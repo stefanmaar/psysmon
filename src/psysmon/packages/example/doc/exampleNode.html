@@ -1,0 +1,110 @@
+<html>
+  <head>
+    <title>Example Node Help</title>
+    <link rel="stylesheet" href="../../../doc/css/moduleDoc.css" type="text/css">
+  </head>
+  <body>
+	<!-- The documentation header -->
+	<div class="docHeader"></div>
+	<!-- End of the documentation header -->
+
+	<!-- Documentation content -->
+	<div class="docContent">
+		<a name="top"><h1>Example Node</h1></a>
+		<div class="docToc"> 
+			<h2>Table of content</h2>
+			<ul>
+				<li><A href="#overview">Overview</A></li>
+				<li><A href="#usage">Usage</A></li>
+				<li><A href="#examples">Examples</A></li>
+				<li><A href="#requiredInput">Required input</A></li>
+				<li><A href="#moduleOutput">Node output</A></li>
+				<li><A href="#relatedModules">Related nodes</A></li>
+			</ul>
+		</div>
+
+
+		<!-- The node overview-->
+		<a name="overview"><h1>Overview</h1></a>
+		<div class="docContent">
+			<b>Category:</b> Example<br>
+			<b>Tags:</b> stable, example<br><br>
+			The <i class="module">example node</i> node can be used as a template to create custom collection nodes.
+		</div>
+
+
+		<!-- The node usage -->
+		<a name="usage"><h1>Usage</h1></a>
+		<div class="docContent">
+			The module's edit window you can find the <i class="guiElement">input files listbox</i> which provides the <i class="guiElement">input files context menu</i> using the right mousebutton.
+			<div class="screenshot">
+				<IMG src="images/adrm_importBulletinFile02.jpg" width="682" height="407" border="0">
+			</div>
+			Using the context menu, you can <i class="guiElement">add files</i> or add all files of a certain directory (<i class="guiElement">add directory</i>) using a file selection filter.<br>
+			The context menu items <i class="guiElement">remove selected</i> and <i class="guiElement">clear list</i> can be used to remove files from the input files listbox.<br>
+			Once you have set up your list of earthquake bulletin files which should be imported into the Seismon database, you can confirm your selection by hitting the <i class="guiElement">ok button</i> or you can discard your changes by clicking the <i class="guiElement">cancel button</i>.<br>
+
+			<h2>Adding all files from a directory</h2>
+			<div class="docContent"> 
+				To add selected files from a directory (including all subfolders) you can use the <i class="guiElement">add directory</i> menu item. This will open a dialog window where you can specify the file filter to be used when searching the specified folder and its subfolders.
+				<div class="screenshot">
+					<IMG src="images/adrm_importBulletinFile_selectDirectory.jpg" width="373" height="117" border="0">
+				</div>
+				The screenshot above shows the selection of all files having an .gse or .ism ending.<br>
+				When using multiple file filters you have to seperate them using the comma sign (,).<br>
+				Of course you can use more sophisticated file filters (e.g. event001*2010*.gse).<br>
+			</div>
+
+			<h2>How the bulletin data is saved in the database</h2>
+			<div class="docContent">
+				The module reads the data in the bulletin text files and transfers the data to the Seismon database. The events imported from a bulletin file are saved as <i>bulletin</i> event types. For each <i>author</i> in the bulletin a new eventset is created. Together with the event time marks, the event origin and the event picks (if available in the bulletin) are saved for the stations that are present in your network geometr. For example if you do import bulletin data which has some event picks at the Austrian station CONA, than the station CONA has to be already created in the Seismon geometry.<br>
+				Because the bulletins don't define the events as it is done within the Seismon database (each event has an event begin and an event end), the event begin and the event end have to be computed from the data available in the bulletin file.<br>
+				For each event, the event begin is set to the event origin time. The event end is computed from the mean arrival times of the stations at which the event has been picked. Most often this works fine, and the event end should mark approximately the first onset of the available data.<br>
+				This method might fail when using bulletins with teleseismic picks when working with stations very near to the event origin or vice versa. Just keep in mind, that the event end marker imported from the bulletin might not exactly match with the data that you are working with.
+			</div>
+		</div>
+		<div class="topFooter"><a href="#top">top</a></div>
+
+
+		<!-- Examples -->
+		<a name="examples"><h1>Examples</h1></a>
+		<div class="docContent">
+			You can use the following files to test the import of GSE2.0 and ISM2.0 short formatted earthquake bulletins.<br>
+			The GSE2.0 file <A href="images/zamgBulletin_2010_02_27.gse" target="_blank">zamgBulletin_2010_02_27.gse</A> is a ZAMG earthquake bulletin downloaded using the ZAMG autodrm service (autodrm@zamg.ac.at). If you open the file you can see, that the whole email response has been saved to the file. The import function neglects all messages that are not part of the GSE2.0 format.<br>
+			The ISM1.0_short file <A href="images/iscCsemBulletin_20100227.ism" target="_blank">iscCsemBulletin_20100227.ism</A> is a ISC bulletin that has been created using the ISC web interface. The result of the web interface query has been saved to a textfile.<br>
+			Both bulletins show the bulletin data of the 27th of February 2010 when the large Chile earthquake occured.
+		</div>
+		<div class="topFooter"><a href="#top">top</a></div>
+
+
+
+		<!-- Required Input -->
+		<a name="requiredInput"><h1>Required input</h1></a>
+		<div class="docContent">
+			This Node doesn't require any inputs.
+		</div>
+
+
+
+		<!-- Node Output -->
+		<a name="moduleOutput"><h1>Node output</h1></a>
+		<div class="docContent">
+			This module doesn't provide any outputs.
+		</div>
+
+
+
+		<!-- Related Nodes -->
+		<a name="relatedModules"><h1>Related nodes</h1></a>
+		<div class="docContent">
+			<ul>
+				<li>example node 2</li>
+				<li>Edit stations database</li>
+			</ul>
+		</div>
+		<div class="topFooter"><a href="#top">top</a></div>
+	</div>
+	<!-- End of documentation content -->
+
+  </body>
+</html>

@@ -1,0 +1,47 @@
+# LICENSE
+#
+# This file is part of pSysmon.
+#
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+#
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from psysmon.core.base import CollectionNodeTemplate
+
+name = "tracedisplay"
+version = "0.1.1"
+author = "Stefan Mertl"
+minPsysmonVersion = "0.0.1"
+description = "The tracedisplay package."
+website = "http://www.stefanmertl.com"
+
+
+def nodeFactory():
+    nodeTemplates = []
+
+   # Create a pSysmon collection node template and add it to the package.
+    property = {}
+    #property['datetime'] = []                   # The begin of the selected timespan.
+    myNodeTemplate = CollectionNodeTemplate(
+                                            name = 'tracedisplay',
+                                            type = 'editable',
+                                            category = 'Display',
+                                            tags = ['development'],
+                                            nodeClass = 'TraceDisplay',
+                                            property = property
+                                            )
+    nodeTemplates.append(myNodeTemplate)
+
+    return nodeTemplates
