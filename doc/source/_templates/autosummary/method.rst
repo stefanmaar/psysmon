@@ -2,24 +2,12 @@
 {{ underline }}
 
 .. currentmodule:: {{ module }}
-.. autoclass:: {{ objname }}
-   :show-inheritance:
-
-   {% block methods %}
-
-   {% if methods %}
-   .. rubric:: Methods
-
-   .. autosummary::
-      :toctree: .
-   {% for item in methods %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
-   {% endif %}
-   {% endblock %}
-
+.. automethod:: {{ objname }}
 
    {% block attributes %}
+   .. rubric:: Documenting a method
+
+   {% print members %}
 
    {% if attributes %}
    .. rubric:: Attributesss
