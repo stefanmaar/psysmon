@@ -45,6 +45,8 @@ class Base:
 
     The Base class is the lowest level class of the pSysmon model. It handles 
     the initialization of the pSysmon packages and stores the package objects.
+   
+
     '''
 
     def __init__(self, baseDir):
@@ -53,13 +55,15 @@ class Base:
 
         Create an instance of the Base class.
 
-        Paramters
-        ---------
         :param self: The object pointer.
         :type self: :class:`~psysmon.core.base.Base`
         :param baseDir: The pSysmon base directory. 
         :type baseDir: String
 
+        :ivar baseDirectory: The pSysmon base directory.
+                            The base directory is the directory in which the pSysmon 
+                            program is located. 
+        :ivar packageDirectory: The psysmon packages directory.
         '''
 
         # Check the baseDir parameter for errors.
@@ -207,7 +211,6 @@ class Base:
         Search for the collection node template with the name *name* in the 
         packages and return it when found. If no template is found, return 
         *False*.
-
         :param self: The object pointer.
         :type self: :class:`~psysmon.core.base.Base` object.
         :param name: The name of the collection node template to get.
@@ -389,8 +392,7 @@ class Package:
     a set of CollectionNodeTemplates which can be used by the pSysmon user to 
     create the collections. 
 
-    Usage
-    -----
+    .. rubric:: Usage
     The packages are created in the pkgInit function of each pSysmon package.@n 
     Below follows an example of a package initialization::
 
@@ -435,14 +437,14 @@ class Package:
             
             return myPackage
 
-    Package creation
-    ----------------
+    .. rubric:: Package creation
+
     As you can see in the example code, first the Package is created using the 
     psysmon.core.base.Package constructor. The package name, version and dependency 
     are passed to the constructor.
 
-    Database table creation
-    -----------------------
+    .. rubric:: Database table creation
+
     Each package can add database tables to the pSysmon database. These tables are 
     created for each project. To add a database table, place the mysql create 
     statement as shown in the example above into a python string. Add the table 
@@ -450,8 +452,8 @@ class Package:
     The *</PREFIX/>* tag in the mysql query will be replaced by pSysmon with the 
     current project name.
 
-    Collection node template creation
-    ---------------------------------
+    .. rubric:: Collection node template creation
+
     Each package will provide one ore more collection nodes which can be used 
     by the user. To let pSysmon know what collection nodes each package provides 
     one has to create a CollectionNodeTemplate for each CollectionNode in the 

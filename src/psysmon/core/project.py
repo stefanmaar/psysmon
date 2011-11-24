@@ -1,6 +1,5 @@
-import pdb
 ## @file project.py
-# 
+#
 
 
 ## @page core.project_page  Page for module core.project
@@ -12,18 +11,18 @@ import pdb
 #     This file is part of Seismon.
 #
 #     If you use Seismon in any program or publication, please inform and
-#     acknowledge its author Stefan Mertl (info@stefanmertl.com). 
-# 
+#     acknowledge its author Stefan Mertl (info@stefanmertl.com).
+#
 #     Seismon is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
 #     (at your option) any later version.
-# 
+#
 #     This program is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
 #     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #     GNU General Public License for more details.
-# 
+#
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -47,74 +46,114 @@ import psysmon.core.base
 from psysmon.core.util import PsysmonError
 
 ## The pSysmon project.
-# 
-# 
+#
+#
 class Project:
+    '''
+    The pSysmon Project class.
 
+    '''
     ## The constructor
     #
     # @param self The Object pointer.
     def __init__(self, name, baseDir, user, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTableNames={}):
-        ## The project name.
-        self.name = name    
+        '''
+        The constructor.
 
-        ## The times when the project has been created.
+        Create an instance of the Project class.
+
+        Parameters
+        ----------
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.project.Project`
+        :param name: The name of the project.
+        :type name: String
+        :param baseDir: The base directory of the project.
+        :type baseDir: String
+        :param user: The admin user of the project.
+        :type user: String
+        :param dbHost: The database host.
+        :type dbHost: String
+        :param dbName: The name of the database associated with the project.
+        :type dbName: String
+        :param dbVersion: The database structure version used by the project.
+        :type dbVersion: Dictionary of Strings with the name of the package as the key.
+        :param createTime: DEPRECATED
+        :param dbTableNames: The database tablenames used by the project.
+        :type dbTableNames: Dictionary of Strings with the name of the table (without prefix) as the key.
+        '''
+
+        self.name = name
+        ''' The project name.'''
+
         if not createTime:
             self.createTime = datetime.utcnow()
+            ''' The time when the project has been created.'''
         else:
             self.createTime = createTime
 
-        ## The base directory of the project.                    
         self.baseDir = baseDir
+        ''' The project's base directory. '''
 
-        ## The project directory.
         self.projectDir = os.path.join(self.baseDir, self.name)
+        ''' The project directory. '''
 
-        ## The host on which the mySQL server is running.
         self.dbHost = dbHost
+        ''' The host on which the mySQL database server is running.'''
 
-        ## The mySQL database name.
-        #
-        # The database of the project is named according to the admin username 
-        # using @e psysmon_ as a prefix (psysmon_ADMINUSERNAME).
         if not dbName:
             self.dbName = "psysmon_" + user.name
         else:
             self.dbName = dbName
+            ''' 
+            The mySQL database name.
+            The database of the project is named according to the admin 
+            username using psysmon_ as a prefix (psysmon_ADMINUSERNAME).
+            '''
 
-
-        ## A dictionary of the project database table names.
         self.dbTableNames = dbTableNames
+        '''
+        A dictionary of the project databaser table names.
+        '''
 
-
-        ## The project filename.
-        #
-        # The project file is saved in the projectDir.
         self.projectFile = self.name +".ppr"
+        '''
+        The project file.
+        The project file is saved in the project Dir.
+        '''
 
-        ## The version list of the package database structures.
         self.dbVersion = dbVersion
+        '''
+        The version dictionary of the package dtabase structures.
+        key: package name
+        '''
 
-        ## A list of waveform directories associated with the project.
-        #
-        # Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
         self.waveformDirList = ()
+        '''
+        A list of waveform directories associated with the project.
+        Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
+        '''
 
-        ## Is the project saved?
         self.saved = False
+        '''
+        Is the project saved?
+        '''
 
-        ## The thread lock object.
         self.threadMutex = None
+        '''
+        The thread lock object.
+        '''
 
-
-        ## A list of users associated with this project. 
-        #
-        # The user creating the project is always the admin user.
         self.user = []
+        '''
+        A list of users associated with this project.
+        The user creating the project is always the admin user.
+        '''
 
-        ## The currently active user of the project.
-        #
         self.activeUser = ""
+        '''
+        The currently active user.
+        '''
 
         # Add the user(s) to the project user list.
         if isinstance(user, list):
