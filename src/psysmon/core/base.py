@@ -1,41 +1,36 @@
-## @file base.py
-# 
-# The pSysmon base module.
+# LICENSE
 #
-# @section sec_license License
-#     This file is part of Seismon.
+# This file is part of pSysmon.
 #
-#     If you use Seismon in any program or publication, please inform and
-#     acknowledge its author Stefan Mertl (info@stefanmertl.com). 
-# 
-#     Seismon is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-# 
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-# 
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
 #
-# @author Stefan Mertl
-# @date Apr 16, 2011
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
+The pSysmon base module.
 
-## @package psysmon.core.base
-#
-# The pSysmon base module.
-#
-# @author: Stefan Mertl
-# Created on Apr 16, 2011
+:copyright:
+    Stefan Mertl
 
+:license:
+    GNU General Public License, Version 3 (http://www.gnu.org/copyleft/gpl.html)
+
+This module contains the basic modules needed to run the pSysmon program.
+'''
 
 import os
 import sys
-import wx
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 from datetime import datetime
@@ -43,47 +38,56 @@ import psysmon.core.project
 from psysmon.core.util import PsysmonError
 
 
-## The pSysmon Base class.
-# 
-# The Base class is the lowest level class of the pSysmon model. It handles the 
-# initialization of the pSysmon packages.
 class Base:
     '''
-    The Base class.
+    The pSysmon Base class.
+
+    The Base class is the lowest level class of the pSysmon model. It handles 
+    the initialization of the pSysmon packages and stores the package objects.
     '''
-    ## The constructor
-    #
-    # Create an instance of the Base class. 
-    #
-    # @param self The Object pointer.
-    # @param baseDir The pSysmon base directory.
+
     def __init__(self, baseDir):
+        '''
+        The constructor.
+
+        Create an instance of the Base class.
+
+        Paramters
+        ---------
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.base.Base`
+        :param baseDir: The pSysmon base directory. 
+        :type baseDir: String
+
+        '''
+
+        # Check the baseDir parameter for errors.
         if not isinstance(baseDir, str):
             msg = "The baseDir should be a string."
             raise IndexError(msg)
-        
+
         if not os.path.isdir(baseDir):
             msg = "The specified directory " + baseDir + " doesn't seem to be a directory."
             raise IndexError(msg)
-        
-        ## The pSysmon base directory.
-        #
-        # The base directory is the directory in which the pSysmon program is located.
+
         self.baseDirectory = baseDir
-        
-        ## The pSysmon packages directory.
-        #
-        # The directory in which the pSysmon packages are located.
+        ''' The pSysmon base directory.
+        The base directory is the directory in which the pSysmon program is 
+        located.
+        '''
+
         self.packageDirectory = os.path.join(self.baseDirectory, "packages")
+        ''' The pSysmon packages directory.
+        The directory in which the pSysmon packages are located.
+        '''
 
-        ## The loaded pSysmon packages.
-        #
-        # A dictionary of all pSysmon packages found in the packageDirectory.
         self.packages = {}
+        ''' The loaded pSysmon packages.
+        A dictionary of all pSysmon packages found in the packageDirectory.
+        '''
 
-        ## The currently loaded pSysmon project.
         self.project = ""
-
+        ''' The currently loaded pSysmon project.'''
 
 
     def scan4Package(self):
@@ -122,12 +126,18 @@ class Base:
     def checkPackage(self, pkg2Check):
         '''
         Check for valid package.
+
+        Check if the package module contains the required attributes.
         '''
+        requiredAttributes = ['name', 'version', 'author', 
+                              'minPsysmonVersion', 'description', 'website']
         tmp = dir(pkg2Check)
-        if 'name' in tmp and 'version' in tmp and 'author' in tmp and 'minPsysmonVersion' and 'description' in tmp and 'website' in tmp:
-            return True
-        else:
-            return False
+        #if 'name' in tmp and 'version' in tmp and 'author' in tmp and 'minPsysmonVersion' and 'description' in tmp and 'website' in tmp:
+        for curAttr in requiredAttributes:
+            if curAttr not in tmp:
+                return False
+
+        return False
 
 
     def addPackage(self, pkgModule, pkgName, pkgBaseDir):
@@ -137,69 +147,88 @@ class Base:
         curPkg = Package(name=pkgModule.name,
                          version=pkgModule.version,
                          dependency=None)
-        
+
+        # Get the database queries.
         if 'databaseFactory' in dir(pkgModule):
             print "Getting the database queries."
             queries = pkgModule.databaseFactory()
             curPkg.addDbTableCreateQuery(queries)
 
+        # Get the collection node templates.
         if 'nodeFactory' in dir(pkgModule):
             print "Getting the collection node templates."
             nodes = pkgModule.nodeFactory()
             curPkg.addCollectionNodeTemplate(nodes)
 
+        # Set the collection node template runtime attributes.
         curPkg.setPyPackageName(pkgName)
         curPkg.setBaseDir(os.path.join(self.packageDirectory, pkgBaseDir))
 
+        # Add the package to the packages list.
         self.packages[curPkg.name] = curPkg
 
-    ## Get a collection node template.
-    #
-    # Search for the collection node template with the name \e name in the 
-    # packages and return it when found. If no template is found, retrun FALSE.
-    #
-    # @param self The object pointer.
-    # @param name The name of the node template.            
+
     def getCollectionNodeTemplate(self, name):
-        
+        '''
+        Get a collection node template.
+
+        Search for the collection node template with the name *name* in the 
+        packages and return it when found. If no template is found, return 
+        *False*.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.base.Base` object.
+        :param name: The name of the collection node template to get.
+        :param self: String
+        :rtype: :class:`~psysmon.core.base.CollectionNodeTemplate` or False
+        '''
         for curPkg in self.packages.itervalues():
             tmp = curPkg.getCollectionNodeTemplate(name)
             if(tmp != False):
                 return tmp
-        
+
         return False
-    
-    
-    ## Create a pSysmon database user.
-    #
-    # Create a new user in the mysql database. For each pSysmon user a corresponding 
-    # database named \e psysmon_USERNAME is created.
-    #
-    # @param self The object pointer.
-    # @param rootUser The username of the mysql root user or any other user having 
-    # root privileges.
-    # @param rootPwd The password of rootUser.
-    # @param dbHost The host on which the mysql server is running.
-    # @param user The username of the user which should be created.
-    # @param userPwd The password of the user \e username.
-    def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):        
-    
+
+
+
+    def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):
+        '''
+        Create a pSysmon database user.
+
+        Create a nuew user in the mysql database. for each pSysmon user a 
+        corresponding database name \e psysmon_USERNAME is created. In this 
+        database, all project database tables will be created.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.base.Base`
+        :param rootUser: The username of the mysql root user or any other user 
+            having root privileges.
+        :type rootUser: String
+        :param rootPwd: The password for the rootUser.
+        :type rootPwd: String
+        :param dbHost: The host on which the mysql server is running.
+        :type dbHost: String
+        :param user: The username of the user which should be created.
+        :type user: String
+        :param userPwd: The password of the user *username*.
+        :type userPwd: String
+        '''
         try:
             dbConn = mysql.connect(dbHost, rootUser, rootPwd)
             cur = dbConn.cursor();
         except mysql.Error:
             raise
-        
+
         try:
             # Create the pSysmon database for the user.
             userDb = "psysmon_" + user
             query = "CREATE DATABASE IF NOT EXISTS %s" % userDb
             cur.execute(query)
-            
+
             # Create the user.
             query = "CREATE USER %s@'%s' IDENTIFIED BY '%s'" % (user, dbHost, userPwd)
             cur.execute(query)
-            
+
             # Grant the privileges.
             query = "GRANT ALL ON %s.* TO '%s'@'%%'" % (userDb, user)
             cur.execute(query)
@@ -207,41 +236,54 @@ class Base:
             raise
         finally:
             dbConn.close()
-            
-    
-    ## Create a pSysmon project.
-    #
-    # The pSysmon project is the starting point when working with pSysmon.
-    # After creating an instance of the psysmon.core.project.Project class, the 
-    # project is initialized:
-    # -# Connect to the database. If this fails, a PsysmonError is raised.
-    # -# Create the project directory structure in the project base directory.
-    # -# Create the project database structure.
-    # -# Initialize the project for the currently active user.
-    # -# Save the project.
-    #
-    # @param self The object pointer.
-    # @param name The name of the project.
-    # @param baseDir The base directory of the pSysmon project. Inside the base 
-    # directory, the pSysmon project directory is created.
-    # @param dbHost The database host on which the mysql server for the project 
-    # is running.
-    # @param user The pSysmon user related to the project as the \e admin.
-    # @param userPwd The password of \e user.
+
+
     def createPsysmonProject(self, name, baseDir, dbHost, user, userPwd):
-        self.project = psysmon.core.project.Project(name=name, 
+        '''
+        Create a pSysmon project.
+
+        The pSysmon project is the starting point when working with pSysmon.
+        After creating an instance of the :class:`~psysmon.core.project.Project` 
+        class, the project is initialized by the following steps:
+            - Connect to the database. If this fails, a PsysmonError is raised.
+            - Create the project directory structure in the project base directory.
+            - Create the project database structure.
+            - Initialize the project for the currently active user.
+            - Save the project.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.base.Base`
+        :param name: The name of the project.
+        :type name: String
+        :param baseDir: The base directory of the pSysmon project. Inside the 
+            base directory, the pSysmon project directory is created.
+        :type baseDir: String
+        :param dbHost: The database host on which the mysql server for the 
+            project is running.
+        :type dbHost: String
+        :param user: The pSysmon user related to the project as the *admin*.
+        :type user: String
+        :param userPwd: The password of *user*.
+        :type user: String
+        :rtype: Boolean
+        '''
+        self.project = psysmon.core.project.Project(name=name,
                                                     baseDir=baseDir,
                                                     user=psysmon.core.project.User(user, 'admin'),
                                                     dbHost=dbHost)
-        self.project.activeUser = self.project.user[0]          # When creating a project, set the active user to the admin user.
+        ''' The current pSysmon project. '''
+
+        # When creating a project, set the active user to the user creating 
+        # the project (which is the *admin* user).
+        self.project.activeUser = self.project.user[0]
         try:
-            self.project.connect2Db(userPwd)                    # Connect to the database.
+            self.project.connect2Db(userPwd)    # Connect to the database.
         except mysql.Error as e:
             msg = "Can't connect to the database.\n The database returned the following message:\n%s" % e
-            raise PsysmonError(msg)                                         # If the connection fails, don't go on with the project creation.
+            raise PsysmonError(msg)     # If the connection fails, don't go on with the project creation.
 
-        self.project.createDirectoryStructure()                 # Create the project's directory structure.
-        self.project.createDatabaseStructure(self.packages)     # Create the project's database structure.
+        self.project.createDirectoryStructure()
+        self.project.createDatabaseStructure(self.packages)
         self.project.setActiveUser(user, userPwd)               # Set the active user again to run all remaining project initialization methods.
         self.project.save()
 
@@ -281,12 +323,23 @@ class Base:
         Close a pSysmon project.
 
         :param self: The object pointer.
-        :type self: Base
+        :type self: :class:`~psysmon.core.base.Base` instance
         '''
         self.project = None
 
 
     def searchCollectionNodeTemplates(self, searchString):
+        '''
+        Find collection node templates containing the searchString in their 
+        name or their tags.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.base.Base`
+        :param searchString: The string to search for.
+        :type searchString: String
+        :rtype: A list of :class:`~psysmon.core.base.CollectionNodeTemplate` 
+            instances.
+        '''
         nodesFound = {}
         for curPkg in self.packages.itervalues():
             for curNode in curPkg.collectionNodeTemplates.itervalues():
@@ -296,87 +349,92 @@ class Base:
         return nodesFound
 
 
-
-
-## The pSysmon Package class.
-# 
-# A pSysmon package provides the functionality to pSysmon. A package contains a 
-# set of CollectionNodeTemplates which can be used by the pSysmon user to create 
-# the collections. 
-#
-# @section Usage
-# The packages are created in the \e pkgInit function of each pSysmon package.@n 
-# Below follows an example of a package initialization:
-#
-# @code
-#from psysmon.core.base import Package, CollectionNodeTemplate
-#
-#def pkgInit():
-#    # Create the pSysmon package.
-#    myPackage = Package(
-#                        name = 'geometry',
-#                        version = '0.1',
-#                        dependency = ''
-#                        )
-#    
-#    # The geom_recorder table.
-#    query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
-#            "("
-#            "id int(10) NOT NULL auto_increment,"
-#            "serial varchar(45) NOT NULL default '',"
-#            "type varchar(255) NOT NULL default '',"
-#            "PRIMARY KEY  (id),"
-#            "UNIQUE (serial, type)"
-#            ") "
-#            "ENGINE=MyISAM "
-#            "DEFAULT CHARSET=latin1 "
-#            "COLLATE latin1_general_cs")
-#    
-#    myPackage.addDbTableCreateQuery(query)
-#
-#    # Create a pSysmon collection node template and add it to the package.
-#    property = {}
-#    property['inputFiles'] = []                     # The files to import.
-#    myNodeTemplate = CollectionNodeTemplate(
-#                                            name = 'edit geometry',
-#                                            type = 'standalone',
-#                                            category = 'Geometry',
-#                                            tags = ['stable'],
-#                                            nodeClass = 'editGeometry',
-#                                            property = property
-#                                            )
-#    
-#    myPackage.addCollectionNodeTemplate(myNodeTemplate)
-#    
-#    return myPackage
-# @endcode
-#
-# @subsection packageCreation Package creation
-# As you can see in the example code, first the Package is created using the 
-# psysmon.core.base.Package constructor. The package name, version and dependency 
-# are passed to the constructor.
-#
-# @subsection databaseTableCreation Database table creation
-# Each package can add database tables to the pSysmon database. These tables are 
-# created for each project. To add a database table, place the mysql create 
-# statement as shown in the example above into a python string. Add the table 
-# create statement to the package by using the Package.addDbTableCreateQuery function.@n
-# The @e </PREFIX/> tag in the mysql query will be replaced by pSysmon with the 
-# current project name.
-#
-# @subsection collectionNodeTemplateCreation Collection node template creation
-# Each package will provide one ore more collection nodes which can be used 
-# by the user. To let pSysmon know what collection nodes each package provides 
-# one has to create a CollectionNodeTemplate for each CollectionNode in the 
-# pkgInit function. In the code example above, one CollectionNodeTemplate is 
-# created by calling the CollectionNodeTemplate constructor and added to the 
-# package \e myPackage by calling the Package.addCollectionNodeTemplate function.@n
-# To learn more about the parameters passet to the CollectionNodeTemplate, 
-# especially the @e property parameter please see the CollectionNodeTemplate.
-# 
-# @see CollectionNodeTemplate
 class Package:
-        
+    '''
+    The pSysmon Package class.
+    
+    A pSysmon package provides the functionality to pSysmon. A package contains 
+    a set of CollectionNodeTemplates which can be used by the pSysmon user to 
+    create the collections. 
+
+    Usage
+    -----
+    The packages are created in the pkgInit function of each pSysmon package.@n 
+    Below follows an example of a package initialization::
+
+        from psysmon.core.base import Package, CollectionNodeTemplate
+
+        def pkgInit():
+            # Create the pSysmon package.
+            myPackage = Package(
+                                name = 'geometry',
+                                version = '0.1',
+                                dependency = ''
+                                )
+            
+            # The geom_recorder table.
+            query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
+                    "("
+                    "id int(10) NOT NULL auto_increment,"
+                    "serial varchar(45) NOT NULL default '',"
+                    "type varchar(255) NOT NULL default '',"
+                    "PRIMARY KEY  (id),"
+                    "UNIQUE (serial, type)"
+                    ") "
+                    "ENGINE=MyISAM "
+                    "DEFAULT CHARSET=latin1 "
+                    "COLLATE latin1_general_cs")
+            
+            myPackage.addDbTableCreateQuery(query)
+
+            # Create a pSysmon collection node template and add it to the package.
+            property = {}
+            property['inputFiles'] = []                     # The files to import.
+            myNodeTemplate = CollectionNodeTemplate(
+                                                    name = 'edit geometry',
+                                                    type = 'standalone',
+                                                    category = 'Geometry',
+                                                    tags = ['stable'],
+                                                    nodeClass = 'editGeometry',
+                                                    property = property
+                                                    )
+            
+            myPackage.addCollectionNodeTemplate(myNodeTemplate)
+            
+            return myPackage
+
+    Package creation
+    ----------------
+    As you can see in the example code, first the Package is created using the 
+    psysmon.core.base.Package constructor. The package name, version and dependency 
+    are passed to the constructor.
+
+    Database table creation
+    -----------------------
+    Each package can add database tables to the pSysmon database. These tables are 
+    created for each project. To add a database table, place the mysql create 
+    statement as shown in the example above into a python string. Add the table 
+    create statement to the package by using the :meth:`~psysmon.core.base.Package.addDbTableCreateQuery` function.
+    The *</PREFIX/>* tag in the mysql query will be replaced by pSysmon with the 
+    current project name.
+
+    Collection node template creation
+    ---------------------------------
+    Each package will provide one ore more collection nodes which can be used 
+    by the user. To let pSysmon know what collection nodes each package provides 
+    one has to create a CollectionNodeTemplate for each CollectionNode in the 
+    pkgInit function. In the code example above, one CollectionNodeTemplate is 
+    created by calling the CollectionNodeTemplate constructor and added to the 
+    package *myPackage* by calling the :meth:`~psysmon.core.Base.Package.addCollectionNodeTemplate` function.
+    To learn more about the parameters passet to the CollectionNodeTemplate, 
+    especially the *property* parameter please see the CollectionNodeTemplate.
+     
+    .. seealso:: 
+        class :class:`psysmon.core.base.CollectionNodeTemplate`
+            The collection node template class.
+                    
+    '''
+
     ## The constructor
     #
     # Create a pSysmon package.@n
@@ -391,33 +449,83 @@ class Package:
     # update the package database in case of a version change.
     # @param dependency A list of other packages needed to run this package.
     def __init__(self, name, version, dependency):   
-        
-        ## The python package name of the package.     
+        '''
+        The constructor.
+
+        Create a pSysmon package.
+        After creating a package, the methods :meth:`~psysmon.core.base.Package.addCollectionNodeTemplate` 
+        and :meth:`~psysmon.core.base.Package.addDbTableCreateQuery` to fill 
+        the package with content.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.base.Package`
+        :param name: The name of the package.
+        :type name: String
+        :param version: The version of the package.
+        :type version: String
+        :param dependency: [deprecated] A list of other packages needed to run this package.     
+        :type dependency: String  
+        '''
+
         self.pyPackage = ""
-        
-        ## The package name.
+        '''
+        The python package name of the package. 
+            Type:
+                String
+        '''     
+
         self.name = name
-        
-        ## The package version.
+        '''
+        The package name. 
+            Type:
+                String
+        '''
+
         self.version = version
-        
-        ## The package dependency
+        '''
+        The package version. 
+            Type:
+                String
+        '''
+
         self.dependency = dependency
-        
-        ## The collection node templates of the package.
+        '''
+        The package dependencies. 
+            [deprecated]
+        '''
+
         self.collectionNodeTemplates = {}
-        
-        ## The package database table create queries.
+        '''
+        The collection node templates of the package. 
+            Type:
+                Dictionary of :class:`~psysmon.core.base.CollectionNodeTemplate` instances.
+                The key of the dictionary is the name of the collection node.
+        '''
+
         self.dbTableCreateQueries = {}
-        
-        ## The package directory.
+        '''
+        The package database table create queries.
+            Each package can add its own database tables.
+            Type:
+                A dictionary of Strings. The key of the dictionary is the name of the 
+                table.
+        '''
+
         self.baseDir = ""
+        '''
+        The package directory.
+            Type:
+                String
+        '''
         
-        ## The package documentation directory.
+
         self.docDir = ""
-        
-        
-        
+        '''
+        The package documentation directory.
+            Type: String
+        '''
+
+
     ## Set the python package name of the collectionNodeTemplates.
     # 
     # Each CollectionNodeTemplate holds the python package name (e.g. psysmon.packages.geometry) 
@@ -431,8 +539,8 @@ class Package:
     def setPyPackageName(self, pyPackage):
         for curNode in self.collectionNodeTemplates.itervalues():
             curNode.setNodePkg(pyPackage)
-            
-            
+
+
     ## Set the package base directory. 
     #
     # @param self The object pointer.
@@ -496,34 +604,34 @@ class Package:
 # The collection controls the adding, removing, editing and execution of the 
 # CollectionNodes.
 class Collection:
-    
+
     ## The constructor.
     # 
     # @param self The object pointer.
     # @param name The name of the collection.
     def __init__(self, name, tmpDir):
-        
+
         ## The name of the collection.
         self.name = name
-        
+
         ## A list CollectionNode objects contained in the collection.
         self.nodes = []
-        
+
         ## The project's temporary directory.
         #
         # Collection log files go in there.
         self.tmpDir = tmpDir
-        
-        
-    
-    
+
+
+
+
     ## Get a node at a given position in the collection.
     #
     # @param self The object pointer.
     # @param index The index of the collection node to get from the list.
     def __getitem__(self, index):
         return self.nodes[index]
-    
+
     ## Add a node to the collection.
     #
     # Insert a node before a specified position in the collection. If the 
@@ -538,7 +646,7 @@ class Collection:
             self.nodes.append(node)
         else:
             self.nodes.insert(position, node)
-        
+
     ## Remove a node from the collection.
     #
     # @param self The Object pointer.
@@ -546,8 +654,8 @@ class Collection:
     def popNode(self, position):
         if len(self.nodes) > 0:
             return self.nodes.pop(position)
-        
-    
+
+
     ## Edit a node.
     #
     # Edit the node at a given position in the collection. This is done by 
@@ -569,8 +677,8 @@ class Collection:
     # edit.    
     def executeNode(self, position):
         self.nodes[position].execute()
-        
-    
+
+
     ## Execute a node.
     #
     # Execute the node at a given position in the collection.
@@ -579,8 +687,8 @@ class Collection:
     # @param position The position in the collection of the node to execute.
     #def executeNode(self, position):
     #    self.nodes[position].execute()
-            
-    
+
+
     ## Execute the collection.
     #
     # Sequentially execute the nodes in the collection. The collection is designed 
@@ -597,7 +705,7 @@ class Collection:
         msg['isError'] = False
         msg['threadId'] = self.threadId
         pub.sendMessage(msgTopic, msg)
-            
+
         for (ind, curNode) in enumerate(self.nodes):
             if ind == 0:
                 curNode.run(threadId=self.threadId)
@@ -605,22 +713,22 @@ class Collection:
                 #curNode.run(threadId=self.threadId)
                 curNode.run(threadId=self.threadId,
                                 prevNodeOutput=self.nodes[ind-1].output)
-                
+
         msgTopic = "state.collection.execution"
         msg = {}
         msg['state'] = 'finished'
         msg['isError'] = False
         msg['threadId'] = self.threadId 
         pub.sendMessage(msgTopic, msg)
-                        
-     
+
+
     ## Set the node's project attribute.
     #    
     def setNodeProject(self, project):
         for curNode in self.nodes:
             curNode.project = project
-            
-        
+
+
     ## Log messages to the collection's log file.
     # 
     # The collection is executed as a thread which has an unique id. 
@@ -631,7 +739,7 @@ class Collection:
     def log(self, nodeName, type, msg):
         curTime = datetime.now()
         timeStampString = datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
-        
+
         if type == 'error':
             modeString = '[ERR] '
         elif type == 'warning':
@@ -640,21 +748,21 @@ class Collection:
             modeString = ' '
 
         nodeName = "[%s]" % nodeName
-        
+
         msgString = msg.rstrip()
         msgString = timeStampString + ">>" + nodeName + modeString + msgString + "\n"
-        
-        
+
+
         # If a threa is running, add the log message to the log file.
         if self.threadId:
             logFile = open(os.path.join(self.tmpDir, self.threadId + ".log"), 'a')
             logFile.write(msgString)
             logFile.close()
-        
-     
-     
-     
-        
+
+
+
+
+
 ## The CollectionNode class.
 # 
 # All collection nodes provided by packages have to be subclasses of the 
@@ -952,7 +1060,7 @@ class CollectionNode:
 # created. The CollectionNodeTemplate takes several parameters to specify the 
 # collection node to be built using this template.
 class CollectionNodeTemplate:
-    
+
     ## The constructor.
     #
     # @param self The object pointer.
@@ -965,7 +1073,7 @@ class CollectionNodeTemplate:
     def __init__(self, name, type, category, tags, nodeClass, property={}, docEntryPoint=None):
         ## The name of the collection node. 
         self.name = name
-        
+
         ## The type of the collection node.
         #
         # Each collection node can specify it's type. Currently there are three 
@@ -975,10 +1083,10 @@ class CollectionNodeTemplate:
         # - standalone The node is not included in the collection execution. Each 
         # node can be executed individually using the collection listbox context menu.
         self.type = type
-        
+
         ## The category of the collection node.
         self.category = category
-        
+
         ## The tags assigned to the collection node.
         #
         # The tags attribute is a list of Strings.@n
@@ -996,7 +1104,7 @@ class CollectionNodeTemplate:
         # - experimental
         # - damaged
         self.tags = tags
-        
+
         ## The collection node properties.
         #
         # Each collection node can have a set of parameters which can be edited 
@@ -1006,22 +1114,22 @@ class CollectionNodeTemplate:
         # The @e property attribute is a dictionary with the property name as it's key.@n
         # @note Usually, the property values are defined in the pkgInit file.
         self.property = property
-        
+
         ## The package which contains the collection node.
         self.nodeClass = nodeClass
-        
+
         ## The node documentation entry point.
         #
         # Each collection node should provide an online documentation in html
         # format. The entry point file can be given using this attribute.
         # the docEntryPoint file has to be saved in the package's doc folder.
         self.docEntryPoint = docEntryPoint 
-        
-        
+
+
         ## The package which contains the collection node.
         self.parentPackage = None
-    
-    
+
+
     ## Set the name of the collection node package.
     #
     #     
@@ -1031,9 +1139,9 @@ class CollectionNodeTemplate:
         # This attribute holds the name of the @b python package holding the 
         # nodeClass. This package is not to be mixed up with the pSysmon package.
         self.nodePkg = nodePkg
-        
-              
-        
+
+
+
 class inheritedBase(Base):
     '''
     This is a test class.
@@ -1041,4 +1149,4 @@ class inheritedBase(Base):
 
     def __init(self):
         pass
-        
+

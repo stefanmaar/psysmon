@@ -34,7 +34,7 @@ Basic Usage
     To start pSysmon from the command line, change into the psysmon directory 
     where the file pSysmon.py is located and type the following command in your 
     linux shell or your window command prompt:
-    
+
     >>> python pSysmon.py:
 
 **Starting from a python shell**
@@ -52,9 +52,9 @@ import os
 
 
 def run():
-    ''' 
+    '''
     Start the pSysmon main program.
-   
+
     Basic Usage
     -----------
 
@@ -73,14 +73,17 @@ def run():
         >>> import psysmon.pSysmon as psysmon
         >>> psysmon.run
     '''
-    
+
     psyBaseDir = os.path.abspath(__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
-    
+
     # Initialize the pSysmon base object.
     psyBase = psybase.Base(psyBaseDir)
+
+    # Scan for available pSysmon packages.
     psyBase.scan4Package()
-    
+
+    # Create the app and run the GUI.
     app =psygui.PSysmonApp()
     pSysmon = psygui.PSysmonGui(psyBase, None)
     pSysmon.Show()
@@ -89,7 +92,7 @@ def run():
 
 if __name__ == '__main__':
     run()
-    
+
 
 
 
