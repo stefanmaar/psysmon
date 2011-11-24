@@ -4,3 +4,5 @@
 # Ignore the tmp folder.
 tmp/
 
+# Ignore the gitignore.swp file
+/.gitignore.swp
