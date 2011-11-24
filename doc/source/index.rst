@@ -5,12 +5,13 @@
 
 
 The pSysmon Core
-------------
+-----------------
 .. autosummary::
    :toctree: autogen
 
    psysmon.pSysmon
-   psysmon.core
+   psysmon.core.base
+   psysmon.core.gui.PSysmonGui
 
    .. comment to end block
 
@@ -29,6 +30,5 @@ Addon Packages
 .. autosummary::
    :toctree: autogen
 
-   
 
    .. comment to end block
