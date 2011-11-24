@@ -31,6 +31,7 @@ This module contains the basic modules needed to run the pSysmon program.
 
 import os
 import sys
+import logging
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 from datetime import datetime
@@ -62,8 +63,8 @@ class Base:
         '''
 
         # Check the baseDir parameter for errors.
-        if not isinstance(baseDir, str):
-            msg = "The baseDir should be a string."
+        if not isinstance(baseDir, basestring):
+            msg = "The baseDir %s should be a string." & baseDir
             raise IndexError(msg)
 
         if not os.path.isdir(baseDir):
@@ -90,6 +91,32 @@ class Base:
         ''' The currently loaded pSysmon project.'''
 
 
+        self.logger = logging.getLogger("base")
+        ''' The system logger used for debugging and system wide error logging.'''
+
+        # Configure the logger.
+        self.configureLogger()
+
+
+    def configureLogger(self):
+        '''
+        Configure the pSysmon system logger.
+
+        This can be used for system log messages (e.g. for debugging).
+        '''
+        print "Configuring logger."
+
+        self.logger.setLevel(logging.DEBUG)
+
+        # Create console handler and set level to debug.
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        # Create a formatter.
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
+
+
     def scan4Package(self):
         '''
         Scan for available pSysmon packages.
@@ -101,8 +128,10 @@ class Base:
         '''
         packages2Register = [ name for name in os.listdir(self.packageDirectory) if os.path.isdir(os.path.join(self.packageDirectory, name)) and name[0]!='.']
 
+        print packages2Register
+
         for curPkg in packages2Register:
-            print "Registering package " + curPkg + "."
+            self.logger.debug("Registering package " + curPkg + ".")
             pkgName = os.path.basename(curPkg)
             try:
                 #pkgInit = __import__("psysmon.packages."+pkgName+".pkgInit", fromlist=['pkgInit'])
@@ -118,9 +147,11 @@ class Base:
 
                 if isOk:
                     self.addPackage(pkgModule, pkgName, curPkg)
+                else:
+                    self.logger.debug("Package check failed!")
 
             except IndexError:
-                print "No init file found."
+                self.logger.debug("No init file found.")
 
 
     def checkPackage(self, pkg2Check):
@@ -135,9 +166,10 @@ class Base:
         #if 'name' in tmp and 'version' in tmp and 'author' in tmp and 'minPsysmonVersion' and 'description' in tmp and 'website' in tmp:
         for curAttr in requiredAttributes:
             if curAttr not in tmp:
+                self.logger.debug("Attribute %s is missing!" % curAttr)
                 return False
 
-        return False
+        return True
 
 
     def addPackage(self, pkgModule, pkgName, pkgBaseDir):
@@ -150,13 +182,13 @@ class Base:
 
         # Get the database queries.
         if 'databaseFactory' in dir(pkgModule):
-            print "Getting the database queries."
+            self.logger.debug("Getting the database queries.")
             queries = pkgModule.databaseFactory()
             curPkg.addDbTableCreateQuery(queries)
 
         # Get the collection node templates.
         if 'nodeFactory' in dir(pkgModule):
-            print "Getting the collection node templates."
+            self.logger.debug("Getting the collection node templates.")
             nodes = pkgModule.nodeFactory()
             curPkg.addCollectionNodeTemplate(nodes)
 
