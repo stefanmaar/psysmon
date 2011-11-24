@@ -18,6 +18,7 @@ import sys, os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.append(os.path.abspath('sphinxext'))
+sys.path.append(os.path.abspath('_ext'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -26,7 +27,10 @@ sys.path.append(os.path.abspath('sphinxext'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.intersphinx', 'sphinx.ext.ifconfig']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.ifconfig',
+              'autosummary']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates'] 
@@ -65,7 +69,7 @@ release = '1.1.1'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_templates']
+exclude_patterns = ['_templates', '_ext']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -221,6 +225,10 @@ man_pages = [
 intersphinx_mapping = {'http://docs.python.org/': None}
 
 autosummary_generate = ["index.rst"]
+autoclass_content = "class"
 #autodoc_default_flags=['members', 'no-inherited-members']
 #template_path = "./_templates"
 
+
+# Add extensions into path
+#sys.path = [os.path.dirname(__file__) + os.sep + '_ext'] + sys.path
