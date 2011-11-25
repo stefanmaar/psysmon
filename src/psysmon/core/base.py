@@ -217,7 +217,7 @@ class Base:
             raise PsysmonError(msg)     # If the connection fails, don't go on with the project creation.
 
         self.project.createDirectoryStructure()
-        self.project.createDatabaseStructure(self.packages)
+        self.project.createDatabaseStructure(self.packageMgr.packages)
         self.project.setActiveUser(user, userPwd)               # Set the active user again to run all remaining project initialization methods.
         self.project.save()
 
