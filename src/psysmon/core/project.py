@@ -150,7 +150,7 @@ class Project:
         else:
             self.user.append(user)
 
-
+    
 
     def setCollectionNodeProject(self):
         for curUser in self.user:
