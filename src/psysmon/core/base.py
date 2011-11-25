@@ -35,6 +35,7 @@ import logging
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 from datetime import datetime
+from psysmon import version
 import psysmon.core.project
 from psysmon.core.util import PsysmonError
 
@@ -97,6 +98,9 @@ class Base:
 
         self.logger = logging.getLogger("base")
         ''' The system logger used for debugging and system wide error logging.'''
+
+        self.version = version
+        ''' The pSysmon version.'''
 
         # Configure the logger.
         self.configureLogger()
