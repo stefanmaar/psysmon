@@ -30,24 +30,24 @@ This module contains the basic modules needed to run the pSysmon program.
 '''
 
 ## The CollectionNode class.
-# 
-# All collection nodes provided by packages have to be subclasses of the 
-# CollectionNode class. The abstract class requires the @e edit and the @e execute 
+#
+# All collection nodes provided by packages have to be subclasses of the
+# CollectionNode class. The abstract class requires the @e edit and the @e execute
 # function to be defined by the subclass.
 #
 # @subsection sub1 CollectionNodeTemplates and CollectionNodes
-# When creating a pSysmon package in the pkgInit function one creates 
-# CollectionNodeTemplates and adds them to the package. So how do CollectionNodeTemplates 
+# When creating a pSysmon package in the pkgInit function one creates
+# CollectionNodeTemplates and adds them to the package. So how do CollectionNodeTemplates
 # and CollectionNodes work together?@n
-# As the class name already suggests, the CollectionNodeTemplate is a template 
-# which can be used to create instances of the CollectionNode which is provided 
+# As the class name already suggests, the CollectionNodeTemplate is a template
+# which can be used to create instances of the CollectionNode which is provided
 # by the package. Each CollectionNodeTemplate has an attribute named @e nodeClass.
 # This nodeClass has to be a class which is a subclass of the CollectionNode.@n
-# 
+#
 # @subsection example An example
-# Lets a look at the following CollectionNodeTemplate created in a pkgInit 
+# Lets a look at the following CollectionNodeTemplate created in a pkgInit
 # function:
-# 
+#
 # @code
 #from psysmon.core.base import Package, CollectionNodeTemplate
 #
@@ -58,8 +58,8 @@ This module contains the basic modules needed to run the pSysmon program.
 #                        version = '0.1',
 #                        dependency = ''
 #                        )
-#    
-#    
+#
+#
 #    # Create a pSysmon collection node template and add it to the package.
 #    property = {}
 #    property['inputFiles'] = []                     # The files to import.
@@ -72,33 +72,33 @@ This module contains the basic modules needed to run the pSysmon program.
 #                                            nodeClass = 'ImportWaveform',
 #                                            property = property
 #                                            )
-#    
+#
 #    myPackage.addCollectionNodeTemplate(myNodeTemplate)
-#    
+#
 #    return myPackage
 # @endcode
 #
-# In this code example, a CollectionNodeTemplate named @e import @e waveform is 
-# created which has the nodeClass @e ImportWaveform. As we already have learned, 
-# the class @e ImportWaveform is the actual class providing the functionality and 
+# In this code example, a CollectionNodeTemplate named @e import @e waveform is
+# created which has the nodeClass @e ImportWaveform. As we already have learned,
+# the class @e ImportWaveform is the actual class providing the functionality and
 # it has to be a subclass of the CollectionNode class.@n
-# 
+#
 # The basic skeleton of the ImportWaveform class should look like this:
 # @code
 #import psysmon.core.base
-# 
+#
 #class ImportWaveform(psysmon.core.base.CollectionNode):
-#    
+#
 #    def edit(self, psyProject):
 #        print "Editing the node %s." % self.name
-#        
+#
 #    def execute(self, psyProject, prevNodeOutput={}):
 #        print "Executing the node %s." % self.name
-#        
+#
 # @endcode
 #
-# The @e edit method is called when editing a collection node, the @e execute 
-# method is called when executing the collection node. 
+# The @e edit method is called when editing a collection node, the @e execute
+# method is called when executing the collection node.
 #
 # @see base.CollectionNodeTemplate
 # @see project.Project.addNode2Collection
@@ -114,27 +114,27 @@ class CollectionNode:
     # - uneditable
     # - standalone
     # @param category The category to which the collection node is assigned to.
-    # @param tags A list of strings containing the tags of the collection node. These values are 
+    # @param tags A list of strings containing the tags of the collection node. These values are
     # not limited but they should contain one of the three development state tags:
     # - stable
     # - experimental
     # - damaged
-    # @param property A dictionary containing the default properties of the 
-    # collection node. This dictionary is used to initialize a new collection node 
+    # @param property A dictionary containing the default properties of the
+    # collection node. This dictionary is used to initialize a new collection node
     # and to save the user input for this collection node during the sessions.
     # @param parent The parent package of the collection node.
     def __init__(self, name, mode, category, tags, options, parent, project):
 
-        ## The name of the collection node.  
+        ## The name of the collection node.
         self.name = name
 
         ## The type of the collection node.
         #
-        # Each collection node can specify it's type. Currently there are three 
+        # Each collection node can specify it's type. Currently there are three
         # allowed values:
         # - editable The user can edit the node paramters.
         # - uneditable There are no node parameters to edit.
-        # - standalone The node is not included in the collection execution. Each 
+        # - standalone The node is not included in the collection execution. Each
         # node can be executed individually using the collection listbox context menu.
         self.mode = mode
 
@@ -144,15 +144,15 @@ class CollectionNode:
         ## The tags assigned to the collection node.
         #
         # The tags attribute is a list of Strings.@n
-        # Additionally to the category, one or more tags can be assigned to the 
-        # collection node. These tags can be used when creating sub-selections of 
-        # all available collection nodes.@n 
-        # For example, a set of nodes has been created for the processing tasks 
-        # at a certain institution or for a special project, one could tag these 
-        # nodes with the institution name or the project name to make it easy for 
-        # users to select these nodes or also to hide these nodes from their 
+        # Additionally to the category, one or more tags can be assigned to the
+        # collection node. These tags can be used when creating sub-selections of
+        # all available collection nodes.@n
+        # For example, a set of nodes has been created for the processing tasks
+        # at a certain institution or for a special project, one could tag these
+        # nodes with the institution name or the project name to make it easy for
+        # users to select these nodes or also to hide these nodes from their
         # collection node inventory.@n
-        # The tag values are not limited but they should contain one of the three 
+        # The tag values are not limited but they should contain one of the three
         # development state tags:
         # - stable
         # - experimental
@@ -161,9 +161,9 @@ class CollectionNode:
 
         ## The collection node properties.
         #
-        # Each collection node can have a set of parameters which can be edited 
-        # by the user and which are used when executing the collection node. 
-        # These properties will also be saved with the collection node during 
+        # Each collection node can have a set of parameters which can be edited
+        # by the user and which are used when executing the collection node.
+        # These properties will also be saved with the collection node during
         # the pSysmon sessions.@n
         # The @e property attribute is a dictionary with the property name as it's key.@n
         # @note Usually, the property values are defined in the pkgInit file.
@@ -173,14 +173,14 @@ class CollectionNode:
         self.parentPackage = parent
 
         ## The node's enabled state.
-        # 
+        #
         # Mark the collection node as enabled or disabled.
         self.enabled = True
 
         ## The collection node's output.
-        # 
+        #
         # The output dictionary can be used to pass parameters to the next
-        # node in the collection. 
+        # node in the collection.
         self.output = {}
 
         ## The current pSysmon project.
@@ -225,10 +225,10 @@ class CollectionNode:
 
     ## The collection node edit method.
     #
-    # The CollecitonNode class requires from it's subclasses to define this method.@n 
-    # The @e edit method is called to edit the collection node parameters. In 
+    # The CollecitonNode class requires from it's subclasses to define this method.@n
+    # The @e edit method is called to edit the collection node parameters. In
     # the pSysmon GUI this is done using the collection listbox context menu.
-    # Within the edit method it's up to the programmer of the collection node 
+    # Within the edit method it's up to the programmer of the collection node
     # how to get the user input to change the collection node properties.
     #
     # @param self The object pointer.
@@ -239,25 +239,25 @@ class CollectionNode:
 
     ## The collection node execute method.
     #
-    # The CollecitonNode class requires from it's subclasses to define this method.@n 
-    # The @e execute method is called to execute the collection node. In 
+    # The CollecitonNode class requires from it's subclasses to define this method.@n
+    # The @e execute method is called to execute the collection node. In
     # the pSysmon GUI this is done using the @e execute @e collection button.
-    # Within the execute method it's up to the programmer of the collection node 
+    # Within the execute method it's up to the programmer of the collection node
     # what algorithm actually is executed.
     #
     # @param self The object pointer.
     # @param project The current pSysmon project.
     # @param prevNodeOutput The output of the previous node in the collection
     def execute(self, prevNodeOutput={}):
-        assert False, 'execute must be defined'   
+        assert False, 'execute must be defined'
 
 
     ## Run the collection node from within a thread.
-    # 
-    # A Collection object is designed to be executed as a thread. The Collection.execute() 
-    # method calls the run method of each collection node. In the run method several 
+    #
+    # A Collection object is designed to be executed as a thread. The Collection.execute()
+    # method calls the run method of each collection node. In the run method several
     # thread dependent attributes can be set before executing the collection node.
-    # Currently the threadId is saved as an attribute of the collection node 
+    # Currently the threadId is saved as an attribute of the collection node
     # so that the node knows to which thread it belongs to.
     def run(self, threadId, prevNodeOutput={}):
         self.threadId = threadId
@@ -266,14 +266,14 @@ class CollectionNode:
 
     ## Log messages.
     #
-    # The collection node is executed by a CollectionNode object. This object handles 
+    # The collection node is executed by a CollectionNode object. This object handles
     # the logging of various messages (error, warning, status, ...) to a log file.
-    # 
-    # @see CollectionNode.log  
+    #
+    # @see CollectionNode.log
     def log(self, mode, msg):
 
         # If the node is running in a thread, log to the collection (the
-        # log file). 
+        # log file).
         # If the thread is not running, log to the pSysmon log area.
         if self.threadId:
             self.parentCollection.log(self.name, mode, msg)
@@ -283,22 +283,22 @@ class CollectionNode:
 
 
 ## The CollectionNodeTemplate class.
-# 
-# This class holds a template which is used to create collection nodes. The 
-# CollectionNodeTemplate should be used only in the pkgInit functions to 
+#
+# This class holds a template which is used to create collection nodes. The
+# CollectionNodeTemplate should be used only in the pkgInit functions to
 # register the pSysmon collection nodes within pSysmon.
 #
 # @subsection sub1 CollectionNodeTemplates and CollectionNodes
-# When creating a pSysmon package in the pkgInit function one creates 
-# CollectionNodeTemplates and adds them to the package. 
-# As the class name already suggests, the CollectionNodeTemplate is a template 
-# which can be used to create instances of the CollectionNode which is provided 
-# by the package. 
-# 
+# When creating a pSysmon package in the pkgInit function one creates
+# CollectionNodeTemplates and adds them to the package.
+# As the class name already suggests, the CollectionNodeTemplate is a template
+# which can be used to create instances of the CollectionNode which is provided
+# by the package.
+#
 # @subsection example An example
-# Lets take a look at the following CollectionNodeTemplate created in a pkgInit 
+# Lets take a look at the following CollectionNodeTemplate created in a pkgInit
 # function:
-# 
+#
 # @code
 #from psysmon.core.base import Package, CollectionNodeTemplate
 #
@@ -309,8 +309,8 @@ class CollectionNode:
 #                        version = '0.1',
 #                        dependency = ''
 #                        )
-#    
-#    
+#
+#
 #    # Create a pSysmon collection node template and add it to the package.
 #    property = {}
 #    property['inputFiles'] = []                     # The files to import.
@@ -323,14 +323,14 @@ class CollectionNode:
 #                                            nodeClass = 'ImportWaveform',
 #                                            property = property
 #                                            )
-#    
+#
 #    myPackage.addCollectionNodeTemplate(myNodeTemplate)
-#    
+#
 #    return myPackage
 # @endcode
 #
-# In this code example, a CollectionNodeTemplate named @e import @e waveform is 
-# created. The CollectionNodeTemplate takes several parameters to specify the 
+# In this code example, a CollectionNodeTemplate named @e import @e waveform is
+# created. The CollectionNodeTemplate takes several parameters to specify the
 # collection node to be built using this template.
 class CollectionNodeTemplate:
 
@@ -341,19 +341,19 @@ class CollectionNodeTemplate:
     # @param type The collection node type.
     # @param category The collection node category.
     # @param tags The collection node tags.
-    # @param property A dictionary specifying the properties of the collection node. 
+    # @param property A dictionary specifying the properties of the collection node.
     # @param nodeClass The class to be used when creating the collection node from the template.
     def __init__(self, name, mode, category, tags, nodeClass, options={}, docEntryPoint=None):
-        ## The name of the collection node. 
+        ## The name of the collection node.
         self.name = name
 
         ## The type of the collection node.
         #
-        # Each collection node can specify it's type. Currently there are three 
+        # Each collection node can specify it's type. Currently there are three
         # allowed values:
         # - editable The user can edit the node paramters.
         # - uneditable There are no node parameters to edit.
-        # - standalone The node is not included in the collection execution. Each 
+        # - standalone The node is not included in the collection execution. Each
         # node can be executed individually using the collection listbox context menu.
         self.mode = mode
 
@@ -363,15 +363,15 @@ class CollectionNodeTemplate:
         ## The tags assigned to the collection node.
         #
         # The tags attribute is a list of Strings.@n
-        # Additionally to the category, one or more tags can be assigned to the 
-        # collection node. These tags can be used when creating sub-selections of 
-        # all available collection nodes.@n 
-        # For example, a set of nodes has been created for the processing tasks 
-        # at a certain institution or for a special project, one could tag these 
-        # nodes with the institution name or the project name to make it easy for 
-        # users to select these nodes or also to hide these nodes from their 
+        # Additionally to the category, one or more tags can be assigned to the
+        # collection node. These tags can be used when creating sub-selections of
+        # all available collection nodes.@n
+        # For example, a set of nodes has been created for the processing tasks
+        # at a certain institution or for a special project, one could tag these
+        # nodes with the institution name or the project name to make it easy for
+        # users to select these nodes or also to hide these nodes from their
         # collection node inventory.@n
-        # The tag values are not limited but they should contain one of the three 
+        # The tag values are not limited but they should contain one of the three
         # development state tags:
         # - stable
         # - experimental
@@ -380,9 +380,9 @@ class CollectionNodeTemplate:
 
         ## The collection node properties.
         #
-        # Each collection node can have a set of parameters which can be edited 
-        # by the user and which are used when executing the collection node. 
-        # These properties will also be saved with the collection node during 
+        # Each collection node can have a set of parameters which can be edited
+        # by the user and which are used when executing the collection node.
+        # These properties will also be saved with the collection node during
         # the pSysmon sessions.@n
         # The @e property attribute is a dictionary with the property name as it's key.@n
         # @note Usually, the property values are defined in the pkgInit file.
@@ -396,7 +396,7 @@ class CollectionNodeTemplate:
         # Each collection node should provide an online documentation in html
         # format. The entry point file can be given using this attribute.
         # the docEntryPoint file has to be saved in the package's doc folder.
-        self.docEntryPoint = docEntryPoint 
+        self.docEntryPoint = docEntryPoint
 
 
         ## The package which contains the collection node.
@@ -405,10 +405,10 @@ class CollectionNodeTemplate:
 
     ## Set the name of the collection node package.
     #
-    #     
+    #
     def setNodePkg(self, nodePkg):
         ## The name of the python package containing the nodeClass.
         #
-        # This attribute holds the name of the @b python package holding the 
+        # This attribute holds the name of the @b python package holding the
         # nodeClass. This package is not to be mixed up with the pSysmon package.
         self.nodePkg = nodePkg
