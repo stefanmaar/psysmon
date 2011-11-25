@@ -50,11 +50,11 @@ def nodeFactory():
 
     myTemplate = CollectionNodeTemplate(
                                         name = 'example node',
-                                        type = 'editable',
+                                        mode = 'editable',
                                         category = 'Example',
                                         tags = ['stable', 'example'],
                                         nodeClass = 'exampleNode',
-                                        property = property,
+                                        options = None,
                                         docEntryPoint = 'exampleNode.html'
                                        )
     nodeTemplates.append(myTemplate)

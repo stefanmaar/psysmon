@@ -32,26 +32,26 @@ def nodeFactory():
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
-    property = {}
+    options = {}
     myNodeTemplate = CollectionNodeTemplate(
                                             name = 'edit geometry',
-                                            type = 'standalone',
+                                            mode = 'standalone',
                                             category = 'Geometry',
                                             tags = ['stable'],
                                             nodeClass = 'EditGeometry',
-                                            property = property
+                                            options = options
                                             )
     nodeTemplates.append(myNodeTemplate) 
     
     # Create a pSysmon collection node template and add it to the package.
-    property = {}
+    options = {}
     myNodeTemplate = CollectionNodeTemplate(
                                             name = 'apply geometry',
-                                            type = 'uneditable',
+                                            mode = 'uneditable',
                                             category = 'Geometry',
                                             tags = ['stable'],
                                             nodeClass = 'ApplyGeometry',
-                                            property = property
+                                            options = options
                                             )
     nodeTemplates.append(myNodeTemplate)
 

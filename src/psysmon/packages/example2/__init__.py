@@ -32,7 +32,7 @@ def nodeFactory():
 
     myTemplate = CollectionNodeTemplate(
                                         name = 'example node 2',
-                                        type = 'editable',
+                                        mode = 'editable',
                                         category = 'Example',
                                         tags = ['stable', 'example'],
                                         nodeClass = 'exampleNode2',

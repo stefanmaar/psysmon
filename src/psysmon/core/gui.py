@@ -1,31 +1,22 @@
-## @file gui.py
-# 
-
-
-## @page core.gui_page  Page for module core.gui
+# LICENSE
 #
-# @section sec_intro Introduction
+# This file is part of pSysmon.
 #
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
 #
-# @section sec_license License
-#     This file is part of Seismon.
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#     If you use Seismon in any program or publication, please inform and
-#     acknowledge its author Stefan Mertl (info@stefanmertl.com). 
-# 
-#     Seismon is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-# 
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-# 
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import wx.aui
@@ -479,10 +470,10 @@ class CollectionListBox(wx.SimpleHtmlListBox):
         
         try:
             selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.GetSelection())
-            if(selectedNode.type == 'standalone'):
+            if(selectedNode.mode == 'standalone'):
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'execute node')
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            elif(selectedNode.type == 'uneditable'):
+            elif(selectedNode.mode == 'uneditable'):
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'uneditable')
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             else:
@@ -605,7 +596,7 @@ class CollectionPanel(wx.Panel):
     def onEditNode(self, event):
         try:
             selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
-            if(selectedNode.type == 'standalone'):
+            if(selectedNode.mode == 'standalone'):
                 print "in standalone"
                 self.psyBase.project.executeNode(self.selectedCollectionNodeIndex)
             else:
@@ -822,7 +813,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         self.nodeListCtrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
         
-        columns = {1: 'name', 2: 'type', 3: 'category', 4: 'tags'}
+        columns = {1: 'name', 2: 'mode', 3: 'category', 4: 'tags'}
         
         for colNum, name in columns.iteritems():
             self.nodeListCtrl.InsertColumn(colNum, name)
@@ -918,10 +909,10 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         
         for curNode in nodeTemplates.itervalues():
             self.nodeListCtrl.InsertStringItem(index, curNode.name)
-            self.nodeListCtrl.SetStringItem(index, 1, curNode.type)
+            self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
             self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
             self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
-            self.itemDataMap[index] = (curNode.name, curNode.type, curNode.category, ', '.join(curNode.tags))
+            self.itemDataMap[index] = (curNode.name, curNode.mode, curNode.category, ', '.join(curNode.tags))
             self.nodeListCtrl.SetItemData(index, index)
             index += 1
 

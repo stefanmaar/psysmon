@@ -32,16 +32,16 @@ def nodeFactory():
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
-    property = {}
-    property['inputFiles'] = []                     # The files to import.
-    property['lastDir'] = ""                        # The last used directory.
+    options = {}
+    options['inputFiles'] = []                     # The files to import.
+    options['lastDir'] = ""                        # The last used directory.
     myNodeTemplate = CollectionNodeTemplate(
                                             name = 'import waveform',
-                                            type = 'editable',
+                                            mode = 'editable',
                                             category = 'Data Import',
                                             tags = ['stable'],
                                             nodeClass = 'ImportWaveform',
-                                            property = property
+                                            options = options
                                             )
     nodeTemplates.append(myNodeTemplate)
 

@@ -32,15 +32,15 @@ def nodeFactory():
     nodeTemplates = []
 
    # Create a pSysmon collection node template and add it to the package.
-    property = {}
-    #property['datetime'] = []                   # The begin of the selected timespan.
+    options = {}
+    #options['datetime'] = []                   # The begin of the selected timespan.
     myNodeTemplate = CollectionNodeTemplate(
                                             name = 'tracedisplay',
-                                            type = 'editable',
+                                            mode = 'editable',
                                             category = 'Display',
                                             tags = ['development'],
                                             nodeClass = 'TraceDisplay',
-                                            property = property
+                                            options = options
                                             )
     nodeTemplates.append(myNodeTemplate)
 

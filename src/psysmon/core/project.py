@@ -1,31 +1,22 @@
-## @file project.py
+# LICENSE
 #
-
-
-## @page core.project_page  Page for module core.project
+# This file is part of pSysmon.
 #
-# @section sec_intro Introduction
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
 #
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# @section sec_license License
-#     This file is part of Seismon.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#     If you use Seismon in any program or publication, please inform and
-#     acknowledge its author Stefan Mertl (info@stefanmertl.com).
-#
-#     Seismon is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 Module for handling the pSysmon project and users.
 
@@ -53,9 +44,7 @@ class Project:
     The pSysmon Project class.
 
     '''
-    ## The constructor
-    #
-    # @param self The Object pointer.
+
     def __init__(self, name, baseDir, user, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTableNames={}):
         '''
         The constructor.
@@ -188,17 +177,17 @@ class Project:
     # @param self The Object pointer.
     # @param query The mySQL query string. 
     # @param type The type of the query (select, insert, update, alter)    
-    def executeQuery(self, query, type='select'):
+    def executeQuery(self, query, mode='select'):
         try:
             self.cur.execute(query)
 
-            if type == 'select':           
+            if mode == 'select':           
                 data = self.cur.fetchall()       # Return the selected data.
-            elif type == 'insert':
+            elif mode == 'insert':
                 data = int(self.cur.rowcount)    # Return the affected rows.
-            elif type == 'update':
+            elif mode == 'update':
                 data = int(self.cur.rowcount)    # Return the affected rows.
-            elif type == 'alter':
+            elif mode == 'alter':
                 data = int(self.cur.rowcount)    # Return the affected rows.
 
 
@@ -209,18 +198,18 @@ class Project:
         except (mysql.DataError, mysql.IntegrityError, mysql.ProgrammingError), e:
             msg = ("The query that you have have passed is not valid. "
                    "Please check the query before trying to execute it again.\n"
-                   "Your query (type = %s):\n"
+                   "Your query (mode = %s):\n"
                    "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (type, query, e)
+                   "The exact error information reads as follows:\n%s") % (mode, query, e)
             return {'isError': True,
                     'msg': msg,
                     'result': ''}
         except (mysql.OperationalError, mysql.InternalError, mysql.NotSupportedError), e:
             msg = ("An irrecoverable error has occured in the way your data was "
                    "processed. Please report this error to the pSysmon development team.\n"
-                   "Your query (type = %s):\n"
+                   "Your query (mode = %s):\n"
                    "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (type, query, e)
+                   "The exact error information reads as follows:\n%s") % (mode, query, e)
             return {'isError': True,
                     'msg': msg,
                     'result': ''}
@@ -234,15 +223,15 @@ class Project:
     # @param query The mySQL query string as required by the mysqldb.executemany method. 
     # @param data The data to be processed by the query.
     # @param type The type of the query (select, insert, update)       
-    def executeManyQuery(self, query, data, type='select'):
+    def executeManyQuery(self, query, data, mode='select'):
         try:
             self.cur.executemany(query, data)
 
-            if type == 'select':           
+            if mode == 'select':           
                 data = self.cur.fetchall()       # Return the selected data.
-            elif type == 'insert':
+            elif mode == 'insert':
                 data = int(self.cur.rowcount)    # Return the affected rows.
-            elif type == 'update':
+            elif mode == 'update':
                 data = int(self.cur.rowcount)    # Return the affected rows.
 
             return {'isError': False,
@@ -252,18 +241,18 @@ class Project:
         except (mysql.DataError, mysql.IntegrityError, mysql.ProgrammingError), e:
             msg = ("The query that you have have passed is not valid. "
                    "Please check the query before trying to execute it again.\n"
-                   "Your query (type = %s):\n"
+                   "Your query (mode = %s):\n"
                    "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (type, query, e)
+                   "The exact error information reads as follows:\n%s") % (mode, query, e)
             return {'isError': True,
                     'msg': msg,
                     'result': ''}
         except (mysql.OperationalError, mysql.InternalError, mysql.NotSupportedError), e:
             msg = ("An irrecoverable error has occured in the way your data was "
                    "processed. Please report this error to the pSysmon development team.\n"
-                   "Your query (type = %s):\n"
+                   "Your query (mode = %s):\n"
                    "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (type, query, e)
+                   "The exact error information reads as follows:\n%s") % (mode, query, e)
             return {'isError': True,
                     'msg': msg,
                     'result': ''}
@@ -425,11 +414,11 @@ class Project:
 
         nodeClass = getattr(nodeModule,nodeTemplate.nodeClass)
         node = nodeClass(name = nodeTemplate.name,
-                         type = nodeTemplate.type,
+                         mode = nodeTemplate.mode,
                          category = nodeTemplate.category,
                          tags = nodeTemplate.tags,
                          parent = nodeTemplate.nodePkg,
-                         property = nodeTemplate.property,
+                         options = nodeTemplate.options,
                          project = self
                          )
         self.activeUser.addNode2Collection(node, position)
@@ -457,7 +446,6 @@ class Project:
 
 
     def loadWaveformDirList(self):
-        pdb.set_trace() ############################## Breakpoint ##############################
         wfDirTable = self.dbTableNames['waveformDir']
         wfDirAliasTable = self.dbTableNames['waveformDirAlias']
 
@@ -474,8 +462,8 @@ class Project:
             print res['msg']
 
 
-    def log(self, type, msg):
-        msgTopic = "log.general." + type
+    def log(self, mode, msg):
+        msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
 
 

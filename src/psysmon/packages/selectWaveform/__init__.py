@@ -32,18 +32,18 @@ def nodeFactory():
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
-    property = {}
-    property['datetime'] = []                   # The begin of the selected timespan.
-    property['duration'] = []                   # The duration of the selected timespan.
-    property['stations'] = []                   # The selected stations.
-    property['channels'] = {}                   # The selected channels for each station.
+    options = {}
+    options['datetime'] = []                   # The begin of the selected timespan.
+    options['duration'] = []                   # The duration of the selected timespan.
+    options['stations'] = []                   # The selected stations.
+    options['channels'] = {}                   # The selected channels for each station.
     myNodeTemplate = CollectionNodeTemplate(
                                             name = 'select waveform',
-                                            type = 'editable',
+                                            mode = 'editable',
                                             category = 'Display',
                                             tags = ['development'],
                                             nodeClass = 'SelectWaveform',
-                                            property = property
+                                            options = options
                                             )
     nodeTemplates.append(myNodeTemplate)
 

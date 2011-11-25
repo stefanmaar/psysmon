@@ -45,7 +45,7 @@ class Base:
 
     The Base class is the lowest level class of the pSysmon model. It handles 
     the initialization of the pSysmon packages and stores the package objects.
-   
+
 
     '''
 
@@ -138,12 +138,6 @@ class Base:
             self.logger.debug("Registering package " + curPkg + ".")
             pkgName = os.path.basename(curPkg)
             try:
-                #pkgInit = __import__("psysmon.packages."+pkgName+".pkgInit", fromlist=['pkgInit'])
-                #pkgInit = reload(pkgInit)
-                #pkgObject = pkgInit.pkgInit();
-                #pkgObject.setPyPackageName("psysmon.packages."+pkgName)
-                #pkgObject.setBaseDir(os.path.join(self.packageDirectory, curPkg))
-                #self.packages[pkgObject.name] = pkgObject
                 pkgName = "psysmon.packages."+pkgName
                 pkgModule = __import__(pkgName)
                 pkgModule = sys.modules[pkgName]
@@ -387,7 +381,7 @@ class Base:
 class Package:
     '''
     The pSysmon Package class.
-    
+
     A pSysmon package provides the functionality to pSysmon. A package contains 
     a set of CollectionNodeTemplates which can be used by the pSysmon user to 
     create the collections. 
@@ -405,7 +399,7 @@ class Package:
                                 version = '0.1',
                                 dependency = ''
                                 )
-            
+
             # The geom_recorder table.
             query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
                     "("
@@ -418,7 +412,7 @@ class Package:
                     "ENGINE=MyISAM "
                     "DEFAULT CHARSET=latin1 "
                     "COLLATE latin1_general_cs")
-            
+
             myPackage.addDbTableCreateQuery(query)
 
             # Create a pSysmon collection node template and add it to the package.
@@ -432,9 +426,9 @@ class Package:
                                                     nodeClass = 'editGeometry',
                                                     property = property
                                                     )
-            
+
             myPackage.addCollectionNodeTemplate(myNodeTemplate)
-            
+
             return myPackage
 
     .. rubric:: Package creation
@@ -462,26 +456,13 @@ class Package:
     package *myPackage* by calling the :meth:`~psysmon.core.Base.Package.addCollectionNodeTemplate` function.
     To learn more about the parameters passet to the CollectionNodeTemplate, 
     especially the *property* parameter please see the CollectionNodeTemplate.
-     
+
     .. seealso:: 
         class :class:`psysmon.core.base.CollectionNodeTemplate`
             The collection node template class.
-                    
+
     '''
 
-    ## The constructor
-    #
-    # Create a pSysmon package.@n
-    # Use the addCollectionNodeTemplate and the addDbTableCreateQuery to fill 
-    # the package content.@n
-    # @note The only place where to use this constructor should be the pkgInit 
-    # function of each pSysmon package.
-    #
-    # @param self The Object pointer.
-    # @param name The name of the package.
-    # @param version The version of the package. The package version is used to 
-    # update the package database in case of a version change.
-    # @param dependency A list of other packages needed to run this package.
     def __init__(self, name, version, dependency):   
         '''
         The constructor.
@@ -506,7 +487,7 @@ class Package:
         The python package name of the package. 
             Type:
                 String
-        '''     
+        '''
 
         self.name = name
         '''
@@ -551,7 +532,7 @@ class Package:
             Type:
                 String
         '''
-        
+
 
         self.docDir = ""
         '''
@@ -770,13 +751,13 @@ class Collection:
     # in the project's temporary directory. All messages created by the nodes in 
     # the collection are written to this file.
     #        
-    def log(self, nodeName, type, msg):
+    def log(self, nodeName, mode, msg):
         curTime = datetime.now()
         timeStampString = datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
 
-        if type == 'error':
+        if mode == 'error':
             modeString = '[ERR] '
-        elif type == 'warning':
+        elif mode == 'warning':
             modeString = '[WRN] '
         else:
             modeString = ' '
@@ -891,7 +872,7 @@ class CollectionNode:
     # collection node. This dictionary is used to initialize a new collection node 
     # and to save the user input for this collection node during the sessions.
     # @param parent The parent package of the collection node.
-    def __init__(self, name, type, category, tags, property, parent, project):
+    def __init__(self, name, mode, category, tags, property, parent, project):
 
         ## The name of the collection node.  
         self.name = name
@@ -904,7 +885,7 @@ class CollectionNode:
         # - uneditable There are no node parameters to edit.
         # - standalone The node is not included in the collection execution. Each 
         # node can be executed individually using the collection listbox context menu.
-        self.type = type
+        self.mode = mode
 
         ## The category of the collection node.
         self.category = category
@@ -1031,15 +1012,15 @@ class CollectionNode:
     # the logging of various messages (error, warning, status, ...) to a log file.
     # 
     # @see CollectionNode.log  
-    def log(self, type, msg):
+    def log(self, mode, msg):
 
         # If the node is running in a thread, log to the collection (the
         # log file). 
         # If the thread is not running, log to the pSysmon log area.
         if self.threadId:
-            self.parentCollection.log(self.name, type, msg)
+            self.parentCollection.log(self.name, mode, msg)
         else:
-            self.project.log(type, msg)
+            self.project.log(mode, msg)
 
 
 
@@ -1104,7 +1085,7 @@ class CollectionNodeTemplate:
     # @param tags The collection node tags.
     # @param property A dictionary specifying the properties of the collection node. 
     # @param nodeClass The class to be used when creating the collection node from the template.
-    def __init__(self, name, type, category, tags, nodeClass, property={}, docEntryPoint=None):
+    def __init__(self, name, mode, category, tags, nodeClass, options={}, docEntryPoint=None):
         ## The name of the collection node. 
         self.name = name
 
@@ -1116,7 +1097,7 @@ class CollectionNodeTemplate:
         # - uneditable There are no node parameters to edit.
         # - standalone The node is not included in the collection execution. Each 
         # node can be executed individually using the collection listbox context menu.
-        self.type = type
+        self.mode = mode
 
         ## The category of the collection node.
         self.category = category
@@ -1147,7 +1128,7 @@ class CollectionNodeTemplate:
         # the pSysmon sessions.@n
         # The @e property attribute is a dictionary with the property name as it's key.@n
         # @note Usually, the property values are defined in the pkgInit file.
-        self.property = property
+        self.options = options
 
         ## The package which contains the collection node.
         self.nodeClass = nodeClass
@@ -1174,13 +1155,4 @@ class CollectionNodeTemplate:
         # nodeClass. This package is not to be mixed up with the pSysmon package.
         self.nodePkg = nodePkg
 
-
-
-class inheritedBase(Base):
-    '''
-    This is a test class.
-    '''        
-
-    def __init(self):
-        pass
 
