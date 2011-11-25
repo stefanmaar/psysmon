@@ -18,14 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from psysmon.core.base import CollectionNodeTemplate
+from psysmon.core.packageNodes import CollectionNodeTemplate
 
-name = "example"
-version = "0.1.1"
-author = "Stefan Mertl"
-minPsysmonVersion = "0.0.1"
-description = "The example packages"
-website = "http://www.stefanmertl.com"
+name = "example"                                # The package name.
+version = "0.1.1"                               # The package version.
+author = "Stefan Mertl"                         # The package author.
+minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
+description = "The example packages"            # The package description.
+website = "http://www.stefanmertl.com"          # The package website.
 
 
 def databaseFactory():

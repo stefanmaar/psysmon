@@ -229,7 +229,7 @@ class PSysmonGui(wx.Frame):
 
             else:
                 # Check if the database tables have to be updated.
-                self.psyBase.project.checkDbVersions(self.psyBase.packages)
+                self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
 
                 # Update the collection panel display.
                 self.collectionPanel.refreshCollection()
@@ -280,7 +280,7 @@ class PSysmonGui(wx.Frame):
             dlg.ShowModal()
         else:
             self.closeProject()
-    
+
     ## Close menu callback.
     #
     # @param self The object pointer.
@@ -290,8 +290,8 @@ class PSysmonGui(wx.Frame):
         self.mgr.UnInit()
         # delete the frame
         self.Destroy()
-    
-        
+
+
     ## About menu button callback.
     #
     # @param self The Object pointer.
@@ -454,20 +454,20 @@ class CollectionListBox(wx.SimpleHtmlListBox):
                   ("remove node", parent.onRemoveNode),
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
-        
+
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
-        
+
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
         self.Bind(wx.html.EVT_HTML_CELL_CLICKED, self.onItemRightClicked)
-        
-        
+
+
     ## Show the context menu.
     #    
     def onShowContextMenu(self, event):
         if not self.Parent.psyBase.project:
             return
-        
+
         try:
             selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.GetSelection())
             if(selectedNode.mode == 'standalone'):
@@ -481,12 +481,12 @@ class CollectionListBox(wx.SimpleHtmlListBox):
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
         except PsysmonError as e:
             pass
-            
-            
+
+
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         self.PopupMenu(self.contextMenu, pos)
-        
+
     def onItemRightClicked(self, event):
         print "Item right clicked."
 
@@ -496,31 +496,31 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
                  size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, id, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
-        
+
         cmData = (("edit node", parent.onEditNode),
                   ("remove node", parent.onRemoveNode),
                   ("separator", None),
                   ("load collection", parent.onCollectionLoad),
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
-        
+
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
-        
+
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
-        
+
     def onShowContextMenu(self, event):
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         self.PopupMenu(self.contextMenu, pos)
-        
-        
+
+
 
 
 ## The collection panel.
 #        
 class CollectionPanel(wx.Panel):
-    
+
     ## The constructor.
     #
     # @param self The object pointer.
@@ -528,9 +528,9 @@ class CollectionPanel(wx.Panel):
     def __init__(self, parent, psyBase, size):
         wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY)
         self.psyBase = psyBase
-        
+
         self.SetBackgroundColour((255, 255, 255))
-   
+
         self.collectionListCtrl = CollectionListCtrl(self, id=wx.ID_ANY,
                                  style=wx.LC_REPORT 
                                  | wx.BORDER_NONE
@@ -538,40 +538,40 @@ class CollectionPanel(wx.Panel):
                                  | wx.LC_SINGLE_SEL
                                  | wx.LC_NO_HEADER
                                  )
-        
+
         columns = {1: 'node'}
-        
+
         for colNum, name in columns.iteritems():
             self.collectionListCtrl.InsertColumn(colNum, name)
-            
+
         sizer = wx.GridBagSizer(5, 5)
         sizer.Add(self.collectionListCtrl, pos=(0, 0), flag=wx.EXPAND|wx.ALL, border=0)
-        
+
         self.executeButton = wx.Button(self, 10, "execute", (20, 20))
         sizer.Add(self.executeButton, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=2)
-        
+
         sizer.AddGrowableCol(0)
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(1)
         self.SetSizerAndFit(sizer)
-        
-        
+
+
         # Bind the events
         self.Bind(wx.EVT_BUTTON, self.onExecuteCollection)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onCollectionNodeItemSelected)
-        
+
         self.selectedCollectionNodeIndex = -1
-        
-        
+
+
     # DEFINE THE CONTEXT MENU EVENT HANDLER.
-     
+
     # Execute collection button callback.
     #
     # @param self The object pointer.
     # @param event The event object.  
     def onExecuteCollection(self, event): 
         self.psyBase.project.executeCollection()
-        
+
     # Remove node context menu callback.
     #
     # @param self The object pointer.
@@ -587,8 +587,8 @@ class CollectionPanel(wx.Panel):
                                    "pSysmon runtime error.",
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal() 
-            
-    
+
+
     ## Edit node context menu callback.
     #
     # @param self The object pointer.
@@ -607,8 +607,8 @@ class CollectionPanel(wx.Panel):
                                    "pSysmon runtime error.",
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal() 
-            
-            
+
+
     ## Select node item callback.
     #
     # This method responds to events raised by selecting a collection node in 
@@ -619,8 +619,8 @@ class CollectionPanel(wx.Panel):
     def onCollectionNodeItemSelected(self, evt):
         print "Selected node in collection."
         self.selectedCollectionNodeIndex = evt.GetIndex()
-        
-     
+
+
     # Load a collection context menu callback.
     #
     # @param self The object pointer.
@@ -635,8 +635,8 @@ class CollectionPanel(wx.Panel):
             self.psyBase.project.setActiveCollection(dlg.GetStringSelection())
             self.refreshCollection()   
         dlg.Destroy()
-           
-               
+
+
     # Add new collection context menu callback.
     #
     # @param self The object pointer.
@@ -644,7 +644,7 @@ class CollectionPanel(wx.Panel):
     def onCollectionNew(self, event):
         colName = wx.GetTextFromUser('collection name', caption='New collection', 
                                      default_value="", parent=None)
-        
+
         if not colName:
             return
         else:
@@ -688,20 +688,20 @@ class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
                  size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, id, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
-        
+
         cmData = (("add", parent.onCollectionNodeAdd),
                   ("help", parent.onCollectionNodeHelp))
-        
+
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
-        
+
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
-        
+
     def onShowContextMenu(self, event):
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         self.PopupMenu(self.contextMenu, pos)
-        
+
 
 
 class LoggingPanel(wx.aui.AuiNotebook):
@@ -714,14 +714,14 @@ class LoggingPanel(wx.aui.AuiNotebook):
         # A dictionary holding the row number of the threads in the threads logging
         # area. The key is the thread ID.
         self.threadMap = {}
-        
+
         # The general logging area.
         self.status = wx.TextCtrl(self, -1, '',
                                     wx.DefaultPosition, wx.Size(200,100),
                                     wx.NO_BORDER 
                                     | wx.TE_MULTILINE
                                     | wx.HSCROLL)
-        
+
         # The collection thread logging area.
         self.threads = wx.ListCtrl(self, id=wx.ID_ANY,
                                       style=wx.LC_REPORT 
@@ -729,23 +729,23 @@ class LoggingPanel(wx.aui.AuiNotebook):
                                       | wx.LC_SINGLE_SEL
                                       | wx.LC_SORT_ASCENDING
                                       )
-        
+
         columns = {1: 'start', 2: 'id', 3: 'status', 4: 'duration'}
-        
+
         for colNum, name in columns.iteritems():
             self.threads.InsertColumn(colNum, name)
-            
+
         # Create the context menu of the thread logging area.
         cmData = (("view log file", self.onViewLogFile),
                   ("remove", self.onRemoveThread))
         self.contextMenu = psyContextMenu(cmData)
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
-        
+
         # Add the elements to the notebook.
         self.AddPage(self.status, "status")
         self.AddPage(self.threads, "threads")
-        
-        
+
+
     def addThread(self, data):
         print data
         #index = self.threads.GetItemCount()
@@ -754,25 +754,25 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.threads.SetStringItem(index, 1, data['threadId'])
         self.threads.SetStringItem(index, 2, data['state'])
         self.threadMap[data['threadId']] = index
-        
+
     def updateThread(self, data):
         if data['threadId'] in self.threadMap.keys():
             curIndex = self.threadMap[data['threadId']]
             self.threads.SetStringItem(curIndex, 1, data['threadId'])
             self.threads.SetStringItem(curIndex, 2, data['state'])
-            
+
     def onShowContextMenu(self, event):
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         self.PopupMenu(self.contextMenu, pos)
-        
+
     def onViewLogFile(self, event):
         selectedRow = self.threads.GetFirstSelected()
         threadId = self.threads.GetItem(selectedRow, 1).GetText()
         logFile = os.path.join(self.GetParent().psyBase.project.tmpDir, threadId + ".log")
         webbrowser.open(logFile)
         print "Showing the log file %s." % logFile
-        
+
     def onRemoveThread(self, event):
         pass
 
@@ -780,20 +780,20 @@ class LoggingPanel(wx.aui.AuiNotebook):
 class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
     def __init__(self, parent, psyBase):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
-        
+
         self.itemDataMap = {}
-        
+
         self.il = wx.ImageList(16, 16)
         self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
         self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
-        
+
         self.psyBase = psyBase
         self.collectionPanel = parent.collectionPanel
-        
+
         self.SetBackgroundColour((255, 255, 255))
-        
+
         sizer = wx.GridBagSizer(5, 5)
-        
+
         self.searchButton = wx.SearchCtrl(self, size=(200,-1), style=wx.TE_PROCESS_ENTER)
         self.searchButton.SetDescriptiveText('Search collection nodes')
         self.searchButton.ShowCancelButton(True)
@@ -802,34 +802,34 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         self.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self.onCancelSearch, self.searchButton)
         self.Bind(wx.EVT_TEXT_ENTER, self.onDoSearch, self.searchButton)
         sizer.Add(self.searchButton, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)
-        
+
         self.nodeListCtrl = NodeListCtrl(self, id=wx.ID_ANY,
                                  style=wx.LC_REPORT 
                                  | wx.BORDER_NONE
                                  | wx.LC_SINGLE_SEL
                                  | wx.LC_SORT_ASCENDING
                                  )
-        
+
         self.nodeListCtrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
-        
+
         columns = {1: 'name', 2: 'mode', 3: 'category', 4: 'tags'}
-        
+
         for colNum, name in columns.iteritems():
             self.nodeListCtrl.InsertColumn(colNum, name)
-        
+
         sizer.Add(self.nodeListCtrl, pos=(1, 0), flag=wx.EXPAND|wx.ALL, border=0)
-        
+
         sizer.AddGrowableCol(0)
         sizer.AddGrowableCol(1)
         sizer.AddGrowableRow(1)
-        
+
         self.SetSizerAndFit(sizer)
-        
+
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onCollectionNodeItemSelected)
-        
-        
-    
+
+
+
     ## Select node item callback.
     #
     # This method responds to events raised by selecting a collection node in 
@@ -840,24 +840,24 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
     def onCollectionNodeItemSelected(self, evt):
         item = evt.GetItem()
         print "Selected item: ", item.GetText()
-        self.selectedCollectionNodeTemplate = self.psyBase.getCollectionNodeTemplate(item.GetText())
-            
-        
+        self.selectedCollectionNodeTemplate = self.psyBase.packageMgr.getCollectionNodeTemplate(item.GetText())
+
+
     def onDoSearch(self, evt):
-        foundNodes = self.psyBase.searchCollectionNodeTemplates(self.searchButton.GetValue())
+        foundNodes = self.psyBase.packageMgr.searchCollectionNodeTemplates(self.searchButton.GetValue())
         self.updateNodeInvenotryList(foundNodes)
         print foundNodes
-        
+
     def onCancelSearch(self, evt):
         self.initNodeInventoryList()
         self.searchButton.SetValue(self.searchButton.GetDescriptiveText())
-        
-        
-    
+
+
+
     def onCollectionNodeAdd(self, event):
         msg =  "Adding node template to collection: " + self.selectedCollectionNodeTemplate.name
         pub.sendMessage("log.general.status", msg)
-            
+
         try:
             pos = self.collectionPanel.selectedCollectionNodeIndex
             if pos != -1:
@@ -871,7 +871,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
                                    "pSysmon runtime error.",
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()    
-        
+
     ## Show the node's online help file.
     # 
     # Each collection node should provide a html formatted help file. This 
@@ -879,10 +879,10 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
     def onCollectionNodeHelp(self, event):
         docFile = self.selectedCollectionNodeTemplate.docEntryPoint
         docDir = self.selectedCollectionNodeTemplate.parentPackage.docDir
-        
+
         if docFile and docDir:
             docFile = os.path.join(docDir, docFile)
-            
+
             if os.path.isfile(docFile):
                 webbrowser.open(docFile)
             else:
@@ -891,22 +891,22 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         else:
             msg =  "No documentation found for node %s " % self.selectedCollectionNodeTemplate.name
             pub.sendMessage("log.general.status", msg)
-        
-                
-                
+
+
+
     def initNodeInventoryList(self):
         nodeTemplates = {}
-        for curPkg in self.psyBase.packages.itervalues():
+        for curPkg in self.psyBase.packageMgr.packages.itervalues():
             nodeTemplates.update(curPkg.collectionNodeTemplates)
-            
+
         self.updateNodeInvenotryList(nodeTemplates)
         listmix.ColumnSorterMixin.__init__(self, 4)
-            
-            
+
+
     def updateNodeInvenotryList(self, nodeTemplates):
         index = 0
         self.nodeListCtrl.DeleteAllItems()
-        
+
         for curNode in nodeTemplates.itervalues():
             self.nodeListCtrl.InsertStringItem(index, curNode.name)
             self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
@@ -1080,21 +1080,21 @@ class CreateNewProjectDlg(wx.Dialog):
 
         # Layout using sizers.
         sizer = wx.BoxSizer(wx.VERTICAL)
-        
+
         self.label = {};
         self.edit = {};
-        
+
         sizer.Add(self.createDialogFields(), 0, wx.EXPAND|wx.ALL, 5)
-        
+
         btnSizer = wx.StdDialogButtonSizer()
         btnSizer.AddButton(okButton)
         btnSizer.AddButton(cancelButton)
         btnSizer.Realize()
         sizer.Add(btnSizer, 0, wx.EXPAND|wx.ALL, 5)
-        
+
         self.SetSizer(sizer)
         sizer.Fit(self)
-        
+
         # Add some default values.
         self.edit['dbHost'].SetValue('localhost')
 
@@ -1104,12 +1104,12 @@ class CreateNewProjectDlg(wx.Dialog):
         self.edit['dbHost'].SetValidator(NotEmptyValidator())        # Not empty.
         self.edit['user'].SetValidator(NotEmptyValidator())        # Not empty.
         #self.edit['userPwd'].SetValidator(NotEmptyValidator())        # Not empty.
-        
+
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
-        
+
     def onBaseDirBrowse(self, event):
-            
+
         # Create the directory dialog.
         dlg = wx.DirDialog(self, message="Choose a directory:",
                            defaultPath=self.edit['baseDir'].GetValue(),
@@ -1124,23 +1124,23 @@ class CreateNewProjectDlg(wx.Dialog):
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
-    
+
     def onOk(self, event):  
         isValid = self.Validate()
-        
+
         if(isValid):
             projectData = {};
             for _, curKey, _, _, _ in self.dialogData():
                 projectData[curKey] = self.edit[curKey].GetValue()
-    
+
             projectCreated = self.createProject(projectData)
             #pub.sendMessage("createNewDbUserDlg.createUser", userData)
             if(projectCreated):
                 self.GetParent().enableGuiElements()
                 self.Destroy()
 
-     
-    
+
+
     def dialogData(self):
         return(("name:", "name", wx.TE_RIGHT, False, ""),
                ("base directory:", "baseDir", wx.TE_LEFT, True, self.onBaseDirBrowse),
@@ -1148,17 +1148,17 @@ class CreateNewProjectDlg(wx.Dialog):
                ("user:", "user", wx.TE_RIGHT, False, ""),
                ("user pwd:", "userPwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, "")
                )
-        
+
     def createDialogFields(self):
         dialogData = self.dialogData()
         gbSizer = wx.GridBagSizer(5, 5)
         rowCount = 0
-            
+
         for curLabel, curKey, curStyle, hasBrowseBtn, curBtnHandler in dialogData:
             self.label[curKey] = wx.StaticText(self, wx.ID_ANY, curLabel)
             self.edit[curKey] = wx.TextCtrl(self, size=(300, -1), 
                                             style=curStyle)
-            
+
             if(hasBrowseBtn):
                 browseButton = wx.Button(self, wx.ID_ANY, "browse", (50,-1))
                 gbSizer.Add(self.label[curKey], pos=(rowCount, 0), 
@@ -1167,22 +1167,22 @@ class CreateNewProjectDlg(wx.Dialog):
                             flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.ALL)
                 gbSizer.Add(browseButton, pos=(rowCount, 2), 
                             flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.ALL)
-                
+
                 self.Bind(wx.EVT_BUTTON, curBtnHandler, browseButton)
             else:
                 gbSizer.Add(self.label[curKey], pos=(rowCount, 0),
                             flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
                 gbSizer.Add(self.edit[curKey], pos=(rowCount, 1),
                             flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-                
+
             rowCount += 1
-            
+
         return gbSizer
-    
-      
+
+
     ## Create a new pSysmon project.
     def createProject(self, projectData):
-          
+
         try:
             self.psyBase.createPsysmonProject(**projectData)
             return True
@@ -1190,8 +1190,8 @@ class CreateNewProjectDlg(wx.Dialog):
             print "Error while creating the project: %s" % e
             raise
             return False  
-        
-        
+
+
 
 ## A dialog field validator which doesn't allow empty field values.
 class NotEmptyValidator(wx.PyValidator):
@@ -1200,13 +1200,13 @@ class NotEmptyValidator(wx.PyValidator):
     # @param self The object pointer.
     def __init__(self):
         wx.PyValidator.__init__(self)
-        
-        
+
+
     ## The default clone method.    
     def Clone(self):
         return NotEmptyValidator()
-    
-    
+
+
     ## The method run when validating the field.
     #
     # This method checks if the control has a value. If not, it returns False.
@@ -1214,7 +1214,7 @@ class NotEmptyValidator(wx.PyValidator):
     def Validate(self, win):
         ctrl = self.GetWindow()
         value = ctrl.GetValue()
-        
+
         if len(value) == 0:
             wx.MessageBox("This field must contain some text!", "Error")
             ctrl.SetBackgroundColour("pink")
@@ -1225,15 +1225,15 @@ class NotEmptyValidator(wx.PyValidator):
             ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
-       
+
     ## The method called when entering the dialog.      
     def TransferToWindow(self):
         return True
-    
+
     ## The method called when leaving the dialog.  
     def TransferFromWindow(self):
         return True
-    
+
 
 
 ## A dialog field validator which checks for field entry equality.
@@ -1242,21 +1242,21 @@ class NotEmptyValidator(wx.PyValidator):
 # equal to another one. It's useful when checking for the correct typing of new
 # passwords.    
 class IsEqualValidator(wx.PyValidator):
-    
+
     ## The constructor.
     #
     # @param self The object pointer.
     # @param ctrl2Compare A wx control to which the value of the validated field should be compared.
     def __init__(self, ctrl2Compare):
         wx.PyValidator.__init__(self)
-        
+
         ## The control to which the field to be validated should be compared to.
         self.ctrl2Compare = ctrl2Compare
-    
+
     ## The default clone method.    
     def Clone(self):
         return IsEqualValidator(self.ctrl2Compare)
-    
+
     ## The method run when validating the field.
     #
     # This method checks whether the values entered in the two controls are equal
@@ -1266,7 +1266,7 @@ class IsEqualValidator(wx.PyValidator):
         ctrl = self.GetWindow()
         value = ctrl.GetValue()
         value2Compare = self.ctrl2Compare.GetValue()
-        
+
         if value != value2Compare:
             wx.MessageBox("The two passwords don't match!", "Error")
             ctrl.SetBackgroundColour("pink")
@@ -1277,87 +1277,87 @@ class IsEqualValidator(wx.PyValidator):
             ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
-    
+
     ## The method called when entering the dialog.    
     def TransferToWindow(self):
         return True
-    
+
     ## The method called when leaving the dialog.
     def TransferFromWindow(self):
         return True
-    
-    
-    
+
+
+
 class ProjectLoginDlg(wx.Dialog):
-    
+
     ## The constructor.
     #
     # @param self The object pointer.
     def __init__(self, size=(300, 200)):
         wx.Dialog.__init__(self, None, wx.ID_ANY, "Project login", size=size)
-                                
+
         # Use standard button IDs.
         okButton = wx.Button(self, wx.ID_OK)
         okButton.SetDefault()
         cancelButton = wx.Button(self, wx.ID_CANCEL)
-        
+
         # Layout using sizers.
         sizer = wx.BoxSizer(wx.VERTICAL)
-        
+
         self.label = {};
         self.edit = {};
-        
+
         sizer.Add(self.createDialogFields(), 0, wx.EXPAND|wx.ALL, 5)
-        
+
         btnSizer = wx.StdDialogButtonSizer()
         btnSizer.AddButton(okButton)
         btnSizer.AddButton(cancelButton)
         btnSizer.Realize()
         sizer.Add(btnSizer, 0, wx.EXPAND|wx.ALL, 5)
-        
+
         self.SetSizer(sizer)
         sizer.Fit(self)
-        
+
         self.edit['user'].SetFocus()
-        
+
         # Add the validators.
         self.edit['user'].SetValidator(NotEmptyValidator())         # Not empty.        
-        
+
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
-        
-    
+
+
     def onOk(self, event):  
         isValid = self.Validate()
-        
+
         if(isValid):
             self.userData = {};
             for _, curKey, _ in self.dialogData():
                 self.userData[curKey] = self.edit[curKey].GetValue()
                 self.Destroy()
-     
-    
+
+
     def dialogData(self):
         return(
                ("user:", "user", wx.TE_RIGHT),
                ("password:", "pwd", wx.TE_PASSWORD|wx.TE_RIGHT),
               )
-        
+
     def createDialogFields(self):
         dialogData = self.dialogData()
         fgSizer = wx.FlexGridSizer(len(dialogData), 2, 5, 5)
-            
+
         for curLabel, curKey, curStyle in dialogData:
             self.label[curKey] = wx.StaticText(self, wx.ID_ANY, curLabel)
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1), 
                                             style=curStyle)
-                
+
             fgSizer.Add(self.label[curKey], 0, wx.ALIGN_RIGHT)
             fgSizer.Add(self.edit[curKey], 0, wx.EXPAND)
-            
+
         fgSizer.AddGrowableCol(1)
         return fgSizer
-        
-    
-        
-        
+
+
+
+

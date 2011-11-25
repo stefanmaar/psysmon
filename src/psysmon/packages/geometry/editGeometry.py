@@ -20,7 +20,7 @@
 
 
 
-import psysmon.core.base
+from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory
 import wx.aui
 import wx.grid
@@ -36,7 +36,7 @@ from obspy.signal import pazToFreqResp
 ## Documentation for class importWaveform
 #
 #
-class EditGeometry(psysmon.core.base.CollectionNode):
+class EditGeometry(CollectionNode):
 
     ## The edit method.
     #

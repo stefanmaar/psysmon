@@ -18,9 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import psysmon.core.base
+from psysmon.core.packageNodes import CollectionNode
 
-class exampleNode2(psysmon.core.base.CollectionNode):
+class exampleNode2(CollectionNode):
     '''
     An example node.
 

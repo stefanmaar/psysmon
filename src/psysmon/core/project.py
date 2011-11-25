@@ -407,6 +407,8 @@ class Project:
         try:
             # The collection node class module should begin with a lower case letter.
             nodeModuleName = nodeTemplate.nodeClass[0].lower() + nodeTemplate.nodeClass[1:]
+            print nodeTemplate.nodePkg+"." + nodeModuleName
+            print nodeTemplate.nodeClass 
             nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeModuleName, fromlist=[nodeTemplate.nodeClass])
         except:
             # If this doesn't work, try the original class name.

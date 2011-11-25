@@ -32,7 +32,7 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import psysmon.core.base
+from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.util import PsysmonError 
 import wx
 import wx.aui
@@ -70,7 +70,7 @@ def _pydate2wxdate(date):
 ## Documentation for class importWaveform
 #
 #
-class SelectWaveform(psysmon.core.base.CollectionNode):
+class SelectWaveform(CollectionNode):
     
     def edit(self):
         dlg = SelectWaveformEditDlg(self, self.project, None)

@@ -81,7 +81,7 @@ def run():
     psyBase = psybase.Base(psyBaseDir)
 
     # Scan for available pSysmon packages.
-    psyBase.scan4Package()
+    #psyBase.initialize()
 
     # Create the app and run the GUI.
     app =psygui.PSysmonApp()

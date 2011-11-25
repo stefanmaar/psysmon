@@ -32,8 +32,7 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import psysmon.core.base
+from psysmon.core.packageNodes import CollectionNode
 
 ## The ApplyGeometry class.
 # 
@@ -44,7 +43,7 @@ import psysmon.core.base
 # fields are reset.
 #
 # The apply geometry collection node is an uneditable node.
-class ApplyGeometry(psysmon.core.base.CollectionNode):
+class ApplyGeometry(CollectionNode):
     
         
     ## The edit method.
