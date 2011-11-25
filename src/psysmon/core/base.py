@@ -962,6 +962,13 @@ class CollectionNode:
         self.__dict__.update(d) # I *think* this is a safe way to do it
         self.project = None
 
+        # Track some instance attribute changes.
+        if not "mode" in dir(self):
+            self.mode = self.type
+
+        if not "options" in dir(self):
+            self.options = self.property
+
 
 
 
