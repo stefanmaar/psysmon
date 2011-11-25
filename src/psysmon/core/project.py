@@ -1,3 +1,4 @@
+import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -404,25 +405,29 @@ class Project:
 
 
     def addNode2Collection(self, nodeTemplate, position=-1):
-        try:
-            # The collection node class module should begin with a lower case letter.
-            nodeModuleName = nodeTemplate.nodeClass[0].lower() + nodeTemplate.nodeClass[1:]
-            print nodeTemplate.nodePkg+"." + nodeModuleName
-            print nodeTemplate.nodeClass 
-            nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeModuleName, fromlist=[nodeTemplate.nodeClass])
-        except:
-            # If this doesn't work, try the original class name.
-            nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeTemplate.nodeClass, fromlist=[nodeTemplate.nodeClass])
+        #try:
+            #pdb.set_trace() ############################## Breakpoint ##############################
+            ## The collection node class module should begin with a lower case letter.
+            #nodeModuleName = nodeTemplate.nodeClass[0].lower() + nodeTemplate.nodeClass[1:]
+            #print nodeTemplate.nodePkg+"." + nodeModuleName
+            #print nodeTemplate.nodeClass 
+            #nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeModuleName, fromlist=[nodeTemplate.nodeClass])
+        #except:
+            ## If this doesn't work, try the original class name.
+            #nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeTemplate.nodeClass, fromlist=[nodeTemplate.nodeClass])
 
-        nodeClass = getattr(nodeModule,nodeTemplate.nodeClass)
-        node = nodeClass(name = nodeTemplate.name,
-                         mode = nodeTemplate.mode,
-                         category = nodeTemplate.category,
-                         tags = nodeTemplate.tags,
-                         parent = nodeTemplate.nodePkg,
-                         options = nodeTemplate.options,
-                         project = self
-                         )
+        #nodeClass = getattr(nodeModule,nodeTemplate.nodeClass)
+        #node = nodeClass(name = nodeTemplate.name,
+                         #mode = nodeTemplate.mode,
+                         #category = nodeTemplate.category,
+                         #tags = nodeTemplate.tags,
+                         #parent = nodeTemplate.nodePkg,
+                         #options = nodeTemplate.options,
+                         #project = self
+                         #)
+
+        node = copy.deepcopy(nodeTemplate)
+        node.project = self
         self.activeUser.addNode2Collection(node, position)
 
 

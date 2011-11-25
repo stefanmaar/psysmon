@@ -123,7 +123,7 @@ class CollectionNode:
     # collection node. This dictionary is used to initialize a new collection node
     # and to save the user input for this collection node during the sessions.
     # @param parent The parent package of the collection node.
-    def __init__(self, name, mode, category, tags, options, parent, project):
+    def __init__(self, name, mode, category, tags, options, docEntryPoint=None, parent=None, project=None):
 
         ## The name of the collection node.
         self.name = name
@@ -168,6 +168,8 @@ class CollectionNode:
         # The @e property attribute is a dictionary with the property name as it's key.@n
         # @note Usually, the property values are defined in the pkgInit file.
         self.options = options
+
+        self.docEntryPoint = docEntryPoint
 
         ## The package which contains the collection node.
         self.parentPackage = parent
@@ -221,6 +223,15 @@ class CollectionNode:
             self.options = self.property
 
 
+    ## Set the name of the collection node package.
+    #
+    #
+    def setNodePkg(self, nodePkg):
+        ## The name of the python package containing the nodeClass.
+        #
+        # This attribute holds the name of the @b python package holding the
+        # nodeClass. This package is not to be mixed up with the pSysmon package.
+        self.nodePkg = nodePkg
 
 
     ## The collection node edit method.

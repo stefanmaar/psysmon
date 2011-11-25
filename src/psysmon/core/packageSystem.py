@@ -132,6 +132,9 @@ class PackageManager:
         if 'nodeFactory' in dir(pkgModule):
             self.parent.logger.debug("Getting the collection node templates.")
             nodes = pkgModule.nodeFactory()
+            for curNode in nodes:
+                curNode.parent = pkgName
+
             curPkg.addCollectionNodeTemplate(nodes)
 
         # Set the collection node template runtime attributes.

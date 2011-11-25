@@ -23,7 +23,7 @@ from psysmon.core.packageNodes import CollectionNode
 import time
 
 
-class exampleNode(CollectionNode):
+class ExampleNode(CollectionNode):
     '''
     An example node.
 
