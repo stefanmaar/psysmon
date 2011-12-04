@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from psysmon.core.packageNodes import CollectionNodeTemplate
-
 name = "obspyImportWaveform"
 version = "0.1.1"
 author = "Stefan Mertl"
@@ -29,20 +27,20 @@ website = "http://www.stefanmertl.com"
 
 
 def nodeFactory():
+    from obspyImportWaveform import ImportWaveform
+
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
     options = {}
     options['inputFiles'] = []                     # The files to import.
     options['lastDir'] = ""                        # The last used directory.
-    myNodeTemplate = CollectionNodeTemplate(
-                                            name = 'import waveform',
-                                            mode = 'editable',
-                                            category = 'Data Import',
-                                            tags = ['stable'],
-                                            nodeClass = 'ImportWaveform',
-                                            options = options
-                                            )
+    myNodeTemplate = ImportWaveform(name = 'import waveform',
+                                    mode = 'editable',
+                                    category = 'Data Import',
+                                    tags = ['stable'],
+                                    options = options
+                                    )
     nodeTemplates.append(myNodeTemplate)
 
     return nodeTemplates

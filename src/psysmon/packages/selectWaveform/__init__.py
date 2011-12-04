@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from psysmon.core.packageNodes import CollectionNodeTemplate
-
 name = "selectWaveform"
 version = "0.1.1"
 author = "Stefan Mertl"
@@ -29,6 +27,8 @@ website = "http://www.stefanmertl.com"
 
 
 def nodeFactory():
+    from selectWaveform import SelectWaveform
+
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
@@ -37,14 +37,13 @@ def nodeFactory():
     options['duration'] = []                   # The duration of the selected timespan.
     options['stations'] = []                   # The selected stations.
     options['channels'] = {}                   # The selected channels for each station.
-    myNodeTemplate = CollectionNodeTemplate(
-                                            name = 'select waveform',
-                                            mode = 'editable',
-                                            category = 'Display',
-                                            tags = ['development'],
-                                            nodeClass = 'SelectWaveform',
-                                            options = options
-                                            )
+    myNodeTemplate = SelectWaveform(name = 'select waveform',
+                                    mode = 'editable',
+                                    category = 'Display',
+                                    tags = ['development'],
+                                    options = options
+                                    )
+
     nodeTemplates.append(myNodeTemplate)
 
     return nodeTemplates

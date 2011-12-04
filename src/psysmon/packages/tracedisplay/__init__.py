@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from psysmon.core.packageNodes import CollectionNodeTemplate
-
 name = "tracedisplay"
 version = "0.1.1"
 author = "Stefan Mertl"
@@ -29,19 +27,20 @@ website = "http://www.stefanmertl.com"
 
 
 def nodeFactory():
+    from tracedisplay import TraceDisplay
     nodeTemplates = []
 
    # Create a pSysmon collection node template and add it to the package.
     options = {}
     #options['datetime'] = []                   # The begin of the selected timespan.
-    myNodeTemplate = CollectionNodeTemplate(
-                                            name = 'tracedisplay',
-                                            mode = 'editable',
-                                            category = 'Display',
-                                            tags = ['development'],
-                                            nodeClass = 'TraceDisplay',
-                                            options = options
-                                            )
+    myNodeTemplate = TraceDisplay(name = 'tracedisplay',
+                                  mode = 'editable',
+                                  category = 'Display',
+                                  tags = ['development'],
+                                  nodeClass = 'TraceDisplay',
+                                  options = options
+                                  )
+
     nodeTemplates.append(myNodeTemplate)
 
     return nodeTemplates
