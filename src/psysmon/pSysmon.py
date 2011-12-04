@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # License
 #     This file is part of Seismon.
 #
