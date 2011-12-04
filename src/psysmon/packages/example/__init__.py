@@ -25,6 +25,7 @@ minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version re
 description = "The example packages"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
+from exampleNode import ExampleNode
 
 def databaseFactory():
     queries = []
@@ -44,7 +45,6 @@ def databaseFactory():
 
 
 def nodeFactory():
-    from exampleNode import ExampleNode
     nodeTemplates = []
 
     myTemplate = ExampleNode(name = 'example node',
@@ -53,7 +53,7 @@ def nodeFactory():
                              tags = ['stable', 'example'],
                              options = None,
                              docEntryPoint = 'exampleNode.html'
-                             )
+                           )
     nodeTemplates.append(myTemplate)
 
     return nodeTemplates
