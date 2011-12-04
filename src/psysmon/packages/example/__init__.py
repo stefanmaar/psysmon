@@ -47,14 +47,13 @@ def nodeFactory():
     from exampleNode import ExampleNode
     nodeTemplates = []
 
-    myTemplate = ExampleNode(
-                                name = 'example node',
-                                mode = 'editable',
-                                category = 'Example',
-                                tags = ['stable', 'example'],
-                                options = None,
-                                docEntryPoint = 'exampleNode.html',
-                               )
+    myTemplate = ExampleNode(name = 'example node',
+                             mode = 'editable',
+                             category = 'Example',
+                             tags = ['stable', 'example'],
+                             options = None,
+                             docEntryPoint = 'exampleNode.html'
+                             )
     nodeTemplates.append(myTemplate)
 
     return nodeTemplates
