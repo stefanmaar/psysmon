@@ -37,7 +37,6 @@ def nodeFactory():
                                   mode = 'editable',
                                   category = 'Display',
                                   tags = ['development'],
-                                  nodeClass = 'TraceDisplay',
                                   options = options
                                   )
 
