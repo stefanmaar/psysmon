@@ -20,7 +20,7 @@
 
 from psysmon.core.packageNodes import CollectionNode
 
-class exampleNode2(CollectionNode):
+class ExampleNode2(CollectionNode):
     '''
     An example node.
 

@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from psysmon.core.packageNodes import CollectionNodeTemplate
-
 name = "example 2"
 version = "0.1.1"
 author = "Stefan Mertl"
@@ -27,16 +25,18 @@ minPsysmonVersion = "0.0.1"
 description = "The second example package."
 website = "http://www.stefanmertl.com"
 
+from exampleNode2 import ExampleNode2
+
 def nodeFactory():
     nodeTemplates = []
 
-    myTemplate = CollectionNodeTemplate(
-                                        name = 'example node 2',
-                                        mode = 'editable',
-                                        category = 'Example',
-                                        tags = ['stable', 'example'],
-                                        nodeClass = 'exampleNode2',
-                                       )
+    myTemplate = ExampleNode2(name = 'example node 2',
+                              mode = 'editable',
+                              category = 'Example',
+                              tags = ['stable', 'example'],
+                              options = None,
+                              docEntryPoint = None
+                              )
     nodeTemplates.append(myTemplate)
 
     return nodeTemplates
