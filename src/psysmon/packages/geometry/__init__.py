@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from psysmon.core.packageNodes import CollectionNodeTemplate
-
 name = "geometry"
 version = "0.1.1"
 author = "Stefan Mertl"
@@ -29,30 +27,29 @@ website = "http://www.stefanmertl.com"
 
 
 def nodeFactory():
+    from applyGeometry import ApplyGeometry
+    from editGeometry import EditGeometry
+
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
     options = {}
-    myNodeTemplate = CollectionNodeTemplate(
-                                            name = 'edit geometry',
-                                            mode = 'standalone',
-                                            category = 'Geometry',
-                                            tags = ['stable'],
-                                            nodeClass = 'EditGeometry',
-                                            options = options
-                                            )
+    myNodeTemplate = EditGeometry(name = 'edit geometry',
+                                  mode = 'standalone',
+                                  category = 'Geometry',
+                                  tags = ['stable'],
+                                  options = options
+                                  )
     nodeTemplates.append(myNodeTemplate) 
-    
+
     # Create a pSysmon collection node template and add it to the package.
     options = {}
-    myNodeTemplate = CollectionNodeTemplate(
-                                            name = 'apply geometry',
-                                            mode = 'uneditable',
-                                            category = 'Geometry',
-                                            tags = ['stable'],
-                                            nodeClass = 'ApplyGeometry',
-                                            options = options
-                                            )
+    myNodeTemplate = ApplyGeometry(name = 'apply geometry',
+                                   mode = 'uneditable',
+                                   category = 'Geometry',
+                                   tags = ['stable'],
+                                   options = options
+                                   )
     nodeTemplates.append(myNodeTemplate)
 
     return nodeTemplates
@@ -92,7 +89,7 @@ def databaseFactory():
                "DEFAULT CHARSET=latin1 COLLATE "
                "latin1_general_cs")
     queries.append(myQuery) 
-    
+
     # The geom_paz table.
     myQuery = ("CREATE TABLE  </PREFIX/>_geom_sensor_param "
              "("
@@ -116,7 +113,7 @@ def databaseFactory():
              "DEFAULT CHARSET=latin1 COLLATE "
              "latin1_general_cs")
     queries.append(myQuery) 
-    
+
     # The geom_paz_pz table.
     myQuery = ("CREATE TABLE  </PREFIX/>_geom_tf_pz "
              "("
@@ -129,7 +126,7 @@ def databaseFactory():
              "DEFAULT CHARSET=latin1 COLLATE "
              "latin1_general_cs")
     queries.append(myQuery) 
-    
+
     # The geom_network table.
     myQuery = ("CREATE TABLE  </PREFIX/>_geom_network "
              "("
@@ -142,7 +139,7 @@ def databaseFactory():
              "DEFAULT CHARSET=latin1 "
              "COLLATE latin1_general_cs")
     queries.append(myQuery) 
-    
+
     # The geom_station table.
     myQuery = ("CREATE TABLE  </PREFIX/>_geom_station "
              "("
@@ -162,7 +159,7 @@ def databaseFactory():
              "DEFAULT CHARSET=latin1 "
              "COLLATE latin1_general_cs")
     queries.append(myQuery) 
-    
+
     # The geom_sensor_time table.
     myQuery = ("CREATE TABLE  </PREFIX/>_geom_sensor_time "
              "("
@@ -176,5 +173,5 @@ def databaseFactory():
              "DEFAULT CHARSET=latin1 "
              "COLLATE latin1_general_cs")
     queries.append(myQuery) 
-    
+
     return queries
