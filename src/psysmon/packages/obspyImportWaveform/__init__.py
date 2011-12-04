@@ -27,7 +27,7 @@ website = "http://www.stefanmertl.com"
 
 
 def nodeFactory():
-    from obspyImportWaveform import ImportWaveform
+    from importWaveform import ImportWaveform
 
     nodeTemplates = []
 
