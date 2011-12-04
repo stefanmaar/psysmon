@@ -31,7 +31,6 @@ This module contains the classes needed to run the pSysmon plugin system.
 
 import os
 import sys
-from psysmon.core.packageNodes import CollectionNodeTemplate, CollectionNode
 
 class PackageManager:
     '''
