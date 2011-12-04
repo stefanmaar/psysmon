@@ -25,9 +25,10 @@ minPsysmonVersion = "0.0.1"
 description = "The second example package."
 website = "http://www.stefanmertl.com"
 
-from exampleNode2 import ExampleNode2
 
 def nodeFactory():
+    from exampleNode2 import ExampleNode2
+
     nodeTemplates = []
 
     myTemplate = ExampleNode2(name = 'example node 2',
