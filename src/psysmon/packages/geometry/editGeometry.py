@@ -26,10 +26,13 @@ import wx.aui
 import wx.grid
 import os
 import matplotlib
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+from matplotlib.figure import Figure
 #matplotlib.use('WX')
 matplotlib.use('WXAgg')
 
 import numpy as np
+from mpl_toolkits.basemap import Basemap, shiftgrid
 from obspy.signal import pazToFreqResp
 
 
@@ -526,8 +529,11 @@ class InventoryViewNotebook(wx.Notebook):
         self.listViewPanel = ListViewPanel(self)
         self.AddPage(self.listViewPanel, "list view")
 
-        win = self.makePanel()
-        self.AddPage(win, "map view")
+        #win = self.makePanel()
+        #self.AddPage(win, "map view")
+
+        self.mapViewPanel = MapViewPanel(self)
+        self.AddPage(self.mapViewPanel, "map view")
 
     ## Show the station data in the list view.
     #
@@ -580,6 +586,35 @@ class ListViewPanel(wx.Panel):
         self.controlPanels[name].Show()
         self.sizer.Add(self.controlPanels[name], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
         self.sizer.Layout()
+
+
+
+class MapViewPanel(wx.Panel):
+
+    def __init__(self, parent, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent, id)
+
+        self.sizer = wx.GridBagSizer(5, 5)
+
+        self.mapFigure = Figure((8,4), dpi=75, facecolor='white')
+        self.mapAx = self.mapFigure.add_subplot(111)
+        self.mapCanvas = FigureCanvas(self, -1, self.mapFigure)
+
+        self.sizer.Add(self.mapCanvas, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        self.sizer.AddGrowableCol(0)
+        self.sizer.AddGrowableRow(0)
+        self.SetSizerAndFit(self.sizer)
+
+        # create Basemap instance for Robinson projection.
+        self.map = Basemap(projection='robin', lon_0=0, ax=self.mapAx)
+        self.map.drawcoastlines()
+        self.map.drawcountries()
+        self.map.drawmapboundary()
+        # draw parallels and meridians.
+        #m.drawparallels(np.arange(-60.,90.,30.),labels=[1,0,0,0])
+        #m.drawmeridians(np.arange(0.,420.,60.),labels=[0,0,0,1])
+
+
 
 
 class StationsPanel(wx.Panel):
@@ -760,10 +795,8 @@ class StationsPanel(wx.Panel):
 class SensorsPanel(wx.Panel):
 
     def __init__(self, parent, id=wx.ID_ANY, size=(-1,-1)):
-        #from matplotlib.backends.backend_wxagg import FigureCanvasWx as FigureCanvas
-        from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-
-        from matplotlib.figure import Figure
+        #from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+        #from matplotlib.figure import Figure
 
         ## The currently displayed sensor.
         self.displayedSensor = None
