@@ -16,36 +16,35 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
     """
     def setUp(self):
-        print "hello"
         # Get the pSysmon base directory.
-        psyBaseDir = '/home/stefan/Development/pSysmon/trunk/pSysmon/src/psysmon/'
+        psyBaseDir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/01_src/psysmon/src/psysmon/'
         psyBaseDir = os.path.dirname(psyBaseDir)
-    
+
         # Initialize the pSysmon base object.
         psyBase = Base(psyBaseDir)
-        psyBase.scan4Package()
-        
+        #psyBase.scan4Package()
+
         # Load the pSysmon test project.
-        path = "/home/stefan/Projects/05_science/pSysmonProjects/test/test.ppr"
+        path = "/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/03_pSysmonProjects/test/test.ppr"
         psyBase.loadPsysmonProject(path)
-            
+
         # Quest for the user and the database password.
-        psyBase.project.setActiveUser('psysmon', 'psysmon')
-           
+        psyBase.project.setActiveUser('psysmon','')
+
         self.app =psygui.PSysmonApp()
         self.dlg = EditGeometryDlg(None, psyBase.project)
         #self.dlg.Show()
-        
+
 
     def tearDown(self):
         print "Good by."
-    
+
     def testDlg(self):
         print "hello"
         self.dlg.Show()
         self.app.MainLoop()
-        
-        
+
+
 #def suite():
 #    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
 #    return suite
