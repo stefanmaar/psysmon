@@ -27,7 +27,8 @@ This package contains methods and classes used for the pSysmon main program.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 (http://www.gnu.org/copyleft/gpl.html)
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
 
 
 Base modules

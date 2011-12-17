@@ -25,7 +25,8 @@ Module for handling the pSysmon project and users.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 (http://www.gnu.org/copyleft/gpl.html)
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
 import os

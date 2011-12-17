@@ -24,7 +24,8 @@ The pSysmon plugin system module.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 (http://www.gnu.org/copyleft/gpl.html)
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
 
 This module contains the classes needed to run the pSysmon plugin system.
 '''
