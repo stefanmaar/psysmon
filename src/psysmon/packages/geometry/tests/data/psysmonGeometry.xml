@@ -1,9 +1,9 @@
 ﻿<?xml version='1.0' encoding='UTF-8'?>
 <inventory name="test inventory">
-	<recorder>
+	<recorder serial="9EB2">
 		<serial>9EB2</serial>
 		<type>Reftek 130-01</type>
-		<channel>
+		<channel rec_channel_name="101">
 			<rec_channel_name>101</rec_channel_name>
 			<channel_name>HHZ</channel_name>
 			<sensor_serial>sn1</sensor_serial>
@@ -32,10 +32,10 @@
 		</channel>
 	</recorder>	
 
-	<recorder>
+	<recorder serial="A00D">
 		<serial>A00D</serial>
 		<type>Reftek 130-01</type>
-		<channel>
+		<channel rec_channel_name="101">
 			<rec_channel_name>101</rec_channel_name>
 			<channel_name>HHZ</channel_name>
 			<sensor_serial>sn2</sensor_serial>
@@ -60,7 +60,7 @@
 				</response_paz>
 			</channel_parameters>
 		</channel>
-		<channel>
+		<channel rec_channel_name="102">
 			<rec_channel_name>102</rec_channel_name>
 			<channel_name>HHN</channel_name>
 			<sensor_serial>sn2</sensor_serial>
@@ -87,7 +87,7 @@
 				</response_paz>
 			</channel_parameters>
 		</channel>
-		<channel>
+		<channel rec_channel_name="103">
 			<rec_channel_name>103</rec_channel_name>
 			<channel_name>HHE</channel_name>
 			<sensor_serial>sn2</sensor_serial>
@@ -116,7 +116,7 @@
 		</channel>
 	</recorder>	
 
-	<station>
+	<station code="STAT01">
 		<code>STAT01</code>
 		<location>00</location>
 		<xcoord>10</xcoord>
@@ -134,7 +134,7 @@
 		</sensor>
 	</station>
 
-	<station>
+	<station code="STAT02">
 		<code>STAT02</code>
 		<location>00</location>
 		<xcoord>20.5568</xcoord>
@@ -166,7 +166,7 @@
 		</sensor>
 	</station>
 
-	<network>
+	<network code="AH">
 		<code>AH</code>
 		<description>Adhocrates Seismic Network</description>
 		<type>Local experimental network</type>

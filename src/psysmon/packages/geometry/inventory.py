@@ -17,6 +17,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
+The inventory module.
+
+:copyright:
+    Stefan Mertl
+
+:license:
+    GNU General Public License, Version 3 
+    http://www.gnu.org/licenses/gpl-3.0.html
+
+This module contains the classed needed to build a pSysmon geometry 
+inventory.
+'''
 
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.util import PsysmonError
@@ -530,13 +543,23 @@ class InventoryDatabaseController:
                     curStation.updateDb(self.project)
 
 
-## Parse an pSysmon inventory XML file.
 class InventoryXmlParser:
-
+    '''
+    Parse a pSysmon inventory XML file.
+    '''
     def __init__(self, parentInventory, filename):
         self.parentInventory = parentInventory
         self.filename = filename
 
+        # The required attributes which have to be present in the tags.
+        self.requiredAttributes = {}
+        self.requiredAttributes['inventory'] = ('name',)
+        self.requiredAttributes['recorder'] = ('serial',)
+        self.requiredAttributes['channel'] = ('rec_channel_name',)
+        self.requiredAttributes['station'] = ('code',)
+        self.requiredAttributes['network'] = ('code',)
+
+        # The required tags which have to be present in the inventory.
         self.requiredTags = {}
         self.requiredTags['recorder'] = ('serial', 'type')
         self.requiredTags['channel'] = ('rec_channel_name', 'channel_name', 
@@ -598,12 +621,14 @@ class InventoryXmlParser:
             recorderContent = self.parseNode(curRecorder)
 
             # Test the recorder tags for completeness.
+            missingAttrib = self.keysComplete(curRecorder.attrib, self.requiredAttributes['recorder'])
             missingKeys = self.keysComplete(recorderContent, self.requiredTags['recorder']);
-            if not missingKeys:
+            if not missingKeys and not missingAttrib:
                 print recorderContent
             else:
                 print "Not all required fields present!\nMissing Keys:\n"
                 print missingKeys
+                print missingAttrib
                 continue
 
             # Create the Recorder instance.
@@ -623,8 +648,10 @@ class InventoryXmlParser:
         channels = recorderNode.findall('channel')
         for curChannel in channels:
             channelContent = self.parseNode(curChannel)
+
+            missingAttrib = self.keysComplete(curChannel.attrib, self.requiredAttributes['channel'])
             missingKeys = self.keysComplete(channelContent, self.requiredTags['channel']);
-            if not missingKeys:
+            if not missingKeys and not missingAttrib:
                 print "Adding sensor to recorder."
                 sensor2Add = Sensor(serial=channelContent['sensor_serial'],
                                     type=channelContent['sensor_type'],
@@ -640,6 +667,7 @@ class InventoryXmlParser:
             else:
                 print "Not all required fields present!\nMissing Keys:\n"
                 print missingKeys 
+                print missingAttrib
 
     ## Process the channel_parameter elements.
     def processChannelParameters(self, channelNode, sensor):
@@ -713,10 +741,11 @@ class InventoryXmlParser:
     def processStations(self, stations):
         for curStation in stations:
             stationContent = self.parseNode(curStation)
+            missingAttrib = self.keysComplete(curStation.attrib, self.requiredAttributes['station'])
             missingKeys = self.keysComplete(stationContent, self.requiredTags['station'])
 
-            if not missingKeys:
-                station2Add = Station(name=stationContent['code'],
+            if not missingKeys and not missingAttrib:
+                station2Add = Station(name=curStation.attrib['code'],
                                       location=stationContent['location'],
                                       x=stationContent['xcoord'],
                                       y=stationContent['ycoord'],
@@ -731,14 +760,20 @@ class InventoryXmlParser:
 
                 self.parentInventory.addStation(station2Add)
 
+            else:
+                print "Not all required tags or attributes present."
+                print missingKeys
+                print missingAttrib
+
 
     def processSensors(self, stationNode, station):
         sensors = stationNode.findall('sensor')
         for curSensor in sensors:
             sensorContent = self.parseNode(curSensor)
+
             missingKeys = self.keysComplete(sensorContent, self.requiredTags['sensor'])
 
-            if not missingKeys:
+            if not missingKeys: 
                 # Find the sensor in the inventory.
                 sensor2Add = self.parentInventory.getSensor(recSerial = sensorContent['recorder_serial'],
                                                             senSerial = sensorContent['sensor_serial'],
@@ -773,12 +808,14 @@ class InventoryXmlParser:
             content = self.parseNode(curNetwork)
 
             # Test the recorder tags for completeness.
+            missingAttrib = self.keysComplete(curNetwork.attrib, self.requiredAttributes['network'])
             missingKeys = self.keysComplete(content, self.requiredTags['network']);
-            if not missingKeys:
+            if not missingKeys and not missingAttrib:
                 print content
             else:
                 print "Not all required fields present!\nMissing Keys:\n"
                 print missingKeys
+                print missingAttrib
                 continue
 
             # Create the Recorder instance.

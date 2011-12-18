@@ -17,7 +17,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
+'''
+The editGeometry module.
 
+:copyright:
+    Stefan Mertl
+
+:license:
+    GNU General Public License, Version 3 
+    http://www.gnu.org/licenses/gpl-3.0.html
+
+This module contains the classes of the editGeometry dialog window.
+'''
 
 
 from psysmon.core.packageNodes import CollectionNode
@@ -26,25 +37,32 @@ import wx.aui
 import wx.grid
 import os
 import matplotlib
+matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
-#matplotlib.use('WX')
-matplotlib.use('WXAgg')
 
 import numpy as np
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from obspy.signal import pazToFreqResp
 
 
-## Documentation for class importWaveform
-#
-#
 class EditGeometry(CollectionNode):
+    '''
+    The EditGeometry class.
+    '''
 
     ## The edit method.
     #
     # The EditGeometry node is a standalone node - ignore the edit method.
     def edit(self):
+        '''
+        The edit method.
+
+        The EditGeometry node is a standalone node. Ignore the edit method.
+
+        :param self: The object pointer.
+        :type self: A `~psysmon.packages.geometry.editGeometry.EditGeometry` instance.
+        '''
         pass
 
 
@@ -590,8 +608,31 @@ class ListViewPanel(wx.Panel):
 
 
 class MapViewPanel(wx.Panel):
+    '''
+    The MapViewPanel class.
 
+    This class creates a panel holding a mpl_toolkits.basemap map.
+    This map is used to display the stations contained in the inventory.
+    
+    :ivar sizer: The sizer used for the panel layout.
+    :ivar mapFigure: The matplotlib figure holding the map axes.
+    :ivar mapAx: The matplotlib axes holding the Basemap.
+    :ivar mapCanvas: The wxPython figureCanvas holding the matplotlib figure.
+    :ivar map: The station map (`~mpl_toolkits.basemap.Basemap`).
+    '''
     def __init__(self, parent, id=wx.ID_ANY):
+        '''
+        The constructor.
+
+        Create an instance of the MapViewPanel class.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        :param parent: The parent object containing the panel.
+        :type self: A wxPython window.
+        :param id: The id of the panel.
+        :type id: 
+        '''
         wx.Panel.__init__(self, parent, id)
 
         self.sizer = wx.GridBagSizer(5, 5)
@@ -605,6 +646,22 @@ class MapViewPanel(wx.Panel):
         self.sizer.AddGrowableRow(0)
         self.SetSizerAndFit(self.sizer)
 
+    def initMap(self):
+        '''
+        Initialize the map parameters.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        '''
+        pass
+
+    def createMap(self):
+        '''
+        Create the basemap.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        '''
         # create Basemap instance for Robinson projection.
         self.map = Basemap(projection='robin', lon_0=0, ax=self.mapAx)
         self.map.drawcoastlines()
@@ -1017,16 +1074,16 @@ class SensorsPanel(wx.Panel):
                 curLine.remove()
 
         frequRange = [0.1,1,10,100,1000]
-        self.tfMagAxis.plot(log10(f), 20*log10(abs(h)), color='k')
-        self.tfMagAxis.set_xticks(log10(frequRange))
+        self.tfMagAxis.plot(np.log10(f), 20*np.log10(abs(h)), color='k')
+        self.tfMagAxis.set_xticks(np.log10(frequRange))
         self.tfMagAxis.set_xticklabels(frequRange)
 
         lines = self.tfPhaseAxis.get_lines()
         if lines:
             for curLine in lines:
                 curLine.remove()
-        self.tfPhaseAxis.plot(log10(f), phase, color='k')
-        self.tfPhaseAxis.set_xticks(log10(frequRange))
+        self.tfPhaseAxis.plot(np.log10(f), phase, color='k')
+        self.tfPhaseAxis.set_xticks(np.log10(frequRange))
         self.tfPhaseAxis.set_xticklabels(frequRange)
 
 
