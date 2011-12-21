@@ -33,6 +33,7 @@ This module contains the classes of the editGeometry dialog window.
 
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian
 import wx.aui
 import wx.grid
 import os
@@ -109,6 +110,9 @@ class EditGeometryDlg(wx.Frame):
         # The keys of the dictionaries are the inventory names.
         self.inventories = {}
 
+        # The inventory currently selected by the user.
+        self.selectedInventory = None
+
         # initialize the user interface
         self.initUI()
 
@@ -116,6 +120,7 @@ class EditGeometryDlg(wx.Frame):
 
         # Load the inventory from the database.
         self.loadInventoryFromDb()
+
 
 
     def initUserSelections(self):
@@ -179,6 +184,8 @@ class EditGeometryDlg(wx.Frame):
 
         self.inventories[curInventory.name] = curInventory
         self.inventoryTree.updateInventoryData()
+        self.selectedInventory = curInventory
+
 
     ## Define the EditGeometryDlg menus.  
     #
@@ -231,22 +238,21 @@ class EditGeometryDlg(wx.Frame):
     # @param self The object pointer.
     # @param event The event object.
     def onSave2Db(self, event):
-        selectedInventory = self.inventoryTree.GetItemPyData(self.inventoryTree.GetSelection())
-        if not selectedInventory:
+        if not self.selectedInventory:
             print "No inventory selected."
             return
 
-        if(selectedInventory.__class__.__name__  != 'Inventory'):
+        if self.selectedInventory.__class__.__name__  != 'Inventory' :
             print "Please select the inventory to be written to the database."
             return
 
-        if selectedInventory.type not in 'db':
+        if self.selectedInventory.type not in 'db':
             print "Saving a non db inventory to the database."
-            selectedInventory.write2Db(self.psyProject)
+            self.selectedInventory.write2Db(self.psyProject)
 
         else:
             print "Updating the existing project inventory database."
-            selectedInventory.updateDb()
+            self.selectedInventory.updateDb()
 
 
     ## Exit menu callback.
@@ -449,6 +455,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
         elif(pyData.__class__.__name__ == 'Sensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
+        elif(pyData.__class__.__name__ == 'Inventory'):
+            self.selectedInventory = pyData
+            self.Parent.inventoryViewNotebook.updateMapView(pyData)
 
     ## Update the inventory tree.
     #
@@ -565,6 +574,13 @@ class InventoryViewNotebook(wx.Notebook):
         print "updating the sensor listview" 
         self.listViewPanel.showControlPanel('sensor', sensor)  
 
+    def updateMapView(self, inventory):
+        '''
+        Initialize the map view panel with the selected inventory.
+        '''
+        print "Initializing the mapview"
+        self.mapViewPanel.initMap(inventory)
+
     ## Create a panel
     def makePanel(self):
         p = wx.Panel(self, wx.ID_ANY)
@@ -613,7 +629,7 @@ class MapViewPanel(wx.Panel):
 
     This class creates a panel holding a mpl_toolkits.basemap map.
     This map is used to display the stations contained in the inventory.
-    
+
     :ivar sizer: The sizer used for the panel layout.
     :ivar mapFigure: The matplotlib figure holding the map axes.
     :ivar mapAx: The matplotlib axes holding the Basemap.
@@ -646,14 +662,56 @@ class MapViewPanel(wx.Panel):
         self.sizer.AddGrowableRow(0)
         self.SetSizerAndFit(self.sizer)
 
-    def initMap(self):
+
+
+
+    def initMap(self, inventory):
         '''
         Initialize the map parameters.
 
         :param self: The object pointer.
         :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
         '''
+        self.mapConfig = {}
+
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        for curNet in inventory.networks.itervalues():
+            print curNet
+            lonLat.extend([stat.getLonLat() for stat in curNet.stations.itervalues()])
+       
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0) 
+        print lonLat
+        print lonLatMin
+        print lonLatMax
+        utmZone = lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        centralMeridian = zone2UtmCentralMeridian(utmZone)
+        centralLat = np.mean([lonLatMin[1], lonLatMax[1]])
+        print "Utmzone: %d" % utmZone
+        print "Central meridian: %d" % centralMeridian
+
+
+        lon = [x[0] for x in lonLat]
+        lat = [x[1] for x in lonLat]
+        # Create the basemap.
+        self.map = Basemap(projection='tmerc', lon_0=centralMeridian, lat_0=centralLat, width=700000, height=700000, resolution='i', ax=self.mapAx)
+        self.map.drawcountries()
+        self.map.drawcoastlines()
+        self.map.drawrivers(color='b')
+        self.map.etopo()
+        print lon
+        print lat
+        x,y = self.map(lon, lat)
+        self.map.scatter(x, y, 10, marker='o', color='r')
+        self.map.drawmapboundary()
+
+    def updatemap(self):
+        '''
+        Update the map elements.
+        '''
         pass
+
 
     def createMap(self):
         '''
@@ -742,6 +800,7 @@ class StationsPanel(wx.Panel):
                 self.displayedStation[fieldName] =  self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
                 self.displayedStation.parentInventory.refreshNetworks()
                 self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+                print self.GetParent().GetParent().GetParent()
         else:
             pass
 
