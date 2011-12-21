@@ -29,7 +29,7 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         psyBase.loadPsysmonProject(path)
 
         # Quest for the user and the database password.
-        psyBase.project.setActiveUser('psysmon','')
+        psyBase.project.setActiveUser('stefan','')
 
         self.app =psygui.PSysmonApp()
         self.dlg = EditGeometryDlg(None, psyBase.project)
