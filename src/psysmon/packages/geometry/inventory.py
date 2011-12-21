@@ -33,6 +33,7 @@ inventory.
 
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.util import PsysmonError
+from mpl_toolkits.basemap import pyproj
 import warnings
 
 ## The Inventory class.
@@ -1719,6 +1720,17 @@ class Station:
         self.__dict__[name] = value
         self.history.do(action)
 
+
+    def getLonLat(self):
+        '''
+        Return the coordinate system as WGS84 longitude latitude tuples.
+        '''
+        # TODO: Add a check for valid epsg string.
+        srcProj = pyproj.Proj(init=self.coordSystem)
+        dstProj = pyproj.Proj(init="epsg:4326") 
+        lon, lat = pyproj.transform(srcProj, dstProj, self.x, self.y)
+        print 'Converting from "%s" to "%s"' % (srcProj.srs, dstProj.srs)
+        return (lon, lat)
 
     ## Add a sensor to the station.
     #
