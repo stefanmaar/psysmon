@@ -119,10 +119,10 @@
 	<station code="STAT01">
 		<code>STAT01</code>
 		<location>00</location>
-		<xcoord>10</xcoord>
-		<ycoord>20</ycoord>
+		<xcoord>16</xcoord>
+		<ycoord>48</ycoord>
 		<elevation>+635.0</elevation>	
-		<coordSystem>WGS84</coordSystem>
+		<coordSystem>epsg:4326</coordSystem>
 		<description>Test station one.</description>
 		<network_code>AH</network_code>
 		<sensor>
@@ -137,10 +137,10 @@
 	<station code="STAT02">
 		<code>STAT02</code>
 		<location>00</location>
-		<xcoord>20.5568</xcoord>
-		<ycoord>60.2235</ycoord>
+		<xcoord>17</xcoord>
+		<ycoord>49</ycoord>
 		<elevation>-100</elevation>	
-		<coordSystem>WGS84</coordSystem>
+		<coordSystem>epsg:4326</coordSystem>
 		<description>Test station 2</description>
 		<network_code>AH</network_code>
 		<sensor>
