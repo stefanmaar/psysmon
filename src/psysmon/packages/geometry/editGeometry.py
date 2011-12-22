@@ -33,7 +33,7 @@ This module contains the classes of the editGeometry dialog window.
 
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory
-from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian
+from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
 import wx.aui
 import wx.grid
 import os
@@ -43,7 +43,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 import numpy as np
-from mpl_toolkits.basemap import Basemap, shiftgrid
+from mpl_toolkits.basemap import Basemap 
 from obspy.signal import pazToFreqResp
 
 
@@ -672,14 +672,16 @@ class MapViewPanel(wx.Panel):
         :param self: The object pointer.
         :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
         '''
+        from mpl_toolkits.basemap.pyproj import Proj,transform
+        myProj = Proj("+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+
         self.mapConfig = {}
 
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks.itervalues():
-            print curNet
             lonLat.extend([stat.getLonLat() for stat in curNet.stations.itervalues()])
-       
+
         lonLatMin = np.min(lonLat, 0)
         lonLatMax = np.max(lonLat, 0) 
         print lonLat
@@ -695,16 +697,42 @@ class MapViewPanel(wx.Panel):
         lon = [x[0] for x in lonLat]
         lat = [x[1] for x in lonLat]
         # Create the basemap.
-        self.map = Basemap(projection='tmerc', lon_0=centralMeridian, lat_0=centralLat, width=700000, height=700000, resolution='i', ax=self.mapAx)
+        #self.map = Basemap(projection='tmerc',
+        #                   lon_0=centralMeridian,
+        #                   lat_0=48.5,
+        #                   rsphere=ellipsoids['wgs84'], 
+        #                   width=700000, 
+        #                   height=700000, 
+        #                   resolution='i', 
+        #                   ax=self.mapAx)
+        self.map = Basemap(projection='utm',
+                           lon_0=centralMeridian,
+                           lat_0=centralLat,
+                           width=5000000,
+                           height=5000000,
+                           rsphere=ellipsoids['wgs84'],
+                           resolution='i',
+                           ax=self.mapAx, 
+                           utm_zone=utmZone,
+                           suppress_ticks=False)
+
+        print self.map.proj4string
         self.map.drawcountries()
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
         self.map.etopo()
+        #self.map.drawparallels(np.arange(40,50,0.5),labels=[1,0,0,0]) # draw parallels
         print lon
         print lat
         x,y = self.map(lon, lat)
+        xUtm, yUtm = myProj(lon,lat)
+        print x
+        print xUtm
+        print y
+        print yUtm
         self.map.scatter(x, y, 10, marker='o', color='r')
         self.map.drawmapboundary()
+        self.map.ax.grid()
 
     def updatemap(self):
         '''
