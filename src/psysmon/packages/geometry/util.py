@@ -41,3 +41,6 @@ def zone2UtmCentralMeridian(zone):
     Compute the middle meridian of a given UTM zone.
     '''
     return zone * 6 - 180 - 3
+
+ellipsoids = {}
+ellipsoids['wgs84'] = (6378137, 6356752.3142)
