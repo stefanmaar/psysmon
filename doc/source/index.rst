@@ -11,7 +11,7 @@ The pSysmon Core
 
    psysmon.pSysmon
    psysmon.core.base
-   psysmon.core.gui.PSysmonGui
+   psysmon.core.project
 
    .. comment to end block
 
@@ -32,3 +32,8 @@ Addon Packages
 
 
    .. comment to end block
+
+Inheritance Diagram
+---------------------
+.. inheritance-diagram:: psysmon.core.base
+.. inheritance-diagram:: psysmon.core.project

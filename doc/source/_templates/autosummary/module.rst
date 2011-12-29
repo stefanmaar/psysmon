@@ -3,6 +3,7 @@
 
 .. automodule:: {{ fullname }}
     
+
    {% block functions %}
    {% if functions %}
    .. rubric:: Functions
@@ -37,4 +38,8 @@
       {{ item }}
    {%- endfor %}
    {% endif %}
+
+   .. rubric:: Inheritence diagram
+   .. inheritance-diagram:: {{fullname}}
+   
    {% endblock %}
