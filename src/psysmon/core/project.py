@@ -124,7 +124,7 @@ class Project:
         :param dbTableNames: The database tablenames used by the project.
         :type dbTableNames: Dictionary of Strings with the name of the table (without prefix) as the key.
         '''
-    
+
         # The project name.
         self.name = name
 
@@ -179,7 +179,7 @@ class Project:
         else:
             self.user.append(user)
 
-    
+
 
     def setCollectionNodeProject(self):
         '''
@@ -227,7 +227,7 @@ class Project:
 
         :returns: A dictionary containing the query result. The dictionary has the 
             following keys:
-            
+
             isError (*Boolean*)
                 Did the query raise an error?
 
@@ -292,7 +292,7 @@ class Project:
 
         :returns: A dictionary containing the query result. The dictionary has the 
             following keys:
-            
+
             isError (*Boolean*)
                 Did the query raise an error?
 
@@ -359,7 +359,7 @@ class Project:
 
         return False
 
-    
+
     def createDirectoryStructure(self):
         '''
         Create the project directory structure.
@@ -589,7 +589,7 @@ class Project:
         :type self: :class:`Project`
         :param position: The position of the node to get.
         :type position: Integer 
-       
+
         :returns: A :class:`~psysmon.core.packageNodes.CollectionNode` instance. 
         '''
         return self.activeUser.getNodeFromCollection(position)
@@ -598,7 +598,7 @@ class Project:
     def editNode(self, position):
         '''
         Edit a node of the active collection of the active user.
-        
+
         Editing a node means calling the *edit()* method of the 
         :class:`~psysmon.core.packageNodes.CollectionNode` instance.
 
@@ -616,7 +616,7 @@ class Project:
 
         Executing a node means calling the *execute()* method of the 
         :class:`~psysmon.core.packageNodes.CollectionNode` instance.
-        
+
         :param self: The object pointer.
         :type self: :class:`Project`
         :param position: The position of the node to edit.
@@ -638,7 +638,7 @@ class Project:
     def loadWaveformDirList(self):
         '''
         Load the waveform directories from the database table.
-         
+
         :param self: The object pointer.
         :type self: :class:`Project`
         '''
@@ -697,7 +697,7 @@ class User:
 
     collection (Dictionary of :class:`~psysmon.core.base.Collection` instances)
         The collections created by the user.
-        
+
         The collections are stored in a dictionary with the collection name as 
         the key.
 
@@ -787,12 +787,12 @@ class User:
     def removeNodeFromCollection(self, position):
         '''
         Remove a node from the active collection.
-        
+
         :param self: The object pointer.
         :type self: :class:`User`
         :param position: The position of the node to remove.
         :type position: Integer 
-        
+
         :raises: :class:`PsysmonError` when no active collection is present.
         '''
         if self.activeCollection:
@@ -809,9 +809,9 @@ class User:
         :type self: :class:`User`
         :param position: The position of the node to get.
         :type position: Integer 
-       
+
         :returns: A :class:`~psysmon.core.packageNodes.Collection` instance.
-         
+
         :raises: :class:`PsysmonError` when no active collection is present.
         '''
         if self.activeCollection:
@@ -831,27 +831,27 @@ class User:
         :type self: :class:`User`
         :param position: The position of the node to edit.
         :type position: Integer 
-        
+
         :raises: :class:`PsysmonError` when no active collection is present.
         '''
         if self.activeCollection:
             self.activeCollection.editNode(position)
         else:
             raise PsysmonError('No active collection found!') 
-    
-    
+
+
     def executeNode(self, position):
         '''
         Execute the node at *position* of the active collection.
 
         Executing a node means calling the :meth:`~psysmon.core.packageNodes.CollectionNode.execute` method of the 
         :class:`~psysmon.core.packageNodes.CollectionNode` instance.
-        
+
         :param self: The object pointer.
         :type self: :class:`User`
         :param position: The position of the node to edit.
         :type position: Integer 
-        
+
         :raises: :class:`PsysmonError` when no active collection is present.
         '''
         if self.activeCollection:
@@ -859,7 +859,7 @@ class User:
         else:
             raise PsysmonError('No active collection found!') 
 
-    
+
     def executeCollection(self, project):
         '''
         Execute the active collection.
@@ -878,7 +878,7 @@ class User:
         :type self: :class:`User`
         :param project: The pSysmon project.
         :type project: :class:`Project`
-        
+
         :raises: :class:`PsysmonError` when no active collection is present.
         '''
         if self.activeCollection:
