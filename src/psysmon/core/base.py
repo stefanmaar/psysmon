@@ -49,6 +49,27 @@ class Base:
     The Base class is the lowest level class of the pSysmon model. It handles 
     the initialization of the pSysmon packages and stores the package objects.
 
+    .. rubric:: Attributes
+
+    baseDirectory (*String*)
+        The pSysmon base directory.
+        The base directory is the directory in which the pSysmon program is located.
+
+    logger (:class:`logging`)
+        The system logger used for debugging and system wide error logging.
+
+    packageDirectory (*String*)
+        The psysmon packages directory.
+
+    packageMgr (:class:`~psysmon.core.packageSystem.PackageManager`)
+        The package manager handles the dynamically loaded packages.
+
+    project (:class:`~psysmon.core.project.Project`)
+        The working pSysmon project.
+
+    version (*String*)
+        The pSysmon version.
+
 
     '''
 
@@ -62,15 +83,10 @@ class Base:
         :type self: :class:`~psysmon.core.base.Base`
         :param baseDir: The pSysmon base directory. 
         :type baseDir: String
-
-        :ivar baseDirectory: The pSysmon base directory.
-                            The base directory is the directory in which the pSysmon 
-                            program is located. 
-        :ivar packageDirectory: The psysmon packages directory.
         '''
 
+        # The system logger used for debugging and system wide error logging.
         self.logger = logging.getLogger("base")
-        ''' The system logger used for debugging and system wide error logging.'''
 
         # Configure the logger.
         self.configureLogger() 
@@ -84,26 +100,20 @@ class Base:
             msg = "The specified directory " + baseDir + " doesn't seem to be a directory."
             raise IndexError(msg)
 
+        # The psysmon base directory.
         self.baseDirectory = baseDir
-        ''' The pSysmon base directory.
-        The base directory is the directory in which the pSysmon program is 
-        located.
-        '''
 
+        # The psysmon base directory.
         self.packageDirectory = os.path.join(self.baseDirectory, "packages")
-        ''' The pSysmon packages directory.
-        The directory in which the pSysmon packages are located.
-        '''
 
+        # The currently loaded pSysmon project.
         self.project = ""
-        ''' The currently loaded pSysmon project.'''
 
-
+        # The pSysmon version.
         self.version = version
-        ''' The pSysmon version.'''
 
+        # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(self, [self.packageDirectory])
-        ''' The package manager handling the dynamically loaded packages. '''
 
 
     def configureLogger(self):
@@ -112,8 +122,6 @@ class Base:
 
         This can be used for system log messages (e.g. for debugging).
         '''
-        print "Configuring logger."
-
         self.logger.setLevel(logging.DEBUG)
 
         # Create console handler and set level to debug.
@@ -202,11 +210,12 @@ class Base:
         :type user: String
         :rtype: Boolean
         '''
+
+        # Create the working psysmon project.
         self.project = psysmon.core.project.Project(name=name,
                                                     baseDir=baseDir,
                                                     user=psysmon.core.project.User(user, 'admin'),
                                                     dbHost=dbHost)
-        ''' The current pSysmon project. '''
 
         # When creating a project, set the active user to the user creating 
         # the project (which is the *admin* user).
@@ -273,13 +282,40 @@ class Base:
 # The collection controls the adding, removing, editing and execution of the 
 # CollectionNodes.
 class Collection:
+    '''
+    The Collection class.
 
+    A collection holds the associated collection nodes in a list.
+    The collection controls the adding, removing, editing and execution of the 
+    collection nodes.
+
+    .. rubric:: Attributes
+
+    name (*String*)
+        The name of the collection.
+
+    nodes (list of :class:`psysmon.core.packageNodes.CollectionNode`)
+        A list of collection node instances managed by the collection.
+
+    tmpDir (*String*)
+        The project's temporary directory.
+        Collection log files are saved there.
+    '''
     ## The constructor.
-    # 
+    #
     # @param self The object pointer.
     # @param name The name of the collection.
     def __init__(self, name, tmpDir):
+        '''
+        The constructor.
 
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param name: The name of the collection.
+        :type name: String
+        :param tmpDir: The project's temporary directory.
+        :type tmpDir: String
+        '''
         ## The name of the collection.
         self.name = name
 
@@ -292,82 +328,96 @@ class Collection:
         self.tmpDir = tmpDir
 
 
-
-
-    ## Get a node at a given position in the collection.
-    #
-    # @param self The object pointer.
-    # @param index The index of the collection node to get from the list.
     def __getitem__(self, index):
+        '''
+        Get a node at a given position in the collection.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param index: The index of the collection node to get from the list.
+        :type index: Integer
+        '''
         return self.nodes[index]
 
-    ## Add a node to the collection.
-    #
-    # Insert a node before a specified position in the collection. If the 
-    # position is set to -1, the node is appended at the end of the collection.
-    #
-    # @param self The Object pointer.
-    # @param node The node to be added to the collection.
-    # @param position The position in the collection before which the node should be inserted.    
+
     def addNode(self, node, position=-1):
+        '''
+        Add a node to the collection.
+
+        Insert a node before a specified position in the collection . If the 
+        position is set to -1, the node is appended at the end of the collection.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param node: The node to be added to the collection.
+        :type node: :class:`psysmon.core.packageNodes.CollectionNode`
+        :param position: The position in the collection before which the node should be inserted.
+        :type position: Integer
+        '''
         node.parentCollection = self
         if position==-1:
             self.nodes.append(node)
         else:
             self.nodes.insert(position, node)
 
-    ## Remove a node from the collection.
-    #
-    # @param self The Object pointer.
-    # @param position The position of the node which should be removed. 
+
     def popNode(self, position):
+        '''
+        Remove a node from the collection.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param position: The position of the node which should be removed.
+        :type position: Integer
+        '''
         if len(self.nodes) > 0:
             return self.nodes.pop(position)
 
 
-    ## Edit a node.
-    #
-    # Edit the node at a given position in the collection. This is done by 
-    # calling the CollectionNode.edit() method of the according CollectionNode object.
-    #
-    # @param self The Object pointer.
-    # @param position The position in the collection of the node to edit.
     def editNode(self, position):
+        '''
+        Edit a node.
+
+        Edit the node at a given position in the collection. This is done by 
+        calling the :meth:`~psysmon.core.packageNodes.CollectionNode.edit()` 
+        method of the according :class:`~psysmon.core.packageNodes.CollectionNode` instance.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param position: The position in the collection of the node to edit.
+        :type position: Integer
+        '''
         self.nodes[position].edit()
 
 
-    ## Execute a node at a given position.
-    #
-    # Execute a node at a given position. This is used to execute
-    # standalone modules.
-    #
-    # @param self The object pointer.
-    # @param position The position in the collection of the node to
-    # edit.    
     def executeNode(self, position):
+        '''
+        Execute a node at a given position.
+
+        Execute a node at *position*. This method is used to 
+        execute standalone collection nodes.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param position: The position in the collection of the node to execute.
+        :type position: Integer
+        '''
         self.nodes[position].execute()
 
 
-    ## Execute a node.
-    #
-    # Execute the node at a given position in the collection.
-    #
-    # @param self The Object pointer.
-    # @param position The position in the collection of the node to execute.
-    #def executeNode(self, position):
-    #    self.nodes[position].execute()
 
-
-    ## Execute the collection.
-    #
-    # Sequentially execute the nodes in the collection. The collection is designed 
-    # to be executed as a thread. The thread is started in the project.User.executeCollection() 
-    # method.
-    #
-    # The collection notifies the system by sending log messages of the type state.collection.execution.
-    #
-    # @param self The Object pointer.
     def execute(self):
+        '''
+        Executing the collection.
+
+        Sequentially execute the nodes in the collection. The collection is designed 
+        to be executed as a new process. The process is started in the :meth:`~psysmon.core.project.Project.executeCollection()` method of the :class:`~psysmon.core.project.Project` class.
+
+        The collection notifies the system by sending log messages of the type state.collection.execution.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        '''
         msgTopic = "state.collection.execution"
         msg = {}
         msg['state'] = 'running'
@@ -387,25 +437,41 @@ class Collection:
         msg = {}
         msg['state'] = 'finished'
         msg['isError'] = False
-        msg['threadId'] = self.threadId 
+        msg['threadId'] = self.threadId
         pub.sendMessage(msgTopic, msg)
 
 
-    ## Set the node's project attribute.
-    #    
     def setNodeProject(self, project):
+        '''
+        Set the the project attribute of all nodes in the collection.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param project: The working psysmon project.
+        :type self: :class:`~psysmon.core.project.Project`
+        '''
         for curNode in self.nodes:
             curNode.project = project
 
 
-    ## Log messages to the collection's log file.
-    # 
-    # The collection is executed as a thread which has an unique id. 
-    # For each thread, a log file with the thread ID as the filename is created 
-    # in the project's temporary directory. All messages created by the nodes in 
-    # the collection are written to this file.
-    #        
     def log(self, nodeName, mode, msg):
+        '''
+        Log messages to the collection's log file.
+
+        The collection is executed as a process which has a unique id.
+        For each process, a log file with the process ID as the filename is created 
+        in the project's temporary directory. All messages created by the nodes in 
+        the collection are written to this file.
+
+        :param self: The object pointer.
+        :type self: :class:`psysmon.core.base.Collection`
+        :param nodeName: The name of the node.
+        :type nodeName: String
+        :param mode: The mode of the status message (error, warning, status).
+        :type mode: String
+        :param msg: The status message to log.
+        :type msg: String
+        '''
         curTime = datetime.now()
         timeStampString = datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
 

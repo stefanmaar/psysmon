@@ -1,4 +1,3 @@
-import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -45,7 +44,59 @@ class Project:
     '''
     The pSysmon Project class.
 
-    '''
+    .. rubric:: Attributes
+
+    activeUser (*String*)
+        The currently active user.
+
+    baseDir (*String*)
+        The project's base directory. The *projectDir* resides in this directory.
+
+    createTime (:class:`datetime.datetime`)
+        The time when the project has been created.
+
+    cur ()
+        The mySQL database cursor.
+
+    dbConn ()
+        The mySQL database connection.
+
+    dbHost (*String*)
+        The host URL on which the mySQL database server is running.
+
+    dbName (*String*)
+        The mySQL database name.
+        The database of the project is named according tto the admin unser 
+        using *psysmon_* as a prefix (e.g.: psysmon_ADMINUSERNAME).
+
+    dbTableNames (*Dictionary of Strings*)
+        A dictionary of the project database table names.
+
+    dbVersion (*Dictionary of Strings*)
+        A dictionary holding the versions of the individual package database 
+        structures (key: package name).
+
+    name (*String*)
+        The project name.
+
+    projectDir (*String*)
+        The project directory.
+
+    projectFile (*String*)
+        The project file holding all project settings.
+        It is saved in the projectDir folder.
+
+    saved (*Boolean*)
+        Is the project saved?
+
+    user (*List of Strings*)
+        A list of users associated with the project.
+        The user creating the project is always the admin user.
+
+    waveformDirList (*List of Strings*)
+        A list of waveform directories associated with the project.
+        Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
+'''
 
     def __init__(self, name, baseDir, user, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTableNames={}):
         '''
@@ -73,78 +124,54 @@ class Project:
         :param dbTableNames: The database tablenames used by the project.
         :type dbTableNames: Dictionary of Strings with the name of the table (without prefix) as the key.
         '''
-
+    
+        # The project name.
         self.name = name
-        ''' The project name.'''
 
+        # The time when the project has been created.
         if not createTime:
             self.createTime = datetime.utcnow()
-            ''' The time when the project has been created.'''
         else:
             self.createTime = createTime
 
+        # The project's base directory. 
         self.baseDir = baseDir
-        ''' The project's base directory. '''
 
+        # The project directory.
         self.projectDir = os.path.join(self.baseDir, self.name)
-        ''' The project directory. '''
 
+        # The host on which the mySQL database server is running.
         self.dbHost = dbHost
-        ''' The host on which the mySQL database server is running.'''
 
+        # The mySQL database name.
         if not dbName:
             self.dbName = "psysmon_" + user.name
         else:
             self.dbName = dbName
-            ''' 
-            The mySQL database name.
-            The database of the project is named according to the admin 
-            username using psysmon_ as a prefix (psysmon_ADMINUSERNAME).
-            '''
 
+        # A dictionary of the project databaser table names.
         self.dbTableNames = dbTableNames
-        '''
-        A dictionary of the project databaser table names.
-        '''
 
+        # The project file.
         self.projectFile = self.name +".ppr"
-        '''
-        The project file.
-        The project file is saved in the project Dir.
-        '''
 
+        # The version dictionary of the package dtabase structures.
         self.dbVersion = dbVersion
-        '''
-        The version dictionary of the package dtabase structures.
-        key: package name
-        '''
 
+        # A list of waveform directories associated with the project.
         self.waveformDirList = ()
-        '''
-        A list of waveform directories associated with the project.
-        Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
-        '''
 
+        # Is the project saved?
         self.saved = False
-        '''
-        Is the project saved?
-        '''
 
+        # The thread lock object.
         self.threadMutex = None
-        '''
-        The thread lock object.
-        '''
 
+        # A list of users associated with this project.
         self.user = []
-        '''
-        A list of users associated with this project.
-        The user creating the project is always the admin user.
-        '''
 
+        # The currently active user.
         self.activeUser = ""
-        '''
-        The currently active user.
-        '''
 
         # Add the user(s) to the project user list.
         if isinstance(user, list):
@@ -155,21 +182,29 @@ class Project:
     
 
     def setCollectionNodeProject(self):
+        '''
+        Set the project attribute of each node in all collections of 
+        the project.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         for curUser in self.user:
             for curCollection in curUser.collection.itervalues():
                 curCollection.setNodeProject(self)
 
 
 
-    ## Connect to the mySQL database.
-    #
-    # This method creates the database connection and the cursor needed to 
-    # execute the queries.
-    #
-    # @param self The Object pointer.
-    # @param passwd The user's database password.     
-    def connect2Db(self, passwd):    
-        ## The mySQL database connection.
+    def connect2Db(self, passwd):
+        '''
+        Connect to the mySQL database.
+
+        This method created the database connection and the database cursor 
+        needed to execute queries.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         self.dbConn = mysql.connect(self.dbHost, self.activeUser.name, passwd, self.dbName)
         self.cur = self.dbConn.cursor(mysql.cursors.DictCursor)     # Fetch rows as dictionaries.
 
@@ -180,6 +215,29 @@ class Project:
     # @param query The mySQL query string. 
     # @param type The type of the query (select, insert, update, alter)    
     def executeQuery(self, query, mode='select'):
+        '''
+        Execute a database query.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param query: The mySQL query string.
+        :type query: String
+        :param type: The type of the query (select, insert, update, alter)
+        :type type: String
+
+        :returns: A dictionary containing the query result. The dictionary has the 
+            following keys:
+            
+            isError (*Boolean*)
+                Did the query raise an error?
+
+            msg (*String*)
+                The error message returned by the mySQL server.
+
+            data (*Dictionary*)
+                The data returned by the mySQL server. In case of *select* queries, 
+                each queried column creates a key in the dictionary.
+        '''
         try:
             self.cur.execute(query)
 
@@ -219,13 +277,32 @@ class Project:
             pass
 
 
-    ## Execute a database query having multiple values to insert, update or select.
-    #
-    # @param self The Object pointer.
-    # @param query The mySQL query string as required by the mysqldb.executemany method. 
-    # @param data The data to be processed by the query.
-    # @param type The type of the query (select, insert, update)       
     def executeManyQuery(self, query, data, mode='select'):
+        '''
+        Execute a database query having multiple values to insert, update or select.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param data: The data to be inserted or updated.
+        :type data: Dictionary; the keys represent the databas columns.
+        :param query: The mySQL query string.
+        :type query: String
+        :param type: The type of the query (select, insert, update)
+        :type type: String
+
+        :returns: A dictionary containing the query result. The dictionary has the 
+            following keys:
+            
+            isError (*Boolean*)
+                Did the query raise an error?
+
+            msg (*String*)
+                The error message returned by the mySQL server.
+
+            data (*Dictionary*)
+                The data returned by the mySQL server. In case of *select* queries, 
+                each queried column creates a key in the dictionary.
+        '''
         try:
             self.cur.executemany(query, data)
 
@@ -263,6 +340,16 @@ class Project:
 
 
     def setActiveUser(self, userName, pwd):
+        '''
+        Set the active user of the project.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param userName: The name of the user to activate.
+        :type userName: String
+        :param pwd: The user's password.
+        :type pwd: String
+        '''
         for curUser in self.user:
             if curUser.name == userName:
                 self.activeUser = curUser
@@ -272,10 +359,16 @@ class Project:
 
         return False
 
-    ## Create the project directory structure.
-    #
-    # @param self The Object pointer.        
+    
     def createDirectoryStructure(self):
+        '''
+        Create the project directory structure.
+
+        Create all necessary folders in the projects projectDir.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         if not os.path.exists(self.projectDir):
             os.makedirs(self.projectDir)
 
@@ -292,10 +385,16 @@ class Project:
             raise Exception(msg)    
 
 
-    ## Update the project directory structure.
-    #
-    # @param self The Object pointer.        
     def updateDirectoryStructure(self):
+        '''
+        Update the project directory structure.
+
+        Check the completeness of the project directory and add 
+        missing folders if necessary.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         if os.path.exists(self.projectDir):
             ## The project's data directory.
             self.dataDir = os.path.join(self.projectDir, "data")
@@ -316,11 +415,27 @@ class Project:
             raise Exception(msg)    
 
 
-    ## Create the project's database structure.
-    #
-    # @param self The Object pointer.
-    # @param packages The packages to be used for the database structure creation. 
     def createDatabaseStructure(self, packages):
+        '''
+        Create the project's database structure.
+
+        In pSysmon, each package can create its own database tables. The table create queries 
+        can be listed in the package's databaseFactory function which is located in 
+        the package's __init__.py module.
+
+        During pSysmon startup from each package, the database table create queries 
+        are requested and saved in the dbTableCreateQueries attribute of the 
+        :class:`~psysmon.core.packageSystem.Package` instance. 
+
+        When creating a new project, the database tables are created using this method. 
+        The method iterates over all packages passed to the method, checks for available 
+        table creation queries and if any present, executes them.
+
+        :param self: The object pointer.
+        :type self: :class:`Projet`
+        :param packages: The packages to be used for the database structure creation.
+        :type packages: Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
+        '''
 
         for _, curPkg in packages.iteritems():
             if not curPkg.dbTableCreateQueries:
@@ -343,11 +458,15 @@ class Project:
                     self.dbTableNames[curName] = self.name + '_' + curName
 
 
-    ## Check if the database has to be updated.
-    #
-    # @param self The object pointer.
-    # @param packages The packages to be checked for a database to be updated.
     def checkDbVersions(self, packages):
+        '''
+        Check if the database has to be updated.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param packages: The packages to be checked for the database table to be updated.
+        :type packages: Dictionary of :class:`~psysmon.core.packageSystem.Packag` instances.
+        '''
         for curPkgKey, curPkg in packages.iteritems():
             if not curPkg.dbTableCreateQueries:
                 continue
@@ -361,10 +480,15 @@ class Project:
                     self.createDatabaseStructure({curPkgKey: curPkg})
 
 
-    ## Save the project to a file.
-    #
-    # @param self. The object pointer.
     def save(self):
+        '''
+        Save the project to a file.
+
+        Use the shelve module to save the project settings to a file.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         import shelve
 
         db = shelve.open(os.path.join(self.projectDir, self.projectFile))
@@ -379,54 +503,66 @@ class Project:
         self.saved = True 
 
 
-    ## Add a collection to the project.
-    #
-    # @param self The object pointer.
-    # @param name The name of the new collection.
     def addCollection(self, name):
+        '''
+        Add a collection to the project.
+
+        The collection is added to the collection list of the active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param name: The name of the new collection.
+        :type name: String
+        '''
         self.activeUser.addCollection(name, self)
 
 
-    ## Get all collections of the project.
-    #
-    # @param self The object pointer.
     def getCollection(self):
+        '''
+        Get all collections of the currently active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+
+        :returns: Dictionary of :class:`~psysmon.core.base.Collection` instances. (key: collection name)
+        '''
         return self.activeUser.collection
 
 
-    ## Get the currently active collection.
-    #
-    # @param self The object pointer.
     def getActiveCollection(self):
+        '''
+        Get the active collection of the active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         return self.activeUser.activeCollection
 
 
     def setActiveCollection(self, name):
+        '''
+        Set the active collection of the active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param name: The name of the collection which should be activated.
+        :type name: String
+        '''
         self.activeUser.setActiveCollection(name)
 
 
     def addNode2Collection(self, nodeTemplate, position=-1):
-        #try:
-            #pdb.set_trace() ############################## Breakpoint ##############################
-            ## The collection node class module should begin with a lower case letter.
-            #nodeModuleName = nodeTemplate.nodeClass[0].lower() + nodeTemplate.nodeClass[1:]
-            #print nodeTemplate.nodePkg+"." + nodeModuleName
-            #print nodeTemplate.nodeClass 
-            #nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeModuleName, fromlist=[nodeTemplate.nodeClass])
-        #except:
-            ## If this doesn't work, try the original class name.
-            #nodeModule = __import__(nodeTemplate.nodePkg+"." + nodeTemplate.nodeClass, fromlist=[nodeTemplate.nodeClass])
+        '''
+        Add a node to the active collection of the active user.
 
-        #nodeClass = getattr(nodeModule,nodeTemplate.nodeClass)
-        #node = nodeClass(name = nodeTemplate.name,
-                         #mode = nodeTemplate.mode,
-                         #category = nodeTemplate.category,
-                         #tags = nodeTemplate.tags,
-                         #parent = nodeTemplate.nodePkg,
-                         #options = nodeTemplate.options,
-                         #project = self
-                         #)
-
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param nodeTemplate: The node to be added to the collection.
+        :type nodeTemplate: :class:`~psysmon.core.packageNodes.CollectionNode`
+        :param position: The position before which to add the node to the 
+            collection. -1 to add it at the end of the collection (default).
+        :type position: Integer 
+        '''
         node = copy.deepcopy(nodeTemplate)
         node.project = self
         self.activeUser.addNode2Collection(node, position)
@@ -434,26 +570,78 @@ class Project:
 
 
     def removeNodeFromCollection(self, position):
+        '''
+        Remove a node from the active collection of the active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param position: The position of the node to remove.
+        :type position: Integer 
+        '''
         self.activeUser.removeNodeFromCollection(position)
 
 
     def getNodeFromCollection(self, position):
+        '''
+        Get a node from the active collection of the active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param position: The position of the node to get.
+        :type position: Integer 
+       
+        :returns: A :class:`~psysmon.core.packageNodes.CollectionNode` instance. 
+        '''
         return self.activeUser.getNodeFromCollection(position)
 
 
     def editNode(self, position):
+        '''
+        Edit a node of the active collection of the active user.
+        
+        Editing a node means calling the *edit()* method of the 
+        :class:`~psysmon.core.packageNodes.CollectionNode` instance.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param position: The position of the node to edit.
+        :type position: Integer 
+        '''
         self.activeUser.editNode(position)
 
 
     def executeNode(self, position):
+        '''
+        Execute a node of the active collection of the active user.
+
+        Executing a node means calling the *execute()* method of the 
+        :class:`~psysmon.core.packageNodes.CollectionNode` instance.
+        
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param position: The position of the node to edit.
+        :type position: Integer 
+        '''
         self.activeUser.executeNode(position)
 
 
     def executeCollection(self):
+        '''
+        Execute the active collection of the active user.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         self.activeUser.executeCollection(self)
 
 
     def loadWaveformDirList(self):
+        '''
+        Load the waveform directories from the database table.
+         
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        '''
         wfDirTable = self.dbTableNames['waveformDir']
         wfDirAliasTable = self.dbTableNames['waveformDirAlias']
 
@@ -471,6 +659,17 @@ class Project:
 
 
     def log(self, mode, msg):
+        '''
+        Send a general log message.
+
+        :param self: The object pointer.
+        :type self: :class:`Project`
+        :param mode: The mode of the log message.
+        :type mode: String
+        :param msg: The log message to send.
+        :type msg: String 
+        '''
+
         msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
 
@@ -484,6 +683,30 @@ class Project:
 # The user class holds the details of the user and the userspecific project
 # variables (e.g. collection, settings, ...).
 class User:
+    '''
+    The pSysmon user class.
+
+    A pSysmon project can be used by multiple users. For each user, an instance 
+    of the :class:`User` class is created. The pSysmon users are managed within 
+    the pSysmon :class:`Project`.
+
+    .. rubric:: Attributes
+
+    activeCollection (:class:`~psysmon.core.base.Collection)`
+        The currently active collection of the user.
+
+    collection (Dictionary of :class:`~psysmon.core.base.Collection` instances)
+        The collections created by the user.
+        
+        The collections are stored in a dictionary with the collection name as 
+        the key.
+
+    mode (*String*)
+        The user mode (admin, editor).
+
+    name (*String*)
+        The user name.
+    '''
 
     def __init__(self, user, userMode):
         ## The user name.
@@ -503,18 +726,58 @@ class User:
 
 
     def addCollection(self, name, project):
+        '''
+        Add a collection to the collection dictionary. The collection 
+        name is used as the dictionary key. 
+
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param name: The name of the new collection.
+        :type name: String
+        :param project: The project holding the user.
+        :type project: :class:`Project`
+        '''
         if not isinstance(self.collection, dict):
             self.collection = {}
 
         self.collection[name] = psysmon.core.base.Collection(name, tmpDir = project.tmpDir)
         self.setActiveCollection(name)
 
+
     def setActiveCollection(self, name):
+        '''
+        Set the active collection.
+
+        Get the collection with the key *name* from the collection 
+        dictionary and assign it to the *activeCollection* attribute.
+
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param name: The name of the collection which should be activated.
+        :type name: String
+        '''
         if name in self.collection.keys():
             self.activeCollection = self.collection[name]
 
 
     def addNode2Collection(self, node, position):
+        '''
+        Add a collection node to the active collection.
+
+        The *node* is added to the currently active collection at *position* 
+        using the :meth:`~psysmon.core.base.Collection.addNode` method of the 
+        :class:`~psysmon.core.base.Collection` class.
+
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param nodeTemplate: The node to be added to the collection.
+        :type nodeTemplate: :class:`~psysmon.core.packageNodes.CollectionNode`
+        :param position: The position before which to add the node to the 
+            collection. -1 to add it at the end of the collection (default).
+        :type position: Integer 
+
+        :raises: :class:`PsysmonError` when no active collection is present.
+        '''
         if self.activeCollection:
             self.activeCollection.addNode(node, position)
         else:
@@ -522,6 +785,16 @@ class User:
 
 
     def removeNodeFromCollection(self, position):
+        '''
+        Remove a node from the active collection.
+        
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param position: The position of the node to remove.
+        :type position: Integer 
+        
+        :raises: :class:`PsysmonError` when no active collection is present.
+        '''
         if self.activeCollection:
             self.activeCollection.popNode(position)
         else:
@@ -529,6 +802,18 @@ class User:
 
 
     def getNodeFromCollection(self, position):
+        '''
+        Get the node at *position* from the active collection.
+
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param position: The position of the node to get.
+        :type position: Integer 
+       
+        :returns: A :class:`~psysmon.core.packageNodes.Collection` instance.
+         
+        :raises: :class:`PsysmonError` when no active collection is present.
+        '''
         if self.activeCollection:
             return self.activeCollection[position]
         else:
@@ -536,26 +821,66 @@ class User:
 
 
     def editNode(self, position):
+        '''
+        Edit the node at *position* of the active collection.
+
+        Editing a node means calling the :meth:`~psysmon.core.packageNodes.CollectionNode.edit` method of the 
+        :class:`~psysmon.core.packageNodes.CollectionNode` instance.
+
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param position: The position of the node to edit.
+        :type position: Integer 
+        
+        :raises: :class:`PsysmonError` when no active collection is present.
+        '''
         if self.activeCollection:
             self.activeCollection.editNode(position)
         else:
             raise PsysmonError('No active collection found!') 
-
+    
+    
     def executeNode(self, position):
+        '''
+        Execute the node at *position* of the active collection.
+
+        Executing a node means calling the :meth:`~psysmon.core.packageNodes.CollectionNode.execute` method of the 
+        :class:`~psysmon.core.packageNodes.CollectionNode` instance.
+        
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param position: The position of the node to edit.
+        :type position: Integer 
+        
+        :raises: :class:`PsysmonError` when no active collection is present.
+        '''
         if self.activeCollection:
             self.activeCollection.executeNode(position)
         else:
             raise PsysmonError('No active collection found!') 
 
-    ## Execute the active collection.
-    #
-    # Start a thread to execute the current collection. A deep copy of the 
-    # collection object is created and this copy is executed. The deep copy is
-    # used to prevent the changes of the node's input and output parameters 
-    # during the execution of the thread.
-    #
-    # @param self. The Object pointer.    
+    
     def executeCollection(self, project):
+        '''
+        Execute the active collection.
+
+        Start a new process to execute the currently active collection.
+        A deep copy of the collection instance is create and this copy 
+        is executed. This is done to prevent runtime interactions 
+        when editing the collection node properties after a collection 
+        has been executed.
+
+        The start of the execution is logged and a state.collection.execution 
+        message is sent to notify eventual listeners of the starting of 
+        the execution.
+
+        :param self: The object pointer.
+        :type self: :class:`User`
+        :param project: The pSysmon project.
+        :type project: :class:`Project`
+        
+        :raises: :class:`PsysmonError` when no active collection is present.
+        '''
         if self.activeCollection:
             if not project.threadMutex:
                 project.threadMutex = thread.allocate_lock()
