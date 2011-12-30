@@ -4,17 +4,17 @@
 .. currentmodule:: {{ module }}
 .. automethod:: {{ objname }}
 
-   {% block attributes %}
-   .. rubric:: Documenting a method
+{% block attributes %}
 
-   {% print members %}
+{% print members %}
 
-   {% if attributes %}
-   .. rubric:: Attributesss
+{% if attributes %}
+Attributes
+----------
 
    .. autosummary::
    {% for item in attributes %}
       ~{{ name }}.{{ item }}
    {%- endfor %}
-   {% endif %}
-   {% endblock %}
+{% endif %}
+{% endblock %}

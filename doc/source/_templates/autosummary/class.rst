@@ -5,28 +5,28 @@
 .. autoclass:: {{ objname }}
    :show-inheritance:
 
-   {% block methods %}
+{% block methods %}
 
-   {% if methods %}
-   .. rubric:: Methods
-
-   .. autosummary::
-      :toctree: .
+{% if methods %}
+Methods
+-------
+.. autosummary::
+   :toctree: .
    {% for item in methods %}
       ~{{ name }}.{{ item }}
    {%- endfor %}
-   {% endif %}
-   {% endblock %}
+{% endif %}
+{% endblock %}
 
 
-   {% block attributes %}
+{% block attributes %}
 
-   {% if attributes %}
-   .. rubric:: Attributesss
-
+{% if attributes %}
+Attributes
+----------
    .. autosummary::
    {% for item in attributes %}
       ~{{ name }}.{{ item }}
    {%- endfor %}
-   {% endif %}
-   {% endblock %}
+{% endif %}
+{% endblock %}
