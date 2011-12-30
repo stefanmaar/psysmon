@@ -29,7 +29,7 @@ The pSysmon main program.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
 
-Basic Usage
+Examples
 -----------
 
 **Starting from the command line**
@@ -38,7 +38,11 @@ Basic Usage
     where the file pSysmon.py is located and type the following command in your 
     linux shell or your window command prompt:
 
-    >>> python pSysmon.py:
+    >>> pSysmon.py
+
+    or
+
+    >>> python pSysmon.py
 
 **Starting from a python shell**
 

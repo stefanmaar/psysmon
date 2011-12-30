@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-The pSysmon plugin system module.
+The pSysmon package system module.
 
 :copyright:
     Stefan Mertl
@@ -27,36 +27,51 @@ The pSysmon plugin system module.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
-This module contains the classes needed to run the pSysmon plugin system.
+This module contains the classes needed to run the pSysmon package system.
 '''
 
 import os
 import sys
 
 class PackageManager:
-    '''
-    The Package Manager keeps track of the pSysmon packages and 
-    manages them.
+    '''The Package Manager keeps track of the pSysmon packages and 
+    manages them. 
+
+    The packages of type :class:`Package` are loaded from the 
+    packageDirectories. A package manager can handle multiple 
+    package directories.
+
+    Attributes
+    ----------
+    parent : Object
+        The parent object holding the package manager.
+
+    packageDirectories : List of Strings
+        A list of directories holding the packages.
+
+    packages : Dictionary of :class:`Package`
+        A dictionary of packages managed by the PackageManager.
+        Key: package name
+
     '''
 
     def __init__(self, parent, packageDirectories):
-        '''
-        The constructor.
+        '''The constructor.
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.pluginSystem.PackageManager`
-        :param packageDir: A list of directories holding the packages.
-        :type self: A list of Strings.
+        Parameters
+        ----------
+        packageDir : List of Strings
+            The directories holding the pSysmon packages.
         '''
 
-        self.parent = parent
         # The parent object holding the package manager.
+        self.parent = parent
 
-        self.packageDirectories = packageDirectories
         # A list of directories holding the packages.
+        self.packageDirectories = packageDirectories
 
-        self.packages = {}
         # The packages managed by the PackageManager.
+        self.packages = {}
 
         # Search for available packages.
         self.scan4Package()
@@ -64,10 +79,23 @@ class PackageManager:
 
 
     def scan4Package(self):
-        '''
-        Scan for available pSysmon packages.
+        '''Scan for available pSysmon packages.
 
-        Scan the package directories for packages.
+        Scan the package directories for packages. Each package has to be 
+        contained in a seperate folder. Each folder found in the 
+        packageDirectories is processed and if a valid package is found, 
+        it is registerd within the packageManager.
+
+        Parameters
+        ----------
+        self : :class:`PackageManager`
+            The object pointer.
+
+        See Also
+        --------
+        :meth:`PackageManager.checkPackage` : Check for a valid package.
+        :meth:`PackageManager.addPackage` : Add a package to the package manager.
+        :class:`Package` : The pSysmon package class.
         '''
 
         for curDir in self.packageDirectories:
@@ -80,6 +108,8 @@ class PackageManager:
                 self.parent.logger.debug("Registering package " + curPkg + ".")
                 pkgName = os.path.basename(curPkg)
                 try:
+                    # TODO: If multiple package directories are used,
+                    # the following import will not work. Change it.
                     pkgName = "psysmon.packages."+pkgName
                     pkgModule = __import__(pkgName)
                     pkgModule = sys.modules[pkgName]
@@ -96,12 +126,37 @@ class PackageManager:
 
 
     def checkPackage(self, pkg2Check):
-        '''
-        Check for valid package.
+        '''Check if the package is a valid pSysmon package.
 
-        Check if the package module contains the required attributes.
+        Check if the package module contains the required attributes. The attributes are:
+
+        - name
+        - version
+        - author
+        - minPsysmonVersion
+        - description
+        - website
+
+
+        Parameters
+        ----------
+        pkg2Check : :class:`Package`
+            The package to check for validity.
+
+
+        Returns
+        -------
+        isValid: Boolean 
+            True if package is valid, False otherwhise.
+
+
+        See Also
+        --------
+        :class:`Package`
+        :meth:`PackageManager.scan4Package`
         '''
 
+        # The list of the required pSysmon package attributes.
         requiredAttributes = ['name', 'version', 'author', 
                               'minPsysmonVersion', 'description', 'website']
         tmp = dir(pkg2Check)
@@ -115,8 +170,27 @@ class PackageManager:
 
 
     def addPackage(self, pkgModule, pkgName, pkgBaseDir, packageDir):
-        '''
-        Create and add a package.
+        '''Add a package to the packageManager.
+
+        Create a :class:`Package` instance with the passed parameters. If the 
+        databaseFactory or the nodeFactory functions exist, they are executed 
+        and the databaseQueries and collectionNodes are added to the package.
+        
+
+        Parameters
+        ----------
+        pkgModule : Python module
+            The pSysmon package module.
+        pkgName : String
+            The name of the package to be added.
+        pkgBaseDir : String
+            The package directory name.
+        packageDir : String
+            The directory containing the package directory.
+
+        See Also
+        --------
+        :class:`Package`
         '''
         curPkg = Package(name=pkgModule.name,
                          version=pkgModule.version,
@@ -146,16 +220,20 @@ class PackageManager:
 
 
     def searchCollectionNodeTemplates(self, searchString):
-        '''
-        Find collection node templates containing the searchString in their 
-        name or their tags.
+        '''Find collection node templates containing the *searchString* in their 
+        name or their tags. 
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base`
-        :param searchString: The string to search for.
-        :type searchString: String
-        :rtype: A list of :class:`~psysmon.core.base.CollectionNodeTemplate` 
-            instances.
+        
+        Parameters
+        ----------
+        searchString : String
+            The string to search for.
+
+
+        Returns
+        -------
+        nodesFound : List of :class:`~psysmon.core.packageNodes.CollectionNode` instances.
+            The nodes found matching the *searchString*.
         '''
         nodesFound = {}
         for curPkg in self.packages.itervalues():
@@ -168,17 +246,24 @@ class PackageManager:
 
     
     def getCollectionNodeTemplate(self, name):
-        '''
-        Get a collection node template.
+        '''Get a collection node template.
 
-        Search for the collection node template with the name *name* in the 
+        Search for the collection node with the name *name* in the 
         packages and return it when found. If no template is found, return 
         *False*.
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base` object.
-        :param name: The name of the collection node template to get.
-        :param self: String
-        :rtype: :class:`~psysmon.core.base.CollectionNodeTemplate` or False
+
+
+        Parameters
+        ----------
+        name : String
+            The name of the collection node template to get.
+       
+        
+        Returns
+        ------- 
+        foundNode : :class:`~psysmon.core.packageNodes.CollectionNode` or False
+            The node found ini the packages matching the name *name*. If no 
+            collection node is found, False is returned.
         '''
         for curPkg in self.packages.itervalues():
             tmp = curPkg.getCollectionNodeTemplate(name)
@@ -190,65 +275,83 @@ class PackageManager:
 
 
 class Package:
-    '''
-    The pSysmon Package class.
+    '''The pSysmon Package class.
 
     A pSysmon package provides the functionality to pSysmon. A package contains 
-    a set of CollectionNodeTemplates which can be used by the pSysmon user to 
-    create the collections. 
+    a set of :class:`psysmon.core.packageNodes.CollectionNode' templates which 
+    can be added to a collection by the pSysmon user.
 
-    .. rubric:: Usage
-    The packages are created in the pkgInit function of each pSysmon package.@n 
-    Below follows an example of a package initialization::
+    pSysmon packages are realized as `Python packages <http://docs.python.org/tutorial/modules.html#packages>`_ 
+    and the functionality is provided as `Python modules <http://docs.python.org/tutorial/modules.html#modules>`_  
+    contained in the package.
 
-        from psysmon.core.base import Package, CollectionNodeTemplate
+    
+    Attributes
+    ----------
+    baseDir : String
+        The package directory.
 
-        def pkgInit():
-            # Create the pSysmon package.
-            myPackage = Package(
-                                name = 'geometry',
-                                version = '0.1',
-                                dependency = ''
-                                )
+    docDir : String
+        The package documentation directory.
 
-            # The geom_recorder table.
-            query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
-                    "("
-                    "id int(10) NOT NULL auto_increment,"
-                    "serial varchar(45) NOT NULL default '',"
-                    "type varchar(255) NOT NULL default '',"
-                    "PRIMARY KEY  (id),"
-                    "UNIQUE (serial, type)"
-                    ") "
-                    "ENGINE=MyISAM "
-                    "DEFAULT CHARSET=latin1 "
-                    "COLLATE latin1_general_cs")
+    dbTableCreateQueries : Dictionary of Strings
+        The mySQL table create queries. The key of the dictionary is the name of the table.
+    
+    collectionNodeTemplates : Dicitonary of :class:`~psysmon.core.base.CollectionNode` instances.
+        The collection nodes contained in the package. Key of the dictionary is the 
+        collection node's name.
 
-            myPackage.addDbTableCreateQuery(query)
+    name : String
+        The package name.
 
-            # Create a pSysmon collection node template and add it to the package.
-            property = {}
-            property['inputFiles'] = []                     # The files to import.
-            myNodeTemplate = CollectionNodeTemplate(
-                                                    name = 'edit geometry',
-                                                    type = 'standalone',
-                                                    category = 'Geometry',
-                                                    tags = ['stable'],
-                                                    nodeClass = 'editGeometry',
-                                                    property = property
-                                                    )
+    pyPackage : String
+        The python package name of the package.
+    
+    version : String
+        The package version.
 
-            myPackage.addCollectionNodeTemplate(myNodeTemplate)
+    
 
-            return myPackage
+    Notes
+    -----
+    Each pSysmon package has to be contained in a seperat folder (the package 
+    folder). Inside the package folder, the __init__.py file has to be created 
+    to mark the folder as a `python package <http://docs.python.org/tutorial/modules.html#packages>`_ which can be imported using the 
+    *import* statement.
 
-    .. rubric:: Package creation
+    In the __init__.py various variables have to be set to mark the package as 
+    a pSysmon package:
 
-    As you can see in the example code, first the Package is created using the 
-    psysmon.core.base.Package constructor. The package name, version and dependency 
-    are passed to the constructor.
+        name (*String*)
+            The name of the package.
 
-    .. rubric:: Database table creation
+        version (*String*)
+            The version of the package. Try to use the version.major.minor format (e.g.: 0.1.1).
+
+        author (*String*)
+            The author of the package.
+
+        minPsysmonVersion (*String*)
+            The minimume pSysmon version required to run the package.
+
+        description (*String*)
+            A short description of the package.
+
+        website (*String*)
+            An URL to the website containing information about the package.
+
+
+    Once the package is marked as a pSysmon package by setting the variables above, 
+    you can add the functionality to the package. This can be done by creating the 
+    *nodeFactory* function. The nodeFactory creates a list of nodes which are 
+    contained in the package. Take a look at the example_ to see how to use the 
+    nodeFactory.
+
+    **Creating database tables**
+
+    Each package can create it's own database tables. To do this, create the 
+    databaseFactory function in the __init__.py file. See the example_ below on how 
+    to create the databaseFactory function.
 
     Each package can add database tables to the pSysmon database. These tables are 
     created for each project. To add a database table, place the mysql create 
@@ -256,6 +359,71 @@ class Package:
     create statement to the package by using the :meth:`~psysmon.core.base.Package.addDbTableCreateQuery` function.
     The *</PREFIX/>* tag in the mysql query will be replaced by pSysmon with the 
     current project name.
+
+
+    Examples
+    --------
+    The packages are created in the __init__.py function of each pSysmon package.
+    Below follows an example of a package initialization taken from the geometry 
+    package::
+
+        name = "geometry"
+        version = "0.1.1"
+        author = "Stefan Mertl"
+        minPsysmonVersion = "0.0.1"
+        description = "The geometry package."
+        website = "http://www.stefanmertl.com"
+
+
+        def nodeFactory():
+            from applyGeometry import ApplyGeometry
+            from editGeometry import EditGeometry
+
+            nodeTemplates = []
+
+            # Create a pSysmon collection node template and add it to the package.
+            options = {}
+            myNodeTemplate = EditGeometry(name = 'edit geometry',
+                                          mode = 'standalone',
+                                          category = 'Geometry',
+                                          tags = ['stable'],
+                                          options = options
+                                          )
+            nodeTemplates.append(myNodeTemplate) 
+
+            # Create a pSysmon collection node template and add it to the package.
+            options = {}
+            myNodeTemplate = ApplyGeometry(name = 'apply geometry',
+                                           mode = 'uneditable',
+                                           category = 'Geometry',
+                                           tags = ['stable'],
+                                           options = options
+                                           )
+            nodeTemplates.append(myNodeTemplate)
+
+            return nodeTemplates
+
+
+
+        def databaseFactory():
+            queries=[]
+
+            # The geom_recorder table.
+            myQuery = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
+                      "("
+                      "id int(10) NOT NULL auto_increment,"
+                      "serial varchar(45) NOT NULL default '',"
+                      "type varchar(255) NOT NULL default '',"
+                      "PRIMARY KEY  (id),"
+                      "UNIQUE (serial, type)"
+                      ") "
+                      "ENGINE=MyISAM "
+                      "DEFAULT CHARSET=latin1 "
+                      "COLLATE latin1_general_cs")
+            queries.append(myQuery)
+
+            return queries
+
 
     .. rubric:: Collection node template creation
 

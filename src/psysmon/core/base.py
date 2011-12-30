@@ -43,46 +43,46 @@ from psysmon.core.util import PsysmonError
 
 
 class Base:
-    '''
-    The pSysmon Base class.
+    '''The pSysmon Base class.
 
     The Base class is the lowest level class of the pSysmon model. It handles 
     the initialization of the pSysmon packages and stores the package objects.
 
-    .. rubric:: Attributes
 
-    baseDirectory (*String*)
+    Attributes
+    ----------
+    baseDirectory : String
         The pSysmon base directory.
         The base directory is the directory in which the pSysmon program is located.
 
-    logger (:class:`logging`)
+    logger : :class:`logging`
         The system logger used for debugging and system wide error logging.
 
-    packageDirectory (*String*)
+    packageDirectory : String
         The psysmon packages directory.
 
-    packageMgr (:class:`~psysmon.core.packageSystem.PackageManager`)
+    packageMgr : :class:`~psysmon.core.packageSystem.PackageManager`
         The package manager handles the dynamically loaded packages.
 
-    project (:class:`~psysmon.core.project.Project`)
+    project : :class:`~psysmon.core.project.Project`
         The working pSysmon project.
 
-    version (*String*)
+    version : *String*
         The pSysmon version.
 
 
     '''
 
     def __init__(self, baseDir):
-        '''
-        The constructor.
+        '''The constructor.
 
         Create an instance of the Base class.
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base`
-        :param baseDir: The pSysmon base directory. 
-        :type baseDir: String
+
+        Parameters
+        ----------
+        baseDir : String
+            The pSysmon base directory. 
         '''
 
         # The system logger used for debugging and system wide error logging.
@@ -117,8 +117,7 @@ class Base:
 
 
     def configureLogger(self):
-        '''
-        Configure the pSysmon system logger.
+        '''Configure the pSysmon system logger.
 
         This can be used for system log messages (e.g. for debugging).
         '''
@@ -135,13 +134,15 @@ class Base:
 
 
     def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):
-        '''
-        Create a pSysmon database user.
+        '''Create a pSysmon database user.
 
         Create a nuew user in the mysql database. for each pSysmon user a 
         corresponding database name \e psysmon_USERNAME is created. In this 
         database, all project database tables will be created.
 
+
+        Parameters
+        ----------
         :param self: The object pointer.
         :type self: :class:`~psysmon.core.base.Base`
         :param rootUser: The username of the mysql root user or any other user 
