@@ -12,6 +12,7 @@ The pSysmon Core
    psysmon.pSysmon
    psysmon.core.base
    psysmon.core.project
+   psysmon.core.packageSystem
 
    .. comment to end block
 
@@ -37,3 +38,4 @@ Inheritance Diagram
 ---------------------
 .. inheritance-diagram:: psysmon.core.base
 .. inheritance-diagram:: psysmon.core.project
+.. inheritance-diagram:: psysmon.core.packageSystem
