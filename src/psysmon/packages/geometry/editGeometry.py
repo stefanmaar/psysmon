@@ -246,6 +246,8 @@ class EditGeometryDlg(wx.Frame):
             print "Please select the inventory to be written to the database."
             return
 
+        print "inventory type: %s" % self.selectedInventory.type
+
         if self.selectedInventory.type not in 'db':
             print "Saving a non db inventory to the database."
             self.selectedInventory.write2Db(self.psyProject)
@@ -456,7 +458,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         elif(pyData.__class__.__name__ == 'Sensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
         elif(pyData.__class__.__name__ == 'Inventory'):
-            self.selectedInventory = pyData
+            self.Parent.selectedInventory = pyData
             self.Parent.inventoryViewNotebook.updateMapView(pyData)
 
     ## Update the inventory tree.
@@ -672,27 +674,21 @@ class MapViewPanel(wx.Panel):
         :param self: The object pointer.
         :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
         '''
-        from mpl_toolkits.basemap.pyproj import Proj,transform
-        myProj = Proj("+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
-
         self.mapConfig = {}
+        self.stations = []
 
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks.itervalues():
             lonLat.extend([stat.getLonLat() for stat in curNet.stations.itervalues()])
+            self.stations.extend([stat for stat in curNet.stations.itervalues()])
 
         lonLatMin = np.min(lonLat, 0)
-        lonLatMax = np.max(lonLat, 0) 
-        print lonLat
-        print lonLatMin
-        print lonLatMax
-        utmZone = lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
-        centralMeridian = zone2UtmCentralMeridian(utmZone)
-        centralLat = np.mean([lonLatMin[1], lonLatMax[1]])
-        print "Utmzone: %d" % utmZone
-        print "Central meridian: %d" % centralMeridian
-
+        lonLatMax = np.max(lonLat, 0)
+        self.mapConfig['utmZone'] = lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        self.mapConfig['ellips'] = 'wgs84'
+        self.mapConfig['lon_0'] = np.mean([lonLatMin[0], lonLatMax[0]])
+        self.mapConfig['lat_0'] = np.mean([lonLatMin[1], lonLatMax[1]])
 
         lon = [x[0] for x in lonLat]
         lat = [x[1] for x in lonLat]
@@ -706,14 +702,14 @@ class MapViewPanel(wx.Panel):
         #                   resolution='i', 
         #                   ax=self.mapAx)
         self.map = Basemap(projection='utm',
-                           lon_0=centralMeridian,
-                           lat_0=centralLat,
-                           width=5000000,
-                           height=5000000,
-                           rsphere=ellipsoids['wgs84'],
+                           lon_0=self.mapConfig['lon_0'],
+                           lat_0=self.mapConfig['lat_0'],
+                           width=300000,
+                           height=300000,
+                           rsphere=ellipsoids[self.mapConfig['ellips']],
                            resolution='i',
                            ax=self.mapAx, 
-                           utm_zone=utmZone,
+                           utm_zone=self.mapConfig['utmZone'],
                            suppress_ticks=False)
 
         print self.map.proj4string
@@ -722,17 +718,19 @@ class MapViewPanel(wx.Panel):
         self.map.drawrivers(color='b')
         self.map.etopo()
         #self.map.drawparallels(np.arange(40,50,0.5),labels=[1,0,0,0]) # draw parallels
-        print lon
-        print lat
         x,y = self.map(lon, lat)
-        xUtm, yUtm = myProj(lon,lat)
-        print x
-        print xUtm
-        print y
-        print yUtm
-        self.map.scatter(x, y, 10, marker='o', color='r')
+        self.map.scatter(x, y, s=100, marker='^', color='r', picker=5)
         self.map.drawmapboundary()
         self.map.ax.grid()
+        self.mapCanvas.mpl_connect('pick_event', self.onPick)
+
+    def onPick(self, event):
+        '''
+        Handle the map pick event.
+        '''
+        pickedStation = self.stations[event.ind[0]]
+        print "picked a station: %s" % pickedStation.name
+
 
     def updatemap(self):
         '''
@@ -886,16 +884,17 @@ class StationsPanel(wx.Panel):
         for k,(curSensor, startTime, endTime) in enumerate(sorted(station.sensors, key = lambda sensor: (sensor[0].recorderSerial, sensor[0].serial, sensor[0].recChannelName))):
             if curSensor.recorderId:
                 self.sensorGrid.SetCellValue(k, 0, str(curSensor.recorderId))
-            self.sensorGrid.SetCellValue(k, 1, curSensor.recorderSerial)
-            self.sensorGrid.SetCellValue(k, 2, curSensor.recorderType)
-            self.sensorGrid.SetCellValue(k, 3, curSensor.serial)
-            self.sensorGrid.SetCellValue(k, 4, curSensor.type)
-            self.sensorGrid.SetCellValue(k, 5, curSensor.recChannelName)
-            self.sensorGrid.SetCellValue(k, 6, curSensor.channelName)
+            self.sensorGrid.SetCellValue(k, 1, curSensor.label)
+            self.sensorGrid.SetCellValue(k, 2, curSensor.recorderSerial)
+            self.sensorGrid.SetCellValue(k, 3, curSensor.recorderType)
+            self.sensorGrid.SetCellValue(k, 4, curSensor.serial)
+            self.sensorGrid.SetCellValue(k, 5, curSensor.type)
+            self.sensorGrid.SetCellValue(k, 6, curSensor.recChannelName)
+            self.sensorGrid.SetCellValue(k, 7, curSensor.channelName)
             if startTime:
-                self.sensorGrid.SetCellValue(k, 7, str(startTime))
+                self.sensorGrid.SetCellValue(k, 8, str(startTime))
             if endTime:
-                self.sensorGrid.SetCellValue(k, 8, str(endTime))
+                self.sensorGrid.SetCellValue(k, 9, str(endTime))
 
         self.sensorGrid.AutoSizeColumns()
 
@@ -925,6 +924,7 @@ class StationsPanel(wx.Panel):
     def getSensorFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly'))
+        tableField.append(('label', 'label', 'readonly'))
         tableField.append(('recorderSerial', 'rec.serial', 'readonly'))
         tableField.append(('recorderType', 'rec. type', 'readonly'))
         tableField.append(('serial', 'serial', 'readonly'))
@@ -1186,6 +1186,7 @@ class SensorsPanel(wx.Panel):
         tableField = []
         tableField.append(('id', 'id', 'readonly'))
         tableField.append(('recorderId', 'rec. id', 'readonly'))
+        tableField.append(('label', 'label', 'editable'))
         tableField.append(('recorderSerial', 'rec. serial', 'editable'))
         tableField.append(('recorderType', 'rec. type', 'editable'))
         tableField.append(('serial', 'serial', 'editable'))

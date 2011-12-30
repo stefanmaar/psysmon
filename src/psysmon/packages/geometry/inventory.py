@@ -264,6 +264,7 @@ class Inventory:
             # Fill the sensor database data.   
             for curSensor in curRecorder.sensors:
                 dbSensorData.append((curRecId,
+                                     curSensor.label,
                                      curSensor.serial, 
                                      curSensor.type,
                                      curSensor.recChannelName,
@@ -273,8 +274,8 @@ class Inventory:
         # Write the sensor data to the geom_sensor table..
         tableName = project.dbTableNames['geom_sensor']
         query =  ("INSERT IGNORE INTO %s "
-                  "(recorder_id, serial, type, rec_channel_name, channel_name) "
-                  "VALUES (%%s, %%s, %%s, %%s, %%s)") % tableName  
+                  "(recorder_id, label, serial, type, rec_channel_name, channel_name) "
+                  "VALUES (%%s, %%s, %%s, %%s, %%s, %%s)") % tableName  
         res = project.executeManyQuery(query, dbSensorData)
 
         if not res['isError']:
@@ -395,6 +396,16 @@ class Inventory:
 
         return None
 
+    ## Get a sensor from the inventory by label.
+    def getSensorByLabel(self, label):
+        for curRecorder in self.recorders:
+            sensorFound = filter((lambda curSensor: curSensor.label==label), curRecorder.sensors)
+
+            if sensorFound:
+                return sensorFound[0]
+
+        return None
+
 
     ## Get a network form the inventory.
     def getNetwork(self, code):
@@ -492,7 +503,7 @@ class InventoryDatabaseController:
     ## Load the unassigned sensors from the database.
     def loadUnassignedSensor(self):
         tableName = self.project.dbTableNames['geom_sensor']
-        query =  ("SELECT id, serial, type, rec_channel_name, channel_name FROM  %s "
+        query =  ("SELECT id, label, serial, type, rec_channel_name, channel_name FROM  %s "
                   "WHERE recorder_id = -1") % tableName
 
         res = self.project.executeQuery(query)
@@ -504,6 +515,7 @@ class InventoryDatabaseController:
                                    type=curData['type'],
                                    recChannelName=curData['rec_channel_name'],
                                    channelName=curData['channel_name'],
+                                   label=curData['label'],
                                    parentInventory=self.inventory)
 
                 self.inventory.addSensor(curSensor)
@@ -556,14 +568,14 @@ class InventoryXmlParser:
         self.requiredAttributes = {}
         self.requiredAttributes['inventory'] = ('name',)
         self.requiredAttributes['recorder'] = ('serial',)
-        self.requiredAttributes['channel'] = ('rec_channel_name',)
+        self.requiredAttributes['sensorUnit'] = ('label',)
         self.requiredAttributes['station'] = ('code',)
         self.requiredAttributes['network'] = ('code',)
 
         # The required tags which have to be present in the inventory.
         self.requiredTags = {}
-        self.requiredTags['recorder'] = ('serial', 'type')
-        self.requiredTags['channel'] = ('rec_channel_name', 'channel_name', 
+        self.requiredTags['recorder'] = ('type',)
+        self.requiredTags['sensorUnit'] = ('rec_channel_name', 'channel_name', 
                                         'sensor_serial', 'sensor_type')
         self.requiredTags['channel_parameters'] = ('start_time', 'end_time', 
                                         'gain', 'bitweight', 'bitweight_units', 
@@ -572,11 +584,10 @@ class InventoryXmlParser:
                                              'normalization_frequency')
         self.requiredTags['complex_zero'] = ('real_zero', 'imaginary_zero')
         self.requiredTags['complex_pole'] = ('real_pole', 'imaginary_pole')
-        self.requiredTags['station'] = ('code', 'location', 'xcoord', 'ycoord', 'elevation', 
+        self.requiredTags['station'] = ('location', 'xcoord', 'ycoord', 'elevation', 
                                         'coordSystem', 'description', 'network_code')
-        self.requiredTags['sensor'] = ('recorder_serial', 'sensor_serial', 
-                                       'rec_channel_name', 'start_time', 'end_time')
-        self.requiredTags['network'] = ('code', 'description', 'type')
+        self.requiredTags['assignedSensorUnit'] = ('sensorUnitLabel', 'start_time', 'end_time')
+        self.requiredTags['network'] = ('description', 'type')
 
 
 
@@ -625,6 +636,7 @@ class InventoryXmlParser:
             missingAttrib = self.keysComplete(curRecorder.attrib, self.requiredAttributes['recorder'])
             missingKeys = self.keysComplete(recorderContent, self.requiredTags['recorder']);
             if not missingKeys and not missingAttrib:
+                print "recorder xml content:"
                 print recorderContent
             else:
                 print "Not all required fields present!\nMissing Keys:\n"
@@ -633,7 +645,7 @@ class InventoryXmlParser:
                 continue
 
             # Create the Recorder instance.
-            rec2Add = Recorder(serial=recorderContent['serial'], 
+            rec2Add = Recorder(serial=curRecorder.attrib['serial'], 
                                type = recorderContent['type'],
                                parentInventory = self.parentInventory)  
 
@@ -646,20 +658,21 @@ class InventoryXmlParser:
 
     ## Process the channel elements.      
     def processChannels(self, recorderNode, recorder):
-        channels = recorderNode.findall('channel')
+        channels = recorderNode.findall('sensorUnit')
         for curChannel in channels:
             channelContent = self.parseNode(curChannel)
 
-            missingAttrib = self.keysComplete(curChannel.attrib, self.requiredAttributes['channel'])
-            missingKeys = self.keysComplete(channelContent, self.requiredTags['channel']);
+            missingAttrib = self.keysComplete(curChannel.attrib, self.requiredAttributes['sensorUnit'])
+            missingKeys = self.keysComplete(channelContent, self.requiredTags['sensorUnit']);
             if not missingKeys and not missingAttrib:
                 print "Adding sensor to recorder."
                 sensor2Add = Sensor(serial=channelContent['sensor_serial'],
                                     type=channelContent['sensor_type'],
                                     recChannelName=channelContent['rec_channel_name'],
                                     channelName=channelContent['channel_name'],
+                                    label=curChannel.attrib['label'],
                                     parentInventory=self.parentInventory)
-
+                print sensor2Add.label
                 # Process the channel parameters.
                 self.processChannelParameters(curChannel, sensor2Add)
 
@@ -768,18 +781,20 @@ class InventoryXmlParser:
 
 
     def processSensors(self, stationNode, station):
-        sensors = stationNode.findall('sensor')
+        sensors = stationNode.findall('assignedSensorUnit')
         for curSensor in sensors:
             sensorContent = self.parseNode(curSensor)
 
-            missingKeys = self.keysComplete(sensorContent, self.requiredTags['sensor'])
+            missingKeys = self.keysComplete(sensorContent, self.requiredTags['assignedSensorUnit'])
 
             if not missingKeys: 
                 # Find the sensor in the inventory.
-                sensor2Add = self.parentInventory.getSensor(recSerial = sensorContent['recorder_serial'],
-                                                            senSerial = sensorContent['sensor_serial'],
-                                                            recChannelName = sensorContent['rec_channel_name'])
-
+                #sensor2Add = self.parentInventory.getSensor(recSerial = sensorContent['recorder_serial'],
+                #                                            senSerial = sensorContent['sensor_serial'],
+                #                                            recChannelName = sensorContent['rec_channel_name'])
+                print sensorContent['sensorUnitLabel']
+                sensor2Add = self.parentInventory.getSensorByLabel(label=sensorContent['sensorUnitLabel'])
+                print sensor2Add
                 if sensor2Add:
                     # Convert the time strings to UTC times.
                     if sensorContent['start_time']:
@@ -793,7 +808,7 @@ class InventoryXmlParser:
                     else:
                         endTime = None
 
-                    station.addSensor(sensor2Add[0], 
+                    station.addSensor(sensor2Add, 
                                       beginTime,
                                       endTime)
                 else:
@@ -801,6 +816,10 @@ class InventoryXmlParser:
                                                                                                         sensorContent['sensor_serial'], 
                                                                                                         sensorContent['rec_channel_name']) 
                     warnings.warn(msg)
+            else:
+                msg = "Not all required fields presents!\nMissing keys:\n"
+                print msg
+                print missingKeys
 
 
      ## Process the network element.
@@ -936,7 +955,7 @@ class Recorder:
     ## Load the recorder sensor data from the datbase.
     def loadSensorFromDb(self, project):
         tableName = project.dbTableNames['geom_sensor']
-        query =  ("SELECT id, serial, type, rec_channel_name, channel_name FROM  %s "
+        query =  ("SELECT id, label, serial, type, rec_channel_name, channel_name FROM  %s "
                   "WHERE recorder_id = %d") % (tableName, self.id)
 
         res = project.executeQuery(query)
@@ -948,6 +967,7 @@ class Recorder:
                                    type=curData['type'],
                                    recChannelName=curData['rec_channel_name'],
                                    channelName=curData['channel_name'],
+                                   label=curData['label'],
                                    parentInventory=self.parentInventory)
 
                 self.addSensor(curSensor)               # This also sets the recorder id of the sensor.
@@ -1025,11 +1045,14 @@ class Sensor:
     #
     #
     def __init__(self, serial, type, 
-                 recChannelName, channelName, id=None, recorderId=None, 
+                 recChannelName, channelName, label, id=None, recorderId=None, 
                  recorderSerial=None, recorderType=None, parentInventory=None):
 
         ## The database id of the sensor.
         self.id = id
+
+        ## The sensor label specified by the user.
+        self.label = label
 
         ## The id of the recorder to which the sensor is attached to.
         self.recorderId = recorderId
@@ -1072,6 +1095,7 @@ class Sensor:
         ## The mapping of the station attributes to the database columns.
         attrMap = {};
         attrMap['id'] = 'id'
+        attrMap['label'] = 'label'
         attrMap['recorderId'] = 'recorder_id'
         attrMap['recorderSerial'] = None
         attrMap['recorderType'] = None
@@ -1191,10 +1215,11 @@ class Sensor:
 
         # Write the sensor data to the geom_sensor table..
         tableName = project.dbTableNames['geom_sensor']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(recorder_id, serial, type, rec_channel_name, channel_name) "
-                  "VALUES ('%s', '%s', '%s', '%s', '%s')") % (tableName, 
+        query =  ("REPLACE INTO %s "
+                  "(recorder_id, label, serial, type, rec_channel_name, channel_name) "
+                  "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')") % (tableName, 
                                                               recorderId,
+                                                              self.label,
                                                               self.serial, 
                                                               self.type,
                                                               self.recChannelName,
