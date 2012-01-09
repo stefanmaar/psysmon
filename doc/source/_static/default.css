@@ -512,3 +512,18 @@ ul.search li div.context {
 ul.keywordmatches li.goodmatch a {
     font-weight: bold;
 }
+
+div#methods {
+    margin-left: 35px;
+    margin-right: 5px;
+}
+
+div#methods h2{
+    font-size: 16pt;
+    padding-top: 14pt;
+}
+
+div#methods table{
+    margin-top: 5px;
+    background-color: #f2f2f2;
+}
