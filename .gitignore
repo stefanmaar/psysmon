@@ -11,3 +11,6 @@ tmp/
 doc/build/
 doc/source/autogen/
 
+# Ignore miniseed data files
+.msd
+
