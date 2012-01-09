@@ -13,6 +13,7 @@ The pSysmon Core
    psysmon.core.base
    psysmon.core.project
    psysmon.core.packageSystem
+   psysmon.core.packageNodes
 
    .. comment to end block
 

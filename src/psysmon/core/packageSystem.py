@@ -53,6 +53,9 @@ class PackageManager:
         A dictionary of packages managed by the PackageManager.
         Key: package name
 
+    See Also
+    --------
+    :class:`Package` : The pSysmon package class.
     '''
 
     def __init__(self, parent, packageDirectories):
@@ -85,11 +88,6 @@ class PackageManager:
         contained in a seperate folder. Each folder found in the 
         packageDirectories is processed and if a valid package is found, 
         it is registerd within the packageManager.
-
-        Parameters
-        ----------
-        self : :class:`PackageManager`
-            The object pointer.
 
         See Also
         --------
@@ -128,7 +126,8 @@ class PackageManager:
     def checkPackage(self, pkg2Check):
         '''Check if the package is a valid pSysmon package.
 
-        Check if the package module contains the required attributes. The attributes are:
+        Check if the package module contains the required attributes. 
+        The required attributes are:
 
         - name
         - version
@@ -146,7 +145,7 @@ class PackageManager:
 
         Returns
         -------
-        isValid: Boolean 
+        isValid : Boolean 
             True if package is valid, False otherwhise.
 
 
@@ -175,7 +174,7 @@ class PackageManager:
         Create a :class:`Package` instance with the passed parameters. If the 
         databaseFactory or the nodeFactory functions exist, they are executed 
         and the databaseQueries and collectionNodes are added to the package.
-        
+
 
         Parameters
         ----------
@@ -223,7 +222,7 @@ class PackageManager:
         '''Find collection node templates containing the *searchString* in their 
         name or their tags. 
 
-        
+
         Parameters
         ----------
         searchString : String
@@ -244,7 +243,7 @@ class PackageManager:
         return nodesFound
 
 
-    
+
     def getCollectionNodeTemplate(self, name):
         '''Get a collection node template.
 
@@ -257,8 +256,8 @@ class PackageManager:
         ----------
         name : String
             The name of the collection node template to get.
-       
-        
+
+
         Returns
         ------- 
         foundNode : :class:`~psysmon.core.packageNodes.CollectionNode` or False
@@ -285,7 +284,7 @@ class Package:
     and the functionality is provided as `Python modules <http://docs.python.org/tutorial/modules.html#modules>`_  
     contained in the package.
 
-    
+
     Attributes
     ----------
     baseDir : String
@@ -296,7 +295,7 @@ class Package:
 
     dbTableCreateQueries : Dictionary of Strings
         The mySQL table create queries. The key of the dictionary is the name of the table.
-    
+
     collectionNodeTemplates : Dicitonary of :class:`~psysmon.core.base.CollectionNode` instances.
         The collection nodes contained in the package. Key of the dictionary is the 
         collection node's name.
@@ -306,11 +305,11 @@ class Package:
 
     pyPackage : String
         The python package name of the package.
-    
+
     version : String
         The package version.
 
-    
+
 
     Notes
     -----
@@ -350,8 +349,8 @@ class Package:
     **Creating database tables**
 
     Each package can create it's own database tables. To do this, create the 
-    databaseFactory function in the __init__.py file. See the example_ below on how 
-    to create the databaseFactory function.
+    *databaseFactory()* function in the __init__.py file. See the example_ below on how 
+    to create the *databaseFactory()* function.
 
     Each package can add database tables to the pSysmon database. These tables are 
     created for each project. To add a database table, place the mysql create 
@@ -360,6 +359,19 @@ class Package:
     The *</PREFIX/>* tag in the mysql query will be replaced by pSysmon with the 
     current project name.
 
+    **Collection node template creation**
+
+    Each package will provide one ore more collection nodes which can be used 
+    by the user. To let pSysmon know what collection nodes each package provides 
+    one has to create the *nodeFactory()* in the 
+    __init__.py file (see the example below). The *nodeFactory()* creates the :class:`~psysmon.core.packageNodes.CollectionNode` 
+    instances which will be used as the collection node templates by pSysmon. 
+
+    In the code example below, two node templates (EditGeometry and ApplyGeometry) 
+    are created in the *nodeFactory()*. The two classes are provided by the developer 
+    creating the package and have to be located in the package directory. See 
+    the documentation of :class:`~psysmon.core.packageNodes.CollectionNode` for 
+    more details on how to write your own collection nodes.
 
     Examples
     --------
@@ -425,20 +437,10 @@ class Package:
             return queries
 
 
-    .. rubric:: Collection node template creation
 
-    Each package will provide one ore more collection nodes which can be used 
-    by the user. To let pSysmon know what collection nodes each package provides 
-    one has to create a CollectionNodeTemplate for each CollectionNode in the 
-    pkgInit function. In the code example above, one CollectionNodeTemplate is 
-    created by calling the CollectionNodeTemplate constructor and added to the 
-    package *myPackage* by calling the :meth:`~psysmon.core.Base.Package.addCollectionNodeTemplate` function.
-    To learn more about the parameters passet to the CollectionNodeTemplate, 
-    especially the *property* parameter please see the CollectionNodeTemplate.
-
-    .. seealso:: 
-        class :class:`psysmon.core.base.CollectionNodeTemplate`
-            The collection node template class.
+    See Also
+    --------
+    :class:`psysmon.core.packageNodes.CollectionNode`
 
     '''
 
@@ -451,73 +453,39 @@ class Package:
         and :meth:`~psysmon.core.base.Package.addDbTableCreateQuery` to fill 
         the package with content.
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Package`
-        :param name: The name of the package.
-        :type name: String
-        :param version: The version of the package.
-        :type version: String
-        :param dependency: [deprecated] A list of other packages needed to run this package.     
-        :type dependency: String  
+        Paramters
+        ---------
+        name : String
+            The name of the package.
+        version : String
+            The version of the package.
+        dependency : String [deprecated] 
+            A list of other packages needed to run this package.     
         '''
 
+        # The python package name.
         self.pyPackage = ""
-        '''
-        The python package name of the package. 
-            Type:
-                String
-        '''
 
+        # The pSysmon package name.
         self.name = name
-        '''
-        The package name. 
-            Type:
-                String
-        '''
 
+        # The package version.
         self.version = version
-        '''
-        The package version. 
-            Type:
-                String
-        '''
-
+        
+        # The package dependencies.
         self.dependency = dependency
-        '''
-        The package dependencies. 
-            [deprecated]
-        '''
 
+        #The collection node templates of the package.
         self.collectionNodeTemplates = {}
-        '''
-        The collection node templates of the package. 
-            Type:
-                Dictionary of :class:`~psysmon.core.base.CollectionNodeTemplate` instances.
-                The key of the dictionary is the name of the collection node.
-        '''
 
+        # The package database table create queries.
         self.dbTableCreateQueries = {}
-        '''
-        The package database table create queries.
-            Each package can add its own database tables.
-            Type:
-                A dictionary of Strings. The key of the dictionary is the name of the 
-                table.
-        '''
 
+        # The package directory.
         self.baseDir = ""
-        '''
-        The package directory.
-            Type:
-                String
-        '''
 
-
+        # The package documentation directory.
         self.docDir = ""    
-        '''
-        The package documentation directory.
-            Type: String
-        '''
 
 
     ## Set the python package name of the collectionNodeTemplates.

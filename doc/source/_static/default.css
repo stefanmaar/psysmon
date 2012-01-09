@@ -513,17 +513,52 @@ ul.keywordmatches li.goodmatch a {
     font-weight: bold;
 }
 
-div#methods {
-    margin-left: 35px;
+div.section#methods {
+    margin-left: 30px;
+    margin-right: 10px;
+}
+
+div.section#methods table {
+    margin-left: 5px;
     margin-right: 5px;
 }
 
-div#methods h2{
-    font-size: 16pt;
-    padding-top: 14pt;
+div.section#methods tr.row-odd {
+    background-color: #f2f2f2;
 }
 
-div#methods table{
-    margin-top: 5px;
+div.section#methods tr.row-even {
+    background-color: #fefefe;
+}
+
+td.field-body {
+    margin-bottom: 10px;
+}
+
+table.field-list {
+    border-collapse: separate;
+    border-spacing: 10px;
+}
+
+.field-list th {
     background-color: #f2f2f2;
+}
+
+.field-list td {
+    background-color: #fbfbfb;
+}
+
+.field-list div {
+
+}
+
+.field p {
+    margin: 0px;
+    padding: 0px;
+}
+
+td.field-body  blockquote {
+    margin: 0px;
+    padding-left: 30px;
+    padding-bottom: 10px;
 }

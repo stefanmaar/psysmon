@@ -137,25 +137,23 @@ class Base:
         '''Create a pSysmon database user.
 
         Create a nuew user in the mysql database. for each pSysmon user a 
-        corresponding database name \e psysmon_USERNAME is created. In this 
+        corresponding database name *psysmon_USERNAME* is created. In this 
         database, all project database tables will be created.
 
 
         Parameters
         ----------
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base`
-        :param rootUser: The username of the mysql root user or any other user 
+        rootUser : String
+            The username of the mysql root user or any other user 
             having root privileges.
-        :type rootUser: String
-        :param rootPwd: The password for the rootUser.
-        :type rootPwd: String
-        :param dbHost: The host on which the mysql server is running.
-        :type dbHost: String
-        :param user: The username of the user which should be created.
-        :type user: String
-        :param userPwd: The password of the user *username*.
-        :type userPwd: String
+        rootPwd : String
+            The password for the rootUser.
+        dbHost : String
+            The host on which the mysql server is running.
+        user : String
+            The username of the user which should be created.
+        userPwd : String
+            The password of the user *username*.
         '''
         try:
             dbConn = mysql.connect(dbHost, rootUser, rootPwd)
@@ -195,21 +193,31 @@ class Base:
             - Initialize the project for the currently active user.
             - Save the project.
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base`
-        :param name: The name of the project.
-        :type name: String
-        :param baseDir: The base directory of the pSysmon project. Inside the 
+        Parameters
+        ----------
+        name : String
+            The name of the project.
+        baseDir : String
+            The base directory of the pSysmon project. Inside the 
             base directory, the pSysmon project directory is created.
-        :type baseDir: String
-        :param dbHost: The database host on which the mysql server for the 
+        dbHost : String
+            The database host on which the mysql server for the 
             project is running.
-        :type dbHost: String
-        :param user: The pSysmon user related to the project as the *admin*.
-        :type user: String
-        :param userPwd: The password of *user*.
-        :type user: String
-        :rtype: Boolean
+        user : String
+            The pSysmon user related to the project as the *admin*.
+        userPwd : String
+            The password of *user*.
+
+        Returns
+        -------
+        projectCreated : Boolean
+            Indicates if the project has been created succesfully.
+            (True: project created; False: project not created)
+
+        Raises
+        ------
+        PsysmonError : :class:`~psysmon.core.util.PsysmonError`
+            Error while connecting to the database.
         '''
 
         # Create the working psysmon project.
@@ -242,10 +250,10 @@ class Base:
         Load pSysmon project settings saved in a python shelve file and create
         a psysmon project using the saved settings.
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base`
-        :param filename: The filename of the project file.
-        :type filename: String
+        Parameters
+        ----------
+        filename : String
+            The filename of the project file.
         '''
         import shelve
         db = shelve.open(filename)
@@ -267,8 +275,7 @@ class Base:
         '''
         Close a pSysmon project.
 
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.base.Base` instance
+        This sets the project attribute to None.
         '''
         self.project = None
 
@@ -290,33 +297,31 @@ class Collection:
     The collection controls the adding, removing, editing and execution of the 
     collection nodes.
 
-    .. rubric:: Attributes
-
-    name (*String*)
+    Attributes
+    ----------
+    name : String
         The name of the collection.
 
-    nodes (list of :class:`psysmon.core.packageNodes.CollectionNode`)
+    nodes : list of :class:`~psysmon.core.packageNodes.CollectionNode`
         A list of collection node instances managed by the collection.
 
-    tmpDir (*String*)
+    tmpDir : String
         The project's temporary directory.
         Collection log files are saved there.
     '''
-    ## The constructor.
-    #
-    # @param self The object pointer.
-    # @param name The name of the collection.
+
     def __init__(self, name, tmpDir):
         '''
         The constructor.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param name: The name of the collection.
-        :type name: String
-        :param tmpDir: The project's temporary directory.
-        :type tmpDir: String
+        Parameters
+        ----------
+        name : String
+            The name of the collection.
+        tmpDir : String
+            The project's temporary directory.
         '''
+
         ## The name of the collection.
         self.name = name
 
@@ -333,11 +338,12 @@ class Collection:
         '''
         Get a node at a given position in the collection.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param index: The index of the collection node to get from the list.
-        :type index: Integer
+        Parameters
+        ----------
+        index : Integer
+            The index of the collection node to get from the list.
         '''
+
         return self.nodes[index]
 
 
@@ -348,13 +354,14 @@ class Collection:
         Insert a node before a specified position in the collection . If the 
         position is set to -1, the node is appended at the end of the collection.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param node: The node to be added to the collection.
-        :type node: :class:`psysmon.core.packageNodes.CollectionNode`
-        :param position: The position in the collection before which the node should be inserted.
-        :type position: Integer
+        Parameters
+        ----------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to be added to the collection.
+        position : Integer
+            The position in the collection before which the node should be inserted.
         '''
+
         node.parentCollection = self
         if position==-1:
             self.nodes.append(node)
@@ -366,10 +373,10 @@ class Collection:
         '''
         Remove a node from the collection.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param position: The position of the node which should be removed.
-        :type position: Integer
+        Paramters
+        ---------
+        position : Integer
+            The position of the node which should be removed.
         '''
         if len(self.nodes) > 0:
             return self.nodes.pop(position)
@@ -383,10 +390,10 @@ class Collection:
         calling the :meth:`~psysmon.core.packageNodes.CollectionNode.edit()` 
         method of the according :class:`~psysmon.core.packageNodes.CollectionNode` instance.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param position: The position in the collection of the node to edit.
-        :type position: Integer
+        Parameters
+        ----------
+        position : Integer
+            The position in the collection of the node to edit.
         '''
         self.nodes[position].edit()
 
@@ -398,10 +405,10 @@ class Collection:
         Execute a node at *position*. This method is used to 
         execute standalone collection nodes.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param position: The position in the collection of the node to execute.
-        :type position: Integer
+        Parameters
+        ----------
+        position : Integer
+            The position in the collection of the node to execute.
         '''
         self.nodes[position].execute()
 
@@ -416,8 +423,6 @@ class Collection:
 
         The collection notifies the system by sending log messages of the type state.collection.execution.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
         '''
         msgTopic = "state.collection.execution"
         msg = {}
@@ -446,10 +451,10 @@ class Collection:
         '''
         Set the the project attribute of all nodes in the collection.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param project: The working psysmon project.
-        :type self: :class:`~psysmon.core.project.Project`
+        Parameters
+        ----------
+        project : :class:`~psysmon.core.project.Project`
+            The working psysmon project.
         '''
         for curNode in self.nodes:
             curNode.project = project
@@ -464,14 +469,14 @@ class Collection:
         in the project's temporary directory. All messages created by the nodes in 
         the collection are written to this file.
 
-        :param self: The object pointer.
-        :type self: :class:`psysmon.core.base.Collection`
-        :param nodeName: The name of the node.
-        :type nodeName: String
-        :param mode: The mode of the status message (error, warning, status).
-        :type mode: String
-        :param msg: The status message to log.
-        :type msg: String
+        Parameters
+        ----------
+        nodeName : String
+            The name of the node.
+        mode : String
+            The mode of the status message (error, warning, status).
+        msg : String
+            The status message to log.
         '''
         curTime = datetime.now()
         timeStampString = datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
@@ -494,10 +499,4 @@ class Collection:
             logFile = open(os.path.join(self.tmpDir, self.threadId + ".log"), 'a')
             logFile.write(msgString)
             logFile.close()
-
-
-
-
-
-
 
