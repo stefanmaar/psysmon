@@ -4,6 +4,9 @@
 # Ignore the tmp folder.
 tmp/
 
+# Ignore the data folder.
+data/
+
 # Ignore the .swp file
 *.swp
 
