@@ -181,17 +181,17 @@ class Base:
 
 
     def createPsysmonProject(self, name, baseDir, dbHost, user, userPwd):
-        '''
-        Create a pSysmon project.
+        '''Create a pSysmon project.
 
         The pSysmon project is the starting point when working with pSysmon.
         After creating an instance of the :class:`~psysmon.core.project.Project` 
         class, the project is initialized by the following steps:
-            - Connect to the database. If this fails, a PsysmonError is raised.
-            - Create the project directory structure in the project base directory.
-            - Create the project database structure.
-            - Initialize the project for the currently active user.
-            - Save the project.
+
+        - Connect to the database. If this fails, a PsysmonError is raised.
+        - Create the project directory structure in the project base directory.
+        - Create the project database structure.
+        - Initialize the project for the currently active user.
+        - Save the project.
 
         Parameters
         ----------
@@ -373,8 +373,8 @@ class Collection:
         '''
         Remove a node from the collection.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         position : Integer
             The position of the node which should be removed.
         '''
