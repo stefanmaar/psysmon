@@ -542,6 +542,7 @@ table.field-list {
 
 .field-list th {
     background-color: #f2f2f2;
+    white-space: nowrap;
 }
 
 .field-list td {
