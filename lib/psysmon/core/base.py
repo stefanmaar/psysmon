@@ -36,7 +36,7 @@ import logging
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 from datetime import datetime
-from psysmon import version
+from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
 from psysmon.core.util import PsysmonError
