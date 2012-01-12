@@ -277,7 +277,7 @@ class Package:
     '''The pSysmon Package class.
 
     A pSysmon package provides the functionality to pSysmon. A package contains 
-    a set of :class:`psysmon.core.packageNodes.CollectionNode' templates which 
+    a set of :class:`psysmon.core.packageNodes.CollectionNode` templates which 
     can be added to a collection by the pSysmon user.
 
     pSysmon packages are realized as `Python packages <http://docs.python.org/tutorial/modules.html#packages>`_ 
@@ -373,6 +373,9 @@ class Package:
     the documentation of :class:`~psysmon.core.packageNodes.CollectionNode` for 
     more details on how to write your own collection nodes.
 
+
+    .. _example:
+
     Examples
     --------
     The packages are created in the __init__.py function of each pSysmon package.
@@ -453,8 +456,8 @@ class Package:
         and :meth:`~psysmon.core.base.Package.addDbTableCreateQuery` to fill 
         the package with content.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         name : String
             The name of the package.
         version : String
@@ -488,39 +491,52 @@ class Package:
         self.docDir = ""    
 
 
-    ## Set the python package name of the collectionNodeTemplates.
-    # 
-    # Each CollectionNodeTemplate holds the python package name (e.g. psysmon.packages.geometry) 
-    # to which it belongs. This method sets the nodePkg property of each 
-    # Collection node template.
-    #
-    # @see Base.scan4Package
-    #
-    # @param self The object pointer.
-    # @param pyPackage The python package name.
     def setPyPackageName(self, pyPackage):
+        ''' Set the python package name of the collectionNodeTemplates.
+
+        Each CollectionNode holds the python package name (e.g.psysmon.packages.geometry) 
+        to which it belongs. This method sets the nodePkg property of each 
+        collection node.
+
+        Parameters
+        ----------
+        pyPackage : String
+            The python package name.
+
+        See Also
+        --------
+        :class:`psysmon.base.Base.scan4Package`
+        '''
         for curNode in self.collectionNodeTemplates.itervalues():
             curNode.setNodePkg(pyPackage)
 
 
-    ## Set the package base directory. 
-    #
-    # @param self The object pointer.
-    # @param baseDir The full path to the package directory.
     def setBaseDir(self, baseDir):
+        ''' Set the package base directory.
+
+        Parameters
+        ----------
+        baseDir : String
+            The full path to the package directory.
+        '''
         if os.path.isdir(baseDir):
             self.baseDir = baseDir 
             self.docDir = os.path.join(self.baseDir, "doc")
 
 
-    ## Add a collection node template to the package.
-    #
-    # The @e curNode CollectionNodeTemplate will be added to the package dictionary 
-    # @e collectionNodeTemplates. The key of the dictionary is the node's name.
-    #
-    # @param self The object pointer.
-    # @param curNode The CollectionNodeTemplate to be added to the package.    
     def addCollectionNodeTemplate(self, nodes):
+        ''' Add a collection node template to the package.
+
+        The *nodes* collection nodes are added to the package dictionary 
+        *collectionNodeTemplates*. The key of the dictionary is the node's name. 
+        The nodes added will be the collection node templates used to create 
+        new collection nodes to be added to a collection.
+
+        Parameters
+        ----------
+        nodes : List of :class:`~psysmon.core.packageNodes.CollectionNode` instances.
+            The collection nodes to be added to the package.
+        '''
         if not nodes:
             return
 
@@ -529,26 +545,36 @@ class Package:
             self.collectionNodeTemplates[curNode.name]= curNode
 
 
-    ## Get a collection node template from the package.
-    #
-    # @param self The object pointer.
-    # @param nodeName The name of the CollectionNodeTemplate to fetch.
     def getCollectionNodeTemplate(self, nodeName):
+        ''' Get a collection node template from the package.
+
+        Parameters
+        ----------
+        nodeName : String
+            The name of the collection node template to fetch.
+        '''
         if(self.collectionNodeTemplates.has_key(nodeName)):
             return self.collectionNodeTemplates[nodeName]
         else:
             return False
 
 
-    ## Add a database table creation query to the package.
-    #
-    # If the package needs an own database table, the queries creating these 
-    # tables can be added to the package using this function.@n
-    # The queries are saved in a dictionary with the table name as the key.
-    #
-    # @param self The object pointer.
-    # @param query The mysql query holding the table create statement.
     def addDbTableCreateQuery(self, queries):
+        ''' Add a database table creation query to the package.
+
+        If the package needs an own database table, the queries creating these 
+        tables are added to the package using this function.
+        The queries are saved in a dictionary with the table name as the key.
+
+        Parameters
+        ----------
+        queries : List of Strings
+            The mysql queries holding the table create statement.
+
+        See Also
+        --------
+        :class:`psysmon.core.base.packageNodes.CollectionNode`
+        '''
         if not queries:
             return
 
