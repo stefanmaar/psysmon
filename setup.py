@@ -70,6 +70,10 @@ if sys.platform == 'win32':
 printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
 
+# Checking for wx
+if not checkForPackage('wx', '2.8.11'):
+    sys.exit(1)
+
 # Checking for numpy
 if not checkForPackage('numpy', '1.1.0'):
     sys.exit(1)
@@ -81,6 +85,7 @@ if not checkForPackage('matplotlib', '1.1.0'):
 # Checking for basemap
 if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
     sys.exit(1)
+
 
 printRaw("")
 printRaw("")
