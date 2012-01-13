@@ -13,6 +13,9 @@ build/
 # Ignore the dist folder.
 dist/
 
+# Ignore the MANIFEST file.
+MANIFEST
+
 # Ignore the .swp file
 *.swp
 
