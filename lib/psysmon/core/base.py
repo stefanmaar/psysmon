@@ -414,7 +414,7 @@ class Collection:
 
 
 
-    def execute(self):
+    def execute(self, pipe):
         '''
         Executing the collection.
 
@@ -423,15 +423,22 @@ class Collection:
 
         The collection notifies the system by sending log messages of the type state.collection.execution.
 
+        Parameters
+        ----------
+        pipe : :class:`~multiprocessing.Pipe`
+            The multiprocessing pipe end.
         '''
-        msgTopic = "state.collection.execution"
-        msg = {}
-        msg['state'] = 'running'
-        msg['isError'] = False
-        msg['threadId'] = self.threadId
-        pub.sendMessage(msgTopic, msg)
+        #msgTopic = "state.collection.execution"
+        #msg = {}
+        #msg['state'] = 'running'
+        #msg['isError'] = False
+        #msg['threadId'] = self.threadId
+        #pub.sendMessage(msgTopic, msg)
+
+        pipe.send('Collection running')
 
         for (ind, curNode) in enumerate(self.nodes):
+            pipe.send('Executing node %d' % ind)
             if ind == 0:
                 curNode.run(threadId=self.threadId)
             else:
@@ -439,12 +446,15 @@ class Collection:
                 curNode.run(threadId=self.threadId,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
-        msgTopic = "state.collection.execution"
-        msg = {}
-        msg['state'] = 'finished'
-        msg['isError'] = False
-        msg['threadId'] = self.threadId
-        pub.sendMessage(msgTopic, msg)
+
+        #msgTopic = "state.collection.execution"
+        #msg = {}
+        #msg['state'] = 'finished'
+        #msg['isError'] = False
+        #msg['threadId'] = self.threadId
+        #pub.sendMessage(msgTopic, msg)
+        pipe.send('Collection execution finished')
+        pipe.send('stop')
 
 
     def setNodeProject(self, project):
