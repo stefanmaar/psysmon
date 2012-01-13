@@ -10,6 +10,9 @@ data/
 # Ignore the build folder.
 build/
 
+# Ignore the dist folder.
+dist/
+
 # Ignore the .swp file
 *.swp
 
