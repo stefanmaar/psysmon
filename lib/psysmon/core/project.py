@@ -930,6 +930,7 @@ class User:
         PsysmonError : :class:`PsysmonError` 
             Error raised when no active collection is present.
         '''
+
         if self.activeCollection:
             if not project.threadMutex:
                 project.threadMutex = thread.allocate_lock()
