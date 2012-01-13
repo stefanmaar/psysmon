@@ -1,0 +1,6 @@
+include CHANGELOG KNOWN_BUGS INSTALL
+include MANIFEST.in
+include setup.cfg.template
+include setupExt.py setup.py
+recursive-include doc *
+recursive-include lib *
