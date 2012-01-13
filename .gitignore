@@ -7,6 +7,9 @@ tmp/
 # Ignore the data folder.
 data/
 
+# Ignore the build folder.
+build/
+
 # Ignore the .swp file
 *.swp
 
