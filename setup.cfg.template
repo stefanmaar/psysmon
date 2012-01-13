@@ -1,0 +1,31 @@
+# Rename this file to setup.cfg to modify pSysmon's
+# build options.
+
+[egg_info]
+
+[directories]
+# Uncomment to override the default basedir in setupext.py.
+# This can be a single directory or a space-delimited list of directories.
+#basedirlist = /usr
+
+[status]
+# To suppress display of the dependencies and their versions
+# at the top of the build log, uncomment the following line:
+#suppress = True
+#
+# Uncomment to insert lots of diagnostic prints in extension code
+verbose = False
+
+[provide_packages]
+# By default, matplotlib checks for a few dependencies and
+# installs them if missing. This feature can be turned off
+# by uncommenting the following lines. Acceptible values are:
+#     True: install, overwrite an existing installation
+#     False: do not install
+#     auto: install only if the package is unavailable. This
+#           is the default behavior
+#
+## Date/timezone support:
+#pytz = False
+#dateutil = False
+
