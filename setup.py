@@ -32,7 +32,7 @@ The pSysmon setup script.
 import sys
 from distutils.core import setup
 from setupExt import printStatus, printMessage, printLine, printRaw, \
-    checkForNumpy, checkForMatplotlib, checkForBasemap
+    checkForPackage
 
 # Get the current pSysmon version, author and description.
 for line in open('lib/psysmon/__init__.py').readlines():
@@ -71,15 +71,15 @@ printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
 
 # Checking for numpy
-if not checkForNumpy():
+if not checkForPackage('numpy', '1.1.0'):
     sys.exit(1)
 
 # Checking for matplotlib
-if not checkForMatplotlib('1.1.0'):
+if not checkForPackage('matplotlib', '1.1.0'):
     sys.exit(1)
 
 # Checking for basemap
-if not checkForBasemap('1.0.2'):
+if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
     sys.exit(1)
 
 printRaw("")

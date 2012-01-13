@@ -83,69 +83,17 @@ else:
 
 
 
-
-def checkForNumpy():
-    try:
-        from numpy import __version__
-    except ImportError:
-        printStatus("numpy", "missing")
-        printMessage("You must install numpy 1.1 or later to build pSysmon.")
-        return False
-    nn = __version__.split('.')
-    if not (int(nn[0]) >= 1 and int(nn[1]) >= 1):
-        if not (int(nn[0]) >= 2):
-            printMessage(
-               'numpy 1.1 or later is required; you have %s' %__version__)
-            return False
-    #module = Extension('test', [])
-    #add_numpy_flags(module)
-    #add_base_flags(module)
-
-    printStatus("numpy", __version__+" (1.1 required)")
-    #if not find_include_file(module.include_dirs, os.path.join("numpy", "arrayobject.h")):
-        #printMessage("Could not find the headers for numpy.  You may need to install the development package.")
-        #return False
-    return True
-
-
-def checkForMatplotlib(requiredVersion):
+def checkForPackage(name, requiredVersion):
     rV = requiredVersion.split('.')
     for k,x in enumerate(rV):
         rV[k] = int(x)
 
     try:
-        from matplotlib import __version__ 
+        mod = __import__(name, globals(), locals(), ['__version__'], -1)
+        __version__ = mod.__version__
     except ImportError:
-        printStatus("matplotlib", "missing")
-        printMessage("You must install matplotlib "+requiredVersion+" or later to build pSysmon.")
-        return False
-
-    nn = __version__.split('.')
-    for k,x in enumerate(nn):
-        nn[k] = int(x)
-
-    if not (nn[0] >= rV[0] and nn[1] >= rV[1]):
-        if not (nn[0] >= rV[0]+1):
-            printMessage(
-               'matplotlib %s or later is required; you have %s' %
-               (requiredVersion, __version__))
-            return False
-
-    printStatus("matplotlib", "%s (%s required)" % (__version__, requiredVersion))
-    return True
-
-
-
-def checkForBasemap(requiredVersion):
-    rV = requiredVersion.split('.')
-    for k,x in enumerate(rV):
-        rV[k] = int(x)
-
-    try:
-        from mpl_toolkits.basemap import __version__ 
-    except ImportError:
-        printStatus("mpl_toolkits.basemap", "missing")
-        printMessage("You must install mpl_toolkits.basemap "+requiredVersion+" or later to build pSysmon.")
+        printStatus(name, "missing")
+        printMessage("You must install %s %s or later to build pSysmon." % (name, requiredVersion))
         return False
 
     nn = __version__.split('.')
@@ -155,9 +103,9 @@ def checkForBasemap(requiredVersion):
     if not (nn[0] >= rV[0] and nn[1] >= rV[1] and nn[2] >= rV[2]):
         if not (nn[0] >= rV[0]+1 or nn[0] >= rV[1]+1):
             printMessage(
-               'mpl_toolkits.basemap %s or later is required; you have %s' %
-               (requiredVersion, __version__))
+               '%s %s or later is required; you have %s' %
+               (name, requiredVersion, __version__))
             return False
 
-    printStatus("basemap", "%s (%s required)" % (__version__, requiredVersion))
+    printStatus(name, "%s (%s required)" % (__version__, requiredVersion))
     return True
