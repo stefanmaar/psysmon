@@ -435,10 +435,10 @@ class Collection:
         #msg['threadId'] = self.threadId
         #pub.sendMessage(msgTopic, msg)
 
-        pipe.send('Collection running')
+        pipe.send({'state': 'running', 'msg': 'Collection running', 'threadId': self.threadId})
 
         for (ind, curNode) in enumerate(self.nodes):
-            pipe.send('Executing node %d' % ind)
+            pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'threadId': self.threadId})
             if ind == 0:
                 curNode.run(threadId=self.threadId)
             else:
@@ -453,8 +453,7 @@ class Collection:
         #msg['isError'] = False
         #msg['threadId'] = self.threadId
         #pub.sendMessage(msgTopic, msg)
-        pipe.send('Collection execution finished')
-        pipe.send('stop')
+        pipe.send({'state': 'stopped', 'msg': 'Collection execution finished', 'threadId': self.threadId})
 
 
     def setNodeProject(self, project):
