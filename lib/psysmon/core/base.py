@@ -518,7 +518,7 @@ class Collection:
             logFile.close()
 
 
-    def pickleData(self, name, data, description):
+    def pickleData(self, name, data, description, origin):
         ''' Save the data in the collection's data shelf.
 
         Parameters
@@ -531,13 +531,16 @@ class Collection:
 
         name : String
             The name of the variable to fetch from the collection's data shelf.
+
+        origin : String
+            The name of the collection node pickling the data.
         '''
         db = shelve.open(self.dataShelf)
         content = db['content']
-        content[name] = description
+        content[name] = (origin, description)
 
         db[name] = data
-        db['content'] = description
+        db['content'] = content
         db.close()
 
 
@@ -557,6 +560,7 @@ class Collection:
             return db[name]
 
 
+
     def hasDataOnShelf(self, name):
         ''' Check if the variable named *name* is available in the collection's 
         data shelf.
@@ -574,4 +578,32 @@ class Collection:
         db.close()
 
         return retVal
+
+
+    def getShelfContent(self):
+        ''' Get the content of the collections data shelf.
+
+        '''
+        db = shelve.open(self.dataShelf)
+        if 'content' in db.keys():
+            retVal = db['content']
+        else:
+            retVal = None
+        db.close()
+
+        return retVal
+
+
+    def clearShelf(self):
+        ''' Clear all the data stored in the collection's shelf.
+
+        '''
+
+        db = shelve.open(self.dataShelf)
+
+        for curKey in db:
+            del db[curKey]
+
+        db['content'] = {}
+        db.close()
 
