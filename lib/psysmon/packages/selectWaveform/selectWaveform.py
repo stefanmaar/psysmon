@@ -1,3 +1,34 @@
+# LICENSE
+#
+# This file is part of pSysmon.
+#
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+#
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
+The pSysmon selectWaveform module.
+
+:copyright:
+    Stefan Mertl
+
+:license:
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
+
+This module contains the selectWaveform collection node.
+'''
 
 
 from psysmon.core.packageNodes import CollectionNode
@@ -35,29 +66,33 @@ def _pydate2wxdate(date):
      dmy = (tt[2], tt[1]-1, tt[0])
      return wx.DateTimeFromDMY(*dmy) 
 
+
+
 ## Documentation for class importWaveform
 #
 #
 class SelectWaveform(CollectionNode):
-    
+    ''' The Select Waveform class.
+
+    '''
     def edit(self):
         dlg = SelectWaveformEditDlg(self, self.project, None)
         dlg.Show()
-        
+
     def execute(self, prevNodeOutput={}):
         print "Executing the node %s." % self.name
-         
-        
-    
+
+
+
     ## Return a tuple of values to be inserted into the traceheader database.
     def getDbData(self, psyProject, filename, format, Trace):
-        
+
         wfDirId = ""
         for curWfDir in psyProject.waveformDirList:
             if filename.startswith(curWfDir['dirAlias']):
                 wfDirId = curWfDir['id']
                 break
-        
+
         if wfDirId:
             return (format, wfDirId, filename, filename, Trace.stats.network,
                     Trace.stats.station, Trace.stats.channel, Trace.stats.location, 
@@ -66,16 +101,16 @@ class SelectWaveform(CollectionNode):
         else:
             print "File %s is not inside a waveform directory. Skipping this trace." % filename
             return ()
-        
-            
-        
-        
-        
+
+
+
+
+
 ## The pSysmon main GUI
 # 
 # 
 class SelectWaveformEditDlg(wx.Frame):
-        
+
     ## The constructor
     #
     # @param self The Object pointer.
@@ -89,20 +124,20 @@ class SelectWaveformEditDlg(wx.Frame):
                           pos=wx.DefaultPosition, 
                           size=size, 
                           style=wx.DEFAULT_FRAME_STYLE)
-        
+
         self.collectionNode = collectionNode
         self.psyProject = psyProject
         self.SetSize(size)
-        
+
         self.initUI()
-        
+
         #self.initUserSelections()
-        
-    
+
+
     def initUserSelections(self):
         if self.collectionNode.property['inputFiles']:
             print "Set the list to the previously selected files."
-            
+
             index = 0
             for curFile in self.collectionNode.property['inputFiles']:
                 fSize = os.path.getsize(curFile['filename']);
@@ -111,40 +146,40 @@ class SelectWaveformEditDlg(wx.Frame):
                 self.fileListCtrl.SetStringItem(index, 1, curFile['filename'])
                 self.fileListCtrl.SetStringItem(index, 2, "%.2f" % fSize)
                 index += 1
-    
-    
+
+
     def initUI(self):
         # Use the AUI docking library.
         self.mgr = wx.aui.AuiManager()
         self.mgr.SetManagedWindow(self)
-         
+
         self.selectionPanel = SelectionPanel(self, self.psyProject)
         self.displayPanel = DisplayPanel(self, self.psyProject )
-        
+
         # Add the selection panel as the center pane.
         self.mgr.AddPane(self.selectionPanel, wx.aui.AuiPaneInfo().Name("selectionPanel").
                           Caption("select parameters").Center().Layer(1).Position(1).Row(2).CloseButton(False)
                           )
-        
+
         # Add the display panel.
         self.mgr.AddPane(self.displayPanel, wx.aui.AuiPaneInfo().Name("display").
                           Caption("available waveform").Left().Layer(1).Position(1).Row(1).CloseButton(False).
                           MinSize(wx.Size(200, -1)).MaxSize(wx.Size(200, -1)))
-        
+
         self.mgr.Update()
-        
-         
+
+
         # Use standard button IDs.
         #okButton = wx.Button(self, wx.ID_OK)
         #okButton.SetDefault()
         #cancelButton = wx.Button(self, wx.ID_CANCEL)
-        
+
         # Layout using sizers.
         #sizer = wx.GridBagSizer(5, 5)
-        
+
 
         #sizer.Add(self.fileListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
-        
+
         #btnSizer = wx.StdDialogButtonSizer()
         #btnSizer.AddButton(okButton)
         #btnSizer.AddButton(cancelButton)
@@ -152,12 +187,12 @@ class SelectWaveformEditDlg(wx.Frame):
         #sizer.Add(btnSizer, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
         #sizer.AddGrowableCol(0)
         #sizer.AddGrowableRow(0)
-        
+
         #self.SetSizerAndFit(sizer)
-        
+
         #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
-        
-        
+
+
     def onOk(self, event):
         inputFiles = []
         for idx in range(self.fileListCtrl.GetItemCount()):
@@ -167,13 +202,13 @@ class SelectWaveformEditDlg(wx.Frame):
 
         self.collectionNode.property['inputFiles'] = inputFiles
         self.Destroy()
-        
-        
-    
+
+
+
 ## The selection panel.
 #        
 class SelectionPanel(scrolled.ScrolledPanel):
-    
+
     ## The constructor.
     #
     # @param self The object pointer.
@@ -181,10 +216,10 @@ class SelectionPanel(scrolled.ScrolledPanel):
     def __init__(self, parent, psyProject):
         scrolled.ScrolledPanel.__init__(self, parent=parent, id=wx.ID_ANY)
         self.SetMaxSize((600, -1))
-        
+
         ## The pSysmon project.
         self.psyProject = psyProject
-                
+
         ## The selected start time.
         #self.startTime = UTCDateTime.today()
         #self.startTime = self.startTime.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -195,8 +230,8 @@ class SelectionPanel(scrolled.ScrolledPanel):
 
 
         sizer = wx.GridBagSizer(5, 5)
-        
-        
+
+
         # Create the labels.
         dateLabel = wx.StaticText(self, wx.ID_ANY, "Date")
         timeLabel = wx.StaticText(self, wx.ID_ANY, "Time")
@@ -204,33 +239,33 @@ class SelectionPanel(scrolled.ScrolledPanel):
         sizer.Add(dateLabel, pos=(0,0), flag=wx.ALIGN_CENTER|wx.TOP|wx.LEFT|wx.RIGHT, border=4)
         sizer.Add(timeLabel, pos=(0,1), flag=wx.ALIGN_CENTER|wx.TOP|wx.LEFT|wx.RIGHT, border=4)
         sizer.Add(durationLabel, pos=(0,2), flag=wx.ALIGN_CENTER|wx.TOP|wx.LEFT|wx.RIGHT, border=4)
-        
+
         # Create the calendar control.
         self.calendarCtrl = wx.calendar.CalendarCtrl(self, -1, _pydate2wxdate(self.startTime))
         sizer.Add(self.calendarCtrl, pos=(1, 0), flag=wx.ALL, border=4)
-        
+
         # Create the time control.
         self.timeCtrl = masked.TimeCtrl(
                         self, -1, name="24 hour control", fmt24hr=True)
         #h = self.timeCtrl.GetSize().height
         sizer.Add(self.timeCtrl, pos=(1, 1), flag=wx.ALL, border=4)
-        
+
         # Create the duration spin control.
         sc = wx.SpinCtrl(self, -1, "")
         sc.SetRange(1,86400)
         sc.SetValue(self.selDuration)
         self.durationCtrl = sc
         sizer.Add(self.durationCtrl, pos=(1, 2), flag=wx.ALIGN_LEFT|wx.ALL, border=4)
-        
+
         # Create the station selection grid.
         roAttr = wx.grid.GridCellAttr()
         roAttr.SetReadOnly(True) 
-        
+
         fields = self.getTableFields()
         data = self.getTableData()
         self.stationGrid = wx.grid.Grid(self, size=(-1, -1))
         self.stationGrid.CreateGrid(len(data), len(fields))
-        
+
         # Bind the sensorGrid events.
         #self.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorCellChange)
 
@@ -238,16 +273,16 @@ class SelectionPanel(scrolled.ScrolledPanel):
             self.stationGrid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.stationGrid.SetColAttr(k, roAttr)
-            
+
             if k > 0:
                 attr = wx.grid.GridCellAttr()
                 attr.SetEditor(wx.grid.GridCellBoolEditor())
                 self.stationGrid.SetColAttr(k, attr)
                 self.stationGrid.SetColFormatBool(k)
-                
+
         for k, (netName, statName, location) in enumerate(sorted(data)):
             self.stationGrid.SetCellValue(k, 0, netName+":"+statName+":"+location)
-        
+
         sizer.Add(self.stationGrid, pos=(2, 0), span=(1,4), flag=wx.EXPAND|wx.ALL, border=4)
 
 #        self.executeButton = wx.Button(self, 10, "execute", (20, 20))
@@ -345,11 +380,11 @@ class SelectionPanel(scrolled.ScrolledPanel):
 class StationSelectionGrid(wx.grid.Grid):
     def __init__(self, parent, id=wx.ID_ANY):
         wx.grid.Grid.__init__(self, parent=parent, id=id)
-        
+
 ## The selection panel.
 #        
 class DisplayPanel(wx.Panel):
-    
+
     ## The constructor.
     #
     # @param self The object pointer.
@@ -359,13 +394,13 @@ class DisplayPanel(wx.Panel):
         self.psyProject = psyProject
         self.SetMinSize((200, -1))
         #self.SetMaxSize((300, -1))
-        
+
         self.sizer = wx.GridBagSizer(0, 0)
-        
+
         self.displayFigure = Figure(figsize=(1, 1), facecolor='white')
         self.displayAxes = self.displayFigure.add_subplot(111, xscale='linear', axis_bgcolor='w')
         self.displayCanvas = FigureCanvas(self, -1, self.displayFigure)
-        
+
         self.sizer.Add(self.displayCanvas, pos=(0, 0), flag=wx.EXPAND|wx.ALL, border=0)
         self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(0)
@@ -412,23 +447,23 @@ class DisplayPanel(wx.Panel):
         res = self.psyProject.executeQuery(query)
         #print query
         #print res
-         
+
         self.displayAxes.clear()
-        
+
         if(not res['isError'] and res['data']): 
             labels = [x['label'] for x in res['data']]
             set = {}
             labels = [set.setdefault(e,e) for e in labels if e not in set]
             labels.sort()
             del(set)
-            
+
             for curData in res['data']:
                 pos = labels.index(curData['label'])
                 self.displayAxes.plot_date(date2num([UTCDateTime(curData['beginTime']), UTCDateTime(curData['endTime'])]), [pos, pos], linestyle='-', color='black')
-            
+
             self.displayAxes.set_yticks(range(0,len(res['data'])+1))
             self.displayAxes.set_yticklabels([x['label'] for x in res['data']])
             self.displayAxes.set_xlim(date2num(timespan))
             self.displayAxes.figure.autofmt_xdate()
-        
+
         self.displayAxes.figure.canvas.draw()
