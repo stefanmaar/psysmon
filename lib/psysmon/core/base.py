@@ -434,6 +434,9 @@ class Collection:
         #msg['isError'] = False
         #msg['threadId'] = self.threadId
         #pub.sendMessage(msgTopic, msg)
+        
+        # TODO: Add a State of Health thread which sends heartbeats at
+        # regular initervals.
 
         pipe.send('Collection running')
 
