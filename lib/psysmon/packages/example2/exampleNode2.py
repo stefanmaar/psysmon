@@ -44,13 +44,6 @@ class ExampleNode2(CollectionNode):
         msg = "Executing the node %s." % self.name
         self.log('status', msg)
 
-        if 'test' in prevModuleOutput.keys():
-            msg = "The parameter passed is: %s" % prevModuleOutput['test']
-            self.log('status', msg)
-        else:
-            msg =  "Missing node output from previous node.\nIs the example node before the example 2 node in the collection?"
-            self.log('error', msg)
-
         requiredData = self.requireData(('exp2InputData', ))
 
         print "Unpickled Data: %s" % requiredData['exp2InputData']

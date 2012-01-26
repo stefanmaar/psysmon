@@ -26,7 +26,6 @@ class ExampleNode(CollectionNode):
         self.log('status', msg)
 
         with self.project.threadMutex:
-            self.output['test'] = 'Hallo Stefan'
             self.provideData(name = 'exp2InputData', 
                              data = 'Hallihallo', 
                              description = 'Ein Test'
