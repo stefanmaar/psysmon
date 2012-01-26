@@ -78,6 +78,7 @@ def databaseFactory():
                "("
                "id int(10) NOT NULL auto_increment,"
                "recorder_id int(10) NOT NULL,"
+               "label varchar(255) NOT NULL,"
                "serial varchar(45) NOT NULL default '',"
                "type varchar(255) NOT NULL default '',"
                "rec_channel_name varchar(10) NOT NULL default '',"
