@@ -27,6 +27,7 @@ class ExampleNode(CollectionNode):
 
         with self.project.threadMutex:
             self.output['test'] = 'Hallo Stefan'
+            self.parentCollection.pickleData('fileTest', 'Hallihallo', 'Ein Test')
 
         for k in range(5):
             msg = "value: " + str(k)

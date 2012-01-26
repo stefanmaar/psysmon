@@ -751,14 +751,14 @@ class LoggingPanel(wx.aui.AuiNotebook):
         #index = self.threads.GetItemCount()
         index = 0
         self.threads.InsertStringItem(index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
-        self.threads.SetStringItem(index, 1, data['threadId'])
+        self.threads.SetStringItem(index, 1, data['procId'])
         self.threads.SetStringItem(index, 2, data['state'])
-        self.threadMap[data['threadId']] = index
+        self.threadMap[data['procId']] = index
 
     def updateThread(self, data):
-        if data['threadId'] in self.threadMap.keys():
-            curIndex = self.threadMap[data['threadId']]
-            self.threads.SetStringItem(curIndex, 1, data['threadId'])
+        if data['procId'] in self.threadMap.keys():
+            curIndex = self.threadMap[data['procId']]
+            self.threads.SetStringItem(curIndex, 1, data['procId'])
             self.threads.SetStringItem(curIndex, 2, data['state'])
 
     def onShowContextMenu(self, event):

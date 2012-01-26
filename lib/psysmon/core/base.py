@@ -33,6 +33,7 @@ This module contains the basic modules needed to run the pSysmon program.
 import os
 import sys
 import logging
+import shelve
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 from datetime import datetime
@@ -299,6 +300,10 @@ class Collection:
 
     Attributes
     ----------
+    dataShelf : String
+        The filename of the data file which is used to store values 
+        passed from one collection node to another.
+
     name : String
         The name of the collection.
 
@@ -332,6 +337,9 @@ class Collection:
         #
         # Collection log files go in there.
         self.tmpDir = tmpDir
+
+        # The collection's data file.
+        self.dataShelf = None
 
 
     def __getitem__(self, index):
@@ -414,7 +422,7 @@ class Collection:
 
 
 
-    def execute(self):
+    def execute(self, pipe):
         '''
         Executing the collection.
 
@@ -423,28 +431,37 @@ class Collection:
 
         The collection notifies the system by sending log messages of the type state.collection.execution.
 
+        Parameters
+        ----------
+        pipe : :class:`~multiprocessing.Pipe`
+            The multiprocessing pipe end.
         '''
-        msgTopic = "state.collection.execution"
-        msg = {}
-        msg['state'] = 'running'
-        msg['isError'] = False
-        msg['threadId'] = self.threadId
-        pub.sendMessage(msgTopic, msg)
+        # TODO: Add a State of Health thread which sends heartbeats at
+        # regular initervals.
 
+        print dir(self)
+
+        pipe.send({'state': 'running', 'msg': 'Collection running', 'procId': self.procId})
+
+        # Create the collection's data file.
+        self.dataShelf = os.path.join(self.tmpDir, self.procId + ".scd")
+        content = {}
+        db = shelve.open(self.dataShelf)
+        db['content'] = content
+        db.close()
+
+        # Execute each node in the collection.
         for (ind, curNode) in enumerate(self.nodes):
+            pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
-                curNode.run(threadId=self.threadId)
+                curNode.run(procId=self.procId)
             else:
                 #curNode.run(threadId=self.threadId)
-                curNode.run(threadId=self.threadId,
+                curNode.run(procId=self.procId,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
-        msgTopic = "state.collection.execution"
-        msg = {}
-        msg['state'] = 'finished'
-        msg['isError'] = False
-        msg['threadId'] = self.threadId
-        pub.sendMessage(msgTopic, msg)
+
+        pipe.send({'state': 'stopped', 'msg': 'Collection execution finished', 'procId': self.procId})
 
 
     def setNodeProject(self, project):
@@ -495,8 +512,66 @@ class Collection:
 
 
         # If a threa is running, add the log message to the log file.
-        if self.threadId:
-            logFile = open(os.path.join(self.tmpDir, self.threadId + ".log"), 'a')
+        if self.procId:
+            logFile = open(os.path.join(self.tmpDir, self.procId + ".log"), 'a')
             logFile.write(msgString)
             logFile.close()
+
+
+    def pickleData(self, name, data, description):
+        ''' Save the data in the collection's data shelf.
+
+        Parameters
+        ----------
+        data : Object
+            The data to be saved in the collection's data shelf.
+
+        description : String
+            A short description of the data.
+
+        name : String
+            The name of the variable to fetch from the collection's data shelf.
+        '''
+        db = shelve.open(self.dataShelf)
+        content = db['content']
+        content[name] = description
+
+        db[name] = data
+        db['content'] = description
+        db.close()
+
+
+    def unpickleData(self, name):
+        ''' Load the variable named *name* from the collection's data shelf.
+
+        Parameters
+        ----------
+        name : String
+            The name of the variable to fetch from the collection's data shelf.
+        '''
+        db = shelve.open(self.dataShelf)
+
+        if name not in db.keys():
+            return None
+        else:
+            return db[name]
+
+
+    def hasDataOnShelf(self, name):
+        ''' Check if the variable named *name* is available in the collection's 
+        data shelf.
+
+        Parameters
+        ----------
+        name : String
+            The name of the variable to fetch from the collection's data shelf.
+        '''
+        db = shelve.open(self.dataShelf)
+        if name in db.keys():
+            retVal = True
+        else:
+            retVal = False
+        db.close()
+
+        return retVal
 

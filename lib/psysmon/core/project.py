@@ -30,6 +30,7 @@ Module for handling the pSysmon project and users.
 
 import os
 import thread
+import multiprocessing
 import copy
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
@@ -931,17 +932,57 @@ class User:
             Error raised when no active collection is present.
         '''
 
+        def processChecker(process, parentEnd, mutex):
+            from time import sleep
+
+            # The time interval to check for process messages [s].
+            checkInterval =0.5 
+
+            # The timeout limit. After this timeout the process is 
+            # marked as "not responding". The timeout interval should
+            # be larger than the process's heartbeat interval. [s]
+            timeout = 10
+
+            procRunning = True
+            isZombie = False
+            print "Checking thread..."
+            lastResponse = 0
+            while procRunning:
+                print "Waiting for message..."
+                if parentEnd.poll(checkInterval):
+                    msg = parentEnd.recv()
+                    print msg
+                    print "Received message: [%s]: %s" % (msg['state'], msg['msg'])
+
+                    # Send the message to the system.
+                    msgTopic = "state.collection.execution"
+                    msg['isError'] = False
+                    #pub.sendMessage(msgTopic, msg)
+
+                    lastResponse = 0
+                    if msg['state'] == 'stopped':
+                        procRunning = False
+                else:
+                    lastResponse += checkInterval
+                    print "No message received."
+
+                if lastResponse > timeout:
+                    procRunning = False
+                    isZombie = True
+
+            print "End checking thread..."
+
         if self.activeCollection:
             if not project.threadMutex:
                 project.threadMutex = thread.allocate_lock()
 
-            col2Thread = copy.deepcopy(self.activeCollection)
-            col2Thread.setNodeProject(project)     # Reset the project of the nodes. This has been cleard by the setstate method.
+            col2Proc = copy.deepcopy(self.activeCollection)
+            col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleard by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
-            col2Thread.threadId = col2Thread.name + "_" + timeStampString
+            col2Proc.procId = col2Proc.name + "_" + timeStampString
 
-            msg = "Executing collection " + col2Thread.name + "with thread ID: " + col2Thread.threadId + "."
+            msg = "Executing collection " + col2Proc.name + "with thread ID: " + col2Proc.procId + "."
             project.log("status", msg)
 
             msgTopic = "state.collection.execution"
@@ -949,10 +990,15 @@ class User:
             msg['state'] = 'starting'
             msg['startTime'] = curTime
             msg['isError'] = False
-            msg['threadId'] = col2Thread.threadId
+            msg['procId'] = col2Proc.procId
             pub.sendMessage(msgTopic, msg)
 
-            thread.start_new_thread(col2Thread.execute, ())
+            (parentEnd, childEnd) = multiprocessing.Pipe()
+            print "proc Id: %s" % col2Proc.procId
+            p = multiprocessing.Process(target=col2Proc.execute, args=(childEnd,))
+            #p.daemon = True
+            p.start()
+            thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
         else:
             raise PsysmonError('No active collection found!') 
 
