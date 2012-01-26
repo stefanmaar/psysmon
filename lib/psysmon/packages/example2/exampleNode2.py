@@ -51,7 +51,8 @@ class ExampleNode2(CollectionNode):
             msg =  "Missing node output from previous node.\nIs the example node before the example 2 node in the collection?"
             self.log('error', msg)
 
-        colData = self.parentCollection.unpickleData('fileTest')
-        print "Unpickled Data: %s" % colData
+        requiredData = self.requireData(('exp2InputData', ))
+
+        print "Unpickled Data: %s" % requiredData['exp2InputData']
 
 

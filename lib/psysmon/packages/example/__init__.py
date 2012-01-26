@@ -53,7 +53,9 @@ def nodeFactory():
                              category = 'Example',
                              tags = ['stable', 'example'],
                              options = None,
-                             docEntryPoint = 'exampleNode.html'
+                             docEntryPoint = 'exampleNode.html',
+                             requires = None, 
+                             provides = ('exp2InputData', )
                            )
     nodeTemplates.append(myTemplate)
 

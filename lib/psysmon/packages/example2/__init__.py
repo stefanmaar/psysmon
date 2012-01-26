@@ -36,7 +36,9 @@ def nodeFactory():
                               category = 'Example',
                               tags = ['stable', 'example'],
                               options = None,
-                              docEntryPoint = None
+                              docEntryPoint = None,
+                              requires = ('exp2InputData', ),
+                              provides = None
                               )
     nodeTemplates.append(myTemplate)
 
