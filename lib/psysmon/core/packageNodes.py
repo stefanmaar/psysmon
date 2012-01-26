@@ -124,7 +124,7 @@ class CollectionNode:
     # collection node. This dictionary is used to initialize a new collection node
     # and to save the user input for this collection node during the sessions.
     # @param parent The parent package of the collection node.
-    def __init__(self, name, mode, category, tags, options, docEntryPoint=None, parent=None, project=None):
+    def __init__(self, name, mode, category, tags, options, requires=None, provides=None, docEntryPoint=None, parent=None, project=None):
 
         ## The name of the collection node.
         self.name = name
@@ -185,6 +185,12 @@ class CollectionNode:
         # The output dictionary can be used to pass parameters to the next
         # node in the collection.
         self.output = {}
+
+        # The variables required by the node.
+        self.requires = requires
+
+        # The variables provided by the node.
+        self.provides = provides
 
         ## The current pSysmon project.
         #
@@ -291,6 +297,43 @@ class CollectionNode:
             self.parentCollection.log(self.name, mode, msg)
         else:
             self.project.log(mode, msg)
+
+
+    def provideData(self, name, data, description):
+        ''' Provide the data to the other collection nodes.
+
+        Parameters
+        ----------
+        name : String
+            The name of the data provided.
+
+        data : Object
+            The data provided to the next collection nodes.
+
+        description : String
+            A short description of the data.
+        '''
+        self.parentCollection.pickleData(name = name,
+                                         data = data,
+                                         description = description,
+                                         origin = self.name
+                                         )
+
+    def requireData(self, names):
+        ''' Require data from the collection's shelf.
+
+        Parameters
+        ----------
+        names : List of Strings
+            The names of the variables to restore from the collection's 
+            shelf.
+        '''
+        requiredData = {}
+        for curName in names:
+            print "Requiring data with name: %s" % curName
+            requiredData[curName] = self.parentCollection.unpickleData(curName)
+
+        return requiredData
 
 
 
