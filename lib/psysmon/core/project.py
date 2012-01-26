@@ -932,7 +932,7 @@ class User:
             Error raised when no active collection is present.
         '''
 
-        def processChecker(process, parentEnd):
+        def processChecker(process, parentEnd, mutex):
             from time import sleep
 
             # The time interval to check for process messages [s].
@@ -951,9 +951,16 @@ class User:
                 print "Waiting for message..."
                 if parentEnd.poll(checkInterval):
                     msg = parentEnd.recv()
-                    print "Received message: %s" % msg
+                    print msg
+                    print "Received message: [%s]: %s" % (msg['state'], msg['msg'])
+
+                    # Send the message to the system.
+                    msgTopic = "state.collection.execution"
+                    msg['isError'] = False
+                    #pub.sendMessage(msgTopic, msg)
+
                     lastResponse = 0
-                    if msg == 'stop':
+                    if msg['state'] == 'stopped':
                         procRunning = False
                 else:
                     lastResponse += checkInterval
@@ -990,7 +997,7 @@ class User:
             p = multiprocessing.Process(target=col2Proc.execute, args=(childEnd,))
             #p.daemon = True
             p.start()
-            thread.start_new_thread(processChecker, (p, parentEnd))
+            thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
         else:
             raise PsysmonError('No active collection found!') 
 
