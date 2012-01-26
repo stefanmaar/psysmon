@@ -980,9 +980,9 @@ class User:
             col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleard by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
-            col2Proc.threadId = col2Proc.name + "_" + timeStampString
+            col2Proc.procId = col2Proc.name + "_" + timeStampString
 
-            msg = "Executing collection " + col2Proc.name + "with thread ID: " + col2Proc.threadId + "."
+            msg = "Executing collection " + col2Proc.name + "with thread ID: " + col2Proc.procId + "."
             project.log("status", msg)
 
             msgTopic = "state.collection.execution"
@@ -990,10 +990,11 @@ class User:
             msg['state'] = 'starting'
             msg['startTime'] = curTime
             msg['isError'] = False
-            msg['threadId'] = col2Proc.threadId
+            msg['procId'] = col2Proc.procId
             pub.sendMessage(msgTopic, msg)
 
             (parentEnd, childEnd) = multiprocessing.Pipe()
+            print "proc Id: %s" % col2Proc.procId
             p = multiprocessing.Process(target=col2Proc.execute, args=(childEnd,))
             #p.daemon = True
             p.start()
