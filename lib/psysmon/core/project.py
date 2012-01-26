@@ -962,7 +962,6 @@ class User:
                 if lastResponse > timeout:
                     procRunning = False
                     isZombie = True
-                #sleep(checkInterval)
 
             print "End checking thread..."
 
