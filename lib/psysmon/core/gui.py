@@ -17,6 +17,20 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
+The pSysmon GUI module.
+
+:copyright:
+    Stefan Mertl
+
+:license:
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
+
+This module contains the graphical user interface (GUI) of the pSysmon 
+main program.
+'''
+
 
 import wx
 import wx.aui
@@ -33,8 +47,7 @@ from wx.lib.mixins.inspection import InspectionMixin
 
 ## The pSysmon main application.
 class PSysmonApp(wx.App, InspectionMixin):
-    '''
-    The pSysmon wxPython App class.
+    ''' The pSysmon wxPython App class.
     '''
     ## The constructor
     #
@@ -87,10 +100,11 @@ class PSysmonGui(wx.Frame):
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onClose)),
                 ("Edit",
-                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser)),
+                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser),
+                 ("Edit waveform directories", "Edit the waveform directories.", self.onEditWaveformDir)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
-               )    
+               )
 
     ## Create the PSysmonGui menubar.
     #
@@ -340,6 +354,22 @@ class PSysmonGui(wx.Frame):
         dlg = CreateNewDbUserDlg(parent=self, psyBase=self.psyBase)
         dlg.ShowModal()
         dlg.Destroy()
+
+
+    def onEditWaveformDir(self, event):
+        ''' The edit waveform directories callback.
+
+        Parameters
+        ----------
+        event : 
+            The event passed to the callback.
+        '''
+        if self.psyBase.project:
+            dlg = EditWaveformDirDlg(parent=self, psyBase=self.psyBase)
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.log('warning', 'You have to open a project to edit the waveform directories.')
 
 
     ## Create new project menu callback.
@@ -1054,6 +1084,172 @@ class CreateNewDbUserDlg(wx.Dialog):
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             return False
+
+
+class EditWaveformDirDlg(wx.Dialog):
+    ''' The EditWaveformDirDlg class.
+
+    This class creates a dialog used to edit the pSysmon waveform directories.
+
+    Attributes
+    ----------
+    psyBase : :class:`~psysmon.core.Base`
+        The pSysmon base instance.
+    '''
+    def __init__(self, psyBase, parent=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Edit the waveform directories", style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size=size)
+
+        self.psyBase = psyBase
+
+        # Use standard button IDs.
+        okButton = wx.Button(self, wx.ID_OK)
+        okButton.SetDefault()
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+
+        # Create the grid editing buttons.
+        addDirButton = wx.Button(self, wx.ID_ANY, "add")
+        removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+        gridButtonSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Fill the grid button sizer
+        gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
+
+        fields = self.getGridColumns()
+        self.wfGrid = wx.grid.Grid(self)
+        self.wfGrid.CreateGrid(1, len(fields))
+
+        roAttr = wx.grid.GridCellAttr()
+        roAttr.SetReadOnly(True)
+        for k, (name, label, attr) in enumerate(fields):
+            self.wfGrid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.wfGrid.SetColAttr(k, roAttr)
+
+        self.wfGrid.AutoSizeColumns()
+        self.initWfTable()
+        sizer.Add(self.wfGrid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        sizer.Add(btnSizer, pos=(1,0), span=(1,2), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+        # Bind the events.
+        self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
+        self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
+        #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
+
+    def onAddDirectory(self, event):
+        ''' The add directory callback.
+
+        Show a directory browse dialog.
+        If a directory has been selected, call to insert the directory 
+        into the database.
+        '''
+        # In this case we include a "New directory" button. 
+        dlg = wx.DirDialog(self, "Choose a directory:",
+                          style=wx.DD_DEFAULT_STYLE
+                           #| wx.DD_DIR_MUST_EXIST
+                           #| wx.DD_CHANGE_DIR
+                           )
+
+        # If the user selects OK, then we process the dialog's data.
+        # This is done by getting the path data from the dialog - BEFORE
+        # we destroy it. 
+        if dlg.ShowModal() == wx.ID_OK:
+            self.psyBase.project.log('status', 'You selected: %s\n' % dlg.GetPath())
+
+        # Only destroy a dialog after you're done with it.
+        dlg.Destroy() 
+
+
+    def onRemoveDirectory(self, event):
+        ''' The remove directory callback.
+        '''
+        pass
+
+
+    def initWfTable(self):
+        ''' Initialize the waveformDir table with values.
+
+        '''
+        for k, curDir in enumerate(self.psyBase.project.waveformDirList):
+            self.wfGrid.SetCellValue(k, 0, str(curDir['id']))
+            self.wfGrid.SetCellValue(k, 1, curDir['dir'])
+            self.wfGrid.SetCellValue(k, 2, curDir['dirAlias'])
+            self.wfGrid.SetCellValue(k, 3, curDir['description'])
+
+
+    def getGridColumns(self):
+        tableField = []
+        tableField.append(('id', 'id', 'readonly'))
+        tableField.append(('origDir', 'original directory', 'readonly'))
+        tableField.append(('alias', 'alias', 'editable'))
+        tableField.append(('description', 'description', 'editable'))
+        return tableField
+
+
+    def onOk(self, event):
+        isValid = self.Validate()
+
+        if(isValid):
+            userData = {};
+            for _, curKey, _ in self.dialogData():
+                userData[curKey] = self.edit[curKey].GetValue()
+
+            userCreated = self.createUser(userData)
+            #pub.sendMessage("createNewDbUserDlg.createUser", userData)
+            if(userCreated):
+                # Set the status message.
+                statusString = "Created the user %s successfully." % userData['userName']
+                self.GetParent().log('status', statusString)
+
+                # Close the dialog.
+                self.Destroy()
+
+            else:
+                # Set the status message.
+                statusString = "Error while creating the user %s." % userData['userName']
+                if not self.GetParent():
+                    print "NO PARENT"
+                else:
+                    self.GetParent().log('status', statusString)
+
+
+
+    def createUser(self, userData):
+
+        try:
+            self.psyBase.createPsysmonDbUser(userData['rootUser'],
+                                             userData['rootPwd'], 
+                                             userData['mysqlHost'],
+                                             userData['userName'],
+                                             userData['userPwd'])
+            return True
+        except mysql.Error, e:
+            msg = "An error occured when trying to create the pSysmon database user:\n%s" % e
+            dlg = wx.MessageDialog(None, msg, 
+                                   "MySQL database error.",
+                                   wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            return False
+
 
 
 
