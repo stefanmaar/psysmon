@@ -106,3 +106,146 @@ class AttribDict(dict, object):
             if key in self.readonly:
                 continue
             self[key] = value
+
+
+
+
+class ActionHistory:
+    ''' Keep track of actions in a GUI.
+
+    This helper class provides the recording of actions executed by the user 
+    which changed the attributes of a class or other variables.
+
+    Each of the attributes can be mapped to a database field and the according 
+    UPDATE query can be created if needed.
+
+    Attributes
+    ----------
+    attrMap : Dictionary of Strings
+        A Dictionary of Strings with the attribute name as the key and the 
+        corresponding database table field as the value.
+
+    actionTypes : Dictionary of Strings
+        A dictionary of Strings with the action type as the key and a 
+        description as the value. With this dictionary, the user can define 
+        allowed actions to be recorded by the ActionHistory class.
+
+    actions : A list of `~psysmon.core.util.Action` instances
+        The actions recorded by the Action History class. Each action in the 
+        list is a dictionary 
+    '''
+
+    def __init__(self, attrMap, actionTypes):
+        ''' The constructor.
+
+        '''
+
+        # The mapping of the attributes to database table fields.
+        self.attrMap = attrMap
+
+        # The allowed types of actions.
+        self.actionTypes = actionTypes
+
+        # The recorded actions.
+        self.actions = []
+
+
+    def do(self, action):
+        ''' Register an action in the history.
+
+        '''
+        print "Registering action: " + action.type
+        self.actions.append(action)
+
+
+    def undo(self, object):
+        ''' Undo the last action in the history.
+
+        '''
+        pass
+
+
+    def hasActions(self):
+        ''' Check if actions have been registered.
+
+        '''
+        if self.actions:
+            return True
+        else:
+            return False
+
+
+    def fetchAction(self, type=None):
+        ''' Fetch the first action in the stack.
+
+        '''
+        if not self.actions:
+            return None
+
+        if not type:
+            if self.actions:
+                curAction = self.actions[0]
+                self.actions.pop(0)
+                return curAction
+        else:
+            actions2Fetch = [curAction for curAction in self.actions if curAction['type'] == type]
+            if actions2Fetch:
+                for curAction in actions2Fetch:
+                    self.actions.remove(curAction)
+            return actions2Fetch
+
+
+    def getUpdateString(self, actions):
+        ''' Build the database UPDATE string.
+
+        '''
+        updateString = ''
+
+        # Get all attributes names to process.
+        attrNames = [curAction['attrName'] for curAction in actions]
+        attrNames = list(set(attrNames))        # Remove duplicates.
+
+        # Process the attribute names.
+        for curAttr in attrNames:
+            actions2Process = [curAction for curAction in actions if curAction['attrName'] == curAttr]
+            firstAction = actions2Process[0]
+
+            if(len(actions2Process) >= 2):
+                lastAction = actions2Process[-1]
+            else:
+                lastAction = firstAction
+
+            # If the attribute exists in the attribute map, create the update string.
+            if curAttr in self.attrMap.keys():
+                curStr = "%s = '%s'," %(self.attrMap[curAttr], str(lastAction['dataAfter']))
+                updateString += curStr 
+
+
+        # Remove the trailing comma from the string.            
+        return updateString[:-1]
+
+
+
+
+class Action:
+    ''' The Action class used by `~psysmon.core.util.ActionHistory`.
+
+    '''
+
+
+    def __init__(self, type, attrName, dataBefore, dataAfter):
+        ''' The constructor.
+
+        '''
+
+        # The type of the action.
+        self.type = type
+
+        # The name of the attribute which the action affects.
+        self.attrName = attrName
+
+        # The value of the attribute before the action has been done.
+        self.dataBefore = dataBefore
+
+        # The value of the attribute after the action has been done.
+        self.dataAfter = dataAfter
