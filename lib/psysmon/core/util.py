@@ -154,15 +154,20 @@ class ActionHistory:
         ''' Register an action in the history.
 
         '''
-        print "Registering action: " + action.type
+        print "Registering action: " + action.style
         self.actions.append(action)
 
 
-    def undo(self, object):
+    def undo(self):
         ''' Undo the last action in the history.
 
         '''
-        pass
+        print "undo action"
+        if not self.hasActions:
+           return
+
+        action2Undo = self.pop()
+        action2Undo.undo()
 
 
     def hasActions(self):
@@ -175,20 +180,18 @@ class ActionHistory:
             return False
 
 
-    def fetchAction(self, type=None):
-        ''' Fetch the first action in the stack.
+    def pop(self, style=None):
+        ''' Pop the last action in the stack.
 
         '''
         if not self.actions:
             return None
 
-        if not type:
+        if not style:
             if self.actions:
-                curAction = self.actions[0]
-                self.actions.pop(0)
-                return curAction
+                return self.actions.pop()
         else:
-            actions2Fetch = [curAction for curAction in self.actions if curAction['type'] == type]
+            actions2Fetch = [curAction for curAction in self.actions if curAction.style == style]
             if actions2Fetch:
                 for curAction in actions2Fetch:
                     self.actions.remove(curAction)
@@ -230,22 +233,52 @@ class ActionHistory:
 class Action:
     ''' The Action class used by `~psysmon.core.util.ActionHistory`.
 
+
+    Attributes
+    ----------
+    style : String
+        The style of the action. These styles are supported:
+
+        - 'VALUE_CHANGE'
+        - 'METHOD'
+
+
     '''
 
 
-    def __init__(self, type, attrName, dataBefore, dataAfter):
+    def __init__(self, style, affectedObject, dataBefore, dataAfter, 
+                 undoMethod=None, undoParameters=None):
         ''' The constructor.
 
         '''
+        allowedStyles = ('VALUE_CHANGE', 'METHOD')
+        if style not in allowedStyles:
+            raise PsysmonError('style %s is not supported' % style)
+
 
         # The type of the action.
-        self.type = type
+        self.style = style
 
-        # The name of the attribute which the action affects.
-        self.attrName = attrName
+        # The object which the action affects.
+        self.affectedObject = affectedObject
 
         # The value of the attribute before the action has been done.
         self.dataBefore = dataBefore
 
         # The value of the attribute after the action has been done.
         self.dataAfter = dataAfter
+
+        # The method or function to be called to undo the action.
+        self.undoMethod = undoMethod
+
+        # The parameters to be passed to the undoMethod.
+        self.undoParameters = undoParameters
+
+
+    def undo(self):
+        ''' Undo the action.
+
+        '''
+        if self.style == 'METHOD':
+            self.undoMethod(self.undoParameters)
+
