@@ -40,6 +40,7 @@ from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 import os
 from psysmon.core.util import PsysmonError
+from psysmon.core.util import ActionHistory, Action
 from datetime import datetime
 import webbrowser
 from wx.lib.mixins.inspection import InspectionMixin 
@@ -1112,6 +1113,7 @@ class EditWaveformDirDlg(wx.Dialog):
         # Create the grid editing buttons.
         addDirButton = wx.Button(self, wx.ID_ANY, "add")
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
+        undoButton = wx.Button(self, wx.ID_ANY, "undo")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1120,6 +1122,7 @@ class EditWaveformDirDlg(wx.Dialog):
         # Fill the grid button sizer
         gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(undoButton, 0, wx.EXPAND|wx.ALL)
 
         fields = self.getGridColumns()
         self.wfGrid = wx.grid.Grid(self)
@@ -1152,7 +1155,18 @@ class EditWaveformDirDlg(wx.Dialog):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
+        self.Bind(wx.EVT_BUTTON, self.onUndo, undoButton)
         #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
+        self.history = ActionHistory(attrMap = {}, 
+                                     actionTypes = []
+                                     ) 
+
+    def onUndo(self, event):
+        ''' Undo the last recorded action.
+
+        '''
+        self.history.undo()
 
 
     def onAddDirectory(self, event):
@@ -1174,15 +1188,33 @@ class EditWaveformDirDlg(wx.Dialog):
         # we destroy it. 
         if dlg.ShowModal() == wx.ID_OK:
             self.psyBase.project.log('status', 'You selected: %s\n' % dlg.GetPath())
+            rowNumber = 1
+            action = Action(style='METHOD',
+                            affectedObject=None,
+                            dataBefore=None,
+                            dataAfter=None,
+                            undoMethod=self.removeDirectory,
+                            undoParameters=rowNumber
+                            )
+            self.history.do(action)
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy() 
+
 
 
     def onRemoveDirectory(self, event):
         ''' The remove directory callback.
         '''
         pass
+
+
+    def removeDirectory(self, rowNumber):
+        ''' Remove the directory at row *rowNumber*
+
+        '''
+        self.psyBase.project.log('status', 'Removing row number %d' % rowNumber)
+
 
 
     def initWfTable(self):
