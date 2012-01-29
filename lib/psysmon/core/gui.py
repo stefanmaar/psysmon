@@ -243,6 +243,12 @@ class PSysmonGui(wx.Frame):
                 dlg.ShowModal()
 
             else:
+                # Load the current database structure.
+                self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
+
+                # Load the waveform directories.
+                self.psyBase.project.loadWaveformDirList()
+
                 # Check if the database tables have to be updated.
                 self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
 
