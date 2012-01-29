@@ -33,14 +33,14 @@ import thread
 import multiprocessing
 import copy
 from wx.lib.pubsub import Publisher as pub
-import MySQLdb as mysql
 from datetime import datetime
 import psysmon.core.base
 from psysmon.core.util import PsysmonError
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-## The pSysmon project.
-#
-#
+
 class Project:
     '''The pSysmon Project class.
 
@@ -59,19 +59,37 @@ class Project:
     cur : 
         The mySQL database cursor.
 
-    dbConn :
-        The mySQL database connection.
+    dbBase : 
+        The sqlalchemy base class created by declarative_base().
+
+    dbDialect : String
+        The database engine to be used. See http://docs.sqlalchemy.org/en/latest/core/engines.html# 
+        for the available database dialects.
+
+    dbDriver : String
+        The database driver to be used. Of course, the selected database API 
+        has to be installed.
+
+    dbEngine : :class:`~sqlalchemy.engine.base.Engine`
+        The sqlalchemy database engine.
 
     dbHost : String
         The host URL on which the mySQL database server is running.
+
+    dbMetaData : :class:`~sqlalchemy.schema.MetaData`
+        The sqlalchemy metadata instance.
 
     dbName : String
         The mySQL database name.
         The database of the project is named according tto the admin unser 
         using *psysmon_* as a prefix (e.g.: psysmon_ADMINUSERNAME).
 
-    dbTableNames : Dictionary of Strings
-        A dictionary of the project database table names.
+    dbSession : :class:`~sqlalchemy.orm.session.Session`
+        The sqlalchemy session instance.
+
+    dbTables : Dictionary of sqlalchemy mapper classes.
+        A dictionary of the project database table mapper classes.
+        The name of the table is the key.
 
     dbVersion : Dictionary of Strings
         A dictionary holding the versions of the individual package database 
@@ -100,7 +118,7 @@ class Project:
 
     '''
 
-    def __init__(self, name, baseDir, user, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTableNames={}):
+    def __init__(self, name, baseDir, user, dbDialect='mysql', dbDriver=None, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -113,6 +131,10 @@ class Project:
             The base directory of the project.
         user : String
             The admin user of the project.
+        dbDialect : String
+            The database dialect to be used by sqlalchemy.
+        dbDriver : String
+            The database driver to be used by sqlalchemy.
         dbHost : String
             The database host.
         dbName : String
@@ -140,6 +162,12 @@ class Project:
         # The project directory.
         self.projectDir = os.path.join(self.baseDir, self.name)
 
+        # The database engine to be used.
+        self.dbDialect = dbDialect
+
+        # The database driver to be used.
+        self.dbDriver = dbDriver
+
         # The host on which the mySQL database server is running.
         self.dbHost = dbHost
 
@@ -150,7 +178,7 @@ class Project:
             self.dbName = dbName
 
         # A dictionary of the project databaser table names.
-        self.dbTableNames = dbTableNames
+        self.dbTables = dbTables
 
         # The project file.
         self.projectFile = self.name +".ppr"
@@ -159,7 +187,7 @@ class Project:
         self.dbVersion = dbVersion
 
         # A list of waveform directories associated with the project.
-        self.waveformDirList = ()
+        self.waveformDirList = []
 
         # Is the project saved?
         self.saved = False
@@ -204,188 +232,21 @@ class Project:
         passwd : String
             The database password to be used.
         '''
-        self.dbConn = mysql.connect(self.dbHost, self.activeUser.name, passwd, self.dbName)
-        self.cur = self.dbConn.cursor(mysql.cursors.DictCursor)     # Fetch rows as dictionaries.
+        if self.dbDriver:
+            dialectString = self.dbDialect + "+" + self.dbDriver
+        else:
+            dialectString = self.dbDialect
 
+        if passwd:
+            engineString = dialectString + "://" + self.activeUser.name + ":" + passwd + "@" + self.dbHost + "/" + self.dbName
+        else:
+            engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
-    ## Execute a database query.
-    #
-    # @param self The Object pointer.
-    # @param query The mySQL query string. 
-    # @param type The type of the query (select, insert, update, alter)    
-    def executeQuery(self, query, mode='select'):
-        '''Execute a database query.
-
-        Parameters
-        ----------
-        query : String
-            The mySQL query string.
-        type : String
-            The type of the query (select, insert, update, alter)
-
-        Returns
-        -------
-        result : Dictionary
-            A dictionary containing the query result. The dictionary has the 
-            following keys:
-
-            isError
-                Did the query raise an error? (Boolean)
-
-            msg
-                The error message returned by the mySQL server. (String)
-
-            data
-                The data returned by the mySQL server. In case of *select* queries, 
-                each queried column creates a key in the dictionary. (dictionary)
-
-        Examples
-        --------
-        Select the data from the pSysmon geom_stations table. For this example 
-        it is assumed, that *project* is a :class:`Project` instance and 
-        the connection to the database has already been established:
-        ::
-            tableName = project.dbTableNames['geom_station']
-            query =  ("SELECT"
-                  "id, net_name, name, location, X, Y, Z, coord_system, description "
-                  "FROM %s") % tableName 
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                for curData in res['data']:
-                    print "Station name %s" % curData['name']
-            else:
-                print res['msg']
-
-        '''
-        try:
-            self.cur.execute(query)
-
-            if mode == 'select':
-                data = self.cur.fetchall()       # Return the selected data.
-            elif mode == 'insert':
-                data = int(self.cur.rowcount)    # Return the affected rows.
-            elif mode == 'update':
-                data = int(self.cur.rowcount)    # Return the affected rows.
-            elif mode == 'alter':
-                data = int(self.cur.rowcount)    # Return the affected rows.
-
-
-            return {'isError': False,
-                    'msg': '',
-                    'data': data}
-
-        except (mysql.DataError, mysql.IntegrityError, mysql.ProgrammingError), e:
-            msg = ("The query that you have have passed is not valid. "
-                   "Please check the query before trying to execute it again.\n"
-                   "Your query (mode = %s):\n"
-                   "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (mode, query, e)
-            return {'isError': True,
-                    'msg': msg,
-                    'result': ''}
-        except (mysql.OperationalError, mysql.InternalError, mysql.NotSupportedError), e:
-            msg = ("An irrecoverable error has occured in the way your data was "
-                   "processed. Please report this error to the pSysmon development team.\n"
-                   "Your query (mode = %s):\n"
-                   "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (mode, query, e)
-            return {'isError': True,
-                    'msg': msg,
-                    'result': ''}
-        except mysql.Warning:
-            pass
-
-
-    def executeManyQuery(self, query, data, mode='select'):
-        '''Execute a database query having multiple values to insert, update or select.
-
-        Parameters
-        ----------
-        data : Dictionary
-            The data to be inserted or updated. The keys of the dictionary 
-            represent the data column names.
-        query : String
-            The mySQL query string.
-        type : String
-            The type of the query (select, insert, update)
-
-        Returns
-        -------
-        res : Dictionary
-            A dictionary containing the query result. The dictionary has the 
-            following keys:
-
-            isError 
-                Did the query raise an error? (Boolean)
-
-            msg 
-                The error message returned by the mySQL server. (String)
-
-            data
-                The data returned by the mySQL server. In case of *select* queries, 
-                each queried column creates a key in the dictionary. (Dictionary)
-
-        Examples
-        --------
-        This example is taken from :meth:'~psysmon.packages.geometry.Inventory.writeRecorders2Db`.
-        First, the list *dbRecorderData* is filled with the data to be inserted 
-        into the database table. Next the query statement is created and the 
-        executeManyQuery is used to insert the *dbRecorderData* list.
-        ::
-            def writeRecorders2Db(self, project):
-                # Create the data lists to be inserted into the db.
-                dbRecorderData = []         # The recorder data.
-                for curRecorder in self.recorders:
-                    dbRecorderData.append((curRecorder.serial, curRecorder.type))
-
-
-                # Write the recorder data to the geom_recorder table.
-                tableName = project.dbTableNames['geom_recorder']
-                query =  ("INSERT IGNORE INTO %s "
-                          "(serial, type) "
-                          "VALUES (%%s, %%s)") % tableName  
-                res = project.executeManyQuery(query, dbRecorderData)
-
-                if not res['isError']:
-                    print("Successfully wrote the recorders to the database.")
-                else:
-                    print res['msg']   
-        '''
-        try:
-            self.cur.executemany(query, data)
-
-            if mode == 'select':
-                data = self.cur.fetchall()       # Return the selected data.
-            elif mode == 'insert':
-                data = int(self.cur.rowcount)    # Return the affected rows.
-            elif mode == 'update':
-                data = int(self.cur.rowcount)    # Return the affected rows.
-
-            return {'isError': False,
-                    'msg': '',
-                    'data': data}
-
-        except (mysql.DataError, mysql.IntegrityError, mysql.ProgrammingError), e:
-            msg = ("The query that you have have passed is not valid. "
-                   "Please check the query before trying to execute it again.\n"
-                   "Your query (mode = %s):\n"
-                   "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (mode, query, e)
-            return {'isError': True,
-                    'msg': msg,
-                    'result': ''}
-        except (mysql.OperationalError, mysql.InternalError, mysql.NotSupportedError), e:
-            msg = ("An irrecoverable error has occured in the way your data was "
-                   "processed. Please report this error to the pSysmon development team.\n"
-                   "Your query (mode = %s):\n"
-                   "%s\n" 
-                   "The exact error information reads as follows:\n%s") % (mode, query, e)
-            return {'isError': True,
-                    'msg': msg,
-                    'result': ''}
-        except mysql.Warning:
-            pass
+        self.dbEngine = create_engine(engineString)
+        self.dbMetaData = MetaData(self.dbEngine)
+        self.dbBase = declarative_base(metadata = self.dbMetaData)
+        Session = sessionmaker(bind=self.dbEngine)
+        self.dbSession = Session()
 
 
     def setActiveUser(self, userName, pwd):
@@ -407,7 +268,6 @@ class Project:
             if curUser.name == userName:
                 self.activeUser = curUser
                 self.connect2Db(pwd)
-                self.loadWaveformDirList()
                 return True
 
         return False
@@ -463,18 +323,40 @@ class Project:
     def createDatabaseStructure(self, packages):
         '''Create the project's database structure.
 
-        In pSysmon, each package can create its own database tables. The table create queries 
-        can be listed in the package's databaseFactory function which is located in 
-        the package's __init__.py module.
+        The createDatabaseStructure method is used to create the database 
+        tables when a new project is created. First, the database structure is 
+        loaded using the :meth:`loadDatabaseStructure`. Next, the sqlalchemy 
+        MetaData instance is used to create the database tables.
 
-        During pSysmon startup from each package, the database table create queries 
-        are requested and saved in the dbTableCreateQueries attribute of the 
+        Parameters
+        ----------
+        packages : Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
+            The packages to be used for the database structure creation.
+            The key of the dictionary is the package name.
+        '''
+        self.loadDatabaseStructure(packages)
+
+        self.dbMetaData.create_all()
+
+
+    def loadDatabaseStructure(self, packages):
+        '''Load the project's database structure.
+
+        In pSysmon, each package can create its own database tables. 
+        pSysmon uses the sqlalchemy database abstraction layer (DAL). The 
+        database tables are created in the package's __init__.py file using 
+        the sqlalchemy declarative mapping classes. These classes are defined 
+        in the package's databaseFactory function.
+
+        During pSysmon startup, from each package the databaseFactory method 
+        is saved in the databaseFactory attribute of the 
         :class:`~psysmon.core.packageSystem.Package` instance. 
-
-        When creating a new project, the database tables are created using this method. 
-        The method iterates over all packages passed to the method, checks for available 
-        table creation queries and if any present, executes them.
-
+        
+        The loadDatabaseStructure iterates over all packages and checks for 
+        existing databaseFactory methods. If present, they are executed to 
+        retrieve the mapping classes. These classes are saved in the dbTables 
+        attribute and can be used by everyone to access the database tables.
+        
         Parameters
         ----------
         packages : Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
@@ -483,24 +365,18 @@ class Project:
         '''
 
         for _, curPkg in packages.iteritems():
-            if not curPkg.dbTableCreateQueries:
-                print "No database table queries found."
+            if not curPkg.databaseFactory:
+                print "No databaseFactory method found."
                 continue
             else:
                 print "Creating the tables for package " + curPkg.name
                 self.dbVersion[curPkg.name] = curPkg.version
-                for curName, curQuery in curPkg.dbTableCreateQueries.iteritems():
-                    # Replace the table prefix keyword with the project name.
-                    curQuery = curQuery.replace("</PREFIX/>", self.name)
-                    print "Executing query: " + curQuery
-                    res = self.executeQuery(curQuery)
-
-                    if res['isError']:
-                        print res['msg']
-                    else:
-                        print "Success"
-
-                    self.dbTableNames[curName] = self.name + '_' + curName
+                tables = curPkg.databaseFactory(self.dbBase)
+                for curTable in tables:
+                    # Add the table prefix.
+                    curName = curTable.__table__.name
+                    curTable.__table__.name = self.name + "_" + curTable.__table__.name
+                    self.dbTables[curName] = curTable
 
 
     def checkDbVersions(self, packages):
@@ -531,12 +407,14 @@ class Project:
 
         db = shelve.open(os.path.join(self.projectDir, self.projectFile))
         db['name'] = self.name
+        db['dbDriver'] = self.dbDriver
+        db['dbDialect'] = self.dbDialect
         db['dbHost'] = self.dbHost
         db['dbName'] = self.dbName
         db['dbVersion'] = self.dbVersion
         db['user'] = self.user
         db['createTime'] = self.createTime
-        db['dbTableNames'] = self.dbTableNames
+        #db['dbTables'] = self.dbTables
         db.close()
         self.saved = True 
 
@@ -670,20 +548,15 @@ class Project:
         '''Load the waveform directories from the database table.
 
         '''
-        wfDirTable = self.dbTableNames['waveformDir']
-        wfDirAliasTable = self.dbTableNames['waveformDirAlias']
+        wfDir = self.dbTables['waveformDir']
+        wfDirAlias = self.dbTables['waveformDirAlias']
 
-        query = ("SELECT wfDir.id, wfDir.directory as dir, wfDirAlias.alias as dirAlias, wfDir.description " 
-                 "FROM %s as wfDir " 
-                 "LEFT JOIN (select * from %s where user like '%s') as wfDirAlias on (wfDir.id = wfDirAlias.wf_id) "  
-                 "order by wfDir.id") % (wfDirTable, wfDirAliasTable, self.activeUser.name)
-
-        res = self.executeQuery(query)
-        if not res['isError']:
-            self.waveformDirList = res['data']
-            print self.waveformDirList
-        else:
-            print res['msg']
+        for row in self.dbSession.query(wfDir.id, wfDir.directory, wfDirAlias.alias, wfDir.description).join(wfDirAlias, wfDir.id==wfDirAlias.wf_id):
+            print row
+            print row.keys()
+            self.waveformDirList.append(dict(zip(['id', 'dir', 'dirAlias', 'description'], row)))
+        
+        print self.waveformDirList
 
 
     def log(self, mode, msg):
