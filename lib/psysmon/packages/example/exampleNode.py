@@ -22,19 +22,31 @@ class ExampleNode(CollectionNode):
         self.log('status', msg)
 
     def execute(self, prevModuleOutput={}):
-        msg =  "Executing the node %s." % self.name
-        self.log('status', msg)
 
-        with self.project.threadMutex:
-            self.provideData(name = 'exp2InputData', 
-                             data = 'Hallihallo', 
-                             description = 'Ein Test'
-                             )
+        myTable = self.project.dbTables['exampleTable']
+        session = self.project.dbSession
+        data2Insert = {'id': None, 'value': 200}
+        addValue = myTable(**data2Insert)
+        session.add(addValue)
+        session.commit()
 
-        for k in range(5):
-            msg = "value: " + str(k)
-            self.log('status', msg)
-            time.sleep(1)
+        myTable = self.project.dbTables['traceheader']
+        for val in session.query(myTable.begin_time):
+            print "begin_time: %f\n" % val
+
+        #msg =  "Executing the node %s." % self.name
+        #self.log('status', msg)
+
+        #with self.project.threadMutex:
+        #    self.provideData(name = 'exp2InputData', 
+        #                     data = 'Hallihallo', 
+        #                     description = 'Ein Test'
+        #                     )
+
+        #for k in range(5):
+        #    msg = "value: " + str(k)
+        #    self.log('status', msg)
+        #    time.sleep(1)
 
 
 
