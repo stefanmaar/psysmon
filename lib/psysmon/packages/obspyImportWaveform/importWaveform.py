@@ -34,21 +34,13 @@ class ImportWaveform(CollectionNode):
 
         print dbData   
 
-        headerTable = self.project.dbTableNames['traceheader']
-        query =  ("INSERT INTO %s "
-                  "(file_type, wf_id, filename, orig_path, network, recorder_serial, channel, location, sps, numsamp, begin_date, begin_time, station_id, recorder_id, sensor_id) "
-                  "VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)") % headerTable  
-        res = self.project.executeManyQuery(query, dbData)
-
-        if not res['isError']:
-            self.waveformDirList = res['data']
-            print self.waveformDirList
-        else:
-            print res['msg']  
+        self.project.dbSession.add_all(dbData)
+        self.project.dbSession.commit()
 
 
     ## Return a tuple of values to be inserted into the traceheader database.
     def getDbData(self, filename, format, Trace):
+        Header = self.project.dbTables['traceheader']
 
         wfDirId = ""
         for curWfDir in self.project.waveformDirList:
@@ -62,10 +54,21 @@ class ImportWaveform(CollectionNode):
             # Remove the waveform directory from the file path.
             relativeFilename = filename.replace(curWfDir['dirAlias'], '')
             relativeFilename = relativeFilename[1:]
-            return (format, wfDirId, relativeFilename, os.path.dirname(filename), Trace.stats.network,
-                    Trace.stats.station, Trace.stats.channel, Trace.stats.location, 
-                    Trace.stats.sampling_rate, Trace.stats.npts, Trace.stats.starttime.isoformat(' '), 
-                    Trace.stats.starttime.getTimeStamp(), -1, -1, -1)
+            labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path', 
+                      'network', 'recorder_serial', 'channel', 'location', 
+                      'sps', 'numsamp', 'begin_date', 'begin_time', 
+                      'station_id', 'recorder_id', 'sensor_id']
+            header2Insert = dict(zip(labels, (None, format, wfDirId, 
+                            relativeFilename, os.path.dirname(filename), 
+                            Trace.stats.network, Trace.stats.station, 
+                            Trace.stats.channel, Trace.stats.location, 
+                            Trace.stats.sampling_rate, Trace.stats.npts, 
+                            Trace.stats.starttime.isoformat(' '), 
+                            Trace.stats.starttime.getTimeStamp(), -1, -1, -1)))
+
+            print header2Insert
+
+            return Header(**header2Insert)
         else:
             print "File %s is not inside a waveform directory. Skipping this trace." % filename
             return ()
