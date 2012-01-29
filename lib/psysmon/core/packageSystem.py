@@ -32,6 +32,7 @@ This module contains the classes needed to run the pSysmon package system.
 
 import os
 import sys
+from sqlalchemy import MetaData
 
 class PackageManager:
     '''The Package Manager keeps track of the pSysmon packages and 
@@ -195,11 +196,12 @@ class PackageManager:
                          version=pkgModule.version,
                          dependency=None)
 
+        self.dbMetadata = MetaData()
+
         # Get the database queries.
         if 'databaseFactory' in dir(pkgModule):
-            self.parent.logger.debug("Getting the database queries.")
-            queries = pkgModule.databaseFactory()
-            curPkg.addDbTableCreateQuery(queries)
+            self.parent.logger.debug("Getting the database factory method.")
+            curPkg.databaseFactory = pkgModule.databaseFactory
 
         # Get the collection node templates.
         if 'nodeFactory' in dir(pkgModule):
@@ -474,7 +476,7 @@ class Package:
 
         # The package version.
         self.version = version
-        
+
         # The package dependencies.
         self.dependency = dependency
 
@@ -483,6 +485,9 @@ class Package:
 
         # The package database table create queries.
         self.dbTableCreateQueries = {}
+
+        # The package database factory method.
+        self.databaseFactory = None
 
         # The package directory.
         self.baseDir = ""
@@ -558,28 +563,3 @@ class Package:
         else:
             return False
 
-
-    def addDbTableCreateQuery(self, queries):
-        ''' Add a database table creation query to the package.
-
-        If the package needs an own database table, the queries creating these 
-        tables are added to the package using this function.
-        The queries are saved in a dictionary with the table name as the key.
-
-        Parameters
-        ----------
-        queries : List of Strings
-            The mysql queries holding the table create statement.
-
-        See Also
-        --------
-        :class:`psysmon.core.base.packageNodes.CollectionNode`
-        '''
-        if not queries:
-            return
-
-        for curQuery in queries:
-            ind = curQuery.find('</PREFIX/>')
-            ind2 = curQuery.find(' ', ind)
-            tableName = curQuery[ind+11:ind2]
-            self.dbTableCreateQueries[tableName] = curQuery
