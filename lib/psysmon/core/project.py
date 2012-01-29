@@ -414,7 +414,6 @@ class Project:
         db['dbVersion'] = self.dbVersion
         db['user'] = self.user
         db['createTime'] = self.createTime
-        #db['dbTables'] = self.dbTables
         db.close()
         self.saved = True 
 
