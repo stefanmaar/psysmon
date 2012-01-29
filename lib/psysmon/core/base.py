@@ -31,11 +31,8 @@ This module contains the basic modules needed to run the pSysmon program.
 '''
 
 import os
-import sys
 import logging
 import shelve
-from wx.lib.pubsub import Publisher as pub
-import MySQLdb as mysql
 from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
@@ -232,7 +229,7 @@ class Base:
         self.project.activeUser = self.project.user[0]
         try:
             self.project.connect2Db(userPwd)    # Connect to the database.
-        except mysql.Error as e:
+        except Exception as e:
             msg = "Can't connect to the database.\n The database returned the following message:\n%s" % e
             raise PsysmonError(msg)     # If the connection fails, don't go on with the project creation.
 
@@ -256,7 +253,6 @@ class Base:
         filename : String
             The filename of the project file.
         '''
-        import shelve
         db = shelve.open(filename)
         projectDir = os.path.dirname(filename)
         self.project = psysmon.core.project.Project(name = db['name'],
@@ -265,11 +261,13 @@ class Base:
                                                     dbHost = db['dbHost'],
                                                     dbName = db['dbName'],
                                                     dbVersion = db['dbVersion'],
-                                                    dbTableNames = db['dbTableNames']
+                                                    dbDriver = db['dbDriver'],
+                                                    dbDialect = db['dbDialect']
                                                     )
         self.project.updateDirectoryStructure()
         self.project.setCollectionNodeProject()
         db.close()
+
 
 
     def closePsysmonProject(self):
