@@ -26,20 +26,23 @@ description = "The example packages"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 
-def databaseFactory():
-    queries = []
-    myQuery = """CREATE TABLE IF NOT EXISTS </PREFIX/>_exampleTable 
-            (
-            id INT(10) NOT NULL AUTO_INCREMENT,
-            value VARCHAR(20) NOT NULL,
-            PRIMARY KEY  (id)
-            )
-            ENGINE=MyISAM 
-            DEFAULT CHARSET=latin1 
-            COLLATE latin1_general_cs"""
-    queries.append(myQuery)
+def databaseFactory(base):
+    from sqlalchemy import Column
+    from sqlalchemy import Integer, String
 
-    return queries
+    tables = []
+
+    # Define the database table mapper class.
+    class ExampleTable(base):
+        __tablename__ = 'exampleTable'
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        value = Column(String(20))
+
+
+    exampleTable = ExampleTable
+    tables.append(exampleTable)
+    return tables
 
 
 
@@ -60,6 +63,8 @@ def nodeFactory():
     nodeTemplates.append(myTemplate)
 
     return nodeTemplates
+
+
 
 
 
