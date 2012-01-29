@@ -47,60 +47,57 @@ def nodeFactory():
 
 
 
-def databaseFactory():
-    queries = []
+def databaseFactory(base):
+    from sqlalchemy import Column, Integer, String, Text, Float
+    
+    tables = []
 
-    # Create the traceheader database table.
-    query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_traceheader "
-             "("
-             "id int(10) NOT NULL auto_increment,"
-             "file_type varchar(10) NOT NULL default '',"
-             "wf_id INT(10) NOT NULL default -1,"
-             "filename varchar(255) NOT NULL,"
-             "orig_path text NOT NULL,"
-             "network varchar(3) NOT NULL default '',"
-             "recorder_serial varchar(45) NOT NULL default '',"
-             "channel varchar(45) NOT NULL default '',"
-             "location varchar(3) NOT NULL default '',"
-             "sps int(10) unsigned NOT NULL default 0,"
-             "numsamp int(10) unsigned NOT NULL default 0,"
-             "begin_date VARCHAR(26) NOT NULL default '0000-00-00 00:00:00',"
-             "begin_time double unsigned NOT NULL default 0,"
-             "station_id int(10) NOT NULL default -1,"
-             "recorder_id int(10) NOT NULL default -1,"
-             "sensor_id int(10) NOT NULL default -1,"
-             "PRIMARY KEY  (id)"
-             ")"
-             "ENGINE=MyISAM "
-             "DEFAULT CHARSET=latin1 "
-             "COLLATE latin1_general_cs")
-    queries.append(query)
+    # Create the traceheader table mapper class.
+    class Traceheader(base):
+        __tablename__ = 'traceheader'
 
-    # Create the waveformdir database table.
-    query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_waveformDir "
-            "("
-            "id int(10) unsigned NOT NULL auto_increment,"
-            "directory varchar(255) NOT NULL,"
-            "description varchar(255) NOT NULL,"
-            "PRIMARY KEY (id),"
-            "UNIQUE KEY dirIndex (directory)"
-            ")"
-            "ENGINE=MyISAM "
-            "DEFAULT CHARSET=latin1 "
-            "COLLATE latin1_general_cs")
-    queries.append(query)
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        file_type = Column(String(10), nullable=False)
+        wf_id = Column(Integer(10), nullable=False, default=-1)
+        filename = Column(String(255), nullable=False)
+        orig_path = Column(Text, nullable=False)
+        network = Column(String(10), nullable=False, default='')
+        recorder_serial = Column(String(45), nullable=False)
+        channel = Column(String(45), nullable=False)
+        location = Column(String(3), nullable=False)
+        sps = Column(Integer(10), nullable=False)
+        numsamp = Column(Integer(10), nullable=False)
+        begin_date = Column(String(26), nullable=False)
+        begin_time = Column(Float(53), nullable=False)
+        station_id = Column(Integer(10), nullable=False, default=-1)
+        recorder_id = Column(Integer(10), nullable=False, default=-1)
+        sensor_id = Column(Integer(10), nullable=False, default=-1)
+
+
+    tables.append(Traceheader)
+        
+
+    # Create the waveformdir table mapper class.
+    class WaveformDir(base):
+        __tablename__ = 'waveformDir'
+
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        directory = Column(String(255), nullable=False)
+        description = Column(String(255), nullable=False, unique=True)
+
+    tables.append(WaveformDir)
+
 
     # Create the waveformdiralias database table.
-    query = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_waveformDirAlias "
-            "("
-            "wf_id int(10) unsigned NOT NULL,"
-            "user varchar(45) NOT NULL,"
-            "alias varchar(255) NOT NULL,"
-            "PRIMARY KEY  (wf_id, user)"
-            ")"
-            "ENGINE=MyISAM "
-            "DEFAULT CHARSET=latin1 "
-            "COLLATE latin1_general_cs")
-    queries.append(query)
+    class WaveformDirAlias(base):
+        __tablename__ = 'waveformDirAlias'
 
-    return queries
+        wf_id = Column(Integer(10), nullable=False, autoincrement=False, primary_key=True)
+        user = Column(String(45), nullable=False, primary_key=True)
+        alias = Column(String(255), nullable=False)
+
+    tables.append(WaveformDirAlias)
+
+    return tables
+
+
