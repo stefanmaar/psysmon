@@ -849,7 +849,7 @@ class User:
                 project.threadMutex = thread.allocate_lock()
 
             col2Proc = copy.deepcopy(self.activeCollection)
-            col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleard by the setstate method.
+            col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
             col2Proc.procId = col2Proc.name + "_" + timeStampString
