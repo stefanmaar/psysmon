@@ -34,6 +34,8 @@ class ExampleNode(CollectionNode):
         for val in session.query(myTable.begin_time):
             print "begin_time: %f\n" % val
 
+        time.sleep(1)
+
         #msg =  "Executing the node %s." % self.name
         #self.log('status', msg)
 
