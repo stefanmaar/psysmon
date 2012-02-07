@@ -35,12 +35,14 @@ main program.
 import wx
 import wx.aui
 import wx.html
+import wx.grid
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 import os
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
+from psysmon.core.waveserver import WaveServer
 from datetime import datetime
 import webbrowser
 from wx.lib.mixins.inspection import InspectionMixin 
@@ -248,6 +250,9 @@ class PSysmonGui(wx.Frame):
 
                 # Load the waveform directories.
                 self.psyBase.project.loadWaveformDirList()
+
+                # The project waveserver.
+                self.psyBase.project.waveserver = WaveServer('sqlDB', self.psyBase.project)
 
                 # Check if the database tables have to be updated.
                 self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
@@ -1162,7 +1167,16 @@ class EditWaveformDirDlg(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
         self.Bind(wx.EVT_BUTTON, self.onUndo, undoButton)
-        #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+        self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
+        self.wfDir = self.psyBase.project.dbTables['waveformDir']
+        self.wfDirAlias = self.psyBase.project.dbTables['waveformDirAlias']
+
+        # A list of available waveform directories. It consits of tuples of
+        # wfDirTable and wfDirAliasTable instances.
+        self.wfDirList = []
+
+        self.dbSession = self.psyBase.project.getDbSession()
 
         self.history = ActionHistory(attrMap = {}, 
                                      actionTypes = []
@@ -1194,6 +1208,17 @@ class EditWaveformDirDlg(wx.Dialog):
         # we destroy it. 
         if dlg.ShowModal() == wx.ID_OK:
             self.psyBase.project.log('status', 'You selected: %s\n' % dlg.GetPath())
+
+            newWfDir = self.wfDir(dlg.GetPath(), '')
+            newAlias = self.wfDirAlias(self.psyBase.project.activeUser.name,
+                                            dlg.GetPath())
+            newWfDir.aliases.append(newAlias)
+
+            self.dbSession.add(newWfDir)
+            #self.dbSession.add(newWfDirAlias)
+
+            self.wfDirList.append(newWfDir)
+
             rowNumber = 1
             action = Action(style='METHOD',
                             affectedObject=None,
@@ -1244,49 +1269,9 @@ class EditWaveformDirDlg(wx.Dialog):
 
 
     def onOk(self, event):
-        isValid = self.Validate()
-
-        if(isValid):
-            userData = {};
-            for _, curKey, _ in self.dialogData():
-                userData[curKey] = self.edit[curKey].GetValue()
-
-            userCreated = self.createUser(userData)
-            #pub.sendMessage("createNewDbUserDlg.createUser", userData)
-            if(userCreated):
-                # Set the status message.
-                statusString = "Created the user %s successfully." % userData['userName']
-                self.GetParent().log('status', statusString)
-
-                # Close the dialog.
-                self.Destroy()
-
-            else:
-                # Set the status message.
-                statusString = "Error while creating the user %s." % userData['userName']
-                if not self.GetParent():
-                    print "NO PARENT"
-                else:
-                    self.GetParent().log('status', statusString)
-
-
-
-    def createUser(self, userData):
-
-        try:
-            self.psyBase.createPsysmonDbUser(userData['rootUser'],
-                                             userData['rootPwd'], 
-                                             userData['mysqlHost'],
-                                             userData['userName'],
-                                             userData['userPwd'])
-            return True
-        except mysql.Error, e:
-            msg = "An error occured when trying to create the pSysmon database user:\n%s" % e
-            dlg = wx.MessageDialog(None, msg, 
-                                   "MySQL database error.",
-                                   wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            return False
+        print("Commiting the session:")
+        self.dbSession.commit()
+        self.Destroy()
 
 
 
