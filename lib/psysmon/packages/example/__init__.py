@@ -32,7 +32,7 @@ def databaseFactory(base):
 
     tables = []
 
-    # Define the database table mapper class.
+    # Define the sqlAlchemy database table mapper class.
     class ExampleTable(base):
         __tablename__ = 'exampleTable'
 
