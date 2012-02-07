@@ -34,12 +34,14 @@ class ImportWaveform(CollectionNode):
 
         print dbData   
 
-        self.project.dbSession.add_all(dbData)
-        self.project.dbSession.commit()
+        dbSession = self.project.getDbSession()
+        dbSession.add_all(dbData)
+        dbSession.commit()
 
 
     ## Return a tuple of values to be inserted into the traceheader database.
     def getDbData(self, filename, format, Trace):
+        # Get the database traceheader table mapper class.
         Header = self.project.dbTables['traceheader']
 
         wfDirId = ""
