@@ -48,7 +48,8 @@ def nodeFactory():
 
 
 def databaseFactory(base):
-    from sqlalchemy import Column, Integer, String, Text, Float
+    from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
+    from sqlalchemy.orm import relationship
     
     tables = []
 
@@ -75,7 +76,7 @@ def databaseFactory(base):
 
 
     tables.append(Traceheader)
-        
+
 
     # Create the waveformdir table mapper class.
     class WaveformDir(base):
@@ -84,6 +85,11 @@ def databaseFactory(base):
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         directory = Column(String(255), nullable=False)
         description = Column(String(255), nullable=False, unique=True)
+        aliases = relationship("WaveformDirAlias")
+
+        def __init__(self, directory, description):
+            self.directory = directory
+            self.description = description
 
     tables.append(WaveformDir)
 
@@ -92,9 +98,17 @@ def databaseFactory(base):
     class WaveformDirAlias(base):
         __tablename__ = 'waveformDirAlias'
 
-        wf_id = Column(Integer(10), nullable=False, autoincrement=False, primary_key=True)
+        wf_id = Column(Integer(10), 
+                       ForeignKey('waveformDir.id', onupdate="cascade"), 
+                       nullable=False, 
+                       autoincrement=False, 
+                       primary_key=True)
         user = Column(String(45), nullable=False, primary_key=True)
         alias = Column(String(255), nullable=False)
+
+        def __init__(self, user, alias):
+            self.user = user
+            self.alias = alias
 
     tables.append(WaveformDirAlias)
 
