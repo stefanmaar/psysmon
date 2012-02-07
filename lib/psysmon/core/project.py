@@ -35,6 +35,7 @@ import copy
 from wx.lib.pubsub import Publisher as pub
 from datetime import datetime
 import psysmon.core.base
+from psysmon.core.waveserver import WaveServer
 from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
@@ -84,8 +85,9 @@ class Project:
         The database of the project is named according tto the admin unser 
         using *psysmon_* as a prefix (e.g.: psysmon_ADMINUSERNAME).
 
-    dbSession : :class:`~sqlalchemy.orm.session.Session`
-        The sqlalchemy session instance.
+    dbSessionClass : :class:`~sqlalchemy.orm.session.Session`
+        The sqlalchemy session class. This is used to create database sessions.
+        Don't use this Attribute directly, call :meth:`getDbSession`.
 
     dbTables : Dictionary of sqlalchemy mapper classes.
         A dictionary of the project database table mapper classes.
@@ -180,6 +182,9 @@ class Project:
         # A dictionary of the project databaser table names.
         self.dbTables = dbTables
 
+        # The sqlAlchemy database session.
+        self.dbSessionClass = None
+
         # The project file.
         self.projectFile = self.name +".ppr"
 
@@ -206,6 +211,7 @@ class Project:
             self.user.extend(user)
         else:
             self.user.append(user)
+
 
 
 
@@ -243,10 +249,21 @@ class Project:
             engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
         self.dbEngine = create_engine(engineString)
+        self.dbEngine.echo = True
         self.dbMetaData = MetaData(self.dbEngine)
         self.dbBase = declarative_base(metadata = self.dbMetaData)
-        Session = sessionmaker(bind=self.dbEngine)
-        self.dbSession = Session()
+        self.dbSessionClass = sessionmaker(bind=self.dbEngine)
+
+
+    def getDbSession(self):
+        ''' Create a sqlAlchemy database session.
+
+        Returns
+        -------
+        session : :class:`orm.session.Session`
+            A sqlAlchemy database session.
+        '''
+        return self.dbSessionClass()
 
 
     def setActiveUser(self, userName, pwd):
@@ -550,11 +567,12 @@ class Project:
         wfDir = self.dbTables['waveformDir']
         wfDirAlias = self.dbTables['waveformDirAlias']
 
-        for row in self.dbSession.query(wfDir.id, wfDir.directory, wfDirAlias.alias, wfDir.description).join(wfDirAlias, wfDir.id==wfDirAlias.wf_id):
+        dbSession = self.getDbSession()
+        for row in dbSession.query(wfDir.id, wfDir.directory, wfDirAlias.alias, wfDir.description).join(wfDirAlias, wfDir.id==wfDirAlias.wf_id):
             print row
             print row.keys()
             self.waveformDirList.append(dict(zip(['id', 'dir', 'dirAlias', 'description'], row)))
-        
+
         print self.waveformDirList
 
 
