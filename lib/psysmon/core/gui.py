@@ -1124,7 +1124,6 @@ class EditWaveformDirDlg(wx.Dialog):
         # Create the grid editing buttons.
         addDirButton = wx.Button(self, wx.ID_ANY, "add")
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
-        undoButton = wx.Button(self, wx.ID_ANY, "undo")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1133,7 +1132,6 @@ class EditWaveformDirDlg(wx.Dialog):
         # Fill the grid button sizer
         gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
-        gridButtonSizer.Add(undoButton, 0, wx.EXPAND|wx.ALL)
 
         fields = self.getGridColumns()
         self.wfListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
@@ -1159,9 +1157,7 @@ class EditWaveformDirDlg(wx.Dialog):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
-        self.Bind(wx.EVT_BUTTON, self.onUndo, undoButton)
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
-        self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
 
         self.wfDir = self.psyBase.project.dbTables['waveformDir']
         self.wfDirAlias = self.psyBase.project.dbTables['waveformDirAlias']
@@ -1175,8 +1171,6 @@ class EditWaveformDirDlg(wx.Dialog):
                                                      self.wfDir.id==self.wfDirAlias.wf_id
                                                     ).filter(self.wfDirAlias.user==self.psyBase.project.activeUser.name
                                                             ).all()
-        print "wfDirList:"
-        print self.wfDirList
 
         self.history = ActionHistory(attrMap = {}, 
                                      actionTypes = []
@@ -1184,11 +1178,6 @@ class EditWaveformDirDlg(wx.Dialog):
 
         self.updateWfListCtrl()
 
-    def onUndo(self, event):
-        ''' Undo the last recorded action.
-
-        '''
-        self.history.undo()
 
 
     def onAddDirectory(self, event):
@@ -1292,6 +1281,9 @@ class EditWaveformDirDlg(wx.Dialog):
 
 
     def getGridColumns(self):
+        ''' Create the column fields used by the list control.
+
+        '''
         tableField = []
         tableField.append(('id', 'id', 'readonly'))
         tableField.append(('origDir', 'original directory', 'readonly'))
@@ -1300,11 +1292,18 @@ class EditWaveformDirDlg(wx.Dialog):
         return tableField
 
 
-    def onCancel(self, event):
-        self.dbSession.rollback()
-        self.Destroy()
 
     def onOk(self, event):
+        ''' The ok button callback.
+
+        Parameters
+        ----------
+        event :
+            The wxPython event passed to the callback.
+
+        Commit the database changes and update the project's waveform directory 
+        list.
+        '''
         self.dbSession.commit()
 
         # Reload the project's waveform directory list to make sure, that it's 
