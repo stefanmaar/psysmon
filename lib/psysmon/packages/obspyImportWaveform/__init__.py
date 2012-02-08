@@ -83,9 +83,9 @@ def databaseFactory(base):
         __tablename__ = 'waveformDir'
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
-        directory = Column(String(255), nullable=False)
-        description = Column(String(255), nullable=False, unique=True)
-        aliases = relationship("WaveformDirAlias")
+        directory = Column(String(255), nullable=False, unique=True)
+        description = Column(String(255), nullable=False)
+        aliases = relationship("WaveformDirAlias", cascade="all, delete, delete-orphan")
 
         def __init__(self, directory, description):
             self.directory = directory
