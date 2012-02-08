@@ -1136,19 +1136,12 @@ class EditWaveformDirDlg(wx.Dialog):
         gridButtonSizer.Add(undoButton, 0, wx.EXPAND|wx.ALL)
 
         fields = self.getGridColumns()
-        self.wfGrid = wx.grid.Grid(self)
-        self.wfGrid.CreateGrid(1, len(fields))
+        self.wfListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
 
-        roAttr = wx.grid.GridCellAttr()
-        roAttr.SetReadOnly(True)
         for k, (name, label, attr) in enumerate(fields):
-            self.wfGrid.SetColLabelValue(k, label)
-            if(attr == 'readonly'):
-                self.wfGrid.SetColAttr(k, roAttr)
+            self.wfListCtrl.InsertColumn(k, label)
 
-        self.wfGrid.AutoSizeColumns()
-        self.initWfTable()
-        sizer.Add(self.wfGrid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.wfListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
 
         sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
 
@@ -1168,19 +1161,28 @@ class EditWaveformDirDlg(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
         self.Bind(wx.EVT_BUTTON, self.onUndo, undoButton)
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+        self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
 
         self.wfDir = self.psyBase.project.dbTables['waveformDir']
         self.wfDirAlias = self.psyBase.project.dbTables['waveformDirAlias']
 
-        # A list of available waveform directories. It consits of tuples of
-        # wfDirTable and wfDirAliasTable instances.
-        self.wfDirList = []
-
         self.dbSession = self.psyBase.project.getDbSession()
+
+        # A list of available waveform directories. It consits of tuples of
+        # wfDir mapper instances.
+        self.wfDirList =  self.dbSession.query(self.wfDir
+                                              ).join(self.wfDirAlias, 
+                                                     self.wfDir.id==self.wfDirAlias.wf_id
+                                                    ).filter(self.wfDirAlias.user==self.psyBase.project.activeUser.name
+                                                            ).all()
+        print "wfDirList:"
+        print self.wfDirList
 
         self.history = ActionHistory(attrMap = {}, 
                                      actionTypes = []
-                                     ) 
+                                     )
+
+        self.updateWfListCtrl()
 
     def onUndo(self, event):
         ''' Undo the last recorded action.
@@ -1218,6 +1220,7 @@ class EditWaveformDirDlg(wx.Dialog):
             #self.dbSession.add(newWfDirAlias)
 
             self.wfDirList.append(newWfDir)
+            self.addItem2WfListCtrl(newWfDir)
 
             rowNumber = 1
             action = Action(style='METHOD',
@@ -1237,7 +1240,12 @@ class EditWaveformDirDlg(wx.Dialog):
     def onRemoveDirectory(self, event):
         ''' The remove directory callback.
         '''
-        pass
+        selectedRow =  self.wfListCtrl.GetFocusedItem()
+        #item2Delete =  self.wfListCtrl.GetItem(selectedRow, 0)
+        obj2Delete = self.wfDirList.pop(selectedRow)
+        self.dbSession.delete(obj2Delete)
+        self.wfListCtrl.DeleteItem(selectedRow)
+        #self.dbSession.query(self.wfDir).filter(self.wfDir.id==id2Delete).delete()
 
 
     def removeDirectory(self, rowNumber):
@@ -1248,15 +1256,39 @@ class EditWaveformDirDlg(wx.Dialog):
 
 
 
-    def initWfTable(self):
+    def updateWfListCtrl(self):
         ''' Initialize the waveformDir table with values.
 
         '''
-        for k, curDir in enumerate(self.psyBase.project.waveformDirList):
-            self.wfGrid.SetCellValue(k, 0, str(curDir['id']))
-            self.wfGrid.SetCellValue(k, 1, curDir['dir'])
-            self.wfGrid.SetCellValue(k, 2, curDir['dirAlias'])
-            self.wfGrid.SetCellValue(k, 3, curDir['description'])
+        self.wfListCtrl.DeleteAllItems()
+        for k, curDir in enumerate(self.wfDirList):
+            self.wfListCtrl.InsertStringItem(k, str(curDir.id))
+            self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
+            self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
+            self.wfListCtrl.SetStringItem(k, 3, curDir.description)
+
+        self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+
+
+    def addItem2WfListCtrl(self, item):
+        ''' Add a waveform directory to the list control.
+
+        Parameters
+        ----------
+        item : Object
+            The waveformDir mapper instance to be added to the list control.
+        '''
+        k = self.wfListCtrl.GetItemCount()
+        self.wfListCtrl.InsertStringItem(k, str(item.id))
+        self.wfListCtrl.SetStringItem(k, 1, item.directory)
+        self.wfListCtrl.SetStringItem(k, 2, item.aliases[0].alias)
+        self.wfListCtrl.SetStringItem(k, 3, item.description)
+        self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+
 
 
     def getGridColumns(self):
@@ -1268,9 +1300,16 @@ class EditWaveformDirDlg(wx.Dialog):
         return tableField
 
 
+    def onCancel(self, event):
+        self.dbSession.rollback()
+        self.Destroy()
+
     def onOk(self, event):
-        print("Commiting the session:")
         self.dbSession.commit()
+
+        # Reload the project's waveform directory list to make sure, that it's 
+        # consistent with the database.
+        self.psyBase.project.loadWaveformDirList()
         self.Destroy()
 
 
