@@ -564,11 +564,20 @@ class Project:
         '''Load the waveform directories from the database table.
 
         '''
+        # Clear the list to start from beginning.
+        self.waveformDirList = []
+
         wfDir = self.dbTables['waveformDir']
         wfDirAlias = self.dbTables['waveformDirAlias']
 
         dbSession = self.getDbSession()
-        for row in dbSession.query(wfDir.id, wfDir.directory, wfDirAlias.alias, wfDir.description).join(wfDirAlias, wfDir.id==wfDirAlias.wf_id):
+        for row in dbSession.query(wfDir.id, 
+                                   wfDir.directory, 
+                                   wfDirAlias.alias, 
+                                   wfDir.description
+                                  ).join(wfDirAlias, 
+                                          wfDir.id==wfDirAlias.wf_id
+                                        ).filter(wfDirAlias.user==self.activeUser.name):
             print row
             print row.keys()
             self.waveformDirList.append(dict(zip(['id', 'dir', 'dirAlias', 'description'], row)))
