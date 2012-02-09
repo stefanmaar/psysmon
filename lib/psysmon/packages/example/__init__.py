@@ -35,6 +35,7 @@ def databaseFactory(base):
     # Define the sqlAlchemy database table mapper class.
     class ExampleTable(base):
         __tablename__ = 'exampleTable'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         value = Column(String(20))
