@@ -98,7 +98,7 @@ def databaseFactory(base):
         channel_name = Column(String(10), nullable=False)
         UniqueConstraint('recorder_id', 'serial', 'type', 'rec_channel_name', 'channel_name')
 
-        sensorParams = relationship('GeomSensorParam', cascade='all, delete-orphan')
+        parameters = relationship('GeomSensorParam', cascade='all, delete-orphan')
 
         
         def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name):
@@ -128,11 +128,12 @@ def databaseFactory(base):
         tf_units = Column(String(20))
         gain = Column(Float)
         sensitivity = Column(Float(53))
+        sensitivity_units = Column(String(30))
         bitweight = Column(Float(53))
         bitweight_units = Column(String(15))
         UniqueConstraint = ('sensor_id', 'start_time', 'end_time')
 
-        transferFunction = relationship('GeomTfPz', cascade='all, delete-orphan')
+        tfPz = relationship('GeomTfPz', cascade='all, delete-orphan')
 
 
         def __init__(self, sensor_id, start_time, end_time, normalization_factor, 
@@ -224,6 +225,7 @@ def databaseFactory(base):
             self.Y = Y
             self.Z = Z
             self.coord_system = coord_system
+            self.description = description
 
     tables.append(GeomStation)
 
@@ -239,6 +241,12 @@ def databaseFactory(base):
         end_time = Column(Float(53))
 
         child = relationship('GeomSensor')
+
+        def __init__(self, stat_id, sensor_id, start_time, end_time):
+            self.stat_id = stat_id
+            self.sensor_id = sensor_id
+            self.start_time = start_time
+            self.end_time = end_time
 
 
     tables.append(GeomSensorTime)
