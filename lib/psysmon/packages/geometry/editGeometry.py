@@ -32,7 +32,7 @@ This module contains the classes of the editGeometry dialog window.
 
 
 from psysmon.core.packageNodes import CollectionNode
-from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
 import wx.aui
 import wx.grid
@@ -118,6 +118,9 @@ class EditGeometryDlg(wx.Frame):
 
         #self.initUserSelections()
 
+        # The inventory database controller.
+        self.dbController = InventoryDatabaseController(self.psyProject)
+
         # Load the inventory from the database.
         self.loadInventoryFromDb()
 
@@ -172,13 +175,12 @@ class EditGeometryDlg(wx.Frame):
         self.mgr.Update()
 
 
-    ## Load the inventory from the project database.
-    #
     def loadInventoryFromDb(self):
-        curInventory = Inventory("new inventory")
+        ''' Load the inventory from the project database.
 
+        '''
         try:
-            curInventory.loadFromDb(self.psyProject)
+            curInventory = self.dbController.load()
         except Warning as w:
                 print w
 
@@ -250,7 +252,8 @@ class EditGeometryDlg(wx.Frame):
 
         if self.selectedInventory.type not in 'db':
             print "Saving a non db inventory to the database."
-            self.selectedInventory.write2Db(self.psyProject)
+            #self.selectedInventory.write2Db(self.psyProject)
+            self.dbController.write(self.selectedInventory)
 
         else:
             print "Updating the existing project inventory database."
@@ -459,7 +462,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selectedInventory = pyData
-            self.Parent.inventoryViewNotebook.updateMapView(pyData)
+            #self.Parent.inventoryViewNotebook.updateMapView(pyData)
 
     ## Update the inventory tree.
     #
