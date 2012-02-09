@@ -17,7 +17,7 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     """
     def setUp(self):
         # Get the pSysmon base directory.
-        psyBaseDir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/01_src/psysmon/src/psysmon/'
+        psyBaseDir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/01_src/psysmon/lib/psysmon/'
         psyBaseDir = os.path.dirname(psyBaseDir)
 
         # Initialize the pSysmon base object.
@@ -30,6 +30,9 @@ class EditGeometryDlgTestCase(unittest.TestCase):
 
         # Quest for the user and the database password.
         psyBase.project.setActiveUser('stefan','')
+
+        # Load the database structure of the project packages.
+        psyBase.project.loadDatabaseStructure(psyBase.packageMgr.packages)
 
         self.app =psygui.PSysmonApp()
         self.dlg = EditGeometryDlg(None, psyBase.project)
