@@ -567,8 +567,8 @@ class Project:
         # Clear the list to start from beginning.
         self.waveformDirList = []
 
-        wfDir = self.dbTables['waveformDir']
-        wfDirAlias = self.dbTables['waveformDirAlias']
+        wfDir = self.dbTables['waveform_dir']
+        wfDirAlias = self.dbTables['waveform_dir_alias']
 
         dbSession = self.getDbSession()
         for row in dbSession.query(wfDir.id, 

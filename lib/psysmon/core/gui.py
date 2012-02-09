@@ -1159,8 +1159,8 @@ class EditWaveformDirDlg(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
 
-        self.wfDir = self.psyBase.project.dbTables['waveformDir']
-        self.wfDirAlias = self.psyBase.project.dbTables['waveformDirAlias']
+        self.wfDir = self.psyBase.project.dbTables['waveform_dir']
+        self.wfDirAlias = self.psyBase.project.dbTables['waveform_dir_alias']
 
         self.dbSession = self.psyBase.project.getDbSession()
 
