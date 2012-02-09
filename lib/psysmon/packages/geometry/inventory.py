@@ -69,12 +69,6 @@ class Inventory:
         ## The networks contained in the inventory.
         self.networks = {}
 
-        ## The inventory database controller.
-        #
-        # The database controller is used to load and update the inventory saved
-        # in the pSysmon project database.
-        self.dbController = None
-
 
 
     ## Add a recorder to the inventory.
@@ -172,9 +166,9 @@ class Inventory:
 
         try:
             self.dbController.loadRecorder()
-            self.dbController.loadNetwork()
-            self.dbController.loadStation()
-            self.dbController.loadUnassignedSensor()
+            #self.dbController.loadNetwork()
+            #self.dbController.loadStation()
+            #self.dbController.loadUnassignedSensor()
         except PsysmonError as e:
             raise e
 
@@ -189,9 +183,6 @@ class Inventory:
 
 
 
-
-
-
     ## Save the inventory to the pSysmon database.
     #
     # Write a non-database inventory (e.g. imported from xml file) to the pSysmon database. 
@@ -200,180 +191,21 @@ class Inventory:
 
         # Write the recorders and sensors to the database.
         for curRecorder in self.recorders:
-            curRecorder.write2Db(project)
+            self.dbController.insertRecorder(curRecorder)
 
 
         # Write the networks and the contained stations to the database.
-        for curNetwork in self.networks.itervalues():
-            curNetwork.write2Db(project)
+        #for curNetwork in self.networks.itervalues():
+        #    curNetwork.write2Db(project)
 
-            for curStation in curNetwork.stations.itervalues():
-                curStation.write2Db(project)
+        #    for curStation in curNetwork.stations.itervalues():
+        #        curStation.write2Db(project)
 
         # Write the unassigned stations to the database.
-        for curStation in self.stations:
-            curStation.write2Db(project)
-
-        #self.writeRecorders2Db(project)
-        #self.writeSensors2Db(project)
-        #self.writeSensorParam2Db(project)
+        #for curStation in self.stations:
+        #    curStation.write2Db(project)
 
 
-    ## Write the recorders to the database.
-    #
-    # 
-    def writeRecorders2Db(self, project):
-        # Create the data lists to be inserted into the db.
-        dbRecorderData = []         # The recorder data.
-        for curRecorder in self.recorders:
-            dbRecorderData.append((curRecorder.serial, curRecorder.type))
-
-
-        # Write the recorder data to the geom_recorder table.
-        tableName = project.dbTableNames['geom_recorder']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(serial, type) "
-                  "VALUES (%%s, %%s)") % tableName  
-        res = project.executeManyQuery(query, dbRecorderData)
-
-        if not res['isError']:
-            print("Successfully wrote the recorders to the database.")
-        else:
-            print res['msg']  
-
-
-
-    ## Write the sensors to the database.
-    def writeSensors2Db(self, project):
-        # Get the recorder ids from the database.
-        tableName = project.dbTableNames['geom_recorder']
-        query = ("SELECT id, serial, type FROM %s") % tableName
-        res = project.executeQuery(query)
-        recData = res['data']
-
-        # Prepare the sensor data to be inserted into the database. 
-        dbSensorData = []           # The sensor data.
-        for curRecorder in self.recorders:
-            # Find the correct database recorder id.
-            ind = [row['serial'] for row in recData].index(curRecorder.serial)
-            if recData[ind]['type'] in curRecorder.type:
-                curRecId = recData[ind]['id']
-            else:
-                curRecId = -1
-
-            # Fill the sensor database data.   
-            for curSensor in curRecorder.sensors:
-                dbSensorData.append((curRecId,
-                                     curSensor.label,
-                                     curSensor.serial, 
-                                     curSensor.type,
-                                     curSensor.recChannelName,
-                                     curSensor.channelName))
-
-
-        # Write the sensor data to the geom_sensor table..
-        tableName = project.dbTableNames['geom_sensor']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(recorder_id, label, serial, type, rec_channel_name, channel_name) "
-                  "VALUES (%%s, %%s, %%s, %%s, %%s, %%s)") % tableName  
-        res = project.executeManyQuery(query, dbSensorData)
-
-        if not res['isError']:
-            print("Successfully wrote the sensors to the database.")
-        else:
-            print res['msg'] 
-
-
-    ## Write the sensor paramters to the database.
-    def writeSensorParam2Db(self, project):
-        # Get the sensor ids from the database.
-        tableName = project.dbTableNames['geom_sensor']
-        query = ("SELECT id, recorder_id, serial, rec_channel_name, channel_name FROM %s") % tableName
-        res = project.executeQuery(query)
-        sensIdData = res['data']
-
-
-        # Prepare the sensor parameter data to be inserted into the database. 
-        dbSensorParamData = []           # The sensor data.
-        for curRecorder in self.recorders:             
-            # Fill the sensor database data.   
-            for curSensor in curRecorder.sensors:
-                # Find the correct database recorder id.
-                curSensorId = [row['id'] for row in sensIdData 
-                               if (row['serial'], row['rec_channel_name'], row['channel_name']) == (curSensor.serial, curSensor.recChannelName, curSensor.channelName)]
-
-                if not curSensorId:
-                    curSensorId = -1
-
-                for (curParam, curStart, curEnd) in curSensor.parameters:
-                    if curStart:
-                        startTime = curStart.getTimeStamp()
-                    else:
-                        startTime = None
-
-                    if curEnd:
-                        endTime = curEnd.getTimeStamp()
-                    else:
-                        endTime = None
-
-                    dbSensorParamData.append((curSensorId[0],
-                                              startTime,
-                                              endTime,
-                                              curParam.tfNormalizationFactor,
-                                              curParam.tfNormalizationFrequency,
-                                              curParam.tfType,
-                                              curParam.tfUnits,
-                                              curParam.gain,
-                                              curParam.sensitivity,
-                                              curParam.sensitivityUnits,
-                                              curParam.bitweight,
-                                              curParam.bitweightUnits))
-
-        # Write the sensor parameter data to the geom_sensor_param table..
-        tableName = project.dbTableNames['geom_sensor_param']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(sensor_id, start_time, end_time, normalization_factor, normalization_frequency, type, tf_units, gain, sensitivity, sensitivity_units, bitweight, bitweight_units) "
-                  "VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)") % tableName  
-        res = project.executeManyQuery(query, dbSensorParamData)
-
-        if not res['isError']:
-            print("Successfully wrote the sensor parameters to the database.")
-        else:
-            print res['msg'] 
-
-
-    ## Write the transfer function PAZ to the database.
-    def writeTf2Db(self, project, param, paramId):
-        dbData = []
-        for curPole in param.tfPoles:
-            dbData.append((paramId, 
-                           1,
-                           curPole.real,
-                           curPole.imag))
-
-        for curZero in param.tfZeros:
-            dbData.append((paramId,
-                           0,
-                           curZero.real,
-                           curPole.imag))
-
-        # Write the poles and zeros to the geom_tf_pz table.
-        tableName = project.dbTableNames['geom_tf_pz']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(param_id, type, complex_real, complex_imag) "
-                  "VALUES (%%s, %%s, %%s, %%s") % tableName  
-        res = project.executeManyQuery(query, dbData)
-
-        if not res['isError']:
-            print("Successfully wrote the sensor parameters to the database.")
-        else:
-            print res['msg']   
-
-
-
-    ## Write a station to the inventory.
-    def writeStation2Db(self, project):
-        pass
 
     ## Get a sensor from the inventory.
     def getSensor(self, recSerial, senSerial, recChannelName):
@@ -418,36 +250,244 @@ class Inventory:
 ## Load the inventory from a pSysmon database.
 class InventoryDatabaseController:
 
-    def __init__(self, parentInventory, project):   
-
-        ## The inventory to which the database should be loaded.
-        self.inventory = parentInventory
+    def __init__(self, project):   
 
         ## The pSysmon project.
         self.project = project
 
+        # The database session.
+        self.dbSession = self.project.getDbSession()
 
-    ## Load the recorders from the database.
-    def loadRecorder(self):
-        # Load the recorder data from the geom_recorder table.
-        tableName = self.project.dbTableNames['geom_recorder']
-        query =  ("SELECT id, serial, type FROM %s ") % tableName 
-        res = self.project.executeQuery(query)
+        self.sensorMappers = {}
 
-        if not res['isError']:
-            for curData in res['data']:
-                print "Loading recorder %s.\n" % curData['serial']
-                curRecorder = Recorder(id=curData['id'],
-                                       serial=curData['serial'],
-                                       type=curData['type'],
-                                       parentInventory=self.inventory)
 
-                curRecorder.loadSensorFromDb(self.project)
+    def load(self):
+        ''' Load the inventory from the pSysmon database.
+        
+        Returns
+        -------
+        inventory : :class:`Inventory`
+            The psysmon inventory loaded from the database. 
+        '''
+        inventory = Inventory('project inventory')
+        inventory.type = 'db'
+        
+        self.loadRecorders(inventory)
+        self.loadNetworks(inventory)
 
-                self.inventory.addRecorder(curRecorder)
+        return inventory
 
-        else:
-            print res['msg']  
+
+    def write(self, inventory):
+        ''' Write the in inventory to the database.
+
+        Parameters
+        ----------
+        inventory : :class:`Inventory`
+            The inventory to be written to the database.
+        '''
+        for curRecorder in inventory.recorders:
+            self.insertRecorder(curRecorder) 
+
+        for curNetwork in inventory.networks.values():
+            self.insertNetwork(curNetwork)
+
+    
+    def loadRecorders(self, inventory):
+        ''' Load the recorder data from the geom_recorder table.
+        
+        Parameters
+        ----------
+        inventory : :class:`Inventory`
+            The inventory to which the loaded recorders should be added.
+        '''
+        dbRecorder = self.project.dbTables['geom_recorder']
+
+        for curInstance in self.dbSession.query(dbRecorder).order_by(dbRecorder.serial):
+            print "Loading recorder %s.\n" % curInstance.serial
+            curRecorder = Recorder(id=curInstance.id,
+                                   serial=curInstance.serial,
+                                   type=curInstance.type,
+                                   parentInventory=inventory)
+
+            for curDbSensor in curInstance.sensors:
+                curSensor = Sensor(curDbSensor.serial,
+                                   curDbSensor.type,
+                                   curDbSensor.rec_channel_name,
+                                   curDbSensor.channel_name,
+                                   curDbSensor.label,
+                                   id=curDbSensor.id,
+                                   recorderId=curRecorder.id,
+                                   recorderType=curRecorder.type,
+                                   parentInventory=inventory)
+                curRecorder.addSensor(curSensor)
+
+                for curDbParam in curDbSensor.parameters:
+                    curParam = SensorParameter(curSensor.id,
+                                               curDbParam.gain,
+                                               curDbParam.bitweight,
+                                               curDbParam.bitweight_units,
+                                               curDbParam.sensitivity,
+                                               curDbParam.sensitivity_units,
+                                               tfType = curDbParam.type,
+                                               tfUnits = curDbParam.tf_units,
+                                               tfNormalizationFactor = curDbParam.normalization_factor,
+                                               tfNormalizationFrequency = curDbParam.normalization_frequency,
+                                               id=curDbParam.id)
+                    curSensor.addParameter(curParam, curDbParam.start_time, curDbParam.end_time)
+
+
+                
+
+            inventory.addRecorder(curRecorder)
+
+
+    def loadNetworks(self, inventory):
+        ''' Load the inventory networks from the pSysmon database.
+
+        Parameters
+        ----------
+        inventory : :class:`Inventory`
+        '''
+        dbNetwork = self.project.dbTables['geom_network']
+
+        for curDbNetwork in self.dbSession.query(dbNetwork).order_by(dbNetwork.name):
+            curNetwork = Network(curDbNetwork.name,
+                                 curDbNetwork.description,
+                                 curDbNetwork.type,
+                                 parentInventory=inventory)
+
+            for curDbStation in curDbNetwork.stations:
+                curStation = Station(curDbStation.name,
+                                     curDbStation.location,
+                                     curDbStation.X,
+                                     curDbStation.Y,
+                                     curDbStation.Z,
+                                     coordSystem=curDbStation.coord_system,
+                                     description=curDbStation.description,
+                                     network=curNetwork.name,
+                                     id=curDbStation.id,
+                                     parentInventory=inventory)
+                curNetwork.addStation(curStation)
+
+                for curDbSensor in curDbStation.sensors:
+                    print "\n\n##########################"
+                    print curDbSensor
+                    print "##############################"
+
+            inventory.addNetwork(curNetwork)
+
+
+
+    def insertRecorder(self, recorder):
+        ''' Write a recorder to the database.
+
+        '''
+        dbRecorder = self.project.dbTables['geom_recorder']
+        dbSensor = self.project.dbTables['geom_sensor']
+        dbParameter = self.project.dbTables['geom_sensor_param']
+        dbTfPz = self.project.dbTables['geom_tf_pz']
+
+        rec2Add = dbRecorder(recorder.serial, recorder.type)
+      
+        # Add all sensors assigned to the recorder. 
+        for curSensor in recorder.sensors:
+            sensor2Add = dbSensor(recorder.id, 
+                                  curSensor.label,
+                                  curSensor.serial,
+                                  curSensor.type,
+                                  curSensor.recChannelName,
+                                  curSensor.channelName)
+            rec2Add.sensors.append(sensor2Add)
+            self.sensorMappers[curSensor] = sensor2Add
+
+            # Add the sensor parameters.
+            for curParam, startTime, endTime in curSensor.parameters:
+                if startTime:
+                    startTime = startTime.getTimeStamp()
+
+                if endTime:
+                    endTime = endTime.getTimeStamp()
+
+                param2Add = dbParameter(curSensor.id,
+                                        startTime,
+                                        endTime,
+                                        curParam.tfNormalizationFactor, 
+                                        curParam.tfNormalizationFrequency,
+                                        curParam.tfType,
+                                        curParam.tfUnits,
+                                        curParam.gain,
+                                        curParam.sensitivity,
+                                        curParam.bitweight,
+                                        curParam.bitweightUnits)
+                sensor2Add.parameters.append(param2Add)
+
+                # Add the the transfer function poles. 
+                for curPole in curParam.tfPoles:
+                    complex2Add = dbTfPz(curParam.id,
+                                         1,
+                                         curPole.real,
+                                         curPole.imag)
+                    curParam.tfPz.append(complex2Add)
+
+                # Add the the transfer function zeros. 
+                for curPole in curParam.tfZeros:
+                    complex2Add = dbTfPz(curParam.id,
+                                         0,
+                                         curPole.real,
+                                         curPole.imag)
+                    curParam.tfPz.append(complex2Add)
+
+        self.dbSession.add(rec2Add)
+        self.dbSession.commit()
+
+
+    def insertNetwork(self, network):
+        ''' Insert a network in to the psysmon database.
+
+        Parameters
+        ----------
+        network : :class:`Network`
+            The network to insert into the database.
+        '''
+        dbNetwork = self.project.dbTables['geom_network']
+        dbStation = self.project.dbTables['geom_station']
+        dbSensorTime = self.project.dbTables['geom_sensor_time']
+
+        network2Add = dbNetwork(network.name, 
+                                network.description,
+                                network.type)
+
+        for curStation in network.stations.values():
+            station2Add = dbStation(network.name,
+                                    curStation.name,
+                                    curStation.location,
+                                    curStation.x,
+                                    curStation.y,
+                                    curStation.z,
+                                    curStation.coordSystem,
+                                    curStation.description)
+            network2Add.stations.append(station2Add)
+
+            for curSensor, startTime, endTime in curStation.sensors:
+                if startTime:
+                    startTime = startTime.getTimeStamp()
+                
+                if endTime:
+                    endTime = endTime.getTimeStamp()
+
+                sensorTime2Add = dbSensorTime(curStation.id,
+                                              curSensor.id,
+                                              startTime, 
+                                              endTime)
+
+                sensorTime2Add.child = self.sensorMappers[curSensor]
+                station2Add.sensors.append(sensorTime2Add)
+
+
+        self.dbSession.add(network2Add)
+        self.dbSession.commit()
+
 
 
     ## Load the networks from the database.
@@ -979,35 +1019,42 @@ class Recorder:
     ## Write the recorder to the pSysmon database.
     def write2Db(self, project):                         
 
+        dbRecorder = project.dbTables['geom_recorder']
+        dbSensor = project.dbTables['geom_sensor']
+
+        newRecorder = dbRecorder(self.serial, self.type)
+        self.dbSession.add(newRecorder)
+
         # Write the recorder data to the geom_recorder table.
-        tableName = project.dbTableNames['geom_recorder']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(serial, type) "
-                  "VALUES ('%s', '%s')") % (tableName, self.serial, self.type)  
-        res = project.executeQuery(query)
+        #tableName = project.dbTableNames['geom_recorder']
+        #query =  ("INSERT IGNORE INTO %s "
+        #          "(serial, type) "
+        #          "VALUES ('%s', '%s')") % (tableName, self.serial, self.type)  
+        #res = project.executeQuery(query)
 
-        if not res['isError']:
-            print("Successfully wrote the recorders to the database.")
-        else:
-            print res['msg']  
+        #if not res['isError']:
+        #    print("Successfully wrote the recorders to the database.")
+        #else:
+        #    print res['msg']  
 
-        query = ("SELECT id, serial, type FROM %s WHERE serial LIKE '%s' AND type LIKE '%s'") % (tableName, self.serial, self.type)  
-        res = project.executeQuery(query)
-        recData = res['data']
+        #query = ("SELECT id, serial, type FROM %s WHERE serial LIKE '%s' AND type LIKE '%s'") % (tableName, self.serial, self.type)  
+        #res = project.executeQuery(query)
+        #recData = res['data']
 
-        if not res['isError']:
-            if not recData:
-                print "No id found for recorder %s-%s" %(self.serial, self.type)
-                recId = -1
-            else:
-                recId = recData[0]['id']
-                print "Assigned id %s to recorder %s-%s." % (recId, self.serial, self.type)
-        else:
-            print res['msg']  
+        #if not res['isError']:
+        #    if not recData:
+        #        print "No id found for recorder %s-%s" %(self.serial, self.type)
+        #        recId = -1
+        #    else:
+        #        recId = recData[0]['id']
+        #        print "Assigned id %s to recorder %s-%s." % (recId, self.serial, self.type)
+        #else:
+        #    print res['msg']  
 
 
-        for curSensor in self.sensors:
-            curSensor.write2Db(project, recId)
+        #for curSensor in self.sensors:
+        #    curSensor.write2Db(project, recId)
+
 
     ## Update the recorder database entry.    
     def updateDb(self, project):
@@ -1571,7 +1618,7 @@ class SensorParameter:
             if not res['isError']:
                 data = res['data']
                 if data:
-                    paramId = data[0]['LAST_INSERT_ID()']
+                    paramrecorderTypeId = data[0]['LAST_INSERT_ID()']
 
                     dbData = []
                     for curPole in self.tfPoles:
