@@ -56,123 +56,192 @@ def nodeFactory():
 
 
 
-def databaseFactory():
-    queries=[]
+def databaseFactory(base):
+    from sqlalchemy import Column, Integer, String, Float
+    from sqlalchemy import ForeignKey, UniqueConstraint
+    from sqlalchemy.orm import relationship
 
-    # The geom_recorder table.
-    myQuery = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
-              "("
-              "id int(10) NOT NULL auto_increment,"
-              "serial varchar(45) NOT NULL default '',"
-              "type varchar(255) NOT NULL default '',"
-              "PRIMARY KEY  (id),"
-              "UNIQUE (serial, type)"
-              ") "
-              "ENGINE=MyISAM "
-              "DEFAULT CHARSET=latin1 "
-              "COLLATE latin1_general_cs")
-    queries.append(myQuery)
+    tables = []
 
-    # The geom_sensor table.
-    myQuery = ("CREATE TABLE  </PREFIX/>_geom_sensor "
-               "("
-               "id int(10) NOT NULL auto_increment,"
-               "recorder_id int(10) NOT NULL,"
-               "label varchar(255) NOT NULL,"
-               "serial varchar(45) NOT NULL default '',"
-               "type varchar(255) NOT NULL default '',"
-               "rec_channel_name varchar(10) NOT NULL default '',"
-               "channel_name varchar(10) NOT NULL default '',"
-               "PRIMARY KEY  (id),"
-               "UNIQUE (recorder_id, serial, type, rec_channel_name, channel_name)"
-               ") " 
-               "ENGINE=MyISAM "
-               "DEFAULT CHARSET=latin1 COLLATE "
-               "latin1_general_cs")
-    queries.append(myQuery) 
+    # Create the geom_recorder table mapper class.
+    class GeomRecorder(base):
+        __tablename__ = 'geom_recorder'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
 
-    # The geom_paz table.
-    myQuery = ("CREATE TABLE  </PREFIX/>_geom_sensor_param "
-             "("
-             "id int(10) NOT NULL auto_increment,"
-             "sensor_id int(10) NOT NULL default '-1',"
-             "start_time double default NULL,"
-             "end_time double default NULL,"
-             "normalization_factor float default NULL,"
-             "normalization_frequency float default NULL,"
-             "type varchar(150) default NULL,"
-             "tf_units varchar(20) default NULL,"
-             "gain float default NULL,"
-             "sensitivity double default NULL,"
-             "sensitivity_units varchar(15) default NULL,"
-             "bitweight double default NULL,"
-             "bitweight_units varchar(15) default NULL,"
-             "PRIMARY KEY (id),"
-             "UNIQUE(sensor_id, start_time, end_time)"
-             ") " 
-             "ENGINE=MyISAM "
-             "DEFAULT CHARSET=latin1 COLLATE "
-             "latin1_general_cs")
-    queries.append(myQuery) 
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        serial = Column(String(45), nullable=False)
+        type = Column(String(255), nullable=False)
+        UniqueConstraint('serial', 'type')
 
-    # The geom_paz_pz table.
-    myQuery = ("CREATE TABLE  </PREFIX/>_geom_tf_pz "
-             "("
-             "param_id int(10) NOT NULL,"
-             "type int(1) unsigned NOT NULL default 1,"
-             "complex_real float NOT NULL,"
-             "complex_imag float NOT NULL"
-             ") " 
-             "ENGINE=MyISAM "
-             "DEFAULT CHARSET=latin1 COLLATE "
-             "latin1_general_cs")
-    queries.append(myQuery) 
+        sensors = relationship('GeomSensor', cascade='all, delete-orphan')
 
-    # The geom_network table.
-    myQuery = ("CREATE TABLE  </PREFIX/>_geom_network "
-             "("
-             "name varchar(10) NOT NULL,"
-             "description varchar(100) default NULL,"
-             "type varchar(255) default NULL,"
-             "PRIMARY KEY (name)"
-             ") "
-             "ENGINE=MyISAM "
-             "DEFAULT CHARSET=latin1 "
-             "COLLATE latin1_general_cs")
-    queries.append(myQuery) 
+        
+        def __init__(self, serial, type):
+            self.serial = serial
+            self.type = type
 
-    # The geom_station table.
-    myQuery = ("CREATE TABLE  </PREFIX/>_geom_station "
-             "("
-             "id int(10) NOT NULL auto_increment,"
-             "net_name varchar(10) default NULL,"
-             "name varchar(10) NOT NULL default '',"
-             "location varchar(3) NOT NULL default '00',"
-             "X double NOT NULL default 0,"
-             "Y double NOT NULL default 0,"
-             "Z float NOT NULL default 0,"
-             "coord_system varchar(50) default NULL,"
-             "description varchar(255) default NULL,"
-             "PRIMARY KEY  (id),"
-             "UNIQUE (net_name, name, location)"
-             ") "
-             "ENGINE=MyISAM "
-             "DEFAULT CHARSET=latin1 "
-             "COLLATE latin1_general_cs")
-    queries.append(myQuery) 
 
-    # The geom_sensor_time table.
-    myQuery = ("CREATE TABLE  </PREFIX/>_geom_sensor_time "
-             "("
-             "stat_id int(10) NOT NULL,"
-             "sensor_id int(10) NOT NULL,"
-             "start_time double signed NOT NULL,"
-             "end_time double default NULL,"
-             "PRIMARY KEY  (stat_id, sensor_id, start_time)"
-             ") "
-             "ENGINE=MyISAM "
-             "DEFAULT CHARSET=latin1 "
-             "COLLATE latin1_general_cs")
-    queries.append(myQuery) 
+    tables.append(GeomRecorder)
 
-    return queries
+
+    # Create the geom_sensor table mapper class.
+    class GeomSensor(base):
+        __tablename__ = 'geom_sensor'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        recorder_id = Column(Integer(10), ForeignKey('geom_recorder.id', onupdate='cascade'), nullable=False)
+        label = Column(String(255), nullable=False)
+        serial = Column(String(45), nullable=False)
+        type = Column(String(255), nullable=False)
+        rec_channel_name = Column(String(10), nullable=False)
+        channel_name = Column(String(10), nullable=False)
+        UniqueConstraint('recorder_id', 'serial', 'type', 'rec_channel_name', 'channel_name')
+
+        sensorParams = relationship('GeomSensorParam', cascade='all, delete-orphan')
+
+        
+        def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name):
+            self.recorder_id = recorder_id
+            self.label = label
+            self.serial = serial
+            self.type = type
+            self.rec_channel_name = rec_channel_name
+            self.channel_name = channel_name
+
+
+    tables.append(GeomSensor)
+
+
+    # Create the geom_sensor_param table mapper.
+    class GeomSensorParam(base):
+        __tablename__ = 'geom_sensor_param'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=False, default=-1)
+        start_time = Column(Float(53))
+        end_time = Column(Float(53))
+        normalization_factor = Column(Float)
+        normalization_frequency = Column(Float)
+        type = Column(String(150))
+        tf_units = Column(String(20))
+        gain = Column(Float)
+        sensitivity = Column(Float(53))
+        bitweight = Column(Float(53))
+        bitweight_units = Column(String(15))
+        UniqueConstraint = ('sensor_id', 'start_time', 'end_time')
+
+        transferFunction = relationship('GeomTfPz', cascade='all, delete-orphan')
+
+
+        def __init__(self, sensor_id, start_time, end_time, normalization_factor, 
+                     normalization_frequency, type, tf_units, gain, sensitivity, 
+                     bitweight, bitweight_units):
+            self.sensor_id = sensor_id
+            self.start_time = start_time
+            self.end_time = end_time
+            self.normalization_factor = normalization_factor
+            self.normalization_frequency = normalization_frequency
+            self.type = type
+            self.tf_units = tf_units
+            self.gain = gain
+            self.sensitivity = sensitivity
+            self.bitweight = bitweight
+            self.bitweight_units = bitweight_units
+
+
+    tables.append(GeomSensorParam)
+
+
+    # Create the geom_tf_pz table mapper.
+    class GeomTfPz(base):
+        __tablename__ = 'geom_tf_pz'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        param_id = Column(Integer(10), ForeignKey('geom_sensor_param.id', onupdate='cascade'), nullable=False)
+        type = Column(Integer(2), nullable=False, default=1)
+        complex_real = Column(Float, nullable=False)
+        complex_imag = Column(Float, nullable=False)
+
+
+        def __init__(self, param_id, type, complex_real, complex_imag):
+            self.param_id = param_id
+            self.type = type
+            self.complex_real = complex_real
+            self.complex_imag = complex_imag
+
+    tables.append(GeomTfPz)
+
+
+
+    # Create the geom_network table mapper.
+    class GeomNetwork(base):
+        __tablename__ = 'geom_network'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        name = Column(String(10), primary_key=True, nullable=False)
+        description = Column(String(255))
+        type = Column(String(255))
+
+        stations = relationship('GeomStation', cascade='all, delete-orphan')
+
+
+        def __init__(self, name, description, type):
+            self.name = name
+            self.description = description
+            self.type = type
+
+    tables.append(GeomNetwork)
+
+
+    # Create the geom_station table mapper class.
+    class GeomStation(base):
+        __tablename__ = 'geom_station'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        net_name = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=False)
+        name = Column(String(10), nullable=False)
+        location = Column(String(3), nullable=False)
+        X = Column(Float(53), nullable=False)
+        Y = Column(Float(53), nullable=False)
+        Z = Column(Float(53), nullable=False)
+        coord_system = Column(String(50), nullable=False)
+        description = Column(String(255))
+        UniqueConstraint('net_name', 'name', 'location')
+
+        sensors = relationship('GeomSensorTime')
+
+
+        def __init__(self, net_name, name, location, X, Y, Z, coord_system, 
+                     description):
+            self.net_name = net_name
+            self.name = name
+            self.location = location
+            self.X = X
+            self.Y = Y
+            self.Z = Z
+            self.coord_system = coord_system
+
+    tables.append(GeomStation)
+
+
+    # Create the geom_sensor_time table mapper class.
+    class GeomSensorTime(base):
+        __tablename__ = 'geom_sensor_time'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        stat_id = Column(Integer(10), ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
+        start_time = Column(Float(53), primary_key=True, nullable=False)
+        end_time = Column(Float(53))
+
+        child = relationship('GeomSensor')
+
+
+    tables.append(GeomSensorTime)
+
+
+    return tables
