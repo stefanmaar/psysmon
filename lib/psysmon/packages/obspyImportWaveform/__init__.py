@@ -50,12 +50,28 @@ def nodeFactory():
 def databaseFactory(base):
     from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
     from sqlalchemy.orm import relationship
+    from sqlalchemy import ForeignKeyConstraint
     
     tables = []
 
     # Create the traceheader table mapper class.
     class Traceheader(base):
         __tablename__ = 'traceheader'
+        __table_args__ = (
+                          ForeignKeyConstraint(['station_id'], 
+                                               ['geom_station.id'],
+                                               onupdate='cascade',
+                                               ondelete='set null'),
+                          ForeignKeyConstraint(['recorder_id'], 
+                                               ['geom_recorder.id'],
+                                               onupdate='cascade',
+                                               ondelete='set null'),
+                          ForeignKeyConstraint(['sensor_id'], 
+                                               ['geom_sensor.id'],
+                                               onupdate='cascade',
+                                               ondelete='set null'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         file_type = Column(String(10), nullable=False)
@@ -70,9 +86,9 @@ def databaseFactory(base):
         numsamp = Column(Integer(10), nullable=False)
         begin_date = Column(String(26), nullable=False)
         begin_time = Column(Float(53), nullable=False)
-        station_id = Column(Integer(10), nullable=False, default=-1)
-        recorder_id = Column(Integer(10), nullable=False, default=-1)
-        sensor_id = Column(Integer(10), nullable=False, default=-1)
+        station_id = Column(Integer(10), default=None)
+        recorder_id = Column(Integer(10), default=None)
+        sensor_id = Column(Integer(10), default=None)
 
 
     tables.append(Traceheader)
@@ -80,12 +96,14 @@ def databaseFactory(base):
 
     # Create the waveformdir table mapper class.
     class WaveformDir(base):
-        __tablename__ = 'waveformDir'
+        __tablename__ = 'waveform_dir'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         directory = Column(String(255), nullable=False, unique=True)
         description = Column(String(255), nullable=False)
-        aliases = relationship("WaveformDirAlias", cascade="all, delete, delete-orphan")
+
+        aliases = relationship("WaveformDirAlias", cascade="all, delete-orphan")
 
         def __init__(self, directory, description):
             self.directory = directory
@@ -96,15 +114,18 @@ def databaseFactory(base):
 
     # Create the waveformdiralias database table.
     class WaveformDirAlias(base):
-        __tablename__ = 'waveformDirAlias'
+        __tablename__ = 'waveform_dir_alias'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        wf_id = Column(Integer(10), 
-                       ForeignKey('waveformDir.id', onupdate="cascade"), 
+        wf_id = Column(Integer(10),
+                       ForeignKey('waveform_dir.id', onupdate="cascade"),
                        nullable=False, 
                        autoincrement=False, 
                        primary_key=True)
         user = Column(String(45), nullable=False, primary_key=True)
         alias = Column(String(255), nullable=False)
+
+        
 
         def __init__(self, user, alias):
             self.user = user
