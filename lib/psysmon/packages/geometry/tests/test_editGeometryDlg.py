@@ -9,6 +9,7 @@ from psysmon.packages.geometry.editGeometry import EditGeometryDlg
 from psysmon.core.base import Base
 import psysmon.core.gui as psygui
 import os
+import copy
 
 
 class EditGeometryDlgTestCase(unittest.TestCase):
@@ -35,7 +36,11 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         psyBase.project.loadDatabaseStructure(psyBase.packageMgr.packages)
 
         self.app =psygui.PSysmonApp()
-        self.dlg = EditGeometryDlg(None, psyBase.project)
+
+        nodeTemplate = psyBase.packageMgr.getCollectionNodeTemplate('edit geometry')
+        self.node = copy.deepcopy(nodeTemplate)
+        self.node.project = psyBase.project
+        #self.dlg = EditGeometryDlg(node, psyBase.project)
         #self.dlg.Show()
 
 
@@ -44,7 +49,8 @@ class EditGeometryDlgTestCase(unittest.TestCase):
 
     def testDlg(self):
         print "hello"
-        self.dlg.Show()
+        #self.dlg.Show()
+        self.node.execute()
         self.app.MainLoop()
 
 
