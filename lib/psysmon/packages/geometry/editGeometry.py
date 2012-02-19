@@ -30,7 +30,7 @@ The editGeometry module.
 This module contains the classes of the editGeometry dialog window.
 '''
 
-
+import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
@@ -42,9 +42,11 @@ matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+from wx.lib.pubsub import Publisher as pub
 import numpy as np
 from mpl_toolkits.basemap import Basemap 
 from obspy.signal import pazToFreqResp
+from obspy.core.utcdatetime import UTCDateTime
 
 
 class EditGeometry(CollectionNode):
@@ -76,6 +78,7 @@ class EditGeometry(CollectionNode):
     # @param prevNodeOutput The output of the previous collection node. 
     # Not used in this method.
     def execute(self, prevNodeOutput={}):
+        self.logger = self.project.getLogger(__name__)
         dlg = EditGeometryDlg(self, self.project)
         dlg.Show()
 
@@ -101,6 +104,10 @@ class EditGeometryDlg(wx.Frame):
 
         ## The collection node calling this dialog.
         self.collectionNode = collectionNode
+
+
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = psyProject.getLogger(loggerName)
 
         ## The current pSysmon project.
         self.psyProject = psyProject
@@ -128,7 +135,7 @@ class EditGeometryDlg(wx.Frame):
 
     def initUserSelections(self):
         if self.collectionNode.property['inputFiles']:
-            print "Set the list to the previously selected files."
+            self.logger.debug("Set the list to the previously selected files.")
 
             index = 0
             for curFile in self.collectionNode.property['inputFiles']:
@@ -241,23 +248,23 @@ class EditGeometryDlg(wx.Frame):
     # @param event The event object.
     def onSave2Db(self, event):
         if not self.selectedInventory:
-            print "No inventory selected."
+            self.logger.info("No inventory selected.")
             return
 
         if self.selectedInventory.__class__.__name__  != 'Inventory' :
-            print "Please select the inventory to be written to the database."
+            self.logger.info("Please select the inventory to be written to the database.")
             return
 
-        print "inventory type: %s" % self.selectedInventory.type
+        self.logger.debug("inventory type: %s",self.selectedInventory.type)
 
         if self.selectedInventory.type not in 'db':
-            print "Saving a non db inventory to the database."
-            #self.selectedInventory.write2Db(self.psyProject)
+            self.logger.debug("Saving a non db inventory to the database.")
             self.dbController.write(self.selectedInventory)
+            self.loadInventoryFromDb()
 
         else:
-            print "Updating the existing project inventory database."
-            self.selectedInventory.updateDb()
+            self.logger.debug("Updating the existing project inventory database.")
+            self.dbController.updateDb(self.selectedInventory)
 
 
     ## Exit menu callback.
@@ -328,6 +335,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def __init__(self, parent, id, pos, size, style):
         wx.TreeCtrl.__init__(self, parent, id, pos, size, style)
 
+        self.logger = self.GetParent().logger
+
         il = wx.ImageList(16, 16)
         self.icons = {}
         self.icons['xmlInventory'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','notebook_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap()) 
@@ -352,6 +361,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_KEY_DOWN, self.onKeyDown)
 
 
+
     ## Handle the key pressed events.
     def onKeyDown(self, event):
         keycode = event.GetKeyCode()
@@ -366,13 +376,13 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
     ## Allow drag'n drop for leaf items.
     def onBeginDrag(self, event):
-        print "OnBeginDrag"
+        self.logger.debug("OnBeginDrag")
         event.Allow()
         self.dragItem = event.GetItem()
 
     ## End drag'n drop for leaf items.
     def onEndDrag(self, event):
-        print "OnEndDrag"
+        self.logger.debug("OnEndDrag")
 
         # If we dropped somewhere that isn't on top of an item, ignore the event
         if event.GetItem().IsOk():
@@ -388,14 +398,14 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         # Prevent the user from dropping an item inside of itself
         if target is source:
-            print "the tree item can not be moved in to itself! "
+            self.logger.info("The tree item can not be moved in to itself!")
             self.Unselect()
             return
 
         sourceData = self.GetPyData(source)
 
         if isinstance(sourceData, tuple):
-            print "You can only drag sensors from the Recorders section."
+            self.logger.info("You can only drag sensors from the Recorders section.")
             return
 
         if isinstance(sourceData, psysmon.packages.geometry.inventory.Sensor):
@@ -409,14 +419,32 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         sourceData = self.GetPyData(source)
         targetData = self.GetPyData(target)
 
-        if not isinstance(targetData, psysmon.packages.geometry.inventory.Station):
-            target = self.GetItemParent(target)
-            targetData = self.GetPyData(target)
-            if not isinstance(targetData, psysmon.packages.geometry.Station):
-                # Can't drag to anything else than a station.
-                return
+        self.logger.debug("SOURCE")
+        self.logger.debug("%s", sourceData)
 
-        targetData.addSensor(sourceData, None, None)
+        self.logger.debug("TARGET")
+        self.logger.debug("%s", targetData)
+
+        if isinstance(targetData, psysmon.packages.geometry.inventory.Recorder):
+            self.logger.debug("Dragging sensor to recorder.")
+            # Remove source from parent recorder.
+            oldRecorder = sourceData.parentRecorder
+            sourceData.parentRecorder.popSensor(sourceData)
+
+            # Add source to target recorder.
+            targetData.addSensor(sourceData)
+
+            # Send an inventory update event.
+            msgTopic = 'inventory.update.sensorAssignment'
+            msg = (sourceData, 'sensor2Recorder', (oldRecorder, targetData))
+            pub.sendMessage(msgTopic, msg)
+
+        elif isinstance(targetData, psysmon.packages.geometry.inventory.Station):
+            self.logger.debug("Dragging sensor to a station")
+            targetData.addSensor(sourceData, UTCDateTime('1976-01-01'), None)
+
+
+        #targetData.addSensor(sourceData, None, None)
         self.updateInventoryData()
 
 
@@ -428,8 +456,14 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
     ## Handle the deletion of a sensor.
     def handleDeleteSensor(self, source):
+       
+        self.logger.debug('Removing a sensor from station.')
+        
         sourceData = self.GetPyData(source)
+        
+        self.logger.debug('%s', sourceData)
         if not isinstance(sourceData, tuple):
+            self.logger.warning('The object you are trying to delete is not a sensor.')
             return
 
         parent = self.GetItemParent(source)
@@ -438,18 +472,15 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         ret  = wx.MessageBox('Are you sure to remove this sensor?', 'Question', 
                              wx.YES_NO | wx.NO_DEFAULT, self)
         if ret == wx.YES:
-            print "Removing the sensor"
+            self.logger.debug("Removing the sensor")
             parentStation.removeSensor(sourceData)
 
         self.updateInventoryData()
 
 
 
-
-
-
     def onItemSelectionChanged(self, evt):
-        print "onItemSelectionChanged: ", self.GetItemText(evt.GetItem()) 
+        self.logger.debug("onItemSelectionChanged: %s", self.GetItemText(evt.GetItem()))
         pyData = self.GetItemPyData(evt.GetItem())
 
         # The pydata of the stationsensors is a tuple.
@@ -458,8 +489,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         if(pyData.__class__.__name__ == 'Station'):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
+            self.Parent.selectedInventory = pyData.parentInventory
         elif(pyData.__class__.__name__ == 'Sensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
+            self.Parent.selectedInventory = pyData.parentInventory
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selectedInventory = pyData
             #self.Parent.inventoryViewNotebook.updateMapView(pyData)
@@ -503,7 +536,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 curRecorderItem = self.AppendItem(recorderItem, curRecorder.serial + '(' + curRecorder.type + ')')
                 self.SetItemPyData(curRecorderItem, curRecorder)
                 self.SetItemImage(curRecorderItem, self.icons['recorder'], wx.TreeItemIcon_Normal)
-                for curSensor in sorted(curRecorder.sensors, key=lambda sensor: (sensor.serial, sensor.recChannelName)):
+                for curSensor in sorted(curRecorder.sensors, key=lambda sensor: (sensor.serial, sensor.channelName)):
                     item = self.AppendItem(curRecorderItem, curSensor.serial + ':' +curSensor.recChannelName + ':' + curSensor.channelName + ':' + curSensor.type)
 
                     self.SetItemPyData(item, curSensor)
@@ -558,6 +591,8 @@ class InventoryViewNotebook(wx.Notebook):
                              # | wx.NB_MULTILINE
                              )
 
+        self.logger = self.GetParent().logger
+
         self.listViewPanel = ListViewPanel(self)
         self.AddPage(self.listViewPanel, "list view")
 
@@ -567,23 +602,24 @@ class InventoryViewNotebook(wx.Notebook):
         self.mapViewPanel = MapViewPanel(self)
         self.AddPage(self.mapViewPanel, "map view")
 
+
     ## Show the station data in the list view.
     #
     def updateStationListView(self, station):
-        print "updating the station listview" 
+        self.logger.debug("updating the station listview") 
         self.listViewPanel.showControlPanel('station', station)   
 
     ## Show the station data in the list view.
     #
     def updateSensorListView(self, sensor):
-        print "updating the sensor listview" 
+        self.logger.debug("updating the sensor listview") 
         self.listViewPanel.showControlPanel('sensor', sensor)  
 
     def updateMapView(self, inventory):
         '''
         Initialize the map view panel with the selected inventory.
         '''
-        print "Initializing the mapview"
+        self.logger.debug("Initializing the mapview")
         self.mapViewPanel.initMap(inventory)
 
     ## Create a panel
@@ -596,6 +632,8 @@ class ListViewPanel(wx.Panel):
 
     def __init__(self, parent, id=wx.ID_ANY):
         wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
 
         self.sizer = wx.GridBagSizer(5, 5)
 
@@ -612,6 +650,7 @@ class ListViewPanel(wx.Panel):
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(0)
         self.SetSizerAndFit(self.sizer)
+
 
 
     def showControlPanel(self, name, data):   
@@ -655,6 +694,8 @@ class MapViewPanel(wx.Panel):
         :type id: 
         '''
         wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
 
         self.sizer = wx.GridBagSizer(5, 5)
 
@@ -715,7 +756,8 @@ class MapViewPanel(wx.Panel):
                            utm_zone=self.mapConfig['utmZone'],
                            suppress_ticks=False)
 
-        print self.map.proj4string
+        self.logger.debug('proj4string: %s', self.map.proj4string)
+
         self.map.drawcountries()
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
@@ -732,7 +774,7 @@ class MapViewPanel(wx.Panel):
         Handle the map pick event.
         '''
         pickedStation = self.stations[event.ind[0]]
-        print "picked a station: %s" % pickedStation.name
+        self.logger.debug("picked a station: %s", pickedStation.name)
 
 
     def updatemap(self):
@@ -765,6 +807,8 @@ class StationsPanel(wx.Panel):
 
     def __init__(self, parent, id=wx.ID_ANY):
         wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
 
         ## The currently displayed station.
         self.displayedStation = None;
@@ -815,6 +859,7 @@ class StationsPanel(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
 
+
     ## The cell edit callback.    
     def onStationCellChange(self, evt):
         selectedParameter = self.stationGrid.GetColLabelValue(evt.GetCol())
@@ -840,18 +885,23 @@ class StationsPanel(wx.Panel):
         selectedParameter = self.sensorGrid.GetColLabelValue(evt.GetCol())
         value = self.sensorGrid.GetCellValue(evt.GetRow(), evt.GetCol())
 
+        self.logger.debug("Edited row: %d", evt.GetRow())
+
+        sensor = self.tableSensors[evt.GetRow()][0]
+
         if selectedParameter == 'start':
-            (timeSet, msg) = self.displayedStation.changeSensorStartTime(evt.GetRow(), value)
+            (timeSet, msg) = self.displayedStation.changeSensorStartTime(sensor, value)
         elif selectedParameter == 'end':
-            (timeSet, msg) = self.displayedStation.changeSensorEndTime(evt.GetRow(), value)
+            (timeSet, msg) = self.displayedStation.changeSensorEndTime(sensor, value)
 
         self.sensorGrid.SetCellValue(evt.GetRow(), evt.GetCol(), str(timeSet))
         self.displayedStation.parentInventory.refreshNetworks()
 
         if msg:
+            self.logger.debug("Message: %s", msg)
             dlg = wx.MessageDialog(self, msg,
                                'Error while changing the deployment time.',
-                               wx.OK | wx.ICON_INFORMATION
+                               wx.OK 
                                #wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                )
             dlg.ShowModal()
@@ -865,28 +915,19 @@ class StationsPanel(wx.Panel):
         # Update the sensor grid fields.
         self.setGridValues(station, self.stationGrid, self.getStationFields(), 0)
 
-        # Set the station values.
-        #if station.id:
-        #    self.stationGrid.SetCellValue(0, 0, str(station.id)) 
-        #self.stationGrid.SetCellValue(0, 1, station.name)  
-        #self.stationGrid.SetCellValue(0, 2, station.network)   
-        #self.stationGrid.SetCellValue(0, 3, str(station.x))
-        #self.stationGrid.SetCellValue(0, 4, str(station.y))
-        #self.stationGrid.SetCellValue(0, 5, str(station.z))   
-        #self.stationGrid.SetCellValue(0, 6, station.coordSystem)
-        #self.stationGrid.SetCellValue(0, 7, station.description)   
-        #self.stationGrid.AutoSizeColumns() 
-
         # Clear the sensor grid rows.
         self.sensorGrid.DeleteRows(0, self.sensorGrid.GetNumberRows())
 
         # Add the new number of rows.
         self.sensorGrid.AppendRows(len(station.sensors))
 
+        # Sort the station sensors and save the sorted list. This list is 
+        # used when changing the sensor values in the inventory.
+        self.tableSensors = sorted(station.sensors, key = lambda sensor: (sensor[0].recorderSerial, sensor[0].serial, sensor[0].channelName))
+        #self.tableSensors = sorted(station.sensors, key = attrgetter('channel'))
         # Set the sensor values.
-        for k,(curSensor, startTime, endTime) in enumerate(sorted(station.sensors, key = lambda sensor: (sensor[0].recorderSerial, sensor[0].serial, sensor[0].recChannelName))):
-            if curSensor.recorderId:
-                self.sensorGrid.SetCellValue(k, 0, str(curSensor.recorderId))
+        for k,(curSensor, startTime, endTime) in enumerate(self.tableSensors):
+            self.sensorGrid.SetCellValue(k, 0, str(curSensor.id))
             self.sensorGrid.SetCellValue(k, 1, curSensor.label)
             self.sensorGrid.SetCellValue(k, 2, curSensor.recorderSerial)
             self.sensorGrid.SetCellValue(k, 3, curSensor.recorderType)
@@ -896,8 +937,11 @@ class StationsPanel(wx.Panel):
             self.sensorGrid.SetCellValue(k, 7, curSensor.channelName)
             if startTime:
                 self.sensorGrid.SetCellValue(k, 8, str(startTime))
+
             if endTime:
                 self.sensorGrid.SetCellValue(k, 9, str(endTime))
+            else:
+                self.sensorGrid.SetCellValue(k, 9, 'running')
 
         self.sensorGrid.AutoSizeColumns()
 
@@ -950,6 +994,8 @@ class SensorsPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent, id)
 
+        self.logger = self.GetParent().logger
+
         self.mgr = wx.aui.AuiManager(self)
 
 
@@ -967,7 +1013,9 @@ class SensorsPanel(wx.Panel):
         self.sensorGrid.CreateGrid(1, len(fields))
 
         # Bind the sensorGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorCellChange)
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+                  self.onSensorCellChange,
+                  self.sensorGrid)
 
         for k, (name, label, attr)  in enumerate(fields):
             self.sensorGrid.SetColLabelValue(k, label)
@@ -988,7 +1036,9 @@ class SensorsPanel(wx.Panel):
         self.paramGrid.CreateGrid(1, len(fields))
 
         # Bind the paramGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorParameterCellChange)
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+                  self.onSensorParameterCellChange,
+                  self.paramGrid)
 
         for k, (name, label, attr)  in enumerate(fields):
             self.paramGrid.SetColLabelValue(k, label)
@@ -1063,7 +1113,7 @@ class SensorsPanel(wx.Panel):
             (timeSet, msg) = self.displayedSensor.changeParameterStartTime(evt.GetRow(), value)
 
             self.paramGrid.SetCellValue(evt.GetRow(), evt.GetCol(), str(timeSet))
-            self.displayedSensor.parentInventory.refreshNetworks()
+            #self.displayedSensor.parentInventory.refreshNetworks()
 
             if msg:
                 dlg = wx.MessageDialog(self, msg,
@@ -1076,10 +1126,10 @@ class SensorsPanel(wx.Panel):
         elif selectedParameter == 'end':
             # Change the end time.
             value = self.paramGrid.GetCellValue(evt.GetRow(), evt.GetCol())
-            (timeSet, msg) = self.displayedSensor.changeParameterStartTime(evt.GetRow(), value)
+            (timeSet, msg) = self.displayedSensor.changeParameterEndTime(evt.GetRow(), value)
 
             self.paramGrid.SetCellValue(evt.GetRow(), evt.GetCol(), str(timeSet))
-            self.displayedStation.parentInventory.refreshNetworks()
+            #self.displayedStation.parentInventory.refreshNetworks()
 
             if msg:
                 dlg = wx.MessageDialog(self, msg,
@@ -1099,7 +1149,7 @@ class SensorsPanel(wx.Panel):
             pass
 
     def updateData(self, sensor):
-        print "updating the sensors data"
+        self.logger.debug("updating the sensors data")
 
         self.displayedSensor = sensor
 
@@ -1109,6 +1159,10 @@ class SensorsPanel(wx.Panel):
         # Update the parameter grid fields.
         for k, (curParam, beginTime, endTime) in enumerate(sensor.parameters):
             self.setGridValues(curParam, self.paramGrid, self.getParameterFields(), k)
+
+            if not endTime:
+                endTime = 'running'
+
             self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'start', 'editable')), str(beginTime))
             self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'end', 'editable')), str(endTime))  
 
@@ -1189,9 +1243,9 @@ class SensorsPanel(wx.Panel):
         tableField = []
         tableField.append(('id', 'id', 'readonly'))
         tableField.append(('recorderId', 'rec. id', 'readonly'))
+        tableField.append(('recorderSerial', 'rec. serial', 'readonly'))
+        tableField.append(('recorderType', 'rec. type', 'readonly'))
         tableField.append(('label', 'label', 'editable'))
-        tableField.append(('recorderSerial', 'rec. serial', 'editable'))
-        tableField.append(('recorderType', 'rec. type', 'editable'))
         tableField.append(('serial', 'serial', 'editable'))
         tableField.append(('type', 'type', 'editable'))
         tableField.append(('recChannelName', 'rec. channel', 'editable'))
@@ -1213,9 +1267,6 @@ class SensorsPanel(wx.Panel):
         tableField.append((None, 'poles', 'readonly'))      # Poles is a list. Handle them seperately
         tableField.append((None, 'zeros', 'readonly'))      # Zeros is a list. Handle them seperately.
         return tableField
-
-
-
 
 
 
