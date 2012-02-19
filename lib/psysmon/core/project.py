@@ -28,6 +28,7 @@ Module for handling the pSysmon project and users.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+import logging
 import os
 import thread
 import multiprocessing
@@ -213,6 +214,12 @@ class Project:
             self.user.append(user)
 
 
+        # The logging configuration.
+        self.logConfig = {}
+        self.logConfig['level'] = 'DEBUG'
+
+
+
 
 
     def setCollectionNodeProject(self):
@@ -249,7 +256,7 @@ class Project:
             engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
         self.dbEngine = create_engine(engineString)
-        self.dbEngine.echo = True
+        #self.dbEngine.echo = True
         self.dbMetaData = MetaData(self.dbEngine)
         self.dbBase = declarative_base(metadata = self.dbMetaData)
         self.dbSessionClass = sessionmaker(bind=self.dbEngine)
@@ -597,6 +604,25 @@ class Project:
         '''
         msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
+
+
+    def getLogger(self, name):
+        ''' Create a logging logger instance.
+
+        Parameters
+        ----------
+        name : String
+            The name of the logger. This should be the module name 
+            using the logger.
+        '''
+        logger = logging.getLogger(name)
+        logger.setLevel(self.logConfig['level'])
+        ch = logging.StreamHandler()
+        ch.setLevel(self.logConfig['level'])
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        ch.setFormatter(formatter)
+        logger.addHandler(ch) 
+        return logger
 
 
 
