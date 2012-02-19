@@ -35,6 +35,8 @@ from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.util import PsysmonError
 from mpl_toolkits.basemap import pyproj
 import warnings
+import logging
+from wx.lib.pubsub import Publisher as pub
 
 ## The Inventory class.
 #
@@ -74,6 +76,8 @@ class Inventory:
     ## Add a recorder to the inventory.
     def addRecorder(self, recorder):
         self.recorders.append(recorder)
+        recorder.setParentInventory(self)
+
 
     ## Remove a recorder from the inventory.
     def removeRecorder(self, position):
@@ -90,6 +94,8 @@ class Inventory:
             # Append the station to the unassigned stations list.
             self.stations.append(station)
 
+        station.setParentInventory(self)
+
 
     ## Add a sensor to the inventory.
     def addSensor(self, sensor):
@@ -105,11 +111,13 @@ class Inventory:
         self.sensors.append(sensor)
         self.sensors = list(set(self.sensors))
         sensor.recorderId = None
+        sensor.setParentInventory(self)
 
 
     ## Add a Network to the inventory.
     def addNetwork(self, network):
         self.networks[network.name] = network
+        network.setParentInventory(self)
 
 
     ## Remove a station from the inventory.
@@ -155,56 +163,6 @@ class Inventory:
             raise e
 
         self.type = 'xml'   
-
-
-    ## Load the inventory from a pSysmon database.
-    def loadFromDb(self, project):
-        self.type = 'db'
-        self.name = 'project inventory'
-
-        self.dbController = InventoryDatabaseController(self, project)
-
-        try:
-            self.dbController.loadRecorder()
-            #self.dbController.loadNetwork()
-            #self.dbController.loadStation()
-            #self.dbController.loadUnassignedSensor()
-        except PsysmonError as e:
-            raise e
-
-
-    ## Update the inventory database tables.
-    def updateDb(self):
-
-        if self.type.lower() != 'db':
-            return
-
-        self.dbController.updateDb()
-
-
-
-    ## Save the inventory to the pSysmon database.
-    #
-    # Write a non-database inventory (e.g. imported from xml file) to the pSysmon database. 
-    def write2Db(self, project):
-        print "Writing inventory to the database."
-
-        # Write the recorders and sensors to the database.
-        for curRecorder in self.recorders:
-            self.dbController.insertRecorder(curRecorder)
-
-
-        # Write the networks and the contained stations to the database.
-        #for curNetwork in self.networks.itervalues():
-        #    curNetwork.write2Db(project)
-
-        #    for curStation in curNetwork.stations.itervalues():
-        #        curStation.write2Db(project)
-
-        # Write the unassigned stations to the database.
-        #for curStation in self.stations:
-        #    curStation.write2Db(project)
-
 
 
     ## Get a sensor from the inventory.
@@ -258,12 +216,32 @@ class InventoryDatabaseController:
         # The database session.
         self.dbSession = self.project.getDbSession()
 
-        self.sensorMappers = {}
+        self.mapper = {}
+
+        # Subscribe to the events signalling inventory attribute changes of 
+        # of the loaded database inventory.
+        pub.subscribe(self.updateNetworkMapper,
+                      'inventory.update.network')
+        pub.subscribe(self.updateStationMapper,
+                      'inventory.update.station')
+        pub.subscribe(self.updateRecorderMapper,
+                      'inventory.update.recorder')
+        pub.subscribe(self.updateSensorMapper,
+                      'inventory.update.sensor')
+        pub.subscribe(self.updateSensorParamMapper,
+                      'inventory.update.sensorParameter')
+        pub.subscribe(self.updateSensorTimeMapper,
+                      'inventory.update.sensorDeploymentTime')
+        pub.subscribe(self.updateSensorAssignmentMapper,
+                      'inventory.update.sensorAssignment')
+        pub.subscribe(self.updateSensor2StationMapper,
+                      'inventory.update.addSensor2Station')
+
 
 
     def load(self):
         ''' Load the inventory from the pSysmon database.
-        
+
         Returns
         -------
         inventory : :class:`Inventory`
@@ -271,7 +249,7 @@ class InventoryDatabaseController:
         '''
         inventory = Inventory('project inventory')
         inventory.type = 'db'
-        
+
         self.loadRecorders(inventory)
         self.loadNetworks(inventory)
 
@@ -292,10 +270,10 @@ class InventoryDatabaseController:
         for curNetwork in inventory.networks.values():
             self.insertNetwork(curNetwork)
 
-    
+
     def loadRecorders(self, inventory):
         ''' Load the recorder data from the geom_recorder table.
-        
+
         Parameters
         ----------
         inventory : :class:`Inventory`
@@ -303,41 +281,35 @@ class InventoryDatabaseController:
         '''
         dbRecorder = self.project.dbTables['geom_recorder']
 
-        for curInstance in self.dbSession.query(dbRecorder).order_by(dbRecorder.serial):
-            print "Loading recorder %s.\n" % curInstance.serial
-            curRecorder = Recorder(id=curInstance.id,
-                                   serial=curInstance.serial,
-                                   type=curInstance.type,
-                                   parentInventory=inventory)
+        for curDbRecorder in self.dbSession.query(dbRecorder).order_by(dbRecorder.serial):
+            curRecorder = Recorder(id = curDbRecorder.id,
+                                   serial = curDbRecorder.serial,
+                                   type = curDbRecorder.type)
 
-            for curDbSensor in curInstance.sensors:
-                curSensor = Sensor(curDbSensor.serial,
-                                   curDbSensor.type,
-                                   curDbSensor.rec_channel_name,
-                                   curDbSensor.channel_name,
-                                   curDbSensor.label,
-                                   id=curDbSensor.id,
-                                   recorderId=curRecorder.id,
-                                   recorderType=curRecorder.type,
-                                   parentInventory=inventory)
+            self.mapper[curRecorder] = curDbRecorder
+
+            for curDbSensor in curDbRecorder.sensors:
+                curSensor = self.convertDbSensor(curDbSensor)
                 curRecorder.addSensor(curSensor)
+                self.mapper[curSensor] = curDbSensor
 
                 for curDbParam in curDbSensor.parameters:
-                    curParam = SensorParameter(curSensor.id,
-                                               curDbParam.gain,
-                                               curDbParam.bitweight,
-                                               curDbParam.bitweight_units,
-                                               curDbParam.sensitivity,
-                                               curDbParam.sensitivity_units,
-                                               tfType = curDbParam.type,
-                                               tfUnits = curDbParam.tf_units,
-                                               tfNormalizationFactor = curDbParam.normalization_factor,
-                                               tfNormalizationFrequency = curDbParam.normalization_frequency,
-                                               id=curDbParam.id)
-                    curSensor.addParameter(curParam, curDbParam.start_time, curDbParam.end_time)
+                    curParam = self.convertDbSensorParam(curDbParam)
 
+                    if curDbParam.start_time:
+                        startTime = UTCDateTime(curDbParam.start_time)
+                    else:
+                        startTime = None
 
-                
+                    if curDbParam.end_time:
+                        endTime = UTCDateTime(curDbParam.end_time)
+                    else:
+                        endTime = None
+
+                    curSensor.addParameter(curParam, 
+                                           startTime, 
+                                           endTime)
+                    self.mapper[curParam] = curDbParam
 
             inventory.addRecorder(curRecorder)
 
@@ -354,8 +326,8 @@ class InventoryDatabaseController:
         for curDbNetwork in self.dbSession.query(dbNetwork).order_by(dbNetwork.name):
             curNetwork = Network(curDbNetwork.name,
                                  curDbNetwork.description,
-                                 curDbNetwork.type,
-                                 parentInventory=inventory)
+                                 curDbNetwork.type)
+            self.mapper[curNetwork] = curDbNetwork
 
             for curDbStation in curDbNetwork.stations:
                 curStation = Station(curDbStation.name,
@@ -366,14 +338,26 @@ class InventoryDatabaseController:
                                      coordSystem=curDbStation.coord_system,
                                      description=curDbStation.description,
                                      network=curNetwork.name,
-                                     id=curDbStation.id,
-                                     parentInventory=inventory)
+                                     id=curDbStation.id)
+                self.mapper[curStation] = curDbStation
                 curNetwork.addStation(curStation)
 
-                for curDbSensor in curDbStation.sensors:
-                    print "\n\n##########################"
-                    print curDbSensor
-                    print "##############################"
+                for curDbSensorTime in curDbStation.sensors:
+                    curDbSensor = curDbSensorTime.child
+
+                    if curDbSensorTime.start_time:
+                        startTime = UTCDateTime(curDbSensorTime.start_time)
+                    else:
+                        startTime = None
+
+                    if curDbSensorTime.end_time:
+                        endTime = UTCDateTime(curDbSensorTime.end_time)
+                    else:
+                        endTime = None
+
+                    # Get the correct Sensor instance from the inventory.
+                    curSensor = inventory.getSensorById(curDbSensor.id)
+                    curStation.sensors.append((curSensor, startTime, endTime))
 
             inventory.addNetwork(curNetwork)
 
@@ -389,7 +373,7 @@ class InventoryDatabaseController:
         dbTfPz = self.project.dbTables['geom_tf_pz']
 
         rec2Add = dbRecorder(recorder.serial, recorder.type)
-      
+
         # Add all sensors assigned to the recorder. 
         for curSensor in recorder.sensors:
             sensor2Add = dbSensor(recorder.id, 
@@ -399,7 +383,7 @@ class InventoryDatabaseController:
                                   curSensor.recChannelName,
                                   curSensor.channelName)
             rec2Add.sensors.append(sensor2Add)
-            self.sensorMappers[curSensor] = sensor2Add
+            self.mapper[curSensor] = sensor2Add
 
             # Add the sensor parameters.
             for curParam, startTime, endTime in curSensor.parameters:
@@ -421,6 +405,7 @@ class InventoryDatabaseController:
                                         curParam.bitweight,
                                         curParam.bitweightUnits)
                 sensor2Add.parameters.append(param2Add)
+                self.mapper[curParam] = param2Add
 
                 # Add the the transfer function poles. 
                 for curPole in curParam.tfPoles:
@@ -441,6 +426,58 @@ class InventoryDatabaseController:
         self.dbSession.add(rec2Add)
         self.dbSession.commit()
 
+
+    def convertDbRecorder(self, dbRecorder):
+        ''' Convert the recorder database table mapper instance to a 
+        :class:`Recorder` instance.
+
+        Parameters:
+        -----------
+        dbRecorder : Object
+            The sqlAlchemy geom_recorder table mapper instance.
+
+        ''' 
+
+    def convertDbSensor(self, dbSensor):
+        ''' Convert the sensor database table mapper instance to a sensor 
+        instance.
+
+        Parameters
+        ----------
+        dbSensor : Object
+            The sqlAlchemy geom_sensor table mapper instance.
+
+        recorder : :class:`Recorder`
+            The recorder to which the sensor will be assigned to.
+
+        '''
+        curSensor = Sensor(dbSensor.serial,
+                           dbSensor.type,
+                           dbSensor.rec_channel_name,
+                           dbSensor.channel_name,
+                           dbSensor.label,
+                           id = dbSensor.id,
+                           recorderId = dbSensor.parent.id,
+                           recorderSerial = dbSensor.parent.serial,
+                           recorderType = dbSensor.parent.type)
+        return curSensor
+
+
+    def convertDbSensorParam(self, dbParam):
+        curParam = SensorParameter(dbParam.parent.id,
+                                   dbParam.gain,
+                                   dbParam.bitweight,
+                                   dbParam.bitweight_units,
+                                   dbParam.sensitivity,
+                                   dbParam.sensitivity_units,
+                                   tfType = dbParam.type,
+                                   tfUnits = dbParam.tf_units,
+                                   tfNormalizationFactor = dbParam.normalization_factor,
+                                   tfNormalizationFrequency = dbParam.normalization_frequency,
+                                   id = dbParam.id,
+                                   startTime = dbParam.start_time,
+                                   endTime = dbParam.end_time)
+        return curParam
 
     def insertNetwork(self, network):
         ''' Insert a network in to the psysmon database.
@@ -472,7 +509,7 @@ class InventoryDatabaseController:
             for curSensor, startTime, endTime in curStation.sensors:
                 if startTime:
                     startTime = startTime.getTimeStamp()
-                
+
                 if endTime:
                     endTime = endTime.getTimeStamp()
 
@@ -481,7 +518,7 @@ class InventoryDatabaseController:
                                               startTime, 
                                               endTime)
 
-                sensorTime2Add.child = self.sensorMappers[curSensor]
+                sensorTime2Add.child = self.mapper[curSensor]
                 station2Add.sensors.append(sensorTime2Add)
 
 
@@ -489,111 +526,228 @@ class InventoryDatabaseController:
         self.dbSession.commit()
 
 
+    def updateStationMapper(self, msg):
+        print "***********************"
+        print "Updating station mapper."
 
-    ## Load the networks from the database.
-    def loadNetwork(self):
-        # Load the network data from the geom_network table.
-        tableName = self.project.dbTableNames['geom_network']
-        query =  ("SELECT name, description, type FROM %s ") % tableName 
-        res = self.project.executeQuery(query)
 
-        if not res['isError']:
-            for curData in res['data']:
-                print "Loading network %s.\n" % curData['name']
-                curNetwork = Network(name=curData['name'],
-                                     description=curData['description'],
-                                     type=curData['type'],
-                                     parentInventory=self.inventory
-                                     )
-                self.inventory.addNetwork(curNetwork)
+        attrMap = {}
+        attrMap['id'] = 'id'
+        attrMap['network'] = 'net_name'
+        attrMap['name'] = 'name'
+        attrMap['location'] = 'location'
+        attrMap['x'] = 'X'
+        attrMap['y'] = 'Y'
+        attrMap['z'] = 'Z'
+        attrMap['coordSystem'] = 'coord_system'
+        attrMap['description'] = 'description'
+
+        masterStation = msg.data[0]
+
+        if masterStation.parentInventory.type != 'db':
+            print "Not a db type inventory."
+            return
+
+        name = msg.data[1]
+        stat2Update = self.mapper[masterStation]
+
+        setattr(stat2Update, 
+                attrMap[name], 
+                getattr(masterStation, name))
+
+
+    def updateRecorderMapper(self, msg):
+        print "***********************"
+        print "Updating recorder mapper."
+
+        attrMap = {}
+        attrMap['id'] = 'id'
+        attrMap['serial'] = 'serial'
+        attrMap['type'] = 'type'
+
+        masterRecorder = msg.data[0]
+        name = msg.data[1]
+        rec2Update = self.mapper[masterRecorder]
+        setattr(rec2Update, 
+                attrMap[name],
+                getattr(masterRecorder, name))
+
+
+    def updateSensorMapper(self, msg):
+        print "***********************"
+        print "Updating sensor mapper."
+
+        attrMap = {};
+        attrMap['id'] = 'id'
+        attrMap['label'] = 'label'
+        attrMap['recorderId'] = 'recorder_id'
+        #attrMap['recorderSerial'] = None
+        #attrMap['recorderType'] = None
+        attrMap['serial'] = 'serial'
+        attrMap['type'] = 'type'
+        attrMap['recChannelName'] = 'rec_channel_name'
+        attrMap['channelName'] = 'channel_name'
+
+        masterSensor = msg.data[0]
+        name = msg.data[1]
+
+        if name not in attrMap.keys():
+            return
+
+        sensor2Update = self.mapper[masterSensor]
+        setattr(sensor2Update,
+                attrMap[name],
+                getattr(masterSensor, name))
+
+
+    def updateSensorParamMapper(self, msg):
+
+        ## The mapping of the station attributes to the database columns.
+        attrMap = {};
+        attrMap['id'] = 'id'
+        attrMap['sensorId'] = 'sensor_id'
+        attrMap['tfNormalizationFactor'] = 'normalization_factor'
+        attrMap['tfNormalizationFrequency'] = 'normalization_frequency'
+        attrMap['tfType'] = 'type'
+        attrMap['tfUnits'] = 'tf_units'
+        attrMap['gain'] = 'gain'
+        attrMap['sensitivity'] = 'sensitivity'
+        attrMap['sensitivityUnits'] = 'sensitivity_units'
+        attrMap['bitweight'] = 'bitweight'
+        attrMap['bitweightUnits'] = 'bitweight_units' 
+        attrMap['startTime'] = 'start_time'
+        attrMap['endTime'] = 'end_time' 
+
+        masterParam = msg.data[0]
+        name = msg.data[1]
+        param2Update = self.mapper[masterParam]
+
+        if name in ['startTime', 'endTime']:
+            value = getattr(masterParam, name)
+            if value:
+                value = value.getTimeStamp()
         else:
-            print res['msg']
+            value = getattr(masterParam, name)
 
-    ## Load the stations from the database.
-    def loadStation(self):
-        # Load the station data from the geom_station table.
-        tableName = self.project.dbTableNames['geom_station']
-        query =  ("SELECT "
-                  "id, net_name, name, location, X, Y, Z, coord_system, description "
-                  "FROM %s") % tableName 
-        res = self.project.executeQuery(query)
+        setattr(param2Update,
+                attrMap[name],
+                value)
 
-        if not res['isError']:
-            for curData in res['data']:
-                print "Loading station %s.\n" % curData['name']
-                curStation = Station(id=curData['id'],
-                                     name=curData['name'],
-                                     location=curData['location'],
-                                     x=curData['X'],
-                                     y=curData['Y'],
-                                     z=curData['Z'],
-                                     coordSystem=curData['coord_system'],
-                                     description=curData['description'],
-                                     network=curData['net_name'],
-                                     parentInventory=self.inventory
-                                     )
 
-                # Load the sensors associated with the station.
-                curStation.loadSensorFromDb(self.project, self.inventory)
+    def updateNetworkMapper(self, msg):
+        ## The mapping of the network attributes to the database columns.
+        attrMap = {};
+        attrMap['name'] = 'name'
+        attrMap['description'] = 'description'
+        attrMap['type'] = 'type'
 
-                self.inventory.addStation(curStation)
-        else:
-            print res['msg']
+        masterNetwork = msg.data[0]
+        name = msg.data[1]
+        network2Update = self.mapper[masterNetwork]
+        setattr(network2Update,
+                attrMap[name],
+                getattr(masterNetwork, name))
 
-    ## Load the unassigned sensors from the database.
-    def loadUnassignedSensor(self):
-        tableName = self.project.dbTableNames['geom_sensor']
-        query =  ("SELECT id, label, serial, type, rec_channel_name, channel_name FROM  %s "
-                  "WHERE recorder_id = -1") % tableName
 
-        res = self.project.executeQuery(query)
+    def updateSensorTimeMapper(self, msg):
 
-        if not res['isError']:
-            for curData in res['data']:
-                curSensor = Sensor(id=curData['id'],
-                                   serial=curData['serial'],
-                                   type=curData['type'],
-                                   recChannelName=curData['rec_channel_name'],
-                                   channelName=curData['channel_name'],
-                                   label=curData['label'],
-                                   parentInventory=self.inventory)
+        masterStation = msg.data[0]
+        masterSensor = msg.data[2][0]
+        station2Update = self.mapper[masterStation]
+        sensor2Update = self.mapper[masterSensor]
+        print "*****************"
+        print station2Update
+        for curSensorTime in station2Update.sensors:
+            if curSensorTime.child == sensor2Update:
+                print curSensorTime
 
-                self.inventory.addSensor(curSensor)
-                curSensor.loadParameterFromDb(self.project)
+                startTime = msg.data[2][1]
+                endTime = msg.data[2][2]
 
-        else:
-            print res['msg']  
+                if startTime:
+                    startTime = startTime.getTimeStamp()
+
+                if endTime:
+                    endTime = endTime.getTimeStamp()
+
+                curSensorTime.start_time = startTime
+                curSensorTime.end_time = endTime
+        print "*****************"
+
+
+    def updateSensorAssignmentMapper(self, msg):
+
+        sensorChanged = msg.data[0]
+        assignmentType = msg.data[1]
+        oldRecorder = msg.data[2][0]
+        newRecorder = msg.data[2][1]
+
+        oldDbRec = self.mapper[oldRecorder]
+        newDbRec = self.mapper[newRecorder]
+        dbSensor = self.mapper[sensorChanged]
+
+        print "+++++++++++++++++++"
+        print "oldDbRec:"
+        print oldDbRec
+        print "newDbRec:"
+        print newDbRec
+        print "dbSensor:"
+        print dbSensor
+        print "+++++++++++++++++++"
+
+        print oldDbRec.sensors
+        tmp = oldDbRec.sensors.pop(oldDbRec.sensors.index(dbSensor))
+        print oldDbRec.sensors
+
+        print "Popped sensor:"
+        print tmp
+        print "sensor parent:"
+        print tmp.parent
+        print "\n"
+
+        print "****************"
+        print "newDbRec"
+        print newDbRec
+
+        tmp.parent = newDbRec
+        newDbRec.sensors.append(tmp)
+
+
+    def updateSensor2StationMapper(self, msg):
+
+        station = msg.data[0]
+        sensor = msg.data[2][0]
+        startTime = msg.data[2][1]
+        endTime = msg.data[2][2]
+
+        dbStation = self.mapper[station]
+        dbSensor = self.mapper[sensor]
+
+        geomSensorTime = self.project.dbTables['geom_sensor_time']
+
+        # Convert the time limits to unixseconds.
+        if startTime:
+            startTime = startTime.getTimeStamp()
+
+        if endTime:
+            endTime = endTime.getTimeStamp()
+
+        sensorTime = geomSensorTime(station.id, sensor.id, startTime, endTime)
+        sensorTime.child = dbSensor
+        dbStation.sensors.append(sensorTime)
+
+
+
+
 
     ## Update the inventory database tables.
-    def updateDb(self):
-        for curRecorder in self.inventory.recorders:
-            if curRecorder.history.hasActions():
-                curRecorder.updateDb(self.project)
+    def updateDb(self, inventory):
 
-            for curSensor in curRecorder.sensors:
-                if curSensor.history.hasActions():
-                    curSensor.updateDb(self.project)
+        if inventory.type != 'db':
+            return
 
-                for (curParam, beginTime, endTime) in curSensor.parameters:
-                    if curParam.history.hasActions():
-                        curParam.updateDb(self.project)
-
-
-        for curStation in self.inventory.stations:
-            if curStation.history.hasActions():
-                curStation.updateDb(self.project)  
-
-        for curSensor in self.inventory.sensors:
-            if curSensor.history.hasActions():
-                curSensor.updateDb(self.project) 
-
-
-        for curNetwork in self.inventory.networks.itervalues():
-            if curNetwork.history.hasActions():
-                curNetwork.updateDb(self.project)
-            for curStation in curNetwork.stations.itervalues():
-                if curStation.history.hasActions():
-                    curStation.updateDb(self.project)
+        self.dbSession.commit()
+        self.dbSession.flush()
 
 
 class InventoryXmlParser:
@@ -686,8 +840,7 @@ class InventoryXmlParser:
 
             # Create the Recorder instance.
             rec2Add = Recorder(serial=curRecorder.attrib['serial'], 
-                               type = recorderContent['type'],
-                               parentInventory = self.parentInventory)  
+                               type = recorderContent['type']) 
 
             # Process the channels of the recorder.
             self.processChannels(curRecorder, rec2Add)
@@ -710,8 +863,7 @@ class InventoryXmlParser:
                                     type=channelContent['sensor_type'],
                                     recChannelName=channelContent['rec_channel_name'],
                                     channelName=channelContent['channel_name'],
-                                    label=curChannel.attrib['label'],
-                                    parentInventory=self.parentInventory)
+                                    label=curChannel.attrib['label']) 
                 print sensor2Add.label
                 # Process the channel parameters.
                 self.processChannelParameters(curChannel, sensor2Add)
@@ -806,8 +958,7 @@ class InventoryXmlParser:
                                       z=stationContent['elevation'],
                                       coordSystem=stationContent['coordSystem'],
                                       description=stationContent['description'],
-                                      network=stationContent['network_code'],
-                                      parentInventory=self.parentInventory
+                                      network=stationContent['network_code'] 
                                       )
 
                 self.processSensors(curStation, station2Add)                      
@@ -881,8 +1032,7 @@ class InventoryXmlParser:
             # Create the Recorder instance.
             net2Add = Network(name=content['code'],
                               description=content['description'],
-                              type=content['type'],
-                              parentInventory=self.parentInventory)  
+                              type=content['type']) 
 
             # Add the network to the inventory.
             self.parentInventory.addNetwork(net2Add)
@@ -960,19 +1110,56 @@ class Recorder:
         self.__dict__[name] = value
         self.hasChanged = True 
         self.changedFields.append(name)
+        print "Setitem in recorder."
+
+
+
+    def setParentInventory(self, parentInventory):
+        ''' Set the parentInventory attribute.
+
+        Also update the parent inventory of all children.
+
+        Parameters
+        ----------
+        parentInventory : :class:`Inventory`
+            The new parent inventory of the station.
+        '''
+        self.parentInventory = parentInventory
+        for curSensor in self.sensors:
+            curSensor.setParentInventory(parentInventory)
 
     ## Add a sensor to the recorder.
     def addSensor(self, sensor):
         sensor.recorderId = self.id
         sensor.recorderSerial = self.serial
         sensor.recorderType = self.type
+        sensor.parentRecorder = self
         self.sensors.append(sensor)
         self.sensors = list(set(self.sensors))
+        sensor.setParentInventory(self.parentInventory)
 
 
-    ## Remove a sensor from the recorder.
-    def removeSensor(self, position):
-        pass
+    def popSensor(self, sensor):
+        ''' Remove a sensor from the recorder.
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The sensor to be removed from the recorder.
+
+        Returns
+        -------
+        sensor : :class:`Sensor`
+            The removed sensor instance.
+        '''
+        if sensor in self.sensors:
+            sensor.parentRecorder = None
+            # sensor.recorderId = None
+            sensor.recorderSerial = None
+            sensor.recorderType = None
+            return self.sensors.pop(self.sensors.index(sensor))
+        else:
+            return None
 
     ## Refresh the sensor list.
     #
@@ -991,69 +1178,6 @@ class Recorder:
         #        self.parentInventory.addStation(curStation)
         #        stations.remove(curStation)
 
-
-    ## Load the recorder sensor data from the datbase.
-    def loadSensorFromDb(self, project):
-        tableName = project.dbTableNames['geom_sensor']
-        query =  ("SELECT id, label, serial, type, rec_channel_name, channel_name FROM  %s "
-                  "WHERE recorder_id = %d") % (tableName, self.id)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            for curData in res['data']:
-                curSensor = Sensor(id=curData['id'],
-                                   serial=curData['serial'],
-                                   type=curData['type'],
-                                   recChannelName=curData['rec_channel_name'],
-                                   channelName=curData['channel_name'],
-                                   label=curData['label'],
-                                   parentInventory=self.parentInventory)
-
-                self.addSensor(curSensor)               # This also sets the recorder id of the sensor.
-                curSensor.loadParameterFromDb(project)
-
-        else:
-            print res['msg'] 
-
-    ## Write the recorder to the pSysmon database.
-    def write2Db(self, project):                         
-
-        dbRecorder = project.dbTables['geom_recorder']
-        dbSensor = project.dbTables['geom_sensor']
-
-        newRecorder = dbRecorder(self.serial, self.type)
-        self.dbSession.add(newRecorder)
-
-        # Write the recorder data to the geom_recorder table.
-        #tableName = project.dbTableNames['geom_recorder']
-        #query =  ("INSERT IGNORE INTO %s "
-        #          "(serial, type) "
-        #          "VALUES ('%s', '%s')") % (tableName, self.serial, self.type)  
-        #res = project.executeQuery(query)
-
-        #if not res['isError']:
-        #    print("Successfully wrote the recorders to the database.")
-        #else:
-        #    print res['msg']  
-
-        #query = ("SELECT id, serial, type FROM %s WHERE serial LIKE '%s' AND type LIKE '%s'") % (tableName, self.serial, self.type)  
-        #res = project.executeQuery(query)
-        #recData = res['data']
-
-        #if not res['isError']:
-        #    if not recData:
-        #        print "No id found for recorder %s-%s" %(self.serial, self.type)
-        #        recId = -1
-        #    else:
-        #        recId = recData[0]['id']
-        #        print "Assigned id %s to recorder %s-%s." % (recId, self.serial, self.type)
-        #else:
-        #    print res['msg']  
-
-
-        #for curSensor in self.sensors:
-        #    curSensor.write2Db(project, recId)
 
 
     ## Update the recorder database entry.    
@@ -1139,54 +1263,53 @@ class Sensor:
         # during which these paramters have been valid.
         self.parameters = []
 
-        ## The mapping of the station attributes to the database columns.
-        attrMap = {};
-        attrMap['id'] = 'id'
-        attrMap['label'] = 'label'
-        attrMap['recorderId'] = 'recorder_id'
-        attrMap['recorderSerial'] = None
-        attrMap['recorderType'] = None
-        attrMap['serial'] = 'serial'
-        attrMap['type'] = 'type'
-        attrMap['recChannelName'] = 'rec_channel_name'
-        attrMap['channel_name'] = 'channel_name'
-
-        # The allowed actions to be saved in the history.
-        actionTypes = {};
-        actionTypes['changeAttribute'] = 'Changed a station attribute.'
-
-        ## The station action history.
-        self.history = InventoryHistory(attrMap, actionTypes)
-
-        ## The database table name holding the station data.
-        self.dbTableName = 'geom_sensor'
 
         # The inventory containing this sensor.
         self.parentInventory = parentInventory
+
+        
+        # The parent recorder.
+        self.parentRecorder = None
 
 
     def __getitem__(self, name):
         return self.__dict__[name]
 
-    def __setitem__(self, name, value):
-        if name in ['recorderSerial', 'recorderType']:
-            action = {}
-            action['type'] = 'changeRecorderAssignment'
-            action['attrName'] = name
-            action['dataBefore'] = self.__dict__[name]
-            action['dataAfter'] = value
-        else:
-            action = {}
-            action['type'] = 'changeAttribute'
-            action['attrName'] = name
-            action['dataBefore'] = self.__dict__[name]
-            action['dataAfter'] = value
 
+    def __setitem__(self, name, value):
         self.__dict__[name] = value
-        self.history.do(action)
+        # Send an inventory update event.
+        msgTopic = 'inventory.update.sensor'
+        msg = (self, name, value)
+        pub.sendMessage(msgTopic, msg)
+
+
+    def setParentInventory(self, parentInventory):
+        ''' Set the parentInventory attribute.
+
+        Parameters
+        ----------
+        parentInventory : :class:`Inventory`
+            The new parent inventory of the station.
+        '''
+        self.parentInventory = parentInventory
 
 
     def addParameter(self, parameter, beginTime, endTime):
+        ''' Add a sensor paramter instance to the sensor.
+
+        Parameters
+        ----------
+        parameter : :class:`SensorParameter`
+            The sensor parameter instance to be added.
+
+        beginTime : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The begin time of the parameter values.
+
+        endTime : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The end time of the parameter values.
+
+        '''
         self.parameters.append(
                                (parameter,
                                beginTime,
@@ -1194,161 +1317,6 @@ class Sensor:
                                )
         self.hasChanged = True
 
-    ## Load the sensor parameters from the database.
-    def loadParameterFromDb(self, project):
-
-        tableName = project.dbTableNames['geom_sensor_param']
-        query =  ("SELECT id, sensor_id, start_time, end_time, normalization_factor, "
-                  "normalization_frequency, type, tf_units, gain, sensitivity, "
-                  "sensitivity_units, bitweight, bitweight_units, "
-                  "start_time, end_time "
-                  "FROM  %s "
-                  "WHERE sensor_id = %d") % (tableName, self.id)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            for curData in res['data']:
-                curParam = SensorParameter(id=curData['id'],
-                                           sensorId=curData['sensor_id'],
-                                           gain = curData['gain'],
-                                           bitweight = curData['bitweight'],
-                                           bitweightUnits = curData['bitweight_units'],
-                                           sensitivity = curData['sensitivity'],
-                                           sensitivityUnits = curData['sensitivity_units']
-                                           )
-
-                curParam.setTransferFunction(tfType=curData['type'], 
-                                             tfUnits=curData['tf_units'],
-                                             tfNormalizationFactor=curData['normalization_factor'], 
-                                             tfNormalizationFrequency=curData['normalization_frequency']
-                                             )
-
-                query = ("SELECT type, complex_real, complex_imag FROM %s "
-                         "WHERE param_id = %d") % (project.dbTableNames['geom_tf_pz'], curParam.id)
-
-                res = project.executeQuery(query)
-
-                for curPz in res['data']:
-                    if curPz['type'] == 0:
-                        # Process a zero.
-                        curParam.tfAddComplexZero(complex(curPz['complex_real'], curPz['complex_imag']))
-
-                    else:
-                        # Process a pole
-                        curParam.tfAddComplexPole(complex(curPz['complex_real'], curPz['complex_imag']))
-
-                # Convert the time strings to UTC times.
-                if curData['start_time']:
-                    startTime = UTCDateTime(curData['start_time'])
-                else:
-                    startTime = None
-
-
-                if curData['end_time']:
-                    endTime = UTCDateTime(curData['end_time'])
-                else:
-                    endTime = None
-
-                self.addParameter(curParam, 
-                                    startTime, 
-                                    endTime)
-
-        else:
-            print res['msg'] 
-
-    ## Write the sensor to the database.
-    def write2Db(self, project, recorderId):              
-
-        # Write the sensor data to the geom_sensor table..
-        tableName = project.dbTableNames['geom_sensor']
-        query =  ("REPLACE INTO %s "
-                  "(recorder_id, label, serial, type, rec_channel_name, channel_name) "
-                  "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')") % (tableName, 
-                                                              recorderId,
-                                                              self.label,
-                                                              self.serial, 
-                                                              self.type,
-                                                              self.recChannelName,
-                                                              self.channelName)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            print("Successfully wrote the sensors to the database.")
-        else:
-            print res['msg'] 
-
-        ## Get the id of the inserted sensor.
-        query = ("SELECT id FROM %s " 
-                 "WHERE recorder_id = %s "
-                 "AND serial LIKE '%s' "
-                 "AND type LIKE '%s' "
-                 "AND rec_channel_name LIKE '%s' "
-                 "AND channel_name LIKE '%s'") % (tableName, 
-                                                  recorderId, 
-                                                  self.serial, 
-                                                  self.type, 
-                                                  self.recChannelName, 
-                                                  self.channelName)  
-        res = project.executeQuery(query)
-        sensorData = res['data']
-
-        if not res['isError']:
-            if not sensorData:
-                print "No id found for recorder %s-%s-%s-%s" % (self.serial, self.type, self.recChannelName, self.channelName)
-                sensorId = -1
-            else:
-                sensorId = sensorData[0]['id']
-                print "Assigned id %s to sensor %s-%s-%s-%s." % (sensorId, self.serial, self.type, self.recChannelName, self.channelName)
-        else:
-            print res['msg']  
-
-
-        for (curParam, curStart, curEnd) in self.parameters:
-            curParam.write2Db(project, sensorId, curStart, curEnd) 
-
-
-    ## Update the sensor database entry.    
-    def updateDb(self, project):
-
-        if not self.history.hasActions():
-            # No actions to perform.
-            return
-
-        # Process the changed attributes of the station.
-        curAction = self.history.fetchAction('changeAttribute')
-        self.dbUpdateAttributes(project, curAction)
-
-        # Process the changed Recorder assignments.
-        curAction = self.history.fetchAction('changeRecorderAssignment')
-        self.dbUpdateRecorderAssignment(project, curAction)
-
-        # Process all other actions. 
-        while(self.history.hasActions()):
-            curAction = self.history.fetchAction()
-            print "Processing action " + curAction['type']
-            print curAction
-
-
-
-    ## Update the changed attribute fields in the database table.      
-    def dbUpdateAttributes(self, project, actions):
-
-        tableName = project.dbTableNames[self.dbTableName]
-        updateString = self.history.getUpdateString(actions)
-
-        if updateString:
-            query =  ("UPDATE %s "
-                      "SET %s "
-                      "WHERE id=%d") % (tableName, updateString, self.id)
-
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                print("Successfully updated the sensor attributes of recorder %s-%s-%s.") % (self.recorderSerial, self.serial, self.recChannelName)
-            else:
-                print res['msg'] 
 
 
     ## Update the changed attribute fields in the database table.      
@@ -1421,8 +1389,7 @@ class Sensor:
 
         if not curRow[2] or startTime < curRow[2]:
             self.parameters[position] = (curRow[0], startTime, curRow[2])
-            # Register an action in the history.
-
+            curRow[0]['startTime'] = startTime
         else:
             startTime = curRow[1]
             msg = "The start-time has to be smaller than the begin time."
@@ -1437,6 +1404,11 @@ class Sensor:
         msg = ''    
         curRow = self.parameters[position]
 
+        if endTime == 'running':
+            self.parameters[position] = (curRow[0], curRow[1], None)
+            curRow[0]['endTime'] = None
+            return(endTime, msg)
+
         if not isinstance(endTime, UTCDateTime):
             try:
                 endTime = UTCDateTime(endTime)
@@ -1445,12 +1417,17 @@ class Sensor:
                 msg = "The entered value is not a valid time."
 
 
-        if not curRow[1] or endTime > curRow[1]:
-            self.parameters[position] = (curRow[0], curRow[1], endTime)
-            # Resister the corresponding action.
-        else:
-            endTime = curRow[2]
-            msg = "The end-time has to be larger than the begin time."
+        if endTime:
+            if not curRow[1] or endTime > curRow[1]:
+                self.parameters[position] = (curRow[0], curRow[1], endTime)
+                curRow[0]['endTime'] = endTime
+                # Send an inventory update event.
+                #msgTopic = 'inventory.update.sensorParameterTime'
+                #msg = (curRow[0], 'time', (self, curRow[0], curRow[1], endTime))
+                #pub.sendMessage(msgTopic, msg)
+            else:
+                endTime = curRow[2]
+                msg = "The end-time has to be larger than the begin time."
 
         return (endTime, msg)
 
@@ -1466,7 +1443,7 @@ class SensorParameter:
     # @param self The object pointer.
     def __init__(self, sensorId, gain, bitweight, bitweightUnits, sensitivity, 
                  sensitivityUnits, tfType=None, tfUnits=None, tfNormalizationFactor=None, 
-                 tfNormalizationFrequency=None, id=None):
+                 tfNormalizationFrequency=None, id=None, startTime=None, endTime=None):
 
         ## The id of the sensor to which this SensorParamter instance is assigned 
         # to. 
@@ -1509,30 +1486,11 @@ class SensorParameter:
         self.tfPoles = []
         self.tfZeros = []
 
-        ## The mapping of the station attributes to the database columns.
-        attrMap = {};
-        attrMap['id'] = 'id'
-        attrMap['sensorId'] = 'sensor_id'
-        attrMap['tfNormalizationFactor'] = 'normalization_factor'
-        attrMap['tfNormalizationFrequency'] = 'normalization_frequency'
-        attrMap['tfType'] = 'type'
-        attrMap['tfUnits'] = 'tf_units'
-        attrMap['gain'] = 'gain'
-        attrMap['sensitivity'] = 'sensitivity'
-        attrMap['sensitivityUnits'] = 'sensitivity_units'
-        attrMap['bitweight'] = 'bitweight'
-        attrMap['bitweightUnits'] = 'bitweight_units'    
+        # The startTime from which the parameters are valid.
+        self.startTime = startTime
 
-        # The allowed actions to be saved in the history.
-        actionTypes = {};
-        actionTypes['changeAttribute'] = 'Changed a station attribute.'
-
-        ## The station action history.
-        self.history = InventoryHistory(attrMap, actionTypes)
-
-        ## The database table name holding the station data.
-        self.dbTableName = 'geom_sensor_param'
-
+        # The end time up to which the parameters are valid.
+        self.endTime = endTime
 
 
 
@@ -1541,142 +1499,35 @@ class SensorParameter:
 
 
     def __setitem__(self, name, value):
-        action = {}
-        action['type'] = 'changeAttribute'
-        action['attrName'] = name
-        action['dataBefore'] = self.__dict__[name]
-        action['dataAfter'] = value
-
         self.__dict__[name] = value
-        self.history.do(action)
+        print "Setting sensor Parameter: %s" % name
+        msgTopic = 'inventory.update.sensorParameter'
+        msg = (self, name, value)
+        pub.sendMessage(msgTopic, msg)
 
 
-
-
-    ## Set the transfer function paramters.
     def setTransferFunction(self, tfType, tfUnits, tfNormalizationFactor, 
                             tfNormalizationFrequency):
+        ''' Set the transfer function parameters.
+
+        '''
         self.tfType = tfType
         self.tfUnits = tfUnits
         self.tfNormalizationFactor = tfNormalizationFactor
         self.tfNormalizationFrequency = tfNormalizationFrequency
 
 
-    ## Add a complex zero to the transfer function PAZ.
     def tfAddComplexZero(self, zero):
+        ''' Add a complex zero to the transfer function PAZ.
+
+        '''
         self.tfZeros.append(zero)
 
-    ## Add a complex zero to the transfer function PAZ.
     def tfAddComplexPole(self, pole):
+        ''' Add a complec pole to the transfer function PAZ.
+
+        '''
         self.tfPoles.append(pole)
-
-    ## Write the sensor paramters to the database.
-    def write2Db(self, project, sensorId, startTime, endTime):
-        # Write the sensor parameter data to the geom_sensor_param table.
-
-        if startTime:
-            startTime = startTime.getTimeStamp()
-        else:
-            startTime = None
-
-        if endTime:
-            endTime = endTime.getTimeStamp()
-        else:
-            endTime = None
-
-
-        tableName = project.dbTableNames['geom_sensor_param']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(sensor_id, start_time, end_time, normalization_factor, "
-                  "normalization_frequency, type, tf_units, gain, sensitivity, "
-                  "sensitivity_units, bitweight, bitweight_units) "
-                  "VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)") % tableName
-
-        dbData = [(sensorId, 
-                  startTime,
-                  endTime,
-                  self.tfNormalizationFactor,
-                  self.tfNormalizationFrequency,
-                  self.tfType,
-                  self.tfUnits,
-                  self.gain,
-                  self.sensitivity,
-                  self.sensitivityUnits,
-                  self.bitweight,
-                  self.bitweightUnits)] 
-
-        res = project.executeManyQuery(query, dbData)  # I'm using executeManyQuery to handle NULL values.
-
-        if not res['isError']:
-            print("Successfully wrote the sensor parameters to the database.")
-
-            ## Get the id of the inserted sensor parameter.
-            query = ("SELECT LAST_INSERT_ID()") 
-
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                data = res['data']
-                if data:
-                    paramrecorderTypeId = data[0]['LAST_INSERT_ID()']
-
-                    dbData = []
-                    for curPole in self.tfPoles:
-                        dbData.append((paramId, 1, curPole.real, curPole.imag))
-
-                    for curZero in self.tfZeros:
-                        dbData.append((paramId, 0, curZero.real, curZero.imag))
-
-                    tableName = project.dbTableNames['geom_tf_pz']
-                    query =  ("INSERT INTO %s "
-                              "(param_id, type, complex_real, complex_imag) "
-                              "VALUES (%%s, %%s, %%s, %%s)") % tableName 
-                    res = project.executeManyQuery(query, dbData)
-            else:
-                print res['msg']  
-
-        else:
-            print res['msg'] 
-
-
-    ## Update the sensor parameter database entry.    
-    def updateDb(self, project):
-
-        if not self.history.hasActions():
-            # No actions to perform.
-            return
-
-        # Process the changed attributes of the sensor paramter.
-        curAction = self.history.fetchAction('changeAttribute')
-        self.dbUpdateAttributes(project, curAction)
-
-
-        # Process all other actions. 
-        while(self.history.hasActions()):
-            curAction = self.history.fetchAction()
-            print "Processing action " + curAction['type']
-            print curAction
-
-
-
-    ## Update the changed attribute fields in the database table.      
-    def dbUpdateAttributes(self, project, actions):
-
-        tableName = project.dbTableNames[self.dbTableName]
-        updateString = self.history.getUpdateString(actions)
-
-        if updateString:
-            query =  ("UPDATE %s "
-                      "SET %s "
-                      "WHERE id=%d") % (tableName, updateString, self.id)
-
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                print("Successfully updated the sensor attributes of sensor parameter %s.") % self.id
-            else:
-                print res['msg'] 
-
 
 
 
@@ -1748,32 +1599,6 @@ class Station:
         # 3. column: end time
         self.sensors = []
 
-
-        # The mapping of the station attributes to the database columns.
-        attrMap = {};
-        attrMap['id'] = 'id'
-        attrMap['network'] = 'net_name'
-        attrMap['name'] = 'name'
-        attrMap['location'] = 'location'
-        attrMap['x'] = 'X'
-        attrMap['y'] = 'Y'
-        attrMap['z'] = 'Z'
-        attrMap['coordSystem'] = 'coord_system'
-        attrMap['description'] = 'description'
-
-        # The allowed actions to be saved in the history.
-        actionTypes = {};
-        actionTypes['changeAttribute'] = 'Changed a station attribute.'
-        actionTypes['addSensor'] = 'Added a sensor to the station.'
-        actionTypes['removeSensor'] = 'Removed a sensor from the station.'
-
-        ## The station action history.
-        self.history = InventoryHistory(attrMap, actionTypes)
-
-
-        ## The database table name holding the station data.
-        self.dbTableName = 'geom_station'
-
         # The inventory containing this sensor.
         self.parentInventory = parentInventory
 
@@ -1783,15 +1608,25 @@ class Station:
 
 
     def __setitem__(self, name, value):
-        action = {}
-        action['type'] = 'changeAttribute'
-        action['attrName'] = name
-        action['dataBefore'] = self.__dict__[name]
-        action['dataAfter'] = value
-
         self.__dict__[name] = value
-        self.history.do(action)
+        msgTopic = 'inventory.update.station'
+        msg = (self, name, value)
+        pub.sendMessage(msgTopic, msg)
 
+
+    def setParentInventory(self, parentInventory):
+        ''' Set the parentInventory attribute.
+
+        Also update the parent inventory of all children.
+
+        Parameters
+        ----------
+        parentInventory : :class:`Inventory`
+            The new parent inventory of the station.
+        '''
+        self.parentInventory = parentInventory
+        for curSensor, beginTime, endTime in self.sensors:
+            curSensor.setParentInventory(self.parentInventory) 
 
     def getLonLat(self):
         '''
@@ -1804,12 +1639,29 @@ class Station:
         print 'Converting from "%s" to "%s"' % (srcProj.srs, dstProj.srs)
         return (lon, lat)
 
-    ## Add a sensor to the station.
-    #
-    # 
+
     def addSensor(self, sensor, startTime, endTime):
+        ''' Add a sensor to the station.
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The :class:`Sensor` instance to be added to the station.
+
+        startTime : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the sensor has been operating at the station.
+
+        endTime : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the sensor has been operating at the station. "None" if the station is still running.
+        '''
         self.sensors.append((sensor, startTime, endTime))
         self.hasChanged = True
+        sensor.setParentInventory(self.parentInventory)
+
+        # Send an inventory update event.
+        msgTopic = 'inventory.update.addSensor2Station'
+        msg = (self, 'addSensor', (sensor, startTime, endTime))
+        pub.sendMessage(msgTopic, msg)
 
         #if 'sensorAdded' in self.changedFields.keys():
         #    self.changedFields['sensorAdded'].append((sensor, startTime, endTime))
@@ -1817,345 +1669,127 @@ class Station:
         #    self.changedFields['sensorAdded'] = [(sensor, startTime, endTime)]
 
 
-    ## Remove a sensor to the station.
-    #
-    # 
+
     def removeSensor(self, sensor):
+        ''' Remove a sensor from the station.
+
+        Parameters
+        ----------
+        sensor : tuple (:class:`Sensor`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
+            The sensor to be removed from the station.
+        '''
         print "Removing sensor "
         print sensor
 
+        logger = logging.getLogger('base')
+        logger.debug('Removing sensor')
 
-    ## Change the sensor deployment start time.
-    #
-    # 
-    def changeSensorStartTime(self, position, startTime):
+        #if sensor not in self.sensors:
+        
+        # Remove the sensor from the sensors list.
+        #self.sensors.pop(self.sensors.index(sensor))
+
+
+
+
+
+    def changeSensorStartTime(self, sensor, startTime):
+        ''' Change the sensor deployment start time
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The sensor which should be changed.
+
+        startTime : :class:`~obspy.core.utcdatetime.UTCDateTime or String
+            A :class:`~obspy.core.utcdatetime.UTCDateTime` instance or a data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
+        '''
+        sensor2Change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+
+        if sensor2Change:
+            sensor2Change = sensor2Change[0]
+            position = sensor2Change[3]
+        else:
+            msg = 'The sensor can''t be found in the station.'
+            return (None, msg)
+
         msg = ''    
-        curRow = self.sensors[position]
+
 
         if not isinstance(startTime, UTCDateTime):
             try:
                 startTime = UTCDateTime(startTime)
             except:
-                startTime = curRow[1]
+                startTime = sensor2Change[2]
                 msg = "The entered value is not a valid time."
 
 
-        if not curRow[2] or startTime < curRow[2]:
-            self.sensors[position] = (curRow[0], startTime, curRow[2])
-           # self.hasChanged = True
+        if not sensor2Change[2] or (sensor2Change[2] and startTime < sensor2Change[2]):
+            self.sensors[position] = (sensor2Change[0], startTime, sensor2Change[2])
+            # Send an inventory update event.
+            msgTopic = 'inventory.update.sensorDeploymentTime'
+            evtMsg = (self, 'startTime', (sensor2Change[0], startTime, sensor2Change[2]))
+            pub.sendMessage(msgTopic, evtMsg)
 
-           # if 'sensorTime' in self.changedFields.keys():
-           #     if curRow[0] in self.changedFields['sensorTime'].keys():
-           #         tmp = self.changedFields['sensorTime'][curRow[0]]
-           #         self.changedFields['sensorTime'][curRow[0]] = (startTime, curRow[2], tmp[2], tmp[3])
-           #     else:
-           #         self.changedFields['sensorTime'] = {curRow[0]: (startTime, curRow[2], curRow[1], curRow[2])}
-           # else:
-           #     self.changedFields['sensorTime'] = {curRow[0]: (startTime, curRow[2], curRow[1], curRow[2])}
         else:
-            startTime = curRow[1]
-            msg = "The start-time has to be smaller than the begin time."
+            startTime = sensor2Change[1]
+            msg = "The end-time has to be larger than the begin time."
 
         return (startTime, msg)
 
-    ## Change the sensor deployment start time.
-    #
-    # 
-    def changeSensorEndTime(self, position, endTime):
+
+
+    def changeSensorEndTime(self, sensor, endTime):
+        ''' Change the sensor deployment end time
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The sensor which should be changed.
+
+        endTime : String
+            A data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
+        '''
+        sensor2Change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+
+        if sensor2Change:
+            sensor2Change = sensor2Change[0]
+            position = sensor2Change[3]
+        else:
+            msg = 'The sensor can''t be found in the station.'
+            return (None, msg)
+
         msg = ''    
-        curRow = self.sensors[position]
+
+        if endTime == 'running':
+            self.sensors[position] = (sensor2Change[0], sensor2Change[1], None)
+            # Send an inventory update event.
+            msgTopic = 'inventory.update.sensorDeploymentTime'
+            evtMsg = (self, 'endTime', (sensor2Change[0], sensor2Change[1], None))
+            pub.sendMessage(msgTopic, evtMsg)
+            return(endTime, msg)
 
         if not isinstance(endTime, UTCDateTime):
             try:
                 endTime = UTCDateTime(endTime)
             except:
-                endTime = curRow[2]
+                endTime = sensor2Change[2]
                 msg = "The entered value is not a valid time."
 
 
-        if not curRow[1] or endTime > curRow[1]:
-            self.sensors[position] = (curRow[0], curRow[1], endTime)
-            #self.hasChanged = True
+        if not sensor2Change[1] or endTime > sensor2Change[1]:
+            self.sensors[position] = (sensor2Change[0], sensor2Change[1], endTime)
+            # Send an inventory update event.
+            msgTopic = 'inventory.update.sensorDeploymentTime'
+            evtMsg = (self, 'endTime', (sensor2Change[0], sensor2Change[1], endTime))
+            pub.sendMessage(msgTopic, evtMsg)
 
-            #if 'sensorTime' in self.changedFields.keys():
-            #    if curRow[0] in self.changedFields['sensorTime'].keys():
-            #        tmp = self.changedFields['sensorTime'][curRow[0]]
-            #        self.changedFields['sensorTime'][curRow[0]] = (curRow[1], endTime, tmp[2], tmp[3])
-            #    else:
-            #        self.changedFields['sensorTime'] = {curRow[0]: (curRow[1], endTime, curRow[1], curRow[2])}
-            #else:
-            #    self.changedFields['sensorTime'] = {curRow[0]: (curRow[1], endTime, curRow[1], curRow[2])}
         else:
-            endTime = curRow[2]
+            endTime = sensor2Change[2]
             msg = "The end-time has to be larger than the begin time."
 
         return (endTime, msg)
 
-    ## Load the sensors from the database.
-    #
-    # @param self The object pointer.
-    # @param project The pSysmon project.
-    def loadSensorFromDb(self, project, inventory):
-
-        tableName = project.dbTableNames['geom_sensor_time']
-        query =  ("SELECT "
-                  "stat_id, sensor_id, start_time, end_time "
-                  "FROM  %s "
-                  "WHERE stat_id = %d") % (tableName, self.id)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            for curData in res['data']:
-                sensor2Add = inventory.getSensorById(id = curData['sensor_id'])
-
-                if not sensor2Add:
-                    continue
-
-                # Convert the time strings to UTC times.
-                if curData['start_time']:
-                    startTime = UTCDateTime(curData['start_time'])
-                else:
-                    startTime = None
-
-
-                if curData['end_time']:
-                    endTime = UTCDateTime(curData['end_time'])
-                else:
-                    endTime = None
-
-                self.addSensor(sensor2Add, startTime, endTime)
-
-            # Reset the station to unchanged state.
-            self.hasChanged = False
-            self.changedFields = {}
-        else:
-            print res['msg']
-
-    ## Write the station to the database.
-    #
-    #
-    def write2Db(self, project):
-        # Write the station data to the geom_sensor_param table.
-
-        tableName = project.dbTableNames['geom_station']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(net_name, name, location, x, y, z, coord_system, description) "
-                  "VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)") % tableName
-
-        dbData = [(self.network,
-                   self.name,
-                   self.location,
-                   self.x,
-                   self.y,
-                   self.z,
-                   self.coordSystem,
-                   self.description)] 
-
-        res = project.executeManyQuery(query, dbData)  # I'm using executeManyQuery to handle NULL values.
-
-        if not res['isError']:
-            print("Successfully wrote the station to the database.")
-        else:
-            print res['msg']
-
-        # Get the station database id.
-        query = ("SELECT "
-                 "id "
-                 "FROM %s "
-                 "WHERE name LIKE '%s'"
-                 ) % (tableName, self.name)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            data = res['data']
-            statId = data[0]['id']
-        else:
-            statId = -1
-
-
-        # Now add the sensors to the geom_sensor_time table.
-        sensorTable = project.dbTableNames['geom_sensor']
-        recorderTable = project.dbTableNames['geom_recorder']
-        sensorTimeTable = project.dbTableNames['geom_sensor_time']
-
-        for (curSensor, curStartTime, curEndTime) in self.sensors:
-            # Get the sensor database id.
-            query = ("SELECT sensor.id FROM %s as sensor, %s as recorder " 
-                     "WHERE sensor.serial LIKE '%s' "
-                     "AND sensor.type LIKE '%s' "
-                     "AND sensor.rec_channel_name LIKE '%s' "
-                     "AND sensor.channel_name LIKE '%s' "
-                     "AND sensor.recorder_id = recorder.id "
-                     "AND recorder.serial LIKE '%s' "
-                     "AND recorder.type LIKE '%s'"
-                     ) % (sensorTable, 
-                          recorderTable,
-                          curSensor.serial, 
-                          curSensor.type, 
-                          curSensor.recChannelName, 
-                          curSensor.channelName,
-                          curSensor.recorderSerial,
-                          curSensor.recorderType)  
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                data = res['data']
-                sensorId = data[0]['id']
-
-                if curStartTime:
-                    curStartTime = curStartTime.getTimeStamp()
-                else:
-                    curStartTime = None
-
-                if curEndTime:
-                    curEndTime = curEndTime.getTimeStamp()
-                else:
-                    curEndTime = None
-
-                query = ("INSERT IGNORE INTO %s "
-                         "(stat_id, sensor_id, start_time, end_time) "
-                         "VALUES (%%s, %%s, %%s, %%s)") % sensorTimeTable
-                dbData = [(statId,
-                           sensorId,
-                           curStartTime,
-                           curEndTime
-                           )]
-
-                project.executeManyQuery(query, dbData)
-            else:
-                print res['msg']
-
-        else:
-            print res['msg'] 
-
-
-        query = ("SELECT id FROM %s WHERE name LIKE '%s'") % (tableName, self.name)  
-        res = project.executeQuery(query)
-        statData = res['data']
-
-        if not res['isError']:
-            if not statData:
-                print "No id found for station %s" % self.name
-                statId = -1
-            else:
-                statId = statData[0]['id']
-                print "Assigned id %s to station %s." % (statId, self.name)
-        else:
-            print res['msg']  
-
-
-    ## Update the station database entry.    
-    def updateDb(self, project):
-
-        if not self.history.hasActions():
-            # No actions to perform.
-            return
-
-        # Process the changed attributes of the station.
-        curAction = self.history.fetchAction('changeAttribute')
-        self.dbUpdateAttributes(project, curAction)
-
-        # Process all other actions. 
-        while(self.history.hasActions()):
-            curAction = self.history.fetchAction()
-            print "Processing action " + curAction
-
-        return
-
-
-
-        # Add new sensors to the station table.        
-        if 'sensorAdded' in self.changedFields.keys():
-            tableName = project.dbTableNames['geom_sensor_time']
-            for (curSensor, curStartTime, curEndTime) in self.changedFields['sensorAdded']:
-                if curStartTime:
-                    curStartTime = curStartTime.getTimeStamp()
-                else:
-                    curStartTime = 0
-
-                if curEndTime:
-                    curEndTime = curEndTime.getTimeStamp()
-                else:
-                    curEndTime = None
-
-                query = ("INSERT IGNORE INTO %s "
-                         "(stat_id, sensor_id, start_time, end_time) "
-                         "VALUES (%%s, %%s, %%s, %%s)") % tableName
-
-                dbData = [(str(self.id),
-                           str(curSensor.id),
-                           curStartTime,
-                           curEndTime
-                           )]
-
-                res = project.executeManyQuery(query, dbData)
-
-                if not res['isError']:
-                    print("Successfully wrote the station to the database.")
-                else:
-                    print res['msg'] 
-
-
-        # Update the sensor deployment time.
-        if 'sensorTime' in self.changedFields.keys():
-            tableName = project.dbTableNames['geom_sensor_time']
-            for  curSensor, (curStartTime, curEndTime, origStartTime, origEndTime) in self.changedFields['sensorTime'].items():
-                if curStartTime:
-                    curStartTime = curStartTime.getTimeStamp()
-                else:
-                    curStartTime = 'NULL'
-
-                if curEndTime:
-                    curEndTime = curEndTime.getTimeStamp()
-                else:
-                    curEndTime = 'NULL'
-
-                if origStartTime:
-                    origStartStr = "start_time=%s" % origStartTime.getTimeStamp()
-                else:
-                    origStartStr = "start_time = 0"
-
-                if origEndTime:
-                    origEndStr = "end_time=%s" % origEndTime.getTimeStamp()
-                else:
-                    origEndStr = "end_time is NULL"
-
-                query =  ("UPDATE %s "
-                      "SET start_time = %s, end_time = %s "
-                      "WHERE stat_id=%d AND sensor_id=%s AND %s AND %s") % (tableName, curStartTime, curEndTime, self.id, curSensor.id, origStartStr, origEndStr)
-
-                print query
-
-                res = project.executeQuery(query)
-                if not res['isError']:
-                    print("Successfully updated the sensor time.")
-                else:
-                    print res['msg']  
-
-
-        self.hasChanged = False
-        self.changedFields = {}
-
-
-    ## Update the changed attribute fields in the database table.      
-    def dbUpdateAttributes(self, project, actions):
-
-        tableName = project.dbTableNames[self.dbTableName]
-        updateString = self.history.getUpdateString(actions)
-
-        if updateString:
-            query =  ("UPDATE %s "
-                      "SET %s "
-                      "WHERE id=%d") % (tableName, updateString, self.id)
-
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                print("Successfully updated the station attributes of station %s.") % self.name
-            else:
-                print res['msg']  
 
 
 ## The network class.
@@ -2178,19 +1812,6 @@ class Network:
         ## The stations contained in the network.
         self.stations = {}
 
-        ## The mapping of the network attributes to the database columns.
-        attrMap = {};
-        attrMap['name'] = 'name'
-        attrMap['description'] = 'description'
-        attrMap['type'] = 'type'
-
-        # The allowed actions to be saved in the history.
-        actionTypes = {};
-        actionTypes['changeAttribute'] = 'Changed a station attribute.'
-
-        ## The network action history.
-        self.history = InventoryHistory(attrMap, actionTypes)
-
         ## The database table name.
         self.dbTableName = 'geom_network'
 
@@ -2203,21 +1824,34 @@ class Network:
 
     ## The index and slicing operator.
     def __setitem__(self, name, value):
-        action = {}
-        action['type'] = 'changeAttribute'
-        action['attrName'] = name
-        action['dataBefore'] = self.__dict__[name]
-        action['dataAfter'] = value
-
         self.__dict__[name] = value
-        self.history.do(action)
+        msgTopic = 'inventory.update.network'
+        msg = (self, name, value)
+        pub.sendMessage(msgTopic, msg)
 
 
+
+
+    def setParentInventory(self, parentInventory):
+        ''' Set the parentInventory attribute.
+
+        Also update the parent inventory of all children.
+
+        Parameters
+        ----------
+        parentInventory : :class:`Inventory`
+            The new parent inventory of the station.
+        '''
+        self.parentInventory = parentInventory
+
+        for curStation in self.stations.values():
+            curStation.setParentInventory(self.parentInventory)
 
     ## Add a station to the network. 
     def addStation(self, station):
         station.network = self.name
         self.stations[(station.name, station.location)] = station
+        station.setParentInventory(self.parentInventory)
 
 
     ## Refresh the station list.
@@ -2237,67 +1871,6 @@ class Network:
                 self.parentInventory.addStation(curStation)
                 stations.remove(curStation)
 
-
-
-    ## Write the network to the database.
-    #
-    #
-    def write2Db(self, project):
-        # Write the network data to the geom_network table.
-
-        tableName = project.dbTableNames['geom_network']
-        query =  ("INSERT IGNORE INTO %s "
-                  "(name, description, type) "
-                  "VALUES (%%s, %%s, %%s)") % tableName
-
-        dbData = [(self.name,
-                   self.description,
-                   self.type)] 
-
-        res = project.executeManyQuery(query, dbData)  # I'm using executeManyQuery to handle NULL values.
-
-        if not res['isError']:
-            print("Successfully wrote the network to the database.")
-        else:
-            print res['msg'] 
-
-
-    ## Update the network database entry.    
-    def updateDb(self, project):
-
-        if not self.history.hasActions():
-            # No actions to perform.
-            return
-
-        # Process the changed attributes of the station.
-        curAction = self.history.fetchAction('changeAttribute')
-        self.dbUpdateAttributes(project, curAction)
-
-        # Process all other actions. 
-        while(self.history.hasActions()):
-            curAction = self.history.fetchAction()
-            print "Processing action " + curAction
-
-
-
-
-    ## Update the changed attribute fields in the database table.      
-    def dbUpdateAttributes(self, project, actions):
-
-        tableName = project.dbTableNames[self.dbTableName]
-        updateString = self.history.getUpdateString(actions)
-
-        if updateString:
-            query =  ("UPDATE %s "
-                      "SET %s "
-                      "WHERE id=%d") % (tableName, updateString, self.id)
-
-            res = project.executeQuery(query)
-
-            if not res['isError']:
-                print("Successfully updated the station attributes of network %s.") % self.name
-            else:
-                print res['msg']  
 
 
 
@@ -2374,11 +1947,5 @@ class InventoryHistory:
 
         # Remove the trailing comma from the string.            
         return updateString[:-1]
-
-
-
-
-
-
 
 
