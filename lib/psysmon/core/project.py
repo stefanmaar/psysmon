@@ -606,25 +606,6 @@ class Project:
         pub.sendMessage(msgTopic, msg)
 
 
-    def getLogger(self, name):
-        ''' Create a logging logger instance.
-
-        Parameters
-        ----------
-        name : String
-            The name of the logger. This should be the module name 
-            using the logger.
-        '''
-        logger = logging.getLogger(name)
-        logger.setLevel(self.logConfig['level'])
-        ch = logging.StreamHandler()
-        ch.setLevel(self.logConfig['level'])
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        ch.setFormatter(formatter)
-        logger.addHandler(ch) 
-        return logger
-
-
 
 
 ## The pSysmon user.
