@@ -84,10 +84,8 @@ class Base:
         '''
 
         # The system logger used for debugging and system wide error logging.
-        self.logger = logging.getLogger("base")
-
-        # Configure the logger.
-        self.configureLogger() 
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # Check the baseDir parameter for errors.
         if not isinstance(baseDir, basestring):
@@ -112,22 +110,6 @@ class Base:
 
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(self, [self.packageDirectory])
-
-
-    def configureLogger(self):
-        '''Configure the pSysmon system logger.
-
-        This can be used for system log messages (e.g. for debugging).
-        '''
-        self.logger.setLevel(logging.DEBUG)
-
-        # Create console handler and set level to debug.
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        # Create a formatter.
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        ch.setFormatter(formatter)
-        self.logger.addHandler(ch)
 
 
 
