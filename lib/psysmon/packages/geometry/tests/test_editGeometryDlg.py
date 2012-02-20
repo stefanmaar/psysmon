@@ -5,6 +5,8 @@ Created on May 17, 2011
 '''
 
 import unittest
+import psysmon
+import logging
 from psysmon.packages.geometry.editGeometry import EditGeometryDlg
 from psysmon.core.base import Base
 import psysmon.core.gui as psygui
@@ -17,6 +19,11 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
     """
     def setUp(self):
+        # Configure the logger.
+        logger = logging.getLogger('psysmon')
+        logger.setLevel(psysmon.logConfig['level'])
+        logger.addHandler(psysmon.getLoggerHandler())
+
         # Get the pSysmon base directory.
         psyBaseDir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/01_src/psysmon/lib/psysmon/'
         psyBaseDir = os.path.dirname(psyBaseDir)
