@@ -30,6 +30,7 @@ The editGeometry module.
 This module contains the classes of the editGeometry dialog window.
 '''
 
+import logging
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
@@ -78,7 +79,6 @@ class EditGeometry(CollectionNode):
     # @param prevNodeOutput The output of the previous collection node. 
     # Not used in this method.
     def execute(self, prevNodeOutput={}):
-        self.logger = self.project.getLogger(__name__)
         dlg = EditGeometryDlg(self, self.project)
         dlg.Show()
 
@@ -107,7 +107,7 @@ class EditGeometryDlg(wx.Frame):
 
 
         loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = psyProject.getLogger(loggerName)
+        self.logger = logging.getLogger(loggerName)
 
         ## The current pSysmon project.
         self.psyProject = psyProject
@@ -874,7 +874,7 @@ class StationsPanel(wx.Panel):
                 self.displayedStation[fieldName] =  self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
                 self.displayedStation.parentInventory.refreshNetworks()
                 self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
-                print self.GetParent().GetParent().GetParent()
+                self.logger.debug(self.GetParent().GetParent().GetParent())
         else:
             pass
 
@@ -1071,7 +1071,7 @@ class SensorsPanel(wx.Panel):
         self.tfPhaseAxis.grid(True)
 
         self.tfCanvas = FigureCanvas(self, -1, self.tfFigure)
-        print self.tfCanvas.GetBestSize()
+        self.logger.debug(self.tfCanvas.GetBestSize())
         self.tfCanvas.SetSize((-1, 320))
         self.tfCanvas.SetMinSize((-1, 320))
         #self.sizer.Add(self.tfCanvas, pos=(2,0), flag=wx.EXPAND|wx.ALL, border=5)
