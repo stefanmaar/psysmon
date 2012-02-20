@@ -31,6 +31,7 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
+import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.util import PsysmonError
 from mpl_toolkits.basemap import pyproj
@@ -47,6 +48,10 @@ class Inventory:
     # @param self The object pointer.
     # @param name The inventory name.
     def __init__(self, name):
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         ## The name of the inventory.
         self.name = name
@@ -212,6 +217,10 @@ class InventoryDatabaseController:
 
         ## The pSysmon project.
         self.project = project
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # The database session.
         self.dbSession = self.project.getDbSession()
@@ -527,8 +536,8 @@ class InventoryDatabaseController:
 
 
     def updateStationMapper(self, msg):
-        print "***********************"
-        print "Updating station mapper."
+        self.logger.debug("***********************")
+        self.logger.debug("Updating station mapper.")
 
 
         attrMap = {}
@@ -545,7 +554,7 @@ class InventoryDatabaseController:
         masterStation = msg.data[0]
 
         if masterStation.parentInventory.type != 'db':
-            print "Not a db type inventory."
+            self.logger.debug("Not a db type inventory.")
             return
 
         name = msg.data[1]
@@ -557,8 +566,8 @@ class InventoryDatabaseController:
 
 
     def updateRecorderMapper(self, msg):
-        print "***********************"
-        print "Updating recorder mapper."
+        self.logger.debug("***********************")
+        self.logger.debug("Updating recorder mapper.")
 
         attrMap = {}
         attrMap['id'] = 'id'
@@ -574,8 +583,8 @@ class InventoryDatabaseController:
 
 
     def updateSensorMapper(self, msg):
-        print "***********************"
-        print "Updating sensor mapper."
+        self.logger.debug("***********************")
+        self.logger.debug("Updating sensor mapper.")
 
         attrMap = {};
         attrMap['id'] = 'id'
@@ -655,11 +664,11 @@ class InventoryDatabaseController:
         masterSensor = msg.data[2][0]
         station2Update = self.mapper[masterStation]
         sensor2Update = self.mapper[masterSensor]
-        print "*****************"
-        print station2Update
+        self.logger.debug("*****************")
+        self.logger.debug("%s", station2Update)
         for curSensorTime in station2Update.sensors:
             if curSensorTime.child == sensor2Update:
-                print curSensorTime
+                self.logger.debug("%s", curSensorTime)
 
                 startTime = msg.data[2][1]
                 endTime = msg.data[2][2]
@@ -672,7 +681,7 @@ class InventoryDatabaseController:
 
                 curSensorTime.start_time = startTime
                 curSensorTime.end_time = endTime
-        print "*****************"
+        self.logger.debug("*****************")
 
 
     def updateSensorAssignmentMapper(self, msg):
@@ -686,28 +695,28 @@ class InventoryDatabaseController:
         newDbRec = self.mapper[newRecorder]
         dbSensor = self.mapper[sensorChanged]
 
-        print "+++++++++++++++++++"
-        print "oldDbRec:"
-        print oldDbRec
-        print "newDbRec:"
-        print newDbRec
-        print "dbSensor:"
-        print dbSensor
-        print "+++++++++++++++++++"
+        self.logger.debug("+++++++++++++++++++")
+        self.logger.debug("oldDbRec:")
+        self.logger.debug("%s", oldDbRec)
+        self.logger.debug("newDbRec:")
+        self.logger.debug("%s", newDbRec)
+        self.logger.debug("dbSensor:")
+        self.logger.debug("%s", dbSensor)
+        self.logger.debug("+++++++++++++++++++")
 
-        print oldDbRec.sensors
+        self.logger.debug(oldDbRec.sensors)
         tmp = oldDbRec.sensors.pop(oldDbRec.sensors.index(dbSensor))
-        print oldDbRec.sensors
+        self.logger.debug(oldDbRec.sensors)
 
-        print "Popped sensor:"
-        print tmp
-        print "sensor parent:"
-        print tmp.parent
-        print "\n"
+        self.logger.debug("Popped sensor:")
+        self.logger.debug("%s", tmp)
+        self.logger.debug("sensor parent:")
+        self.logger.debug("%s", tmp.parent)
+        self.logger.debug("\n")
 
-        print "****************"
-        print "newDbRec"
-        print newDbRec
+        self.logger.debug("****************")
+        self.logger.debug("newDbRec")
+        self.logger.debug("%s", newDbRec)
 
         tmp.parent = newDbRec
         newDbRec.sensors.append(tmp)
@@ -788,7 +797,7 @@ class InventoryXmlParser:
     def parse(self):
         from xml.etree.ElementTree import parse
 
-        print "parsing file...\n"
+        self.logger.debug("parsing file...\n")
 
         # Parse the xml file passed as argument.
         tree = parse(self.filename)
@@ -798,7 +807,7 @@ class InventoryXmlParser:
         if inventory.tag != 'inventory':
             return
         else:
-            print("found inventory root tag\n")
+            self.logger.debug("found inventory root tag\n")
 
         # Set the name of the inventory.
         self.parentInventory.name = inventory.attrib['name']
@@ -817,7 +826,7 @@ class InventoryXmlParser:
 
         self.processStations(stations)
 
-        print "Success reading the XML file."
+        self.logger.debug("Success reading the XML file.")
 
 
 
@@ -830,12 +839,12 @@ class InventoryXmlParser:
             missingAttrib = self.keysComplete(curRecorder.attrib, self.requiredAttributes['recorder'])
             missingKeys = self.keysComplete(recorderContent, self.requiredTags['recorder']);
             if not missingKeys and not missingAttrib:
-                print "recorder xml content:"
-                print recorderContent
+                self.logger.debug("recorder xml content:")
+                self.logger.debug("%s", recorderContent)
             else:
-                print "Not all required fields present!\nMissing Keys:\n"
-                print missingKeys
-                print missingAttrib
+                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
+                self.logger.debug("%s", missingKeys)
+                self.logger.debug("%s", missingAttrib)
                 continue
 
             # Create the Recorder instance.
@@ -858,22 +867,22 @@ class InventoryXmlParser:
             missingAttrib = self.keysComplete(curChannel.attrib, self.requiredAttributes['sensorUnit'])
             missingKeys = self.keysComplete(channelContent, self.requiredTags['sensorUnit']);
             if not missingKeys and not missingAttrib:
-                print "Adding sensor to recorder."
+                self.logger.debug("Adding sensor to recorder.")
                 sensor2Add = Sensor(serial=channelContent['sensor_serial'],
                                     type=channelContent['sensor_type'],
                                     recChannelName=channelContent['rec_channel_name'],
                                     channelName=channelContent['channel_name'],
                                     label=curChannel.attrib['label']) 
-                print sensor2Add.label
+                self.logger.debug("%s", sensor2Add.label)
                 # Process the channel parameters.
                 self.processChannelParameters(curChannel, sensor2Add)
 
                 recorder.addSensor(sensor2Add)
 
             else:
-                print "Not all required fields present!\nMissing Keys:\n"
-                print missingKeys 
-                print missingAttrib
+                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
+                self.logger.debug("%s", missingKeys)
+                self.logger.debug("%s", missingAttrib)
 
     ## Process the channel_parameter elements.
     def processChannelParameters(self, channelNode, sensor):
@@ -882,7 +891,7 @@ class InventoryXmlParser:
             content = self.parseNode(curParameter)
             missingKeys = self.keysComplete(content, self.requiredTags['channel_parameters'])
             if not missingKeys:
-                print "Adding the channel parameters to the sensor"
+                self.logger.debug("Adding the channel parameters to the sensor")
                 parameter2Add = SensorParameter(sensorId = sensor.id,
                                                  gain = float(content['gain']),
                                                  bitweight = float(content['bitweight']),
@@ -917,7 +926,7 @@ class InventoryXmlParser:
             content = self.parseNode(curTf)
             missingKeys = self.keysComplete(content, self.requiredTags['response_paz'])
             if not missingKeys:
-                print "Adding the tf to the parameter"                
+                self.logger.debug("Adding the tf to the parameter")
                 parameter.setTransferFunction(content['type'], 
                                               content['units'],
                                               float(content['A0_normalization_factor']), 
@@ -966,9 +975,9 @@ class InventoryXmlParser:
                 self.parentInventory.addStation(station2Add)
 
             else:
-                print "Not all required tags or attributes present."
-                print missingKeys
-                print missingAttrib
+                self.logger.debug("Not all required tags or attributes present.")
+                self.logger.debug("%s", missingKeys)
+                self.logger.debug("%s", missingAttrib)
 
 
     def processSensors(self, stationNode, station):
@@ -983,9 +992,9 @@ class InventoryXmlParser:
                 #sensor2Add = self.parentInventory.getSensor(recSerial = sensorContent['recorder_serial'],
                 #                                            senSerial = sensorContent['sensor_serial'],
                 #                                            recChannelName = sensorContent['rec_channel_name'])
-                print sensorContent['sensorUnitLabel']
+                self.logger.debug(sensorContent['sensorUnitLabel'])
                 sensor2Add = self.parentInventory.getSensorByLabel(label=sensorContent['sensorUnitLabel'])
-                print sensor2Add
+                self.logger.debug("%s", sensor2Add)
                 if sensor2Add:
                     # Convert the time strings to UTC times.
                     if sensorContent['start_time']:
@@ -1009,8 +1018,8 @@ class InventoryXmlParser:
                     warnings.warn(msg)
             else:
                 msg = "Not all required fields presents!\nMissing keys:\n"
-                print msg
-                print missingKeys
+                self.logger.debug("%s", msg)
+                self.logger.debug("%s", missingKeys)
 
 
      ## Process the network element.
@@ -1022,11 +1031,11 @@ class InventoryXmlParser:
             missingAttrib = self.keysComplete(curNetwork.attrib, self.requiredAttributes['network'])
             missingKeys = self.keysComplete(content, self.requiredTags['network']);
             if not missingKeys and not missingAttrib:
-                print content
+                self.logger.debug("%s", content)
             else:
-                print "Not all required fields present!\nMissing Keys:\n"
-                print missingKeys
-                print missingAttrib
+                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
+                self.logger.debug("%s", missingKeys)
+                self.logger.debug("%s", missingAttrib)
                 continue
 
             # Create the Recorder instance.
@@ -1110,7 +1119,7 @@ class Recorder:
         self.__dict__[name] = value
         self.hasChanged = True 
         self.changedFields.append(name)
-        print "Setitem in recorder."
+        self.logger.debug("Setitem in recorder.")
 
 
 
@@ -1192,9 +1201,9 @@ class Recorder:
         res = project.executeQuery(query)
 
         if not res['isError']:
-            print("Successfully wrote the recorders to the database.")
+            self.logger.debug("Successfully wrote the recorders to the database.")
         else:
-            print res['msg']  
+            self.logger.debug("%s", res['msg'])  
 
 
     ## Build the database query update string.
@@ -1357,7 +1366,7 @@ class Sensor:
             else:
                 newRecId = res['data'][0]['id']
         else:
-            print res['msg'] 
+            self.logger.debug("%s", res['msg']) 
 
         tableName = project.dbTableNames['geom_sensor']
         query = ("UPDATE %s "
@@ -1367,9 +1376,9 @@ class Sensor:
         res = project.executeQuery(query)
 
         if not res['isError']:
-            print("Successfully updated the sensor assignment of sensor %s-%s-%s.") % (self.recorderSerial, self.serial, self.recChannelName)
+            self.logger.debug("Successfully updated the sensor assignment of sensor %s-%s-%s.", self.recorderSerial, self.serial, self.recChannelName)
         else:
-            print res['msg'] 
+            self.logger.debug("%s", res['msg']) 
 
 
     ## Change the sensor deployment start time.
@@ -1500,7 +1509,7 @@ class SensorParameter:
 
     def __setitem__(self, name, value):
         self.__dict__[name] = value
-        print "Setting sensor Parameter: %s" % name
+        self.logger.debug("Setting sensor Parameter: %s", name)
         msgTopic = 'inventory.update.sensorParameter'
         msg = (self, name, value)
         pub.sendMessage(msgTopic, msg)
@@ -1539,6 +1548,10 @@ class Station:
     #
     # @param self The object pointer.
     def __init__(self, name, location, x, y, z, parentInventory=None, coordSystem=None, description=None, network=None, id=None):
+
+        # The logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         ## The station id.
         self.id = id
@@ -1603,6 +1616,7 @@ class Station:
         self.parentInventory = parentInventory
 
 
+
     def __getitem__(self, name):
         return self.__dict__[name]
 
@@ -1636,7 +1650,7 @@ class Station:
         srcProj = pyproj.Proj(init=self.coordSystem)
         dstProj = pyproj.Proj(init="epsg:4326") 
         lon, lat = pyproj.transform(srcProj, dstProj, self.x, self.y)
-        print 'Converting from "%s" to "%s"' % (srcProj.srs, dstProj.srs)
+        self.logger.debug('Converting from "%s" to "%s"', srcProj.srs, dstProj.srs)
         return (lon, lat)
 
 
@@ -1678,11 +1692,8 @@ class Station:
         sensor : tuple (:class:`Sensor`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
             The sensor to be removed from the station.
         '''
-        print "Removing sensor "
-        print sensor
-
-        logger = logging.getLogger('base')
-        logger.debug('Removing sensor')
+        self.logger.debug("Removing sensor ")
+        self.logger.debug("%s", sensor)
 
         #if sensor not in self.sensors:
         
@@ -1886,7 +1897,7 @@ class InventoryHistory:
 
     ## Register an action in the history.
     def do(self, action):
-        print "Registering action: " + action['type']
+        self.logger.debug("Registering action: %s",  action['type'])
         self.actions.append(action)
 
 
