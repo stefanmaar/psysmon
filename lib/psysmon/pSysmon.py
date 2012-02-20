@@ -53,9 +53,11 @@ Examples
         >>> psysmon.run()
 '''
 
+import psysmon
 import psysmon.core.gui as psygui
 import psysmon.core.base as psybase
 import os
+import logging
 
 
 def run():
@@ -80,6 +82,10 @@ def run():
         >>> import psysmon.pSysmon as psysmon
         >>> psysmon.run
     '''
+
+    logger = logging.getLogger('psysmon')
+    logger.setLevel(psysmon.logConfig['level'])
+    logger.addHandler(psysmon.getLoggerHandler())
 
     psyBaseDir = os.path.abspath(__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
