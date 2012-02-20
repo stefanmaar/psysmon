@@ -30,3 +30,17 @@ __website__ = "http://www.stefanmertl.com/science/"
 __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
 __license__ = "GNU General Public Licence version 3"
 __keywords__ = "seismological prototyping prototype data processing earthquake"
+
+
+import logging
+
+logConfig = {}
+logConfig['level'] = 'DEBUG'
+
+def getLoggerHandler(mode='console'):
+    ch = logging.StreamHandler()
+    ch.setLevel(logConfig['level'])
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    ch.setFormatter(formatter)
+    return ch
+
