@@ -37,10 +37,20 @@ import logging
 logConfig = {}
 logConfig['level'] = 'DEBUG'
 
+class MainProcessFilter(logging.Filter):
+
+    def filter(self, rec):
+        return rec.processName == 'MainProcess'
+
+
+
 def getLoggerHandler(mode='console'):
     ch = logging.StreamHandler()
     ch.setLevel(logConfig['level'])
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(process)d - %(processName)s - %(levelname)s - %(message)s")
     ch.setFormatter(formatter)
+
+    # Only log messages from the main process to the console.
+    #ch.addFilter(MainProcessFilter())
     return ch
 
