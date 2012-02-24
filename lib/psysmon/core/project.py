@@ -652,6 +652,10 @@ class User:
             - editor
         '''
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         ## The user name.
         self.name = user
 
@@ -666,6 +670,21 @@ class User:
 
         # The currently active collection.
         self.activeCollection = None
+
+
+    ## The __setstate__ method.
+    #
+    # Fill the attributes after unpickling.
+    def __setstate__(self, d):
+        self.__dict__.update(d) # I *think* this is a safe way to do it
+        self.project = None
+
+        # Track some instance attribute changes.
+        if not "logger" in dir(self):
+            loggerName = __name__ + "." + self.__class__.__name__
+            self.logger = logging.getLogger(loggerName)
+
+
 
 
     def addCollection(self, name, project):
@@ -851,14 +870,14 @@ class User:
 
             procRunning = True
             isZombie = False
-            print "Checking thread..."
+            self.logger.debug("Checking process...")
             lastResponse = 0
             while procRunning:
-                print "Waiting for message..."
+                self.logger.debug("Waiting for message...")
                 if parentEnd.poll(checkInterval):
                     msg = parentEnd.recv()
-                    print msg
-                    print "Received message: [%s]: %s" % (msg['state'], msg['msg'])
+                    #print msg
+                    self.logger.debug("Received message: [%s]: %s" % (msg['state'], msg['msg']))
 
                     # Send the message to the system.
                     msgTopic = "state.collection.execution"
@@ -870,13 +889,13 @@ class User:
                         procRunning = False
                 else:
                     lastResponse += checkInterval
-                    print "No message received."
+                    self.logger.debug("No message received.")
 
                 if lastResponse > timeout:
                     procRunning = False
                     isZombie = True
 
-            print "End checking thread..."
+            self.logger.debug("End checking thread.")
 
         if self.activeCollection:
             if not project.threadMutex:
@@ -886,10 +905,11 @@ class User:
             col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
+            processName = col2Proc.name + "_" + timeStampString
             col2Proc.procId = col2Proc.name + "_" + timeStampString
 
-            msg = "Executing collection " + col2Proc.name + "with thread ID: " + col2Proc.procId + "."
-            project.log("status", msg)
+            msg = "Executing collection " + col2Proc.name + "with process name: " + processName + "."
+            self.logger.info(msg)
 
             msgTopic = "state.collection.execution"
             msg = {}
@@ -900,8 +920,11 @@ class User:
             pub.sendMessage(msgTopic, msg)
 
             (parentEnd, childEnd) = multiprocessing.Pipe()
-            print "proc Id: %s" % col2Proc.procId
-            p = multiprocessing.Process(target=col2Proc.execute, args=(childEnd,))
+            self.logger.debug("proc Id: %s" % col2Proc.procId)
+            p = multiprocessing.Process(name = processName,
+                                        target = col2Proc.execute, 
+                                        args = (childEnd,)
+                                       )
             #p.daemon = True
             p.start()
             thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
