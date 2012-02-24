@@ -84,7 +84,7 @@ class ApplyGeometry(CollectionNode):
 
         # Assign the station-, recorder- and sensor ids to the fileheaders in 
         # the traceheader table.
-        query =  ("PDATE %s as th, %s as rec, %s as sens, %s as sensTime, %s as stat "
+        query =  ("UPDATE %s as th, %s as rec, %s as sens, %s as sensTime, %s as stat "
                   "SET th.recorder_id = rec.id, th.station_id = stat.id, th.sensor_id = sens.id "
                   "WHERE "
                   "rec.serial LIKE th.recorder_serial "
