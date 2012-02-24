@@ -52,11 +52,9 @@ class EditGeometryDlgTestCase(unittest.TestCase):
 
 
     def tearDown(self):
-        print "Good by."
+        print "\n\nEs war sehr schoen - auf Wiederseh'n.\n"
 
     def testDlg(self):
-        print "hello"
-        #self.dlg.Show()
         self.node.execute()
         self.app.MainLoop()
 
