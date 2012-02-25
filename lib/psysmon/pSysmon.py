@@ -98,8 +98,11 @@ def run():
 
     # Create the app and run the GUI.
     app =psygui.PSysmonApp()
-    pSysmon = psygui.PSysmonGui(psyBase, None)
-    pSysmon.Show()
+    psysmonMain = psygui.PSysmonGui(psyBase, None)
+
+    logger.addHandler(psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel))
+
+    psysmonMain.Show()
     app.MainLoop()
 
 
