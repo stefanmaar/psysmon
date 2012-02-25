@@ -37,20 +37,46 @@ import logging
 logConfig = {}
 logConfig['level'] = 'DEBUG'
 
-class MainProcessFilter(logging.Filter):
+class LoggingMainProcessFilter(logging.Filter):
 
     def filter(self, rec):
         return rec.processName == 'MainProcess'
 
 
+class LoggingRedirectHandler(logging.Handler):
+        def __init__(self, window):
+            # run the regular Handler __init__
+            logging.Handler.__init__(self)
+
+            self.logArea = window
+
+        def emit(self, record):
+            msg = self.format(record)+'\n'
+            self.logArea.log(msg)
+            #print "REDIRECT :: %s" % msg
+
 
 def getLoggerHandler(mode='console'):
     ch = logging.StreamHandler()
     ch.setLevel(logConfig['level'])
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(process)d - %(processName)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(processName)s - %(levelname)s - %(name)s: %(message)s")
     ch.setFormatter(formatter)
 
     # Only log messages from the main process to the console.
-    #ch.addFilter(MainProcessFilter())
+    #ch.addFilter(LoggingMainProcessFilter())
     return ch
+
+def getLoggerWxRedirectHandler(window):
+    ch = LoggingRedirectHandler(window)
+    ch.setLevel(logConfig['level'])
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(processName)s - %(levelname)s - %(name)s: %(message)s")
+    ch.setFormatter(formatter)
+
+    # Only log messages from the main process to the console.
+    #ch.addFilter(LoggingMainProcessFilter())
+    return ch
+
+
+
+
 
