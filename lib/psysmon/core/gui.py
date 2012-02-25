@@ -257,7 +257,8 @@ class PSysmonGui(wx.Frame):
                 self.psyBase.project.loadWaveformDirList()
 
                 # The project waveserver.
-                self.psyBase.project.waveserver = WaveServer('sqlDB', self.psyBase.project)
+                waveserver = WaveServer('sqlDB', self.psyBase.project)
+                self.psyBase.project.addWaveServer('psysmon database', waveserver)
 
                 # Check if the database tables have to be updated.
                 self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
