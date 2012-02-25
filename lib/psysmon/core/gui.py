@@ -32,6 +32,7 @@ main program.
 '''
 
 
+import logging
 import wx
 import wx.aui
 import wx.html
@@ -40,6 +41,7 @@ import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
 import MySQLdb as mysql
 import os
+import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveserver import WaveServer
@@ -79,11 +81,14 @@ class PSysmonGui(wx.Frame):
         # The pSysmon base object.
         self.psyBase = psyBase
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         #self.CreateStatusBar()  # A statusbar at the bottom of the window.
         #self.buildMenu()
         self.initUI()
 
-        self.logger = Logger(self.loggingPanel, psyBase)
 
         self.collectionNodeInventoryPanel.initNodeInventoryList()
 
@@ -211,7 +216,7 @@ class PSysmonGui(wx.Frame):
         '''
         # If a project is open, close it.
         if self.psyBase.project:
-            print "closing project"
+            self.logger.info("closing project")
             self.closeProject()
 
         dlg = wx.FileDialog(
@@ -267,8 +272,8 @@ class PSysmonGui(wx.Frame):
                 self.SetTitle(self.psyBase.project.name)
 
                 # Set the status message.
-                statusString = "Loaded project %s successfully." % self.psyBase.project.name
-                self.psyBase.project.log('status', statusString)
+                self.logger.info("Loaded project %s successfully.", self.psyBase.project.name)
+                #self.psyBase.project.log('status', statusString)
 
         # Destroy the dialog. 
         dlg.Destroy()
@@ -342,7 +347,8 @@ class PSysmonGui(wx.Frame):
         msgString = "Closed project %s." % self.psyBase.project.name
         self.psyBase.closePsysmonProject()
         self.collectionPanel.refreshCollection()
-        self.log('status', msgString)
+
+        self.logger.info(msgString)
 
 
     ## Enable of disable the main GUI elements.
@@ -381,7 +387,7 @@ class PSysmonGui(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
         else:
-            self.log('warning', 'You have to open a project to edit the waveform directories.')
+            self.logger.warning('You have to open a project to edit the waveform directories.')
 
 
     ## Create new project menu callback.
@@ -413,11 +419,10 @@ class PSysmonGui(wx.Frame):
     # @param self The object pointer.
     # @param msg The message object.     
     def onCollectionNodeListCtrlMsg(self, msg):
-        print("msg.topic: ", msg.topic)
         if msg.topic == ('collectionNodeListCtrl', 'addSelectedNode'):
-            print "Got message - Adding node ", self.selectedCollectionNodeTemplate.name, " to the collection."
+            self.logger.debug("Got message - Adding node %s  to the collection.", self.selectedCollectionNodeTemplate.name)
         else:
-            print "Unknown topic."
+            self.logger.debug("Unknown topic: %s", msg.topic)
 
 
 
@@ -530,7 +535,7 @@ class CollectionListBox(wx.SimpleHtmlListBox):
         self.PopupMenu(self.contextMenu, pos)
 
     def onItemRightClicked(self, event):
-        print "Item right clicked."
+        self.logger.debug("Item right clicked.")
 
 
 class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
@@ -569,6 +574,11 @@ class CollectionPanel(wx.Panel):
     # @param parent The parent object holding the panel.
     def __init__(self, parent, psyBase, size):
         wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         self.psyBase = psyBase
 
         self.SetBackgroundColour((255, 255, 255))
@@ -620,7 +630,7 @@ class CollectionPanel(wx.Panel):
     # @param event The event object. 
     def onRemoveNode(self, event):
         try:
-            print "Removing node at index %d." % self.selectedCollectionNodeIndex
+            self.logger.debug("Removing node at index %d.", self.selectedCollectionNodeIndex)
             self.psyBase.project.removeNodeFromCollection(self.selectedCollectionNodeIndex)
             self.refreshCollection()
         except PsysmonError as e:
@@ -639,7 +649,7 @@ class CollectionPanel(wx.Panel):
         try:
             selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
             if(selectedNode.mode == 'standalone'):
-                print "in standalone"
+                self.logger.debug("in standalone")
                 self.psyBase.project.executeNode(self.selectedCollectionNodeIndex)
             else:
                 self.psyBase.project.editNode(self.selectedCollectionNodeIndex)
@@ -659,7 +669,7 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.    
     def onCollectionNodeItemSelected(self, evt):
-        print "Selected node in collection."
+        self.logger.debug("Selected node at position %d in collection.", evt.GetIndex())
         self.selectedCollectionNodeIndex = evt.GetIndex()
 
 
@@ -699,7 +709,7 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.
     def onCollectionDelete(self, event):
-        print("Delete a collection")
+        self.log.debug("Delete a collection.")
 
 
 
@@ -788,8 +798,11 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.AddPage(self.threads, "threads")
 
 
+    def log(self, msg):
+        self.status.AppendText(msg)
+
+
     def addThread(self, data):
-        print data
         #index = self.threads.GetItemCount()
         index = 0
         self.threads.InsertStringItem(index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
@@ -813,7 +826,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
         threadId = self.threads.GetItem(selectedRow, 1).GetText()
         logFile = os.path.join(self.GetParent().psyBase.project.tmpDir, threadId + ".log")
         webbrowser.open(logFile)
-        print "Showing the log file %s." % logFile
+        self.logger.info("Showing the log file %s.", logFile)
 
     def onRemoveThread(self, event):
         pass
@@ -822,6 +835,10 @@ class LoggingPanel(wx.aui.AuiNotebook):
 class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
     def __init__(self, parent, psyBase):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         self.itemDataMap = {}
 
@@ -881,14 +898,14 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
     # @param event The event object.    
     def onCollectionNodeItemSelected(self, evt):
         item = evt.GetItem()
-        print "Selected item: ", item.GetText()
+        self.logger.debug("Selected item: %s", item.GetText())
         self.selectedCollectionNodeTemplate = self.psyBase.packageMgr.getCollectionNodeTemplate(item.GetText())
 
 
     def onDoSearch(self, evt):
         foundNodes = self.psyBase.packageMgr.searchCollectionNodeTemplates(self.searchButton.GetValue())
         self.updateNodeInvenotryList(foundNodes)
-        print foundNodes
+        self.logger.debug('%s', foundNodes)
 
     def onCancelSearch(self, evt):
         self.initNodeInventoryList()
@@ -904,7 +921,6 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
             pos = self.collectionPanel.selectedCollectionNodeIndex
             if pos != -1:
                 pos += 1    # Add after the selected node in the collection.
-            print pos
             self.psyBase.project.addNode2Collection(self.selectedCollectionNodeTemplate, pos)
             self.collectionPanel.refreshCollection()
         except PsysmonError:
@@ -1048,7 +1064,7 @@ class CreateNewDbUserDlg(wx.Dialog):
                 # Set the status message.
                 statusString = "Error while creating the user %s." % userData['userName']
                 if not self.GetParent():
-                    print "NO PARENT"
+                    self.logger.debug("NO PARENT")
                 else:
                     self.GetParent().log('status', statusString)
 
@@ -1115,6 +1131,10 @@ class EditWaveformDirDlg(wx.Dialog):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, "Edit the waveform directories", style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size=size)
 
         self.psyBase = psyBase
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # Use standard button IDs.
         okButton = wx.Button(self, wx.ID_OK)
@@ -1198,7 +1218,7 @@ class EditWaveformDirDlg(wx.Dialog):
         # This is done by getting the path data from the dialog - BEFORE
         # we destroy it. 
         if dlg.ShowModal() == wx.ID_OK:
-            self.psyBase.project.log('status', 'You selected: %s\n' % dlg.GetPath())
+            self.logger.info('You selected: %s', dlg.GetPath())
 
             newWfDir = self.wfDir(dlg.GetPath(), '')
             newAlias = self.wfDirAlias(self.psyBase.project.activeUser.name,
@@ -1444,7 +1464,7 @@ class CreateNewProjectDlg(wx.Dialog):
             self.psyBase.createPsysmonProject(**projectData)
             return True
         except Exception as e:
-            print "Error while creating the project: %s" % e
+            self.logger.error("Error while creating the project: %s", e)
             raise
             return False  
 
