@@ -98,6 +98,9 @@ class Project:
         A dictionary holding the versions of the individual package database 
         structures (key: package name).
 
+    logger : :class:`logging.logger`
+        The logger instance.
+
     name : String
         The project name.
 
@@ -149,6 +152,11 @@ class Project:
             The database tablenames used by the project. The name of the table 
             (without prefix) is the key of the dictionary.
         '''
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+        
 
         # The project name.
         self.name = name
@@ -390,10 +398,10 @@ class Project:
 
         for _, curPkg in packages.iteritems():
             if not curPkg.databaseFactory:
-                print "No databaseFactory method found."
+                self.logger.info("%s: No databaseFactory method found.", curPkg.name)
                 continue
             else:
-                print "Creating the tables for package " + curPkg.name
+                self.logger.info("%s: Creating the database tables.", curPkg.name)
                 self.dbVersion[curPkg.name] = curPkg.version
                 tables = curPkg.databaseFactory(self.dbBase)
                 for curTable in tables:
@@ -415,10 +423,10 @@ class Project:
             else:
                 if curPkg.name in self.dbVersion:
                     if(curPkg.version > self.dbVersion[curPkg.name]):
-                        print "An update of the package database is needed."
+                        self.logger.info("An update of the package database is needed.")
                 else:
                     # The package database tables have not yet been created. Create it now.
-                    print "Creating the database tables of package %s" % curPkg.name
+                    self.logger.info("Creating the database tables of package %s" % curPkg.name)
                     self.createDatabaseStructure({curPkgKey: curPkg})
 
 
@@ -585,11 +593,8 @@ class Project:
                                   ).join(wfDirAlias, 
                                           wfDir.id==wfDirAlias.wf_id
                                         ).filter(wfDirAlias.user==self.activeUser.name):
-            print row
-            print row.keys()
             self.waveformDirList.append(dict(zip(['id', 'dir', 'dirAlias', 'description'], row)))
 
-        print self.waveformDirList
 
 
     def log(self, mode, msg):
@@ -670,6 +675,18 @@ class User:
 
         # The currently active collection.
         self.activeCollection = None
+
+
+    ## The __getstate__ method.
+    #
+    # Remove the project instance before pickling the instance.
+    def __getstate__(self):
+        result = self.__dict__.copy()
+
+        # The logger can't be pickled. Remove it.
+        del result['logger']
+
+        return result
 
 
     ## The __setstate__ method.
