@@ -28,7 +28,9 @@ Module for providing the waveform data from various sources.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+import logging
 import string
+from obspy.core import read, Trace, Stream
 
 class WaveServer:
     '''The waveserver class.
@@ -36,8 +38,6 @@ class WaveServer:
 
     Attributes
     ----------
-    activeUser : String
-        The currently active user.
 
     '''
 
@@ -55,6 +55,9 @@ class WaveServer:
             - earthworm (A earthworm waverserver)
             - css (A CSS formatted flat file database)
         '''
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # The project name.
         self.source = source
@@ -63,11 +66,18 @@ class WaveServer:
         self.connector = None
 
         if string.lower(self.source) == 'sqldb':
-            self.connector = SqlConnector(project.getDbSession(), 
-                                          project.dbTables['traceheader'])
+            self.connector = SqlConnector(project)
+        else:
+            self.logger.error('The required source "%s" is not supported.', self.source)
 
 
-    def getWaveform(self, network, station, location, channel, beginTime, endTime):
+    def getWaveform(self, 
+                    network = None, 
+                    station = None, 
+                    location = None, 
+                    channel = None, 
+                    beginTime = None, 
+                    endTime = None):
         ''' Get the waveform data for the specified parameters.
 
         Parameters
@@ -104,16 +114,38 @@ class SqlConnector:
     database. 
     '''
 
-    def __init__(self, dbSession, traceheaderTable):
+    def __init__(self, project):
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The current psysmon project.
+        self.project = project
 
         # The current database session.
-        self.dbSession = dbSession
+        self.dbSession = project.getDbSession()
 
         # The traceheader database table.
-        self.table = traceheaderTable
+        self.traceheader = self.project.dbTables['traceheader']
+
+        # The waveform directory table.
+        self.waveformDir = self.project.dbTables['waveform_dir']
+
+        # The waveform directory alias table.
+        self.waveformDirAlias = self.project.dbTables['waveform_dir_alias']
+
+        # The station database table.
+        self.geomStation = self.project.dbTables['geom_station']
 
 
-    def getWaveform(self, network, station, location, channel, beginTime, endTime):
+    def getWaveform(self, 
+                    network = None, 
+                    station = None, 
+                    location = None, 
+                    channel = None, 
+                    beginTime = None, 
+                    endTime = None):
         ''' Get the waveform data for the specified parameters.
 
         Parameters
@@ -137,9 +169,25 @@ class SqlConnector:
             The end datetime of the data to fetch.
         '''
 
-        for val in self.dbSession.query(self.table):
-            print "Querying..."
-            print val
+        self.logger.debug("Querying...")
+
+        # Create the standard query.
+        query = self.dbSession.query(self.traceheader.filename, 
+                                     self.waveformDirAlias.alias).\
+                               filter(self.traceheader.wf_id ==self.waveformDir.id).\
+                               filter(self.waveformDir.id == self.waveformDirAlias.wf_id, 
+                                      self.waveformDirAlias.user == self.project.activeUser.name)
+
+        # Check for station filter option.
+        if station:
+            query = query.filter(self.traceheader.station_id == self.geomStation.id, 
+                                 self.geomStation.name.in_(station))
+
+        for curHeader in query:
+            self.logger.debug("%s", curHeader)
+
+
+        self.logger.debug("....finished.")
 
 
 
