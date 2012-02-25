@@ -56,6 +56,8 @@ class ApplyGeometry(CollectionNode):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        self.logger.debug('Applying geometry.')
+
         stationTable = self.project.dbTables['geom_station']
         recorderTable = self.project.dbTables['geom_recorder']
         sensorTable = self.project.dbTables['geom_sensor']
@@ -99,8 +101,9 @@ class ApplyGeometry(CollectionNode):
                                                                                                                                          stationTable.__table__.name) 
         try:
             dbSession.execute(query)
+            dbSession.commit()
+            #self.logger.debug('Executed query: %s', query)
         except:
-            self.log("error", "Database error")
             self.logger.error("Database error")
 
         #if not res['isError']:
