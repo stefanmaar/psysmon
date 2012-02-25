@@ -36,7 +36,6 @@ import copy
 from wx.lib.pubsub import Publisher as pub
 from datetime import datetime
 import psysmon.core.base
-from psysmon.core.waveserver import WaveServer
 from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
@@ -156,7 +155,7 @@ class Project:
         # The logger.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
-        
+
 
         # The project name.
         self.name = name
@@ -222,12 +221,8 @@ class Project:
             self.user.append(user)
 
 
-        # The logging configuration.
-        self.logConfig = {}
-        self.logConfig['level'] = 'DEBUG'
-
-
-
+        # The project's waveservers.
+        self.waveserver = {}
 
 
     def setCollectionNodeProject(self):
@@ -239,6 +234,19 @@ class Project:
             for curCollection in curUser.collection.itervalues():
                 curCollection.setNodeProject(self)
 
+
+    def addWaveServer(self, name, waveserver):
+        ''' Add a waveserver instance to the project.
+
+        Parameters
+        ----------
+        name : String
+            The name of the waveserver. Used as the key of the dictionary.
+
+        waveserver : :class:`~psysmon.core.waveserver.WaveServer`
+            The waveserver to be added to the project.
+        '''
+        self.waveserver[name] = waveserver
 
 
     def connect2Db(self, passwd):
