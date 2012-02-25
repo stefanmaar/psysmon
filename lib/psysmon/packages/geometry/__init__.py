@@ -100,7 +100,7 @@ def databaseFactory(base):
                              ForeignKey('geom_recorder.id', 
                                         onupdate='cascade',
                                         ondelete='set null'), 
-                             nullable=False)
+                             nullable=True)
         label = Column(String(255), nullable=False)
         serial = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
@@ -112,7 +112,7 @@ def databaseFactory(base):
                                   cascade = 'all',
                                   backref = 'parent')
 
-        
+
         def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name):
             self.recorder_id = recorder_id
             self.label = label
