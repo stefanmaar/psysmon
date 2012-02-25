@@ -419,8 +419,6 @@ class Collection:
         # TODO: Add a State of Health thread which sends heartbeats at
         # regular initervals.
 
-        print dir(self)
-
         pipe.send({'state': 'running', 'msg': 'Collection running', 'procId': self.procId})
 
         # Create the collection's data file.
