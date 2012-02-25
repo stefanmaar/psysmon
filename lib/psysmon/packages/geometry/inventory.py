@@ -60,7 +60,7 @@ class Inventory:
         #
         # Based on the source the inventory can be of the following types:
         # - xml
-        # - database
+        # - db
         # - manual
         self.type = None
 
@@ -132,16 +132,21 @@ class Inventory:
     ## Check the inventory for changed objects.
     def hasChanged(self):
         for curRecorder in self.recorders:
-            if curRecorder.history.hasActions():
+            if curRecorder.hasChanged:
+                self.logger.debug('Recorder changed')
                 return True
 
             for curSensor in curRecorder.sensors:
-                if curSensor.history.hasActions():
+                if curSensor.hasChanged:
+                    self.logger.debug('Sensor changed')
                     return True
 
-            for curStation in self.stations:
-                if curStation.history.hasActions():
-                    return True
+        for curStation in self.stations:
+            if curStation.hasChanged:
+                self.logger.debug('Station changed')
+                return True
+
+        return False
 
 
 
@@ -729,6 +734,10 @@ class InventoryDatabaseController:
         startTime = msg.data[2][1]
         endTime = msg.data[2][2]
 
+        if(station.parentInventory.type != 'db'):
+            self.logger.debug('Inventory %s is not a database inventory.', station.parentInventory.name)
+            return
+
         dbStation = self.mapper[station]
         dbSensor = self.mapper[sensor]
 
@@ -766,6 +775,10 @@ class InventoryXmlParser:
     def __init__(self, parentInventory, filename):
         self.parentInventory = parentInventory
         self.filename = filename
+
+        # The logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # The required attributes which have to be present in the tags.
         self.requiredAttributes = {}
@@ -851,11 +864,12 @@ class InventoryXmlParser:
             rec2Add = Recorder(serial=curRecorder.attrib['serial'], 
                                type = recorderContent['type']) 
 
+            # Add the recorder to the inventory.
+            self.parentInventory.addRecorder(rec2Add)
+
             # Process the channels of the recorder.
             self.processChannels(curRecorder, rec2Add)
 
-            # Add the recorder to the inventory.
-            self.parentInventory.addRecorder(rec2Add)
 
 
     ## Process the channel elements.      
@@ -874,10 +888,12 @@ class InventoryXmlParser:
                                     channelName=channelContent['channel_name'],
                                     label=curChannel.attrib['label']) 
                 self.logger.debug("%s", sensor2Add.label)
+
+                recorder.addSensor(sensor2Add)
+
                 # Process the channel parameters.
                 self.processChannelParameters(curChannel, sensor2Add)
 
-                recorder.addSensor(sensor2Add)
 
             else:
                 self.logger.debug("Not all required fields present!\nMissing Keys:\n")
@@ -970,9 +986,10 @@ class InventoryXmlParser:
                                       network=stationContent['network_code'] 
                                       )
 
+                self.parentInventory.addStation(station2Add)
+
                 self.processSensors(curStation, station2Add)                      
 
-                self.parentInventory.addStation(station2Add)
 
             else:
                 self.logger.debug("Not all required tags or attributes present.")
@@ -1097,6 +1114,9 @@ class Recorder:
 
         ## The recorder type.
         self.type = type
+
+        # Indicates if the attributes have been changed.
+        self.hasChanged = False
 
         # The mapping of the station attributes to the database columns.
         attrMap = {};
@@ -1276,9 +1296,13 @@ class Sensor:
         # The inventory containing this sensor.
         self.parentInventory = parentInventory
 
-        
+
         # The parent recorder.
         self.parentRecorder = None
+
+
+        # Indicates if the attributes have been changed.
+        self.hasChanged = False
 
 
     def __getitem__(self, name):
@@ -1287,6 +1311,9 @@ class Sensor:
 
     def __setitem__(self, name, value):
         self.__dict__[name] = value
+        self.hasChanged = True
+        self.logger.debug('Changing attribute %s of sensor %d', name, self.id)
+
         # Send an inventory update event.
         msgTopic = 'inventory.update.sensor'
         msg = (self, name, value)
@@ -1324,7 +1351,7 @@ class Sensor:
                                beginTime,
                                endTime)
                                )
-        self.hasChanged = True
+        #self.hasChanged = True
 
 
 
@@ -1501,6 +1528,8 @@ class SensorParameter:
         # The end time up to which the parameters are valid.
         self.endTime = endTime
 
+        # Indicates if the attributes have been changed.
+        self.hasChanged = False
 
 
     def __getitem__(self, name):
@@ -1509,6 +1538,8 @@ class SensorParameter:
 
     def __setitem__(self, name, value):
         self.__dict__[name] = value
+        self.hasChanged = True
+
         self.logger.debug("Setting sensor Parameter: %s", name)
         msgTopic = 'inventory.update.sensorParameter'
         msg = (self, name, value)
@@ -1615,6 +1646,8 @@ class Station:
         # The inventory containing this sensor.
         self.parentInventory = parentInventory
 
+        # Indicates if the attributes have been changed.
+        self.hasChanged = False
 
 
     def __getitem__(self, name):
@@ -1623,6 +1656,8 @@ class Station:
 
     def __setitem__(self, name, value):
         self.__dict__[name] = value
+        self.hasChanged = True
+
         msgTopic = 'inventory.update.station'
         msg = (self, name, value)
         pub.sendMessage(msgTopic, msg)
@@ -1826,6 +1861,8 @@ class Network:
         ## The database table name.
         self.dbTableName = 'geom_network'
 
+        # Indicates if the attributes have been changed.
+        self.hasChanged = False
 
 
     ## The index and slicing operator.
@@ -1836,6 +1873,8 @@ class Network:
     ## The index and slicing operator.
     def __setitem__(self, name, value):
         self.__dict__[name] = value
+        self.hasChanged = True
+
         msgTopic = 'inventory.update.network'
         msg = (self, name, value)
         pub.sendMessage(msgTopic, msg)
