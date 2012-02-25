@@ -50,7 +50,7 @@ def nodeFactory():
 def databaseFactory(base):
     from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
     from sqlalchemy.orm import relationship
-    from sqlalchemy import ForeignKeyConstraint
+    from sqlalchemy import ForeignKeyConstraint, UniqueConstraint
     
     tables = []
 
@@ -89,6 +89,7 @@ def databaseFactory(base):
         station_id = Column(Integer(10), default=None)
         recorder_id = Column(Integer(10), default=None)
         sensor_id = Column(Integer(10), default=None)
+        UniqueConstraint('file_type', 'wf_id', 'filename')
 
 
     tables.append(Traceheader)
