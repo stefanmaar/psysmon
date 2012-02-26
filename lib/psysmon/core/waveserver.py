@@ -30,7 +30,8 @@ Module for providing the waveform data from various sources.
 
 import logging
 import string
-from obspy.core import read, Trace, Stream
+import os
+from obspy.core import read, Stream
 
 class WaveServer:
     '''The waveserver class.
@@ -72,12 +73,12 @@ class WaveServer:
 
 
     def getWaveform(self, 
+                    startTime,
+                    endTime,
                     network = None, 
                     station = None, 
                     location = None, 
-                    channel = None, 
-                    beginTime = None, 
-                    endTime = None):
+                    channel = None):
         ''' Get the waveform data for the specified parameters.
 
         Parameters
@@ -94,18 +95,25 @@ class WaveServer:
         channel : String
             The channel name.
 
-        beginTime : UTCDateTime
+        startTime : UTCDateTime
             The begin datetime of the data to fetch.
 
         endTime : UTCDateTime
             The end datetime of the data to fetch.
+
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
         '''
-        self.connector.getWaveform(network,
-                                   station,
-                                   location,
-                                   channel,
-                                   beginTime,
-                                   endTime)
+        stream = self.connector.getWaveform(startTime,
+                                            endTime,
+                                            network = network,
+                                            station = station,
+                                            location = location,
+                                            channel = channel)
+        return stream
+
 
 class SqlConnector:
     ''' The SQL database waveserver connector.
@@ -138,14 +146,17 @@ class SqlConnector:
         # The station database table.
         self.geomStation = self.project.dbTables['geom_station']
 
+        # The senors database table.
+        self.geomSensor = self.project.dbTables['geom_sensor']
 
-    def getWaveform(self, 
+
+    def getWaveform(self,
+                    startTime,
+                    endTime, 
                     network = None, 
                     station = None, 
                     location = None, 
-                    channel = None, 
-                    beginTime = None, 
-                    endTime = None):
+                    channel = None):
         ''' Get the waveform data for the specified parameters.
 
         Parameters
@@ -162,32 +173,92 @@ class SqlConnector:
         channel : String
             The channel name.
 
-        beginTime : UTCDateTime
+        startTime : UTCDateTime
             The begin datetime of the data to fetch.
 
         endTime : UTCDateTime
             The end datetime of the data to fetch.
+        
+        
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
         '''
 
         self.logger.debug("Querying...")
 
+        self.logger.debug('startTime: %s', startTime)
+        self.logger.debug('endTime: %s', endTime)
+
         # Create the standard query.
-        query = self.dbSession.query(self.traceheader.filename, 
-                                     self.waveformDirAlias.alias).\
+        query = self.dbSession.query(self.traceheader.file_type,
+                                     self.traceheader.filename, 
+                                     self.waveformDirAlias.alias,
+                                     self.geomStation.net_name,
+                                     self.geomStation.name,
+                                     self.geomStation.location,
+                                     self.geomSensor.channel_name).\
                                filter(self.traceheader.wf_id ==self.waveformDir.id).\
                                filter(self.waveformDir.id == self.waveformDirAlias.wf_id, 
                                       self.waveformDirAlias.user == self.project.activeUser.name)
 
-        # Check for station filter option.
+        # Add the startTime filter option.
+        if startTime:
+            query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > startTime.getTimeStamp())
+
+        # Add the endTime filter option.
+        if endTime:
+            query = query.filter(self.traceheader.begin_time < endTime.getTimeStamp())
+
+        # Add the linkage between geometry ids.
+        query = query.filter(self.traceheader.station_id == self.geomStation.id,
+                             self.traceheader.sensor_id == self.geomSensor.id)
+
+        # If required, add the network filter option.
+        if network:
+            query = query.filter(self.traceheader.station_id == self.geomStation.id, 
+                                 self.geomStation.net_name.in_(network))
+
+        # If required, add the station filter option.
         if station:
             query = query.filter(self.traceheader.station_id == self.geomStation.id, 
                                  self.geomStation.name.in_(station))
 
-        for curHeader in query:
-            self.logger.debug("%s", curHeader)
+        # If required, add the location filter option.
+        if location:
+            query = query.filter(self.traceheader.station_id == self.geomStation.id,
+                                 self.geomStation.location.in_(location))
 
+        # If required, add the channel filter option.
+        if channel:
+            query = query.filter(self.traceheader.sensor_id == self.geomSensor.id,
+                                 self.geomSensor.channel_name.in_(channel))
+
+
+        stream = Stream()
+        for curHeader in query:
+            #self.logger.debug("%s", curHeader)
+            filename = os.path.join(curHeader.alias, curHeader.filename)
+            self.logger.debug("Loading file: %s", filename)
+            curStream = read(pathname_or_url = filename,
+                          format = curHeader.file_type,
+                          starttime = startTime,
+                          endtime = endTime)
+
+            # Change the header values to the one loaded from the database.
+            for curTrace in curStream:
+                curTrace.stats.network = curHeader.net_name
+                curTrace.stats.station = curHeader.name
+                curTrace.stats.location = curHeader.location
+                curTrace.stats.channel = curHeader.channel_name
+
+            stream += curStream
+             
 
         self.logger.debug("....finished.")
+        
+        return stream
 
 
 
