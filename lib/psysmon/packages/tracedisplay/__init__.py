@@ -28,11 +28,12 @@ website = "http://www.stefanmertl.com"
 
 def nodeFactory():
     from tracedisplay import TraceDisplay
+    
     nodeTemplates = []
 
-   # Create a pSysmon collection node template and add it to the package.
+    # Create a pSysmon collection node template and add it to the package.
     options = {}
-    #options['datetime'] = []                   # The begin of the selected timespan.
+    
     myNodeTemplate = TraceDisplay(name = 'tracedisplay',
                                   mode = 'editable',
                                   category = 'Display',
