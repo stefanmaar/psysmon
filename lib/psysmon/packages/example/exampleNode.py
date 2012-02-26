@@ -23,18 +23,16 @@ class ExampleNode(CollectionNode):
 
     def execute(self, prevModuleOutput={}):
 
-        myTable = self.project.dbTables['exampleTable']
-        session = self.project.dbSession
-        data2Insert = {'id': None, 'value': 200}
-        addValue = myTable(**data2Insert)
-        session.add(addValue)
-        session.commit()
+        #myTable = self.project.dbTables['exampleTable']
+        #session = self.project.dbSession
+        #data2Insert = {'id': None, 'value': 200}
+        #addValue = myTable(**data2Insert)
+        #session.add(addValue)
+        #session.commit()
 
-        myTable = self.project.dbTables['traceheader']
-        for val in session.query(myTable.begin_time):
-            print "begin_time: %f\n" % val
+        self.project.waveserver.getWaveform()
 
-        time.sleep(1)
+        #time.sleep(1)
 
         #msg =  "Executing the node %s." % self.name
         #self.log('status', msg)
