@@ -495,7 +495,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.selectedInventory = pyData.parentInventory
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selectedInventory = pyData
-            #self.Parent.inventoryViewNotebook.updateMapView(pyData)
+            self.Parent.inventoryViewNotebook.updateMapView(pyData)
 
     ## Update the inventory tree.
     #
