@@ -30,6 +30,7 @@ The pSysmon base module.
 This module contains the basic modules needed to run the pSysmon program.
 '''
 
+
 ## The CollectionNode class.
 #
 # All collection nodes provided by packages have to be subclasses of the
