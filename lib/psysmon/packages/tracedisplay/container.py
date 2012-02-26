@@ -29,7 +29,7 @@ class TdViewAnnotationPanel(wx.Panel):
         sizer.Add(label, 1, wx.EXPAND|wx.ALL, border=0)
 	self.SetSizer(sizer)
 
-        print label.GetAlignment()
+        #print label.GetAlignment()
 
 
 class PlotPanel(wx.Panel):
@@ -95,10 +95,10 @@ class TdView(wx.Panel):
 
     def _onSize( self, event ):
         event.Skip()
-        print "view resize"
-        print "view size: " + str(self.GetSize())
-        print "view parent: " + str(self.GetParent())
-        print "view parent size: " + str(self.GetParent().GetSize())
+        #print "view resize"
+        #print "view size: " + str(self.GetSize())
+        #print "view parent: " + str(self.GetParent())
+        #print "view parent size: " + str(self.GetParent().GetSize())
         #self.annotationArea.Resize()
         self.plotCanvas.Resize()
 
@@ -147,7 +147,7 @@ class TdChannelAnnotationArea(wx.Panel):
 
 
     def OnPaint(self, event):
-        print "OnPaint"
+        #print "OnPaint"
         event.Skip()
         dc = wx.PaintDC(self)
         gc = self.makeGC(dc)
@@ -164,7 +164,7 @@ class TdChannelAnnotationArea(wx.Panel):
         return gc
 
     def draw(self, gc):
-        print "drawing"
+        #print "drawing"
         winSize = self.GetClientSize()
         width = winSize[0]
         height = winSize[1]
@@ -201,16 +201,15 @@ class TdChannelAnnotationArea(wx.Panel):
 
         newPos =  height/2
 
-        print winSize
-        print newPos
+        #print winSize
+        #print newPos
         gc.PushState()
         gc.Translate(width/4.0, newPos)
         gc.Rotate(np.radians(-90))
         w, h = gc.GetTextExtent(self.label)
-        print w
+        #print w
         gc.DrawText(self.label, -w/2.0, -h/2.0)
         #gc.DrawPath(path1)
-        print ""
         gc.PopState()
 
 class TdChannel(wx.Panel):
@@ -245,7 +244,7 @@ class TdChannel(wx.Panel):
 
     def addView(self, view):
         self.views.append(view)
-	print len(self.views)
+	#print len(self.views)
 	if self.views:
 	    self.sizer.Add(view, pos=(len(self.views)-1,1), flag=wx.ALL|wx.EXPAND, border=0)
             self.sizer.AddGrowableRow(len(self.views)-1)
@@ -311,7 +310,7 @@ class TdStationAnnotationArea(wx.Panel):
 
 
     def OnPaint(self, event):
-        print "OnPaint"
+        #print "OnPaint"
         event.Skip()
         dc = wx.PaintDC(self)
         gc = self.makeGC(dc)
@@ -328,7 +327,7 @@ class TdStationAnnotationArea(wx.Panel):
         return gc
 
     def draw(self, gc):
-        print "drawing"
+        #print "drawing"
         winSize = self.GetClientSize()
         width = winSize[0]
         height = winSize[1]
@@ -365,16 +364,15 @@ class TdStationAnnotationArea(wx.Panel):
 
         newPos =  height/2
 
-        print winSize
-        print newPos
+        #print winSize
+        #print newPos
         gc.PushState()
         gc.Translate(width/4.0, newPos)
         gc.Rotate(np.radians(-90))
         w, h = gc.GetTextExtent(self.label)
-        print w
+        #print w
         gc.DrawText(self.label, -w/2.0, -h/2.0)
         #gc.DrawPath(path1)
-        print ""
         gc.PopState()
 
 
