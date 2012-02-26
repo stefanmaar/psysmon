@@ -9,9 +9,8 @@ import psysmon
 import logging
 from psysmon.core.base import Base
 from psysmon.core.waveserver import WaveServer
-import psysmon.core.gui as psygui
+from obspy.core.utcdatetime import UTCDateTime
 import os
-import copy
 
 
 class EditGeometryDlgTestCase(unittest.TestCase):
@@ -20,9 +19,9 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     """
     def setUp(self):
         # Configure the logger.
-        logger = logging.getLogger('psysmon')
-        logger.setLevel(psysmon.logConfig['level'])
-        logger.addHandler(psysmon.getLoggerHandler())
+        self.logger = logging.getLogger('psysmon')
+        self.logger.setLevel(psysmon.logConfig['level'])
+        self.logger.addHandler(psysmon.getLoggerHandler())
 
         # Get the pSysmon base directory.
         psyBaseDir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/01_src/psysmon/lib/psysmon/'
@@ -46,15 +45,23 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         # Create the project waveserver.
         waveserver = WaveServer('sqlDB', self.psyBase.project)
         self.psyBase.project.addWaveServer('psysmon database', waveserver)
-        
+
         self.project = self.psyBase.project
 
-        
+
     def tearDown(self):
         print "\n\nEs war sehr schoen - auf Wiederseh'n.\n"
 
     def testDlg(self):
-        self.project.waveserver['psysmon database'].getWaveform(station=['SITA', 'ALBA'])
+        startTime = UTCDateTime('2010-08-31 07:59:00')
+        endTime = UTCDateTime('2010-08-31 08:02:00')
+        stream = self.project.waveserver['psysmon database'].\
+                              getWaveform(startTime = startTime,
+                                          endTime = endTime,
+                                          channel = ['HHZ'])
+        self.logger.debug("Got stream: %s", stream)
+
+        stream.plot()
 
 #def suite():
 #    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
