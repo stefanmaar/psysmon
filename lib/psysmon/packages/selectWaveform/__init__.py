@@ -49,8 +49,3 @@ def nodeFactory():
     return nodeTemplates
 
 
-
-def databaseFactory():
-    queries = []
-
-    return queries
