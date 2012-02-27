@@ -2,6 +2,7 @@ import wx
 import wx.lib.graphics
 from wx.lib.stattext import GenStaticText as StaticText
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+import wx.lib.scrolledpanel as scrolled
 from matplotlib.figure import Figure
 import numpy as np
 
@@ -43,7 +44,7 @@ class PlotPanel(wx.Panel):
         if 'style' not in kwargs.keys():
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
-        self.SetMinSize((100, 20))
+        self.SetMinSize((100, 40))
 
         # initialize matplotlib stuff
         self.figure = Figure( None, dpi=dpi, facecolor='white')
@@ -76,6 +77,9 @@ class TdView(wx.Panel):
 
         self.plotCanvas = PlotPanel(self, color=(255,255,255))
         self.annotationArea = TdViewAnnotationPanel(self, color='gray80')
+
+        self.SetMinSize(self.plotCanvas.GetMinSize())
+
         sizer = wx.GridBagSizer(0,0)
         sizer.Add(self.plotCanvas, pos=(0,0), flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.annotationArea, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=1)
@@ -243,12 +247,17 @@ class TdChannel(wx.Panel):
         self.SetSizer(self.sizer)
 
     def addView(self, view):
+        view.Reparent(self)
         self.views.append(view)
 	#print len(self.views)
 	if self.views:
 	    self.sizer.Add(view, pos=(len(self.views)-1,1), flag=wx.ALL|wx.EXPAND, border=0)
             self.sizer.AddGrowableRow(len(self.views)-1)
 	    self.sizer.SetItemSpan(self.annotationArea, (len(self.views), 1))
+
+            channelSize = self.views[0].GetMinSize()
+            channelSize[1] = channelSize[1] * len(self.views) 
+            self.SetMinSize(channelSize)
 	self.SetSizer(self.sizer)
 
 
@@ -284,11 +293,16 @@ class TdStation(wx.Panel):
         self.SetSizer(self.sizer)
 
     def addChannel(self, channel):
+        channel.Reparent(self)
         self.channels.append(channel)
 	if self.channels:
 	    self.sizer.Add(channel, pos=(len(self.channels)-1,1), flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
             self.sizer.AddGrowableRow(len(self.channels)-1)
 	    self.sizer.SetItemSpan(self.annotationArea, (len(self.channels), 1))
+
+            stationSize = self.channels[0].GetMinSize()
+            stationSize[1] = stationSize[1] * len(self.channels) 
+            self.SetMinSize(stationSize)
 	self.SetSizer(self.sizer)
 
 
@@ -377,7 +391,7 @@ class TdStationAnnotationArea(wx.Panel):
 
 
 
-class TdViewPort(wx.Panel):
+class TdViewPort(scrolled.ScrolledPanel):
     '''
     The tracedisplay viewport.
 
@@ -385,12 +399,16 @@ class TdViewPort(wx.Panel):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY):
-        wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.SetMinSize((200, -1))
+        scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
+        self.SetBackgroundColour('red')
+
+        self.SetupScrolling()
+
+        self.stations = []
 
 
     def addStation(self, station, position=None):
@@ -404,6 +422,13 @@ class TdViewPort(wx.Panel):
         :param position: The position where to add the station. If none, the station is added to the bottom.
         :type position: Integer
         '''
+        station.Reparent(self)
+        self.stations.append(station)
+
         self.sizer.Add(station, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
-        
+        viewPortSize = self.stations[0].GetMinSize()
+        viewPortSize[1] = viewPortSize[1] * len(self.stations) + 100 
+        #self.SetMinSize(viewPortSize)
+        self.SetupScrolling()
+
 
