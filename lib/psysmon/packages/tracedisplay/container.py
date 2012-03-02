@@ -131,6 +131,12 @@ class TdView(wx.Panel):
 
         #self.Bind(wx.EVT_SIZE, self._onSize)
     
+    def draw(self):
+        ''' Draw the canvas to make the changes visible.
+        '''
+        self.plotCanvas.canvas.draw()
+    
+    
     def onEnterWindow(self, event):
         print "Entered view."
         #self.plotCanvas.SetColor((0,255,255))
@@ -178,11 +184,15 @@ class TdSeismogramView(TdView):
 
         self.line = None
 
+
     def plot(self, trace):
 
         start = time.clock()
-        endTime = trace.stats.starttime + (trace.stats.npts * 1/trace.stats.sampling_rate)
-        timeArray = np.arange(trace.stats.starttime.timestamp, endTime.timestamp, 1/trace.stats.sampling_rate)
+        #endTime = trace.stats.starttime + (trace.stats.npts * 1/trace.stats.sampling_rate)
+        timeArray = np.arange(0, trace.stats.npts)
+        timeArray = timeArray * 1/trace.stats.sampling_rate
+        timeArray = timeArray + trace.stats.starttime.timestamp
+        #timeArray = np.arange(trace.stats.starttime.timestamp, endTime.timestamp, 1/trace.stats.sampling_rate)
         stop = time.clock()
         self.logger.debug('Prepared data (%.5fs)', stop - start)
 
@@ -191,7 +201,7 @@ class TdSeismogramView(TdView):
             timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
 
 
-        self.t0 = timeArray[0]
+        self.t0 = trace.stats.starttime
 
         #start = time.clock()
         #self.dataAxes.clear()
@@ -199,28 +209,43 @@ class TdSeismogramView(TdView):
         #self.logger.debug('Cleared axes (%.5fs)', stop - start)
 
         start = time.clock()
+        print trace.stats.npts
+        print timeArray.shape
+        print trace.data.shape
         if not self.line:
-            self.line, = self.dataAxes.plot(timeArray-self.t0, trace.data, color=self.lineColor)
+            self.line, = self.dataAxes.plot(timeArray, trace.data, color=self.lineColor)
         else:
             self.logger.debug('Updating line %s', self.line)
-            self.line.set_xdata(timeArray - self.t0)
+            self.line.set_xdata(timeArray)
             self.line.set_ydata(trace.data)
         stop = time.clock()
         self.logger.debug('Plotted data (%.5fs)', stop -start)
 
         start = time.clock()
         self.dataAxes.set_frame_on(False)
-        self.dataAxes.get_xaxis().set_visible(False)
+        self.dataAxes.get_xaxis().set_visible(True)
         self.dataAxes.get_yaxis().set_visible(False)
+        yLim = np.max(np.abs(trace.data))
+        self.logger.debug('ylim: %f', yLim)
+        self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
         stop = time.clock()
         self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
 
-        start = time.clock()
-        self.plotCanvas.canvas.draw()
-        #if self.line:
-        #    self.dataAxes.draw_artist(self.line)
-        stop = time.clock()
-        self.logger.debug('Redrawed canvas (%.5f)', stop -start)
+        self.logger.debug('time limits: %f, %f', timeArray[0], timeArray[-1])
+
+
+    def setYLimits(self, bottom, top):
+        ''' Set the limits of the y-axes.
+        '''
+        self.dataAxes.set_ylim(bottom = bottom, top = top)
+
+
+    def setXLimits(self, left, right):
+        ''' Set the limits of the x-axes.
+        '''
+        self.logger.debug('Set limits: %f, %f', left, right)
+        self.dataAxes.set_xlim(left = left, right = right)
+
 
 class TdChannelAnnotationArea(wx.Panel):
 
