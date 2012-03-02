@@ -33,9 +33,11 @@ __keywords__ = "seismological prototyping prototype data processing earthquake"
 
 
 import logging
+import wx
 
 logConfig = {}
 logConfig['level'] = 'DEBUG'
+
 
 class LoggingMainProcessFilter(logging.Filter):
 
@@ -52,7 +54,7 @@ class LoggingRedirectHandler(logging.Handler):
 
         def emit(self, record):
             msg = self.format(record)+'\n'
-            self.logArea.log(msg)
+            wx.CallAfter(self.logArea.log, msg)
             #print "REDIRECT :: %s" % msg
 
 
