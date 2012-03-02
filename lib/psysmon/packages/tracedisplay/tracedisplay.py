@@ -333,6 +333,8 @@ class TraceDisplayDlg(wx.Frame):
                                           endTime = self.displayOptions.endTime,
                                           station = self.displayOptions.station,
                                           channel = channels2Load)
+        print dir(stream)
+        stream.detrend(type = 'constant')
 
         self.logger.debug("Finished loading data.")
         for curStation in self.displayOptions.station:
@@ -360,9 +362,12 @@ class TraceDisplayDlg(wx.Frame):
                     myView = container.TdSeismogramView(myChannel, wx.ID_ANY, name=myChannel, lineColor=curColor)
 
                     for curTrace in curStream:
-                        #self.logger.debug("Plotting trace:\n%s", curTrace)
+                        self.logger.debug("Plotting trace:\n%s", curTrace)
                         start = time.clock()
                         myView.plot(curTrace)
+                        myView.setXLimits(left = self.displayOptions.startTime.timestamp,
+                                          right = self.displayOptions.endTime.timestamp)
+                        myView.draw()
                         stop = time.clock()
                         self.logger.debug("Plotted data (%.5fs).", stop - start)
                     myChannel.addView(myView)
@@ -370,9 +375,12 @@ class TraceDisplayDlg(wx.Frame):
                     myChannel.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
                 else:
                     for curTrace in curStream:
-                        #self.logger.debug("Plotting trace:\n%s", curTrace)
+                        self.logger.debug("Plotting trace:\n%s", curTrace)
                         try:
                             myView.plot(curTrace)
+                            myView.setXLimits(left = self.displayOptions.startTime.timestamp,
+                                              right = self.displayOptions.endTime.timestamp)
+                            myView.draw()
                         except Exception, err:
                             print err
                             pass
@@ -439,14 +447,15 @@ class DisplayOptions:
     def __init__(self):
         # The timespan to show.
         self.startTime = UTCDateTime('2010-08-31 07:59:00')
-        self.endTime = UTCDateTime('2010-08-31 07:59:30')
+        self.endTime = UTCDateTime('2010-08-31 08:00:00')
+        #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # The stations to show.
-        #self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
-        #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
-        #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
+        self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
+                   'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
+                   'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
         #self.station = ['GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'SITA', 'ALBA', 'G_NAWA']
-        self.station = ['ALBA', 'SITA', 'GILA']
+        #self.station = ['ALBA', 'SITA', 'GILA']
 
         # The channels to show.
         self.channel = {}
@@ -458,6 +467,7 @@ class DisplayOptions:
         #self.channel['SITA'] = ['HHZ', 'HHN', 'HHE']
 
         # Fill the channel automatically. 
+        # This is just for testing.
         # This has to be changed to a user selectable value.
         for curStation in self.station:
             self.channel[curStation] = ['HHZ', 'HHN', 'HHE']
