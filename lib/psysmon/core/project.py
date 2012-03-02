@@ -899,6 +899,7 @@ class User:
             lastResponse = 0
             while procRunning:
                 self.logger.debug("Waiting for message...")
+
                 if parentEnd.poll(checkInterval):
                     msg = parentEnd.recv()
                     #print msg
