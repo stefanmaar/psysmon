@@ -1,3 +1,7 @@
+
+
+import logging
+import time
 import wx
 import wx.lib.graphics
 from wx.lib.stattext import GenStaticText as StaticText
@@ -47,7 +51,7 @@ class PlotPanel(wx.Panel):
         self.SetMinSize((100, 40))
 
         # initialize matplotlib stuff
-        self.figure = Figure( None, dpi=dpi, facecolor='white')
+        self.figure = Figure(None, dpi=dpi, facecolor='white')
         self.canvas = FigureCanvas(self, -1, self.figure)
         self.canvas.SetMinSize((30, 10))
         self.SetBackgroundColour('blue')
@@ -57,6 +61,29 @@ class PlotPanel(wx.Panel):
         self.sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
+        self.canvas.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus2)
+        self.canvas.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+
+        #self.canvas.Disable()
+        #self.Disable()
+
+    def onSetFocus(self, event):
+        print "Canvas got Focus"
+        print "Event should propagate: %s" % event.ShouldPropagate()
+        #event.ResumePropagation(1)
+        event.Skip()
+
+    def onSetFocus2(self, event):
+        print "PlotPanel got Focus"
+    
+    def onKeyDown(self, event):
+        print "Propagating keyDown in plotPanel"
+        event.ResumePropagation(1)
+        event.Skip()
+
+
     def SetColor( self, rgbtuple=None ):
         """Set figure and canvas colours to be the same."""
         if rgbtuple is None:
@@ -65,6 +92,8 @@ class PlotPanel(wx.Panel):
         self.figure.set_facecolor( clr )
         self.figure.set_edgecolor( clr )
         self.canvas.SetBackgroundColour( wx.Colour( *rgbtuple ) )
+        self.canvas.Refresh()
+
 
 
 class TdView(wx.Panel):
@@ -94,8 +123,31 @@ class TdView(wx.Panel):
         # Create the view data axes.
         #self.dataAxes = self.plotCanvas.figure.add_axes([0.1,0.1,0.8,0.8])
         self.dataAxes = self.plotCanvas.figure.add_axes([0,0,1,1])
+        
+        self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.onLeaveWindow)
+        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
         #self.Bind(wx.EVT_SIZE, self._onSize)
+    
+    def onEnterWindow(self, event):
+        print "Entered view."
+        #self.plotCanvas.SetColor((0,255,255))
+        self.SetBackgroundColour('blue')
+        self.Refresh()
+    
+    def onLeaveWindow(self, event):
+        print "Entered view."
+        self.SetBackgroundColour('green')
+        self.Refresh()
+
+    def onSetFocus(self, event):
+        print "view got focus."
+
+    def onKeyDown(self, event):
+        event.ResumePropagation(1)
+        event.Skip()
 
     def _onSize( self, event ):
         event.Skip()
@@ -117,22 +169,58 @@ class TdSeismogramView(TdView):
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
         TdView.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
 
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         self.t0 = None
 	self.lineColor = [x/255.0 for x in lineColor]
 
+        self.line = None
+
     def plot(self, trace):
+
+        start = time.clock()
         endTime = trace.stats.starttime + (trace.stats.npts * 1/trace.stats.sampling_rate)
-        time = np.arange(trace.stats.starttime.timestamp, endTime.timestamp, 1/trace.stats.sampling_rate)
+        timeArray = np.arange(trace.stats.starttime.timestamp, endTime.timestamp, 1/trace.stats.sampling_rate)
+        stop = time.clock()
+        self.logger.debug('Prepared data (%.5fs)', stop - start)
 
         # Check if the data is a ma.maskedarray
         if np.ma.count_masked(trace.data):
-            time = np.ma.array(time[:-1], mask=trace.data.mask)
+            timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
 
-        self.t0 = time[0]
-        self.dataAxes.plot(time-self.t0, trace.data, color=self.lineColor)
+
+        self.t0 = timeArray[0]
+
+        #start = time.clock()
+        #self.dataAxes.clear()
+        #stop = time.clock()
+        #self.logger.debug('Cleared axes (%.5fs)', stop - start)
+
+        start = time.clock()
+        if not self.line:
+            self.line, = self.dataAxes.plot(timeArray-self.t0, trace.data, color=self.lineColor)
+        else:
+            self.logger.debug('Updating line %s', self.line)
+            self.line.set_xdata(timeArray - self.t0)
+            self.line.set_ydata(trace.data)
+        stop = time.clock()
+        self.logger.debug('Plotted data (%.5fs)', stop -start)
+
+        start = time.clock()
         self.dataAxes.set_frame_on(False)
         self.dataAxes.get_xaxis().set_visible(False)
         self.dataAxes.get_yaxis().set_visible(False)
+        stop = time.clock()
+        self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
+
+        start = time.clock()
+        self.plotCanvas.canvas.draw()
+        #if self.line:
+        #    self.dataAxes.draw_artist(self.line)
+        stop = time.clock()
+        self.logger.debug('Redrawed canvas (%.5f)', stop -start)
 
 class TdChannelAnnotationArea(wx.Panel):
 
@@ -235,8 +323,8 @@ class TdChannel(wx.Panel):
         # The channel's color.
         self.color = color
 
-        # A list containing the views of the channel.
-        self.views = []
+        # A dictionary containing the views of the channel.
+        self.views = {}
 
         self.SetBackgroundColour('white')
 
@@ -248,17 +336,29 @@ class TdChannel(wx.Panel):
 
     def addView(self, view):
         view.Reparent(self)
-        self.views.append(view)
-	#print len(self.views)
-	if self.views:
+        self.views[view.name] = view
+	
+        if self.views:
 	    self.sizer.Add(view, pos=(len(self.views)-1,1), flag=wx.ALL|wx.EXPAND, border=0)
             self.sizer.AddGrowableRow(len(self.views)-1)
 	    self.sizer.SetItemSpan(self.annotationArea, (len(self.views), 1))
 
-            channelSize = self.views[0].GetMinSize()
+            channelSize = self.views.itervalues().next().GetMinSize()
             channelSize[1] = channelSize[1] * len(self.views) 
             self.SetMinSize(channelSize)
 	self.SetSizer(self.sizer)
+
+
+    def hasView(self, viewName):
+        ''' Check if the channel already contains the view.
+        
+        Parameters
+        ----------
+        viewName : String
+            The name of the view to search.
+        '''
+        return self.views.get(viewName, None)
+
 
 
 
@@ -281,8 +381,8 @@ class TdStation(wx.Panel):
         # The channel's color.
         self.color = color
 
-        # A list containing the views of the channel.
-        self.channels = []
+        # A dictionary containing the views of the channel.
+        self.channels = {}
 
         self.SetBackgroundColour('white')
 
@@ -294,16 +394,27 @@ class TdStation(wx.Panel):
 
     def addChannel(self, channel):
         channel.Reparent(self)
-        self.channels.append(channel)
+        self.channels[channel.name] = channel
 	if self.channels:
 	    self.sizer.Add(channel, pos=(len(self.channels)-1,1), flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
             self.sizer.AddGrowableRow(len(self.channels)-1)
 	    self.sizer.SetItemSpan(self.annotationArea, (len(self.channels), 1))
 
-            stationSize = self.channels[0].GetMinSize()
+            stationSize = self.channels.itervalues().next().GetMinSize()
             stationSize[1] = stationSize[1] * len(self.channels) 
             self.SetMinSize(stationSize)
 	self.SetSizer(self.sizer)
+
+
+    def hasChannel(self, channelName):
+        ''' Check if the station already contains a channel.
+
+        Parameters
+        ----------
+        channelName : String
+            The name of the channel to search.
+        '''
+        return self.channels.get(channelName, None)
 
 
 
@@ -408,7 +519,7 @@ class TdViewPort(scrolled.ScrolledPanel):
 
         self.SetupScrolling()
 
-        self.stations = []
+        self.stations = {}
 
 
     def addStation(self, station, position=None):
@@ -423,12 +534,22 @@ class TdViewPort(scrolled.ScrolledPanel):
         :type position: Integer
         '''
         station.Reparent(self)
-        self.stations.append(station)
+        self.stations[station.name] = station
 
         self.sizer.Add(station, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
-        viewPortSize = self.stations[0].GetMinSize()
+        viewPortSize = self.stations.itervalues().next().GetMinSize()
         viewPortSize[1] = viewPortSize[1] * len(self.stations) + 100 
         #self.SetMinSize(viewPortSize)
         self.SetupScrolling()
+
+    def hasStation(self, stationName):
+        ''' Check if the viewport already contains a station.
+
+        Parameters
+        ----------
+        stationName : String
+            The name of the station.
+        '''
+        return self.stations.get(stationName, None)
 
 
