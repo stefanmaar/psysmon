@@ -44,7 +44,7 @@ import os
 import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
-from psysmon.core.waveserver import WaveServer
+from psysmon.core.waveclient import PsysmonDbWaveClient
 from datetime import datetime
 import webbrowser
 from wx.lib.mixins.inspection import InspectionMixin 
@@ -256,9 +256,9 @@ class PSysmonGui(wx.Frame):
                 # Load the waveform directories.
                 self.psyBase.project.loadWaveformDirList()
 
-                # The project waveserver.
-                waveserver = WaveServer('sqlDB', self.psyBase.project)
-                self.psyBase.project.addWaveServer('psysmon database', waveserver)
+                # The project database waveclient.
+                waveclient = PsysmonDbWaveClient('main client', self.psyBase.project)
+                self.psyBase.project.addWaveClient(waveclient)
 
                 # Check if the database tables have to be updated.
                 self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
