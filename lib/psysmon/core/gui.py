@@ -39,7 +39,6 @@ import wx.html
 import wx.grid
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
-import MySQLdb as mysql
 import os
 import psysmon
 from psysmon.core.util import PsysmonError
@@ -1101,14 +1100,14 @@ class CreateNewDbUserDlg(wx.Dialog):
 
         try:
             self.psyBase.createPsysmonDbUser(userData['rootUser'],
-                                             userData['rootPwd'], 
+                                             userData['rootPwd'],
                                              userData['mysqlHost'],
                                              userData['userName'],
                                              userData['userPwd'])
             return True
-        except mysql.Error, e:
-            msg = "An error occured when trying to create the pSysmon database user:\n%s" % e
-            dlg = wx.MessageDialog(None, msg, 
+        except:
+            msg = "An error occured when trying to create the pSysmon database user:\n"
+            dlg = wx.MessageDialog(None, msg,
                                    "MySQL database error.",
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
