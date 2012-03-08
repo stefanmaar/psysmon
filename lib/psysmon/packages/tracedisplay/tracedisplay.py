@@ -446,8 +446,8 @@ class DisplayOptions:
 
     def __init__(self):
         # The timespan to show.
-        self.startTime = UTCDateTime('2010-08-31 07:59:00')
-        self.endTime = UTCDateTime('2010-08-31 08:00:00')
+        self.startTime = UTCDateTime('2010-08-31 07:57:00')
+        self.endTime = UTCDateTime('2010-08-31 07:58:00')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # The stations to show.
