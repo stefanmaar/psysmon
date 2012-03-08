@@ -33,8 +33,8 @@ import string
 import os
 from obspy.core import read, Stream
 
-class WaveServer:
-    '''The waveserver class.
+class WaveClient:
+    '''The WaveClient class.
 
 
     Attributes
@@ -42,7 +42,7 @@ class WaveServer:
 
     '''
 
-    def __init__(self, source, project, wsUrl=None): 
+    def __init__(self, name): 
         '''The constructor.
 
         Create an instance of the Project class.
@@ -60,16 +60,8 @@ class WaveServer:
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        # The project name.
-        self.source = source
-
-        # The waveform resource connector.
-        self.connector = None
-
-        if string.lower(self.source) == 'sqldb':
-            self.connector = SqlConnector(project)
-        else:
-            self.logger.error('The required source "%s" is not supported.', self.source)
+        # The name of the waveclient.
+        self.name = name
 
 
     def getWaveform(self, 
@@ -106,29 +98,20 @@ class WaveServer:
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
-        stream = self.connector.getWaveform(startTime,
-                                            endTime,
-                                            network = network,
-                                            station = station,
-                                            location = location,
-                                            channel = channel)
-        return stream
+        assert False, 'getWaveform must be defined'
 
 
-class SqlConnector:
-    ''' The SQL database waveserver connector.
+class PsysmonDbWaveClient(WaveClient):
+    ''' The pSysmon database waveclient.
 
     This class provides the connector to a pSysmon formatted SQL waveform 
     database. 
     '''
 
-    def __init__(self, project):
-
-        # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        # The current psysmon project.
+    def __init__(self, name, project):
+        WaveClient.__init__(self, name=name)
+        
+        # The psysmon project owning the waveclient.
         self.project = project
 
         # The current database session.
@@ -261,4 +244,62 @@ class SqlConnector:
         return stream
 
 
+class EarthwormWaveClient(WaveClient):
+    ''' The earthworm waveserver client.
 
+    This class provides the connector to a Earthworm waveserver.
+    The client uses the :class:`obspy.earthworm.Client` class.
+    '''
+
+    def __init__(self, name, host='localhost', port='16022'):
+        WaveClient.__init__(self, name=name)
+        
+        from obspy.earthworm import Client
+
+        # The Earthworm waveserver host to which the client should connect.
+        self.host = host
+
+        # The port on which the Eartworm waveserver is running on host.
+        self.port = port
+
+        # The obspy earthworm waveserver client instance.
+        self.client = Client(self.host, self.port)
+
+    def getWaveform(self,
+                    startTime,
+                    endTime, 
+                    network = None, 
+                    station = None, 
+                    location = None, 
+                    channel = None):
+        ''' Get the waveform data for the specified parameters.
+
+        Parameters
+        ----------
+        network : String
+            The network name.
+
+        station : String
+            The station name.
+
+        location : String
+            The location specifier.
+
+        channel : String
+            The channel name.
+
+        startTime : UTCDateTime
+            The begin datetime of the data to fetch.
+
+        endTime : UTCDateTime
+            The end datetime of the data to fetch.
+        
+        
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
+        '''
+
+        self.logger.debug("Querying...")
+        

@@ -221,8 +221,8 @@ class Project:
             self.user.append(user)
 
 
-        # The project's waveservers.
-        self.waveserver = {}
+        # The project's waveclients.
+        self.waveclient = {}
 
 
     def setCollectionNodeProject(self):
@@ -235,18 +235,20 @@ class Project:
                 curCollection.setNodeProject(self)
 
 
-    def addWaveServer(self, name, waveserver):
-        ''' Add a waveserver instance to the project.
+    def addWaveClient(self, waveclient):
+        ''' Add a waveclient instance to the project.
 
         Parameters
         ----------
-        name : String
-            The name of the waveserver. Used as the key of the dictionary.
-
-        waveserver : :class:`~psysmon.core.waveserver.WaveServer`
-            The waveserver to be added to the project.
+        waveclient : :class:`~psysmon.core.waveclient.PsysmonDbWaveClient`, :class:`~psysmon.core.waveclient.EarthwormWaveClient`, 
+            The waveclient to be added to the project. Usually this 
+            is an instance of a class derived from WaveClient.
         '''
-        self.waveserver[name] = waveserver
+        if waveclient.name in self.waveclient.keys():
+            self.logger.error('The waveclient with name %s already exits.\nRemove it first to avoid troubles.', waveclient.name)
+            return
+
+        self.waveclient[waveclient.name] = waveclient
 
 
     def connect2Db(self, passwd):

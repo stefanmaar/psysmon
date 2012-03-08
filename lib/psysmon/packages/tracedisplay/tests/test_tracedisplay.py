@@ -8,7 +8,7 @@ import unittest
 import psysmon
 import logging
 from psysmon.core.base import Base
-from psysmon.core.waveserver import WaveServer
+from psysmon.core.waveclient import PsysmonDbWaveClient
 import psysmon.core.gui as psygui
 import os
 import copy
@@ -42,9 +42,9 @@ class TracedisplayTestCase(unittest.TestCase):
         # Load the database structure of the project packages.
         psyBase.project.loadDatabaseStructure(psyBase.packageMgr.packages)
 
-        # Create the project waveserver.
-        waveserver = WaveServer('sqlDB', psyBase.project)
-        psyBase.project.addWaveServer('psysmon database', waveserver)
+        # Create the project waveclient.
+        waveclient = PsysmonDbWaveClient('main client', psyBase.project)
+        psyBase.project.addWaveClient(waveclient)
         self.app =psygui.PSysmonApp()
 
         nodeTemplate = psyBase.packageMgr.getCollectionNodeTemplate('tracedisplay')

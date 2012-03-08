@@ -328,7 +328,7 @@ class TraceDisplayDlg(wx.Frame):
         '''
 
         channels2Load = list(itertools.chain(*self.displayOptions.channel.values()))
-        stream = self.project.waveserver['psysmon database'].\
+        stream = self.project.waveclient['main client'].\
                               getWaveform(startTime = self.displayOptions.startTime,
                                           endTime = self.displayOptions.endTime,
                                           station = self.displayOptions.station,
