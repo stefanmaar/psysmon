@@ -87,7 +87,9 @@ def run():
     logger.setLevel(psysmon.logConfig['level'])
     logger.addHandler(psysmon.getLoggerHandler())
 
-    psyBaseDir = os.path.abspath(__file__)
+    #psyBaseDir = os.path.abspath(__file__)
+    psyBaseDir = os.path.abspath(psysmon.__file__)
+    print "psyBaseDir: %s" % psyBaseDir
     psyBaseDir = os.path.dirname(psyBaseDir)
 
     # Initialize the pSysmon base object.
