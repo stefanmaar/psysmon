@@ -58,6 +58,9 @@ packages = [
             'psysmon.packages.tracedisplay'
            ]
 
+# Define the scripts to be processed.
+scripts = ['scripts/pSysmon.py']
+
 # Let the user know what's going on.
 printLine()
 printRaw("BUILDING PSYSMON")
@@ -133,7 +136,8 @@ setup(name = 'pSysmon',
       keywords = __keywords__,
       packages = packages,
       platforms = 'any',
-      package_dir = {'': 'lib'}
+      package_dir = {'': 'lib'},
+      scripts = scripts
       #requires = ['matplotlib (>=1.1.0)']
      )
 
