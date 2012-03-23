@@ -58,6 +58,9 @@ packages = [
             'psysmon.packages.tracedisplay'
            ]
 
+# Define the scripts to be processed.
+scripts = ['scripts/pSysmon.py']
+
 # Let the user know what's going on.
 printLine()
 printRaw("BUILDING PSYSMON")
@@ -75,7 +78,11 @@ if not checkForPackage('wx', '2.8.11'):
     sys.exit(1)
 
 # Checking for numpy
-if not checkForPackage('numpy', '1.1.0'):
+if not checkForPackage('numpy', '1.6.1'):
+    sys.exit(1)
+
+# Checking for scipy
+if not checkForPackage('scipy', '0.10.1'):
     sys.exit(1)
 
 # Checking for matplotlib
@@ -86,6 +93,29 @@ if not checkForPackage('matplotlib', '1.1.0'):
 if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
     sys.exit(1)
 
+# Checking for sqlAlchemy
+if not checkForPackage('sqlalchemy', '0.7.5'):
+    sys.exit(1)
+
+# Checking for SQLAlchemy
+if not checkForPackage('MySQLdb', '1.2.3'):
+    sys.exit(1)
+
+# Checking for obspy.core
+if not checkForPackage('obspy.core', '0.6.2'):
+    sys.exit(1)
+
+# Checking for obspy.signal
+if not checkForPackage('obspy.signal', '0.6.1'):
+    sys.exit(1)
+
+# Checking for obspy.mseed
+if not checkForPackage('obspy.mseed', '0.6.1'):
+    sys.exit(1)
+
+# Checking for obspy.earthworm
+if not checkForPackage('obspy.earthworm', '0.1.0'):
+    sys.exit(1)
 
 printRaw("")
 printRaw("")
@@ -106,7 +136,8 @@ setup(name = 'pSysmon',
       keywords = __keywords__,
       packages = packages,
       platforms = 'any',
-      package_dir = {'': 'lib'}
+      package_dir = {'': 'lib'},
+      scripts = scripts
       #requires = ['matplotlib (>=1.1.0)']
      )
 
