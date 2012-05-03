@@ -59,6 +59,13 @@ import psysmon.core.base as psybase
 import os
 import logging
 
+from twisted.internet import wxreactor
+wxreactor.install()
+
+# import t.i.reactor only after installing wxreactor:
+from twisted.internet import reactor
+
+from psysmon.core.collectionExecutionControl import CecServer
 
 def run():
     '''
@@ -105,8 +112,14 @@ def run():
     logger.addHandler(psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel))
 
     psysmonMain.Show()
-    app.MainLoop()
 
+    reactor.registerWxApp(app)
+
+    cecServer = CecServer(8000)
+    #app.MainLoop()
+
+    # Start the event loop
+    reactor.run()
 
 if __name__ == '__main__':
     run()
