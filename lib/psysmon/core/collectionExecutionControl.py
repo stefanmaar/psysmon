@@ -28,6 +28,8 @@ The pSysmon main program.
 '''
 
 from twisted.internet import reactor, protocol
+from twisted.protocols.basic import LineReceiver
+import pickle
 
 
 class CecServer():
@@ -35,7 +37,8 @@ class CecServer():
     def __init__(self, port):
         factory = protocol.ServerFactory()
         factory.protocol = Echo
-        reactor.listenTCP(port, factory)
+        port = reactor.listenTCP(port, factory)
+        self.port = port.getHost().port
 
 
 
@@ -52,28 +55,43 @@ class CecClient():
 
 
 
-class Echo(protocol.Protocol):
+class Echo(LineReceiver):
     """This is just about the simplest possible protocol"""
 
-    def dataReceived(self, data):
+    def connectionMade(self):
+        print "SERVER: got a connection from client."
+
+
+    def lineReceived(self, data):
         "As soon as any data is received, write it back."
-        print "Client sent: %s" % data
-        self.transport.write(data)
+        try:
+            obj = pickle.loads(data)
+            print "SERVER: Client sent: %s" % obj 
+        except:
+            print "SERVER: Client sent: %s" % data
+        
+
+        returnData = "Collection to be executed."
+        self.sendLine(returnData)
 
 
-class EchoClient(protocol.Protocol):
+
+class EchoClient(LineReceiver):
     """Once connected, send a message, then print the result."""
 
     def connectionMade(self):
-        self.transport.write("hello, world!")
+        test = {'type': 'RQST', 'msg': 'Requesting collection data'}
+        self.sendLine(pickle.dumps(test))
 
-    def dataReceived(self, data):
-        "As soon as any data is received, write it back."
-        print "Server said:", data
+    def lineReceived(self, data):
+        """ As soon as any data is received, write it back. """
+        print "CLIENT: Server said:", data
         self.transport.loseConnection()
 
     def connectionLost(self, reason):
-        print "connection lost"
+        print "CLIENT: lost connection."
+
+
 
 class EchoFactory(protocol.ClientFactory):
     protocol = EchoClient
