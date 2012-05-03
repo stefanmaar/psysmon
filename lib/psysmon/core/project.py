@@ -42,6 +42,7 @@ from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from psysmon.core.collectionExecutionControl import CecServer
 
 
 class Project:
@@ -622,7 +623,15 @@ class Project:
         msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
 
+    
+    def createCecServer(self):
+        ''' Create a Collection-Execution-Control server for the project. 
 
+        '''
+        # Start the collection execution server. Use port 0 to
+        # get a free port from the OS.
+        self.cecServer = CecServer(0);
+        self.logger.info("CEC-Server port: %d", self.cecServer.port)
 
 
 ## The pSysmon user.
@@ -962,7 +971,7 @@ class User:
             # Start the collection using the cecClient as a subprocess.
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
             self.logger.debug("path: %s", cecPath)
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py')])
+            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), str(project.cecServer.port)])
 
         else:
             raise PsysmonError('No active collection found!') 
