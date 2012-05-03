@@ -30,8 +30,10 @@ Module for handling the pSysmon project and users.
 
 import logging
 import os
+import sys
 import thread
 import multiprocessing
+import subprocess
 import copy
 from wx.lib.pubsub import Publisher as pub
 from datetime import datetime
@@ -947,15 +949,21 @@ class User:
             msg['procId'] = col2Proc.procId
             pub.sendMessage(msgTopic, msg)
 
-            (parentEnd, childEnd) = multiprocessing.Pipe()
+            #(parentEnd, childEnd) = multiprocessing.Pipe()
             self.logger.debug("proc Id: %s" % col2Proc.procId)
-            p = multiprocessing.Process(name = processName,
-                                        target = col2Proc.execute, 
-                                        args = (childEnd,)
-                                       )
+            #p = multiprocessing.Process(name = processName,
+            #                            target = col2Proc.execute, 
+            #                            args = (childEnd,)
+            #                           )
             #p.daemon = True
-            p.start()
-            thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
+            #p.start()
+            #thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
+
+            # Start the collection using the cecClient as a subprocess.
+            cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
+            self.logger.debug("path: %s", cecPath)
+            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py')])
+
         else:
             raise PsysmonError('No active collection found!') 
 
