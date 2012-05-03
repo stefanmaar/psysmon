@@ -29,10 +29,17 @@ The pSysmon main program.
 
 from psysmon.core.collectionExecutionControl import CecClient
 from twisted.internet import reactor
+import sys
 
 if __name__ == "__main__":
-    myClient = CecClient('localhost', 8000)
+
+    # The port number is passed as the first commandline argument.
+    port = int(sys.argv[1])
+
+    # Create a CecClient and connect it to the project's CecServer.
+    myClient = CecClient('localhost', port)
     myClient.connect()
 
+    # Start the twisted eventloop.
     reactor.run()
 
