@@ -227,6 +227,44 @@ class Project:
         # The project's waveclients.
         self.waveclient = {}
 
+    ## The __getstate__ method.
+    #
+    # Remove the project instance before pickling the instance.
+    def __getstate__(self):
+        result = self.__dict__.copy()
+
+        # The following attributes can't be pickled and therefore have
+        # to be removed.
+        del result['logger']
+        #del result['dbEngine']
+        #del result['dbSessionClass']
+        #del result['dbBase']
+        #del result['dbMetaData']
+        result['dbEngine'] = None
+        result['dbSessionClass'] = None
+        result['dbBase'] = None
+        result['dbMetaData'] = None
+        result['dbTables'] = {}
+        result['waveclient'] = {}
+        result['threadMutex'] = None
+
+
+        return result
+
+
+    ## The __setstate__ method.
+    #
+    # Fill the attributes after unpickling.
+    def __setstate__(self, d):
+        self.__dict__.update(d) # I *think* this is a safe way to do it
+        print dir(self)
+
+        # Track some instance attribute changes.
+        if not "logger" in dir(self):
+            loggerName = __name__ + "." + self.__class__.__name__
+            self.logger = logging.getLogger(loggerName)
+
+
 
     def setCollectionNodeProject(self):
         '''Set the project attribute of each node in all collections of 
@@ -588,6 +626,8 @@ class Project:
         self.activeUser.executeCollection(self)
 
 
+
+
     def loadWaveformDirList(self):
         '''Load the waveform directories from the database table.
 
@@ -624,13 +664,13 @@ class Project:
         pub.sendMessage(msgTopic, msg)
 
     
-    def createCecServer(self):
+    def createCecServer(self, packages):
         ''' Create a Collection-Execution-Control server for the project. 
 
         '''
         # Start the collection execution server. Use port 0 to
         # get a free port from the OS.
-        self.cecServer = CecServer(0);
+        self.cecServer = CecServer(0, self, packages);
         self.logger.info("CEC-Server port: %d", self.cecServer.port)
 
 
@@ -968,10 +1008,25 @@ class User:
             #p.start()
             #thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
 
+            # Put the collection on the CEC-Server stack.
+            project.cecServer.addCollection(col2Proc)
+
+            # Store all the needed data in a temporary file.
+            import tempfile
+            import shelve
+            tmpDir = tempfile.gettempdir()
+            filename = os.path.join(tmpDir, col2Proc.procId)
+
+            db = shelve.open(filename, flag='n')
+            db['project'] = project
+            db['collection'] = col2Proc
+            db.close()
+
+
             # Start the collection using the cecClient as a subprocess.
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
             self.logger.debug("path: %s", cecPath)
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), str(project.cecServer.port)])
+            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename])
 
         else:
             raise PsysmonError('No active collection found!') 
