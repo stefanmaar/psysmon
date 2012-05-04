@@ -27,19 +27,65 @@ The pSysmon main program.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+#from twisted.internet import wxreactor
+#wxreactor.install()
+
+import psysmon.core.gui as psygui
 from psysmon.core.collectionExecutionControl import CecClient
 from twisted.internet import reactor
 import sys
+import shelve
+import threading
+import wx
+
+class ExecutionFrame(wx.Frame):
+
+    def __init__(self, collection):
+        wx.Frame.__init__(self, None, wx.ID_ANY, 'Execution frame')
+        #wx.CallAfter(collection.execute, 'halloooo')
+
+    
+
+
 
 if __name__ == "__main__":
 
     # The port number is passed as the first commandline argument.
-    port = int(sys.argv[1])
+    filename = sys.argv[1]
+    print "Filename: %s" % filename
+
+    db = shelve.open(filename)
+    project = db['project']
+    collection = db['collection']
+    print "Project: %s" % project
+    print "collection: %s" % collection
+
+
+    # Create the wxPython app.
+    #app = psygui.PSysmonApp()
+
+    executionThread = threading.Thread(name='execute', 
+                                       target = collection.execute,
+                                       args = ('hallooo',))
+    
+    collection.execute('halloooo')
+
+    print "Finished the execution."
+    #frame = ExecutionFrame(collection)
+    #frame.Show(True)
+    
+    #app.MainLoop()
+    
+    #reactor.registerWxApp(app)
 
     # Create a CecClient and connect it to the project's CecServer.
-    myClient = CecClient('localhost', port)
-    myClient.connect()
+    #myClient = CecClient('localhost', port)
+    #myClient.connect()
 
     # Start the twisted eventloop.
-    reactor.run()
+    #reactor.run()
+
+
+
+
 
