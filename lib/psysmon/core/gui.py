@@ -252,7 +252,7 @@ class PSysmonGui(wx.Frame):
             else:
                 # Create the project's collection execution control
                 # server.
-                self.psyBase.project.createCecServer()
+                #self.psyBase.project.createCecServer(self.psyBase.packageMgr.packages)
 
                 # Load the current database structure.
                 self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
