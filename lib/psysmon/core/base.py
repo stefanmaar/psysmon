@@ -403,7 +403,7 @@ class Collection:
 
 
 
-    def execute(self, pipe):
+    def execute(self, client):
         '''
         Executing the collection.
 
@@ -419,15 +419,14 @@ class Collection:
         '''
         # TODO: Add a State of Health thread which sends heartbeats at
         # regular initervals.
-        from time import sleep
 
-        pipe.send({'state': 'running', 'msg': 'Collection running', 'procId': self.procId})
+        #pipe.send({'state': 'running', 'msg': 'Collection running', 'procId': self.procId})
 
-        e = threading.Event()
-        heartbeat = threading.Thread(name = 'heartbeat', 
-                                     target =self.heartBeat, 
-                                     args = (e,pipe))
-        heartbeat.start()
+        #e = threading.Event()
+        #heartbeat = threading.Thread(name = 'heartbeat', 
+        #                             target =self.heartBeat, 
+        #                             args = (e,pipe))
+        #heartbeat.start()
 
         # Create the collection's data file.
         self.dataShelf = os.path.join(self.tmpDir, self.procId + ".scd")
@@ -438,7 +437,7 @@ class Collection:
 
         # Execute each node in the collection.
         for (ind, curNode) in enumerate(self.nodes):
-            pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
+            #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
                 curNode.run(procId=self.procId)
             else:
@@ -446,9 +445,9 @@ class Collection:
                 curNode.run(procId=self.procId,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
-        e.set()
-        heartbeat.join()
-        pipe.send({'state': 'stopped', 'msg': 'Collection execution finished', 'procId': self.procId})
+        #e.set()
+        #heartbeat.join()
+        #pipe.send({'state': 'stopped', 'msg': 'Collection execution finished', 'procId': self.procId})
 
 
     def heartBeat(self, event, pipe):
