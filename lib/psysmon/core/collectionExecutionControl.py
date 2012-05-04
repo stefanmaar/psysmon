@@ -30,15 +30,20 @@ The pSysmon main program.
 from twisted.internet import reactor, protocol
 from twisted.protocols.basic import LineReceiver
 import pickle
-
+from psysmon.core.waveclient import PsysmonDbWaveClient
 
 class CecServer():
 
-    def __init__(self, port):
-        factory = protocol.ServerFactory()
-        factory.protocol = Echo
-        port = reactor.listenTCP(port, factory)
+    def __init__(self, port, project, packages):
+        #factory = protocol.ServerFactory()
+        #factory.protocol = Echo
+        self.factory = CecServerFactory(project, packages)
+        port = reactor.listenTCP(port, self.factory)
         self.port = port.getHost().port
+
+    def addCollection(self, collection):
+        self.factory.addCollection(collection)
+
 
 
 
@@ -47,15 +52,23 @@ class CecClient():
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.protocol = EchoFactory()
+        self.factory = CecClientFactory()
 
 
     def connect(self):
-        reactor.connectTCP(self.host, self.port, self.protocol)
+        tmp = reactor.connectTCP(self.host, self.port, self.factory)
+        print tmp
+
+    def requestCollection(self):
+        if self.factory.protocolInstance:
+            self.factory.protocolInstance.requestCollection()
+        else:
+            print "protocolInstance not ready."
 
 
 
-class Echo(LineReceiver):
+
+class CecServerProtocol(LineReceiver):
     """This is just about the simplest possible protocol"""
 
     def connectionMade(self):
@@ -71,30 +84,94 @@ class Echo(LineReceiver):
             print "SERVER: Client sent: %s" % data
         
 
-        returnData = "Collection to be executed."
-        self.sendLine(returnData)
+        #returnData = "Collection to be executed."
+        #self.sendLine(returnData)
+
+        print self.factory.collections
+        if self.factory.collections:
+            data2Send = {}
+            data2Send['project'] = self.factory.project
+            #data2Send['project'] = None
+            #data2Send['collection'] = self.factory.collections.pop()
+            print "SERVER: Sending data %s" % data2Send
+            tmp = pickle.dumps(data2Send)
+            self.sendLine(tmp)
+            print "SERVER: Sent data %s" % data2Send
+        else:
+            self.sendLine("No Collection available.")
+
+
+class CecServerFactory(protocol.ServerFactory):
+    protocol = CecServerProtocol
+
+    def __init__(self, project, packages):
+        self.project = project
+        self.packages = packages
+        self.collections = []
+
+
+    def addCollection(self, collection):
+
+        self.collections.append(collection)
 
 
 
-class EchoClient(LineReceiver):
+class CecClientProtocol(LineReceiver):
     """Once connected, send a message, then print the result."""
 
     def connectionMade(self):
-        test = {'type': 'RQST', 'msg': 'Requesting collection data'}
-        self.sendLine(pickle.dumps(test))
+        self.factory.clientReady(self)
+        self.requestCollection()
 
     def lineReceived(self, data):
         """ As soon as any data is received, write it back. """
-        print "CLIENT: Server said:", data
-        self.transport.loseConnection()
+       
+        collection = None 
+        
+        print "CLIENT: Trying to unpickle the data."
+            #serverData = pickle.loads(data)
+            #project = serverData['project']
+            #collection = serverData['collection']
+            #print "CLIENT: SERVER sent project: %s" % project
+            #print "CLIENT: SERVER sent collection: %s" % collection
+        #print "CLIENT: SERVER sent data: %s" % data
+        
+        if collection:
+            self.executeCollection(collection)
+        else:
+            print "CLIENT: No collection to execute"
+        #self.transport.loseConnection()
 
     def connectionLost(self, reason):
         print "CLIENT: lost connection."
 
 
+    def requestCollection(self):
+        test = {'type': 'RQST', 'msg': 'Requesting collection from server.'}
+        self.sendLine(pickle.dumps(test))
 
-class EchoFactory(protocol.ClientFactory):
-    protocol = EchoClient
+
+    def executeCollection(self, collection):
+        print "Executing collection %s" % collection
+
+        # Create the project links loosed due to pickling.
+        # The project database waveclient.
+        waveclient = PsysmonDbWaveClient('main client', collection.project)
+        self.psyBase.project.addWaveClient(waveclient)
+
+        collection.execute(self)
+
+
+
+
+class CecClientFactory(protocol.ClientFactory):
+    protocol = CecClientProtocol
+
+    def startFactory(self):
+        self.protocolInstance = None
+
+    def clientReady(self, protocol):
+        self.protocolInstance = protocol
 
     def clientConnectionFailed(self, connector, reason):
         print "Connection failed - goodbye!"
@@ -103,5 +180,6 @@ class EchoFactory(protocol.ClientFactory):
     def clientConnectionLost(self, connector, reason):
         print "Connection lost - goodbye!"
         reactor.stop()
+
 
 
