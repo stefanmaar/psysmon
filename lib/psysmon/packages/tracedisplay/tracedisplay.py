@@ -23,6 +23,7 @@ import itertools
 import time
 import wx
 import wx.lib.colourdb
+import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
 from obspy.core.utcdatetime import UTCDateTime
 import container
@@ -180,14 +181,14 @@ class TraceDisplay(CollectionNode):
         self.logger.debug('Executing TraceDisplay')
 
 
-
+        app = psygui.PSysmonApp()
 
         tdDlg = TraceDisplayDlg(project = self.project,
                                 parent = None,
                                 id = wx.ID_ANY,
                                 title = "TraceDisplay Development")
-        return
-
+        
+        app.MainLoop()
 
 
 class TraceDisplayDlg(wx.Frame):
@@ -233,7 +234,7 @@ class TraceDisplayDlg(wx.Frame):
 
 
         # Display the data.
-        self.updateDisplay()
+        #self.updateDisplay()
 
         # Show the frame. 
         self.Show(True)
