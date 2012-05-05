@@ -234,7 +234,7 @@ class TraceDisplayDlg(wx.Frame):
 
 
         # Display the data.
-        #self.updateDisplay()
+        self.updateDisplay()
 
         # Show the frame. 
         self.Show(True)
