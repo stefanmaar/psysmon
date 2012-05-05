@@ -126,7 +126,7 @@ class Project:
 
     '''
 
-    def __init__(self, name, baseDir, user, dbDialect='mysql', dbDriver=None, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTables={}):
+    def __init__(self, psyBase, name, baseDir, user, dbDialect='mysql', dbDriver=None, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -159,6 +159,8 @@ class Project:
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        # The parent psysmon base.
+        self.psyBase = psyBase
 
         # The project name.
         self.name = name
@@ -236,6 +238,7 @@ class Project:
         # The following attributes can't be pickled and therefore have
         # to be removed.
         del result['logger']
+        result['psyBase'] = None
         #del result['dbEngine']
         #del result['dbSessionClass']
         #del result['dbBase']
@@ -350,6 +353,7 @@ class Project:
         for curUser in self.user:
             if curUser.name == userName:
                 self.activeUser = curUser
+                self.activeUser.pwd = pwd
                 self.connect2Db(pwd)
                 return True
 
@@ -725,6 +729,9 @@ class User:
         ## The user name.
         self.name = user
 
+        # The user's password.
+        self.pwd = None
+
         ## The user mode.
         #
         # The user privileges. 
@@ -981,7 +988,7 @@ class User:
                 project.threadMutex = thread.allocate_lock()
 
             col2Proc = copy.deepcopy(self.activeCollection)
-            col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
+            #col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
             processName = col2Proc.name + "_" + timeStampString
@@ -1008,9 +1015,6 @@ class User:
             #p.start()
             #thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
 
-            # Put the collection on the CEC-Server stack.
-            project.cecServer.addCollection(col2Proc)
-
             # Store all the needed data in a temporary file.
             import tempfile
             import shelve
@@ -1020,6 +1024,7 @@ class User:
             db = shelve.open(filename, flag='n')
             db['project'] = project
             db['collection'] = col2Proc
+            db['packages'] = project.psyBase.packageMgr.packages
             db.close()
 
 
