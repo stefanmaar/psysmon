@@ -202,10 +202,11 @@ class Base:
         '''
 
         # Create the working psysmon project.
-        self.project = psysmon.core.project.Project(name=name,
-                                                    baseDir=baseDir,
-                                                    user=psysmon.core.project.User(user, 'admin'),
-                                                    dbHost=dbHost)
+        self.project = psysmon.core.project.Project(psyBase = self,
+                                                    name = name,
+                                                    baseDir = baseDir,
+                                                    user = psysmon.core.project.User(user, 'admin'),
+                                                    dbHost = dbHost)
 
         # When creating a project, set the active user to the user creating 
         # the project (which is the *admin* user).
@@ -238,7 +239,8 @@ class Base:
         '''
         db = shelve.open(filename)
         projectDir = os.path.dirname(filename)
-        self.project = psysmon.core.project.Project(name = db['name'],
+        self.project = psysmon.core.project.Project(psyBase = self,
+                                                    name = db['name'],
                                                     baseDir=os.path.dirname(projectDir),
                                                     user=db['user'],
                                                     dbHost = db['dbHost'],
