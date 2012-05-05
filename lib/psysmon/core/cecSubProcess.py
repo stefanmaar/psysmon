@@ -32,10 +32,10 @@ The pSysmon main program.
 
 import psysmon.core.gui as psygui
 from psysmon.core.collectionExecutionControl import CecClient
+from psysmon.core.waveclient import PsysmonDbWaveClient
 from twisted.internet import reactor
 import sys
 import shelve
-import threading
 import wx
 
 class ExecutionFrame(wx.Frame):
@@ -57,17 +57,17 @@ if __name__ == "__main__":
     db = shelve.open(filename)
     project = db['project']
     collection = db['collection']
+    packages = db['packages']
     print "Project: %s" % project
     print "collection: %s" % collection
 
-
-    # Create the wxPython app.
-    #app = psygui.PSysmonApp()
-
-    executionThread = threading.Thread(name='execute', 
-                                       target = collection.execute,
-                                       args = ('hallooo',))
-    
+    # Reinitialize the project.
+    project.connect2Db(project.activeUser.pwd)
+    project.loadDatabaseStructure(packages)
+    waveclient = PsysmonDbWaveClient('main client', project)
+    project.addWaveClient(waveclient)
+    collection.setNodeProject(project) 
+     
     collection.execute('halloooo')
 
     print "Finished the execution."
