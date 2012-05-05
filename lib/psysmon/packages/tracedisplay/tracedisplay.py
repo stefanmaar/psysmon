@@ -221,7 +221,7 @@ class TraceDisplayDlg(wx.Frame):
         self.logger = logging.getLogger(loggerName)
 
         self.project = project
-        
+
         # Create the display option.
         self.displayOptions = DisplayOptions()
 
@@ -231,7 +231,6 @@ class TraceDisplayDlg(wx.Frame):
         # Initialize the user interface.
         self.initUI()
         self.initKeyEvents()
-
 
         # Display the data.
         self.updateDisplay()
