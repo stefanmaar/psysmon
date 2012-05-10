@@ -187,7 +187,7 @@ class TraceDisplay(CollectionNode):
                                 parent = None,
                                 id = wx.ID_ANY,
                                 title = "TraceDisplay Development")
-        
+
         app.MainLoop()
 
 
@@ -451,11 +451,11 @@ class DisplayOptions:
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # The stations to show.
-        self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
-                   'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
-                   'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
+        #self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
+        #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
+        #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
         #self.station = ['GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'SITA', 'ALBA', 'G_NAWA']
-        #self.station = ['ALBA', 'SITA', 'GILA']
+        self.station = ['ALBA', 'SITA', 'GILA']
 
         # The channels to show.
         self.channel = {}
