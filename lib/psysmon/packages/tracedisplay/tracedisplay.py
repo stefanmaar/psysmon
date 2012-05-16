@@ -243,6 +243,7 @@ class TraceDisplayDlg(wx.Frame):
         ''' Build the userinterface.
 
         '''
+        self.logger.debug('Initializing the GUI')
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.viewPort =  container.TdViewPort(parent = self)
         self.sizer.Add(self.viewPort, 1, flag = wx.EXPAND|wx.ALL, border = 0)
