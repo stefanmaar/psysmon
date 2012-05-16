@@ -30,13 +30,17 @@ The pSysmon main program.
 #from twisted.internet import wxreactor
 #wxreactor.install()
 
-import psysmon.core.gui as psygui
-from psysmon.core.collectionExecutionControl import CecClient
+import psysmon
+#import psysmon.core.gui as psygui
+#from psysmon.core.collectionExecutionControl import CecClient
 from psysmon.core.waveclient import PsysmonDbWaveClient
-from twisted.internet import reactor
+#from twisted.internet import reactor
 import sys
 import shelve
 import wx
+import logging
+import os
+import tempfile
 
 class ExecutionFrame(wx.Frame):
 
@@ -49,10 +53,19 @@ class ExecutionFrame(wx.Frame):
 
 
 if __name__ == "__main__":
-
-    # The port number is passed as the first commandline argument.
+   
+    # The process name and the temp. file are passes as arguments. 
     filename = sys.argv[1]
-    print "Filename: %s" % filename
+    procName = sys.argv[2]
+
+    logfileName = os.path.join(tempfile.gettempdir(), procName + '.log')
+
+    logger = logging.getLogger('psysmon')
+    logger.setLevel(psysmon.logConfig['level'])
+    logger.addHandler(psysmon.getLoggerFileHandler(logfileName))
+    
+    logger.debug('process name: %s', procName)
+    logger.debug('pickle file: %s', filename)
 
     db = shelve.open(filename)
     project = db['project']
