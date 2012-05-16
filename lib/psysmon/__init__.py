@@ -68,6 +68,18 @@ def getLoggerHandler(mode='console'):
     #ch.addFilter(LoggingMainProcessFilter())
     return ch
 
+
+def getLoggerFileHandler(filename=None):
+    if not filename:
+        return
+    ch = logging.FileHandler(filename)
+    ch.setLevel(logConfig['level'])
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(processName)s - %(levelname)s - %(name)s: %(message)s")
+    ch.setFormatter(formatter)
+
+    return ch
+
+
 def getLoggerWxRedirectHandler(window):
     ch = LoggingRedirectHandler(window)
     ch.setLevel(logConfig['level'])
