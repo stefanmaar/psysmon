@@ -1031,7 +1031,8 @@ class User:
             # Start the collection using the cecClient as a subprocess.
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
             self.logger.debug("path: %s", cecPath)
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename])
+            #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename])
+            proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procId], executable=sys.executable)
 
         else:
             raise PsysmonError('No active collection found!') 
