@@ -836,11 +836,19 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.processes.SetStringItem(index, 1, str(data['pid']))
         self.processes.SetStringItem(index, 2, data['procName'])
         self.processes.SetStringItem(index, 3, data['state'])
+
+        # The new process is added on top of the list. Add 1 to all
+        # index values of the process map.
+        for curKey in self.processMap.keys():
+            self.processMap[curKey] += 1
+
         self.processMap[data['procName']] = index
 
     def updateThread(self, data):
+        self.logger.debug('updating process: %s', data['procName'])
         if data['procName'] in self.processMap.keys():
             curIndex = self.processMap[data['procName']]
+            self.logger.debug('process has index: %d', curIndex)
             self.processes.SetStringItem(curIndex, 3, data['state'])
             duration = data['curTime'] - data['startTime']
             self.processes.SetStringItem(curIndex, 4, str(duration))
