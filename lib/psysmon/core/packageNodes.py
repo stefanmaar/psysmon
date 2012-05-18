@@ -208,6 +208,8 @@ class CollectionNode:
         self.procName = None
 
 
+
+
     ## The __getstate__ method.
     #
     # Remove the project instance before pickling the instance.
