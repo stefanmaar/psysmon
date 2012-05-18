@@ -38,11 +38,10 @@ class ExampleNode2(CollectionNode):
 
     def edit(self):
         msg = "Editing the node %s." % self.name
-        self.log('status', msg)
+
 
     def execute(self, prevModuleOutput={}):
-        msg = "Executing the node %s." % self.name
-        self.log('status', msg)
+        self.logger.debug("Executing the node %s." % self.name)
 
         requiredData = self.requireData(('exp2InputData', ))
 
