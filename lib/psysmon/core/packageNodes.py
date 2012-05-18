@@ -205,7 +205,7 @@ class CollectionNode:
 
         # If the node is executed in a collection thread a thread ID is
         # assigned.
-        self.procId = None
+        self.procName = None
 
 
     ## The __getstate__ method.
@@ -278,8 +278,8 @@ class CollectionNode:
     # thread dependent attributes can be set before executing the collection node.
     # Currently the procId is saved as an attribute of the collection node
     # so that the node knows to which thread it belongs to.
-    def run(self, procId, prevNodeOutput={}):
-        self.procId = procId
+    def run(self, procName, prevNodeOutput={}):
+        self.procName = procName
         self.execute(prevNodeOutput)
 
 
@@ -294,7 +294,7 @@ class CollectionNode:
         # If the node is running in a thread, log to the collection (the
         # log file).
         # If the thread is not running, log to the pSysmon log area.
-        if self.procId:
+        if self.procName:
             self.parentCollection.log(self.name, mode, msg)
         else:
             self.project.log(mode, msg)
