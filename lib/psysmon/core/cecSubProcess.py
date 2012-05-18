@@ -83,6 +83,7 @@ if __name__ == "__main__":
     waveclient = PsysmonDbWaveClient('main client', project)
     project.addWaveClient(waveclient)
     collection.setNodeProject(project) 
+    collection.createNodeLoggers()
 
     collection.execute()
 
