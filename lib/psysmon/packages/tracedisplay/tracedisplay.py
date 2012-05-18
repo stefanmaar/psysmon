@@ -174,10 +174,6 @@ class TraceDisplay(CollectionNode):
 
     def execute(self, prevNodeOutput={}):
 
-        # Create the logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
         self.logger.debug('Executing TraceDisplay')
 
 
