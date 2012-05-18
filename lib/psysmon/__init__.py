@@ -61,17 +61,29 @@ class LoggingRedirectHandler(logging.Handler):
 def getLoggerHandler(mode='console'):
     ch = logging.StreamHandler()
     ch.setLevel(logConfig['level'])
-    formatter = logging.Formatter("%(asctime)s - %(process)d - %(processName)s - %(levelname)s - %(name)s: %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(processName)s - %(levelname)s - %(name)s:\n%(message)s\n")
     ch.setFormatter(formatter)
 
     # Only log messages from the main process to the console.
     #ch.addFilter(LoggingMainProcessFilter())
     return ch
 
+
+def getLoggerFileHandler(filename=None):
+    if not filename:
+        return
+    ch = logging.FileHandler(filename)
+    ch.setLevel(logConfig['level'])
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(levelname)s - %(name)s:\n%(message)s\n")
+    ch.setFormatter(formatter)
+
+    return ch
+
+
 def getLoggerWxRedirectHandler(window):
     ch = LoggingRedirectHandler(window)
     ch.setLevel(logConfig['level'])
-    formatter = logging.Formatter("%(asctime)s - %(process)d - %(processName)s - %(levelname)s - %(name)s: %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(levelname)s - %(name)s:\n%(message)s")
     ch.setFormatter(formatter)
 
     # Only log messages from the main process to the console.

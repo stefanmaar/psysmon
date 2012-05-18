@@ -249,6 +249,10 @@ class PSysmonGui(wx.Frame):
                 dlg.ShowModal()
 
             else:
+                # Create the project's collection execution control
+                # server.
+                #self.psyBase.project.createCecServer(self.psyBase.packageMgr.packages)
+
                 # Load the current database structure.
                 self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
 
@@ -433,8 +437,8 @@ class Logger:
         self.psyBase = psyBase
 
         # Subscribe to logging messages.
-        pub.subscribe(self.logGeneral, "log.general")
-        pub.subscribe(self.logCollectionNode, "log.collectionNode")
+        #pub.subscribe(self.logGeneral, "log.general")
+        #pub.subscribe(self.logCollectionNode, "log.collectionNode")
 
         # Subscribe to project state messages.
         pub.subscribe(self.onCollectionExecutionMessage, "state.collection.execution")
@@ -761,11 +765,15 @@ class LoggingPanel(wx.aui.AuiNotebook):
         wx.aui.AuiNotebook.__init__(self, parent=parent, style=style)
         self.SetMinSize((200, 120))
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         ## The threadId map.
         #
-        # A dictionary holding the row number of the threads in the threads logging
-        # area. The key is the thread ID.
-        self.threadMap = {}
+        # A dictionary holding the row number of the processes in the
+        # processes logging area. The key is the process name.
+        self.processMap = {}
 
         # The general logging area.
         self.status = wx.TextCtrl(self, -1, '',
@@ -775,17 +783,17 @@ class LoggingPanel(wx.aui.AuiNotebook):
                                     | wx.HSCROLL)
 
         # The collection thread logging area.
-        self.threads = wx.ListCtrl(self, id=wx.ID_ANY,
+        self.processes = wx.ListCtrl(self, id=wx.ID_ANY,
                                       style=wx.LC_REPORT 
                                       | wx.BORDER_NONE
                                       | wx.LC_SINGLE_SEL
                                       | wx.LC_SORT_ASCENDING
                                       )
 
-        columns = {1: 'start', 2: 'id', 3: 'status', 4: 'duration'}
+        columns = {1: 'start', 2: 'pid', 3: 'name', 4: 'status', 5: 'duration'}
 
         for colNum, name in columns.iteritems():
-            self.threads.InsertColumn(colNum, name)
+            self.processes.InsertColumn(colNum, name)
 
         # Create the context menu of the thread logging area.
         cmData = (("view log file", self.onViewLogFile),
@@ -795,26 +803,47 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
         # Add the elements to the notebook.
         self.AddPage(self.status, "status")
-        self.AddPage(self.threads, "threads")
+        self.AddPage(self.processes, "processes")
+
+        # Subscribe to the state messages of the project.
+        pub.subscribe(self.onCollectionExecutionMessage, "state.collection.execution")
+
 
 
     def log(self, msg):
         self.status.AppendText(msg)
 
 
+
+    def onCollectionExecutionMessage(self, msg):
+        data = msg.data
+
+        self.logger.debug('Received pubsub message: %s', data)
+
+        if 'started' in data['state']:
+            self.addThread(data)
+        elif 'running' in data['state']:
+            self.updateThread(data)
+        elif 'stopped' in data['state']:
+            self.updateThread(data)
+
+
+
     def addThread(self, data):
         #index = self.threads.GetItemCount()
         index = 0
-        self.threads.InsertStringItem(index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
-        self.threads.SetStringItem(index, 1, data['procId'])
-        self.threads.SetStringItem(index, 2, data['state'])
-        self.threadMap[data['procId']] = index
+        self.processes.InsertStringItem(index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
+        self.processes.SetStringItem(index, 1, str(data['pid']))
+        self.processes.SetStringItem(index, 2, data['procName'])
+        self.processes.SetStringItem(index, 3, data['state'])
+        self.processMap[data['procName']] = index
 
     def updateThread(self, data):
-        if data['procId'] in self.threadMap.keys():
-            curIndex = self.threadMap[data['procId']]
-            self.threads.SetStringItem(curIndex, 1, data['procId'])
-            self.threads.SetStringItem(curIndex, 2, data['state'])
+        if data['procName'] in self.processMap.keys():
+            curIndex = self.processMap[data['procName']]
+            self.processes.SetStringItem(curIndex, 3, data['state'])
+            duration = data['curTime'] - data['startTime']
+            self.processes.SetStringItem(curIndex, 4, str(duration))
 
     def onShowContextMenu(self, event):
         pos = event.GetPosition()
@@ -822,9 +851,9 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.PopupMenu(self.contextMenu, pos)
 
     def onViewLogFile(self, event):
-        selectedRow = self.threads.GetFirstSelected()
-        threadId = self.threads.GetItem(selectedRow, 1).GetText()
-        logFile = os.path.join(self.GetParent().psyBase.project.tmpDir, threadId + ".log")
+        selectedRow = self.processes.GetFirstSelected()
+        procName = self.processes.GetItem(selectedRow, 2).GetText()
+        logFile = os.path.join(self.GetParent().psyBase.project.tmpDir, procName + ".log")
         webbrowser.open(logFile)
         self.logger.info("Showing the log file %s.", logFile)
 

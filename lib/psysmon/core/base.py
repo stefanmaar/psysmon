@@ -202,10 +202,11 @@ class Base:
         '''
 
         # Create the working psysmon project.
-        self.project = psysmon.core.project.Project(name=name,
-                                                    baseDir=baseDir,
-                                                    user=psysmon.core.project.User(user, 'admin'),
-                                                    dbHost=dbHost)
+        self.project = psysmon.core.project.Project(psyBase = self,
+                                                    name = name,
+                                                    baseDir = baseDir,
+                                                    user = psysmon.core.project.User(user, 'admin'),
+                                                    dbHost = dbHost)
 
         # When creating a project, set the active user to the user creating 
         # the project (which is the *admin* user).
@@ -238,7 +239,8 @@ class Base:
         '''
         db = shelve.open(filename)
         projectDir = os.path.dirname(filename)
-        self.project = psysmon.core.project.Project(name = db['name'],
+        self.project = psysmon.core.project.Project(psyBase = self,
+                                                    name = db['name'],
                                                     baseDir=os.path.dirname(projectDir),
                                                     user=db['user'],
                                                     dbHost = db['dbHost'],
@@ -403,7 +405,7 @@ class Collection:
 
 
 
-    def execute(self, pipe):
+    def execute(self, client=None):
         '''
         Executing the collection.
 
@@ -419,36 +421,35 @@ class Collection:
         '''
         # TODO: Add a State of Health thread which sends heartbeats at
         # regular initervals.
-        from time import sleep
 
-        pipe.send({'state': 'running', 'msg': 'Collection running', 'procId': self.procId})
+        #pipe.send({'state': 'running', 'msg': 'Collection running', 'procId': self.procId})
 
-        e = threading.Event()
-        heartbeat = threading.Thread(name = 'heartbeat', 
-                                     target =self.heartBeat, 
-                                     args = (e,pipe))
-        heartbeat.start()
+        #e = threading.Event()
+        #heartbeat = threading.Thread(name = 'heartbeat', 
+        #                             target =self.heartBeat, 
+        #                             args = (e,pipe))
+        #heartbeat.start()
 
         # Create the collection's data file.
-        self.dataShelf = os.path.join(self.tmpDir, self.procId + ".scd")
-        content = {}
-        db = shelve.open(self.dataShelf)
-        db['content'] = content
-        db.close()
+        #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
+        #content = {}
+        #db = shelve.open(self.dataShelf)
+        #db['content'] = content
+        #db.close()
 
         # Execute each node in the collection.
         for (ind, curNode) in enumerate(self.nodes):
-            pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
+            #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
-                curNode.run(procId=self.procId)
+                curNode.run(procName=self.procName)
             else:
                 #curNode.run(threadId=self.threadId)
-                curNode.run(procId=self.procId,
+                curNode.run(procName=self.procName,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
-        e.set()
-        heartbeat.join()
-        pipe.send({'state': 'stopped', 'msg': 'Collection execution finished', 'procId': self.procId})
+        #e.set()
+        #heartbeat.join()
+        #pipe.send({'state': 'stopped', 'msg': 'Collection execution finished', 'procId': self.procId})
 
 
     def heartBeat(self, event, pipe):
@@ -512,7 +513,7 @@ class Collection:
         msgString = timeStampString + ">>" + nodeName + modeString + msgString + "\n"
 
 
-        # If a threa is running, add the log message to the log file.
+        # If a thread is running, add the log message to the log file.
         if self.procId:
             logFile = open(os.path.join(self.tmpDir, self.procId + ".log"), 'a')
             logFile.write(msgString)

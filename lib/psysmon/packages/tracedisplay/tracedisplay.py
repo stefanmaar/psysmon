@@ -23,6 +23,7 @@ import itertools
 import time
 import wx
 import wx.lib.colourdb
+import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
 from obspy.core.utcdatetime import UTCDateTime
 import container
@@ -180,14 +181,14 @@ class TraceDisplay(CollectionNode):
         self.logger.debug('Executing TraceDisplay')
 
 
-
+        app = psygui.PSysmonApp()
 
         tdDlg = TraceDisplayDlg(project = self.project,
                                 parent = None,
                                 id = wx.ID_ANY,
                                 title = "TraceDisplay Development")
-        return
 
+        app.MainLoop()
 
 
 class TraceDisplayDlg(wx.Frame):
@@ -220,7 +221,7 @@ class TraceDisplayDlg(wx.Frame):
         self.logger = logging.getLogger(loggerName)
 
         self.project = project
-        
+
         # Create the display option.
         self.displayOptions = DisplayOptions()
 
@@ -230,7 +231,6 @@ class TraceDisplayDlg(wx.Frame):
         # Initialize the user interface.
         self.initUI()
         self.initKeyEvents()
-
 
         # Display the data.
         self.updateDisplay()
@@ -243,6 +243,7 @@ class TraceDisplayDlg(wx.Frame):
         ''' Build the userinterface.
 
         '''
+        self.logger.debug('Initializing the GUI')
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.viewPort =  container.TdViewPort(parent = self)
         self.sizer.Add(self.viewPort, 1, flag = wx.EXPAND|wx.ALL, border = 0)
@@ -451,11 +452,11 @@ class DisplayOptions:
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # The stations to show.
-        self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
-                   'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
-                   'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
+        #self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
+        #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
+        #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
         #self.station = ['GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'SITA', 'ALBA', 'G_NAWA']
-        #self.station = ['ALBA', 'SITA', 'GILA']
+        self.station = ['ALBA', 'SITA', 'GILA']
 
         # The channels to show.
         self.channel = {}

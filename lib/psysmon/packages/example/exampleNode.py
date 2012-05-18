@@ -2,6 +2,8 @@
 
 from psysmon.core.packageNodes import CollectionNode
 import time
+import wx
+import psysmon.core.gui as psygui
 
 
 class ExampleNode(CollectionNode):
@@ -30,10 +32,17 @@ class ExampleNode(CollectionNode):
         #session.add(addValue)
         #session.commit()
 
-        self.project.waveserver.getWaveform()
+        #self.project.waveserver.getWaveform()
+        print "Executing the node."
 
-        #time.sleep(1)
+        app = psygui.PSysmonApp()
 
+        frame = wx.Frame(None, wx.ID_ANY, 'Hello World')
+
+        print "Showing the frame in the node."
+        frame.Show(True)
+
+        app.MainLoop()
         #msg =  "Executing the node %s." % self.name
         #self.log('status', msg)
 

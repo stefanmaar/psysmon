@@ -30,8 +30,10 @@ Module for handling the pSysmon project and users.
 
 import logging
 import os
+import sys
 import thread
 import multiprocessing
+import subprocess
 import copy
 from wx.lib.pubsub import Publisher as pub
 from datetime import datetime
@@ -40,6 +42,7 @@ from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from psysmon.core.collectionExecutionControl import CecServer
 
 
 class Project:
@@ -123,7 +126,7 @@ class Project:
 
     '''
 
-    def __init__(self, name, baseDir, user, dbDialect='mysql', dbDriver=None, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTables={}):
+    def __init__(self, psyBase, name, baseDir, user, dbDialect='mysql', dbDriver=None, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -156,6 +159,8 @@ class Project:
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        # The parent psysmon base.
+        self.psyBase = psyBase
 
         # The project name.
         self.name = name
@@ -223,6 +228,45 @@ class Project:
 
         # The project's waveclients.
         self.waveclient = {}
+
+    ## The __getstate__ method.
+    #
+    # Remove the project instance before pickling the instance.
+    def __getstate__(self):
+        result = self.__dict__.copy()
+
+        # The following attributes can't be pickled and therefore have
+        # to be removed.
+        del result['logger']
+        result['psyBase'] = None
+        #del result['dbEngine']
+        #del result['dbSessionClass']
+        #del result['dbBase']
+        #del result['dbMetaData']
+        result['dbEngine'] = None
+        result['dbSessionClass'] = None
+        result['dbBase'] = None
+        result['dbMetaData'] = None
+        result['dbTables'] = {}
+        result['waveclient'] = {}
+        result['threadMutex'] = None
+
+
+        return result
+
+
+    ## The __setstate__ method.
+    #
+    # Fill the attributes after unpickling.
+    def __setstate__(self, d):
+        self.__dict__.update(d) # I *think* this is a safe way to do it
+        print dir(self)
+
+        # Track some instance attribute changes.
+        if not "logger" in dir(self):
+            loggerName = __name__ + "." + self.__class__.__name__
+            self.logger = logging.getLogger(loggerName)
+
 
 
     def setCollectionNodeProject(self):
@@ -309,6 +353,7 @@ class Project:
         for curUser in self.user:
             if curUser.name == userName:
                 self.activeUser = curUser
+                self.activeUser.pwd = pwd
                 self.connect2Db(pwd)
                 return True
 
@@ -585,6 +630,8 @@ class Project:
         self.activeUser.executeCollection(self)
 
 
+
+
     def loadWaveformDirList(self):
         '''Load the waveform directories from the database table.
 
@@ -620,7 +667,15 @@ class Project:
         msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
 
+    
+    def createCecServer(self, packages):
+        ''' Create a Collection-Execution-Control server for the project. 
 
+        '''
+        # Start the collection execution server. Use port 0 to
+        # get a free port from the OS.
+        self.cecServer = CecServer(0, self, packages);
+        self.logger.info("CEC-Server port: %d", self.cecServer.port)
 
 
 ## The pSysmon user.
@@ -673,6 +728,9 @@ class User:
 
         ## The user name.
         self.name = user
+
+        # The user's password.
+        self.pwd = None
 
         ## The user mode.
         #
@@ -884,7 +942,7 @@ class User:
             Error raised when no active collection is present.
         '''
 
-        def processChecker(process, parentEnd, mutex):
+        def processChecker(process, procName):
             from time import sleep
 
             # The time interval to check for process messages [s].
@@ -902,39 +960,65 @@ class User:
             while procRunning:
                 self.logger.debug("Waiting for message...")
 
-                if parentEnd.poll(checkInterval):
-                    msg = parentEnd.recv()
-                    #print msg
-                    self.logger.debug("Received message: [%s]: %s" % (msg['state'], msg['msg']))
+                procStatus = proc.poll()
 
-                    # Send the message to the system.
-                    msgTopic = "state.collection.execution"
-                    msg['isError'] = False
-                    #pub.sendMessage(msgTopic, msg)
+                self.logger.debug('procStatus: %s', procStatus)
 
-                    lastResponse = 0
-                    if msg['state'] == 'stopped':
-                        procRunning = False
-                else:
-                    lastResponse += checkInterval
-                    self.logger.debug("No message received.")
-
-                if lastResponse > timeout:
+                if procStatus != None:
                     procRunning = False
-                    isZombie = True
+                    self.logger.debug('Process %d has stopped with return code %s.', proc.pid, procStatus)
+                    msgTopic = 'state.collection.execution'
+                    msg['state'] = 'stopped'
+                    msg['pid'] = proc.pid
+                    msg['procName'] = procName
+                    msg['curTime'] = datetime.now()
+                    pub.sendMessage(msgTopic, msg)
 
-            self.logger.debug("End checking thread.")
+                else:
+                    self.logger.debug('Process %d is still running.', proc.pid)
+                    msgTopic = 'state.collection.execution'
+                    msg['state'] = 'running'
+                    msg['pid'] = proc.pid
+                    msg['procName'] = procName
+                    msg['curTime'] = datetime.now()
+                    pub.sendMessage(msgTopic, msg)
+
+                sleep(checkInterval)
+
+                #if parentEnd.poll(checkInterval):
+                    #msg = parentEnd.recv()
+                    ##print msg
+                    #self.logger.debug("Received message: [%s]: %s" % (msg['state'], msg['msg']))
+#
+                   # # Send the message to the system.
+                    #msgTopic = "state.collection.execution"
+                   # msg['isError'] = False
+                    ##pub.sendMessage(msgTopic, msg)
+
+                    #lastResponse = 0
+                    #if msg['state'] == 'stopped':
+                    #    procRunning = False
+               # else:
+                    #lastResponse += checkInterval
+                   # self.logger.debug("No message received.")
+
+                #if lastResponse > timeout:
+                    #procRunning = False
+                   # isZombie = True
+
+            self.logger.debug("End checking process %d.", proc.pid)
+
 
         if self.activeCollection:
             if not project.threadMutex:
                 project.threadMutex = thread.allocate_lock()
 
             col2Proc = copy.deepcopy(self.activeCollection)
-            col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
+            #col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
             processName = col2Proc.name + "_" + timeStampString
-            col2Proc.procId = col2Proc.name + "_" + timeStampString
+            col2Proc.procName = col2Proc.name + "_" + timeStampString
 
             msg = "Executing collection " + col2Proc.name + "with process name: " + processName + "."
             self.logger.info(msg)
@@ -944,18 +1028,44 @@ class User:
             msg['state'] = 'starting'
             msg['startTime'] = curTime
             msg['isError'] = False
-            msg['procId'] = col2Proc.procId
+            msg['pid'] = None
+            msg['procName'] = col2Proc.procName
             pub.sendMessage(msgTopic, msg)
 
-            (parentEnd, childEnd) = multiprocessing.Pipe()
-            self.logger.debug("proc Id: %s" % col2Proc.procId)
-            p = multiprocessing.Process(name = processName,
-                                        target = col2Proc.execute, 
-                                        args = (childEnd,)
-                                       )
-            #p.daemon = True
-            p.start()
-            thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
+            #(parentEnd, childEnd) = multiprocessing.Pipe()
+            self.logger.debug("process name: %s" % col2Proc.procName)
+            #thread.start_new_thread(processChecker, (p, parentEnd, project.threadMutex))
+
+            # Store all the needed data in a temporary file.
+            #import tempfile
+            import shelve
+            #tmpDir = tempfile.gettempdir()
+            filename = os.path.join(project.tmpDir, col2Proc.procName + '.ced')  # ced for Collection Execution Data
+
+            db = shelve.open(filename, flag='n')
+            db['project'] = project
+            db['collection'] = col2Proc
+            db['packages'] = project.psyBase.packageMgr.packages
+            db.close()
+
+
+            # Start the collection using the cecClient as a subprocess.
+            cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
+            proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
+                                    executable=sys.executable, 
+                                    stdout=subprocess.PIPE)
+
+            msgTopic = "state.collection.execution"
+            msg = {}
+            msg['state'] = 'started'
+            msg['startTime'] = curTime
+            msg['isError'] = False
+            msg['pid'] = proc.pid
+            msg['procName'] = col2Proc.procName
+            pub.sendMessage(msgTopic, msg)
+
+            thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+
         else:
             raise PsysmonError('No active collection found!') 
 
