@@ -405,7 +405,7 @@ class Collection:
 
 
 
-    def execute(self, client):
+    def execute(self, client=None):
         '''
         Executing the collection.
 
@@ -431,20 +431,20 @@ class Collection:
         #heartbeat.start()
 
         # Create the collection's data file.
-        self.dataShelf = os.path.join(self.tmpDir, self.procId + ".scd")
-        content = {}
-        db = shelve.open(self.dataShelf)
-        db['content'] = content
-        db.close()
+        #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
+        #content = {}
+        #db = shelve.open(self.dataShelf)
+        #db['content'] = content
+        #db.close()
 
         # Execute each node in the collection.
         for (ind, curNode) in enumerate(self.nodes):
             #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
-                curNode.run(procId=self.procId)
+                curNode.run(procName=self.procName)
             else:
                 #curNode.run(threadId=self.threadId)
-                curNode.run(procId=self.procId,
+                curNode.run(procName=self.procName,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
         #e.set()
@@ -513,7 +513,7 @@ class Collection:
         msgString = timeStampString + ">>" + nodeName + modeString + msgString + "\n"
 
 
-        # If a threa is running, add the log message to the log file.
+        # If a thread is running, add the log message to the log file.
         if self.procId:
             logFile = open(os.path.join(self.tmpDir, self.procId + ".log"), 'a')
             logFile.write(msgString)
