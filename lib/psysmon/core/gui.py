@@ -40,6 +40,7 @@ import wx.grid
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
 import os
+import signal
 import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
@@ -797,7 +798,8 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
         # Create the context menu of the thread logging area.
         cmData = (("view log file", self.onViewLogFile),
-                  ("remove", self.onRemoveThread))
+                  ("kill process", self.onKillProcess),
+                  ("remove from display", self.onRemoveProcess))
         self.contextMenu = psyContextMenu(cmData)
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
 
@@ -832,10 +834,10 @@ class LoggingPanel(wx.aui.AuiNotebook):
     def addThread(self, data):
         #index = self.threads.GetItemCount()
         index = 0
-        self.processes.InsertStringItem(index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
-        self.processes.SetStringItem(index, 1, str(data['pid']))
-        self.processes.SetStringItem(index, 2, data['procName'])
-        self.processes.SetStringItem(index, 3, data['state'])
+        wx.CallAfter(self.processes.InsertStringItem,index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
+        wx.CallAfter(self.processes.SetStringItem, index, 1, str(data['pid']))
+        wx.CallAfter(self.processes.SetStringItem, index, 2, data['procName'])
+        wx.CallAfter(self.processes.SetStringItem, index, 3, data['state'])
 
         # The new process is added on top of the list. Add 1 to all
         # index values of the process map.
@@ -849,9 +851,9 @@ class LoggingPanel(wx.aui.AuiNotebook):
         if data['procName'] in self.processMap.keys():
             curIndex = self.processMap[data['procName']]
             self.logger.debug('process has index: %d', curIndex)
-            self.processes.SetStringItem(curIndex, 3, data['state'])
+            wx.CallAfter(self.processes.SetStringItem, curIndex, 3, data['state'])
             duration = data['curTime'] - data['startTime']
-            self.processes.SetStringItem(curIndex, 4, str(duration))
+            wx.CallAfter(self.processes.SetStringItem, curIndex, 4, str(duration))
 
     def onShowContextMenu(self, event):
         pos = event.GetPosition()
@@ -865,7 +867,15 @@ class LoggingPanel(wx.aui.AuiNotebook):
         webbrowser.open(logFile)
         self.logger.info("Showing the log file %s.", logFile)
 
-    def onRemoveThread(self, event):
+
+    def onKillProcess(self, event):
+        selectedRow = self.processes.GetFirstSelected()
+        pid = self.processes.GetItem(selectedRow, 1).GetText()
+        pid = int(pid)
+        self.logger.debug('Killing process with pid %d.', pid)
+        os.kill(pid, signal.SIGTERM)
+
+    def onRemoveProcess(self, event):
         pass
 
 

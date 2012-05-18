@@ -36,6 +36,7 @@ import multiprocessing
 import subprocess
 import copy
 from wx.lib.pubsub import Publisher as pub
+from wx import CallAfter
 from datetime import datetime
 import psysmon.core.base
 from psysmon.core.util import PsysmonError
@@ -946,7 +947,7 @@ class User:
             from time import sleep
 
             # The time interval to check for process messages [s].
-            checkInterval =0.5 
+            checkInterval = 2
 
             # The timeout limit. After this timeout the process is 
             # marked as "not responding". The timeout interval should
@@ -972,7 +973,7 @@ class User:
                     msg['pid'] = proc.pid
                     msg['procName'] = procName
                     msg['curTime'] = datetime.now()
-                    pub.sendMessage(msgTopic, msg)
+                    CallAfter(pub.sendMessage, msgTopic, msg)
 
                 else:
                     self.logger.debug('Process %d is still running.', proc.pid)
@@ -981,7 +982,7 @@ class User:
                     msg['pid'] = proc.pid
                     msg['procName'] = procName
                     msg['curTime'] = datetime.now()
-                    pub.sendMessage(msgTopic, msg)
+                    CallAfter(pub.sendMessage, msgTopic, msg)
 
                 sleep(checkInterval)
 
