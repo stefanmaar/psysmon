@@ -479,6 +479,17 @@ class Collection:
             curNode.project = project
 
 
+    def createNodeLoggers(self):
+        '''
+        Create a logging.logger instance for each node in the collection.
+        '''
+        for curNode in self.nodes:
+            # Create the logger instance.
+            loggerName = __name__ + "." + curNode.__class__.__name__
+            curNode.logger = logging.getLogger(loggerName)
+
+
+
     def log(self, nodeName, mode, msg):
         '''
         Log messages to the collection's log file.
