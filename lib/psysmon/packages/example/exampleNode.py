@@ -21,7 +21,6 @@ class ExampleNode(CollectionNode):
 
     def edit(self):
         msg = "Editing the node %s." % self.name
-        self.log('status', msg)
 
     def execute(self, prevModuleOutput={}):
 
@@ -33,13 +32,13 @@ class ExampleNode(CollectionNode):
         #session.commit()
 
         #self.project.waveserver.getWaveform()
-        print "Executing the node."
+        self.logger.debug("Executing the node.")
 
         app = psygui.PSysmonApp()
 
         frame = wx.Frame(None, wx.ID_ANY, 'Hello World')
 
-        print "Showing the frame in the node."
+        self.logger.debug("Showing the frame in the node.")
         frame.Show(True)
 
         app.MainLoop()
