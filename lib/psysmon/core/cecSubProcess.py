@@ -48,31 +48,34 @@ class ExecutionFrame(wx.Frame):
         wx.Frame.__init__(self, None, wx.ID_ANY, 'Execution frame')
         #wx.CallAfter(collection.execute, 'halloooo')
 
-    
+
 
 
 
 if __name__ == "__main__":
-   
+
     # The process name and the temp. file are passes as arguments. 
     filename = sys.argv[1]
     procName = sys.argv[2]
-
-    logfileName = os.path.join(tempfile.gettempdir(), procName + '.log')
-
-    logger = logging.getLogger('psysmon')
-    logger.setLevel(psysmon.logConfig['level'])
-    logger.addHandler(psysmon.getLoggerFileHandler(logfileName))
-    
-    logger.debug('process name: %s', procName)
-    logger.debug('pickle file: %s', filename)
 
     db = shelve.open(filename)
     project = db['project']
     collection = db['collection']
     packages = db['packages']
-    print "Project: %s" % project
-    print "collection: %s" % collection
+
+    #logfileName = os.path.join(tempfile.gettempdir(), procName + '.log')
+    logfileName = os.path.join(project.tmpDir, procName + '.log')
+
+    logger = logging.getLogger('psysmon')
+    logger.setLevel(psysmon.logConfig['level'])
+    logger.addHandler(psysmon.getLoggerFileHandler(logfileName))
+    logger.addHandler(psysmon.getLoggerHandler())
+
+    logger.info('Starting process %s', procName)
+    logger.info('Loading data from file %s', filename)
+
+
+    logger.info('Executing collection %s of project %s.', (collection, project))
 
     # Reinitialize the project.
     project.connect2Db(project.activeUser.pwd)
@@ -80,15 +83,13 @@ if __name__ == "__main__":
     waveclient = PsysmonDbWaveClient('main client', project)
     project.addWaveClient(waveclient)
     collection.setNodeProject(project) 
-     
-    collection.execute('halloooo')
 
-    print "Finished the execution."
-    #frame = ExecutionFrame(collection)
-    #frame.Show(True)
-    
-    #app.MainLoop()
-    
+    collection.execute()
+
+    logger.info('Finished the execution. Cleaning up....')
+    logger.info('Deleting data file %s.', filename)
+    os.remove(filename)
+
     #reactor.registerWxApp(app)
 
     # Create a CecClient and connect it to the project's CecServer.
