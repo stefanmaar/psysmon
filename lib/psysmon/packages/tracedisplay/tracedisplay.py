@@ -451,8 +451,8 @@ class DisplayOptions:
         #self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
         #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
         #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
-        #self.station = ['GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'SITA', 'ALBA', 'G_NAWA']
-        self.station = ['ALBA', 'SITA', 'GILA']
+        self.station = ['ALBA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'G_JOAA', 'MARA', 'SITA', 'ALBA', 'G_NAWA']
+        #self.station = ['ALBA', 'SITA', 'GILA']
 
         # The channels to show.
         self.channel = {}
