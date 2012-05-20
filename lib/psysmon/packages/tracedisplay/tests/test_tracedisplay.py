@@ -50,6 +50,12 @@ class TracedisplayTestCase(unittest.TestCase):
         nodeTemplate = psyBase.packageMgr.getCollectionNodeTemplate('tracedisplay')
         self.node = copy.deepcopy(nodeTemplate)
         self.node.project = psyBase.project
+
+        # Create the node logger. This is usually done in the collection.
+        loggerName = __name__ + "." + self.node.__class__.__name__
+        self.node.logger = logging.getLogger(loggerName)
+
+
         #self.dlg = EditGeometryDlg(node, psyBase.project)
         #self.dlg.Show()
 
