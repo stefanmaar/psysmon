@@ -442,6 +442,62 @@ class TdStation(wx.Panel):
         return self.channels.get(channelName, None)
 
 
+class TdDatetimeInfo(wx.Panel):
+    def __init__(self, parent=None, id=wx.ID_ANY, bgColor="orchid", penColor="black"):
+        wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+        self.SetMinSize((-1, 30))
+        self.SetMaxSize((-1, 30))
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.startTime = None
+        self.endTime = None
+
+        self.SetBackgroundColour(bgColor)
+
+        self.Bind(wx.EVT_PAINT, self.onPaint)
+
+    def onPaint(self, event):
+        #print "OnPaint"
+        event.Skip()
+        dc = wx.PaintDC(self)
+        gc = self.makeGC(dc)
+        self.draw(gc)
+
+    def makeGC(self, dc):
+        try:
+            gc = wx.GraphicsContext.Create(dc)
+        except NotImplementedError:
+            dc.DrawText("This build of wxPython does not support the wx.GraphicsContext "
+                        "family of classes.",
+                        25, 25)
+            return None
+        return gc
+
+    def draw(self, gc):
+        self.logger.debug('Draw datetime')
+        winSize = self.GetClientSize()
+        width = winSize[0]
+        height = winSize[1]
+
+
+        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font.SetWeight(wx.BOLD)
+        gc.SetFont(font)
+        if self.startTime:
+            gc.Translate(80, height/2.0)
+            gc.DrawText(str(self.startTime), 0, 0)
+
+
+    def setTime(self, startTime, endTime):
+
+        # TODO: Add a check for the correct data type.
+        self.startTime = startTime
+        self.endTime = endTime
+
+
 
 class TdStationAnnotationArea(wx.Panel):
 
