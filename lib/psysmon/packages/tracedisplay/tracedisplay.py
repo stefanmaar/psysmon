@@ -22,6 +22,7 @@ import logging
 import itertools
 import time
 import wx
+import wx.aui
 import wx.lib.colourdb
 import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
@@ -240,10 +241,56 @@ class TraceDisplayDlg(wx.Frame):
 
         '''
         self.logger.debug('Initializing the GUI')
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.viewPort =  container.TdViewPort(parent = self)
-        self.sizer.Add(self.viewPort, 1, flag = wx.EXPAND|wx.ALL, border = 0)
-        self.SetSizer(self.sizer)
+
+        self.mgr = wx.aui.AuiManager(self)
+    
+        self.toolPanels = wx.Panel(parent=self, id=wx.ID_ANY)
+        self.toolPanels.SetBackgroundColour('chocolate1')
+
+        self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
+        self.eventInfo.SetBackgroundColour('khaki')
+      
+        # The station display area contains the datetimeInfo and the viewPort.
+        # TODO: Maybe create a seperate class for this.
+        self.viewportSizer = wx.GridBagSizer()
+        self.centerPanel = wx.Panel(parent=self, id=wx.ID_ANY)
+        self.datetimeInfo = container.TdDatetimeInfo(parent=self.centerPanel)
+        self.viewPort =  container.TdViewPort(parent = self.centerPanel)
+        self.viewportSizer.Add(self.datetimeInfo, 
+                               pos=(0,0), 
+                               flag=wx.EXPAND|wx.ALL, 
+                               border=0)
+        self.viewportSizer.Add(self.viewPort,
+                               pos=(1,0),
+                               flag = wx.EXPAND|wx.ALL, 
+                               border = 0)
+        self.viewportSizer.AddGrowableRow(1)
+        self.viewportSizer.AddGrowableCol(0)
+        self.centerPanel.SetSizer(self.viewportSizer)
+
+        
+        self.mgr.AddPane(self.centerPanel, 
+                         wx.aui.AuiPaneInfo().Name('seismograms').
+                                              CenterPane())
+
+        self.mgr.AddPane(self.eventInfo,
+                         wx.aui.AuiPaneInfo().Top().
+                                              Name('event information').
+                                              Layer(0).
+                                              Row(0).
+                                              Position(0))
+       
+        self.mgr.AddPane(self.toolPanels,
+                         wx.aui.AuiPaneInfo().Left().
+                                              Name('tool panels').
+                                              Caption('tool panels').
+                                              Layer(1).
+                                              Row(0).
+                                              Position(0))
+
+        # Tell the manager to commit all the changes.
+        self.mgr.Update() 
+
         self.SetBackgroundColour('white')
         self.viewPort.SetFocus()
 
@@ -332,6 +379,11 @@ class TraceDisplayDlg(wx.Frame):
                                           channel = channels2Load)
         print dir(stream)
         stream.detrend(type = 'constant')
+
+        # Update the datetime information
+        self.datetimeInfo.setTime(self.displayOptions.startTime, 
+                                  self.displayOptions.endTime)
+        self.datetimeInfo.Refresh()
 
         self.logger.debug("Finished loading data.")
         for curStation in self.displayOptions.station:
@@ -451,8 +503,8 @@ class DisplayOptions:
         #self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
         #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
         #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
-        self.station = ['ALBA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'G_JOAA', 'MARA', 'SITA', 'ALBA', 'G_NAWA']
-        #self.station = ['ALBA', 'SITA', 'GILA']
+        #self.station = ['ALBA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'G_JOAA', 'MARA', 'SITA', 'ALBA', 'G_NAWA']
+        self.station = ['ALBA', 'SITA', 'GILA']
 
         # The channels to show.
         self.channel = {}
