@@ -269,6 +269,26 @@ class Project:
             self.logger = logging.getLogger(loggerName)
 
 
+    def getPlugins(self, name):
+        ''' Get the available plugins for a specified class name.
+
+        Parameters
+        ----------
+        name : String
+            The name of the class for which the plugins should be returned.
+
+        Returns
+        -------
+        plugins : List of plugin objects
+            A list of plugin objects which are associated with the specified class name.
+
+        '''
+        plugins = []
+        for curTemplate in self.psyBase.packageMgr.plugins[name]:
+            plugins.append(copy.copy(curTemplate))
+        return plugins
+
+
 
     def setCollectionNodeProject(self):
         '''Set the project attribute of each node in all collections of 
