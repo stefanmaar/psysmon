@@ -32,6 +32,7 @@ import logging
 import string
 import os
 from obspy.core import read, Stream
+from sqlalchemy import or_
 
 class WaveClient:
     '''The WaveClient class.
@@ -133,13 +134,8 @@ class PsysmonDbWaveClient(WaveClient):
         self.geomSensor = self.project.dbTables['geom_sensor']
 
 
-    def getWaveform(self,
-                    startTime,
-                    endTime, 
-                    network = None, 
-                    station = None, 
-                    location = None, 
-                    channel = None):
+
+    def getWaveform(self, startTime, endTime, scnl):
         ''' Get the waveform data for the specified parameters.
 
         Parameters
@@ -193,52 +189,38 @@ class PsysmonDbWaveClient(WaveClient):
         # Add the endTime filter option.
         if endTime:
             query = query.filter(self.traceheader.begin_time < endTime.getTimeStamp())
-
+        
         # Add the linkage between geometry ids.
         query = query.filter(self.traceheader.station_id == self.geomStation.id,
                              self.traceheader.sensor_id == self.geomSensor.id)
 
-        # If required, add the network filter option.
-        if network:
-            query = query.filter(self.traceheader.station_id == self.geomStation.id, 
-                                 self.geomStation.net_name.in_(network))
-
-        # If required, add the station filter option.
-        if station:
-            query = query.filter(self.traceheader.station_id == self.geomStation.id, 
-                                 self.geomStation.name.in_(station))
-
-        # If required, add the location filter option.
-        if location:
-            query = query.filter(self.traceheader.station_id == self.geomStation.id,
-                                 self.geomStation.location.in_(location))
-
-        # If required, add the channel filter option.
-        if channel:
-            query = query.filter(self.traceheader.sensor_id == self.geomSensor.id,
-                                 self.geomSensor.channel_name.in_(channel))
-
-
         stream = Stream()
-        for curHeader in query:
-            #self.logger.debug("%s", curHeader)
-            filename = os.path.join(curHeader.alias, curHeader.filename)
-            self.logger.debug("Loading file: %s", filename)
-            curStream = read(pathname_or_url = filename,
-                          format = curHeader.file_type,
-                          starttime = startTime,
-                          endtime = endTime)
+        
+        # Filter the SCNL selections.
+        if scnl:
+            for stat, chan, net, loc in scnl:
+                curQuery = query.filter(self.geomStation.name == stat, 
+                                        self.geomSensor.channel_name == chan,
+                                        self.geomStation.net_name == net,
+                                        self.geomStation.location == loc)
+                for curHeader in curQuery:
+                    filename = os.path.join(curHeader.alias, curHeader.filename)
+                    self.logger.debug("Loading file: %s", filename)
+                    curStream = read(pathname_or_url = filename,
+                                     format = curHeader.file_type,
+                                     starttime = startTime,
+                                     endtime = endTime)
 
-            # Change the header values to the one loaded from the database.
-            for curTrace in curStream:
-                curTrace.stats.network = curHeader.net_name
-                curTrace.stats.station = curHeader.name
-                curTrace.stats.location = curHeader.location
-                curTrace.stats.channel = curHeader.channel_name
+                # Change the header values to the one loaded from the database.
+                for curTrace in curStream:
+                    curTrace.stats.network = curHeader.net_name
+                    curTrace.stats.station = curHeader.name
+                    curTrace.stats.location = curHeader.location
+                    curTrace.stats.channel = curHeader.channel_name
 
-            stream += curStream
-             
+                stream += curStream
 
+               
         self.logger.debug("....finished.")
         
         return stream
