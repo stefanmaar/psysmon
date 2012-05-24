@@ -54,6 +54,10 @@ class PackageManager:
         A dictionary of packages managed by the PackageManager.
         Key: package name
 
+    plugins : Dictionary of :class:`~psysmon.core.plugins.PluginNode`
+        A dictionary of plugins managed by the package manager. 
+        Key: Name of the associated collection node.
+
     See Also
     --------
     :class:`Package` : The pSysmon package class.
@@ -76,6 +80,9 @@ class PackageManager:
 
         # The packages managed by the PackageManager.
         self.packages = {}
+
+        # The plugins managed by the package manager.
+        self.plugins = {}
 
         # Search for available packages.
         self.scan4Package()
@@ -212,12 +219,36 @@ class PackageManager:
 
             curPkg.addCollectionNodeTemplate(nodes)
 
+        # Get the plugins provided by the package.
+        if 'pluginFactory' in dir(pkgModule):
+            self.parent.logger.debug("Getting the plugin templates.")
+            plugins = pkgModule.pluginFactory()
+            self.addPlugins(plugins)
+
+
         # Set the collection node template runtime attributes.
         curPkg.setPyPackageName(pkgName)
         curPkg.setBaseDir(os.path.join(packageDir, pkgBaseDir))
 
         # Add the package to the packages list.
         self.packages[curPkg.name] = curPkg
+
+
+    def addPlugins(self, plugins):
+        ''' Add the plugins to a map.
+        
+        Parameters
+        ----------
+        plugins : List of :class:`~psysmon.core.plugins.PluginNode`
+            A list of plugins to be added to the package manager.
+        '''
+        for curPlugin in plugins:
+            curKey = curPlugin.nodeClass
+            if self.plugins.has_key(curKey):
+                self.plugins[curKey] = self.plugins['curKey'].append(curPlugin)
+            else:
+                self.plugins[curKey] = [curPlugin, ]
+
 
 
     def searchCollectionNodeTemplates(self, searchString):
