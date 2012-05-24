@@ -100,7 +100,16 @@ class PluginNode:
         self.parent = parent
 
 
-    def buildFoldPanel(self):
+
+    def buildMenu(self):
+        ''' Build the menu which is added to the parent's menu bar.
+        '''
+        assert False, 'buildMenu must be defined'
+
+
+
+
+    def buildFoldPanel(self, panelBar):
         ''' Create the foldpanel GUI.
 
         '''
