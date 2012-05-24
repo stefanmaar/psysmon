@@ -26,8 +26,14 @@ import wx.aui
 import wx.lib.colourdb
 import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
+from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from obspy.core.utcdatetime import UTCDateTime
 import container
+try:
+    from agw import foldpanelbar as fpb
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.foldpanelbar as fpb
+
 
 
 keyMap = {
@@ -179,11 +185,15 @@ class TraceDisplay(CollectionNode):
 
 
         app = psygui.PSysmonApp()
+        
+        # Get the plugins for this class.
+        plugins = self.project.getPlugins(self.__class__.__name__)
 
         tdDlg = TraceDisplayDlg(project = self.project,
                                 parent = None,
                                 id = wx.ID_ANY,
-                                title = "TraceDisplay Development")
+                                title = "TraceDisplay Development",
+                                plugins = plugins)
 
         app.MainLoop()
 
@@ -201,7 +211,7 @@ class TraceDisplayDlg(wx.Frame):
     '''
 
     def __init__(self, project, parent = None, id = wx.ID_ANY, title = "tracedisplay", 
-                 size=(1000, 600)):
+                 plugins = None, size=(1000, 600)):
         ''' The constructor.
 
         '''
@@ -217,10 +227,18 @@ class TraceDisplayDlg(wx.Frame):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        # The parent project.
         self.project = project
 
+        # The available plugins of the collection node.
+        self.plugins = plugins
+        for curPlugin in self.plugins:
+            curPlugin.parent = self
+
         # Create the display option.
-        self.displayOptions = DisplayOptions()
+        inventoryDbController = InventoryDatabaseController(self.project)
+        self.displayOptions = DisplayOptions(inventoryDbController.load())
+        del(inventoryDbController)
 
         # Create the shortcut options.
         self.shortCutOptions = ShortCutOptions()
@@ -244,7 +262,11 @@ class TraceDisplayDlg(wx.Frame):
 
         self.mgr = wx.aui.AuiManager(self)
     
-        self.toolPanels = wx.Panel(parent=self, id=wx.ID_ANY)
+        self.toolPanels = fpb.FoldPanelBar(parent=self, 
+                                           id=wx.ID_ANY,
+                                           pos = wx.DefaultPosition,
+                                           size=wx.DefaultSize,
+                                           agwStyle=fpb.FPB_VERTICAL)
         self.toolPanels.SetBackgroundColour('chocolate1')
 
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
@@ -287,6 +309,12 @@ class TraceDisplayDlg(wx.Frame):
                                               Layer(1).
                                               Row(0).
                                               Position(0))
+
+        # Build the plugin elements.
+        for curPlugin in self.plugins:
+            if curPlugin.mode == 'foldpanel':
+                curPlugin.buildFoldPanel(self.toolPanels)
+
 
         # Tell the manager to commit all the changes.
         self.mgr.Update() 
@@ -370,14 +398,13 @@ class TraceDisplayDlg(wx.Frame):
         ''' Update the display.
 
         '''
-
-        channels2Load = list(itertools.chain(*self.displayOptions.channel.values()))
         stream = self.project.waveclient['main client'].\
                               getWaveform(startTime = self.displayOptions.startTime,
                                           endTime = self.displayOptions.endTime,
-                                          station = self.displayOptions.station,
-                                          channel = channels2Load)
-        print dir(stream)
+                                          scnl = self.displayOptions.showStations)
+
+        #channels2Load = list(itertools.chain(*self.displayOptions.channel.values()))
+
         stream.detrend(type = 'constant')
 
         # Update the datetime information
@@ -386,7 +413,9 @@ class TraceDisplayDlg(wx.Frame):
         self.datetimeInfo.Refresh()
 
         self.logger.debug("Finished loading data.")
-        for curStation in self.displayOptions.station:
+        for curScnl in self.displayOptions.showStations:
+            curStation = curScnl[0]
+            curChannel = curScnl[1]
             myStation = self.viewPort.hasStation(curStation)
             if not myStation:
                 # The station doesn't exist, create a new one.
@@ -394,45 +423,48 @@ class TraceDisplayDlg(wx.Frame):
                 self.viewPort.addStation(myStation)
                 myStation.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
-            for m, curChannel in enumerate(self.displayOptions.channel[curStation]):
-                myChannel = myStation.hasChannel(curChannel)
-                if not myChannel:
-                    curColor = self.displayOptions.channelColors[m]
-                    myChannel = container.TdChannel(myStation, wx.ID_ANY, name=curChannel, color=curColor)
-                    myStation.addChannel(myChannel)
+            myChannel = myStation.hasChannel(curChannel)
+            if not myChannel:
+                if self.displayOptions.channelColors.has_key(curChannel):
+                    curColor = self.displayOptions.channelColors[curChannel]
+                else:
+                    curColor = (0,0,0)
 
-                self.logger.debug("station: %s", curStation)
-                self.logger.debug("channel: %s", curChannel)
-                curStream = stream.select(station = curStation,
+                myChannel = container.TdChannel(myStation, wx.ID_ANY, name=curChannel, color=curColor)
+                myStation.addChannel(myChannel)
+
+            self.logger.debug("station: %s", curStation)
+            self.logger.debug("channel: %s", curChannel)
+            curStream = stream.select(station = curStation,
                                           channel = curChannel)
 
-                myView = myChannel.hasView(myChannel)
-                if not myView:
-                    myView = container.TdSeismogramView(myChannel, wx.ID_ANY, name=myChannel, lineColor=curColor)
+            myView = myChannel.hasView(myChannel)
+            if not myView:
+                myView = container.TdSeismogramView(myChannel, wx.ID_ANY, name=myChannel, lineColor=curColor)
 
-                    for curTrace in curStream:
-                        self.logger.debug("Plotting trace:\n%s", curTrace)
-                        start = time.clock()
+                for curTrace in curStream:
+                    self.logger.debug("Plotting trace:\n%s", curTrace)
+                    start = time.clock()
+                    myView.plot(curTrace)
+                    myView.setXLimits(left = self.displayOptions.startTime.timestamp,
+                                      right = self.displayOptions.endTime.timestamp)
+                    myView.draw()
+                    stop = time.clock()
+                    self.logger.debug("Plotted data (%.5fs).", stop - start)
+                myChannel.addView(myView)
+
+                myChannel.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+            else:
+                for curTrace in curStream:
+                    self.logger.debug("Plotting trace:\n%s", curTrace)
+                    try:
                         myView.plot(curTrace)
                         myView.setXLimits(left = self.displayOptions.startTime.timestamp,
                                           right = self.displayOptions.endTime.timestamp)
                         myView.draw()
-                        stop = time.clock()
-                        self.logger.debug("Plotted data (%.5fs).", stop - start)
-                    myChannel.addView(myView)
-
-                    myChannel.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
-                else:
-                    for curTrace in curStream:
-                        self.logger.debug("Plotting trace:\n%s", curTrace)
-                        try:
-                            myView.plot(curTrace)
-                            myView.setXLimits(left = self.displayOptions.startTime.timestamp,
-                                              right = self.displayOptions.endTime.timestamp)
-                            myView.draw()
-                        except Exception, err:
-                            print err
-                            pass
+                    except Exception, err:
+                        print err
+                        pass
 
 
 
@@ -493,7 +525,10 @@ class ShortCutOptions:
 class DisplayOptions:
 
 
-    def __init__(self):
+    def __init__(self, inventory):
+        # The inventory of the available geometry.
+        self.inventory = inventory
+
         # The timespan to show.
         self.startTime = UTCDateTime('2010-08-31 07:57:00')
         self.endTime = UTCDateTime('2010-08-31 07:58:00')
@@ -504,27 +539,31 @@ class DisplayOptions:
         #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
         #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
         #self.station = ['ALBA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'G_JOAA', 'MARA', 'SITA', 'ALBA', 'G_NAWA']
-        self.station = ['ALBA', 'SITA', 'GILA']
 
-        # The channels to show.
-        self.channel = {}
-        #self.channel['GILA'] = ['HHZ', 'HHN', 'HHE']
-        #self.channel['GUWA'] = ['HHZ', 'HHN', 'HHE']
-        #self.channel['G_ALLA'] = ['HHZ', 'HHN', 'HHE']
-        #self.channel['G_GRUA'] = ['HHZ', 'HHN', 'HHE']
-        #self.channel['ALBA'] = ['HHZ', 'HHN', 'HHE']
-        #self.channel['SITA'] = ['HHZ', 'HHN', 'HHE']
+        self.availableStations = {}
+        self.showStations = []
+        for curNetwork in self.inventory.networks.values():
+            for curStation in curNetwork.stations.values():
+                channels = set([x[0].channelName for x in curStation.sensors])
 
-        # Fill the channel automatically. 
-        # This is just for testing.
-        # This has to be changed to a user selectable value.
-        for curStation in self.station:
-            self.channel[curStation] = ['HHZ', 'HHN', 'HHE']
+                for curChannel in channels:
+                    self.availableStations[(curStation.name, curChannel, curNetwork.name, curStation.location)] = curStation
+                    self.showStations.append((curStation.name, curChannel, curNetwork.name, curStation.location))
+
+
+
+        # Limit the stations to show.
+        self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
+                      ('SITA', 'HHZ', 'ALPAACT', '00'),
+                      ('GUWA', 'HHZ', 'ALPAACT', '00')]
+
 
         # The trace color settings.
         clrList = wx.lib.colourdb.getColourInfoList()
-        colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN', 'GOLDENROD', 'SADDLEBROWN', 'VIOLETRED', 'BLUE4', 'LIGHTSKYBLUE4']
+        channelNames = ['HHZ', 'HHN', 'HHE']
+        colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
         self.channelColors = [tuple(x[1:4]) for x in clrList if x[0] in colorNames]
+        self.channelColors = dict(zip(channelNames, self.channelColors))
 
 
     def advanceTime(self):
