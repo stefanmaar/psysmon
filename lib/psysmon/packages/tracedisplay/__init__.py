@@ -44,3 +44,22 @@ def nodeFactory():
     nodeTemplates.append(myNodeTemplate)
 
     return nodeTemplates
+
+
+def pluginFactory():
+    ''' Provide some plugins.
+    '''
+    from plugins import SelectStation
+
+    pluginTemplates = []
+
+    myPluginTemplate = SelectStation(name = 'select station',
+                                     mode = 'foldpanel',
+                                     category = 'view',
+                                     tags = ['station', 'view', 'select'],
+                                     nodeClass = 'TraceDisplay'
+                                     )
+    pluginTemplates.append(myPluginTemplate)
+
+    return pluginTemplates
+
