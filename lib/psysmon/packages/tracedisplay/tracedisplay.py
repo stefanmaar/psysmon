@@ -20,6 +20,7 @@
 
 import logging
 import itertools
+from operator import itemgetter
 import time
 import wx
 import wx.aui
@@ -365,8 +366,8 @@ class TraceDisplayDlg(wx.Frame):
                     keyName = "\"%s\"" % chr(keyCode)
             else:
                 keyName = "(%s)" % keyCode
-        
-        
+
+
         # Process the modifiers.
         pressedKey = []
         modString = ""
@@ -382,7 +383,7 @@ class TraceDisplayDlg(wx.Frame):
         pressedKeyString = modString + keyName
         self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
         action = self.shortCutOptions.getAction(tuple(pressedKey))
-        
+
         if action:
             action()
 
@@ -392,8 +393,8 @@ class TraceDisplayDlg(wx.Frame):
 
         '''
         self.logger.debug('Setting focus.')
-    
-    
+
+
     def updateDisplay(self):
         ''' Update the display.
 
@@ -479,7 +480,7 @@ class ShortCutOptions:
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
-        
+
         # A dictionary holding the actions bound to a certain key combination.
         # The key of the dictionary is a tuple of none or more modifiers keys 
         # and the pressed key.
@@ -534,11 +535,6 @@ class DisplayOptions:
         self.endTime = UTCDateTime('2010-08-31 07:58:00')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
-        # The stations to show.
-        #self.station = ['ALBA', 'BISA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA',
-        #           'G_JOAA', 'G_NAWA', 'G_PITA', 'G_RETA', 'G_SIGA', 
-        #           'G_VEIA', 'G_VELA', 'G_WISA', 'MARA', 'SITA']
-        #self.station = ['ALBA', 'GILA', 'GUWA', 'G_ALLA', 'G_GRUA', 'G_JOAA', 'MARA', 'SITA', 'ALBA', 'G_NAWA']
 
         self.availableStations = {}
         self.showStations = []
@@ -550,12 +546,18 @@ class DisplayOptions:
                     self.availableStations[(curStation.name, curChannel, curNetwork.name, curStation.location)] = curStation
                     self.showStations.append((curStation.name, curChannel, curNetwork.name, curStation.location))
 
+        # Sort the stations by name.
+        self.stationSortKey = list(self.availableStations.keys())
+        self.stationSortKey = sorted(self.stationSortKey, key = itemgetter(0))
+
 
 
         # Limit the stations to show.
+        # TODO: This should be selected by the user in the edit dialog.
         self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
                       ('SITA', 'HHZ', 'ALPAACT', '00'),
                       ('GUWA', 'HHZ', 'ALPAACT', '00')]
+        self.showStations = sorted(self.showStations, key = itemgetter(0))
 
 
         # The trace color settings.
@@ -583,3 +585,32 @@ class DisplayOptions:
         self.endTime = self.startTime
         self.startTime = self.startTime - interval
 
+
+    def hideStation(self, snl):
+        ''' Remove the specified station from the showed stations.
+
+        Parameters
+        ----------
+        snl : tuple (String, String, String)
+            The station, network, location code of the station which should be hidden.
+        '''
+
+        for curStation in self.showStations:
+            if snl == (curStation[0], curStation[2], curStation[3]):
+                self.showStations.remove(curStation)
+
+
+    def showStation(self, snl):
+        ''' Remove the specified station from the showed stations.
+
+        Parameters
+        ----------
+        snl : tuple (String, String, String)
+            The station, network, location code of the station which should be hidden.
+        '''
+
+        # TODO: Add the selected channel to the snl.
+        scnl = (snl[0], 'HHZ', snl[1], snl[2])
+
+        self.showStations.append(scnl)
+        self.showStations = sorted(self.showStations, key = itemgetter(0))

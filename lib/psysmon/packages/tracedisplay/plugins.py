@@ -60,17 +60,46 @@ class SelectStation(PluginNode):
 
         # Create a checkbox list holding the station names.
         #sampleList = ['ALBA', 'SITA', 'GILA']
-        displayedStations = [x[0] for x in self.parent.displayOptions.showStations]
-        stationList = sorted(list(set([x[0] for x in self.parent.displayOptions.availableStations])))
-        lb = wx.CheckListBox(foldPanel, wx.ID_ANY, (80, 50), wx.DefaultSize, stationList)
+        displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.showStations]
         
-        ind = [m for m,x in enumerate(stationList) if x in displayedStations]
+        # Create a unique list containing SNL. Preserve the sort order.
+        tmp = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.stationSortKey]
+        self.stationList = []
+        for x in tmp:
+            if x not in self.stationList:
+                self.stationList.append(x)
+
+
+        stationListString = [":".join(x) for x in self.stationList]
+        lb = wx.CheckListBox(foldPanel, wx.ID_ANY, (80, 50), wx.DefaultSize, stationListString)
+
+        ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
         lb.SetChecked(ind)
 
+        # Bind the events.
+        lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
 
 
         panelBar.AddFoldPanelWindow(foldPanel, lb)
 
+        # Save the listbox as a class attribute.
+        self.lb = lb
 
+    def onBoxChecked(self, event):
+        index = event.GetSelection()
+        label = self.lb.GetString(index)
+        self.logger.debug('Checked item %d, label %s.', index, label)
+        self.logger.debug('stationList[%d]: %s', index, self.stationList[index])
+
+        # Remove all entries with the selected station from the
+        # showStations.
+        if not self.lb.IsChecked(index):
+            self.parent.displayOptions.hideStation(self.stationList[index])
+        else:
+            self.parent.displayOptions.showStation(self.stationList[index])
+
+        self.parent.updateDisplay()
+
+            
 
 
