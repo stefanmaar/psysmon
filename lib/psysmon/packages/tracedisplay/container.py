@@ -387,6 +387,11 @@ class TdChannel(wx.Panel):
 
 
 
+
+
+
+
+
 class TdStation(wx.Panel):
     '''
     The station panel.
@@ -394,14 +399,20 @@ class TdStation(wx.Panel):
     The station panel may hold 1 to more TdChannels.
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewPort=None, name='channel name', color='black'):
+    def __init__(self, parent=None, id=wx.ID_ANY, parentViewPort=None, name=None, network=None, location=None, color='black'):
         wx.Panel.__init__(self, parent=parent, id=id)
 
         # The viewPort containing the channel.
         self.parentViewPort = parentViewPort
 
-        # The channel's name.
+        # The name of the station.
         self.name = name
+
+        # The network of the station.
+        self.network = network
+
+        # The location of the station.
+        self.location = location
 
         # The channel's color.
         self.color = color
@@ -600,7 +611,8 @@ class TdViewPort(scrolled.ScrolledPanel):
 
         self.SetupScrolling()
 
-        self.stations = {}
+        # The list of stations controlled by the viewport.
+        self.stations = [] 
 
 
     def addStation(self, station, position=None):
@@ -615,13 +627,15 @@ class TdViewPort(scrolled.ScrolledPanel):
         :type position: Integer
         '''
         station.Reparent(self)
-        self.stations[station.name] = station
+        self.stations.append(station)
 
         self.sizer.Add(station, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
-        viewPortSize = self.stations.itervalues().next().GetMinSize()
+        viewPortSize = self.stations[-1].GetMinSize()
         viewPortSize[1] = viewPortSize[1] * len(self.stations) + 100 
         #self.SetMinSize(viewPortSize)
         self.SetupScrolling()
+
+
 
     def hasStation(self, stationName):
         ''' Check if the viewport already contains a station.
@@ -631,6 +645,30 @@ class TdViewPort(scrolled.ScrolledPanel):
         stationName : String
             The name of the station.
         '''
-        return self.stations.get(stationName, None)
+        stationsFound = [x for x in self.stations if x.name == stationName]
+        if len(stationsFound) == 1:
+            return stationsFound[0]
+        else:
+            return stationsFound
+        #return self.stations.get(stationName, None)
 
+
+    def sortStations(self, snl=[]):
+        ''' Sort the stations according to the list given by snl.
+
+            Parameters
+            ----------
+            snl : Tuple of Strings
+                The order how to sort the stations. (station, network, location).
+        '''
+        for curStation in self.stations:
+            curStation.Hide()
+            self.sizer.Detach(curStation)
+
+
+        for curSnl in snl:
+            statFound = [x for x in self.stations if x.name == curSnl[0]]
+            if statFound:
+                self.sizer.Add(statFound[0], 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
+                statFound[0].Show()
 
