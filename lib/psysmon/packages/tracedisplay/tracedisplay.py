@@ -467,6 +467,7 @@ class TraceDisplayDlg(wx.Frame):
                         print err
                         pass
 
+        self.viewPort.sortStations(snl=[('GUWA',),('SITA', ),('GILA', )])
 
 
 
