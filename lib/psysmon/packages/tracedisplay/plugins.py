@@ -53,7 +53,9 @@ class SelectStation(PluginNode):
 
     def buildFoldPanel(self, panelBar):
         self.logger.debug('Building the fold panel.')
-        foldPanel = panelBar.AddFoldPanel(self.name, collapsed = False)
+        foldPanel = panelBar.AddFoldPanel(caption = self.name, 
+                                          collapsed = False
+                                          )
 
 
         #button1 = wx.Button(foldPanel, wx.ID_ANY, "Collapse Me")
@@ -98,8 +100,5 @@ class SelectStation(PluginNode):
         else:
             self.parent.displayOptions.showStation(self.stationList[index])
 
-        self.parent.updateDisplay()
-
-            
 
 
