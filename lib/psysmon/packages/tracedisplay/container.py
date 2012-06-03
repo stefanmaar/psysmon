@@ -5,6 +5,7 @@ import time
 import wx
 import wx.lib.graphics
 from wx.lib.stattext import GenStaticText as StaticText
+from wx.lib.pubsub import Publisher as pub
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import wx.lib.scrolledpanel as scrolled
 from matplotlib.figure import Figure
@@ -442,6 +443,7 @@ class TdStation(wx.Panel):
 	self.SetSizer(self.sizer)
 
 
+
     def hasChannel(self, channelName):
         ''' Check if the station already contains a channel.
 
@@ -451,6 +453,9 @@ class TdStation(wx.Panel):
             The name of the channel to search.
         '''
         return self.channels.get(channelName, None)
+
+
+
 
 
 class TdDatetimeInfo(wx.Panel):
@@ -603,6 +608,10 @@ class TdViewPort(scrolled.ScrolledPanel):
 
     def __init__(self, parent=None, id=wx.ID_ANY):
         scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+        
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -613,6 +622,15 @@ class TdViewPort(scrolled.ScrolledPanel):
 
         # The list of stations controlled by the viewport.
         self.stations = [] 
+        
+        # Message subsiptions
+        pub.subscribe(self.onStationMsg, ('tracedisplay', 'display', 'station'))
+
+
+    def onStationMsg(self, msg):
+        if msg.topic == ('tracedisplay', 'display', 'station', 'hide'):
+            self.removeStation(msg.data)
+
 
 
     def addStation(self, station, position=None):
@@ -629,7 +647,7 @@ class TdViewPort(scrolled.ScrolledPanel):
         station.Reparent(self)
         self.stations.append(station)
 
-        self.sizer.Add(station, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
+        #self.sizer.Add(station, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
         viewPortSize = self.stations[-1].GetMinSize()
         viewPortSize[1] = viewPortSize[1] * len(self.stations) + 100 
         #self.SetMinSize(viewPortSize)
@@ -653,12 +671,13 @@ class TdViewPort(scrolled.ScrolledPanel):
         #return self.stations.get(stationName, None)
 
 
+
     def sortStations(self, snl=[]):
         ''' Sort the stations according to the list given by snl.
 
             Parameters
             ----------
-            snl : Tuple of Strings
+            snl : Tuple of Stringssnl=[]
                 The order how to sort the stations. (station, network, location).
         '''
         for curStation in self.stations:
@@ -671,4 +690,45 @@ class TdViewPort(scrolled.ScrolledPanel):
             if statFound:
                 self.sizer.Add(statFound[0], 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
                 statFound[0].Show()
+
+
+
+    def removeStation(self, snl):
+        ''' Remove a station from the viewport.
+
+        This destroys the instance of the station.
+
+        Parameters
+        ----------
+        station : :class:`TdStation`
+            The station object which should be removed.
+        '''
+        for curSnl in snl:
+            statFound = [x for x in self.stations if x.name == curSnl[0]]
+            if statFound:
+                statFound = statFound[0]
+                self.stations.remove(statFound)
+                self.sizer.Remove(statFound)
+                self.rearrangeStations()
+
+        self.sizer.Layout()
+
+
+    def rearrangeStations(self):
+        ''' Rearrange the stations in the viewport.
+
+        '''
+
+        for curStation in self.stations:
+            #curStation.Hide()
+            self.sizer.Hide(curStation)
+            self.sizer.Detach(curStation)
+
+
+        for curStation in self.stations:
+            self.sizer.Add(curStation, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
+            curStation.Show()
+
+
+
 
