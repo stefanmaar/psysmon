@@ -630,6 +630,9 @@ class TdViewPort(scrolled.ScrolledPanel):
     def onStationMsg(self, msg):
         if msg.topic == ('tracedisplay', 'display', 'station', 'hide'):
             self.removeStation(msg.data)
+        elif msg.topic == ('tracedisplay', 'display', 'station', 'show'):
+            self.sortStations(msg.data)
+
 
 
 
@@ -709,9 +712,12 @@ class TdViewPort(scrolled.ScrolledPanel):
                 statFound = statFound[0]
                 self.stations.remove(statFound)
                 self.sizer.Remove(statFound)
+                statFound.Destroy()
+                self.logger.debug('statFound: %s', statFound)
                 self.rearrangeStations()
 
         self.sizer.Layout()
+
 
 
     def rearrangeStations(self):
