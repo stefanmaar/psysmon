@@ -21,8 +21,10 @@
 import logging
 import itertools
 from operator import itemgetter
+from wx.lib.pubsub import Publisher as pub
 import time
 import wx
+from wx import CallAfter
 import wx.aui
 import wx.lib.colourdb
 import psysmon.core.gui as psygui
@@ -467,7 +469,9 @@ class TraceDisplayDlg(wx.Frame):
                         print err
                         pass
 
-        self.viewPort.sortStations(snl=[('GUWA',),('SITA', ),('GILA', )])
+
+        # Sort the displayed stations.
+        self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.showStations])
 
 
 
@@ -599,6 +603,9 @@ class DisplayOptions:
         for curStation in self.showStations:
             if snl == (curStation[0], curStation[2], curStation[3]):
                 self.showStations.remove(curStation)
+                msgTopic = 'tracedisplay.display.station.hide'
+                data = {'snl', snl}
+                CallAfter(pub.sendMessage, msgTopic, data)
 
 
     def showStation(self, snl):
