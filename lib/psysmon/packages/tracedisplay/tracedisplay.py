@@ -240,11 +240,15 @@ class TraceDisplayDlg(wx.Frame):
 
         # Create the display option.
         inventoryDbController = InventoryDatabaseController(self.project)
-        self.displayOptions = DisplayOptions(inventoryDbController.load())
+        self.displayOptions = DisplayOptions(parent = self,
+                                             inventory = inventoryDbController.load())
         del(inventoryDbController)
 
         # Create the shortcut options.
         self.shortCutOptions = ShortCutOptions()
+
+        # Create the dataManager.
+        self.dataManager = DataManager(self)
 
         # Initialize the user interface.
         self.initUI()
@@ -401,10 +405,14 @@ class TraceDisplayDlg(wx.Frame):
         ''' Update the display.
 
         '''
-        stream = self.project.waveclient['main client'].\
-                              getWaveform(startTime = self.displayOptions.startTime,
-                                          endTime = self.displayOptions.endTime,
-                                          scnl = self.displayOptions.showStations)
+        #stream = self.project.waveclient['main client'].\
+        #                      getWaveform(startTime = self.displayOptions.startTime,
+        #                                  endTime = self.displayOptions.endTime,
+        #                                  scnl = self.displayOptions.showStations)
+
+        stream = self.dataManager.getStream(startTime = self.displayOptions.startTime,
+                                            endTime = self.displayOptions.endTime,
+                                            scnl = self.displayOptions.showStations)
 
         #channels2Load = list(itertools.chain(*self.displayOptions.channel.values()))
 
@@ -531,7 +539,15 @@ class ShortCutOptions:
 class DisplayOptions:
 
 
-    def __init__(self, inventory):
+    def __init__(self, parent, inventory):
+        
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+        
+        # The parent tracedisplay instance.
+        self.parent = parent
+
         # The inventory of the available geometry.
         self.inventory = inventory
 
@@ -617,8 +633,107 @@ class DisplayOptions:
             The station, network, location code of the station which should be hidden.
         '''
 
-        # TODO: Add the selected channel to the snl.
+        # TODO: Add the selected channel(s) to the snl.
         scnl = (snl[0], 'HHZ', snl[1], snl[2])
 
         self.showStations.append(scnl)
         self.showStations = sorted(self.showStations, key = itemgetter(0))
+
+        curStream = self.parent.dataManager.hasData(self.startTime, 
+                                               self.endTime, 
+                                               scnl)
+
+
+        if not curStream:
+            self.logger.debug('No data for the station available.')
+            # TODO: Load the data for the current SCNL.
+        else:
+            self.logger.debug('Data for the station is available.')
+
+
+        # Create the TdStation instance.
+        curStation = scnl[0]
+        curChannel = scnl[1]
+        myStation = self.parent.viewPort.hasStation(curStation)
+        if not myStation:
+            myStation = container.TdStation(parent = self.parent.viewPort,
+                                            name = curStation,
+                                            color = 'white')
+            self.parent.viewPort.addStation(myStation)
+            myStation.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+
+        myChannel = myStation.hasChannel(curChannel)
+        if not myChannel:
+            if self.channelColors.has_key(curChannel):
+                curColor = self.channelColors[curChannel]
+            else:
+                curColor = (0,0,0)
+
+            myChannel = container.TdChannel(myStation, 
+                                            wx.ID_ANY,
+                                            name = curChannel,
+                                            color = curColor)
+            myStation.addChannel(myChannel)
+
+        myView = myChannel.hasView(myChannel)
+        if not myView:
+            myView = container.TdSeismogramView(myChannel, 
+                                                wx.ID_ANY,
+                                                name = myChannel,
+                                                lineColor = curColor)
+
+            for curTrace in curStream:
+                myView.plot(curTrace)
+                myView.setXLimits(left = self.startTime.timestamp,
+                                  right = self.endTime.timestamp)
+                myView.draw()
+
+            myChannel.addView(myView)
+            myChannel.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+        else:
+            self.logger.debug('This should be impossible.')
+
+
+        snl = [(x[0],x[1],x[2]) for x in self.showStations] 
+        #msgTopic = 'tracedisplay.display.station.show'
+        #data = {'snl', snl}
+        #CallAfter(pub.sendMessage, msgTopic, data)
+
+        self.parent.viewPort.sortStations(snl = snl)
+
+
+
+
+class DataManager():
+
+    def __init__(self, parent):
+
+        self.parent = parent
+
+        self.project = parent.project
+
+        self.waveclient = self.project.waveclient['main client']
+
+        self.stream = None
+
+
+    def getStream(self, startTime, endTime, scnl):
+
+        self.stream =  self.waveclient.getWaveform(startTime = startTime,
+                                           endTime = endTime,
+                                           scnl = scnl)
+        return self.stream
+
+
+    def hasData(self, startTime, endTime, scnl):
+        ''' Check if the data for the specified station and time period has 
+        already been loaded by the dataManager.
+        '''
+
+        curStream = self.stream.select(station = scnl[0], network = scnl[2], location = scnl[3], channel = scnl[1])
+
+        return curStream
+        
+
+
+
