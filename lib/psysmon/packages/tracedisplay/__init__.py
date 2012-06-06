@@ -49,7 +49,7 @@ def nodeFactory():
 def pluginFactory():
     ''' Provide some plugins.
     '''
-    from plugins import SelectStation
+    from plugins import SelectStation, SelectChannel
 
     pluginTemplates = []
 
@@ -57,6 +57,14 @@ def pluginFactory():
                                      mode = 'foldpanel',
                                      category = 'view',
                                      tags = ['station', 'view', 'select'],
+                                     nodeClass = 'TraceDisplay'
+                                     )
+    pluginTemplates.append(myPluginTemplate)
+
+    myPluginTemplate = SelectChannel(name = 'select channel',
+                                     mode = 'foldpanel',
+                                     category = 'view',
+                                     tags = ['channel', 'view', 'select'],
                                      nodeClass = 'TraceDisplay'
                                      )
     pluginTemplates.append(myPluginTemplate)

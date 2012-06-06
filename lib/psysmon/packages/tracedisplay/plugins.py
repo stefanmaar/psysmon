@@ -106,3 +106,63 @@ class SelectStation(PluginNode):
 
 
 
+
+
+class SelectChannel(PluginNode):
+    '''
+
+    '''
+    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        '''
+
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = mode,
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+
+
+    def buildMenu(self):
+        pass
+
+
+    def buildFoldPanel(self, panelBar):
+        foldPanel = panelBar.AddFoldPanel(caption = self.name,
+                                          collapsed = False)
+
+
+        self.channelList = sorted(self.parent.displayOptions.availableChannels)
+
+
+        lb = wx.CheckListBox(parent = foldPanel,
+                             id = wx.ID_ANY,
+                             choices = self.channelList)
+
+
+        ind = [m for m,x in enumerate(self.channelList) if x in self.parent.displayOptions.showChannels]
+        lb.SetChecked(ind)
+
+
+        # Bind the events.
+        lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
+
+        panelBar.AddFoldPanelWindow(foldPanel, lb)
+
+        # Save the listbox as a class attribute.
+        self.lb = lb
+
+
+
+    def onBoxChecked(self, event):
+        pass
+        
