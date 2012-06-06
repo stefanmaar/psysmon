@@ -274,6 +274,7 @@ class TraceDisplayDlg(wx.Frame):
                                            pos = wx.DefaultPosition,
                                            size=wx.DefaultSize,
                                            agwStyle=fpb.FPB_VERTICAL)
+
         self.toolPanels.SetBackgroundColour('chocolate1')
 
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
@@ -619,9 +620,11 @@ class DisplayOptions:
         for curStation in self.showStations:
             if snl == (curStation[0], curStation[2], curStation[3]):
                 self.showStations.remove(curStation)
-                msgTopic = 'tracedisplay.display.station.hide'
-                data = {'snl', snl}
-                CallAfter(pub.sendMessage, msgTopic, data)
+                self.parent.viewPort.removeStation(snl)
+                #msgTopic = 'tracedisplay.display.station.hide'
+                #data = {'snl', snl}
+                #CallAfter(pub.sendMessage, msgTopic, data)
+
 
 
     def showStation(self, snl):
