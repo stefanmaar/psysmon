@@ -111,7 +111,7 @@ class PsysmonDbWaveClient(WaveClient):
 
     def __init__(self, name, project):
         WaveClient.__init__(self, name=name)
-        
+
         # The psysmon project owning the waveclient.
         self.project = project
 
@@ -157,13 +157,15 @@ class PsysmonDbWaveClient(WaveClient):
 
         endTime : UTCDateTime
             The end datetime of the data to fetch.
-        
-        
+
+
         Returns
         -------
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
+        
+
 
         self.logger.debug("Querying...")
 
@@ -189,13 +191,13 @@ class PsysmonDbWaveClient(WaveClient):
         # Add the endTime filter option.
         if endTime:
             query = query.filter(self.traceheader.begin_time < endTime.getTimeStamp())
-        
+
         # Add the linkage between geometry ids.
         query = query.filter(self.traceheader.station_id == self.geomStation.id,
                              self.traceheader.sensor_id == self.geomSensor.id)
 
         stream = Stream()
-        
+
         # Filter the SCNL selections.
         if scnl:
             for stat, chan, net, loc in scnl:
@@ -220,7 +222,7 @@ class PsysmonDbWaveClient(WaveClient):
 
                 stream += curStream
 
-               
+
         self.logger.debug("....finished.")
         
         return stream
