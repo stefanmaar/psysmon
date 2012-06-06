@@ -573,13 +573,24 @@ class DisplayOptions:
         self.stationSortKey = sorted(self.stationSortKey, key = itemgetter(0))
 
 
+        # The channel selection settings.
+        self.availableChannels = []
+        for curName, curChannel, curNet, curLoc in self.availableStations.keys():
+            if curChannel not in self.availableChannels:
+                self.availableChannels.append(curChannel)
+
+
+
+        # The channels currently shown.
+        self.showChannels = ['HHZ']
 
         # Limit the stations to show.
         # TODO: This should be selected by the user in the edit dialog.
         self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
-                      ('SITA', 'HHZ', 'ALPAACT', '00'),
-                      ('GUWA', 'HHZ', 'ALPAACT', '00')]
+                             ('SITA', 'HHZ', 'ALPAACT', '00'),
+                             ('GUWA', 'HHZ', 'ALPAACT', '00')]
         self.showStations = sorted(self.showStations, key = itemgetter(0))
+
 
 
         # The trace color settings.
@@ -649,7 +660,9 @@ class DisplayOptions:
 
         if not curStream:
             self.logger.debug('No data for the station available.')
-            # TODO: Load the data for the current SCNL.
+            curStream = self.parent.dataManager.addStream(self.startTime, 
+                                                          self.endTime,
+                                                          scnl)
         else:
             self.logger.debug('Data for the station is available.')
 
@@ -720,12 +733,14 @@ class DataManager():
         self.stream = None
 
 
+
     def getStream(self, startTime, endTime, scnl):
 
         self.stream =  self.waveclient.getWaveform(startTime = startTime,
-                                           endTime = endTime,
-                                           scnl = scnl)
+                                                   endTime = endTime,
+                                                   scnl = scnl)
         return self.stream
+
 
 
     def hasData(self, startTime, endTime, scnl):
@@ -736,7 +751,17 @@ class DataManager():
         curStream = self.stream.select(station = scnl[0], network = scnl[2], location = scnl[3], channel = scnl[1])
 
         return curStream
-        
+
+
+    def addStream(self, startTime, endTime, scnl):
+
+        curStream = self.waveclient.getWaveform(startTime = startTime,
+                                                endTime = endTime,
+                                                scnl = [scnl,])
+
+        self.stream = self.stream + curStream
+        return curStream
+
 
 
 
