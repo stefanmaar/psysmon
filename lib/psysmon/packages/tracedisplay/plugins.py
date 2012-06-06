@@ -57,6 +57,8 @@ class SelectStation(PluginNode):
                                           collapsed = False
                                           )
 
+        foldPanel.SetBackgroundColour('red')
+
 
         #button1 = wx.Button(foldPanel, wx.ID_ANY, "Collapse Me")
 
@@ -73,7 +75,9 @@ class SelectStation(PluginNode):
 
 
         stationListString = [":".join(x) for x in self.stationList]
-        lb = wx.CheckListBox(foldPanel, wx.ID_ANY, (80, 50), wx.DefaultSize, stationListString)
+        lb = wx.CheckListBox(parent = foldPanel, 
+                             id = wx.ID_ANY, 
+                             choices = stationListString)
 
         ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
         lb.SetChecked(ind)
