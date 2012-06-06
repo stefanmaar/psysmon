@@ -624,7 +624,7 @@ class TdViewPort(scrolled.ScrolledPanel):
         self.stations = [] 
         
         # Message subsiptions
-        pub.subscribe(self.onStationMsg, ('tracedisplay', 'display', 'station'))
+        # pub.subscribe(self.onStationMsg, ('tracedisplay', 'display', 'station'))
 
 
     def onStationMsg(self, msg):
@@ -683,16 +683,23 @@ class TdViewPort(scrolled.ScrolledPanel):
             snl : Tuple of Stringssnl=[]
                 The order how to sort the stations. (station, network, location).
         '''
-        for curStation in self.stations:
-            curStation.Hide()
-            self.sizer.Detach(curStation)
+        #for curStation in self.stations:
+        #    curStation.Hide()
+        #    self.sizer.Detach(curStation)
 
-
+        # Sort the stations list according to snl.
+        tmp = []
         for curSnl in snl:
             statFound = [x for x in self.stations if x.name == curSnl[0]]
-            if statFound:
-                self.sizer.Add(statFound[0], 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
-                statFound[0].Show()
+            tmp.append(statFound[0])
+
+        self.stations = tmp
+
+        # Rearrange the 
+        self.rearrangeStations()
+        #for curStation in self.stations:
+        #    self.sizer.Add(curStation, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
+        #    curStation.Show()
 
 
 
@@ -706,15 +713,15 @@ class TdViewPort(scrolled.ScrolledPanel):
         station : :class:`TdStation`
             The station object which should be removed.
         '''
-        for curSnl in snl:
-            statFound = [x for x in self.stations if x.name == curSnl[0]]
-            if statFound:
-                statFound = statFound[0]
-                self.stations.remove(statFound)
-                self.sizer.Remove(statFound)
-                statFound.Destroy()
-                self.logger.debug('statFound: %s', statFound)
-                self.rearrangeStations()
+        statFound = [x for x in self.stations if x.name == snl[0]]
+        if statFound:
+            self.logger.debug('Hiding the station.')
+            statFound = statFound[0]
+            self.stations.remove(statFound)
+            self.sizer.Remove(statFound)
+            statFound.Destroy()
+            self.logger.debug('statFound: %s', statFound)
+            self.rearrangeStations()
 
         self.sizer.Layout()
 
