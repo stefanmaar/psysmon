@@ -245,7 +245,7 @@ class PackageManager:
         for curPlugin in plugins:
             curKey = curPlugin.nodeClass
             if self.plugins.has_key(curKey):
-                self.plugins[curKey] = self.plugins['curKey'].append(curPlugin)
+                self.plugins[curKey].append(curPlugin)
             else:
                 self.plugins[curKey] = [curPlugin, ]
 
