@@ -440,7 +440,9 @@ class TdStation(wx.Panel):
             stationSize = self.channels.itervalues().next().GetMinSize()
             stationSize[1] = stationSize[1] * len(self.channels) 
             self.SetMinSize(stationSize)
-	self.SetSizer(self.sizer)
+
+        self.sizer.Layout()
+	#self.SetSizer(self.sizer)
 
 
 
@@ -691,7 +693,10 @@ class TdViewPort(scrolled.ScrolledPanel):
         tmp = []
         for curSnl in snl:
             statFound = [x for x in self.stations if x.name == curSnl[0]]
-            tmp.append(statFound[0])
+            
+            # Add the station only if it's not already contained in the list.
+            if statFound[0] not in tmp:
+                tmp.append(statFound[0])
 
         self.stations = tmp
 

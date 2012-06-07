@@ -27,6 +27,7 @@ import wx
 from wx import CallAfter
 import wx.aui
 import wx.lib.colourdb
+from obspy.core import Stream
 import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
@@ -557,9 +558,14 @@ class DisplayOptions:
         self.endTime = UTCDateTime('2010-08-31 07:58:00')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
-
+        # All stations that are contained in the inventory.
         self.availableStations = {}
+
+        # The currently shown stations.
+        # This is a list of tuples containing the SCNL code (S, C, N, L).
         self.showStations = []
+
+        # Fill the available- and current station lists.
         for curNetwork in self.inventory.networks.values():
             for curStation in curNetwork.stations.values():
                 channels = set([x[0].channelName for x in curStation.sensors])
@@ -589,7 +595,7 @@ class DisplayOptions:
         self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
                              ('SITA', 'HHZ', 'ALPAACT', '00'),
                              ('GUWA', 'HHZ', 'ALPAACT', '00')]
-        self.showStations = sorted(self.showStations, key = itemgetter(0))
+        self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
 
 
 
@@ -648,9 +654,11 @@ class DisplayOptions:
         '''
 
         # TODO: Add the selected channel(s) to the snl.
-        scnl = (snl[0], 'HHZ', snl[1], snl[2])
+        scnl = []
+        for curChannel in self.showChannels:
+            scnl.append((snl[0], curChannel, snl[1], snl[2]))
 
-        self.showStations.append(scnl)
+        self.showStations.extend(scnl)
         self.showStations = sorted(self.showStations, key = itemgetter(0))
 
         curStream = self.parent.dataManager.hasData(self.startTime, 
@@ -668,54 +676,90 @@ class DisplayOptions:
 
 
         # Create the TdStation instance.
-        curStation = scnl[0]
-        curChannel = scnl[1]
-        myStation = self.parent.viewPort.hasStation(curStation)
-        if not myStation:
-            myStation = container.TdStation(parent = self.parent.viewPort,
-                                            name = curStation,
-                                            color = 'white')
-            self.parent.viewPort.addStation(myStation)
-            myStation.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+        for curScnl in scnl:
+            curStation = curScnl[0]
+            curChannel = curScnl[1]
+            myStation = self.parent.viewPort.hasStation(curStation)
+            if not myStation:
+                myStation = container.TdStation(parent = self.parent.viewPort,
+                                                name = curStation,
+                                                color = 'white')
+                self.parent.viewPort.addStation(myStation)
+                myStation.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
 
-        myChannel = myStation.hasChannel(curChannel)
-        if not myChannel:
-            if self.channelColors.has_key(curChannel):
-                curColor = self.channelColors[curChannel]
-            else:
-                curColor = (0,0,0)
+            myChannel = myStation.hasChannel(curChannel)
+            if not myChannel:
+                if self.channelColors.has_key(curChannel):
+                    curColor = self.channelColors[curChannel]
+                else:
+                    curColor = (0,0,0)
 
-            myChannel = container.TdChannel(myStation, 
-                                            wx.ID_ANY,
-                                            name = curChannel,
-                                            color = curColor)
-            myStation.addChannel(myChannel)
-
-        myView = myChannel.hasView(myChannel)
-        if not myView:
-            myView = container.TdSeismogramView(myChannel, 
+                myChannel = container.TdChannel(myStation, 
                                                 wx.ID_ANY,
-                                                name = myChannel,
-                                                lineColor = curColor)
+                                                name = curChannel,
+                                                color = curColor)
+                myStation.addChannel(myChannel)
 
-            for curTrace in curStream:
-                myView.plot(curTrace)
-                myView.setXLimits(left = self.startTime.timestamp,
-                                  right = self.endTime.timestamp)
-                myView.draw()
+            myView = myChannel.hasView(myChannel)
+            if not myView:
+                myView = container.TdSeismogramView(myChannel, 
+                                                    wx.ID_ANY,
+                                                    name = myChannel,
+                                                    lineColor = curColor)
 
-            myChannel.addView(myView)
-            myChannel.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-        else:
-            self.logger.debug('This should be impossible.')
+                for curTrace in curStream:
+                    myView.plot(curTrace)
+                    myView.setXLimits(left = self.startTime.timestamp,
+                                      right = self.endTime.timestamp)
+                    myView.draw()
+
+                myChannel.addView(myView)
+                myChannel.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            else:
+                self.logger.debug('This should be impossible.')
 
 
+        self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
         snl = [(x[0],x[1],x[2]) for x in self.showStations] 
         #msgTopic = 'tracedisplay.display.station.show'
         #data = {'snl', snl}
         #CallAfter(pub.sendMessage, msgTopic, data)
 
         self.parent.viewPort.sortStations(snl = snl)
+
+
+
+    def showChannel(self, channel):
+
+        if channel not in self.showChannels:
+            self.showChannels.append(channel)
+        
+        # Create a unique list containing SNL. Preserve the sort order.
+        tmp = [(x[0], x[2], x[3]) for x in self.showStations]
+        snl = []
+        for x in tmp:
+            if x not in snl:
+                snl.append(x)
+        
+        scnl = []
+        for curStat, curNet, curLoc in snl:
+            scnl.append((curStat, channel, curNet, curLoc))
+
+        self.showStations.extend(scnl)
+
+        self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
+        # TODO: Add the TdChannel instances to the display.
+
+
+
+    def hideChannel(self, channel):
+
+        self.showChannels.remove(channel)
+
+        self.showStations = [x for x in self.showStations if x[1] != channel]
+
+        # TODO: Remove the TdChannel instances from the display.
+
 
 
 
@@ -748,7 +792,13 @@ class DataManager():
         already been loaded by the dataManager.
         '''
 
-        curStream = self.stream.select(station = scnl[0], network = scnl[2], location = scnl[3], channel = scnl[1])
+        curStream = Stream()
+        
+        for curStat, curChan, curNet, curLoc in scnl:
+            curStream += self.stream.select(station = curStat, 
+                                            network = curNet, 
+                                            location = curLoc, 
+                                            channel = curChan)
 
         return curStream
 
@@ -757,7 +807,7 @@ class DataManager():
 
         curStream = self.waveclient.getWaveform(startTime = startTime,
                                                 endTime = endTime,
-                                                scnl = [scnl,])
+                                                scnl = scnl)
 
         self.stream = self.stream + curStream
         return curStream
