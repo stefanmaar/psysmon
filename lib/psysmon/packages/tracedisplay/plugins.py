@@ -164,5 +164,15 @@ class SelectChannel(PluginNode):
 
 
     def onBoxChecked(self, event):
-        pass
-        
+        index = event.GetSelection()
+        label = self.lb.GetString(index)
+        self.logger.debug('Checked item %d, label %s.', index, label)
+        self.logger.debug('channelList[%d]: %s', index, self.channelList[index])
+
+        # Remove all entries with the selected station from the
+        # showStations.
+        if not self.lb.IsChecked(index):
+            self.parent.displayOptions.hideChannel(self.channelList[index])
+        else:
+            self.parent.displayOptions.showChannel(self.channelList[index])
+
