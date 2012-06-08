@@ -176,3 +176,26 @@ class SelectChannel(PluginNode):
         else:
             self.parent.displayOptions.showChannel(self.channelList[index])
 
+
+
+
+class Zoom(PluginNode):
+    '''
+    
+    '''
+    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = mode,
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+        
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)

@@ -69,5 +69,13 @@ def pluginFactory():
                                      )
     pluginTemplates.append(myPluginTemplate)
 
+    #myPluginTemplate = Zoom(name = 'zoom',
+    #                        mode = 'tool',
+    #                        category = 'view',
+    #                        tags = None,
+    #                        nodeClass = 'TraceDislay'
+    #                        )
+    #pluginTemplates.append(myPluginTemplate)
+
     return pluginTemplates
 

@@ -9,7 +9,9 @@ from wx.lib.pubsub import Publisher as pub
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import wx.lib.scrolledpanel as scrolled
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
 import numpy as np
+
 
 
 class TdViewAnnotationPanel(wx.Panel):
@@ -23,6 +25,7 @@ class TdViewAnnotationPanel(wx.Panel):
     def __init__(self, parent, size=(50,-1), color=None):
         wx.Panel.__init__(self, parent, size=size)
         self.SetBackgroundColour(color)
+        self.SetMinSize((100, -1))
 
 
 	# Create a test label.
@@ -62,13 +65,20 @@ class PlotPanel(wx.Panel):
         self.sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
+        #self.canvas.mpl_connect('button_press_event', self.onClick)
         self.canvas.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus2)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
-        #self.canvas.Disable()
-        #self.Disable()
+
+    def onClick(self, event):
+        print "Clicked in View. event: %s" % event.guiEvent
+        event.guiEvent.ResumePropagation(1)
+        event.guiEvent.Skip()
+
+    def onWxClick(self, event):
+        print "Got the WX event."
 
     def onSetFocus(self, event):
         print "Canvas got Focus"
@@ -78,7 +88,7 @@ class PlotPanel(wx.Panel):
 
     def onSetFocus2(self, event):
         print "PlotPanel got Focus"
-    
+
     def onKeyDown(self, event):
         print "Propagating keyDown in plotPanel"
         event.ResumePropagation(1)
@@ -142,6 +152,7 @@ class TdView(wx.Panel):
         print "Entered view."
         #self.plotCanvas.SetColor((0,255,255))
         self.SetBackgroundColour('blue')
+        self.SetFocus()
         self.Refresh()
     
     def onLeaveWindow(self, event):
@@ -183,7 +194,10 @@ class TdSeismogramView(TdView):
         self.t0 = None
 	self.lineColor = [x/255.0 for x in lineColor]
 
+        self.scaleBar = None
+
         self.line = None
+
 
 
     def plot(self, trace):
@@ -224,7 +238,7 @@ class TdSeismogramView(TdView):
 
         start = time.clock()
         self.dataAxes.set_frame_on(False)
-        self.dataAxes.get_xaxis().set_visible(True)
+        self.dataAxes.get_xaxis().set_visible(False)
         self.dataAxes.get_yaxis().set_visible(False)
         yLim = np.max(np.abs(trace.data))
         self.logger.debug('ylim: %f', yLim)
@@ -233,6 +247,21 @@ class TdSeismogramView(TdView):
         self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
 
         self.logger.debug('time limits: %f, %f', timeArray[0], timeArray[-1])
+
+        # Add the scale bar.
+        scaleLength = 10
+        unitsPerPixel = (2*yLim) / self.dataAxes.get_window_extent().height
+        scaleHeight = 3 * unitsPerPixel
+        if self.scaleBar:
+            self.scaleBar.remove()
+        self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
+                                  -yLim+scaleHeight/2.0), 
+                                  width=scaleLength, 
+                                  height=scaleHeight,
+                                  edgecolor = 'none',
+                                  facecolor = '0.75')
+        self.dataAxes.add_patch(self.scaleBar)
+        #self.dataAxes.axvspan(timeArray[0], timeArray[0] + 10, facecolor='0.5', alpha=0.5)
 
 
     def setYLimits(self, bottom, top):
@@ -246,6 +275,18 @@ class TdSeismogramView(TdView):
         '''
         self.logger.debug('Set limits: %f, %f', left, right)
         self.dataAxes.set_xlim(left = left, right = right)
+
+        # Adjust the scale bar.
+
+
+
+    def getScalePixels(self):
+        yLim = self.dataAxes.get_xlim()
+        timeRange = yLim[1] - yLim[0]
+        width = self.dataAxes.get_window_extent().width
+        return  width / float(timeRange)
+
+
 
 
 class TdChannelAnnotationArea(wx.Panel):
@@ -424,25 +465,31 @@ class TdStation(wx.Panel):
         self.SetBackgroundColour('white')
 
         self.annotationArea = TdStationAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
+
+        self.channelSizer = wx.BoxSizer(wx.VERTICAL)
+
         self.sizer = wx.GridBagSizer(0,0)
 	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.Add(self.channelSizer, pos = (0,1), flag=wx.ALL|wx.EXPAND, border = 0)
         self.sizer.AddGrowableCol(1)
+        self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
+    
     def addChannel(self, channel):
         channel.Reparent(self)
         self.channels[channel.name] = channel
 	if self.channels:
-	    self.sizer.Add(channel, pos=(len(self.channels)-1,1), flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
-            self.sizer.AddGrowableRow(len(self.channels)-1)
-	    self.sizer.SetItemSpan(self.annotationArea, (len(self.channels), 1))
+            self.channelSizer.Add(channel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
-            stationSize = self.channels.itervalues().next().GetMinSize()
-            stationSize[1] = stationSize[1] * len(self.channels) 
-            self.SetMinSize(stationSize)
+        #self.sizer.Layout()
 
-        self.sizer.Layout()
-	#self.SetSizer(self.sizer)
+        curSize = self.GetSize()
+
+        height = self.channelSizer.GetSize()[1]
+        if height > curSize[1]:
+            self.SetMinSize(self.channelSizer.GetSize())
+            self.channelSizer.Layout()
 
 
 
@@ -455,6 +502,37 @@ class TdStation(wx.Panel):
             The name of the channel to search.
         '''
         return self.channels.get(channelName, None)
+
+
+
+    def removeChannel(self, channelName):
+
+        chan2Remove = self.channels.pop(channelName, None)
+
+        if chan2Remove:
+            self.channelSizer.Remove(chan2Remove)
+            chan2Remove.Destroy()
+
+        self.rearrangeChannels()
+
+        self.channelSizer.Layout()
+
+
+    def rearrangeChannels(self):
+        
+        for curChannel in self.channels.values():
+            self.channelSizer.Hide(curChannel)
+            self.channelSizer.Detach(curChannel)
+
+
+        for curChannel in self.channels.values():
+	    self.channelSizer.Add(curChannel, 1, flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
+            curChannel.Show()
+
+        stationSize = self.channels.itervalues().next().GetMinSize()
+        stationSize[1] = stationSize[1] * len(self.channels) 
+        self.SetMinSize(stationSize)
+
 
 
 
@@ -472,6 +550,7 @@ class TdDatetimeInfo(wx.Panel):
 
         self.startTime = None
         self.endTime = None
+        self.scale = None
 
         self.SetBackgroundColour(bgColor)
 
@@ -505,15 +584,47 @@ class TdDatetimeInfo(wx.Panel):
         font.SetWeight(wx.BOLD)
         gc.SetFont(font)
         if self.startTime:
+            gc.PushState()
             gc.Translate(80, height/2.0)
-            gc.DrawText(str(self.startTime), 0, 0)
+
+            spanText = str(self.endTime - self.startTime) + ' s'
+            text = str(self.startTime) + '      length: ' + spanText
+            gc.DrawText(text, 0, 0)
+
+            #gc.PopState()
+            #gc.PushState()
+            #text = str(self.endTime - self.startTime) + ' s'
+            #(textWidth, textHeight) = gc.GetTextExtent(text)
+            #gc.Translate(width - 100 - textWidth, height/2.0)
+            #gc.DrawText(text, 0, 0)
+
+            #gc.PopState()
+
+            #gc.Translate(width/2.0, height/2.0)
+            #penSize = 2
+            #pen = wx.Pen('black', penSize)
+            #pen.SetJoin(wx.JOIN_ROUND)
+            #path = gc.CreatePath()
+            #scalebarLength = 10
+            #path.MoveToPoint(0, 0)
+            #path.AddLineToPoint(scalebarLength * self.scale, 0)
+            #path.CloseSubpath()
+
+            #gc.Translate(width/2.0, height/2.0)
+            #gc.SetPen(pen)
+            #gc.DrawPath(path)
+
+            #gc.PopState()
 
 
-    def setTime(self, startTime, endTime):
+    def setTime(self, startTime, endTime, scale):
 
         # TODO: Add a check for the correct data type.
         self.startTime = startTime
         self.endTime = endTime
+        self.scale = scale
+
+
 
 
 
@@ -624,7 +735,9 @@ class TdViewPort(scrolled.ScrolledPanel):
 
         # The list of stations controlled by the viewport.
         self.stations = [] 
-        
+
+        self.SetupScrolling()
+
         # Message subsiptions
         # pub.subscribe(self.onStationMsg, ('tracedisplay', 'display', 'station'))
 
@@ -652,11 +765,9 @@ class TdViewPort(scrolled.ScrolledPanel):
         station.Reparent(self)
         self.stations.append(station)
 
-        #self.sizer.Add(station, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
-        viewPortSize = self.stations[-1].GetMinSize()
-        viewPortSize[1] = viewPortSize[1] * len(self.stations) + 100 
+        #viewPortSize = self.stations[-1].GetMinSize()
+        #viewPortSize[1] = viewPortSize[1] * len(self.stations) + 100 
         #self.SetMinSize(viewPortSize)
-        self.SetupScrolling()
 
 
 
@@ -693,14 +804,14 @@ class TdViewPort(scrolled.ScrolledPanel):
         tmp = []
         for curSnl in snl:
             statFound = [x for x in self.stations if x.name == curSnl[0]]
-            
+
             # Add the station only if it's not already contained in the list.
             if statFound[0] not in tmp:
                 tmp.append(statFound[0])
 
         self.stations = tmp
 
-        # Rearrange the 
+        # Rearrange the stations.
         self.rearrangeStations()
         #for curStation in self.stations:
         #    self.sizer.Add(curStation, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
@@ -731,6 +842,16 @@ class TdViewPort(scrolled.ScrolledPanel):
         self.sizer.Layout()
 
 
+    def removeChannel(self, scnl):
+
+        statFound = [x for x in self.stations if x.name == scnl[0]]
+
+        if statFound:
+            statFound = statFound[0]
+            statFound.removeChannel(scnl[1])
+
+
+
 
     def rearrangeStations(self):
         ''' Rearrange the stations in the viewport.
@@ -744,8 +865,10 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
         for curStation in self.stations:
-            self.sizer.Add(curStation, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=5)
+            self.sizer.Add(curStation, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
             curStation.Show()
+
+        self.SetupScrolling()
 
 
 

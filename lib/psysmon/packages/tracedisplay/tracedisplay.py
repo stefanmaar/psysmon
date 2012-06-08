@@ -346,15 +346,19 @@ class TraceDisplayDlg(wx.Frame):
     def advanceTime(self):
         ''' Advance the display time by one step. 
         '''
+        oldFocus = wx.Window.FindFocus()
         self.displayOptions.advanceTime()
         self.updateDisplay()
+        oldFocus.SetFocus()
 
 
     def decreaseTime(self):
         ''' Decrease the display time by one step.
         '''
+        oldFocus = wx.Window.FindFocus()
         self.displayOptions.decreaseTime()
         self.updateDisplay()
+        oldFocus.SetFocus()
 
 
     def onKeyDown(self, event):
@@ -420,10 +424,6 @@ class TraceDisplayDlg(wx.Frame):
 
         stream.detrend(type = 'constant')
 
-        # Update the datetime information
-        self.datetimeInfo.setTime(self.displayOptions.startTime, 
-                                  self.displayOptions.endTime)
-        self.datetimeInfo.Refresh()
 
         self.logger.debug("Finished loading data.")
         for curScnl in self.displayOptions.showStations:
@@ -435,6 +435,7 @@ class TraceDisplayDlg(wx.Frame):
                 myStation = container.TdStation(parent=self.viewPort, id=wx.ID_ANY, name=curStation, color='white')
                 self.viewPort.addStation(myStation)
                 myStation.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+
 
             myChannel = myStation.hasChannel(curChannel)
             if not myChannel:
@@ -450,6 +451,7 @@ class TraceDisplayDlg(wx.Frame):
             self.logger.debug("channel: %s", curChannel)
             curStream = stream.select(station = curStation,
                                           channel = curChannel)
+
 
             myView = myChannel.hasView(myChannel)
             if not myView:
@@ -480,9 +482,20 @@ class TraceDisplayDlg(wx.Frame):
                         pass
 
 
+
         # Sort the displayed stations.
         self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.showStations])
+        self.viewPort.Refresh()
+        self.viewPort.Update()      
 
+        
+        scale = myView.getScalePixels()
+
+        # Update the datetime information
+        self.datetimeInfo.setTime(self.displayOptions.startTime, 
+                                  self.displayOptions.endTime, 
+                                  scale)
+        self.datetimeInfo.Refresh()
 
 
 class ShortCutOptions:
@@ -592,9 +605,10 @@ class DisplayOptions:
 
         # Limit the stations to show.
         # TODO: This should be selected by the user in the edit dialog.
-        self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
-                             ('SITA', 'HHZ', 'ALPAACT', '00'),
-                             ('GUWA', 'HHZ', 'ALPAACT', '00')]
+        #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
+        #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
+        #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
+        self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00')]
         self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
 
 
@@ -634,13 +648,12 @@ class DisplayOptions:
             The station, network, location code of the station which should be hidden.
         '''
 
-        for curStation in self.showStations:
-            if snl == (curStation[0], curStation[2], curStation[3]):
-                self.showStations.remove(curStation)
-                self.parent.viewPort.removeStation(snl)
-                #msgTopic = 'tracedisplay.display.station.hide'
-                #data = {'snl', snl}
-                #CallAfter(pub.sendMessage, msgTopic, data)
+            
+        stat2Remove = [x for x in self.showStations if snl == (x[0], x[2], x[3])]
+
+        for curStation in stat2Remove:
+            self.showStations.remove(curStation)
+            self.parent.viewPort.removeStation(snl)
 
 
 
@@ -727,6 +740,8 @@ class DisplayOptions:
 
         self.parent.viewPort.sortStations(snl = snl)
 
+        self.parent.viewPort.Refresh()
+
 
 
     def showChannel(self, channel):
@@ -748,17 +763,20 @@ class DisplayOptions:
         self.showStations.extend(scnl)
 
         self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
-        # TODO: Add the TdChannel instances to the display.
-
+        
+        # TODO: Only update the data of the added channel.
+        self.parent.updateDisplay() 
 
 
     def hideChannel(self, channel):
 
         self.showChannels.remove(channel)
+        
+        for curStation in self.showStations:
+            if channel == curStation[1]:
+                self.showStations.remove(curStation)
+                self.parent.viewPort.removeChannel(curStation)
 
-        self.showStations = [x for x in self.showStations if x[1] != channel]
-
-        # TODO: Remove the TdChannel instances from the display.
 
 
 
