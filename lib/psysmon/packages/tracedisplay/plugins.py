@@ -199,3 +199,7 @@ class Zoom(PluginNode):
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+
+    
+
