@@ -91,6 +91,8 @@ class SelectStation(PluginNode):
         # Save the listbox as a class attribute.
         self.lb = lb
 
+
+
     def onBoxChecked(self, event):
         index = event.GetSelection()
         label = self.lb.GetString(index)
@@ -163,6 +165,8 @@ class SelectChannel(PluginNode):
 
 
 
+
+
     def onBoxChecked(self, event):
         index = event.GetSelection()
         label = self.lb.GetString(index)
@@ -199,6 +203,31 @@ class Zoom(PluginNode):
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+
+
+    def buildMenu(self):
+        pass
+
+
+    def buildFoldPanel(self, panelBar):
+        pass
+
+
+    def getHooks(self):
+        hooks = {}
+
+        hooks['button_press_event'] = self.onButtonPress
+
+        return hooks
+
+
+    def buildToolbarButton(self):
+        return 'Hallo hier spricht Zoom Plugin.'
+
+    
+    def onButtonPress(self, event):
+        self.logger.debug('Mouse click catched.')
 
 
     
