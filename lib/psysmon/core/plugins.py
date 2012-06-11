@@ -116,4 +116,15 @@ class PluginNode:
         assert False, 'buildFoldPanel must be defined'
 
 
+    def getHooks(self):
+        ''' Register the mouse event hooks for interactive plugins.
+
+        '''
+        pass
+
+
+    def buildToolbarButton(self):
+        pass
+
+
 
