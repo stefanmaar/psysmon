@@ -38,6 +38,10 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.foldpanelbar as fpb
 
+try:
+    from agw import ribbon as ribbon
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.ribbon as ribbon
 
 
 keyMap = {
@@ -280,6 +284,17 @@ class TraceDisplayDlg(wx.Frame):
 
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
         self.eventInfo.SetBackgroundColour('khaki')
+        
+        #self.toolRibbonPanel = wx.Panel(parent=self, id=wx.ID_ANY)
+        #self.toolRibbonPanel.SetBackgroundColour('cyan')
+
+
+        # Create the toolRibbonBar
+        self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
+        home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Home")
+        dummy_2 = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Empty Page")
+        dummy_3 = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Another Page")
+        self.ribbon.Realize()
       
         # The station display area contains the datetimeInfo and the viewPort.
         # TODO: Maybe create a seperate class for this.
@@ -318,12 +333,24 @@ class TraceDisplayDlg(wx.Frame):
                                               Layer(1).
                                               Row(0).
                                               Position(0))
-
+        self.mgr.AddPane(self.ribbon,
+                         wx.aui.AuiPaneInfo().Top().
+                                              Name('palette').
+                                              Caption('palette').
+                                              Layer(2).
+                                              Row(0).
+                                              Position(0))
         # Build the plugin elements.
         for curPlugin in self.plugins:
-            if curPlugin.mode == 'foldpanel':
+            # Get all option plugins and build the foldpanels.
+            if curPlugin.mode == 'option':
                 curPlugin.buildFoldPanel(self.toolPanels)
 
+            # Get all interactive plugins and add them to the toolbar.
+            if curPlugin.mode == 'interactive':
+                button = curPlugin.buildToolbarButton()
+                if button:
+                    self.logger.debug(button)
 
         # Tell the manager to commit all the changes.
         self.mgr.Update() 
