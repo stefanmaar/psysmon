@@ -39,7 +39,7 @@ class PluginNode:
     Each collection node can load plugins which provide some functionality to the node.
     '''
 
-    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    def __init__(self, name, mode, category, tags, nodeClass, icons = None, parent=None, docEntryPoint=None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -49,7 +49,7 @@ class PluginNode:
         name : String
             The name of the plugin-node.
         mode : String
-            The mode of the plugin-node (standard, interactive).
+            The mode of the plugin-node (option, command, interactive, addon).
         category : String
             The category of the plugin-node.
         tags : list of String
@@ -78,6 +78,7 @@ class PluginNode:
         # The tags of the plugin.
         self.tags = tags
 
+
         # The class to which the plugin belongs to.
         self.nodeClass = nodeClass
 
@@ -87,6 +88,12 @@ class PluginNode:
         # The path to the html index file containing the documentation of the
         # plugin.
         self.docEntryPoint = docEntryPoint
+
+        # The icons of the plugin.
+        # The dictionary has to be filled in the constructor of the
+        # plugin node. The icons icons['active'] and icons['inactive']
+        # should be set.
+        self.icons = {}
 
 
     def register(self, parent):

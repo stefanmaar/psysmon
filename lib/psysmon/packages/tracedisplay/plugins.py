@@ -21,6 +21,7 @@
 import logging
 import wx
 from psysmon.core.plugins import PluginNode
+import psysmon.core.icons as icons
 
 
 class SelectStation(PluginNode):
@@ -45,19 +46,19 @@ class SelectStation(PluginNode):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        self.icons['active'] = icons.pin_map_icon_16
 
 
     def buildMenu(self):
         self.logger.debug('Building the menu.')
 
 
-    def buildFoldPanel(self, panelBar):
+    def buildFoldPanel(self, parent):
         self.logger.debug('Building the fold panel.')
-        foldPanel = panelBar.AddFoldPanel(caption = self.name, 
-                                          collapsed = False
-                                          )
 
-        foldPanel.SetBackgroundColour('red')
+        foldPanel = wx.Panel(parent = parent, id = wx.ID_ANY)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
 
 
         #button1 = wx.Button(foldPanel, wx.ID_ANY, "Collapse Me")
@@ -65,7 +66,7 @@ class SelectStation(PluginNode):
         # Create a checkbox list holding the station names.
         #sampleList = ['ALBA', 'SITA', 'GILA']
         displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.showStations]
-        
+
         # Create a unique list containing SNL. Preserve the sort order.
         tmp = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.stationSortKey]
         self.stationList = []
@@ -85,12 +86,13 @@ class SelectStation(PluginNode):
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
 
-
-        panelBar.AddFoldPanelWindow(foldPanel, lb)
+        sizer.Add(lb, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        foldPanel.SetSizer(sizer)
 
         # Save the listbox as a class attribute.
         self.lb = lb
 
+        return foldPanel
 
 
     def onBoxChecked(self, event):
@@ -132,36 +134,40 @@ class SelectChannel(PluginNode):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        self.icons['active'] = icons.pin_sq_right_icon_16
+
 
 
     def buildMenu(self):
         pass
 
 
-    def buildFoldPanel(self, panelBar):
-        foldPanel = panelBar.AddFoldPanel(caption = self.name,
-                                          collapsed = False)
+    def buildFoldPanel(self, parent):
+        foldPanel = wx.Panel(parent = parent, id = wx.ID_ANY)
 
+        sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.channelList = sorted(self.parent.displayOptions.availableChannels)
-
 
         lb = wx.CheckListBox(parent = foldPanel,
                              id = wx.ID_ANY,
                              choices = self.channelList)
 
-
         ind = [m for m,x in enumerate(self.channelList) if x in self.parent.displayOptions.showChannels]
         lb.SetChecked(ind)
-
 
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
 
-        panelBar.AddFoldPanelWindow(foldPanel, lb)
+        sizer.Add(lb, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        foldPanel.SetSizer(sizer)
 
         # Save the listbox as a class attribute.
         self.lb = lb
+
+        foldPanel.SetMinSize(lb.GetBestSize())
+
+        return foldPanel
 
 
 
@@ -203,6 +209,8 @@ class Zoom(PluginNode):
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.zoom_icon_16
 
 
 
