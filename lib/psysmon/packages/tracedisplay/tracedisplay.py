@@ -29,6 +29,7 @@ import wx.aui
 import wx.lib.colourdb
 from obspy.core import Stream
 import psysmon.core.gui as psygui
+import psysmon.core.icons as icons
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from obspy.core.utcdatetime import UTCDateTime
@@ -43,6 +44,10 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.ribbon as ribbon
 
+try:
+    from agw import pycollapsiblepane as pcp
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.pycollapsiblepane as pcp
 
 keyMap = {
     wx.WXK_BACK : "WXK_BACK",
@@ -274,27 +279,23 @@ class TraceDisplayDlg(wx.Frame):
 
         self.mgr = wx.aui.AuiManager(self)
     
-        self.toolPanels = fpb.FoldPanelBar(parent=self, 
-                                           id=wx.ID_ANY,
-                                           pos = wx.DefaultPosition,
-                                           size=wx.DefaultSize,
-                                           agwStyle=fpb.FPB_VERTICAL)
+        #self.toolPanels = fpb.FoldPanelBar(parent=self, 
+        #                                   id=wx.ID_ANY,
+        #                                   pos = wx.DefaultPosition,
+        #                                   size=wx.DefaultSize,
+        #                                   agwStyle=fpb.FPB_VERTICAL)
 
-        self.toolPanels.SetBackgroundColour('chocolate1')
+        #self.foldPanelBar = psygui.FoldPanelBarSplitter(parent=self)
+        self.foldPanelBar = psygui.FoldPanelBar(parent=self)
+
+        self.foldPanelBar.SetBackgroundColour('white')
 
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
         self.eventInfo.SetBackgroundColour('khaki')
         
-        #self.toolRibbonPanel = wx.Panel(parent=self, id=wx.ID_ANY)
-        #self.toolRibbonPanel.SetBackgroundColour('cyan')
-
-
         # Create the toolRibbonBar
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
-        home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Home")
-        dummy_2 = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Empty Page")
-        dummy_3 = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Another Page")
-        self.ribbon.Realize()
+        self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Home")
       
         # The station display area contains the datetimeInfo and the viewPort.
         # TODO: Maybe create a seperate class for this.
@@ -326,7 +327,7 @@ class TraceDisplayDlg(wx.Frame):
                                               Row(0).
                                               Position(0))
        
-        self.mgr.AddPane(self.toolPanels,
+        self.mgr.AddPane(self.foldPanelBar,
                          wx.aui.AuiPaneInfo().Left().
                                               Name('tool panels').
                                               Caption('tool panels').
@@ -340,18 +341,47 @@ class TraceDisplayDlg(wx.Frame):
                                               Layer(2).
                                               Row(0).
                                               Position(0))
-        # Build the plugin elements.
-        for curPlugin in self.plugins:
-            # Get all option plugins and build the foldpanels.
+        # Build the ribbon bar based on the plugins.
+        # First create all the pages according to the category.
+        self.ribbonPanels = {}
+        self.ribbonToolbars = {}
+        self.foldPanels = {}
+        for curCategory in [x.category for x in self.plugins]:
+            if curCategory not in self.ribbonPanels.keys():
+                self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.home,
+                                                                    wx.ID_ANY,
+                                                                    curCategory,
+                                                                    wx.NullBitmap,
+                                                                    wx.DefaultPosition,
+                                                                    wx.DefaultSize,
+                                                                    agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
+                self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
+
+        for k,curPlugin in enumerate(self.plugins):
+            # Fill the ribbon bar.
             if curPlugin.mode == 'option':
-                curPlugin.buildFoldPanel(self.toolPanels)
+                # Create a tool.
+                curTool = self.ribbonToolbars[curPlugin.category].AddTool(k, curPlugin.icons['active'].GetBitmap())
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
+                                                             lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
+            elif curPlugin.mode == 'interactive':
+                # Create a HybridTool.
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin), id=curTool.id)
+
+            # Get all option plugins and build the foldpanels.
+            #if curPlugin.mode == 'option':
+            #    curPlugin.buildFoldPanel(self.toolPanels)
 
             # Get all interactive plugins and add them to the toolbar.
-            if curPlugin.mode == 'interactive':
-                button = curPlugin.buildToolbarButton()
-                if button:
-                    self.logger.debug(button)
+            #if curPlugin.mode == 'interactive':
+            #    button = curPlugin.buildToolbarButton()
+            #    if button:
+            #        self.logger.debug(button)
 
+        self.ribbon.Realize()
+        
         # Tell the manager to commit all the changes.
         self.mgr.Update() 
 
@@ -388,6 +418,36 @@ class TraceDisplayDlg(wx.Frame):
         oldFocus.SetFocus()
 
 
+    def onOptionToolClicked(self, event, plugin):
+        ''' Handle the click of an option plugin toolbar button.
+
+        Show or hide the foldpanel of the plugin.
+        '''
+        self.logger.debug('Clicked the option tool.')
+
+        if plugin.name not in self.foldPanels.keys():
+            curPanel = plugin.buildFoldPanel(self.foldPanelBar)
+            foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
+            self.foldPanels[plugin.name] = foldPanel
+        else:
+            if self.foldPanels[plugin.name].IsShown():
+                self.foldPanelBar.hidePanel(self.foldPanels[plugin.name])
+            else:
+                self.foldPanelBar.showPanel(self.foldPanels[plugin.name]) 
+
+            
+
+
+
+    def onInteractiveToolClicked(self, event, plugin):
+        ''' Handle the click of an interactive plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the option tool.')
+        print plugin
+    
+    
     def onKeyDown(self, event):
         ''' Handle a key down event.
 
