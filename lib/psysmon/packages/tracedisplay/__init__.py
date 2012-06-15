@@ -71,7 +71,7 @@ def pluginFactory():
 
     myPluginTemplate = Zoom(name = 'zoom',
                             mode = 'interactive',
-                            category = 'view',
+                            category = 'test',
                             tags = None,
                             nodeClass = 'TraceDisplay'
                             )
