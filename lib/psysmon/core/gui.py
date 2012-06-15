@@ -47,7 +47,10 @@ from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveclient import PsysmonDbWaveClient
 from datetime import datetime
 import webbrowser
-from wx.lib.mixins.inspection import InspectionMixin 
+from wx.lib.mixins.inspection import InspectionMixin
+import wx.lib.scrolledpanel as scrolled
+from wx.lib.splitter import MultiSplitterWindow
+
 
 
 ## The pSysmon main application.
@@ -1682,6 +1685,159 @@ class ProjectLoginDlg(wx.Dialog):
         fgSizer.AddGrowableCol(1)
         return fgSizer
 
+
+
+
+class FoldPanelBar(scrolled.ScrolledPanel):
+    ''' pSysmon custom foldpanelbar class.
+
+    '''
+
+    def __init__(self, parent=None, id=wx.ID_ANY):
+        scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.sizer = wx.GridBagSizer(0, 0)
+        self.sizer.AddGrowableCol(0)
+        self.SetSizer(self.sizer)
+
+        self.SetupScrolling()
+
+        self.subPanels = []
+
+
+    def addPanel(self, subPanel, icon):
+        foldPanel = self.makeFoldPanel(subPanel, icon)
+        curRow = len(self.subPanels)
+        self.subPanels.append(foldPanel)
+        best = foldPanel.GetBestSize()
+        foldPanel.SetMinSize(best)
+        foldPanel.SetSize(best)
+        self.sizer.Add(foldPanel, pos=(curRow, 0), flag=wx.EXPAND|wx.ALL, border=0)
+        self.sizer.Layout()
+        self.SetupScrolling()
+
+        return foldPanel
+
+
+
+    def hidePanel(self, subPanel):
+        self.subPanels.remove(subPanel)
+        self.sizer.Detach(subPanel)
+        subPanel.Hide()
+        self.rearrangePanels()
+
+
+    def showPanel(self, subPanel):
+        self.subPanels.append(subPanel)
+        self.rearrangePanels()
+
+
+    def rearrangePanels(self):
+
+        for curPanel in self.subPanels:
+            self.sizer.Hide(curPanel)
+            self.sizer.Detach(curPanel)
+
+        for k, curPanel in enumerate(self.subPanels):
+            self.sizer.Add(curPanel, pos=(k,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+            self.sizer.Show(curPanel)
+
+        self.Layout()
+        #self.SetupScrolling()
+
+
+    def makeFoldPanel(self, panel, icon):
+        foldPanel = wx.Panel(self, id=wx.ID_ANY)
+        panel.Reparent(foldPanel)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        bmp = icon.GetBitmap()
+        headerButton = wx.BitmapButton(foldPanel, -1, bmp, (0,0), 
+                                       (bmp.GetWidth()+10, bmp.GetHeight()+10),
+                                       style=wx.NO_BORDER)
+        sizer.Add(headerButton, 0, flag=wx.ALL, border=0)
+        sizer.Add(panel, 1, flag=wx.EXPAND|wx.ALL, border=0)
+        foldPanel.SetSizer(sizer)
+
+        self.Bind(wx.EVT_BUTTON, self.onIconButtonClick, headerButton)
+
+        return foldPanel
+
+
+    def onIconButtonClick(self, event):
+        print "Clicked the icon."
+        self.hidePanel(event.GetEventObject().GetParent())
+
+
+
+
+class FoldPanelBarSplitter(scrolled.ScrolledPanel):
+    ''' pSysmon custom foldpanelbar class.
+
+    '''
+
+    def __init__(self, parent=None, id=wx.ID_ANY):
+        scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+        #wx.ScrolledWindow.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.splitter = MultiSplitterWindow(self, style=wx.SP_LIVE_UPDATE)
+        self.splitter.SetOrientation(wx.VERTICAL)
+
+        self.sizer.Add(self.splitter, 1, wx.EXPAND)
+        self.SetSizer(self.sizer)
+
+        self.splitter.SetMinimumPaneSize(100)
+
+        #self.EnableScrolling(True, True)
+        self.SetupScrolling()
+
+        self.subPanels = []
+
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.onSashChanged, self.splitter)
+
+
+    def onSashChanged(self, event):
+        print 'Changed sash: %d; %s\n' % (event.GetSashIdx(), event.GetSashPosition())
+
+
+    def addPanel(self, subPanel):
+        subPanel.Reparent(self.splitter)
+        self.subPanels.append(subPanel)
+        self.splitter.AppendWindow(subPanel, 200)
+        self.SetupScrolling()
+
+
+
+    def hidePanel(self, subPanel):
+        self.subPanels.remove(subPanel)
+        self.splitter.DetachWindow(subPanel)
+        subPanel.Hide()
+        #self.rearrangePanels()
+
+
+    def showPanel(self, subPanel):
+        subPanel.Show()
+        self.addPanel(subPanel)
+
+
+    def rearrangePanels(self):
+        for curPanel in self.subPanels:
+            self.sizer.Hide(curPanel)
+            self.sizer.Detach(curPanel)
+
+        for curPanel in self.subPanels:
+            self.sizer.Add(curPanel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+
+        #self.SetupScrolling()
 
 
 
