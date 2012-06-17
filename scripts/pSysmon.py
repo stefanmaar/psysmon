@@ -88,16 +88,15 @@ def run():
         >>> import psysmon.pSysmon as psysmon
         >>> psysmon.run
     '''
-
     logger = logging.getLogger('psysmon')
     logger.setLevel(psysmon.logConfig['level'])
     logger.addHandler(psysmon.getLoggerHandler())
 
-    #psyBaseDir = os.path.abspath(__file__)
+    
     psyBaseDir = os.path.abspath(psysmon.__file__)
-    print "psyBaseDir: %s" % psyBaseDir
     psyBaseDir = os.path.dirname(psyBaseDir)
-
+    print "psyBaseDir: %s" % psyBaseDir
+    
     # Initialize the pSysmon base object.
     psyBase = psybase.Base(psyBaseDir)
 
