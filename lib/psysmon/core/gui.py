@@ -51,6 +51,11 @@ from wx.lib.mixins.inspection import InspectionMixin
 import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
 
+try:
+    from agw import advancedsplash as splash
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.advancedsplash as splash
+
 
 
 ## The pSysmon main application.
@@ -80,6 +85,15 @@ class PSysmonGui(wx.Frame):
     def __init__(self, psyBase,  parent, id=-1, title='pSysmon', pos=wx.DefaultPosition, 
                  size=(800,600), style=wx.DEFAULT_FRAME_STYLE):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
+
+        bitmapDir = os.path.join(psyBase.baseDirectory, 'artwork', 'splash')
+        pn = os.path.normpath(os.path.join(bitmapDir, "psysmon.png"))
+        bitmap = wx.Bitmap(pn, wx.BITMAP_TYPE_PNG)
+
+        frame = splash.AdvancedSplash(self, bitmap=bitmap, timeout=1000,
+                                      agwStyle=splash.AS_TIMEOUT |
+                                      splash.AS_CENTER_ON_SCREEN)
+
 
         # The pSysmon base object.
         self.psyBase = psyBase
