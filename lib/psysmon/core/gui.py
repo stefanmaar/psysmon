@@ -45,6 +45,7 @@ import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveclient import PsysmonDbWaveClient
+import psysmon.core.icons as icons
 from datetime import datetime
 import webbrowser
 from wx.lib.mixins.inspection import InspectionMixin
@@ -1750,6 +1751,11 @@ class FoldPanelBar(scrolled.ScrolledPanel):
         self.rearrangePanels()
 
 
+    def toggleMinimizePanel(self, subPanel):
+        subPanel.toggleMinimize()
+        self.rearrangePanels()
+
+
     def rearrangePanels(self):
 
         for curPanel in self.subPanels:
@@ -1765,27 +1771,64 @@ class FoldPanelBar(scrolled.ScrolledPanel):
 
 
     def makeFoldPanel(self, panel, icon):
-        foldPanel = wx.Panel(self, id=wx.ID_ANY)
-        panel.Reparent(foldPanel)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        bmp = icon.GetBitmap()
-        headerButton = wx.BitmapButton(foldPanel, -1, bmp, (0,0), 
-                                       (bmp.GetWidth()+10, bmp.GetHeight()+10),
-                                       style=wx.NO_BORDER)
-        sizer.Add(headerButton, 0, flag=wx.ALL, border=0)
-        sizer.Add(panel, 1, flag=wx.EXPAND|wx.ALL, border=0)
-        foldPanel.SetSizer(sizer)
-
-        self.Bind(wx.EVT_BUTTON, self.onIconButtonClick, headerButton)
-
+        foldPanel = FoldPanel(self, panel, icon)
         return foldPanel
 
 
-    def onIconButtonClick(self, event):
-        print "Clicked the icon."
+    def onCloseButtonClick(self, event):
         self.hidePanel(event.GetEventObject().GetParent())
 
 
+    def onMinimizeButtonClick(self, event):
+        self.toggleMinimizePanel(event.GetEventObject().GetParent())
+
+
+
+class FoldPanel(wx.Panel):
+
+    def __init__(self, parent, contentPanel, icon):
+        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        self.icon = icon
+        self.contentPanel = contentPanel
+
+        contentPanel.Reparent(self)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        headerSizer = wx.GridBagSizer(0,0)
+
+        bmp = icon.GetBitmap()
+        self.headerButton = wx.StaticBitmap(self, -1, bmp, (0,0), 
+                                       (bmp.GetWidth(), bmp.GetHeight()),
+                                       style=wx.NO_BORDER)
+        headerSizer.Add(self.headerButton, pos=(0,0), flag=wx.ALL, border=2)
+
+        bmp = icons.sq_minus_icon_16.GetBitmap()
+        self.minimizeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
+                                       style=wx.NO_BORDER)
+        headerSizer.Add(self.minimizeButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_RIGHT, border=0)
+
+        bmp = icons.app_window_cross_icon_16.GetBitmap()
+        self.closeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
+                                       style=wx.NO_BORDER)
+        headerSizer.Add(self.closeButton, pos=(0,3), flag=wx.ALL|wx.ALIGN_RIGHT, border=0)
+        headerSizer.AddGrowableCol(1)
+
+        sizer.Add(headerSizer, 0, flag=wx.EXPAND|wx.ALL, border=0)
+        sizer.Add(self.contentPanel, 0, flag=wx.EXPAND|wx.ALL|wx.ALIGN_LEFT, border=0)
+        self.SetSizer(sizer)
+        self.sizer = sizer
+        self.headerSizer = headerSizer
+
+        self.Bind(wx.EVT_BUTTON, parent.onCloseButtonClick, self.closeButton)
+        self.Bind(wx.EVT_BUTTON, parent.onMinimizeButtonClick, self.minimizeButton)
+
+
+    def toggleMinimize(self):
+        if self.contentPanel.IsShown():
+            self.sizer.Detach(self.contentPanel)
+            self.contentPanel.Hide()
+        else:
+            self.contentPanel.Show()
 
 
 class FoldPanelBarSplitter(scrolled.ScrolledPanel):
