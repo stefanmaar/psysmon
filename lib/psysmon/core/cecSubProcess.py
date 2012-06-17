@@ -34,13 +34,13 @@ import psysmon
 #import psysmon.core.gui as psygui
 #from psysmon.core.collectionExecutionControl import CecClient
 from psysmon.core.waveclient import PsysmonDbWaveClient
+import psysmon.core.base as psybase
 #from twisted.internet import reactor
 import sys
 import shelve
 import wx
 import logging
 import os
-import tempfile
 
 class ExecutionFrame(wx.Frame):
 
@@ -74,8 +74,14 @@ if __name__ == "__main__":
     logger.info('Starting process %s', procName)
     logger.info('Loading data from file %s', filename)
 
+    logger.info('Project: %s', project)
+    logger.info('Collection: %s', collection)
 
-    logger.info('Executing collection %s of project %s.', (collection, project))
+    logger.info('Executing collection %s of project %s.', collection, project)
+
+    psyBaseDir = os.path.abspath(psysmon.__file__)
+    psyBaseDir = os.path.dirname(psyBaseDir)
+    psyBase = psybase.Base(psyBaseDir)
 
     # Reinitialize the project.
     project.connect2Db(project.activeUser.pwd)
@@ -84,6 +90,10 @@ if __name__ == "__main__":
     project.addWaveClient(waveclient)
     collection.setNodeProject(project) 
     collection.createNodeLoggers()
+
+    project.psyBase = psyBase
+
+    logger.debug('psyBase: %s', project.psyBase)
 
     collection.execute()
 
