@@ -1748,6 +1748,8 @@ class FoldPanelBar(scrolled.ScrolledPanel):
 
     def showPanel(self, subPanel):
         self.subPanels.append(subPanel)
+        if subPanel.isMinimized:
+            subPanel.toggleMinimize()
         self.rearrangePanels()
 
 
@@ -1788,6 +1790,11 @@ class FoldPanel(wx.Panel):
 
     def __init__(self, parent, contentPanel, icon):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+
+        self.SetMinSize((50, 10))
+
+        self.isMinimized = False
+
         self.icon = icon
         self.contentPanel = contentPanel
 
@@ -1825,10 +1832,22 @@ class FoldPanel(wx.Panel):
 
     def toggleMinimize(self):
         if self.contentPanel.IsShown():
-            self.sizer.Detach(self.contentPanel)
+            print "hiding panel"
+            #self.sizer.Detach(self.contentPanel)
             self.contentPanel.Hide()
+            self.SetMinSize(self.GetBestSize())
+            self.SetSize(self.GetBestSize())
+            self.sizer.Layout()
+            self.isMinimized = True
         else:
+            print "showing panel"
+            print "contentPanel size: %s" % self.contentPanel.GetSize()
+            #self.sizer.Add(self.contentPanel, 0, flag=wx.EXPAND|wx.ALL, border = 0)
             self.contentPanel.Show()
+            self.SetMinSize(self.GetBestSize())
+            self.SetSize(self.GetBestSize())
+            self.sizer.Layout()
+            self.isMinimized = False
 
 
 class FoldPanelBarSplitter(scrolled.ScrolledPanel):
