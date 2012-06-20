@@ -20,7 +20,7 @@
 
 import logging
 import itertools
-from operator import itemgetter
+from operator import itemgetter, attrgetter
 from wx.lib.pubsub import Publisher as pub
 import time
 import wx
@@ -505,7 +505,7 @@ class TraceDisplayDlg(wx.Frame):
 
         stream = self.dataManager.getStream(startTime = self.displayOptions.startTime,
                                             endTime = self.displayOptions.endTime,
-                                            scnl = self.displayOptions.showStations)
+                                            scnl = self.displayOptions.getSCNL('show'))
 
         #channels2Load = list(itertools.chain(*self.displayOptions.channel.values()))
 
@@ -513,7 +513,9 @@ class TraceDisplayDlg(wx.Frame):
 
 
         self.logger.debug("Finished loading data.")
-        for curScnl in self.displayOptions.showStations:
+        #self.displayOptions.createStationContainer(self.displayOptions.getSCNL('show'), stream)
+        
+        for curScnl in self.displayOptions.getSCNL('show'):
             curStation = curScnl[0]
             curChannel = curScnl[1]
             myStation = self.viewPort.hasStation(curStation)
@@ -537,7 +539,7 @@ class TraceDisplayDlg(wx.Frame):
             self.logger.debug("station: %s", curStation)
             self.logger.debug("channel: %s", curChannel)
             curStream = stream.select(station = curStation,
-                                          channel = curChannel)
+                                      channel = curChannel)
 
 
             myView = myChannel.hasView(myChannel)
@@ -571,17 +573,17 @@ class TraceDisplayDlg(wx.Frame):
 
 
         # Sort the displayed stations.
-        self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.showStations])
+        self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
         self.viewPort.Refresh()
         self.viewPort.Update()      
 
         
-        scale = myView.getScalePixels()
+        #scale = myView.getScalePixels()
 
         # Update the datetime information
         self.datetimeInfo.setTime(self.displayOptions.startTime, 
                                   self.displayOptions.endTime, 
-                                  scale)
+                                  None)
         self.datetimeInfo.Refresh()
 
 
@@ -659,7 +661,10 @@ class DisplayOptions:
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # All stations that are contained in the inventory.
-        self.availableStations = {}
+        self.availableStations = []
+
+        # All unique channels contained in the available stations.
+        self.availableChannels = []
 
         # The currently shown stations.
         # This is a list of tuples containing the SCNL code (S, C, N, L).
@@ -669,25 +674,15 @@ class DisplayOptions:
         for curNetwork in self.inventory.networks.values():
             for curStation in curNetwork.stations.values():
                 channels = set([x[0].channelName for x in curStation.sensors])
+                self.availableStations.append(DisplayStation(curStation))
 
                 for curChannel in channels:
-                    self.availableStations[(curStation.name, curChannel, curNetwork.name, curStation.location)] = curStation
-                    self.showStations.append((curStation.name, curChannel, curNetwork.name, curStation.location))
-
-        # Sort the stations by name.
-        self.stationSortKey = list(self.availableStations.keys())
-        self.stationSortKey = sorted(self.stationSortKey, key = itemgetter(0))
-
-
-        # The channel selection settings.
-        self.availableChannels = []
-        for curName, curChannel, curNet, curLoc in self.availableStations.keys():
-            if curChannel not in self.availableChannels:
-                self.availableChannels.append(curChannel)
-
+                    if curChannel not in self.availableChannels:
+                        self.availableChannels.append(curChannel)
 
 
         # The channels currently shown.
+        # TODO: This should be selected by the user in the edit dialog.
         self.showChannels = ['HHZ']
 
         # Limit the stations to show.
@@ -695,8 +690,15 @@ class DisplayOptions:
         #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
         #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
         #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
-        self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00')]
-        self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
+        for curStation in self.availableStations:
+            if curStation.name == 'GILA':
+                self.showStations.append(DisplayStation(curStation))
+                break
+
+        self.showStations[0].addChannel(['HHZ'])
+
+        #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00')]
+        self.showStations = sorted(self.showStations, key = attrgetter('name'))
 
 
 
@@ -736,11 +738,11 @@ class DisplayOptions:
         '''
 
             
-        stat2Remove = [x for x in self.showStations if snl == (x[0], x[2], x[3])]
+        stat2Remove = [x for x in self.showStations if snl == x.getSNL()]
 
         for curStation in stat2Remove:
             self.showStations.remove(curStation)
-            self.parent.viewPort.removeStation(snl)
+            self.parent.viewPort.removeStation(curStation.getSNL())
 
 
 
@@ -753,14 +755,12 @@ class DisplayOptions:
             The station, network, location code of the station which should be hidden.
         '''
 
-        # TODO: Add the selected channel(s) to the snl.
-        scnl = []
-        for curChannel in self.showChannels:
-            scnl.append((snl[0], curChannel, snl[1], snl[2]))
-
-        self.showStations.extend(scnl)
-        self.showStations = sorted(self.showStations, key = itemgetter(0))
-
+        station2Show = self.getAvailableStation(snl)
+        self.addShowStation(station2Show)
+         
+        station2Show.addChannel(self.showChannels)
+        
+        scnl = station2Show.getSCNL()
         curStream = self.parent.dataManager.hasData(self.startTime, 
                                                self.endTime, 
                                                scnl)
@@ -775,6 +775,22 @@ class DisplayOptions:
             self.logger.debug('Data for the station is available.')
 
 
+        self.createStationContainer(scnl, curStream)
+
+        #self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
+        #snl = [(x[0],x[1],x[2]) for x in self.getSNL(source='show')]
+        #msgTopic = 'tracedisplay.display.station.show'
+        #data = {'snl', snl}
+        #CallAfter(pub.sendMessage, msgTopic, data)
+
+        self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
+
+        self.parent.viewPort.Refresh()
+
+
+
+    def createStationContainer(self, scnl, curStream):
+            
         # Create the TdStation instance.
         for curScnl in scnl:
             curStation = curScnl[0]
@@ -819,51 +835,180 @@ class DisplayOptions:
                 self.logger.debug('This should be impossible.')
 
 
-        self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
-        snl = [(x[0],x[1],x[2]) for x in self.showStations] 
-        #msgTopic = 'tracedisplay.display.station.show'
-        #data = {'snl', snl}
-        #CallAfter(pub.sendMessage, msgTopic, data)
-
-        self.parent.viewPort.sortStations(snl = snl)
-
-        self.parent.viewPort.Refresh()
-
-
 
     def showChannel(self, channel):
-
+        ''' Show a channel in the display.
+        
+        Parameters
+        ----------
+        channel : String
+            The channel name which should be shown.
+        '''
         if channel not in self.showChannels:
             self.showChannels.append(channel)
-        
-        # Create a unique list containing SNL. Preserve the sort order.
-        tmp = [(x[0], x[2], x[3]) for x in self.showStations]
-        snl = []
-        for x in tmp:
-            if x not in snl:
-                snl.append(x)
-        
-        scnl = []
-        for curStat, curNet, curLoc in snl:
-            scnl.append((curStat, channel, curNet, curLoc))
 
-        self.showStations.extend(scnl)
+        for curStation in self.showStations:
+            curStation.addChannel([channel])
 
-        self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
-        
         # TODO: Only update the data of the added channel.
         self.parent.updateDisplay() 
 
 
+
     def hideChannel(self, channel):
+        ''' Hide a channel in the display.
+
+        Parameters
+        ----------
+        channel : String
+            The name of the channel which should be hidden.
+        '''
+        for curStation in self.showStations:
+            removedSCNL = curStation.removeChannel([channel])
+            self.parent.viewPort.removeChannel(removedSCNL)
 
         self.showChannels.remove(channel)
-        
-        for curStation in self.showStations:
-            if channel == curStation[1]:
-                self.showStations.remove(curStation)
-                self.parent.viewPort.removeChannel(curStation)
 
+
+
+    def getSNL(self, source='available'):
+        ''' Get the station,network,location (SNL) code of the selected station set.
+        
+        Parameters
+        ----------
+        source : String
+            The source for which the SNL code should be built.
+            (available, show; default=available)
+             - available: all available stations
+             - show: the currently displayed stations only
+        
+        Returns
+        -------
+        snl : List of SNL tuples
+            The snl codes of the specified station set.
+        '''
+        snl = []
+
+        if source == 'show':
+            curList = self.showStations
+        elif source == 'available':
+            curList = self.availableStations
+             
+        for curStation in curList:
+            snl.append(curStation.getSNL())
+
+        return snl
+
+
+
+    def getSCNL(self, source='available'):
+        ''' The the station, channel, network, location (SCNL) code of the selected station set.
+        
+        Parameters
+        ----------
+        source : String
+            The source for which the SNL code should be built.
+            (available, show; default=available)
+             - available: all available stations
+             - show: the currently displayed stations only
+
+        Returns
+        -------
+        scnl : List of SCNL tuples
+            The SCNL codes of the specified station set.
+
+        ''' 
+        scnl = []
+
+        if source == 'show':
+            curList = self.showStations
+        elif source == 'available':
+            curList = self.availableStations
+
+        for curStation in curList:
+            scnl.extend(curStation.getSCNL())
+
+        return scnl
+
+
+
+    def getAvailableStation(self, snl):
+        ''' Get the station with the specified SNL code from the available stations.
+
+        Parameters
+        ----------
+        snl : SNL tuple (station, network, location)
+            The SNL code of the station to be searched for.
+            
+        Returns
+        -------
+        station : :class: `DisplayStation`
+            The station in the availableStations set matching the specified SNL code. None if the station is not found. 
+        '''
+        for curStation in self.availableStations:
+            if curStation.getSNL() == snl:
+                return curStation
+
+        return None
+
+
+    def addShowStation(self, station):
+        ''' Add a station to the showStations list.
+
+        Parameters
+        ----------
+        station : :class:`DisplayStation`
+            The station to be added to the showStations list.
+        '''
+        if station not in self.showStations:
+            self.showStations.append(station)
+
+
+
+
+class DisplayStation():
+
+    def __init__(self, station):
+
+        self.station = station
+
+        self.name = station.name
+
+        self.network = station.network
+
+        self.location = station.location
+
+        self.channels = []
+
+
+    def addChannel(self, channel):
+
+        for curChannel in channel:
+            if curChannel not in self.channels:
+                self.channels.append(curChannel)
+
+
+    def removeChannel(self, channel):
+        removedSCNL = []
+
+        for curChannel in channel:
+            if curChannel in self.channels:
+                self.channels.remove(curChannel)
+                removedSCNL.append((self.name, curChannel, self.network, self.location))
+
+        return removedSCNL
+
+
+
+    def getSCNL(self):
+        scnl = []
+        for curChannel in self.channels:
+            scnl.append((self.name, curChannel, self.network, self.location))
+        return scnl
+
+
+    def getSNL(self):
+        return (self.name, self.network, self.location)
 
 
 
