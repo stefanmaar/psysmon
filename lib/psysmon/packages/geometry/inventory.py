@@ -1837,6 +1837,17 @@ class Station:
         return (endTime, msg)
 
 
+    def getUniqueChannelNames(self):
+        channelNames = []
+
+        for curSensor, start, end in self.sensors:
+            if curSensor.channelName not in channelNames:
+                channelNames.append(curSensor.channelName)
+
+        return channelNames
+
+
+
 
 ## The network class.
 class Network:
