@@ -65,15 +65,10 @@ class SelectStation(PluginNode):
 
         # Create a checkbox list holding the station names.
         #sampleList = ['ALBA', 'SITA', 'GILA']
-        displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.showStations]
+        displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.getSCNL('show')]
 
         # Create a unique list containing SNL. Preserve the sort order.
-        tmp = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.stationSortKey]
-        self.stationList = []
-        for x in tmp:
-            if x not in self.stationList:
-                self.stationList.append(x)
-
+        self.stationList = self.parent.displayOptions.getSNL('available')
 
         stationListString = [":".join(x) for x in self.stationList]
         lb = wx.CheckListBox(parent = foldPanel, 
