@@ -520,6 +520,9 @@ class TdStation(wx.Panel):
 
     def rearrangeChannels(self):
         
+        if not self.channels:
+            return
+
         for curChannel in self.channels.values():
             self.channelSizer.Hide(curChannel)
             self.channelSizer.Detach(curChannel)
@@ -844,11 +847,12 @@ class TdViewPort(scrolled.ScrolledPanel):
 
     def removeChannel(self, scnl):
 
-        statFound = [x for x in self.stations if x.name == scnl[0]]
+        for curSCNL in scnl:
+            statFound = [x for x in self.stations if x.name == curSCNL[0]]
 
-        if statFound:
-            statFound = statFound[0]
-            statFound.removeChannel(scnl[1])
+            if statFound:
+                statFound = statFound[0]
+                statFound.removeChannel(curSCNL[1])
 
 
 
