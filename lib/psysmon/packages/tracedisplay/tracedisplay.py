@@ -709,6 +709,8 @@ class DisplayOptions:
             if curStation.name == 'GILA' or curStation.name == 'SITA':
                 station2Add = DisplayStation(curStation)
                 station2Add.addChannel(['HHZ',])
+                for curChannel in station2Add.channels:
+                    curChannel.addView(curChannel.name, 'seismogram')
                 self.showStations.append(station2Add)
 
 
@@ -940,8 +942,8 @@ class DisplayOptions:
             curStatContainer = self.createStationContainer(curStation)
             for curChannel in curStation.channels:
                 curChanContainer = self.createChannelContainer(curStatContainer, curChannel.name)
-                for curView in curChannel.views:
-                    self.createViewContainer(curChanContainer, curView) 
+                for curViewName, curViewType in curChannel.views.items():
+                    self.createViewContainer(curChanContainer, curViewName, curViewType) 
 
 
 
@@ -988,17 +990,15 @@ class DisplayOptions:
         
          
                 
-    def createViewContainer(self, channelContainer, view):
+    def createViewContainer(self, channelContainer, name, viewType):
         '''
         
         '''
-        name = view[0]
-        viewType = view[1]
         # Check if the container already exists in the channel.
         viewContainer = channelContainer.hasView(name)
 
         if not viewContainer:
-            viewContainer = container.viewMap[viewType](channelContainer,
+            viewContainer = container.viewTypeMap[viewType](channelContainer,
                                                         id = wx.ID_ANY,
                                                         name = name,
                                                         lineColor = channelContainer.color)
