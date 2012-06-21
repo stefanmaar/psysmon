@@ -107,7 +107,7 @@ class PlotPanel(wx.Panel):
 
 
 
-class TdView(wx.Panel):
+class View(wx.Panel):
     '''
     The tracedisplay view container.
     '''
@@ -177,7 +177,7 @@ class TdView(wx.Panel):
         self.plotCanvas.Resize()
 
 
-class TdSeismogramView(TdView):
+class SeismogramView(View):
     '''
     A standard seismogram view.
 
@@ -185,7 +185,7 @@ class TdSeismogramView(TdView):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
-        TdView.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+        View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
 
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -289,7 +289,7 @@ class TdSeismogramView(TdView):
 
 
 
-class TdChannelAnnotationArea(wx.Panel):
+class ChannelAnnotationArea(wx.Panel):
 
     def __init__(self, parent=None, id=wx.ID_ANY, label="channel name", bgColor="white", color="indianred", penColor="black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
@@ -301,6 +301,7 @@ class TdChannelAnnotationArea(wx.Panel):
         self.penColor = penColor
 
 	self.SetBackgroundColour(self.bgColor)
+	self.SetBackgroundColour('blue')
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
@@ -371,11 +372,12 @@ class TdChannelAnnotationArea(wx.Panel):
         #gc.DrawPath(path1)
         gc.PopState()
 
-class TdChannel(wx.Panel):
+
+class ChannelContainer(wx.Panel):
     '''
     The channel panel.
 
-    The channel panel may hold 1 to more TdViews.
+    The channel panel may hold 1 to more Views.
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewPort=None, name='channel name', color='black'):
@@ -393,18 +395,19 @@ class TdChannel(wx.Panel):
         # A dictionary containing the views of the channel.
         self.views = {}
 
-        self.SetBackgroundColour('white')
+        self.SetBackgroundColour('green')
 
-        self.annotationArea = TdChannelAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
+        self.annotationArea = ChannelAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
         self.sizer = wx.GridBagSizer(0,0)
 	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(1)
         self.SetSizer(self.sizer)
 
     def addView(self, view):
         view.Reparent(self)
         self.views[view.name] = view
-	
+
         if self.views:
 	    self.sizer.Add(view, pos=(len(self.views)-1,1), flag=wx.ALL|wx.EXPAND, border=0)
             self.sizer.AddGrowableRow(len(self.views)-1)
@@ -434,11 +437,11 @@ class TdChannel(wx.Panel):
 
 
 
-class TdStation(wx.Panel):
+class StationContainer(wx.Panel):
     '''
     The station panel.
 
-    The station panel may hold 1 to more TdChannels.
+    The station panel may hold 1 to more ChannelContainers.
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewPort=None, name=None, network=None, location=None, color='black'):
@@ -464,7 +467,7 @@ class TdStation(wx.Panel):
 
         self.SetBackgroundColour('white')
 
-        self.annotationArea = TdStationAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
+        self.annotationArea = StationAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
 
         self.channelSizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -475,14 +478,14 @@ class TdStation(wx.Panel):
         self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
-    
+
     def addChannel(self, channel):
         channel.Reparent(self)
         self.channels[channel.name] = channel
 	if self.channels:
-            self.channelSizer.Add(channel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
+            self.channelSizer.Add(channel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
-        #self.sizer.Layout()
+        self.sizer.Layout()
 
         curSize = self.GetSize()
 
@@ -631,7 +634,7 @@ class TdDatetimeInfo(wx.Panel):
 
 
 
-class TdStationAnnotationArea(wx.Panel):
+class StationAnnotationArea(wx.Panel):
 
     def __init__(self, parent=None, id=wx.ID_ANY, label="station name", bgColor="white", color="indianred", penColor="black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
@@ -719,7 +722,7 @@ class TdViewPort(scrolled.ScrolledPanel):
     '''
     The tracedisplay viewport.
 
-    This panel holds the :class:`~psysmon.packages.tracedisplay.TdStation` objects.
+    This panel holds the :class:`~psysmon.packages.tracedisplay.StationContainer` objects.
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY):
@@ -756,12 +759,12 @@ class TdViewPort(scrolled.ScrolledPanel):
 
     def addStation(self, station, position=None):
         '''
-        Add a TdStation object to the viewport.
+        Add a StationContainer object to the viewport.
 
         :param self: The object pointer.
         :type self: :class:`~psysmon.packages.tracedisplay.TdViewPort`
         :param station: The station to be added to the viewport.
-        :type station: :class:TdStation
+        :type station: :class:StationContainer
         :param position: The position where to add the station. If none, the station is added to the bottom.
         :type position: Integer
         '''
@@ -829,7 +832,7 @@ class TdViewPort(scrolled.ScrolledPanel):
 
         Parameters
         ----------
-        station : :class:`TdStation`
+        station : :class:`StationContainer`
             The station object which should be removed.
         '''
         statFound = [x for x in self.stations if x.name == snl[0]]
