@@ -495,39 +495,49 @@ class TraceDisplayDlg(wx.Frame):
         self.logger.debug('Setting focus.')
 
 
+
     def updateDisplay(self):
         ''' Update the display.
 
         '''
-        #stream = self.project.waveclient['main client'].\
-        #                      getWaveform(startTime = self.displayOptions.startTime,
-        #                                  endTime = self.displayOptions.endTime,
-        #                                  scnl = self.displayOptions.showStations)
+        #stream = self.dataManager.getStream(startTime = self.displayOptions.startTime,
+        #                                    endTime = self.displayOptions.endTime,
+        #                                    scnl = self.displayOptions.getSCNL('show'))
 
-        stream = self.dataManager.getStream(startTime = self.displayOptions.startTime,
-                                            endTime = self.displayOptions.endTime,
-                                            scnl = self.displayOptions.getSCNL('show'))
-
-        #channels2Load = list(itertools.chain(*self.displayOptions.channel.values()))
-
-        stream.detrend(type = 'constant')
+        #stream.detrend(type = 'constant')
 
 
-        self.logger.debug("Finished loading data.")
-        #self.displayOptions.createStationContainer(self.displayOptions.getSCNL('show'), stream)
-
-
-        self.displayOptions.createContainers()
+        #self.logger.debug("Finished loading data.")
         
+        # Create the necessary containers.
+        # TODO: Call these method only, if the displayed stations or
+        # channels have changed.
+        self.displayOptions.createContainers() 
         self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
+
+        # Plot the data using the addon tools.
+        addonPlugins = [x for x in self.plugins if x.mode == 'addon']
+        for curPlugin in addonPlugins:
+            curPlugin.plot(self.displayOptions, self.dataManager)
+         
+
+
+        # Update the viewport to show the changes.
         self.viewPort.Refresh()
         self.viewPort.Update()
         
+        # Update the time information panel.
         self.datetimeInfo.setTime(self.displayOptions.startTime, 
                                   self.displayOptions.endTime, 
                                   None)
         self.datetimeInfo.Refresh()
         return
+
+
+
+
+
+
 
         for curScnl in self.displayOptions.getSCNL('show'):
             curStation = curScnl[0]
@@ -942,7 +952,7 @@ class DisplayOptions:
             curStatContainer = self.createStationContainer(curStation)
             for curChannel in curStation.channels:
                 curChanContainer = self.createChannelContainer(curStatContainer, curChannel.name)
-                for curViewName, curViewType in curChannel.views.items():
+                for curViewName, (curViewType, ) in curChannel.views.items():
                     self.createViewContainer(curChanContainer, curViewName, curViewType) 
 
 
@@ -1077,9 +1087,9 @@ class DisplayChannel():
         self.views = {}
 
 
-    def addView(self, name, type):
+    def addView(self, name, viewType):
         if name not in self.views.keys():
-            self.views[name] = type
+            self.views[name] = (viewType, )
 
 
 
