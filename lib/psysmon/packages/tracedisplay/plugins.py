@@ -183,10 +183,37 @@ class SelectChannel(PluginNode):
 
 
 
+class SeismogramPlotter(PluginNode):
+    '''
+
+    '''
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = 'addon',
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+
+    def plot(self, displayManager, dataManager):
+        self.logger.debug('Plotting the data.')
+
+
+
 
 class Zoom(PluginNode):
     '''
-    
+
     '''
     def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
         ''' The constructor.
@@ -200,7 +227,7 @@ class Zoom(PluginNode):
                             nodeClass = nodeClass,
                             parent = parent,
                             docEntryPoint = docEntryPoint)
-        
+
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
@@ -228,10 +255,9 @@ class Zoom(PluginNode):
     def buildToolbarButton(self):
         return 'Hallo hier spricht Zoom Plugin.'
 
-    
+
     def onButtonPress(self, event):
         self.logger.debug('Mouse click catched.')
 
 
-    
 
