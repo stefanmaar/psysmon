@@ -114,6 +114,7 @@ class View(wx.Panel):
     '''
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None):
         wx.Panel.__init__(self, parent)
+
         self.SetBackgroundColour('green')
 
         self.plotCanvas = PlotPanel(self, color=(255,255,255))
@@ -135,27 +136,28 @@ class View(wx.Panel):
         # Create the view data axes.
         #self.dataAxes = self.plotCanvas.figure.add_axes([0.1,0.1,0.8,0.8])
         self.dataAxes = self.plotCanvas.figure.add_axes([0,0,1,1])
-        
+
         self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.onLeaveWindow)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
         #self.Bind(wx.EVT_SIZE, self._onSize)
-    
+
+
     def draw(self):
         ''' Draw the canvas to make the changes visible.
         '''
         self.plotCanvas.canvas.draw()
-    
-    
+
+
     def onEnterWindow(self, event):
         print "Entered view."
         #self.plotCanvas.SetColor((0,255,255))
         self.SetBackgroundColour('blue')
         self.SetFocus()
         self.Refresh()
-    
+
     def onLeaveWindow(self, event):
         print "Entered view."
         self.SetBackgroundColour('green')
@@ -176,6 +178,8 @@ class View(wx.Panel):
         #print "view parent size: " + str(self.GetParent().GetSize())
         #self.annotationArea.Resize()
         self.plotCanvas.Resize()
+
+
 
 
 class SeismogramView(View):
@@ -286,6 +290,7 @@ class SeismogramView(View):
         timeRange = yLim[1] - yLim[0]
         width = self.dataAxes.get_window_extent().width
         return  width / float(timeRange)
+
 
 
 
