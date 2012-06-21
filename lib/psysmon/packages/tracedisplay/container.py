@@ -14,6 +14,7 @@ import numpy as np
 
 
 
+
 class TdViewAnnotationPanel(wx.Panel):
     '''
     The view annotation area.
@@ -880,3 +881,4 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
+viewTypeMap = {'seismogram' : SeismogramView}
