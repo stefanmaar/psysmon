@@ -198,7 +198,7 @@ class TraceDisplay(CollectionNode):
 
 
         app = psygui.PSysmonApp()
-        
+
         # Get the plugins for this class.
         plugins = self.project.getPlugins(self.__class__.__name__)
 
@@ -248,6 +248,7 @@ class TraceDisplayDlg(wx.Frame):
         for curPlugin in self.plugins:
             curPlugin.parent = self
 
+
         # Create the display option.
         inventoryDbController = InventoryDatabaseController(self.project)
         self.displayOptions = DisplayOptions(parent = self,
@@ -278,7 +279,7 @@ class TraceDisplayDlg(wx.Frame):
         self.logger.debug('Initializing the GUI')
 
         self.mgr = wx.aui.AuiManager(self)
-    
+
         #self.toolPanels = fpb.FoldPanelBar(parent=self, 
         #                                   id=wx.ID_ANY,
         #                                   pos = wx.DefaultPosition,
@@ -292,11 +293,11 @@ class TraceDisplayDlg(wx.Frame):
 
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
         self.eventInfo.SetBackgroundColour('khaki')
-        
+
         # Create the toolRibbonBar
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
         self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Home")
-      
+
         # The station display area contains the datetimeInfo and the viewPort.
         # TODO: Maybe create a seperate class for this.
         self.viewportSizer = wx.GridBagSizer()
@@ -315,7 +316,7 @@ class TraceDisplayDlg(wx.Frame):
         self.viewportSizer.AddGrowableCol(0)
         self.centerPanel.SetSizer(self.viewportSizer)
 
-        
+
         self.mgr.AddPane(self.centerPanel, 
                          wx.aui.AuiPaneInfo().Name('seismograms').
                                               CenterPane())
@@ -326,7 +327,7 @@ class TraceDisplayDlg(wx.Frame):
                                               Layer(0).
                                               Row(0).
                                               Position(0))
-       
+
         self.mgr.AddPane(self.foldPanelBar,
                          wx.aui.AuiPaneInfo().Left().
                                               Name('tool panels').
@@ -381,7 +382,7 @@ class TraceDisplayDlg(wx.Frame):
             #        self.logger.debug(button)
 
         self.ribbon.Realize()
-        
+
         # Tell the manager to commit all the changes.
         self.mgr.Update() 
 
@@ -398,7 +399,7 @@ class TraceDisplayDlg(wx.Frame):
 
         self.shortCutOptions.addAction(('WXK_RIGHT',), self.advanceTime)
         self.shortCutOptions.addAction(('WXK_LEFT',), self.decreaseTime)
-        
+
 
     def advanceTime(self):
         ''' Advance the display time by one step. 
@@ -435,7 +436,7 @@ class TraceDisplayDlg(wx.Frame):
             else:
                 self.foldPanelBar.showPanel(self.foldPanels[plugin.name]) 
 
-            
+
 
 
 
@@ -446,8 +447,8 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.logger.debug('Clicked the option tool.')
         print plugin
-    
-    
+
+
     def onKeyDown(self, event):
         ''' Handle a key down event.
 
@@ -514,14 +515,27 @@ class TraceDisplayDlg(wx.Frame):
 
         self.logger.debug("Finished loading data.")
         #self.displayOptions.createStationContainer(self.displayOptions.getSCNL('show'), stream)
+
+
+        self.displayOptions.createContainers()
         
+        self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
+        self.viewPort.Refresh()
+        self.viewPort.Update()
+        
+        self.datetimeInfo.setTime(self.displayOptions.startTime, 
+                                  self.displayOptions.endTime, 
+                                  None)
+        self.datetimeInfo.Refresh()
+        return
+
         for curScnl in self.displayOptions.getSCNL('show'):
             curStation = curScnl[0]
             curChannel = curScnl[1]
             myStation = self.viewPort.hasStation(curStation)
             if not myStation:
                 # The station doesn't exist, create a new one.
-                myStation = container.TdStation(parent=self.viewPort, id=wx.ID_ANY, name=curStation, color='white')
+                myStation = container.StationContainer(parent=self.viewPort, id=wx.ID_ANY, name=curStation, color='white')
                 self.viewPort.addStation(myStation)
                 myStation.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
@@ -533,7 +547,7 @@ class TraceDisplayDlg(wx.Frame):
                 else:
                     curColor = (0,0,0)
 
-                myChannel = container.TdChannel(myStation, wx.ID_ANY, name=curChannel, color=curColor)
+                myChannel = container.ChannelContainer(myStation, wx.ID_ANY, name=curChannel, color=curColor)
                 myStation.addChannel(myChannel)
 
             self.logger.debug("station: %s", curStation)
@@ -544,7 +558,7 @@ class TraceDisplayDlg(wx.Frame):
 
             myView = myChannel.hasView(myChannel)
             if not myView:
-                myView = container.TdSeismogramView(myChannel, wx.ID_ANY, name=myChannel, lineColor=curColor)
+                myView = container.SeismogramView(myChannel, wx.ID_ANY, name=myChannel, lineColor=curColor)
 
                 for curTrace in curStream:
                     self.logger.debug("Plotting trace:\n%s", curTrace)
@@ -577,7 +591,7 @@ class TraceDisplayDlg(wx.Frame):
         self.viewPort.Refresh()
         self.viewPort.Update()      
 
-        
+
         #scale = myView.getScalePixels()
 
         # Update the datetime information
@@ -622,13 +636,13 @@ class ShortCutOptions:
 
     def getAction(self, keyCombination):
         ''' Get the action bound to the keyCombination.
-        
+
         Paramters
         ---------
         keyCombination : tuple of Strings
             The key combination to which the action is bound to.
             E.g.: ('WXK_LEFT'), ('CTRL', 'P'), ('CTRL', 'ALT', 'P')
-        
+
         Returns
         -------
         action : Method
@@ -640,15 +654,16 @@ class ShortCutOptions:
         return self.actions.get(keyCombination, None)
 
 
+
 class DisplayOptions:
 
 
     def __init__(self, parent, inventory):
-        
+
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
-        
+
         # The parent tracedisplay instance.
         self.parent = parent
 
@@ -691,11 +706,11 @@ class DisplayOptions:
         #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
         #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
         for curStation in self.availableStations:
-            if curStation.name == 'GILA':
-                self.showStations.append(DisplayStation(curStation))
-                break
+            if curStation.name == 'GILA' or curStation.name == 'SITA':
+                station2Add = DisplayStation(curStation)
+                station2Add.addChannel(['HHZ'])
+                self.showStations.append(station2Add)
 
-        self.showStations[0].addChannel(['HHZ'])
 
         #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00')]
         self.showStations = sorted(self.showStations, key = attrgetter('name'))
@@ -737,7 +752,7 @@ class DisplayOptions:
             The station, network, location code of the station which should be hidden.
         '''
 
-            
+
         stat2Remove = [x for x in self.showStations if snl == x.getSNL()]
 
         for curStation in stat2Remove:
@@ -754,17 +769,25 @@ class DisplayOptions:
         snl : tuple (String, String, String)
             The station, network, location code of the station which should be hidden.
         '''
-
+        
+        # Get the selected station and set all currently active
+        # channels.
         station2Show = self.getAvailableStation(snl)
         self.addShowStation(station2Show)
-         
         station2Show.addChannel(self.showChannels)
         
+        # Create the necessary containers.
+        stationContainer = self.createStationContainer(station2Show)
+        self.createChannelContainer(stationContainer, station2Show.channels)
+
+        # Request the data of the station from the waveserver.
+        self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
+        self.parent.viewPort.Refresh()
+
         scnl = station2Show.getSCNL()
         curStream = self.parent.dataManager.hasData(self.startTime, 
                                                self.endTime, 
                                                scnl)
-
 
         if not curStream:
             self.logger.debug('No data for the station available.')
@@ -775,70 +798,13 @@ class DisplayOptions:
             self.logger.debug('Data for the station is available.')
 
 
-        self.createStationContainer(scnl, curStream)
-
-        #self.showStations = sorted(self.showStations, key = itemgetter(0, 2, 3, 1))
-        #snl = [(x[0],x[1],x[2]) for x in self.getSNL(source='show')]
-        #msgTopic = 'tracedisplay.display.station.show'
-        #data = {'snl', snl}
-        #CallAfter(pub.sendMessage, msgTopic, data)
-
-        self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
-
-        self.parent.viewPort.Refresh()
-
-
-
-    def createStationContainer(self, scnl, curStream):
-            
-        # Create the TdStation instance.
-        for curScnl in scnl:
-            curStation = curScnl[0]
-            curChannel = curScnl[1]
-            myStation = self.parent.viewPort.hasStation(curStation)
-            if not myStation:
-                myStation = container.TdStation(parent = self.parent.viewPort,
-                                                name = curStation,
-                                                color = 'white')
-                self.parent.viewPort.addStation(myStation)
-                myStation.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-
-            myChannel = myStation.hasChannel(curChannel)
-            if not myChannel:
-                if self.channelColors.has_key(curChannel):
-                    curColor = self.channelColors[curChannel]
-                else:
-                    curColor = (0,0,0)
-
-                myChannel = container.TdChannel(myStation, 
-                                                wx.ID_ANY,
-                                                name = curChannel,
-                                                color = curColor)
-                myStation.addChannel(myChannel)
-
-            myView = myChannel.hasView(myChannel)
-            if not myView:
-                myView = container.TdSeismogramView(myChannel, 
-                                                    wx.ID_ANY,
-                                                    name = myChannel,
-                                                    lineColor = curColor)
-
-                for curTrace in curStream:
-                    myView.plot(curTrace)
-                    myView.setXLimits(left = self.startTime.timestamp,
-                                      right = self.endTime.timestamp)
-                    myView.draw()
-
-                myChannel.addView(myView)
-                myChannel.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            else:
-                self.logger.debug('This should be impossible.')
+        # Plot the data.
 
 
 
     def showChannel(self, channel):
         ''' Show a channel in the display.
-        
+
         Parameters
         ----------
         channel : String
@@ -873,7 +839,7 @@ class DisplayOptions:
 
     def getSNL(self, source='available'):
         ''' Get the station,network,location (SNL) code of the selected station set.
-        
+
         Parameters
         ----------
         source : String
@@ -881,7 +847,7 @@ class DisplayOptions:
             (available, show; default=available)
              - available: all available stations
              - show: the currently displayed stations only
-        
+
         Returns
         -------
         snl : List of SNL tuples
@@ -893,7 +859,7 @@ class DisplayOptions:
             curList = self.showStations
         elif source == 'available':
             curList = self.availableStations
-             
+
         for curStation in curList:
             snl.append(curStation.getSNL())
 
@@ -903,7 +869,7 @@ class DisplayOptions:
 
     def getSCNL(self, source='available'):
         ''' The the station, channel, network, location (SCNL) code of the selected station set.
-        
+
         Parameters
         ----------
         source : String
@@ -939,7 +905,7 @@ class DisplayOptions:
         ----------
         snl : SNL tuple (station, network, location)
             The SNL code of the station to be searched for.
-            
+
         Returns
         -------
         station : :class: `DisplayStation`
@@ -962,6 +928,60 @@ class DisplayOptions:
         '''
         if station not in self.showStations:
             self.showStations.append(station)
+
+
+    def createContainers(self):
+        ''' Create all display elements needed to plot the shown stations.
+
+        '''
+        for curStation in self.showStations:
+            curStatContainer = self.createStationContainer(curStation)
+            self.createChannelContainer(curStatContainer, curStation.channels)
+
+
+
+    def createStationContainer(self, station):
+        ''' Create the station container of the specified station.
+
+        '''
+        viewport = self.parent.viewPort
+
+        # Check if the container already exists in the viewport.
+        statContainer = viewport.hasStation(station)
+        if not statContainer:
+            statContainer = container.StationContainer(parent = viewport,
+                                                id = wx.ID_ANY,
+                                                name = station.name,
+                                                color = 'white')
+            viewport.addStation(statContainer)
+            statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+
+        return statContainer
+
+
+
+    def createChannelContainer(self, stationContainer, channels):
+        '''
+
+        '''
+        for curChannel in channels:
+            # Check if the container already exists in the station.
+            chanContainer = stationContainer.hasChannel(curChannel)
+            
+            if not chanContainer:
+                if self.channelColors.has_key(curChannel):
+                    curColor = self.channelColors[curChannel]
+                else:
+                    curColor = (0, 0, 0)
+                    
+                chanContainer = container.ChannelContainer(stationContainer,
+                                                           id = wx.ID_ANY,
+                                                           name = curChannel,
+                                                           color=curColor)
+                stationContainer.addChannel(chanContainer) 
+
+
+
 
 
 
@@ -1043,7 +1063,7 @@ class DataManager():
         '''
 
         curStream = Stream()
-        
+
         for curStat, curChan, curNet, curLoc in scnl:
             curStream += self.stream.select(station = curStat, 
                                             network = curNet, 
