@@ -111,8 +111,7 @@ class PluginNode:
     def buildMenu(self):
         ''' Build the menu which is added to the parent's menu bar.
         '''
-        assert False, 'buildMenu must be defined'
-
+        pass
 
 
 
@@ -120,8 +119,7 @@ class PluginNode:
         ''' Create the foldpanel GUI.
 
         '''
-        assert False, 'buildFoldPanel must be defined'
-
+        pass
 
     def getHooks(self):
         ''' Register the mouse event hooks for interactive plugins.
