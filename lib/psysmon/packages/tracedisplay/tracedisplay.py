@@ -708,7 +708,7 @@ class DisplayOptions:
         for curStation in self.availableStations:
             if curStation.name == 'GILA' or curStation.name == 'SITA':
                 station2Add = DisplayStation(curStation)
-                station2Add.addChannel(['HHZ'])
+                station2Add.addChannel(['HHZ',])
                 self.showStations.append(station2Add)
 
 
@@ -778,7 +778,9 @@ class DisplayOptions:
         
         # Create the necessary containers.
         stationContainer = self.createStationContainer(station2Show)
-        self.createChannelContainer(stationContainer, station2Show.channels)
+        channels2Create = station2Show.getChannelNames()
+        for curChannel in channels2Create:
+            self.createChannelContainer(stationContainer, curChannel)
 
         # Request the data of the station from the waveserver.
         self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
@@ -936,7 +938,10 @@ class DisplayOptions:
         '''
         for curStation in self.showStations:
             curStatContainer = self.createStationContainer(curStation)
-            self.createChannelContainer(curStatContainer, curStation.channels)
+            for curChannel in curStation.channels:
+                curChanContainer = self.createChannelContainer(curStatContainer, curChannel.name)
+                for curView in curChannel.views:
+                    self.createViewContainer(curChanContainer, curView) 
 
 
 
@@ -960,25 +965,50 @@ class DisplayOptions:
 
 
 
-    def createChannelContainer(self, stationContainer, channels):
+    def createChannelContainer(self, stationContainer, channel):
         '''
 
         '''
-        for curChannel in channels:
-            # Check if the container already exists in the station.
-            chanContainer = stationContainer.hasChannel(curChannel)
-            
-            if not chanContainer:
-                if self.channelColors.has_key(curChannel):
-                    curColor = self.channelColors[curChannel]
-                else:
-                    curColor = (0, 0, 0)
-                    
-                chanContainer = container.ChannelContainer(stationContainer,
-                                                           id = wx.ID_ANY,
-                                                           name = curChannel,
-                                                           color=curColor)
-                stationContainer.addChannel(chanContainer) 
+        # Check if the container already exists in the station.
+        chanContainer = stationContainer.hasChannel(channel)
+        
+        if not chanContainer:
+            if self.channelColors.has_key(channel):
+                curColor = self.channelColors[channel]
+            else:
+                curColor = (0, 0, 0)
+                
+            chanContainer = container.ChannelContainer(stationContainer,
+                                                       id = wx.ID_ANY,
+                                                       name = channel,
+                                                       color=curColor)
+            stationContainer.addChannel(chanContainer)
+
+        return chanContainer
+        
+         
+                
+    def createViewContainer(self, channelContainer, view):
+        '''
+        
+        '''
+        name = view[0]
+        viewType = view[1]
+        # Check if the container already exists in the channel.
+        viewContainer = channelContainer.hasView(name)
+
+        if not viewContainer:
+            viewContainer = container.viewMap[viewType](channelContainer,
+                                                        id = wx.ID_ANY,
+                                                        name = name,
+                                                        lineColor = channelContainer.color)
+        channelContainer.addView(viewContainer)
+        channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+
+                                                            
+             
+        
+        
 
 
 
@@ -1001,20 +1031,22 @@ class DisplayStation():
         self.channels = []
 
 
-    def addChannel(self, channel):
+    def addChannel(self, channelName):
 
-        for curChannel in channel:
-            if curChannel not in self.channels:
+        channelNames = self.getChannelNames()
+        for curName in channelName:
+            if curName not in channelNames:
+                curChannel = DisplayChannel(curName)
                 self.channels.append(curChannel)
 
 
-    def removeChannel(self, channel):
+    def removeChannel(self, channelName):
         removedSCNL = []
 
         for curChannel in channel:
             if curChannel in self.channels:
                 self.channels.remove(curChannel)
-                removedSCNL.append((self.name, curChannel, self.network, self.location))
+                removedSCNL.append((self.name, curChannel.name, self.network, self.location))
 
         return removedSCNL
 
@@ -1023,12 +1055,31 @@ class DisplayStation():
     def getSCNL(self):
         scnl = []
         for curChannel in self.channels:
-            scnl.append((self.name, curChannel, self.network, self.location))
+            scnl.append((self.name, curChannel.name, self.network, self.location))
         return scnl
 
 
     def getSNL(self):
         return (self.name, self.network, self.location)
+
+
+    def getChannelNames(self):
+        return [x.name for x in self.channels]
+
+
+
+class DisplayChannel():
+
+    def __init__(self, name):
+
+        self.name = name
+
+        self.views = {}
+
+
+    def addView(self, name, type):
+        if name not in self.views.keys():
+            self.views[name] = type
 
 
 
