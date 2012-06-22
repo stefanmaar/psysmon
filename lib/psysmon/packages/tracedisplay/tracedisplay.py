@@ -981,16 +981,6 @@ class DisplayOptions:
         return self.parent.viewPort.getViewContainer(scnl, viewName)
 
 
-                                                            
-             
-        
-        
-
-
-
-
-
-
 
 class DisplayStation():
 
