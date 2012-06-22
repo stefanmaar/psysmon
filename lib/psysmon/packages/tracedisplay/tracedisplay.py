@@ -500,20 +500,22 @@ class TraceDisplayDlg(wx.Frame):
         ''' Update the display.
 
         '''
-        #stream = self.dataManager.getStream(startTime = self.displayOptions.startTime,
-        #                                    endTime = self.displayOptions.endTime,
-        #                                    scnl = self.displayOptions.getSCNL('show'))
-
-        #stream.detrend(type = 'constant')
-
-
-        #self.logger.debug("Finished loading data.")
-        
         # Create the necessary containers.
         # TODO: Call these method only, if the displayed stations or
-        # channels have changed.
-        self.displayOptions.createContainers() 
-        self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
+        if self.displayOptions.stationsChanged:
+            self.displayOptions.createContainers() 
+            self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
+            self.displayOptions.stationsChanged = False
+
+        # TODO: Request the needed data from the wave client.
+        self.dataManager.requestStream(startTime = self.displayOptions.startTime,
+                                       endTime = self.displayOptions.endTime,
+                                       scnl = self.displayOptions.getSCNL('show'))
+
+
+        # TODO: Apply the processing stack before plotting the data.
+        self.dataManager.processStream(stack = None)
+
 
         # Plot the data using the addon tools.
         addonPlugins = [x for x in self.plugins if x.mode == 'addon']
@@ -534,81 +536,6 @@ class TraceDisplayDlg(wx.Frame):
         return
 
 
-
-
-
-
-
-        for curScnl in self.displayOptions.getSCNL('show'):
-            curStation = curScnl[0]
-            curChannel = curScnl[1]
-            myStation = self.viewPort.hasStation(curStation)
-            if not myStation:
-                # The station doesn't exist, create a new one.
-                myStation = container.StationContainer(parent=self.viewPort, id=wx.ID_ANY, name=curStation, color='white')
-                self.viewPort.addStation(myStation)
-                myStation.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
-
-
-            myChannel = myStation.hasChannel(curChannel)
-            if not myChannel:
-                if self.displayOptions.channelColors.has_key(curChannel):
-                    curColor = self.displayOptions.channelColors[curChannel]
-                else:
-                    curColor = (0,0,0)
-
-                myChannel = container.ChannelContainer(myStation, wx.ID_ANY, name=curChannel, color=curColor)
-                myStation.addChannel(myChannel)
-
-            self.logger.debug("station: %s", curStation)
-            self.logger.debug("channel: %s", curChannel)
-            curStream = stream.select(station = curStation,
-                                      channel = curChannel)
-
-
-            myView = myChannel.hasView(myChannel)
-            if not myView:
-                myView = container.SeismogramView(myChannel, wx.ID_ANY, name=myChannel, lineColor=curColor)
-
-                for curTrace in curStream:
-                    self.logger.debug("Plotting trace:\n%s", curTrace)
-                    start = time.clock()
-                    myView.plot(curTrace)
-                    myView.setXLimits(left = self.displayOptions.startTime.timestamp,
-                                      right = self.displayOptions.endTime.timestamp)
-                    myView.draw()
-                    stop = time.clock()
-                    self.logger.debug("Plotted data (%.5fs).", stop - start)
-                myChannel.addView(myView)
-
-                myChannel.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
-            else:
-                for curTrace in curStream:
-                    self.logger.debug("Plotting trace:\n%s", curTrace)
-                    try:
-                        myView.plot(curTrace)
-                        myView.setXLimits(left = self.displayOptions.startTime.timestamp,
-                                          right = self.displayOptions.endTime.timestamp)
-                        myView.draw()
-                    except Exception, err:
-                        print err
-                        pass
-
-
-
-        # Sort the displayed stations.
-        self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
-        self.viewPort.Refresh()
-        self.viewPort.Update()      
-
-
-        #scale = myView.getScalePixels()
-
-        # Update the datetime information
-        self.datetimeInfo.setTime(self.displayOptions.startTime, 
-                                  self.displayOptions.endTime, 
-                                  None)
-        self.datetimeInfo.Refresh()
 
 
 class ShortCutOptions:
@@ -695,6 +622,9 @@ class DisplayOptions:
         # This is a list of tuples containing the SCNL code (S, C, N, L).
         self.showStations = []
 
+        # Indicates if the station configuration has changed.
+        self.stationsChanged = False
+
         # Fill the available- and current station lists.
         for curNetwork in self.inventory.networks.values():
             for curStation in curNetwork.stations.values():
@@ -710,6 +640,10 @@ class DisplayOptions:
         # TODO: This should be selected by the user in the edit dialog.
         self.showChannels = ['HHZ']
 
+        # The views currently shown. (viewName, viewType)
+        # TODO: This should be selected by the user in the edit dialog.
+        self.showViews = [('seismogram', 'seismogram')]
+
         # Limit the stations to show.
         # TODO: This should be selected by the user in the edit dialog.
         #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
@@ -720,8 +654,10 @@ class DisplayOptions:
                 station2Add = DisplayStation(curStation)
                 station2Add.addChannel(['HHZ',])
                 for curChannel in station2Add.channels:
-                    curChannel.addView(curChannel.name, 'seismogram')
+                    for curView in self.showViews:
+                        curChannel.addView(curView[0], curView[1])
                 self.showStations.append(station2Add)
+        self.stationsChanged = True
 
 
         #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00')]
@@ -774,7 +710,7 @@ class DisplayOptions:
 
 
     def showStation(self, snl):
-        ''' Remove the specified station from the showed stations.
+        ''' Show the specified station in the display.
 
         Parameters
         ----------
@@ -787,33 +723,44 @@ class DisplayOptions:
         station2Show = self.getAvailableStation(snl)
         self.addShowStation(station2Show)
         station2Show.addChannel(self.showChannels)
+        for curChannel in station2Show.channels:
+            for curView in self.showViews:
+                curChannel.addView(curView[0], curView[1])
         
         # Create the necessary containers.
         stationContainer = self.createStationContainer(station2Show)
-        channels2Create = station2Show.getChannelNames()
-        for curChannel in channels2Create:
-            self.createChannelContainer(stationContainer, curChannel)
+        for curChannel in station2Show.channels:
+            curChanContainer = self.createChannelContainer(stationContainer, curChannel.name)
+            for curViewName, (curViewType, ) in curChannel.views.items():
+                self.createViewContainer(curChanContainer, curViewName, curViewType) 
 
-        # Request the data of the station from the waveserver.
+        # Update the display
         self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
         self.parent.viewPort.Refresh()
 
+
+        # Request the data.
         scnl = station2Show.getSCNL()
         curStream = self.parent.dataManager.hasData(self.startTime, 
-                                               self.endTime, 
-                                               scnl)
+                                                    self.endTime, 
+                                                    scnl)
 
         if not curStream:
-            self.logger.debug('No data for the station available.')
+            # The data is not yet available in the data manager. Add the
+            # needed data to the data manager.
             curStream = self.parent.dataManager.addStream(self.startTime, 
                                                           self.endTime,
                                                           scnl)
-        else:
-            self.logger.debug('Data for the station is available.')
+
+            # Run the processing stack on the new data.
+            self.parent.dataManager.processStream(self, scnl = station2Show.getSCNL())
 
 
-        # Plot the data.
-
+        # Plot the data using the addon tools.
+        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon']
+        for curPlugin in addonPlugins:
+            curPlugin.plot(self, self.parent.dataManager, scnl = station2Show.getSCNL())
+        
 
 
     def showChannel(self, channel):
@@ -828,9 +775,14 @@ class DisplayOptions:
             self.showChannels.append(channel)
 
         for curStation in self.showStations:
-            curStation.addChannel([channel])
+             curStation.addChannel([channel])
+             for curChannel in curStation.channels:
+                 for curView in self.showViews:
+                     curChannel.addView(curView[0], curView[1])
+
 
         # TODO: Only update the data of the added channel.
+        self.stationsChanged = True
         self.parent.updateDisplay() 
 
 
@@ -942,6 +894,8 @@ class DisplayOptions:
         '''
         if station not in self.showStations:
             self.showStations.append(station)
+        
+        self.stationsChanged = True
 
 
     def createContainers(self):
@@ -964,11 +918,13 @@ class DisplayOptions:
         viewport = self.parent.viewPort
 
         # Check if the container already exists in the viewport.
-        statContainer = viewport.hasStation(station)
+        statContainer = viewport.hasStation(station.getSNL())
         if not statContainer:
             statContainer = container.StationContainer(parent = viewport,
                                                 id = wx.ID_ANY,
                                                 name = station.name,
+                                                network = station.network,
+                                                location = station.location,
                                                 color = 'white')
             viewport.addStation(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
@@ -1012,8 +968,18 @@ class DisplayOptions:
                                                         id = wx.ID_ANY,
                                                         name = name,
                                                         lineColor = channelContainer.color)
-        channelContainer.addView(viewContainer)
-        channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            channelContainer.addView(viewContainer)
+            channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+        
+        return viewContainer
+
+
+    def getViewContainer(self, scnl=None, viewName=None):
+        ''' Get the view container of a specified scnl code.
+
+        '''
+        return self.parent.viewPort.getViewContainer(scnl, viewName)
+
 
                                                             
              
@@ -1046,15 +1012,19 @@ class DisplayStation():
         channelNames = self.getChannelNames()
         for curName in channelName:
             if curName not in channelNames:
-                curChannel = DisplayChannel(curName)
+                curChannel = DisplayChannel(self, curName)
                 self.channels.append(curChannel)
 
 
     def removeChannel(self, channelName):
         removedSCNL = []
 
-        for curChannel in channel:
-            if curChannel in self.channels:
+        for curName in channelName:
+            for curChannel in self.channels:
+                if curChannel.name == curName:
+                    break
+            
+            if curChannel:
                 self.channels.remove(curChannel)
                 removedSCNL.append((self.name, curChannel.name, self.network, self.location))
 
@@ -1080,7 +1050,9 @@ class DisplayStation():
 
 class DisplayChannel():
 
-    def __init__(self, name):
+    def __init__(self, parent, name):
+
+        self.parent = parent
 
         self.name = name
 
@@ -1090,6 +1062,10 @@ class DisplayChannel():
     def addView(self, name, viewType):
         if name not in self.views.keys():
             self.views[name] = (viewType, )
+
+    
+    def getSCNL(self):
+        return (self.parent.name, self.name, self.parent.network, self.parent.location)
 
 
 
@@ -1105,16 +1081,20 @@ class DataManager():
 
         self.waveclient = self.project.waveclient['main client']
 
-        self.stream = None
+        self.origStream = None
+
+        self.procStream = None
 
 
 
-    def getStream(self, startTime, endTime, scnl):
+    def requestStream(self, startTime, endTime, scnl):
+        ''' Request a data stream from the waveclient.
 
-        self.stream =  self.waveclient.getWaveform(startTime = startTime,
-                                                   endTime = endTime,
-                                                   scnl = scnl)
-        return self.stream
+        This method overwrites the existing stream.
+        '''
+        self.origStream =  self.waveclient.getWaveform(startTime = startTime,
+                                                       endTime = endTime,
+                                                       scnl = scnl)
 
 
 
@@ -1126,22 +1106,49 @@ class DataManager():
         curStream = Stream()
 
         for curStat, curChan, curNet, curLoc in scnl:
-            curStream += self.stream.select(station = curStat, 
-                                            network = curNet, 
-                                            location = curLoc, 
-                                            channel = curChan)
+            curStream += self.origStream.select(station = curStat, 
+                                                network = curNet, 
+                                                location = curLoc, 
+                                                channel = curChan)
 
         return curStream
 
 
     def addStream(self, startTime, endTime, scnl):
+        ''' Add a stream to the existing stream.
 
+        '''
         curStream = self.waveclient.getWaveform(startTime = startTime,
                                                 endTime = endTime,
                                                 scnl = scnl)
 
-        self.stream = self.stream + curStream
+        self.origStream = self.origStream + curStream
         return curStream
+
+
+    def processStream(self, stack = None, scnl = None):
+        ''' Process the data stream using the passed processing stack.
+
+        '''
+        # TODO: Add the real processing stack class.
+        if not scnl:
+            # No SCNL is specified, process the whole stream.
+            self.procStream = self.origStream.copy()
+            self.procStream.detrend(type = 'constant')
+        else:
+            # Process the stream of the specified scnl only.
+            for curScnl in scnl:
+                curStream = self.origStream.select(station = curScnl[0],
+                                                   channel = curScnl[1],
+                                                   network = curScnl[2],
+                                                   location = curScnl[3])
+                curStream = curStream.copy()
+                curStream.detrend(type = 'constant')
+                self.procStream += curStream
+
+
+        
+        
 
 
 

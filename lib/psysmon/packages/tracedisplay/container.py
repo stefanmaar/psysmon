@@ -115,9 +115,9 @@ class View(wx.Panel):
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None):
         wx.Panel.__init__(self, parent)
 
-        self.SetBackgroundColour('green')
+        self.SetBackgroundColour('cyan3')
 
-        self.plotCanvas = PlotPanel(self, color=(255,255,255))
+        self.plotCanvas = PlotPanel(self, color='violet')
         self.annotationArea = TdViewAnnotationPanel(self, color='gray80')
 
         self.SetMinSize(self.plotCanvas.GetMinSize())
@@ -205,53 +205,48 @@ class SeismogramView(View):
 
 
 
-    def plot(self, trace):
+    def plot(self, stream):
 
         start = time.clock()
-        #endTime = trace.stats.starttime + (trace.stats.npts * 1/trace.stats.sampling_rate)
-        timeArray = np.arange(0, trace.stats.npts)
-        timeArray = timeArray * 1/trace.stats.sampling_rate
-        timeArray = timeArray + trace.stats.starttime.timestamp
-        #timeArray = np.arange(trace.stats.starttime.timestamp, endTime.timestamp, 1/trace.stats.sampling_rate)
-        stop = time.clock()
-        self.logger.debug('Prepared data (%.5fs)', stop - start)
+       
+        for trace in stream: 
+            timeArray = np.arange(0, trace.stats.npts)
+            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = timeArray + trace.stats.starttime.timestamp
+            stop = time.clock()
+            self.logger.debug('Prepared data (%.5fs)', stop - start)
 
-        # Check if the data is a ma.maskedarray
-        if np.ma.count_masked(trace.data):
-            timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+            # Check if the data is a ma.maskedarray
+            if np.ma.count_masked(trace.data):
+                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
 
 
-        self.t0 = trace.stats.starttime
+            self.t0 = trace.stats.starttime
 
-        #start = time.clock()
-        #self.dataAxes.clear()
-        #stop = time.clock()
-        #self.logger.debug('Cleared axes (%.5fs)', stop - start)
+            start = time.clock()
+            print trace.stats.npts
+            print timeArray.shape
+            print trace.data.shape
+            if not self.line:
+                self.line, = self.dataAxes.plot(timeArray, trace.data, color=self.lineColor)
+            else:
+                self.logger.debug('Updating line %s', self.line)
+                self.line.set_xdata(timeArray)
+                self.line.set_ydata(trace.data)
+            stop = time.clock()
+            self.logger.debug('Plotted data (%.5fs)', stop -start)
 
-        start = time.clock()
-        print trace.stats.npts
-        print timeArray.shape
-        print trace.data.shape
-        if not self.line:
-            self.line, = self.dataAxes.plot(timeArray, trace.data, color=self.lineColor)
-        else:
-            self.logger.debug('Updating line %s', self.line)
-            self.line.set_xdata(timeArray)
-            self.line.set_ydata(trace.data)
-        stop = time.clock()
-        self.logger.debug('Plotted data (%.5fs)', stop -start)
+            start = time.clock()
+            self.dataAxes.set_frame_on(False)
+            self.dataAxes.get_xaxis().set_visible(False)
+            self.dataAxes.get_yaxis().set_visible(False)
+            yLim = np.max(np.abs(trace.data))
+            self.logger.debug('ylim: %f', yLim)
+            self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
+            stop = time.clock()
+            self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
 
-        start = time.clock()
-        self.dataAxes.set_frame_on(False)
-        self.dataAxes.get_xaxis().set_visible(False)
-        self.dataAxes.get_yaxis().set_visible(False)
-        yLim = np.max(np.abs(trace.data))
-        self.logger.debug('ylim: %f', yLim)
-        self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
-        stop = time.clock()
-        self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
-
-        self.logger.debug('time limits: %f, %f', timeArray[0], timeArray[-1])
+            self.logger.debug('time limits: %f, %f', timeArray[0], timeArray[-1])
 
         # Add the scale bar.
         scaleLength = 10
@@ -401,7 +396,7 @@ class ChannelContainer(wx.Panel):
         # A dictionary containing the views of the channel.
         self.views = {}
 
-        self.SetBackgroundColour('green')
+        self.SetBackgroundColour('yellow3')
 
         self.annotationArea = ChannelAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
         self.sizer = wx.GridBagSizer(0,0)
@@ -422,7 +417,8 @@ class ChannelContainer(wx.Panel):
             channelSize = self.views.itervalues().next().GetMinSize()
             channelSize[1] = channelSize[1] * len(self.views) 
             self.SetMinSize(channelSize)
-	self.SetSizer(self.sizer)
+        
+        self.sizer.Layout()
 
 
     def hasView(self, viewName):
@@ -434,6 +430,7 @@ class ChannelContainer(wx.Panel):
             The name of the view to search.
         '''
         return self.views.get(viewName, None)
+
 
 
 
@@ -530,20 +527,29 @@ class StationContainer(wx.Panel):
     def rearrangeChannels(self):
         
         if not self.channels:
-            return
+            return        
 
         for curChannel in self.channels.values():
             self.channelSizer.Hide(curChannel)
             self.channelSizer.Detach(curChannel)
-
+        
+        stationSize = self.channels.itervalues().next().GetMinSize()
+        stationSize[1] = stationSize[1] * len(self.channels) 
+        self.SetMinSize(stationSize)
 
         for curChannel in self.channels.values():
 	    self.channelSizer.Add(curChannel, 1, flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
             curChannel.Show()
 
-        stationSize = self.channels.itervalues().next().GetMinSize()
-        stationSize[1] = stationSize[1] * len(self.channels) 
-        self.SetMinSize(stationSize)
+
+
+
+    def getViewContainer(self, channelName, viewName):
+        curChannel = self.hasChannel(channelName)
+        if not curChannel:
+            return None
+
+        return curChannel.hasView(viewName)
 
 
 
@@ -783,7 +789,7 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
-    def hasStation(self, stationName):
+    def hasStation(self, snl):
         ''' Check if the viewport already contains a station.
 
         Parameters
@@ -791,7 +797,7 @@ class TdViewPort(scrolled.ScrolledPanel):
         stationName : String
             The name of the station.
         '''
-        stationsFound = [x for x in self.stations if x.name == stationName]
+        stationsFound = [x for x in self.stations if (x.name, x.network, x.location) == snl]
         if len(stationsFound) == 1:
             return stationsFound[0]
         else:
@@ -882,6 +888,21 @@ class TdViewPort(scrolled.ScrolledPanel):
             curStation.Show()
 
         self.SetupScrolling()
+
+
+
+    def getViewContainer(self, scnl, viewName):
+        ''' Get the view container of a specified scnl code.
+       
+        '''
+        curStation = self.hasStation((scnl[0], scnl[2], scnl[3]))
+        
+        if not curStation:
+            return None
+
+        return curStation.getViewContainer(scnl[1], viewName)
+         
+        
 
 
 
