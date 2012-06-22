@@ -212,15 +212,18 @@ class PsysmonDbWaveClient(WaveClient):
                                      format = curHeader.file_type,
                                      starttime = startTime,
                                      endtime = endTime)
+                    
+                    if not curStream:
+                        continue
 
-                # Change the header values to the one loaded from the database.
-                for curTrace in curStream:
-                    curTrace.stats.network = curHeader.net_name
-                    curTrace.stats.station = curHeader.name
-                    curTrace.stats.location = curHeader.location
-                    curTrace.stats.channel = curHeader.channel_name
+                    # Change the header values to the one loaded from the database.
+                    for curTrace in curStream:
+                        curTrace.stats.network = curHeader.net_name
+                        curTrace.stats.station = curHeader.name
+                        curTrace.stats.location = curHeader.location
+                        curTrace.stats.channel = curHeader.channel_name
 
-                stream += curStream
+                    stream += curStream
 
 
         self.logger.debug("....finished.")
