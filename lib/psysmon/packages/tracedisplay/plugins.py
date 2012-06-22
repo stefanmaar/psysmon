@@ -205,8 +205,38 @@ class SeismogramPlotter(PluginNode):
         self.logger = logging.getLogger(loggerName)
 
 
-    def plot(self, displayManager, dataManager):
-        self.logger.debug('Plotting the data.')
+    def plot(self, displayManager, dataManager, scnl=None):
+        stream = dataManager.procStream
+
+
+        if not scnl:
+            # No SCNL code is specified. Plot all the stations.
+            for curStation in displayManager.showStations:
+                for curChannel in curStation.channels:
+                    curView = displayManager.getViewContainer(curChannel.getSCNL(), 'seismogram')
+                    curStream = stream.select(station = curStation.name,
+                                             channel = curChannel.name,
+                                             network = curStation.network,
+                                             location = curStation.location)
+                    if curStream:
+                        curView.plot(curStream)
+                    curView.setXLimits(left = displayManager.startTime.timestamp,
+                                       right = displayManager.endTime.timestamp)
+                    curView.draw()
+
+        else:
+            # Plot only the selected SCNL codes.
+            for curScnl in scnl:
+                curView = displayManager.getViewContainer(curScnl, 'seismogram')
+                curStream = stream.select(station = curScnl[0],
+                                          channel = curScnl[1],
+                                          network = curScnl[2],
+                                          location = curScnl[3])
+                if curStream:
+                    curView.plot(curStream)
+                curView.setXLimits(left = displayManager.startTime.timestamp,
+                                   right = displayManager.endTime.timestamp)                
+
 
 
 
