@@ -29,7 +29,6 @@ import wx.aui
 import wx.lib.colourdb
 from obspy.core import Stream
 import psysmon.core.gui as psygui
-import psysmon.core.icons as icons
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from obspy.core.utcdatetime import UTCDateTime
