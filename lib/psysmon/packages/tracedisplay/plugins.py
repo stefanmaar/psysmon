@@ -264,11 +264,17 @@ class Zoom(PluginNode):
 
         self.icons['active'] = icons.zoom_icon_16
 
+        self.beginLine = {}
+        self.endLine = {}
+        self.bg = {}
+        self.motionNotifyCid = []
+
 
     def getHooks(self):
         hooks = {}
 
         hooks['button_press_event'] = self.onButtonPress
+        hooks['button_release_event'] = self.onButtonRelease
 
         return hooks
 
@@ -277,9 +283,79 @@ class Zoom(PluginNode):
         return 'Hallo hier spricht Zoom Plugin.'
 
 
-    def onButtonPress(self, event, dataManager, displayManager):
-        self.logger.debug('Mouse click catched.')
-        self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
+    def onButtonPress(self, event, dataManager=None, displayManager=None):
+        self.logger.debug('onButtonPress.')
+        #self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
+
+        #print 'Clicked mouse:\nxdata=%f, ydata=%f' % (event.xdata, event.ydata)
+        #print 'x=%f, y=%f' % (event.x, event.y)
+
+
+
+        viewport = displayManager.parent.viewPort
+        for curStation in viewport.stations:
+            for curChannel in curStation.channels.values():
+                for curView in curChannel.views.values():
+                    #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
+                    #curView.plotCanvas.canvas.restore_region(bg)
+                    
+                    if curView in self.endLine.keys():
+                        self.endLine[curView].set_visible(False)
+                        curView.dataAxes.draw_artist(self.endLine[curView])
+                    
+                    
+                    if curView in self.beginLine.keys():
+                        self.beginLine[curView].set_xdata(event.xdata)
+                    else:
+                        self.beginLine[curView] = curView.dataAxes.axvline(x=event.xdata)
+
+                    curView.plotCanvas.canvas.draw()
+
+                    cid = curView.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.onMouseMotion : callback(evt, dataManager, displayManager))
+                    self.motionNotifyCid.append((curView.plotCanvas.canvas, cid))
+
+
+    def onMouseMotion(self, event, dataManger=None, displayManager=None):
+        self.logger.debug('mouse motion')
+        self.logger.debug('x: %f', event.x)
+        if event.inaxes is not None:
+            self.logger.debug('xData: %f', event.xdata)
+        
+        viewport = displayManager.parent.viewPort
+        for curStation in viewport.stations:
+            for curChannel in curStation.channels.values():
+                for curView in curChannel.views.values():
+                    if event.inaxes is None:
+                        inv = curView.dataAxes.transData.inverted()
+                        tmp = inv.transform((event.x, event.y))
+                        self.logger.debug('xTrans: %f', tmp[0])
+                        event.xdata = tmp[0]
+                    canvas = curView.plotCanvas.canvas
+                    if curView not in self.bg.keys():
+                        self.bg[curView] = canvas.copy_from_bbox(curView.dataAxes.bbox)
+                    canvas.restore_region(self.bg[curView])
+
+                    if curView not in self.endLine.keys():
+                        self.endLine[curView] = curView.dataAxes.axvline(x=event.xdata, animated=True)
+                    else:
+                        self.endLine[curView].set_xdata(event.xdata)
+                        self.endLine[curView].set_visible(True)
+
+                    curView.dataAxes.draw_artist(self.endLine[curView])
+                    canvas.blit()
+
+        
+
+    def onButtonRelease(self, event, dataManager=None, displayManager=None):
+        self.logger.debug('onButtonRelease')
+        for canvas, cid in self.motionNotifyCid:
+            canvas.mpl_disconnect(cid)
+
+        self.motionNotifyCid = []
+        self.bg = {} 
+        
+
+
 
 
 
