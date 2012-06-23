@@ -265,15 +265,6 @@ class Zoom(PluginNode):
         self.icons['active'] = icons.zoom_icon_16
 
 
-
-    def buildMenu(self):
-        pass
-
-
-    def buildFoldPanel(self, panelBar):
-        pass
-
-
     def getHooks(self):
         hooks = {}
 
@@ -286,8 +277,9 @@ class Zoom(PluginNode):
         return 'Hallo hier spricht Zoom Plugin.'
 
 
-    def onButtonPress(self, event):
+    def onButtonPress(self, event, dataManager, displayManager):
         self.logger.debug('Mouse click catched.')
+        self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
 
 
 

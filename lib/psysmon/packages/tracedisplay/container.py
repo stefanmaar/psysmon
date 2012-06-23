@@ -170,7 +170,7 @@ class View(wx.Panel):
         event.ResumePropagation(1)
         event.Skip()
 
-    def _onSize( self, event ):
+    def _onSize(self, event):
         event.Skip()
         #print "view resize"
         #print "view size: " + str(self.GetSize())
@@ -178,6 +178,13 @@ class View(wx.Panel):
         #print "view parent size: " + str(self.GetParent().GetSize())
         #self.annotationArea.Resize()
         self.plotCanvas.Resize()
+
+
+    def setEventCallbacks(self, hooks, dataManager, displayManager):
+        
+        for curKey, curCallback in hooks.iteritems():
+            self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager : curCallback(evt, dataManager, displayManager))
+
 
 
 
@@ -901,6 +908,16 @@ class TdViewPort(scrolled.ScrolledPanel):
             return None
 
         return curStation.getViewContainer(scnl[1], viewName)
+
+
+    def registerEventCallbacks(self, hooks, dataManager, displayManager):
+        ''' Set the specified event callbacks of the views.
+
+        '''
+        for curStation in self.stations:
+            for curChannel in curStation.channels.values():
+                for curView in curChannel.views.values():
+                    curView.setEventCallbacks(hooks, dataManager, displayManager)
          
         
 

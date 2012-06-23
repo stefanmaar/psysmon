@@ -445,7 +445,11 @@ class TraceDisplayDlg(wx.Frame):
         Activate the tool.
         '''
         self.logger.debug('Clicked the option tool.')
-        print plugin
+        hooks = plugin.getHooks()
+
+        # Set the callbacks of the views.
+        self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayOptions)
+        
 
 
     def onKeyDown(self, event):
