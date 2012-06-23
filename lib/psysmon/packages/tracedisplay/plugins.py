@@ -21,7 +21,7 @@
 import logging
 import wx
 from psysmon.core.plugins import PluginNode
-import psysmon.core.icons as icons
+from psysmon.artwork.icons import iconsBlack16 as icons
 
 
 class SelectStation(PluginNode):
