@@ -1,3 +1,4 @@
+import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -45,12 +46,13 @@ import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveclient import PsysmonDbWaveClient
-import psysmon.core.icons as icons
+from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 from datetime import datetime
 import webbrowser
 from wx.lib.mixins.inspection import InspectionMixin
 import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
+import wx.lib.platebtn as platebtn
 
 try:
     from agw import advancedsplash as splash
@@ -1809,14 +1811,16 @@ class FoldPanel(wx.Panel):
                                        style=wx.NO_BORDER)
         headerSizer.Add(self.headerButton, pos=(0,0), flag=wx.ALL, border=2)
 
-        bmp = icons.sq_minus_icon_16.GetBitmap()
+        bmp = iconsBlack16.sq_minus_icon_16.GetBitmap()
         self.minimizeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
                                        style=wx.NO_BORDER)
         headerSizer.Add(self.minimizeButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_RIGHT, border=0)
 
-        bmp = icons.app_window_cross_icon_16.GetBitmap()
-        self.closeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
-                                       style=wx.NO_BORDER)
+        bmp = iconsBlack10.delete_icon10.GetBitmap()
+        #self.closeButton = wx.BitmapButton(self, -1, bmp, (0,0), size=(16,16), 
+        #                               style=wx.NO_BORDER)
+        self.closeButton = platebtn.PlateButton(self, wx.ID_ANY, bmp=bmp)
+        pdb.set_trace() ############################## Breakpoint ##############################
         headerSizer.Add(self.closeButton, pos=(0,3), flag=wx.ALL|wx.ALIGN_RIGHT, border=0)
         headerSizer.AddGrowableCol(1)
 
