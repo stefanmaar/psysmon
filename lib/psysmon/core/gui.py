@@ -1,4 +1,3 @@
-import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -1746,6 +1745,14 @@ class FoldPanelBar(scrolled.ScrolledPanel):
         self.sizer.Detach(subPanel)
         subPanel.Hide()
         self.rearrangePanels()
+        
+        if subPanel.minimizeButton.IsPressed():
+            subPanel.minimizeButton.SetState(platebtn.PLATE_NORMAL)
+            # The _pressed attribute is not reset when setting the
+            # state. Do it explicitely.
+            subPanel.minimizeButton._pressed = False
+
+        print 'hidePanel: buttonPressed = %s' % subPanel.minimizeButton.IsPressed()
 
 
     def showPanel(self, subPanel):
@@ -1811,16 +1818,18 @@ class FoldPanel(wx.Panel):
                                        style=wx.NO_BORDER)
         headerSizer.Add(self.headerButton, pos=(0,0), flag=wx.ALL, border=2)
 
-        bmp = iconsBlack16.sq_minus_icon_16.GetBitmap()
-        self.minimizeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
-                                       style=wx.NO_BORDER)
+        bmp = iconsBlack10.minus_icon_10.GetBitmap()
+        #self.minimizeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
+        #                               style=wx.NO_BORDER)
+        self.minimizeButton = platebtn.PlateButton(self, wx.ID_ANY, bmp=bmp, style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_TOGGLE)
+        self.minimizeButton.SetPressColor(wx.NamedColor('peachpuff4'))
         headerSizer.Add(self.minimizeButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_RIGHT, border=0)
 
-        bmp = iconsBlack10.delete_icon10.GetBitmap()
-        #self.closeButton = wx.BitmapButton(self, -1, bmp, (0,0), size=(16,16), 
+        bmp = iconsBlack10.delete_icon_10.GetBitmap()
+        #self.closeButton = wx.BitmapButton(self, -1, bmp, (0,0), 
         #                               style=wx.NO_BORDER)
         self.closeButton = platebtn.PlateButton(self, wx.ID_ANY, bmp=bmp)
-        pdb.set_trace() ############################## Breakpoint ##############################
+        self.closeButton.SetPressColor(wx.NamedColor('peachpuff4'))
         headerSizer.Add(self.closeButton, pos=(0,3), flag=wx.ALL|wx.ALIGN_RIGHT, border=0)
         headerSizer.AddGrowableCol(1)
 
@@ -1831,7 +1840,7 @@ class FoldPanel(wx.Panel):
         self.headerSizer = headerSizer
 
         self.Bind(wx.EVT_BUTTON, parent.onCloseButtonClick, self.closeButton)
-        self.Bind(wx.EVT_BUTTON, parent.onMinimizeButtonClick, self.minimizeButton)
+        self.Bind(wx.EVT_TOGGLEBUTTON, parent.onMinimizeButtonClick, self.minimizeButton)
 
 
     def toggleMinimize(self):
@@ -1843,6 +1852,7 @@ class FoldPanel(wx.Panel):
             self.SetSize(self.GetBestSize())
             self.sizer.Layout()
             self.isMinimized = True
+            self.minimizeButton.SetPressColor(wx.NamedColor('darkolivegreen4'))
         else:
             print "showing panel"
             print "contentPanel size: %s" % self.contentPanel.GetSize()
@@ -1852,6 +1862,8 @@ class FoldPanel(wx.Panel):
             self.SetSize(self.GetBestSize())
             self.sizer.Layout()
             self.isMinimized = False
+            self.minimizeButton.SetPressColor(wx.NamedColor('peachpuff4'))
+            print "button pressed: %s" % self.minimizeButton.IsPressed()
 
 
 class FoldPanelBarSplitter(scrolled.ScrolledPanel):
