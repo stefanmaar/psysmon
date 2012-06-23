@@ -1,5 +1,4 @@
-
-
+import sys
 import logging
 import time
 import wx
@@ -71,6 +70,8 @@ class PlotPanel(wx.Panel):
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus2)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
+        self.canvas.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
 
     def onClick(self, event):
@@ -93,6 +94,11 @@ class PlotPanel(wx.Panel):
     def onKeyDown(self, event):
         print "Propagating keyDown in plotPanel"
         event.ResumePropagation(1)
+        event.Skip()
+
+    def onLeftDown(self, event):
+        print "PlotPanel LEFT DOWN"
+        event.ResumePropagation(30)
         event.Skip()
 
 
@@ -137,10 +143,12 @@ class View(wx.Panel):
         #self.dataAxes = self.plotCanvas.figure.add_axes([0.1,0.1,0.8,0.8])
         self.dataAxes = self.plotCanvas.figure.add_axes([0,0,1,1])
 
+
         self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.onLeaveWindow)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
         #self.Bind(wx.EVT_SIZE, self._onSize)
 
@@ -179,11 +187,21 @@ class View(wx.Panel):
         #self.annotationArea.Resize()
         self.plotCanvas.Resize()
 
+    def onRelease(self, event):
+        print "RELEASING BUTTON"
+
+    def onPress(self, event):
+        print "PRESS BUTTON"
+
+    def onLeftDown(self, event):
+        print "view LEFT DOWN"
+        event.Skip()
+
 
     def setEventCallbacks(self, hooks, dataManager, displayManager):
         
         for curKey, curCallback in hooks.iteritems():
-            self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager : curCallback(evt, dataManager, displayManager))
+            self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager, callback=curCallback: callback(evt, dataManager, displayManager))
 
 
 
@@ -411,6 +429,8 @@ class ChannelContainer(wx.Panel):
         self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(1)
         self.SetSizer(self.sizer)
+
+
 
     def addView(self, view):
         view.Reparent(self)
@@ -763,9 +783,14 @@ class TdViewPort(scrolled.ScrolledPanel):
 
         self.SetupScrolling()
 
+        self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
+
         # Message subsiptions
         # pub.subscribe(self.onStationMsg, ('tracedisplay', 'display', 'station'))
 
+
+    def onLeftDown(self, event):
+        print "##### LEFT DOWN IN VIEWPORT #######"
 
     def onStationMsg(self, msg):
         if msg.topic == ('tracedisplay', 'display', 'station', 'hide'):
