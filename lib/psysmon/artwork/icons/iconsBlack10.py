@@ -13,11 +13,11 @@ getminus_icon_10Icon = minus_icon_10.GetIcon
 
 #----------------------------------------------------------------------
 delete_icon_10 = PyEmbeddedImage(
-    "iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABHNCSVQICAgIfAhkiAAAAAlw"
     "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
-    "AABxSURBVAiZLckxDgEBFADR9xMX2G03odE7g5PoHcYJVGqFK0iIYkW20HADNTZRfc2vJjMT"
-    "2KDFOjPHiGixQw8XJI6YYSjfQ4dnhW/xikZmwgK/Gm9Mq+vwqDEWezRwqnDGHPfywwQ3vLDK"
-    "zE9ELLHF8AeUGytHr/GPWAAAAABJRU5ErkJggg==")
+    "AABfSURBVBiVnZAxDsAwCAMvHbIjlM/l2Rn6HXeBlKmKisRiDoHdJHFUAXZgAiYpNQ+tS9rg"
+    "BAQsYESv0GYFvQzu6Fy0DQY8CpALI+fXmZPXjH2c9l9mMh4vP1uNp50G/gDDqltD5h8IIgAA"
+    "AABJRU5ErkJggg==")
 getdelete_icon_10Data = delete_icon_10.GetData
 getdelete_icon_10Image = delete_icon_10.GetImage
 getdelete_icon_10Bitmap = delete_icon_10.GetBitmap
@@ -25,11 +25,10 @@ getdelete_icon_10Icon = delete_icon_10.GetIcon
 
 #----------------------------------------------------------------------
 plus_icon_10 = PyEmbeddedImage(
-    "iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABHNCSVQICAgIfAhkiAAAAAlw"
     "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
-    "AAB5SURBVBiVfc+xCYJREAPg78Q9FGws7RQsFAtBOwt3cBy3sHGAv7ByDisH8dmc8P6HGggh"
-    "uRA4pRQfYo8HpnU+0McWE6zrsC19xTAidlilX6YeImKMgis80/ziLTDDIheO2OCCe5Y6zXfn"
-    "PJz+ffdKLb20WZqjw6jO3y9eTGrWZ96kAAAAAElFTkSuQmCC")
+    "AABUSURBVBiVtY4xCoBAEAMnItj6oX2Cr/ZDWp1WuUbhhFWxMJAmDENkmzaSAsD2fNkTsAC7"
+    "7fEN9GFUu3d8SAAL4JsWIE7j8CDa/vnYJ9uaXcnAKTNWr2YnpujLtgQAAAAASUVORK5CYII=")
 getplus_icon_10Data = plus_icon_10.GetData
 getplus_icon_10Image = plus_icon_10.GetImage
 getplus_icon_10Bitmap = plus_icon_10.GetBitmap
