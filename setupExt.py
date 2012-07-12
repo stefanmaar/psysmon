@@ -100,12 +100,21 @@ def checkForPackage(name, requiredVersion):
     for k,x in enumerate(nn):
         nn[k] = int(x)
 
-    if not (nn[0] >= rV[0] and nn[1] >= rV[1] and nn[2] >= rV[2]):
-        if not (nn[0] >= rV[0]+1 or nn[0] >= rV[1]+1):
-            printMessage(
-               '%s %s or later is required; you have %s' %
-               (name, requiredVersion, __version__))
-            return False
+    checkPassed = False
+    if nn[0] > rV[0]:
+        checkPassed = True
+    elif nn[0] == rV[0] and nn[1] > rV[2]:
+        checkPassed = True
+    elif nn[1] == rV[1] and nn[2] > rV[2]:
+        checkPassed = True
+    elif nn[2] == rV[2]:
+        checkPassed = True
 
-    printStatus(name, "%s (%s required)" % (__version__, requiredVersion))
-    return True
+    if not checkPassed:
+        printMessage(
+           '%s %s or later is required; you have %s' %
+           (name, requiredVersion, __version__))
+    else:
+        printStatus(name, "%s (%s required)" % (__version__, requiredVersion))
+
+    return checkPassed
