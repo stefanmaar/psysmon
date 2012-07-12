@@ -55,11 +55,21 @@ packages = [
             'psysmon.packages.geometry',
             'psysmon.packages.obspyImportWaveform',
             'psysmon.packages.selectWaveform',
-            'psysmon.packages.tracedisplay'
+            'psysmon.packages.tracedisplay',
+            'psysmon.artwork',
+            'psysmon.artwork.icons'
            ]
 
 # Define the scripts to be processed.
 scripts = ['scripts/pSysmon.py']
+
+# Define some package data.
+packageDir = {'': 'lib',
+              'psysmon.artwork': 'lib/psysmon/artwork'}
+packageData = {'psysmon.artwork': ['splash/psysmon.png']}
+
+# Define additinal files to be copied.
+#dataFiles = ('artwork', ['lib/psysmon/artwork/splash/splash.png'])
 
 # Let the user know what's going on.
 printLine()
@@ -98,7 +108,7 @@ if not checkForPackage('sqlalchemy', '0.7.5'):
     sys.exit(1)
 
 # Checking for SQLAlchemy
-if not checkForPackage('MySQLdb', '1.2.3'):
+if not checkForPackage('MySQLdb', '1.2.2'):
     sys.exit(1)
 
 # Checking for obspy.core
@@ -120,7 +130,7 @@ if not checkForPackage('obspy.earthworm', '0.1.0'):
 printRaw("")
 printRaw("")
 
-setup(name = 'pSysmon',
+setup(name = 'psysmon',
       version = __version__,
       description = __description__,
       long_description = """
@@ -136,8 +146,10 @@ setup(name = 'pSysmon',
       keywords = __keywords__,
       packages = packages,
       platforms = 'any',
-      package_dir = {'': 'lib'},
-      scripts = scripts
+      scripts = scripts,
+      package_dir = packageDir,
+      package_data = packageData
+      #data_files = dataFiles
       #requires = ['matplotlib (>=1.1.0)']
      )
 
