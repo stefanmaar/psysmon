@@ -32,15 +32,27 @@ This module contains helper functions used in the geometry package.
 def lon2UtmZone(lon):
     '''
     Convert a longitude to the UTM zone.
+
+    The formula is based on the wikipedia description:
+    The UTM system divides the surface of Earth between 80S and 84N latitude 
+    into 60 zones, each 6 of longitude in width. Zone 1 covers longitude 180 
+    to 174 W; zone numbering increases eastward to zone 60 that covers 
+    longitude 174 to 180 East.
     '''
-    return int((180 + lon) / 6) + 1
+    if lon < -180 or lon > 180:
+        raise ValueError('The longitude must be between -180 and 180.')
+
+    return (int((180 + lon) / 6.0) + 1) % 60
 
 
 def zone2UtmCentralMeridian(zone):
     '''
     Compute the middle meridian of a given UTM zone.
     '''
+    if zone < 1 or zone > 60:
+        raise ValueError('The zone must be between 1 and 60.')
+
     return zone * 6 - 180 - 3
 
 ellipsoids = {}
-ellipsoids['wgs84'] = (6378137, 6356752.3142)
+ellipsoids['wgs84'] = (6378137, 6356752.314245179)
