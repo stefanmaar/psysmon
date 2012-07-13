@@ -1682,8 +1682,16 @@ class Station:
         Return the coordinate system as WGS84 longitude latitude tuples.
         '''
         # TODO: Add a check for valid epsg string.
+
+        destSys = "epsg:4326"
+
+        if self.coordSystem == destSys:
+            return(self.x, self.y)
+
         srcProj = pyproj.Proj(init=self.coordSystem)
-        dstProj = pyproj.Proj(init="epsg:4326") 
+        dstProj = pyproj.Proj(init=destSys) 
+
+
         lon, lat = pyproj.transform(srcProj, dstProj, self.x, self.y)
         self.logger.debug('Converting from "%s" to "%s"', srcProj.srs, dstProj.srs)
         return (lon, lat)
