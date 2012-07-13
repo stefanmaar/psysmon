@@ -731,42 +731,43 @@ class MapViewPanel(wx.Panel):
         lonLatMax = np.max(lonLat, 0)
         self.mapConfig['utmZone'] = lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
         self.mapConfig['ellips'] = 'wgs84'
-        self.mapConfig['lon_0'] = np.mean([lonLatMin[0], lonLatMax[0]])
-        self.mapConfig['lat_0'] = np.mean([lonLatMin[1], lonLatMax[1]])
+        self.mapConfig['lon_0'] = zone2UtmCentralMeridian(self.mapConfig['utmZone'])
+        self.mapConfig['lat_0'] = 0
+        self.mapConfig['limits'] = np.hstack([np.floor(lonLatMin), np.ceil(lonLatMax)]) 
+        #self.mapConfig['lon_0'] = np.mean([lonLatMin[0], lonLatMax[0]])
+        #self.mapConfig['lat_0'] = np.mean([lonLatMin[1], lonLatMax[1]])
 
         lon = [x[0] for x in lonLat]
         lat = [x[1] for x in lonLat]
-        # Create the basemap.
-        #self.map = Basemap(projection='tmerc',
-        #                   lon_0=centralMeridian,
-        #                   lat_0=48.5,
-        #                   rsphere=ellipsoids['wgs84'], 
-        #                   width=700000, 
-        #                   height=700000, 
-        #                   resolution='i', 
-        #                   ax=self.mapAx)
-        self.map = Basemap(projection='utm',
-                           lon_0=self.mapConfig['lon_0'],
-                           lat_0=self.mapConfig['lat_0'],
-                           width=300000,
-                           height=300000,
+
+        self.logger.debug('Setting up the basemap.')
+        self.map = Basemap(projection='tmerc',
+                           lon_0 = self.mapConfig['lon_0'],
+                           lat_0 = self.mapConfig['lat_0'],
+                           k_0 = 0.9996,
                            rsphere=ellipsoids[self.mapConfig['ellips']],
-                           resolution='i',
+                           llcrnrlon = self.mapConfig['limits'][0],
+                           llcrnrlat = self.mapConfig['limits'][1],
+                           urcrnrlon = self.mapConfig['limits'][2],
+                           urcrnrlat = self.mapConfig['limits'][3],
+                           resolution='h',
                            ax=self.mapAx, 
-                           utm_zone=self.mapConfig['utmZone'],
-                           suppress_ticks=False)
+                           suppress_ticks=True)
 
         self.logger.debug('proj4string: %s', self.map.proj4string)
 
         self.map.drawcountries()
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
-        self.map.etopo()
-        #self.map.drawparallels(np.arange(40,50,0.5),labels=[1,0,0,0]) # draw parallels
+        #self.map.etopo()
         x,y = self.map(lon, lat)
         self.map.scatter(x, y, s=100, marker='^', color='r', picker=5)
         self.map.drawmapboundary()
-        self.map.ax.grid()
+        #self.map.ax.grid()
+        self.map.drawparallels(np.arange(self.mapConfig['limits'][1], self.mapConfig['limits'][3], 0.5),
+                               labels=[1,0,0,0]) # draw parallels
+        self.map.drawmeridians(np.arange(self.mapConfig['limits'][0], self.mapConfig['limits'][2], 0.5),
+                               labels=[0,0,0,1]) # draw parallels
         self.mapCanvas.mpl_connect('pick_event', self.onPick)
 
     def onPick(self, event):
