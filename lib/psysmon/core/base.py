@@ -32,13 +32,14 @@ This module contains the basic modules needed to run the pSysmon program.
 
 import os
 import logging
-import threading
 import shelve
 from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
 from psysmon.core.util import PsysmonError
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class Base:
@@ -137,28 +138,43 @@ class Base:
             The password of the user *username*.
         '''
         try:
-            dbConn = mysql.connect(dbHost, rootUser, rootPwd)
-            cur = dbConn.cursor();
-        except mysql.Error:
+            dbDialect = 'mysql'
+            dbDriver = None
+            if dbDriver:
+                dialectString = dbDialect + "+" + dbDriver
+            else:
+                dialectString = dbDialect
+
+            engineString = dialectString + "://" + rootUser + ":" + rootPwd + "@" + dbHost
+
+            dbEngine = create_engine(engineString)
+            conn = dbEngine.connect()
+            conn.execute('commit')
+
+        except SQLAlchemyError as e:
+            print e
             raise
 
         try:
             # Create the pSysmon database for the user.
             userDb = "psysmon_" + user
             query = "CREATE DATABASE IF NOT EXISTS %s" % userDb
-            cur.execute(query)
+            conn.execute(query)
 
             # Create the user.
             query = "CREATE USER %s@'%s' IDENTIFIED BY '%s'" % (user, dbHost, userPwd)
-            cur.execute(query)
+            conn.execute(query)
 
             # Grant the privileges.
-            query = "GRANT ALL ON %s.* TO '%s'@'%%'" % (userDb, user)
-            cur.execute(query)
-        except mysql.Error:
+            query = "GRANT ALL ON %s.* TO '%s'@'localhost'" % (userDb, user)
+            conn.execute(query)
+
+            conn.execute('commit')
+        except SQLAlchemyError as e:
+            print e
             raise
         finally:
-            dbConn.close()
+            conn.close()
 
 
     def createPsysmonProject(self, name, baseDir, dbHost, user, userPwd):

@@ -41,6 +41,7 @@ import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
 import os
 import signal
+from sqlalchemy.exc import SQLAlchemyError
 import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
@@ -1171,8 +1172,8 @@ class CreateNewDbUserDlg(wx.Dialog):
                                              userData['userName'],
                                              userData['userPwd'])
             return True
-        except:
-            msg = "An error occured when trying to create the pSysmon database user:\n"
+        except SQLAlchemyError as e:
+            msg = "An error occured when trying to create the pSysmon database user:\n%s" % str(e)
             dlg = wx.MessageDialog(None, msg,
                                    "MySQL database error.",
                                    wx.OK | wx.ICON_ERROR)
