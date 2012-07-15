@@ -298,12 +298,12 @@ class Zoom(PluginNode):
                 for curView in curChannel.views.values():
                     #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
                     #curView.plotCanvas.canvas.restore_region(bg)
-                    
+
                     if curView in self.endLine.keys():
                         self.endLine[curView].set_visible(False)
                         curView.dataAxes.draw_artist(self.endLine[curView])
-                    
-                    
+
+
                     if curView in self.beginLine.keys():
                         self.beginLine[curView].set_xdata(event.xdata)
                     else:
@@ -320,7 +320,7 @@ class Zoom(PluginNode):
         self.logger.debug('x: %f', event.x)
         if event.inaxes is not None:
             self.logger.debug('xData: %f', event.xdata)
-        
+
         viewport = displayManager.parent.viewPort
         for curStation in viewport.stations:
             for curChannel in curStation.channels.values():
@@ -344,7 +344,7 @@ class Zoom(PluginNode):
                     curView.dataAxes.draw_artist(self.endLine[curView])
                     canvas.blit()
 
-        
+
 
     def onButtonRelease(self, event, dataManager=None, displayManager=None):
         self.logger.debug('onButtonRelease')
@@ -353,7 +353,9 @@ class Zoom(PluginNode):
 
         self.motionNotifyCid = []
         self.bg = {} 
-        
+
+        # Call the setTimeLimits of the displayManager.
+
 
 
 

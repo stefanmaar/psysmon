@@ -355,7 +355,11 @@ class TraceDisplayDlg(wx.Frame):
                                                                     wx.DefaultPosition,
                                                                     wx.DefaultSize,
                                                                     agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
-                self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
+
+                if curCategory == 'interactive':
+                    self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
+                else:
+                    self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
 
         for k,curPlugin in enumerate(self.plugins):
             # Fill the ribbon bar.
