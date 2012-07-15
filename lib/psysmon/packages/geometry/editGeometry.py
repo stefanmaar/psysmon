@@ -31,6 +31,7 @@ This module contains the classes of the editGeometry dialog window.
 '''
 
 import logging
+from threading import Thread
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
@@ -130,6 +131,7 @@ class EditGeometryDlg(wx.Frame):
 
         # Load the inventory from the database.
         self.loadInventoryFromDb()
+
 
 
 
@@ -495,7 +497,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.selectedInventory = pyData.parentInventory
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selectedInventory = pyData
-            self.Parent.inventoryViewNotebook.updateMapView(pyData)
 
     ## Update the inventory tree.
     #
@@ -593,6 +594,8 @@ class InventoryViewNotebook(wx.Notebook):
 
         self.logger = self.GetParent().logger
 
+        self.inventory = None
+
         self.listViewPanel = ListViewPanel(self)
         self.AddPage(self.listViewPanel, "list view")
 
@@ -601,6 +604,8 @@ class InventoryViewNotebook(wx.Notebook):
 
         self.mapViewPanel = MapViewPanel(self)
         self.AddPage(self.mapViewPanel, "map view")
+
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onPageChanged)
 
 
     ## Show the station data in the list view.
@@ -620,7 +625,18 @@ class InventoryViewNotebook(wx.Notebook):
         Initialize the map view panel with the selected inventory.
         '''
         self.logger.debug("Initializing the mapview")
-        self.mapViewPanel.initMap(inventory)
+        #t = Thread(target = self.mapViewPanel.initMap, args = (inventory, ))
+        #t.setDaemon(True)
+        #t.start()
+        if inventory != self.inventory:
+            self.mapViewPanel.initMap(inventory)
+            self.inventory = inventory
+
+    def onPageChanged(self, event):
+        if event.GetSelection() == 1:
+            self.updateMapView(self.Parent.selectedInventory)
+        event.Skip()
+
 
     ## Create a panel
     def makePanel(self):
