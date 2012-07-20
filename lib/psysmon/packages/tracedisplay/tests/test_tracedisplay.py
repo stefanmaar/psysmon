@@ -8,7 +8,7 @@ import unittest
 import psysmon
 import logging
 from psysmon.core.base import Base
-from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import PsysmonDbWaveClient,EarthwormWaveClient
 import psysmon.core.gui as psygui
 import os
 import copy
@@ -44,6 +44,8 @@ class TracedisplayTestCase(unittest.TestCase):
 
         # Create the project waveclient.
         waveclient = PsysmonDbWaveClient('main client', psyBase.project)
+        psyBase.project.addWaveClient(waveclient)
+        waveclient = EarthwormWaveClient('earthworm')
         psyBase.project.addWaveClient(waveclient)
         self.app =psygui.PSysmonApp()
 
