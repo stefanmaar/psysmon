@@ -520,21 +520,22 @@ class TraceDisplayDlg(wx.Frame):
                                        scnl = self.displayOptions.getSCNL('show'))
 
 
-        # TODO: Apply the processing stack before plotting the data.
-        self.dataManager.processStream(stack = None)
+        if self.dataManager.origStream:
+            # TODO: Apply the processing stack before plotting the data.
+            self.dataManager.processStream(stack = None)
 
 
-        # Plot the data using the addon tools.
-        addonPlugins = [x for x in self.plugins if x.mode == 'addon']
-        for curPlugin in addonPlugins:
-            curPlugin.plot(self.displayOptions, self.dataManager)
-         
+            # Plot the data using the addon tools.
+            addonPlugins = [x for x in self.plugins if x.mode == 'addon']
+            for curPlugin in addonPlugins:
+                curPlugin.plot(self.displayOptions, self.dataManager)
+
 
 
         # Update the viewport to show the changes.
         self.viewPort.Refresh()
         self.viewPort.Update()
-        
+
         # Update the time information panel.
         self.datetimeInfo.setTime(self.displayOptions.startTime, 
                                   self.displayOptions.endTime, 
@@ -1076,7 +1077,8 @@ class DataManager():
 
         self.project = parent.project
 
-        self.waveclient = self.project.waveclient['main client']
+        #self.waveclient = self.project.waveclient['main client']
+        self.waveclient = self.project.waveclient['earthworm']
 
         self.origStream = None
 
