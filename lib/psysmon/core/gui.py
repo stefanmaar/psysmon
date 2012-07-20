@@ -45,7 +45,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import psysmon
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
-from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 from datetime import datetime
 import webbrowser
@@ -129,7 +129,9 @@ class PSysmonGui(wx.Frame):
                  ("&Exit", "Exit pSysmon.", self.onClose)),
                 ("Edit",
                  ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser),
-                 ("Edit waveform directories", "Edit the waveform directories.", self.onEditWaveformDir)),
+                 ("waveform directories", "Edit the waveform directories.", self.onEditWaveformDir),
+                 ("Wave clients", "Edit the wave clients.", self.onEditWaveClients),
+                 ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
                )
@@ -283,6 +285,10 @@ class PSysmonGui(wx.Frame):
                 # The project database waveclient.
                 waveclient = PsysmonDbWaveClient('main client', self.psyBase.project)
                 self.psyBase.project.addWaveClient(waveclient)
+                
+                # Add the default localhost earthworm waveclient.
+                waveclient = EarthwormWaveClient('earthworm localhost')
+                self.psyBase.project.addWaveClient(waveclient)
 
                 # Check if the database tables have to be updated.
                 self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
@@ -409,6 +415,38 @@ class PSysmonGui(wx.Frame):
         '''
         if self.psyBase.project:
             dlg = EditWaveformDirDlg(parent=self, psyBase=self.psyBase)
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.logger.warning('You have to open a project to edit the waveform directories.')
+
+
+    def onEditWaveClients(self, event):
+        ''' The edit wave clients callback.
+
+        Parameters
+        ----------
+        event :
+            The event passed to the callback.
+        '''
+        if self.psyBase.project:
+            dlg = EditWaveclientDlg(parent=self, psyBase=self.psyBase)
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.logger.warning('You have to open a project to edit the waveform directories.')
+
+
+    def onEditScnlDataSources(self, event):
+        ''' The edit scnl data sources callback.
+
+        Parameters
+        ----------
+        event :
+            The event passed to the callback.
+        '''
+        if self.psyBase.project:
+            dlg = EditScnlDataSourcesDlg(parent=self, psyBase=self.psyBase)
             dlg.ShowModal()
             dlg.Destroy()
         else:
@@ -1397,6 +1435,235 @@ class EditWaveformDirDlg(wx.Dialog):
         # consistent with the database.
         self.psyBase.project.loadWaveformDirList()
         self.Destroy()
+
+
+
+class EditWaveclientDlg(wx.Dialog):
+    ''' The EditWaveformDirDlg class.
+
+    This class creates a dialog used to edit the pSysmon waveform directories.
+
+    Attributes
+    ----------
+    psyBase : :class:`~psysmon.core.Base`
+        The pSysmon base instance.
+    '''
+    def __init__(self, psyBase, parent=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Edit the waveclients", style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size=size)
+
+        self.psyBase = psyBase
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Use standard button IDs.
+        okButton = wx.Button(self, wx.ID_OK)
+        okButton.SetDefault()
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+
+        # Create the grid editing buttons.
+        addButton = wx.Button(self, wx.ID_ANY, "add")
+        editButton = wx.Button(self, wx.ID_ANY, "edit")
+        removeButton = wx.Button(self, wx.ID_ANY, "remove")
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+        gridButtonSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Fill the grid button sizer
+        gridButtonSizer.Add(addButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(editButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(removeButton, 0, wx.EXPAND|wx.ALL)
+
+        fields = self.getGridColumns()
+        self.wcListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
+
+        for k, (name, label, attr) in enumerate(fields):
+            self.wcListCtrl.InsertColumn(k, label)
+
+        sizer.Add(self.wcListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        sizer.Add(btnSizer, pos=(1,0), span=(1,2), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+        # Bind the events.
+        self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
+        self.Bind(wx.EVT_BUTTON, self.onRemove, removeButton)
+        self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
+        self.updateWcListCtrl()
+
+
+
+    def onAdd(self, event):
+        ''' The add directory callback.
+
+        Show a directory browse dialog.
+        If a directory has been selected, call to insert the directory 
+        into the database.
+        '''
+        pass
+
+
+
+    def onRemove(self, event):
+        ''' The remove directory callback.
+        '''
+        pass
+
+
+
+    def updateWcListCtrl(self):
+        ''' Initialize the waveformDir table with values.
+
+        '''
+        self.wcListCtrl.DeleteAllItems()
+        for k, (name, client) in enumerate(self.psyBase.project.waveclient.iteritems()):
+            self.wcListCtrl.InsertStringItem(k, client.name)
+            self.wcListCtrl.SetStringItem(k, 1, client.mode)
+            #self.wcListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
+            #self.wcListCtrl.SetStringItem(k, 3, curDir.description)
+
+        self.wcListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.wcListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        #self.wcListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+
+
+    def addItem2WfListCtrl(self, item):
+        ''' Add a waveform directory to the list control.
+
+        Parameters
+        ----------
+        item : Object
+            The waveformDir mapper instance to be added to the list control.
+        '''
+        k = self.wfListCtrl.GetItemCount()
+        self.wfListCtrl.InsertStringItem(k, str(item.id))
+        self.wfListCtrl.SetStringItem(k, 1, item.directory)
+        self.wfListCtrl.SetStringItem(k, 2, item.aliases[0].alias)
+        self.wfListCtrl.SetStringItem(k, 3, item.description)
+        self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+
+
+
+    def getGridColumns(self):
+        ''' Create the column fields used by the list control.
+
+        '''
+        tableField = []
+        tableField.append(('name', 'name', 'readonly'))
+        tableField.append(('type', 'type', 'readonly'))
+        #tableField.append(('alias', 'alias', 'editable'))
+        #tableField.append(('description', 'description', 'editable'))
+        return tableField
+
+
+
+    def onOk(self, event):
+        ''' The ok button callback.
+
+        Parameters
+        ----------
+        event :
+            The wxPython event passed to the callback.
+
+        Commit the database changes and update the project's waveform directory 
+        list.
+        '''
+        self.Destroy()
+
+
+
+
+class EditScnlDataSourcesDlg(wx.Dialog):
+    ''' The EditWaveformDirDlg class.
+
+    This class creates a dialog used to edit the pSysmon waveform directories.
+
+    Attributes
+    ----------
+    psyBase : :class:`~psysmon.core.Base`
+        The pSysmon base instance.
+    '''
+    def __init__(self, psyBase, parent=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Edit the waveclients", style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size=size)
+
+        self.psyBase = psyBase
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Use standard button IDs.
+        okButton = wx.Button(self, wx.ID_OK)
+        okButton.SetDefault()
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        sizer.Add(btnSizer, pos=(1,0), span=(1,2), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+        # Bind the events.
+        self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
+
+
+    def getGridColumns(self):
+        ''' Create the column fields used by the list control.
+
+        '''
+        tableField = []
+        tableField.append(('name', 'name', 'readonly'))
+        tableField.append(('type', 'type', 'readonly'))
+        #tableField.append(('alias', 'alias', 'editable'))
+        #tableField.append(('description', 'description', 'editable'))
+        return tableField
+
+
+
+    def onOk(self, event):
+        ''' The ok button callback.
+
+        Parameters
+        ----------
+        event :
+            The wxPython event passed to the callback.
+
+        Commit the database changes and update the project's waveform directory 
+        list.
+        '''
+        self.Destroy()
+
 
 
 
