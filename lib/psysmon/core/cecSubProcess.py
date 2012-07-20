@@ -33,7 +33,7 @@ The pSysmon main program.
 import psysmon
 #import psysmon.core.gui as psygui
 #from psysmon.core.collectionExecutionControl import CecClient
-from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
 import psysmon.core.base as psybase
 #from twisted.internet import reactor
 import sys
@@ -87,6 +87,8 @@ if __name__ == "__main__":
     project.connect2Db(project.activeUser.pwd)
     project.loadDatabaseStructure(packages)
     waveclient = PsysmonDbWaveClient('main client', project)
+    project.addWaveClient(waveclient)
+    waveclient = EarthwormWaveClient('earthworm', project)
     project.addWaveClient(waveclient)
     collection.setNodeProject(project) 
     collection.createNodeLoggers()
