@@ -43,7 +43,7 @@ class WaveClient:
 
     '''
 
-    def __init__(self, name): 
+    def __init__(self, name, mode): 
         '''The constructor.
 
         Create an instance of the Project class.
@@ -63,6 +63,9 @@ class WaveClient:
 
         # The name of the waveclient.
         self.name = name
+
+        # The mode of the waveclient.
+        self.mode = mode
 
 
     def getWaveform(self, 
@@ -110,7 +113,7 @@ class PsysmonDbWaveClient(WaveClient):
     '''
 
     def __init__(self, name, project):
-        WaveClient.__init__(self, name=name)
+        WaveClient.__init__(self, name=name, mode='psysmonDb')
 
         # The psysmon project owning the waveclient.
         self.project = project
@@ -238,8 +241,8 @@ class EarthwormWaveClient(WaveClient):
     The client uses the :class:`obspy.earthworm.Client` class.
     '''
 
-    def __init__(self, name, host='localhost', port='16022'):
-        WaveClient.__init__(self, name=name)
+    def __init__(self, name, host='localhost', port=16022):
+        WaveClient.__init__(self, name=name, mode='earthworm')
         
         from obspy.earthworm import Client
 
@@ -255,10 +258,7 @@ class EarthwormWaveClient(WaveClient):
     def getWaveform(self,
                     startTime,
                     endTime, 
-                    network = None, 
-                    station = None, 
-                    location = None, 
-                    channel = None):
+                    scnl):
         ''' Get the waveform data for the specified parameters.
 
         Parameters
@@ -289,4 +289,24 @@ class EarthwormWaveClient(WaveClient):
         '''
 
         self.logger.debug("Querying...")
+           
+        stream = Stream() 
+        for curScnl in scnl:
+            curStation = curScnl[0]
+            curChannel = curScnl[1]
+            curNetwork = curScnl[2]
+            curLocation = curScnl[3]
+            
+            try:
+                curStream = self.client.getWaveform(curNetwork,
+                                                    curStation,
+                                                    curLocation,
+                                                    curChannel,
+                                                    startTime,
+                                                    endTime)
+                stream += curStream
+            except:
+                pass
+
+        return stream
         
