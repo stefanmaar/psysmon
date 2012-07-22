@@ -1073,12 +1073,16 @@ class DataManager():
 
     def __init__(self, parent):
 
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         self.parent = parent
 
         self.project = parent.project
 
         #self.waveclient = self.project.waveclient['main client']
-        self.waveclient = self.project.waveclient['earthworm']
+        #self.waveclient = self.project.waveclient['earthworm']
 
         self.origStream = None
 
@@ -1091,9 +1095,28 @@ class DataManager():
 
         This method overwrites the existing stream.
         '''
-        self.origStream =  self.waveclient.getWaveform(startTime = startTime,
-                                                       endTime = endTime,
-                                                       scnl = scnl)
+        dataSources = {}
+        for curScnl in scnl:
+            if curScnl in self.project.dataSources.keys():
+                if self.project.dataSources[curScnl] not in dataSources.keys():
+                    dataSources[self.project.dataSources[curScnl]] = [curScnl, ]
+                else:
+                    dataSources[self.project.dataSources[curScnl]].append(curScnl)
+            else:
+                if self.project.defaultWaveclient not in dataSources.keys():
+                    dataSources[self.project.defaultWaveclient] = [curScnl, ]
+                else:
+                    dataSources[self.project.defaultWaveclient].append(curScnl)
+
+        self.origStream = Stream()
+
+        for curName in dataSources.iterkeys():
+            self.logger.debug("curName: %s", curName)
+            curWaveclient = self.project.waveclient[curName]
+            curStream =  curWaveclient.getWaveform(startTime = startTime,
+                                                           endTime = endTime,
+                                                           scnl = scnl)
+            self.origStream += curStream
 
 
 
