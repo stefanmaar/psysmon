@@ -67,6 +67,12 @@ class WaveClient:
         # The mode of the waveclient.
         self.mode = mode
 
+        # The options of the waveclient.
+        # The options can vary depending on the mode of the waveclient.
+        # The options attribute is a dictionary with the option name as the key
+        # and the option values as the value.
+        self.options = {}
+
 
     def getWaveform(self, 
                     startTime,
@@ -247,13 +253,15 @@ class EarthwormWaveClient(WaveClient):
         from obspy.earthworm import Client
 
         # The Earthworm waveserver host to which the client should connect.
-        self.host = host
+        self.options['host'] = host
 
         # The port on which the Eartworm waveserver is running on host.
-        self.port = port
+        self.options['port'] = port
 
         # The obspy earthworm waveserver client instance.
-        self.client = Client(self.host, self.port)
+        self.client = Client(self.options['host'], 
+                             self.options['port'], 
+                             timeout=2)
 
     def getWaveform(self,
                     startTime,
@@ -280,8 +288,8 @@ class EarthwormWaveClient(WaveClient):
 
         endTime : UTCDateTime
             The end datetime of the data to fetch.
-        
-        
+
+
         Returns
         -------
         stream : :class:`obspy.core.Stream`
@@ -289,24 +297,28 @@ class EarthwormWaveClient(WaveClient):
         '''
 
         self.logger.debug("Querying...")
-           
+        self.logger.debug("%s", scnl)
+
         stream = Stream() 
         for curScnl in scnl:
             curStation = curScnl[0]
             curChannel = curScnl[1]
             curNetwork = curScnl[2]
             curLocation = curScnl[3]
-            
+
             try:
+                self.logger.debug('Before getWaveform....')
                 curStream = self.client.getWaveform(curNetwork,
                                                     curStation,
                                                     curLocation,
                                                     curChannel,
                                                     startTime,
                                                     endTime)
+                self.logger.debug('got waveform.')
                 stream += curStream
+                self.logger.debug('leave try')
             except:
-                pass
+                self.logger.debug("Error connecting to waveserver.")
 
         return stream
-        
+
