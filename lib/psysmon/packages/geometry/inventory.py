@@ -1663,6 +1663,17 @@ class Station:
         pub.sendMessage(msgTopic, msg)
 
 
+    def getScnl(self):
+        scnl = []
+        for curSensor, startTime, endTime in self.sensors:
+            curScnl = (self.name, curSensor.channelName, self.network, self.location)
+            if curScnl not in scnl:
+                scnl.append(curScnl)
+
+        return scnl
+
+
+
     def setParentInventory(self, parentInventory):
         ''' Set the parentInventory attribute.
 
