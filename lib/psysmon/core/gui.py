@@ -37,12 +37,15 @@ import wx
 import wx.aui
 import wx.html
 import wx.grid
+from wx import Choicebook
+from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
 import psysmon
+from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
@@ -255,15 +258,16 @@ class PSysmonGui(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             path = dlg.GetPath()
-            self.psyBase.loadPsysmonProject(path)
+            #self.psyBase.loadPsysmonProject(path)
 
             # Quest for the user and the database password.
             dlg = ProjectLoginDlg()
             dlg.ShowModal()
             userData = dlg.userData
-            userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
+            projectLoaded = self.psyBase.loadPsysmonProject(path, userData)
+            #userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
 
-            if not userSet:
+            if not projectLoaded:
                 self.psyBase.project = ""
                 msg = "No valid user found. Project not loaded."
                 dlg = wx.MessageDialog(None, msg, 
@@ -272,26 +276,22 @@ class PSysmonGui(wx.Frame):
                 dlg.ShowModal()
 
             else:
-                # Create the project's collection execution control
-                # server.
-                #self.psyBase.project.createCecServer(self.psyBase.packageMgr.packages)
-
                 # Load the current database structure.
-                self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
+                #self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
 
                 # Load the waveform directories.
-                self.psyBase.project.loadWaveformDirList()
+                #self.psyBase.project.loadWaveformDirList()
 
-                # The project database waveclient.
-                waveclient = PsysmonDbWaveClient('main client', self.psyBase.project)
-                self.psyBase.project.addWaveClient(waveclient)
-                
+                # By default, the project has a database waveclient.
+                #waveclient = PsysmonDbWaveClient('main client', self.psyBase.project)
+                #self.psyBase.project.addWaveClient(waveclient)
+
                 # Add the default localhost earthworm waveclient.
-                waveclient = EarthwormWaveClient('earthworm localhost')
-                self.psyBase.project.addWaveClient(waveclient)
+                #waveclient = EarthwormWaveClient('earthworm localhost')
+                #self.psyBase.project.addWaveClient(waveclient)
 
                 # Check if the database tables have to be updated.
-                self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
+                #self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
 
                 # Update the collection panel display.
                 self.collectionPanel.refreshCollection()
@@ -1469,6 +1469,7 @@ class EditWaveclientDlg(wx.Dialog):
         addButton = wx.Button(self, wx.ID_ANY, "add")
         editButton = wx.Button(self, wx.ID_ANY, "edit")
         removeButton = wx.Button(self, wx.ID_ANY, "remove")
+        defaultButton = wx.Button(self, wx.ID_ANY, "as default")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1478,9 +1479,16 @@ class EditWaveclientDlg(wx.Dialog):
         gridButtonSizer.Add(addButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(editButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(removeButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(defaultButton, 0, wx.EXPAND|wx.ALL)
 
+        # Create the image list for the list control.
+        self.il = wx.ImageList(16, 16)
+        self.iconDefault = self.il.Add(iconsBlack16.star_icon_16.GetBitmap())
+
+        # Create the list control
         fields = self.getGridColumns()
         self.wcListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
+        self.wcListCtrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
         for k, (name, label, attr) in enumerate(fields):
             self.wcListCtrl.InsertColumn(k, label)
@@ -1504,6 +1512,7 @@ class EditWaveclientDlg(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
         self.Bind(wx.EVT_BUTTON, self.onRemove, removeButton)
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+        self.Bind(wx.EVT_BUTTON, self.onSetAsDefault, defaultButton)
 
         self.updateWcListCtrl()
 
@@ -1516,7 +1525,18 @@ class EditWaveclientDlg(wx.Dialog):
         If a directory has been selected, call to insert the directory 
         into the database.
         '''
-        pass
+        dlg = AddWaveClientDlg()
+        dlg.ShowModal()
+        dlg.Destroy()
+
+
+    def onSetAsDefault(self, event):
+        ''' The remove directory callback.
+        '''
+        selectedRow = self.wcListCtrl.GetFocusedItem()
+        selectedItem = self.wcListCtrl.GetItemText(selectedRow)
+        self.psyBase.project.defaultWaveclient = selectedItem
+        self.updateWcListCtrl()
 
 
 
@@ -1533,7 +1553,10 @@ class EditWaveclientDlg(wx.Dialog):
         '''
         self.wcListCtrl.DeleteAllItems()
         for k, (name, client) in enumerate(self.psyBase.project.waveclient.iteritems()):
-            self.wcListCtrl.InsertStringItem(k, client.name)
+            if name == self.psyBase.project.defaultWaveclient:
+                self.wcListCtrl.InsertImageStringItem(k, client.name, self.iconDefault)
+            else:
+                self.wcListCtrl.InsertStringItem(k, client.name)
             self.wcListCtrl.SetStringItem(k, 1, client.mode)
             #self.wcListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
             #self.wcListCtrl.SetStringItem(k, 3, curDir.description)
@@ -1590,6 +1613,60 @@ class EditWaveclientDlg(wx.Dialog):
 
 
 
+class AddWaveClientDlg(wx.Dialog):
+
+    def __init__(self, parent=None, size=(-1,-1)):
+        ''' The constructor.
+
+        '''
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Add a new waveclient", style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
+        
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Create the dialog buttons.
+        okButton = wx.Button(self, wx.ID_OK)
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+        okButton.SetDefault()
+
+        # Create the choicebook.
+        self.modeChoiceBook = Choicebook(parent = self, id = wx.ID_ANY)
+      
+        for curLabel, curClass in self.clientModes().itervalues():
+            win = wx.Panel(self)
+            self.modeChoiceBook.AddPage(win, curLabel)
+
+
+        # The main dialog sizer.
+        sizer = wx.GridBagSizer(5,5)
+
+        # Add the choicebook.
+        sizer.Add(self.modeChoiceBook, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        # The button sizer.
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+        
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+
+    def clientModes(self):
+        clientModes = {}
+        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveClient)
+        clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
+        return clientModes
+
+        
+        
+
+
 
 class EditScnlDataSourcesDlg(wx.Dialog):
     ''' The EditWaveformDirDlg class.
@@ -1613,15 +1690,54 @@ class EditScnlDataSourcesDlg(wx.Dialog):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        # Get the inventory from the database.
+        inventoryDbController = InventoryDatabaseController(self.psyBase.project)
+        self.inventory = inventoryDbController.load()
+
+        # Create the scnl-datasource list.
+        self.scnl = []
+        for curNetwork in self.inventory.networks.itervalues():
+            for curStation in curNetwork.stations.itervalues():
+                self.scnl.extend(curStation.getScnl())
+
+        # Sort the scnl list.
+        self.scnl = sorted(self.scnl, key = itemgetter(0,1,2,3))
+
+        for curScnl in self.scnl:
+            if curScnl not in self.psyBase.project.dataSources.keys():
+                self.psyBase.project.dataSources[curScnl] = self.psyBase.project.defaultWaveclient
+
+
         # Use standard button IDs.
         okButton = wx.Button(self, wx.ID_OK)
         okButton.SetDefault()
         cancelButton = wx.Button(self, wx.ID_CANCEL)
 
-
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
 
+        # Create the grid.
+        roAttr = wx.grid.GridCellAttr()
+        roAttr.SetReadOnly(True)
+        columns = self.getGridColumns()
+        self.dataSourceGrid = wx.grid.Grid(self, size=(-1, 100))
+        self.dataSourceGrid.CreateGrid(len(self.scnl), len(columns))
+
+        for k, (name, label, attr) in enumerate(columns):
+            self.dataSourceGrid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.dataSourceGrid.SetColAttr(k, roAttr)
+
+        self.dataSourceGrid.AutoSizeColumns()
+        
+        # Fill the table values
+        for k, curScnl in enumerate(self.scnl):
+            self.dataSourceGrid.SetCellValue(k, 0, "-".join(x for x in curScnl))
+            self.dataSourceGrid.SetCellValue(k, 1, self.psyBase.project.dataSources[curScnl])
+        
+        sizer.Add(self.dataSourceGrid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        # Create a button sizer and add the ok and cancel buttons.
         btnSizer = wx.StdDialogButtonSizer()
         btnSizer.AddButton(okButton)
         btnSizer.AddButton(cancelButton)
@@ -1636,6 +1752,8 @@ class EditScnlDataSourcesDlg(wx.Dialog):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
 
+        
+
 
 
     def getGridColumns(self):
@@ -1643,10 +1761,8 @@ class EditScnlDataSourcesDlg(wx.Dialog):
 
         '''
         tableField = []
-        tableField.append(('name', 'name', 'readonly'))
-        tableField.append(('type', 'type', 'readonly'))
-        #tableField.append(('alias', 'alias', 'editable'))
-        #tableField.append(('description', 'description', 'editable'))
+        tableField.append(('scnl', 'SCNL', 'readonly'))
+        tableField.append(('dataSource', 'data source', 'editable'))
         return tableField
 
 
