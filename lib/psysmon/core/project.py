@@ -35,6 +35,7 @@ import thread
 import multiprocessing
 import subprocess
 import copy
+from psysmon.core.waveclient import PsysmonDbWaveClient
 from wx.lib.pubsub import Publisher as pub
 from wx import CallAfter
 from datetime import datetime
@@ -230,6 +231,12 @@ class Project:
         # The project's waveclients.
         self.waveclient = {}
 
+        # The default waveclient.
+        self.defaultWaveclient = 'earthworm localhost'
+
+        # The association of the SCNLs to the data sources (the waveclients).
+        self.dataSources = {}
+
     ## The __getstate__ method.
     #
     # Remove the project instance before pickling the instance.
@@ -251,7 +258,6 @@ class Project:
         result['dbTables'] = {}
         result['waveclient'] = {}
         result['threadMutex'] = None
-
 
         return result
 
@@ -522,6 +528,9 @@ class Project:
         db['dbVersion'] = self.dbVersion
         db['user'] = self.user
         db['createTime'] = self.createTime
+        db['waveclient'] = [(x.name, x.mode) for x in self.waveclient.itervalues()]
+        db['defaultWaveclient'] = self.defaultWaveclient
+        db['dataSources'] = self.dataSources
         db.close()
         self.saved = True 
 
@@ -1067,14 +1076,17 @@ class User:
             db['project'] = project
             db['collection'] = col2Proc
             db['packages'] = project.psyBase.packageMgr.packages
+            db['waveclient'] = [(x.name, x.mode) for x in project.waveclient.itervalues()]
             db.close()
 
 
             # Start the collection using the cecClient as a subprocess.
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
+            #proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
+            #                        executable=sys.executable, 
+            #                        stdout=subprocess.PIPE)
             proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
-                                    executable=sys.executable, 
-                                    stdout=subprocess.PIPE)
+                                    executable=sys.executable)
 
             msgTopic = "state.collection.execution"
             msg = {}
@@ -1085,7 +1097,7 @@ class User:
             msg['procName'] = col2Proc.procName
             pub.sendMessage(msgTopic, msg)
 
-            thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+            #thread.start_new_thread(processChecker, (proc, col2Proc.procName))
 
         else:
             raise PsysmonError('No active collection found!') 
