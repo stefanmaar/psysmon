@@ -45,7 +45,7 @@ class TracedisplayTestCase(unittest.TestCase):
         # Create the project waveclient.
         waveclient = PsysmonDbWaveClient('main client', psyBase.project)
         psyBase.project.addWaveClient(waveclient)
-        waveclient = EarthwormWaveClient('earthworm')
+        waveclient = EarthwormWaveClient('earthworm localhost')
         psyBase.project.addWaveClient(waveclient)
         self.app =psygui.PSysmonApp()
 
