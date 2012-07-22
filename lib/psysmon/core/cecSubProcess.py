@@ -62,6 +62,8 @@ if __name__ == "__main__":
     project = db['project']
     collection = db['collection']
     packages = db['packages']
+    waveclients = db['waveclient']
+    db.close()
 
     #logfileName = os.path.join(tempfile.gettempdir(), procName + '.log')
     logfileName = os.path.join(project.tmpDir, procName + '.log')
@@ -86,10 +88,18 @@ if __name__ == "__main__":
     # Reinitialize the project.
     project.connect2Db(project.activeUser.pwd)
     project.loadDatabaseStructure(packages)
-    waveclient = PsysmonDbWaveClient('main client', project)
-    project.addWaveClient(waveclient)
-    waveclient = EarthwormWaveClient('earthworm', project)
-    project.addWaveClient(waveclient)
+
+    for curName, curMode in waveclients:
+        if curMode == 'psysmonDb':
+            waveclient = PsysmonDbWaveClient(curName, project)
+        elif curMode == 'earthworm':
+            waveclient = EarthwormWaveClient(curName)
+        else:
+            waveclient = None
+
+        if waveclient != None:
+            project.addWaveClient(waveclient)
+
     collection.setNodeProject(project) 
     collection.createNodeLoggers()
 
