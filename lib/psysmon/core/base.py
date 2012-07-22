@@ -37,6 +37,7 @@ from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
+from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
 from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -241,7 +242,7 @@ class Base:
         return True
 
 
-    def loadPsysmonProject(self, filename):
+    def loadPsysmonProject(self, filename, userData):
         '''
         Load a psysmon project.
 
@@ -265,9 +266,40 @@ class Base:
                                                     dbDriver = db['dbDriver'],
                                                     dbDialect = db['dbDialect']
                                                     )
+        self.project.defaultWaveclient = db['defaultWaveclient']
+        self.project.dataSources = db['dataSources']
         self.project.updateDirectoryStructure()
         self.project.setCollectionNodeProject()
+        waveclients2Add = db['waveclient']
         db.close()
+
+        userSet = self.project.setActiveUser(userData['user'], userData['pwd'])
+        if not userSet:
+            self.project = None
+            return False
+        else:
+            # Load the current database structure.
+            self.project.loadDatabaseStructure(self.packageMgr.packages)
+            
+            # Load the waveform directories.
+            self.project.loadWaveformDirList()
+
+            for curName, curMode in waveclients2Add:
+                if curMode == 'psysmonDb':
+                    waveclient = PsysmonDbWaveClient(curName, self.project)
+                elif curMode == 'earthworm':
+                    waveclient = EarthwormWaveClient(curName)
+                else:
+                    waveclient = None
+
+                self.project.addWaveClient(waveclient)
+
+            # Check if the database tables have to be updated.
+            self.project.checkDbVersions(self.packageMgr.packages)
+
+            return True
+
+
 
 
 
