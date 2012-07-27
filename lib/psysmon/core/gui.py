@@ -1655,6 +1655,9 @@ class AddWaveClientDlg(wx.Dialog):
         sizer.AddGrowableCol(0)
 
         self.SetSizerAndFit(sizer)
+        
+        # Bind the events.
+        self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
 
 
     def clientModes(self):
@@ -1662,6 +1665,11 @@ class AddWaveClientDlg(wx.Dialog):
         clientModes['earthworm'] =  ('Earthworm', EarthwormWaveClient)
         clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
         return clientModes
+
+
+    def onOk(self, event):
+
+        pass
 
         
         
