@@ -342,15 +342,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         il = wx.ImageList(16, 16)
         self.icons = {}
-        #self.icons['xmlInventory'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','notebook_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap()) 
-        #self.icons['recorderList'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','list_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap()) 
-        #self.icons['stationList'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','list_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap()) 
-        #self.icons['sensorList'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','list_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap()) 
-        #self.icons['networkList'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','list_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        #self.icons['network'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','network_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        #self.icons['station'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','flag_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        #self.icons['recorder'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','help_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        #self.icons['sensor'] = il.Add(wx.Image(os.path.join(os.path.dirname(__file__), 'icons','help_16.png'), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         self.icons['xmlInventory'] = il.Add(icons.db_icon_16.GetBitmap()) 
         self.icons['recorderList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['stationList'] = il.Add(icons.notepad_icon_16.GetBitmap())
