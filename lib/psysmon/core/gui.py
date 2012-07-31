@@ -1543,7 +1543,18 @@ class EditWaveclientDlg(wx.Dialog):
     def onRemove(self, event):
         ''' The remove directory callback.
         '''
-        pass
+        selectedRow = self.wcListCtrl.GetFocusedItem()
+        selectedItem = self.wcListCtrl.GetItemText(selectedRow)
+
+        if selectedItem != 'main client':
+            self.psyBase.project.removeWaveClient(selectedItem)
+            self.updateWcListCtrl()
+        else:
+            msg = "The main client can't be deleted"
+            dlg = wx.MessageDialog(None, msg, 
+                                   "pSysmon error",
+                                    wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
 
 
 
@@ -1635,6 +1646,11 @@ class AddWaveClientDlg(wx.Dialog):
       
         for curLabel, curClass in self.clientModes().itervalues():
             win = wx.Panel(self)
+            win.SetMinSize((200, 200))
+            if curClass == PsysmonDbWaveClient:
+                win.SetBackgroundColour('red')
+            elif curClass == EarthwormWaveClient:
+                win.SetBackgroundColour('green')
             self.modeChoiceBook.AddPage(win, curLabel)
 
 
