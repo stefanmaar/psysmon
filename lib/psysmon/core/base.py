@@ -237,6 +237,12 @@ class Base:
         self.project.createDirectoryStructure()
         self.project.createDatabaseStructure(self.packageMgr.packages)
         self.project.setActiveUser(user, userPwd)               # Set the active user again to run all remaining project initialization methods.
+
+        # By default add a psysmon Database waveclient with the name 'main
+        # client'.
+        waveclient = PsysmonDbWaveClient('main client', self.project)
+        self.project.addWaveClient(waveclient)
+
         self.project.save()
 
         return True
