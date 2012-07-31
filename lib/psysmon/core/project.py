@@ -322,6 +322,30 @@ class Project:
         self.waveclient[waveclient.name] = waveclient
 
 
+    def removeWaveClient(self, name):
+        ''' Remove the waveclient with name 'name' from the project.
+        The client with the name 'main client' can't be removed from 
+        the project. The main client is the default psysmon database 
+        client.
+
+        Parameters
+        ----------
+        name : String
+            The name of the waveclient to remove from the project.
+
+        Returns
+        -------
+        waveclient : waveclient object
+            The waveclient removed from the project.
+        '''
+        if name == 'main client':
+            return None
+        if name in self.waveclient.keys():
+            return self.waveclient.pop(name)
+
+
+
+
     def connect2Db(self, passwd):
         '''Connect to the mySQL database.
 
