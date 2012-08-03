@@ -1624,6 +1624,18 @@ class EditWaveclientDlg(wx.Dialog):
 
 
 
+class PsysmonDbWaveclientOptions(wx.Panel):
+
+    def __init__(self, parent=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
+
+
+
+
+
 class AddWaveClientDlg(wx.Dialog):
 
     def __init__(self, parent=None, size=(-1,-1)):
@@ -1648,6 +1660,7 @@ class AddWaveClientDlg(wx.Dialog):
             win = wx.Panel(self)
             win.SetMinSize((200, 200))
             if curClass == PsysmonDbWaveClient:
+                win = PsysmonDbWaveclientOptions
                 win.SetBackgroundColour('red')
             elif curClass == EarthwormWaveClient:
                 win.SetBackgroundColour('green')
