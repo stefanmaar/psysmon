@@ -430,7 +430,7 @@ class PSysmonGui(wx.Frame):
             The event passed to the callback.
         '''
         if self.psyBase.project:
-            dlg = EditWaveclientDlg(parent=self, psyBase=self.psyBase)
+            dlg = WaveclientDlg(parent=self, psyBase=self.psyBase)
             dlg.ShowModal()
             dlg.Destroy()
         else:
@@ -1438,7 +1438,7 @@ class EditWaveformDirDlg(wx.Dialog):
 
 
 
-class EditWaveclientDlg(wx.Dialog):
+class WaveclientDlg(wx.Dialog):
     ''' The EditWaveformDirDlg class.
 
     This class creates a dialog used to edit the pSysmon waveform directories.
@@ -1509,12 +1509,26 @@ class EditWaveclientDlg(wx.Dialog):
         self.SetSizerAndFit(sizer)
 
         # Bind the events.
-        self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
+        #self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
+        self.Bind(wx.EVT_BUTTON, self.onEdit, editButton)
         self.Bind(wx.EVT_BUTTON, self.onRemove, removeButton)
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
         self.Bind(wx.EVT_BUTTON, self.onSetAsDefault, defaultButton)
 
         self.updateWcListCtrl()
+
+
+    def onEdit(self, event):
+        ''' The edit button callback.
+
+        '''
+        selectedRow = self.wcListCtrl.GetFocusedItem()
+        selectedItem = self.wcListCtrl.GetItemText(selectedRow)
+        print "Edit the waveclient: %s" % selectedItem
+        dlg = EditWaveclientDlg(psyBase = self.psyBase,
+                                client = self.psyBase.project.waveclient[selectedItem])
+        dlg.ShowModal()
+        dlg.Destroy()
 
 
 
@@ -1525,7 +1539,7 @@ class EditWaveclientDlg(wx.Dialog):
         If a directory has been selected, call to insert the directory 
         into the database.
         '''
-        dlg = AddWaveClientDlg()
+        dlg = AddWaveClientDlg(psyBase=self.psyBase)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -1632,21 +1646,229 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         '''
         wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Create the grid editing buttons.
+        addDirButton = wx.Button(self, wx.ID_ANY, "add")
+        removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+        gridButtonSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Fill the grid button sizer
+        gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
+
+        fields = self.getGridColumns()
+        self.wfListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
+
+        for k, (name, label, attr) in enumerate(fields):
+            self.wfListCtrl.InsertColumn(k, label)
+
+        sizer.Add(self.wfListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+        # Bind the events.
+        self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
+        self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
+        #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
+        self.project = self.GetParent().psyBase.project
+        self.wfDir = self.project.dbTables['waveform_dir']
+        self.wfDirAlias = self.project.dbTables['waveform_dir_alias']
+        self.dbSession = self.project.getDbSession()
+
+        # A list of available waveform directories. It consits of tuples of
+        # wfDir mapper instances.
+        self.wfDirList =  self.dbSession.query(self.wfDir
+                                              ).join(self.wfDirAlias, 
+                                                     self.wfDir.id == self.wfDirAlias.wf_id
+                                                    ).filter(self.wfDirAlias.user == self.project.activeUser.name
+                                                            ).all()
+
+        self.history = ActionHistory(attrMap = {}, 
+                                     actionTypes = []
+                                     )
+
+        self.updateWfListCtrl()
 
 
+
+    def getGridColumns(self):
+        ''' Create the column fields used by the list control.
+
+        '''
+        tableField = []
+        tableField.append(('id', 'id', 'readonly'))
+        tableField.append(('origDir', 'original directory', 'readonly'))
+        tableField.append(('alias', 'alias', 'editable'))
+        tableField.append(('description', 'description', 'editable'))
+        return tableField
+
+
+    def onAddDirectory(self, event):
+        ''' The add directory callback.
+
+        Show a directory browse dialog.
+        If a directory has been selected, call to insert the directory 
+        into the database.
+        '''
+        # In this case we include a "New directory" button.
+        dlg = wx.DirDialog(self, "Choose a directory:",
+                          style=wx.DD_DEFAULT_STYLE
+                           #| wx.DD_DIR_MUST_EXIST
+                           #| wx.DD_CHANGE_DIR
+                           )
+
+        # If the user selects OK, then we process the dialog's data.
+        # This is done by getting the path data from the dialog - BEFORE
+        # we destroy it.
+        if dlg.ShowModal() == wx.ID_OK:
+            self.logger.info('You selected: %s', dlg.GetPath())
+
+            newWfDir = self.wfDir(dlg.GetPath(), '')
+            newAlias = self.wfDirAlias(self.project.activeUser.name,
+                                            dlg.GetPath())
+            newWfDir.aliases.append(newAlias)
+
+            self.dbSession.add(newWfDir)
+            #self.dbSession.add(newWfDirAlias)
+
+            self.wfDirList.append(newWfDir)
+            self.addItem2WfListCtrl(newWfDir)
+
+            #rowNumber = 1
+            #action = Action(style='METHOD',
+            #                affectedObject=None,
+            #                dataBefore=None,
+            #                dataAfter=None,
+            #                undoMethod=self.removeDirectory,
+            #                undoParameters=rowNumber
+            #                )
+            #self.history.do(action)
+
+        # Only destroy a dialog after you're done with it.
+        dlg.Destroy()
+
+
+    def updateWfListCtrl(self):
+        ''' Initialize the waveformDir table with values.
+
+        '''
+        self.wfListCtrl.DeleteAllItems()
+        for k, curDir in enumerate(self.wfDirList):
+            self.wfListCtrl.InsertStringItem(k, str(curDir.id))
+            self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
+            self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
+            self.wfListCtrl.SetStringItem(k, 3, curDir.description)
+
+        self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+
+
+    def addItem2WfListCtrl(self, item):
+        ''' Add a waveform directory to the list control.
+
+        Parameters
+        ----------
+        item : Object
+            The waveformDir mapper instance to be added to the list control.
+        '''
+        k = self.wfListCtrl.GetItemCount()
+        self.wfListCtrl.InsertStringItem(k, str(item.id))
+        self.wfListCtrl.SetStringItem(k, 1, item.directory)
+        self.wfListCtrl.SetStringItem(k, 2, item.aliases[0].alias)
+        self.wfListCtrl.SetStringItem(k, 3, item.description)
+        self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+
+
+    def onRemoveDirectory(self, event):
+        ''' The remove directory callback.
+        '''
+        selectedRow =  self.wfListCtrl.GetFocusedItem()
+        #item2Delete =  self.wfListCtrl.GetItem(selectedRow, 0)
+        obj2Delete = self.wfDirList.pop(selectedRow)
+        self.dbSession.delete(obj2Delete)
+        self.wfListCtrl.DeleteItem(selectedRow)
+        #self.dbSession.query(self.wfDir).filter(self.wfDir.id==id2Delete).delete()
+
+
+
+class EditWaveclientDlg(wx.Dialog):
+
+    def __init__(self, parent=None, size=(-1, -1), psyBase = None, client = None):
+        ''' The constructor.
+
+        '''
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Edit the waveclient options", style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.psyBase = psyBase
+
+        self.clientOptionPanels = self.getClientOptionsPanels()
+
+        # Create the dialog buttons.
+        okButton = wx.Button(self, wx.ID_OK)
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+        okButton.SetDefault()
+
+        # Create the client's options pane.
+        (curLabel, curPanel) = self.clientOptionPanels[client.mode]
+        self.optionsPanel = curPanel(parent = self)
+
+        # The main dialog sizer.
+        sizer = wx.GridBagSizer(5,5)
+
+        sizer.Add(self.optionsPanel, pos=(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
+
+        # The button sizer.
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+
+
+    def getClientOptionsPanels(self):
+        clientModes = {}
+        clientModes['earthworm'] =  ('Earthworm', None)
+        clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
+        return clientModes
 
 
 class AddWaveClientDlg(wx.Dialog):
 
-    def __init__(self, parent=None, size=(-1,-1)):
+    def __init__(self, parent=None, size=(-1,-1), psyBase=None):
         ''' The constructor.
 
         '''
         wx.Dialog.__init__(self, parent, wx.ID_ANY, "Add a new waveclient", style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
-        
+
         # The logger.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+        self.psyBase = psyBase
 
         # Create the dialog buttons.
         okButton = wx.Button(self, wx.ID_OK)
@@ -1655,16 +1877,17 @@ class AddWaveClientDlg(wx.Dialog):
 
         # Create the choicebook.
         self.modeChoiceBook = Choicebook(parent = self, id = wx.ID_ANY)
-      
+
         for curLabel, curClass in self.clientModes().itervalues():
-            win = wx.Panel(self)
-            win.SetMinSize((200, 200))
             if curClass == PsysmonDbWaveClient:
-                win = PsysmonDbWaveclientOptions
-                win.SetBackgroundColour('red')
+                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook)
+                panel.SetBackgroundColour('red')
             elif curClass == EarthwormWaveClient:
-                win.SetBackgroundColour('green')
-            self.modeChoiceBook.AddPage(win, curLabel)
+                panel = wx.Panel(self)
+                panel.SetBackgroundColour('green')
+
+            panel.SetMinSize((200, 200))
+            self.modeChoiceBook.AddPage(panel, curLabel)
 
 
         # The main dialog sizer.
