@@ -242,6 +242,7 @@ class Base:
         # client'.
         waveclient = PsysmonDbWaveClient('main client', self.project)
         self.project.addWaveClient(waveclient)
+        self.project.defaultWaveclient = 'main client'
 
         self.project.save()
 
