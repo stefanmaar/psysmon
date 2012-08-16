@@ -1,4 +1,3 @@
-import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
