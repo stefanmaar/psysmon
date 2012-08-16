@@ -270,7 +270,7 @@ class PsysmonDbWaveClient(WaveClient):
 
 
 
-class EarthwormWaveClient(WaveClient):
+class EarthwormWaveclient(WaveClient):
     ''' The earthworm waveserver client.
 
     This class provides the connector to a Earthworm waveserver.
@@ -325,6 +325,7 @@ class EarthwormWaveClient(WaveClient):
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
+        from obspy.core import Stream
 
         self.logger.debug("Querying...")
         self.logger.debug("%s", scnl)

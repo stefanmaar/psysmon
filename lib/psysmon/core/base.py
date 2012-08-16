@@ -37,7 +37,7 @@ from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
+from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -292,7 +292,7 @@ class Base:
                 if curMode == 'psysmonDb':
                     waveclient = PsysmonDbWaveClient(curName, self.project)
                 elif curMode == 'earthworm':
-                    waveclient = EarthwormWaveClient(curName)
+                    waveclient = EarthwormWaveclient(curName)
                 else:
                     waveclient = None
 
