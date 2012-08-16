@@ -1304,9 +1304,10 @@ class DataSourceDlg(wx.Dialog):
         If a directory has been selected, call to insert the directory 
         into the database.
         '''
-        dlg = AddWaveClientDlg(psyBase=self.psyBase)
+        dlg = AddDataSourceDlg(psyBase=self.psyBase)
         dlg.ShowModal()
         dlg.Destroy()
+        self.updateWcListCtrl()
 
 
     def onSetAsDefault(self, event):
@@ -1603,14 +1604,22 @@ class EarthwormWaveclientOptions(wx.Panel):
 
 
         self.nameLabel = wx.StaticText(self, -1, "name:")
-        self.nameEdit = wx.TextCtrl(self, -1, "localhost", size=(125, -1))
+        self.nameEdit = wx.TextCtrl(self, -1, self.client.name, size=(100, -1))
+        self.hostLabel = wx.StaticText(self, -1, "host:")
+        self.hostEdit = wx.TextCtrl(self, -1, self.client.options['host'], size=(100, -1))
+        self.portLabel = wx.StaticText(self, -1, "port:")
+        self.portEdit = wx.TextCtrl(self, -1, str(self.client.options['port']), size=(100, -1))
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
 
 
-        sizer.Add(self.nameLabel, pos=(0,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.nameLabel, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
         sizer.Add(self.nameEdit, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.hostLabel, pos=(1,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.hostEdit, pos=(1,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.portLabel, pos=(2,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.portEdit, pos=(2,1), flag=wx.EXPAND|wx.ALL, border=5)
 
         sizer.AddGrowableCol(1)
 
@@ -1626,7 +1635,13 @@ class EarthwormWaveclientOptions(wx.Panel):
         This method should be called by the dialog holding the options when the user clicks 
         the ok button.
         '''
-        pass
+        self.client.name = self.nameEdit.GetValue()
+        self.client.options['host'] = self.hostEdit.GetValue()
+        self.client.options['port'] = int(self.portEdit.GetValue())
+        self.logger.debug(self.client.name)
+        return self.client
+
+
 
 
 
@@ -1701,7 +1716,7 @@ class EditWaveclientDlg(wx.Dialog):
         
 
 
-class AddWaveClientDlg(wx.Dialog):
+class AddDataSourceDlg(wx.Dialog):
 
     def __init__(self, parent=None, size=(-1,-1), psyBase=None):
         ''' The constructor.
@@ -1728,7 +1743,9 @@ class AddWaveClientDlg(wx.Dialog):
                 panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook, project=self.psyBase.project)
                 panel.SetBackgroundColour('red')
             elif curClass == EarthwormWaveclient:
-                panel = EarthwormWaveclientOptions(parent=self.modeChoiceBook, project=self.psyBase.project)
+                panel = EarthwormWaveclientOptions(parent=self.modeChoiceBook, 
+                                                   project=self.psyBase.project,
+                                                   client=curClass(name='earthworm client'))
                 panel.SetBackgroundColour('green')
 
             panel.SetMinSize((200, 200))
@@ -1765,8 +1782,9 @@ class AddWaveClientDlg(wx.Dialog):
 
 
     def onOk(self, event):
-
-        pass
+        client = self.modeChoiceBook.GetCurrentPage().onOk()
+        self.psyBase.project.addWaveClient(client) 
+        self.Destroy()
 
         
         
