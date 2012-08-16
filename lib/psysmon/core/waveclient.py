@@ -1,3 +1,4 @@
+import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -31,7 +32,6 @@ Module for providing the waveform data from various sources.
 import logging
 import string
 import os
-from obspy.core import read, Stream
 from sqlalchemy import or_
 
 class WaveClient:
@@ -119,6 +119,7 @@ class PsysmonDbWaveClient(WaveClient):
     '''
 
     def __init__(self, name, project):
+        
         WaveClient.__init__(self, name=name, mode='psysmonDb')
 
         # The psysmon project owning the waveclient.
@@ -184,6 +185,7 @@ class PsysmonDbWaveClient(WaveClient):
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
+        from obspy.core import read, Stream
 
         self.logger.debug("Querying...")
 

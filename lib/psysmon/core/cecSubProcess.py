@@ -31,8 +31,6 @@ The pSysmon main program.
 #wxreactor.install()
 
 import psysmon
-#import psysmon.core.gui as psygui
-#from psysmon.core.collectionExecutionControl import CecClient
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
 import psysmon.core.base as psybase
 #from twisted.internet import reactor
