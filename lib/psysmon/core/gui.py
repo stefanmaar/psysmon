@@ -1293,7 +1293,8 @@ class DataSourceDlg(wx.Dialog):
         dlg = EditWaveclientDlg(psyBase = self.psyBase,
                                 client = self.psyBase.project.waveclient[selectedItem])
         dlg.ShowModal()
-        dlg.Destroy()
+        #dlg.Destroy()
+        self.updateWcListCtrl()
 
 
 
@@ -1306,7 +1307,7 @@ class DataSourceDlg(wx.Dialog):
         '''
         dlg = AddDataSourceDlg(psyBase=self.psyBase)
         dlg.ShowModal()
-        dlg.Destroy()
+        #dlg.Destroy()
         self.updateWcListCtrl()
 
 
@@ -1694,7 +1695,7 @@ class EditWaveclientDlg(wx.Dialog):
 
     def getClientOptionsPanels(self):
         clientModes = {}
-        clientModes['earthworm'] =  ('Earthworm', None)
+        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveclientOptions)
         clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
         return clientModes
 
