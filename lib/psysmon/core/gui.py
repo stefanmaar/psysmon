@@ -48,7 +48,7 @@ import psysmon
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
+from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 from datetime import datetime
 import webbrowser
@@ -1274,7 +1274,7 @@ class DataSourceDlg(wx.Dialog):
         self.SetSizerAndFit(sizer)
 
         # Bind the events.
-        #self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
+        self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
         self.Bind(wx.EVT_BUTTON, self.onEdit, editButton)
         self.Bind(wx.EVT_BUTTON, self.onRemove, removeButton)
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
@@ -1402,10 +1402,9 @@ class DataSourceDlg(wx.Dialog):
         self.Destroy()
 
 
-
 class PsysmonDbWaveclientOptions(wx.Panel):
 
-    def __init__(self, parent=None, client=None, size=(-1, -1)):
+    def __init__(self, parent=None, client=None, project=None, size=(-1, -1)):
         ''' The constructor.
 
         '''
@@ -1448,7 +1447,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
 
-        self.project = self.GetParent().psyBase.project
+        self.project = project
         self.wfDir = self.project.dbTables['waveform_dir']
         self.wfDirAlias = self.project.dbTables['waveform_dir_alias']
         self.dbSession = self.project.getDbSession()
@@ -1587,6 +1586,50 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
 
 
+class EarthwormWaveclientOptions(wx.Panel):
+
+    def __init__(self, parent=None, client=None, project=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The waveclient holding the options.
+        self.client = client
+
+
+        self.nameLabel = wx.StaticText(self, -1, "name:")
+        self.nameEdit = wx.TextCtrl(self, -1, "localhost", size=(125, -1))
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+
+
+        sizer.Add(self.nameLabel, pos=(0,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.nameEdit, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.AddGrowableCol(1)
+
+        self.SetSizerAndFit(sizer)
+
+        self.project = project
+
+
+    
+    def onOk(self):
+        ''' Apply the changes.
+
+        This method should be called by the dialog holding the options when the user clicks 
+        the ok button.
+        '''
+        pass
+
+
+
 
 class EditWaveclientDlg(wx.Dialog):
 
@@ -1611,7 +1654,7 @@ class EditWaveclientDlg(wx.Dialog):
 
         # Create the client's options pane.
         (curLabel, curPanel) = self.clientOptionPanels[client.mode]
-        self.optionsPanel = curPanel(parent=self, client=client)
+        self.optionsPanel = curPanel(parent=self, client=client, project=self.psyBase.project)
 
         # The main dialog sizer.
         sizer = wx.GridBagSizer(5,5)
@@ -1682,10 +1725,10 @@ class AddWaveClientDlg(wx.Dialog):
 
         for curLabel, curClass in self.clientModes().itervalues():
             if curClass == PsysmonDbWaveClient:
-                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook)
+                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook, project=self.psyBase.project)
                 panel.SetBackgroundColour('red')
-            elif curClass == EarthwormWaveClient:
-                panel = wx.Panel(self)
+            elif curClass == EarthwormWaveclient:
+                panel = EarthwormWaveclientOptions(parent=self.modeChoiceBook, project=self.psyBase.project)
                 panel.SetBackgroundColour('green')
 
             panel.SetMinSize((200, 200))
@@ -1716,8 +1759,8 @@ class AddWaveClientDlg(wx.Dialog):
 
     def clientModes(self):
         clientModes = {}
-        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveClient)
-        clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
+        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveclient)
+        #clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
         return clientModes
 
 
