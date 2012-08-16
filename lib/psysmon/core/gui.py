@@ -132,7 +132,6 @@ class PSysmonGui(wx.Frame):
                  ("&Exit", "Exit pSysmon.", self.onClose)),
                 ("Edit",
                  ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser),
-                 ("waveform directories", "Edit the waveform directories.", self.onEditWaveformDir),
                  ("Wave clients", "Edit the wave clients.", self.onEditWaveClients),
                  ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources)),
                 ("Help",
@@ -403,22 +402,6 @@ class PSysmonGui(wx.Frame):
         dlg = CreateNewDbUserDlg(parent=self, psyBase=self.psyBase)
         dlg.ShowModal()
         dlg.Destroy()
-
-
-    def onEditWaveformDir(self, event):
-        ''' The edit waveform directories callback.
-
-        Parameters
-        ----------
-        event : 
-            The event passed to the callback.
-        '''
-        if self.psyBase.project:
-            dlg = EditWaveformDirDlg(parent=self, psyBase=self.psyBase)
-            dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            self.logger.warning('You have to open a project to edit the waveform directories.')
 
 
     def onEditWaveClients(self, event):
