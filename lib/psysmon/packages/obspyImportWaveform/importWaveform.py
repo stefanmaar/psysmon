@@ -45,16 +45,16 @@ class ImportWaveform(CollectionNode):
         Header = self.project.dbTables['traceheader']
 
         wfDirId = ""
-        for curWfDir in self.project.waveformDirList:
-            if filename.startswith(curWfDir['dirAlias']):
-                wfDirId = curWfDir['id']
+        for curWfDir in self.project.waveclient['main client'].waveformDirList:
+            if filename.startswith(curWfDir.alias):
+                wfDirId = curWfDir.id
                 break
 
         print wfDirId
 
         if wfDirId:
             # Remove the waveform directory from the file path.
-            relativeFilename = filename.replace(curWfDir['dirAlias'], '')
+            relativeFilename = filename.replace(curWfDir.alias, '')
             relativeFilename = relativeFilename[1:]
             labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path', 
                       'network', 'recorder_serial', 'channel', 'location', 
