@@ -132,7 +132,7 @@ class PSysmonGui(wx.Frame):
                  ("&Exit", "Exit pSysmon.", self.onClose)),
                 ("Edit",
                  ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser),
-                 ("Wave clients", "Edit the wave clients.", self.onEditWaveClients),
+                 ("Data sources", "Edit the data sources of the project.", self.onEditDataSources),
                  ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
@@ -404,7 +404,7 @@ class PSysmonGui(wx.Frame):
         dlg.Destroy()
 
 
-    def onEditWaveClients(self, event):
+    def onEditDataSources(self, event):
         ''' The edit wave clients callback.
 
         Parameters
@@ -413,11 +413,11 @@ class PSysmonGui(wx.Frame):
             The event passed to the callback.
         '''
         if self.psyBase.project:
-            dlg = WaveclientDlg(parent=self, psyBase=self.psyBase)
+            dlg = DataSourceDlg(parent=self, psyBase=self.psyBase)
             dlg.ShowModal()
             dlg.Destroy()
         else:
-            self.logger.warning('You have to open a project to edit the waveform directories.')
+            self.logger.warning('You have to open a project first to edit the wave clients.')
 
 
     def onEditScnlDataSources(self, event):
@@ -433,7 +433,7 @@ class PSysmonGui(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
         else:
-            self.logger.warning('You have to open a project to edit the waveform directories.')
+            self.logger.warning('You have to open a project first to edit the scnl data sources.')
 
 
     ## Create new project menu callback.
@@ -1203,10 +1203,10 @@ class CreateNewDbUserDlg(wx.Dialog):
 
 
 
-class WaveclientDlg(wx.Dialog):
+class DataSourceDlg(wx.Dialog):
     ''' The EditWaveformDirDlg class.
 
-    This class creates a dialog used to edit the pSysmon waveform directories.
+    This class creates a dialog used to edit the pSysmon data sources.
 
     Attributes
     ----------
