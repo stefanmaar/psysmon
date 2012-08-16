@@ -1640,7 +1640,7 @@ class WaveclientDlg(wx.Dialog):
 
 class PsysmonDbWaveclientOptions(wx.Panel):
 
-    def __init__(self, parent=None, size=(-1, -1)):
+    def __init__(self, parent=None, client=None, size=(-1, -1)):
         ''' The constructor.
 
         '''
@@ -1649,6 +1649,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # The logger.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+        # The waveclient holding the options.
+        self.client = client
 
         # Create the grid editing buttons.
         addDirButton = wx.Button(self, wx.ID_ANY, "add")
@@ -1679,7 +1682,6 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
-        #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
 
         self.project = self.GetParent().psyBase.project
         self.wfDir = self.project.dbTables['waveform_dir']
@@ -1688,11 +1690,13 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         # A list of available waveform directories. It consits of tuples of
         # wfDir mapper instances.
-        self.wfDirList =  self.dbSession.query(self.wfDir
-                                              ).join(self.wfDirAlias, 
-                                                     self.wfDir.id == self.wfDirAlias.wf_id
-                                                    ).filter(self.wfDirAlias.user == self.project.activeUser.name
-                                                            ).all()
+        #self.wfDirList =  self.dbSession.query(self.wfDir
+        #                                      ).join(self.wfDirAlias, 
+        #                                             self.wfDir.id == self.wfDirAlias.wf_id
+        #                                            ).filter(self.wfDirAlias.user == self.project.activeUser.name
+        #                                                    ).all()
+
+        self.wfDirList = self.client.waveformDirList
 
         self.history = ActionHistory(attrMap = {}, 
                                      actionTypes = []
@@ -1767,7 +1771,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         for k, curDir in enumerate(self.wfDirList):
             self.wfListCtrl.InsertStringItem(k, str(curDir.id))
             self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
-            self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
+            self.wfListCtrl.SetStringItem(k, 2, curDir.alias)
             self.wfListCtrl.SetStringItem(k, 3, curDir.description)
 
         self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
@@ -1804,6 +1808,20 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         #self.dbSession.query(self.wfDir).filter(self.wfDir.id==id2Delete).delete()
 
 
+    
+    def onOk(self):
+        ''' Apply the changes.
+
+        This method should be called by the dialog holding the options when the user clicks 
+        the ok button.
+        '''
+        self.dbSession.commit()
+        # Reload the project's waveform directory list to make sure, that it's 
+        # consistent with the database.
+        self.client.loadWaveformDirList()
+
+
+
 
 class EditWaveclientDlg(wx.Dialog):
 
@@ -1828,7 +1846,7 @@ class EditWaveclientDlg(wx.Dialog):
 
         # Create the client's options pane.
         (curLabel, curPanel) = self.clientOptionPanels[client.mode]
-        self.optionsPanel = curPanel(parent = self)
+        self.optionsPanel = curPanel(parent=self, client=client)
 
         # The main dialog sizer.
         sizer = wx.GridBagSizer(5,5)
@@ -1847,6 +1865,8 @@ class EditWaveclientDlg(wx.Dialog):
 
         self.SetSizerAndFit(sizer)
 
+        self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+
 
 
     def getClientOptionsPanels(self):
@@ -1854,6 +1874,23 @@ class EditWaveclientDlg(wx.Dialog):
         clientModes['earthworm'] =  ('Earthworm', None)
         clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
         return clientModes
+
+
+    def onOk(self, event):
+        ''' The ok button callback.
+
+        Parameters
+        ----------
+        event :
+            The wxPython event passed to the callback.
+
+        Commit the database changes and update the project's waveform directory 
+        list.
+        '''
+        # Call the onOk method of the options class.
+        self.optionsPanel.onOk()
+        self.Destroy()
+        
 
 
 class AddWaveClientDlg(wx.Dialog):

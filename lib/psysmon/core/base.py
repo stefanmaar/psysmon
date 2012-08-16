@@ -288,9 +288,6 @@ class Base:
             # Load the current database structure.
             self.project.loadDatabaseStructure(self.packageMgr.packages)
             
-            # Load the waveform directories.
-            self.project.loadWaveformDirList()
-
             for curName, curMode in waveclients2Add:
                 if curMode == 'psysmonDb':
                     waveclient = PsysmonDbWaveClient(curName, self.project)

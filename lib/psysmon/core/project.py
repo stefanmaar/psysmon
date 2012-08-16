@@ -122,9 +122,6 @@ class Project:
         A list of users associated with the project.
         The user creating the project is always the admin user.
 
-    waveformDirList : List of Strings
-        A list of waveform directories associated with the project.
-        Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
 
     '''
 
@@ -205,9 +202,6 @@ class Project:
 
         # The version dictionary of the package dtabase structures.
         self.dbVersion = dbVersion
-
-        # A list of waveform directories associated with the project.
-        self.waveformDirList = []
 
         # Is the project saved?
         self.saved = False
@@ -682,29 +676,6 @@ class Project:
 
         '''
         self.activeUser.executeCollection(self)
-
-
-
-
-    def loadWaveformDirList(self):
-        '''Load the waveform directories from the database table.
-
-        '''
-        # Clear the list to start from beginning.
-        self.waveformDirList = []
-
-        wfDir = self.dbTables['waveform_dir']
-        wfDirAlias = self.dbTables['waveform_dir_alias']
-
-        dbSession = self.getDbSession()
-        for row in dbSession.query(wfDir.id, 
-                                   wfDir.directory, 
-                                   wfDirAlias.alias, 
-                                   wfDir.description
-                                  ).join(wfDirAlias, 
-                                          wfDir.id==wfDirAlias.wf_id
-                                        ).filter(wfDirAlias.user==self.activeUser.name):
-            self.waveformDirList.append(dict(zip(['id', 'dir', 'dirAlias', 'description'], row)))
 
 
 

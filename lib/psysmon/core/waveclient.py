@@ -142,6 +142,13 @@ class PsysmonDbWaveClient(WaveClient):
         # The senors database table.
         self.geomSensor = self.project.dbTables['geom_sensor']
 
+        # The list of the associated waveform directories.
+        self.waveformDirList = []
+
+
+        # Initialize the waveformDirList from the database.
+        self.loadWaveformDirList()
+
 
 
     def getWaveform(self, startTime, endTime, scnl):
@@ -167,14 +174,16 @@ class PsysmonDbWaveClient(WaveClient):
         endTime : UTCDateTime
             The end datetime of the data to fetch.
 
+        waveformDirList : List of Strings
+            A list of waveform directories associated with the project.
+            Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
+
 
         Returns
         -------
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
-        
-
 
         self.logger.debug("Querying...")
 
@@ -221,7 +230,7 @@ class PsysmonDbWaveClient(WaveClient):
                                      format = curHeader.file_type,
                                      starttime = startTime,
                                      endtime = endTime)
-                    
+
                     if not curStream:
                         continue
 
@@ -236,8 +245,28 @@ class PsysmonDbWaveClient(WaveClient):
 
 
         self.logger.debug("....finished.")
-        
+
         return stream
+
+
+
+    def loadWaveformDirList(self):
+        '''Load the waveform directories from the database table.
+
+        '''
+        wfDir = self.waveformDir
+        wfDirAlias = self.waveformDirAlias
+
+        dbSession = self.dbSession
+        self.waveformDirList = dbSession.query(wfDir.id, 
+                                               wfDir.directory, 
+                                               wfDirAlias.alias, 
+                                               wfDir.description
+                                              ).join(wfDirAlias, 
+                                                     wfDir.id==wfDirAlias.wf_id
+                                                    ).filter(wfDirAlias.user==self.project.activeUser.name).all()
+
+
 
 
 class EarthwormWaveClient(WaveClient):
