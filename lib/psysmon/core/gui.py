@@ -1828,8 +1828,8 @@ class EditScnlDataSourcesDlg(wx.Dialog):
         self.scnl = sorted(self.scnl, key = itemgetter(0,1,2,3))
 
         for curScnl in self.scnl:
-            if curScnl not in self.psyBase.project.dataSources.keys():
-                self.psyBase.project.dataSources[curScnl] = self.psyBase.project.defaultWaveclient
+            if curScnl not in self.psyBase.project.scnlDataSources.keys():
+                self.psyBase.project.scnlDataSources[curScnl] = self.psyBase.project.defaultWaveclient
 
 
         # Use standard button IDs.
@@ -1857,7 +1857,7 @@ class EditScnlDataSourcesDlg(wx.Dialog):
         # Fill the table values
         for k, curScnl in enumerate(self.scnl):
             self.dataSourceGrid.SetCellValue(k, 0, "-".join(x for x in curScnl))
-            self.dataSourceGrid.SetCellValue(k, 1, self.psyBase.project.dataSources[curScnl])
+            self.dataSourceGrid.SetCellValue(k, 1, self.psyBase.project.scnlDataSources[curScnl])
         
         sizer.Add(self.dataSourceGrid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
 

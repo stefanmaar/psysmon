@@ -229,7 +229,7 @@ class Project:
         self.defaultWaveclient = 'earthworm localhost'
 
         # The association of the SCNLs to the data sources (the waveclients).
-        self.dataSources = {}
+        self.scnlDataSources = {}
 
     ## The __getstate__ method.
     #
@@ -548,7 +548,7 @@ class Project:
         db['createTime'] = self.createTime
         db['waveclient'] = [(x.name, x.mode) for x in self.waveclient.itervalues()]
         db['defaultWaveclient'] = self.defaultWaveclient
-        db['dataSources'] = self.dataSources
+        db['scnlDataSources'] = self.scnlDataSources
         db.close()
         self.saved = True 
 
