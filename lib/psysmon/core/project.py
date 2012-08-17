@@ -339,6 +339,20 @@ class Project:
 
 
 
+    def handleWaveclientNameChange(self, oldName, client):
+        ''' Make all changes needed if the name of a waveclient has been changed.
+
+        '''
+        # Change the key in the waveclient dictionary.
+        self.removeWaveClient(oldName)
+        self.addWaveClient(client)
+
+        # Change the default waveclient if needed.
+        if self.defaultWaveclient == oldName:
+            self.defaultWaveclient = client.name
+
+
+
 
     def connect2Db(self, passwd):
         '''Connect to the mySQL database.

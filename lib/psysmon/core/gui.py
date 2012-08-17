@@ -1289,11 +1289,16 @@ class DataSourceDlg(wx.Dialog):
         '''
         selectedRow = self.wcListCtrl.GetFocusedItem()
         selectedItem = self.wcListCtrl.GetItemText(selectedRow)
+        client2Edit = self.psyBase.project.waveclient[selectedItem]
         print "Edit the waveclient: %s" % selectedItem
         dlg = EditWaveclientDlg(psyBase = self.psyBase,
-                                client = self.psyBase.project.waveclient[selectedItem])
+                                client = client2Edit)
         dlg.ShowModal()
-        #dlg.Destroy()
+
+        # Check if the name of the waveclient has changed.
+        if client2Edit.name != selectedItem:
+            self.psyBase.project.handleWaveclientNameChange(selectedItem, client2Edit)
+
         self.updateWcListCtrl()
 
 
@@ -1714,7 +1719,7 @@ class EditWaveclientDlg(wx.Dialog):
         # Call the onOk method of the options class.
         self.optionsPanel.onOk()
         self.Destroy()
-        
+
 
 
 class AddDataSourceDlg(wx.Dialog):

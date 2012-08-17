@@ -1,3 +1,4 @@
+import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -301,7 +302,12 @@ class Base:
             # Check if the database tables have to be updated.
             self.project.checkDbVersions(self.packageMgr.packages)
 
+            # Check if the default wave client exists.
+            if self.project.defaultWaveclient not in self.project.waveclient.keys():
+                self.project.defaultWaveclient = 'main client'
+
             return True
+
 
 
 
