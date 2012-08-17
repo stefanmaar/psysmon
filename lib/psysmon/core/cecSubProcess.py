@@ -87,11 +87,11 @@ if __name__ == "__main__":
     project.connect2Db(project.activeUser.pwd)
     project.loadDatabaseStructure(packages)
 
-    for curName, curMode in waveclients:
+    for curName, curMode, curOptions in waveclients:
         if curMode == 'psysmonDb':
             waveclient = PsysmonDbWaveClient(curName, project)
         elif curMode == 'earthworm':
-            waveclient = EarthwormWaveclient(curName)
+            waveclient = EarthwormWaveclient(curName, **curOptions)
         else:
             waveclient = None
 
