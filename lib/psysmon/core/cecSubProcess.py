@@ -31,7 +31,7 @@ The pSysmon main program.
 #wxreactor.install()
 
 import psysmon
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveClient
+from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 import psysmon.core.base as psybase
 #from twisted.internet import reactor
 import sys
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         if curMode == 'psysmonDb':
             waveclient = PsysmonDbWaveClient(curName, project)
         elif curMode == 'earthworm':
-            waveclient = EarthwormWaveClient(curName)
+            waveclient = EarthwormWaveclient(curName)
         else:
             waveclient = None
 

@@ -1080,8 +1080,9 @@ class User:
             #proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
             #                        executable=sys.executable, 
             #                        stdout=subprocess.PIPE)
-            proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
-                                    executable=sys.executable)
+            #proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
+            #                        executable=sys.executable)
+            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
 
             msgTopic = "state.collection.execution"
             msg = {}

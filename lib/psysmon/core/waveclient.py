@@ -29,9 +29,9 @@ Module for providing the waveform data from various sources.
 '''
 
 import logging
-import string
 import os
-from sqlalchemy import or_
+from obspy.core import read, Stream
+from obspy.earthworm import Client
 
 class WaveClient:
     '''The WaveClient class.
@@ -184,7 +184,6 @@ class PsysmonDbWaveClient(WaveClient):
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
-        from obspy.core import read, Stream
 
         self.logger.debug("Querying...")
 
@@ -279,8 +278,7 @@ class EarthwormWaveclient(WaveClient):
 
     def __init__(self, name, host='localhost', port=16022):
         WaveClient.__init__(self, name=name, mode='earthworm')
-        
-        from obspy.earthworm import Client
+
 
         # The Earthworm waveserver host to which the client should connect.
         self.options['host'] = host
@@ -328,6 +326,8 @@ class EarthwormWaveclient(WaveClient):
         from obspy.core import Stream
 
         self.logger.debug("Querying...")
+        self.logger.debug('startTime: %s', startTime)
+        self.logger.debug('endTime: %s', endTime)
         self.logger.debug("%s", scnl)
 
         stream = Stream() 
@@ -345,7 +345,7 @@ class EarthwormWaveclient(WaveClient):
                                                     curChannel,
                                                     startTime,
                                                     endTime)
-                self.logger.debug('got waveform.')
+                self.logger.debug('got waveform: %s', curStream)
                 stream += curStream
                 self.logger.debug('leave try')
             except:
