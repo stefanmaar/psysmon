@@ -10,6 +10,7 @@ import wx.lib.scrolledpanel as scrolled
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 import numpy as np
+import wx.lib.platebtn as platebtn
 
 
 
@@ -597,16 +598,60 @@ class TdDatetimeInfo(wx.Panel):
         self.endTime = None
         self.scale = None
 
+        sizer = wx.GridBagSizer(0,0)
+
+        self.dummy80 = wx.StaticText(self, wx.ID_ANY, '', size=(80, 10))
+        self.dummy100 = wx.StaticText(self, wx.ID_ANY, '', size=(100, 10))
+        self.startTimeButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
+                                                    style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
+                                                   )
+
+        self.durationButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
+                                                    style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
+                                                  )
+
+        sizer.Add(self.dummy80, pos=(0,0), flag=wx.ALL, border=0)
+        sizer.Add(self.startTimeButton, pos=(0,1), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.durationButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.dummy100, pos=(0,3), flag=wx.ALL, border=0)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(1)
+
+        self.SetSizer(sizer)
+
         self.SetBackgroundColour(bgColor)
 
-        self.Bind(wx.EVT_PAINT, self.onPaint)
+        self.Bind(wx.EVT_BUTTON, self.onDurationButton)
+
+        #self.Bind(wx.EVT_PAINT, self.onPaint)
+
+    def onDurationButton(self, event):
+        dlg = wx.TextEntryDialog(
+                self, 'Duration:',
+                'Enter new duration')
+
+        dlg.SetValue(str(self.endTime - self.startTime))
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.logger.debug('New duration: %f', float(dlg.GetValue()))
+            self.logger.debug('Parent: %s', self.GetParent().GetParent())
+            self.GetParent().GetParent().setDuration(float(dlg.GetValue()))
+
 
     def onPaint(self, event):
         #print "OnPaint"
+        winSize = self.GetClientSize()
+        width = winSize[0]
+        height = winSize[1]
+        btnSize = self.durationButton.GetSize()
+        pos = (width - 100 - btnSize[1], height/2)
+        self.durationButton.SetPosition(pos)
         event.Skip()
-        dc = wx.PaintDC(self)
-        gc = self.makeGC(dc)
-        self.draw(gc)
+        #dc = wx.PaintDC(self)
+        #gc = self.makeGC(dc)
+        #self.draw(gc)
+
 
     def makeGC(self, dc):
         try:
@@ -668,6 +713,12 @@ class TdDatetimeInfo(wx.Panel):
         self.startTime = startTime
         self.endTime = endTime
         self.scale = scale
+
+        self.startTimeButton.SetLabel(str(self.startTime))
+        self.startTimeButton.SetSize(self.startTimeButton.DoGetBestSize())
+
+        self.durationButton.SetLabel(str(self.endTime - self.startTime) + ' s')
+        self.durationButton.SetSize(self.durationButton.DoGetBestSize())
 
 
 
