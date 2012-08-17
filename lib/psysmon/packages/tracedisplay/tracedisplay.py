@@ -422,6 +422,14 @@ class TraceDisplayDlg(wx.Frame):
         oldFocus.SetFocus()
 
 
+    def setDuration(self, duration):
+        ''' Set a new duration of the displayed time period.
+        '''
+        self.displayOptions.setDuration(duration)
+        self.updateDisplay()
+    
+
+
     def onOptionToolClicked(self, event, plugin):
         ''' Handle the click of an option plugin toolbar button.
 
@@ -697,6 +705,13 @@ class DisplayOptions:
         interval = self.endTime - self.startTime
         self.endTime = self.startTime
         self.startTime = self.startTime - interval
+
+
+    def setDuration(self, duration):
+        ''' Set the duration of the displayed time period.
+
+        '''
+        self.endTime = self.startTime + duration
 
 
     def hideStation(self, snl):
