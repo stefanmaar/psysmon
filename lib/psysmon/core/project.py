@@ -546,7 +546,7 @@ class Project:
         db['dbVersion'] = self.dbVersion
         db['user'] = self.user
         db['createTime'] = self.createTime
-        db['waveclient'] = [(x.name, x.mode) for x in self.waveclient.itervalues()]
+        db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.itervalues()]
         db['defaultWaveclient'] = self.defaultWaveclient
         db['scnlDataSources'] = self.scnlDataSources
         db.close()

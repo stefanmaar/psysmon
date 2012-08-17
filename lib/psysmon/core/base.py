@@ -287,12 +287,12 @@ class Base:
         else:
             # Load the current database structure.
             self.project.loadDatabaseStructure(self.packageMgr.packages)
-            
-            for curName, curMode in waveclients2Add:
+
+            for curName, curMode, curOptions in waveclients2Add:
                 if curMode == 'psysmonDb':
                     waveclient = PsysmonDbWaveClient(curName, self.project)
                 elif curMode == 'earthworm':
-                    waveclient = EarthwormWaveclient(curName)
+                    waveclient = EarthwormWaveclient(name=curName, **curOptions)
                 else:
                     waveclient = None
 
