@@ -43,7 +43,7 @@
 
 import datetime
 from obspy.core import UTCDateTime
-from wx import DateTimeFromDMY
+from wx import DateTime, DateTimeFromDMY
 
 class PsysmonError(Exception):
     def __init__(self, value):
@@ -57,7 +57,7 @@ def _wxdate2pydate(date):
      if date is None:
          return None
 
-     assert isinstance(date, UTCDateTime)
+     assert isinstance(date, DateTime)
      if date.IsValid():
          ymd = map(int, date.FormatISODate().split('-'))
          return UTCDateTime(*ymd)
