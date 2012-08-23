@@ -11,6 +11,10 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 import numpy as np
 import wx.lib.platebtn as platebtn
+try:
+    from agw import floatspin as floatspin
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.floatspin as floatspin
 
 
 
@@ -606,13 +610,19 @@ class TdDatetimeInfo(wx.Panel):
                                                     style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
                                                    )
 
-        self.durationButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
-                                                    style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
-                                                  )
+        self.durationFloatSpin = floatspin.FloatSpin(self, wx.ID_ANY, min_val=0, max_val=None,
+                                              increment=1, value=60, agwStyle=floatspin.FS_RIGHT)
+        self.durationFloatSpin.SetDigits(3)
+        self.durationFloatSpin.SetFormat('%f')
+        self.durationFloatSpin.SetRange(min_val=0.1, max_val=None)
+
+        #self.durationButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
+        #                                            style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
+        #                                          )
 
         sizer.Add(self.dummy80, pos=(0,0), flag=wx.ALL, border=0)
         sizer.Add(self.startTimeButton, pos=(0,1), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.durationButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.durationFloatSpin, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
         sizer.Add(self.dummy100, pos=(0,3), flag=wx.ALL, border=0)
 
         sizer.AddGrowableRow(0)
@@ -622,21 +632,26 @@ class TdDatetimeInfo(wx.Panel):
 
         self.SetBackgroundColour(bgColor)
 
-        self.Bind(wx.EVT_BUTTON, self.onDurationButton)
+        self.Bind(floatspin.EVT_FLOATSPIN, self.onDurationFloatSpin, self.durationFloatSpin)
 
         #self.Bind(wx.EVT_PAINT, self.onPaint)
 
-    def onDurationButton(self, event):
-        dlg = wx.TextEntryDialog(
-                self, 'Duration:',
-                'Enter new duration')
+    def onDurationFloatSpin(self, event):
+        #dlg = wx.TextEntryDialog(
+        #        self, 'Duration:',
+        #        'Enter new duration')
 
-        dlg.SetValue(str(self.endTime - self.startTime))
+        #dlg.SetValue(str(self.endTime - self.startTime))
 
-        if dlg.ShowModal() == wx.ID_OK:
-            self.logger.debug('New duration: %f', float(dlg.GetValue()))
-            self.logger.debug('Parent: %s', self.GetParent().GetParent())
-            self.GetParent().GetParent().setDuration(float(dlg.GetValue()))
+        #if dlg.ShowModal() == wx.ID_OK:
+        #    self.logger.debug('New duration: %f', float(dlg.GetValue()))
+        #    self.logger.debug('Parent: %s', self.GetParent().GetParent())
+        #    self.GetParent().GetParent().setDuration(float(dlg.GetValue()))
+        floatSpin = event.GetEventObject()
+        value = floatSpin.GetValue()
+        self.logger.debug('New duration: %f', value)
+        self.GetParent().GetParent().setDuration(value)
+
 
 
     def onPaint(self, event):
@@ -717,9 +732,9 @@ class TdDatetimeInfo(wx.Panel):
         self.startTimeButton.SetLabel(str(self.startTime))
         self.startTimeButton.SetSize(self.startTimeButton.DoGetBestSize())
 
-        self.durationButton.SetLabel(str(self.endTime - self.startTime) + ' s')
-        self.durationButton.SetSize(self.durationButton.DoGetBestSize())
-
+        #self.durationButton.SetLabel(str(self.endTime - self.startTime) + ' s')
+        #self.durationButton.SetSize(self.durationButton.DoGetBestSize())
+        self.durationFloatSpin.SetValue(self.endTime - self.startTime)
 
 
 
