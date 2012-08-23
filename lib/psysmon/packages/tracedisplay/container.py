@@ -69,7 +69,7 @@ class PlotPanel(wx.Panel):
         self.figure = Figure(None, dpi=dpi, facecolor='white')
         self.canvas = FigureCanvas(self, -1, self.figure)
         self.canvas.SetMinSize((30, 10))
-        self.SetBackgroundColour('blue')
+        self.SetBackgroundColour('white')
 
 	# Add the canvas to the sizer.
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -338,7 +338,7 @@ class ChannelAnnotationArea(wx.Panel):
         self.penColor = penColor
 
 	self.SetBackgroundColour(self.bgColor)
-	self.SetBackgroundColour('blue')
+	self.SetBackgroundColour('white')
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
