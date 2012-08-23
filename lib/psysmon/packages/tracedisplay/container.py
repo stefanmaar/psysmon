@@ -16,6 +16,11 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as floatspin
 
+from wx import DatePickerCtrl
+from wx.lib.masked import TimeCtrl
+from wx.lib.masked import TextCtrl as MaskedTextCtrl
+from psysmon.core.util import _wxdate2pydate, _pydate2wxdate
+
 
 
 
@@ -606,9 +611,19 @@ class TdDatetimeInfo(wx.Panel):
 
         self.dummy80 = wx.StaticText(self, wx.ID_ANY, '', size=(80, 10))
         self.dummy100 = wx.StaticText(self, wx.ID_ANY, '', size=(100, 10))
-        self.startTimeButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
-                                                    style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
-                                                   )
+        #self.startTimeButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
+        #                                            style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
+        #                                           )
+
+        self.startDatePicker = DatePickerCtrl(self, id=wx.ID_ANY, style=wx.DP_DEFAULT|wx.DP_SHOWCENTURY)
+
+
+        self.startTimePicker = MaskedTextCtrl( self, wx.ID_ANY, '',
+                                                mask         = '##:##:##.######',
+                                                excludeChars = '',
+                                                formatcodes  = 'DF!',
+                                                includeChars = '')
+
 
         self.durationFloatSpin = floatspin.FloatSpin(self, wx.ID_ANY, min_val=0, max_val=None,
                                               increment=1, value=60, agwStyle=floatspin.FS_RIGHT)
@@ -616,17 +631,14 @@ class TdDatetimeInfo(wx.Panel):
         self.durationFloatSpin.SetFormat('%f')
         self.durationFloatSpin.SetRange(min_val=0.1, max_val=None)
 
-        #self.durationButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
-        #                                            style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
-        #                                          )
-
         sizer.Add(self.dummy80, pos=(0,0), flag=wx.ALL, border=0)
-        sizer.Add(self.startTimeButton, pos=(0,1), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.durationFloatSpin, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.dummy100, pos=(0,3), flag=wx.ALL, border=0)
+        sizer.Add(self.startDatePicker, pos=(0,1), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.startTimePicker, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.durationFloatSpin, pos=(0,3), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.dummy100, pos=(0,4), flag=wx.ALL, border=0)
 
         sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(1)
+        sizer.AddGrowableCol(2)
 
         self.SetSizer(sizer)
 
@@ -729,8 +741,12 @@ class TdDatetimeInfo(wx.Panel):
         self.endTime = endTime
         self.scale = scale
 
-        self.startTimeButton.SetLabel(str(self.startTime))
-        self.startTimeButton.SetSize(self.startTimeButton.DoGetBestSize())
+        # Set the datePicker value.
+        self.startDatePicker.SetValue(_pydate2wxdate(self.startTime))
+        self.startTimePicker.SetValue(self.startTime.strftime('%H%M%S%f'))
+
+        #self.startTimeButton.SetLabel(str(self.startTime))
+        #self.startTimeButton.SetSize(self.startTimeButton.DoGetBestSize())
 
         #self.durationButton.SetLabel(str(self.endTime - self.startTime) + ' s')
         #self.durationButton.SetSize(self.durationButton.DoGetBestSize())
