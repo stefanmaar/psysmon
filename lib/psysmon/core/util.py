@@ -41,13 +41,42 @@
 #
 
 
+import datetime
+from obspy.core import UTCDateTime
+from wx import DateTimeFromDMY
+
 class PsysmonError(Exception):
     def __init__(self, value):
         self.value = value
         
     def __str__(self):
         return repr(self.value)
-    
+
+
+def _wxdate2pydate(date):
+     if date is None:
+         return None
+
+     assert isinstance(date, UTCDateTime)
+     if date.IsValid():
+         ymd = map(int, date.FormatISODate().split('-'))
+         return UTCDateTime(*ymd)
+     else:
+         return None 
+
+
+
+def _pydate2wxdate(date):
+     if date is None:
+         return None
+
+     assert isinstance(date, UTCDateTime)
+     tt = date.timetuple()
+     dmy = (tt[2], tt[1]-1, tt[0])
+     return DateTimeFromDMY(*dmy)     
+
+
+
 
 class AttribDict(dict, object):
 
