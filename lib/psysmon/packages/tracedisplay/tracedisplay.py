@@ -1112,11 +1112,11 @@ class DataManager():
         '''
         dataSources = {}
         for curScnl in scnl:
-            if curScnl in self.project.dataSources.keys():
-                if self.project.dataSources[curScnl] not in dataSources.keys():
-                    dataSources[self.project.dataSources[curScnl]] = [curScnl, ]
+            if curScnl in self.project.scnlDataSources.keys():
+                if self.project.scnlDataSources[curScnl] not in dataSources.keys():
+                    dataSources[self.project.scnlDataSources[curScnl]] = [curScnl, ]
                 else:
-                    dataSources[self.project.dataSources[curScnl]].append(curScnl)
+                    dataSources[self.project.scnlDataSources[curScnl]].append(curScnl)
             else:
                 if self.project.defaultWaveclient not in dataSources.keys():
                     dataSources[self.project.defaultWaveclient] = [curScnl, ]

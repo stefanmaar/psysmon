@@ -275,7 +275,7 @@ class Base:
                                                     dbDialect = db['dbDialect']
                                                     )
         self.project.defaultWaveclient = db['defaultWaveclient']
-        self.project.dataSources = db['dataSources']
+        self.project.scnlDataSources = db['scnlDataSources']
         self.project.updateDirectoryStructure()
         self.project.setCollectionNodeProject()
         waveclients2Add = db['waveclient']
