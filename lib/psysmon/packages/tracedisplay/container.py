@@ -20,6 +20,7 @@ from wx import DatePickerCtrl
 from wx.lib.masked import TimeCtrl
 from wx.lib.masked import TextCtrl as MaskedTextCtrl
 from psysmon.core.util import _wxdate2pydate, _pydate2wxdate
+from obspy.core import UTCDateTime
 
 
 
@@ -594,7 +595,7 @@ class StationContainer(wx.Panel):
 
 
 class TdDatetimeInfo(wx.Panel):
-    def __init__(self, parent=None, id=wx.ID_ANY, bgColor="orchid", penColor="black"):
+    def __init__(self, parent=None, id=wx.ID_ANY, bgColor="ghostwhite", penColor="black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
         self.SetMinSize((-1, 30))
         self.SetMaxSize((-1, 30))
@@ -625,6 +626,10 @@ class TdDatetimeInfo(wx.Panel):
                                                 includeChars = '')
 
 
+        size = self.startTimePicker.GetSize()
+        self.startTimeGoButton = wx.Button(self, id=wx.ID_ANY, label="go", size=(40, size[1]))
+
+
         self.durationFloatSpin = floatspin.FloatSpin(self, wx.ID_ANY, min_val=0, max_val=None,
                                               increment=1, value=60, agwStyle=floatspin.FS_RIGHT)
         self.durationFloatSpin.SetDigits(3)
@@ -634,19 +639,36 @@ class TdDatetimeInfo(wx.Panel):
         sizer.Add(self.dummy80, pos=(0,0), flag=wx.ALL, border=0)
         sizer.Add(self.startDatePicker, pos=(0,1), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
         sizer.Add(self.startTimePicker, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.durationFloatSpin, pos=(0,3), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.dummy100, pos=(0,4), flag=wx.ALL, border=0)
+        sizer.Add(self.startTimeGoButton, pos=(0,3), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.durationFloatSpin, pos=(0,4), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
+        sizer.Add(self.dummy100, pos=(0,5), flag=wx.ALL, border=0)
 
         sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(2)
+        sizer.AddGrowableCol(3)
 
         self.SetSizer(sizer)
 
         self.SetBackgroundColour(bgColor)
 
         self.Bind(floatspin.EVT_FLOATSPIN, self.onDurationFloatSpin, self.durationFloatSpin)
-
+        #self.Bind(wx.EVT_TEXT, self.onStartTimePicker, self.startTimePicker)
+        self.Bind(wx.EVT_BUTTON, self.onStartTimeGo, self.startTimeGoButton)
         #self.Bind(wx.EVT_PAINT, self.onPaint)
+
+    def onStartTimePicker(self, event):
+        self.logger.debug('onStartTimePicker')
+
+    def onStartTimeGo(self, event):
+        self.logger.debug('GO startTime GO')
+        curDate = _wxdate2pydate(self.startDatePicker.GetValue())
+        if self.startTimePicker.IsValid():
+            curTime = self.startTimePicker.GetValue().replace('.', ':').split(':')
+            curDateTime = UTCDateTime(curDate.year, curDate.month, curDate.day,
+                                      int(curTime[0]), int(curTime[1]),
+                                      int(curTime[2]), int(curTime[3]))
+            self.logger.debug('startTime: %s', curDateTime)
+            self.GetParent().GetParent().setStartTime(curDateTime)
+
 
     def onDurationFloatSpin(self, event):
         #dlg = wx.TextEntryDialog(
@@ -856,7 +878,7 @@ class TdViewPort(scrolled.ScrolledPanel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        self.SetBackgroundColour('red')
+        self.SetBackgroundColour('white')
 
         self.SetupScrolling()
 

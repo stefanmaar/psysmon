@@ -427,6 +427,13 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.displayOptions.setDuration(duration)
         self.updateDisplay()
+
+
+    def setStartTime(self, startTime):
+        ''' Set the new start time of the displayed time period.
+        '''
+        self.displayOptions.setStartTime(startTime)
+        self.updateDisplay()
     
 
 
@@ -712,6 +719,15 @@ class DisplayOptions:
 
         '''
         self.endTime = self.startTime + duration
+
+
+    def setStartTime(self, startTime):
+        ''' Set the start time of the displayed time period.
+        '''
+        duration = self.endTime - self.startTime
+        self.startTime = startTime
+        self.endTime = startTime + duration
+        
 
 
     def hideStation(self, snl):
