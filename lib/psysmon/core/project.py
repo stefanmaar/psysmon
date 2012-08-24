@@ -515,7 +515,7 @@ class Project:
                 self.logger.info("%s: No databaseFactory method found.", curPkg.name)
                 continue
             else:
-                self.logger.info("%s: Creating the database tables.", curPkg.name)
+                self.logger.info("%s: Retrieving the database tables.", curPkg.name)
                 self.dbVersion[curPkg.name] = curPkg.version
                 tables = curPkg.databaseFactory(self.dbBase)
                 for curTable in tables:
