@@ -581,7 +581,6 @@ class StationContainer(wx.Panel):
 
 
 
-
     def getViewContainer(self, channelName, viewName):
         curChannel = self.hasChannel(channelName)
         if not curChannel:
@@ -942,6 +941,10 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
+
+        
+
+
     def sortStations(self, snl=[]):
         ''' Sort the stations according to the list given by snl.
 
@@ -1027,6 +1030,16 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
+    def getChannelContainer(self, scnl):
+        curStation = self.hasStation((scnl[0], scnl[2], scnl[3]))
+        
+        if not curStation:
+            return None
+
+        return curStation.hasChannel(scnl[1])
+
+
+
     def getViewContainer(self, scnl, viewName):
         ''' Get the view container of a specified scnl code.
        
@@ -1037,6 +1050,7 @@ class TdViewPort(scrolled.ScrolledPanel):
             return None
 
         return curStation.getViewContainer(scnl[1], viewName)
+
 
 
     def registerEventCallbacks(self, hooks, dataManager, displayManager):
