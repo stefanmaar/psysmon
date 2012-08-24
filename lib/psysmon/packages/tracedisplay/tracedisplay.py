@@ -341,6 +341,8 @@ class TraceDisplayDlg(wx.Frame):
                                               Layer(2).
                                               Row(0).
                                               Position(0))
+
+
         # Build the ribbon bar based on the plugins.
         # First create all the pages according to the category.
         self.ribbonPanels = {}
@@ -356,23 +358,35 @@ class TraceDisplayDlg(wx.Frame):
                                                                     wx.DefaultSize,
                                                                     agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
 
+                # TODO: Find out what I wanted to do with these lines!?!
                 if curCategory == 'interactive':
                     self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
                 else:
                     self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
 
+
+        # Fill the ribbon bar with the plugin buttons.
         for k,curPlugin in enumerate(self.plugins):
-            # Fill the ribbon bar.
             if curPlugin.mode == 'option':
                 # Create a tool.
                 curTool = self.ribbonToolbars[curPlugin.category].AddTool(k, curPlugin.icons['active'].GetBitmap())
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
                                                              lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
             elif curPlugin.mode == 'interactive':
-                # Create a HybridTool.
+                # Create a HybridTool. The dropdown menu allows to open
+                # the tool parameters in a foldpanel.
                 curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin), id=curTool.id)
+
+            elif curPlugin.mode == 'addon':
+                # Create a HybridTool. The dropdown menu allows to open
+                # the tool parameters in a foldpanel.
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
+                #self.ribbonToolbars[curPlugin.category].SetToolClientData(curTool, 'test')
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin), id=curTool.id)
+
 
             # Get all option plugins and build the foldpanels.
             #if curPlugin.mode == 'option':
@@ -442,7 +456,7 @@ class TraceDisplayDlg(wx.Frame):
 
         Show or hide the foldpanel of the plugin.
         '''
-        self.logger.debug('Clicked the option tool.')
+        self.logger.debug('Clicked the option tool: %s', plugin.name)
 
         if plugin.name not in self.foldPanels.keys():
             curPanel = plugin.buildFoldPanel(self.foldPanelBar)
@@ -463,12 +477,31 @@ class TraceDisplayDlg(wx.Frame):
 
         Activate the tool.
         '''
-        self.logger.debug('Clicked the option tool.')
+        self.logger.debug('Clicked the interactive tool: %s', plugin.name)
         hooks = plugin.getHooks()
 
         # Set the callbacks of the views.
         self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayOptions)
         
+
+
+    def onAddonToolClicked(self, event, plugin):
+        ''' Handle the click of an addon plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the addon tool: %s', plugin.name)
+        
+        if plugin.active == True:
+            plugin.setInactive()
+        else:
+            plugin.setActive()
+            self.displayOptions.registerAddonTool(plugin)
+
+        self.updateDisplay()
+
+
+
 
 
     def onKeyDown(self, event):
@@ -541,7 +574,7 @@ class TraceDisplayDlg(wx.Frame):
 
 
             # Plot the data using the addon tools.
-            addonPlugins = [x for x in self.plugins if x.mode == 'addon']
+            addonPlugins = [x for x in self.plugins if x.mode == 'addon' and x.active]
             for curPlugin in addonPlugins:
                 curPlugin.plot(self.displayOptions, self.dataManager)
 
@@ -665,7 +698,10 @@ class DisplayOptions:
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
-        self.showViews = [('seismogram', 'seismogram')]
+        #self.showViews = [('seismogram', 'seismogram')]
+        # Create the views based on the active addon tools.
+        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
+
 
         # Limit the stations to show.
         # TODO: This should be selected by the user in the edit dialog.
@@ -677,8 +713,8 @@ class DisplayOptions:
                 station2Add = DisplayStation(curStation)
                 station2Add.addChannel(['HHZ',])
                 for curChannel in station2Add.channels:
-                    for curView in self.showViews:
-                        curChannel.addView(curView[0], curView[1])
+                    for curPlugin in addonPlugins:
+                        curChannel.addView(curPlugin.name, 'my Type')
                 self.showStations.append(station2Add)
         self.stationsChanged = True
 
@@ -839,6 +875,18 @@ class DisplayOptions:
             self.parent.viewPort.removeChannel(removedSCNL)
 
         self.showChannels.remove(channel)
+
+
+    def registerAddonTool(self, plugin):
+        ''' Create the views needed by the plugin.
+        '''
+        for curStation in self.showStations:
+            for curChannel in curStation.channels:
+                curChannel.addView(plugin.name, 'my View')
+                curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
+                self.createViewContainer(curChannelContainer, plugin.name, 'my View')
+                
+
 
 
 
