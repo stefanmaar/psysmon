@@ -1,4 +1,3 @@
-import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -42,6 +41,7 @@ from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from collections import namedtuple
 
 
 class Base:
@@ -396,6 +396,18 @@ class Collection:
         return self.nodes[index]
 
 
+    def setDataShelfFile(self, filename):
+        ''' Set the dataShelf filename of the collection.
+
+        Parameters
+        ----------
+        filename : String
+            The full path to the dataShelf file.
+        '''
+        #TODO: Add some checks for valid file.
+        self.dataShelf = filename
+
+
     def addNode(self, node, position=-1):
         '''
         Add a node to the collection.
@@ -490,13 +502,12 @@ class Collection:
 
         # Create the collection's data file.
         #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
-        #content = {}
-        #db = shelve.open(self.dataShelf)
-        #db['content'] = content
-        #db.close()
+        content = {}
+        db = shelve.open(self.dataShelf)
+        db['content'] = content
+        db.close()
 
         # Execute each node in the collection.
-        pdb.set_trace() ############################## Breakpoint ##############################
         for (ind, curNode) in enumerate(self.nodes):
             #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
@@ -609,29 +620,46 @@ class Collection:
         origin : String
             The name of the collection node pickling the data.
         '''
+        #nodeContent = namedtuple('nodeContent', 'name description origin')
+        #nodeData = namedtuple('nodeData', 'name description origin data')
+
         db = shelve.open(self.dataShelf)
         content = db['content']
-        content[name] = (origin, description)
+        content[(origin,name)] = (name, description, origin)
+        db[origin+'.'+name] = (name, description, origin, data)
 
-        db[name] = data
         db['content'] = content
         db.close()
 
 
-    def unpickleData(self, name):
+    def unpickleData(self, name=None, origin=None):
         ''' Load the variable named *name* from the collection's data shelf.
 
         Parameters
         ----------
         name : String
             The name of the variable to fetch from the collection's data shelf.
+
+        origin : String
+            The name of the collecionNode which created the nodeData.
         '''
         db = shelve.open(self.dataShelf)
 
-        if name not in db.keys():
+        if name is not None and origin is not None:
+            if (origin+'.'+name) in db.keys():
+                return db[(origin+'.'+name)]
+            else:
+                return None
+        elif name is not None and origin is None:
+            # Return all nodeData with the specified name.
+            return None
+        elif name is None and origin is not None:
+            # Return all nodeData with the specified origin.
             return None
         else:
-            return db[name]
+            # Return all available nodeData
+            return None
+
 
 
 

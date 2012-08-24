@@ -56,6 +56,7 @@ if __name__ == "__main__":
     filename = sys.argv[1]
     procName = sys.argv[2]
 
+    # Get the execution parameters from the ced file.
     db = shelve.open(filename)
     project = db['project']
     collection = db['collection']
@@ -105,6 +106,7 @@ if __name__ == "__main__":
 
     logger.debug('psyBase: %s', project.psyBase)
 
+    collection.setDataShelfFile(filename)
     collection.execute()
 
     logger.info('Finished the execution. Cleaning up....')

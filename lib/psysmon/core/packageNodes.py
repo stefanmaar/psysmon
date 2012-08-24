@@ -322,7 +322,7 @@ class CollectionNode:
                                          origin = self.name
                                          )
 
-    def requireData(self, names):
+    def requireData(self, name=None, origin=None):
         ''' Require data from the collection's shelf.
 
         Parameters
@@ -331,12 +331,10 @@ class CollectionNode:
             The names of the variables to restore from the collection's 
             shelf.
         '''
-        requiredData = {}
-        for curName in names:
-            print "Requiring data with name: %s" % curName
-            requiredData[curName] = self.parentCollection.unpickleData(curName)
+        
+        print "Requiring data with name: %s and origin: %s" % (name, origin)
+        return self.parentCollection.unpickleData(name=name, origin=origin)
 
-        return requiredData
 
 
 
