@@ -78,7 +78,6 @@ class PluginNode:
         # The tags of the plugin.
         self.tags = tags
 
-
         # The class to which the plugin belongs to.
         self.nodeClass = nodeClass
 
@@ -95,6 +94,11 @@ class PluginNode:
         # should be set.
         self.icons = {}
 
+        # The activation state of the tool. This is used by addon- and
+        # interactive tools. For other tool modes, the active state is
+        # always False.
+        self.active = False
+
 
     def register(self, parent):
         ''' Register the plugin within a collection node.
@@ -106,6 +110,17 @@ class PluginNode:
         '''
         self.parent = parent
 
+
+    def setActive(self):
+        ''' Set the active state of the plugin to True.
+        '''
+        self.active = True
+
+
+    def setInactive(self):
+        ''' Set the active state of the plugin to False.
+        '''
+        self.active = False
 
 
     def buildMenu(self):
@@ -121,11 +136,14 @@ class PluginNode:
         '''
         pass
 
+
+
     def getHooks(self):
         ''' Register the mouse event hooks for interactive plugins.
 
         '''
         pass
+
 
 
     def buildToolbarButton(self):
