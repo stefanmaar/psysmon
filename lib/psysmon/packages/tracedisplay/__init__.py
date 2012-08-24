@@ -74,7 +74,7 @@ def pluginFactory():
 
 
     myPluginTemplate = SeismogramPlotter(name = 'plot seismogram',
-                            category = 'test',
+                            category = 'views',
                             tags = None,
                             nodeClass = 'TraceDisplay'
                             )
