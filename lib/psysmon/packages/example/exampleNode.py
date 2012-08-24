@@ -32,24 +32,20 @@ class ExampleNode(CollectionNode):
         #session.commit()
 
         #self.project.waveserver.getWaveform()
-        self.logger.debug("Executing the node.")
+        #self.logger.debug("Executing the node.")
 
-        app = psygui.PSysmonApp()
+        #frame = wx.Frame(None, wx.ID_ANY, 'Hello World')
 
-        frame = wx.Frame(None, wx.ID_ANY, 'Hello World')
+        #self.logger.debug("Showing the frame in the node.")
+        #frame.Show(True)
 
-        self.logger.debug("Showing the frame in the node.")
-        frame.Show(True)
-
-        app.MainLoop()
         #msg =  "Executing the node %s." % self.name
         #self.log('status', msg)
 
-        #with self.project.threadMutex:
-        #    self.provideData(name = 'exp2InputData', 
-        #                     data = 'Hallihallo', 
-        #                     description = 'Ein Test'
-        #                     )
+        self.provideData(name = 'test_data', 
+                         data = 'Hallihallo', 
+                         description = 'Ein Test'
+                         )
 
         #for k in range(5):
         #    msg = "value: " + str(k)
