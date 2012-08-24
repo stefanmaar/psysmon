@@ -504,7 +504,7 @@ class Collection:
         #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
         content = {}
         db = shelve.open(self.dataShelf)
-        db['content'] = content
+        db['nodeDataContent'] = content
         db.close()
 
         # Execute each node in the collection.
@@ -624,11 +624,11 @@ class Collection:
         #nodeData = namedtuple('nodeData', 'name description origin data')
 
         db = shelve.open(self.dataShelf)
-        content = db['content']
+        content = db['nodeDataContent']
         content[(origin,name)] = (name, description, origin)
-        db[origin+'.'+name] = (name, description, origin, data)
+        db[origin + '.' + name] = (name, description, origin, data)
 
-        db['content'] = content
+        db['nodeDataContent'] = content
         db.close()
 
 
@@ -643,22 +643,38 @@ class Collection:
         origin : String
             The name of the collecionNode which created the nodeData.
         '''
-        db = shelve.open(self.dataShelf)
 
+        db = shelve.open(self.dataShelf)
         if name is not None and origin is not None:
             if (origin+'.'+name) in db.keys():
-                return db[(origin+'.'+name)]
+                returnData = db[origin + '.' + name]
             else:
-                return None
+                returnData = None
+
         elif name is not None and origin is None:
             # Return all nodeData with the specified name.
-            return None
+            content = self.getShelfContent()
+            returnData = []
+            for curOrigin, curName in content.keys():
+                if curName == name:
+                    returnData.append(db[curOrigin + '.' + curName])
+
         elif name is None and origin is not None:
             # Return all nodeData with the specified origin.
-            return None
+            content = self.getShelfContent()
+            returnData = []
+            for curOrigin, curName in content.keys():
+                if curOrigin == origin:
+                    returnData.append(db[curOrigin + '.' + curName])
         else:
             # Return all available nodeData
-            return None
+            content = self.getShelfContent()
+            returnData = []
+            for curOrigin, curName in content.keys():
+                returnData.append(db[curOrigin + '.' + curName])
+
+        db.close()
+        return returnData
 
 
 
@@ -687,8 +703,8 @@ class Collection:
 
         '''
         db = shelve.open(self.dataShelf)
-        if 'content' in db.keys():
-            retVal = db['content']
+        if 'nodeDataContent' in db.keys():
+            retVal = db['nodeDataContent']
         else:
             retVal = None
         db.close()
@@ -700,12 +716,12 @@ class Collection:
         ''' Clear all the data stored in the collection's shelf.
 
         '''
+        pass
+        #db = shelve.open(self.dataShelf)
 
-        db = shelve.open(self.dataShelf)
+        #for curKey in db:
+        #    del db[curKey]
 
-        for curKey in db:
-            del db[curKey]
-
-        db['content'] = {}
-        db.close()
+        #db['content'] = {}
+        #db.close()
 
