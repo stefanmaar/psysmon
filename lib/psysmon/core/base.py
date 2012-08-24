@@ -496,13 +496,16 @@ class Collection:
         #db.close()
 
         # Execute each node in the collection.
+        pdb.set_trace() ############################## Breakpoint ##############################
         for (ind, curNode) in enumerate(self.nodes):
             #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
-                curNode.run(procName=self.procName)
+                if curNode.mode != 'standalone':
+                    curNode.run(procName=self.procName)
             else:
                 #curNode.run(threadId=self.threadId)
-                curNode.run(procName=self.procName,
+                if curNode.mode != 'standalone':
+                    curNode.run(procName=self.procName,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
         #e.set()
