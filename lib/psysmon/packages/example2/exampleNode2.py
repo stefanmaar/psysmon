@@ -43,8 +43,7 @@ class ExampleNode2(CollectionNode):
     def execute(self, prevModuleOutput={}):
         self.logger.debug("Executing the node %s." % self.name)
 
-        requiredData = self.requireData(name    = 'test_data',
-                                        origin  = 'example node')
+        requiredData = self.requireData(origin = 'example node')
 
         self.logger.debug('requiredData: %s', requiredData)
         #print "Unpickled Data: %s" % requiredData['test_data']

@@ -47,6 +47,11 @@ class ExampleNode(CollectionNode):
                          description = 'Ein Test'
                          )
 
+        self.provideData(name = 'my_data', 
+                         data = 'Stefan', 
+                         description = 'Ein weiterer Test.'
+                         )
+
         #for k in range(5):
         #    msg = "value: " + str(k)
         #    self.log('status', msg)
