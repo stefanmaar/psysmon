@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from psysmon.core.packageNodes import CollectionNode
+from psysmon.core.gui import PSysmonApp
+import wx
 
 class ExampleNode2(CollectionNode):
     '''
@@ -42,10 +44,21 @@ class ExampleNode2(CollectionNode):
 
     def execute(self, prevModuleOutput={}):
         self.logger.debug("Executing the node %s." % self.name)
-
+        
         requiredData = self.requireData(origin = 'example node')
+        
+        app = PSysmonApp()
 
-        self.logger.debug('requiredData: %s', requiredData)
+        dlg = wx.MessageDialog(None, str(requiredData),
+                               'Echo Echo',
+                               wx.OK | wx.ICON_INFORMATION
+                               #wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
+                               )
+        dlg.ShowModal()
+        dlg.Destroy()
+        app.MainLoop()
+
+        #self.logger.debug('requiredData: %s', requiredData)
         #print "Unpickled Data: %s" % requiredData['test_data']
 
 

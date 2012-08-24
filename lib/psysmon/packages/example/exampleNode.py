@@ -34,13 +34,6 @@ class ExampleNode(CollectionNode):
         #self.project.waveserver.getWaveform()
         #self.logger.debug("Executing the node.")
 
-        #frame = wx.Frame(None, wx.ID_ANY, 'Hello World')
-
-        #self.logger.debug("Showing the frame in the node.")
-        #frame.Show(True)
-
-        #msg =  "Executing the node %s." % self.name
-        #self.log('status', msg)
 
         self.provideData(name = 'test_data', 
                          data = 'Hallihallo', 
