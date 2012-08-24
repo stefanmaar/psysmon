@@ -203,6 +203,9 @@ class SeismogramPlotter(PluginNode):
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+        
+        # Define the plugin icons.
+        self.icons['active'] = icons.waveform_icon_16
 
 
     def plot(self, displayManager, dataManager, scnl=None):
@@ -213,7 +216,7 @@ class SeismogramPlotter(PluginNode):
             # No SCNL code is specified. Plot all the stations.
             for curStation in displayManager.showStations:
                 for curChannel in curStation.channels:
-                    curView = displayManager.getViewContainer(curChannel.getSCNL(), 'seismogram')
+                    curView = displayManager.getViewContainer(curChannel.getSCNL(), 'self.name')
                     curStream = stream.select(station = curStation.name,
                                              channel = curChannel.name,
                                              network = curStation.network,
@@ -227,7 +230,7 @@ class SeismogramPlotter(PluginNode):
         else:
             # Plot only the selected SCNL codes.
             for curScnl in scnl:
-                curView = displayManager.getViewContainer(curScnl, 'seismogram')
+                curView = displayManager.getViewContainer(curScnl, 'self.name')
                 curStream = stream.select(station = curScnl[0],
                                           channel = curScnl[1],
                                           network = curScnl[2],
