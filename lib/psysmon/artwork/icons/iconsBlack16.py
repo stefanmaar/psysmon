@@ -4437,6 +4437,21 @@ getarrow_bottom_left_icon_16Bitmap = arrow_bottom_left_icon_16.GetBitmap
 getarrow_bottom_left_icon_16Icon = arrow_bottom_left_icon_16.GetIcon
 
 #----------------------------------------------------------------------
+waveform_icon_16 = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
+    "AAErSURBVDiNpdOxStxBEAbw35gDCxNQEzSQ4kwCAS1yD3FpIiiiZd4gFlqJZawDprSSEGys"
+    "bFSSVHkJGzkwCBZpIkhiYRHH4tbjOP/Eg1sYlpmd/fab+XYiMw2yhga63QsQEcMRsRcRj4o/"
+    "eS9CZnYMb5F4gRqOMdWd02u9JSyVfRTzeIZPfTHAOM5xhCa2sI4LPMATfEWzm0EtIj4g8A6f"
+    "8bwweIldnKGBFVxhJyJeZebfiJio3RLBcmZ+j4htjBWAE/zALOYwjY84iIg6Ru40BZtYw6W2"
+    "Sov4g2/l/CFW8TozVQFs4AtaxX+Mayz0o4LyWgM/S5N/4xD7VSJUAfzCDFpdsfeZ+a8KoKqE"
+    "p4Xym/99oE5+ZbBNd6gfgKiaxoioZ+ZpJeXe3EHH+QZZku9pSKg7tAAAAABJRU5ErkJggg==")
+getwaveform_icon_16Data = waveform_icon_16.GetData
+getwaveform_icon_16Image = waveform_icon_16.GetImage
+getwaveform_icon_16Bitmap = waveform_icon_16.GetBitmap
+getwaveform_icon_16Icon = waveform_icon_16.GetIcon
+
+#----------------------------------------------------------------------
 dashboard_icon_16 = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAFo9M/3AAAABGdBTUEAALGPC/xhBQAAAAZi"
     "S0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9wGFwkMJprPHQwA"
