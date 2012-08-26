@@ -212,38 +212,44 @@ class SeismogramPlotter(AddonPlugin):
         self.icons['active'] = icons.waveform_icon_16
 
 
-    def plot(self, displayManager, dataManager, scnl=None):
+    def plot(self, displayManager, dataManager):
+        ''' Plot all available stations.
+
+        '''
+        self.plotStation(displayManager, dataManager, displayManager.showStations)
+
+
+    def plotStation(self, displayManager, dataManager, station):
+        ''' Plot one or more stations.
+
+        '''
+        for curStation in station:
+            self.plotChannel(displayManager, dataManager, curStation.channels)
+
+
+
+    def plotChannel(self, displayManager, dataManager, channels):
+        ''' Plot one or more channels.
+
+        '''
         stream = dataManager.procStream
 
+        for curChannel in channels:
+            curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
+            curStream = stream.select(station = curChannel.parent.name,
+                                     channel = curChannel.name,
+                                     network = curChannel.parent.network,
+                                     location = curChannel.parent.location)
 
-        if not scnl:
-            # No SCNL code is specified. Plot all the stations.
-            for curStation in displayManager.showStations:
-                for curChannel in curStation.channels:
-                    curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
-                    curStream = stream.select(station = curStation.name,
-                                             channel = curChannel.name,
-                                             network = curStation.network,
-                                             location = curStation.location)
-                    if curStream:
-	                lineColor = [x/255.0 for x in curChannel.container.color]
-                        curView.plot(curStream, lineColor)
-                    curView.setXLimits(left = displayManager.startTime.timestamp,
-                                       right = displayManager.endTime.timestamp)
-                    curView.draw()
+            if curStream:
+                lineColor = [x/255.0 for x in curChannel.container.color]
+                curView.plot(curStream, lineColor)
 
-        else:
-            # Plot only the selected SCNL codes.
-            for curScnl in scnl:
-                curView = displayManager.getViewContainer(curScnl, self.name)
-                curStream = stream.select(station = curScnl[0],
-                                          channel = curScnl[1],
-                                          network = curScnl[2],
-                                          location = curScnl[3])
-                if curStream:
-                    curView.plot(curStream)
-                curView.setXLimits(left = displayManager.startTime.timestamp,
-                                   right = displayManager.endTime.timestamp)
+            curView.setXLimits(left = displayManager.startTime.timestamp,
+                               right = displayManager.endTime.timestamp)
+            curView.draw()
+
+
 
 
     def getViewClass(self):
