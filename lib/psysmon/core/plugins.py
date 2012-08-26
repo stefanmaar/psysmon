@@ -151,3 +151,54 @@ class PluginNode:
 
 
 
+
+class AddonPlugin(PluginNode):
+    ''' The AddonPlugin class.
+
+    This is a addon plugin, that's capable of creating individual views 
+    which are used in the tracedisplay.
+    '''
+
+    def __init__(self, name, mode, category, tags, nodeClass, icons = None, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        Create an instance of the PluginNode.
+
+        Parameters
+        ----------
+        name : String
+            The name of the plugin-node.
+        mode : String
+            The mode of the plugin-node (option, command, interactive, addon).
+        category : String
+            The category of the plugin-node.
+        tags : list of String
+            A list of strings containing the tags of the collection node.
+            These values are not limited but they should contain one of 
+            the three development state tags:
+             - stable
+             - experimental
+             - damaged
+        nodeClass : String
+            The name of the class for which the plugin-node has been written.
+        parent : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The parent collectionNode which has loaded the plugin.
+        docEntryPoint : String
+            The path to where the documentation's index.html file can be found.
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = mode,
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            icons = icons,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+
+        def getViewClass(self):
+            ''' Get a class object of the view of the plugin.
+
+            '''
+            assert False, 'The getViewClass must be defined!'
