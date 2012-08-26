@@ -848,12 +848,14 @@ class DisplayOptions:
         '''
         if channel not in self.showChannels:
             self.showChannels.append(channel)
+        
+        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
 
         for curStation in self.showStations:
              curStation.addChannel([channel])
              for curChannel in curStation.channels:
-                 for curView in self.showViews:
-                     curChannel.addView(curView[0], curView[1])
+                 for curPlugin in addonPlugins:
+                     curChannel.addView(curPlugin.name, curPlugin.getViewClass())
 
 
         # TODO: Only update the data of the added channel.
@@ -884,8 +886,8 @@ class DisplayOptions:
             for curChannel in curStation.channels:
                 curChannel.addView(plugin.name, 'my View')
                 curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
-                self.createViewContainer(curChannelContainer, plugin.name, 'my View')
-                
+                self.createViewContainer(curChannelContainer, plugin.name, plugin.getViewClass())
+
 
 
 
@@ -992,7 +994,7 @@ class DisplayOptions:
         for curStation in self.showStations:
             curStatContainer = self.createStationContainer(curStation)
             for curChannel in curStation.channels:
-                curChanContainer = self.createChannelContainer(curStatContainer, curChannel.name)
+                curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
                 for curViewName, (curViewType, ) in curChannel.views.items():
                     self.createViewContainer(curChanContainer, curViewName, curViewType) 
 
@@ -1025,25 +1027,26 @@ class DisplayOptions:
 
         '''
         # Check if the container already exists in the station.
-        chanContainer = stationContainer.hasChannel(channel)
+        chanContainer = stationContainer.hasChannel(channel.name)
         
         if not chanContainer:
-            if self.channelColors.has_key(channel):
-                curColor = self.channelColors[channel]
+            if self.channelColors.has_key(channel.name):
+                curColor = self.channelColors[channel.name]
             else:
                 curColor = (0, 0, 0)
                 
             chanContainer = container.ChannelContainer(stationContainer,
                                                        id = wx.ID_ANY,
-                                                       name = channel,
+                                                       name = channel.name,
                                                        color=curColor)
             stationContainer.addChannel(chanContainer)
+            channel.container = chanContainer
 
         return chanContainer
         
          
                 
-    def createViewContainer(self, channelContainer, name, viewType):
+    def createViewContainer(self, channelContainer, name, viewClass):
         '''
         
         '''
@@ -1051,10 +1054,14 @@ class DisplayOptions:
         viewContainer = channelContainer.hasView(name)
 
         if not viewContainer:
-            viewContainer = container.viewTypeMap[viewType](channelContainer,
-                                                        id = wx.ID_ANY,
-                                                        name = name,
-                                                        lineColor = channelContainer.color)
+            #viewContainer = container.viewTypeMap[viewType](channelContainer,
+            #                                            id = wx.ID_ANY,
+            #                                            name = name,
+            #                                            lineColor = channelContainer.color)
+            viewContainer = viewClass(channelContainer,
+                                      id = wx.ID_ANY,
+                                      name = name)
+
             channelContainer.addView(viewContainer)
             channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
         
@@ -1134,6 +1141,9 @@ class DisplayChannel():
         self.name = name
 
         self.views = {}
+
+        # The display container of the channel.
+        self.container = None
 
 
     def addView(self, name, viewType):
