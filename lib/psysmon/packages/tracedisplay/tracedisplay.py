@@ -793,19 +793,21 @@ class DisplayOptions:
             The station, network, location code of the station which should be hidden.
         '''
         
+        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
+        
         # Get the selected station and set all currently active
         # channels.
         station2Show = self.getAvailableStation(snl)
         self.addShowStation(station2Show)
         station2Show.addChannel(self.showChannels)
         for curChannel in station2Show.channels:
-            for curView in self.showViews:
-                curChannel.addView(curView[0], curView[1])
+            for curPlugin in addonPlugins:
+                curChannel.addView(curPlugin.name, curPlugin.getViewClass())
         
         # Create the necessary containers.
         stationContainer = self.createStationContainer(station2Show)
         for curChannel in station2Show.channels:
-            curChanContainer = self.createChannelContainer(stationContainer, curChannel.name)
+            curChanContainer = self.createChannelContainer(stationContainer, curChannel)
             for curViewName, (curViewType, ) in curChannel.views.items():
                 self.createViewContainer(curChanContainer, curViewName, curViewType) 
 
@@ -831,10 +833,11 @@ class DisplayOptions:
             self.parent.dataManager.processStream(self, scnl = station2Show.getSCNL())
 
 
-        # Plot the data using the addon tools.
-        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon']
+        # Plot the data of the station only using the addon tools.
         for curPlugin in addonPlugins:
-            curPlugin.plot(self, self.parent.dataManager, scnl = station2Show.getSCNL())
+            curPlugin.plotStation(displayManager = self.parent.displayOptions,
+                           dataManager = self.parent.dataManager,
+                           station = [station2Show,])
         
 
 
@@ -1225,13 +1228,21 @@ class DataManager():
         return curStream
 
 
+
     def addStream(self, startTime, endTime, scnl):
         ''' Add a stream to the existing stream.
 
         '''
-        curStream = self.waveclient.getWaveform(startTime = startTime,
-                                                endTime = endTime,
-                                                scnl = scnl)
+        if scnl in self.project.scnlDataSources.keys():
+            dataSource = self.project.scnlDataSources[scnl] 
+        else:
+            dataSource = self.project.defaultWaveclient
+
+        curWaveClient = self.project.waveclient[dataSource]
+
+        curStream = curWaveClient.getWaveform(startTime = startTime,
+                                              endTime = endTime,
+                                              scnl = scnl)
 
         self.origStream = self.origStream + curStream
         return curStream
