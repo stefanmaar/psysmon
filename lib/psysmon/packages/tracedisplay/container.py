@@ -210,118 +210,9 @@ class View(wx.Panel):
 
 
     def setEventCallbacks(self, hooks, dataManager, displayManager):
-        
+
         for curKey, curCallback in hooks.iteritems():
             self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager, callback=curCallback: callback(evt, dataManager, displayManager))
-
-
-
-
-
-class SeismogramView(View):
-    '''
-    A standard seismogram view.
-
-    Display the data as a timeseries.
-    '''
-
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
-        View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
-
-        # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
-
-        self.scaleBar = None
-
-        self.line = None
-
-
-
-    def plot(self, stream):
-
-        start = time.clock()
-       
-        for trace in stream: 
-            timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray * 1/trace.stats.sampling_rate
-            timeArray = timeArray + trace.stats.starttime.timestamp
-            stop = time.clock()
-            self.logger.debug('Prepared data (%.5fs)', stop - start)
-
-            # Check if the data is a ma.maskedarray
-            if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
-
-
-            self.t0 = trace.stats.starttime
-
-            start = time.clock()
-            print trace.stats.npts
-            print timeArray.shape
-            print trace.data.shape
-            if not self.line:
-                self.line, = self.dataAxes.plot(timeArray, trace.data, color=self.lineColor)
-            else:
-                self.logger.debug('Updating line %s', self.line)
-                self.line.set_xdata(timeArray)
-                self.line.set_ydata(trace.data)
-            stop = time.clock()
-            self.logger.debug('Plotted data (%.5fs)', stop -start)
-
-            start = time.clock()
-            self.dataAxes.set_frame_on(False)
-            self.dataAxes.get_xaxis().set_visible(False)
-            self.dataAxes.get_yaxis().set_visible(False)
-            yLim = np.max(np.abs(trace.data))
-            self.logger.debug('ylim: %f', yLim)
-            self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
-            stop = time.clock()
-            self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
-
-            self.logger.debug('time limits: %f, %f', timeArray[0], timeArray[-1])
-
-        # Add the scale bar.
-        scaleLength = 10
-        unitsPerPixel = (2*yLim) / self.dataAxes.get_window_extent().height
-        scaleHeight = 3 * unitsPerPixel
-        if self.scaleBar:
-            self.scaleBar.remove()
-        self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
-                                  -yLim+scaleHeight/2.0), 
-                                  width=scaleLength, 
-                                  height=scaleHeight,
-                                  edgecolor = 'none',
-                                  facecolor = '0.75')
-        self.dataAxes.add_patch(self.scaleBar)
-        #self.dataAxes.axvspan(timeArray[0], timeArray[0] + 10, facecolor='0.5', alpha=0.5)
-
-
-    def setYLimits(self, bottom, top):
-        ''' Set the limits of the y-axes.
-        '''
-        self.dataAxes.set_ylim(bottom = bottom, top = top)
-
-
-    def setXLimits(self, left, right):
-        ''' Set the limits of the x-axes.
-        '''
-        self.logger.debug('Set limits: %f, %f', left, right)
-        self.dataAxes.set_xlim(left = left, right = right)
-
-        # Adjust the scale bar.
-
-
-
-    def getScalePixels(self):
-        yLim = self.dataAxes.get_xlim()
-        timeRange = yLim[1] - yLim[0]
-        width = self.dataAxes.get_window_extent().width
-        return  width / float(timeRange)
-
 
 
 
@@ -1067,4 +958,4 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
-viewTypeMap = {'seismogram' : SeismogramView}
+#viewTypeMap = {'seismogram' : SeismogramView}
