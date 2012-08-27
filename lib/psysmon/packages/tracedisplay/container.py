@@ -326,8 +326,12 @@ class ChannelContainer(wx.Panel):
         self.SetBackgroundColour('yellow3')
 
         self.annotationArea = ChannelAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
+        
         self.sizer = wx.GridBagSizer(0,0)
+        self.viewSizer = wx.BoxSizer(wx.VERTICAL)
+
 	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.Add(self.viewSizer, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(1)
         self.SetSizer(self.sizer)
@@ -339,15 +343,15 @@ class ChannelContainer(wx.Panel):
         self.views[view.name] = view
 
         if self.views:
-	    self.sizer.Add(view, pos=(len(self.views)-1,1), flag=wx.ALL|wx.EXPAND, border=0)
-            self.sizer.AddGrowableRow(len(self.views)-1)
-	    self.sizer.SetItemSpan(self.annotationArea, (len(self.views), 1))
+	    self.viewSizer.Add(view, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
-            channelSize = self.views.itervalues().next().GetMinSize()
-            channelSize[1] = channelSize[1] * len(self.views) 
-            self.SetMinSize(channelSize)
+            #channelSize = self.views.itervalues().next().GetMinSize()
+            #channelSize[1] = channelSize[1] * len(self.views) 
+            #self.SetMinSize(channelSize)
         
         self.sizer.Layout()
+        #self.rearrangeViews()
+
 
 
     def hasView(self, viewName):
@@ -363,6 +367,41 @@ class ChannelContainer(wx.Panel):
 
 
 
+    def removeView(self, name):
+        ''' Remove a specified view from the channel container.
+
+        Parameters
+        ----------
+        name : String
+            The name of the view to remove
+        '''
+        view2Remove = self.views.pop(name)
+        
+        if view2Remove:
+            self.sizer.Remove(view2Remove)
+            view2Remove.Destroy()
+
+        self.rearrangeViews()
+        self.sizer.Layout()
+
+
+
+    def rearrangeViews(self):
+        
+        if not self.views:
+            return
+
+        for curView in self.views.values():
+            self.viewSizer.Hide(curView)
+            self.viewSizer.Detach(curView)
+
+        viewSize = self.views.itervalues().next().GetMinSize()
+        viewSize[1] = viewSize[1] * len(self.views)
+        self.SetMinSize(viewSize)
+
+        for k, curView in enumerate(self.views.values()):
+            self.viewSizer.Add(curView, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+            curView.Show()
 
 
 

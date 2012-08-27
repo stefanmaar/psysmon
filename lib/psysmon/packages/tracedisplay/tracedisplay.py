@@ -293,6 +293,12 @@ class TraceDisplayDlg(wx.Frame):
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
         self.eventInfo.SetBackgroundColour('khaki')
 
+        # Create the status bar.
+        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
+        self.statusbar.SetStatusWidths([-2, -3])
+        self.statusbar.SetStatusText("Ready, go go.", 0)
+        self.statusbar.SetStatusText("Tracedisplay", 1)
+
         # Create the toolRibbonBar
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
         self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Home")
@@ -357,7 +363,6 @@ class TraceDisplayDlg(wx.Frame):
                                                                     wx.DefaultPosition,
                                                                     wx.DefaultSize,
                                                                     agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
-
                 # TODO: Find out what I wanted to do with these lines!?!
                 if curCategory == 'interactive':
                     self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
@@ -382,7 +387,7 @@ class TraceDisplayDlg(wx.Frame):
             elif curPlugin.mode == 'addon':
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap(), help_string='Hallo Stefan')
                 #self.ribbonToolbars[curPlugin.category].SetToolClientData(curTool, 'test')
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin), id=curTool.id)
@@ -399,6 +404,7 @@ class TraceDisplayDlg(wx.Frame):
             #        self.logger.debug(button)
 
         self.ribbon.Realize()
+
 
         # Tell the manager to commit all the changes.
         self.mgr.Update() 
@@ -494,6 +500,7 @@ class TraceDisplayDlg(wx.Frame):
         
         if plugin.active == True:
             plugin.setInactive()
+            self.displayOptions.removeAddonTool(plugin)
         else:
             plugin.setActive()
             self.displayOptions.registerAddonTool(plugin)
@@ -892,6 +899,18 @@ class DisplayOptions:
                 self.createViewContainer(curChannelContainer, plugin.name, plugin.getViewClass())
 
 
+    def removeAddonTool(self, plugin):
+        ''' Remove the views created by the plugin.
+        
+        '''
+        for curStation in self.showStations:
+            for curChannel in curStation.channels:
+                curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
+                curChannel.removeView(plugin.name, 'my View')
+                curChannelContainer.removeView(plugin.name)
+
+
+
 
 
 
@@ -1145,13 +1164,18 @@ class DisplayChannel():
 
         self.views = {}
 
-        # The display container of the channel.
+        # The display containers of the channel.
         self.container = None
 
 
     def addView(self, name, viewType):
         if name not in self.views.keys():
             self.views[name] = (viewType, )
+
+
+    def removeView(self, name, viewType):
+        if name in self.views.keys():
+            self.views.pop(name)
 
     
     def getSCNL(self):
