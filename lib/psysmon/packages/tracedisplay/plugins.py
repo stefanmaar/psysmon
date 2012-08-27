@@ -488,4 +488,289 @@ class Zoom(PluginNode):
 
 
 
+############## DEMO PLUGIN FOR VIEWS ##########################################
+
+class DemoPlotter(AddonPlugin):
+    '''
+
+    '''
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = 'addon',
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Define the plugin icons.
+        self.icons['active'] = icons.attention_icon_16
+
+
+    def plot(self, displayManager, dataManager):
+        ''' Plot all available stations.
+
+        '''
+        self.plotStation(displayManager, dataManager, displayManager.showStations)
+
+
+    def plotStation(self, displayManager, dataManager, station):
+        ''' Plot one or more stations.
+
+        '''
+        for curStation in station:
+            self.plotChannel(displayManager, dataManager, curStation.channels)
+
+
+
+    def plotChannel(self, displayManager, dataManager, channels):
+        ''' Plot one or more channels.
+
+        '''
+        stream = dataManager.procStream
+
+        for curChannel in channels:
+            curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
+            curStream = stream.select(station = curChannel.parent.name,
+                                     channel = curChannel.name,
+                                     network = curChannel.parent.network,
+                                     location = curChannel.parent.location)
+
+            if curStream:
+                #lineColor = [x/255.0 for x in curChannel.container.color]
+                curView.plot(curStream, [0.3, 0.7, 1])
+
+            curView.setXLimits(left = displayManager.startTime.timestamp,
+                               right = displayManager.endTime.timestamp)
+            curView.draw()
+
+
+
+
+    def getViewClass(self):
+        ''' Get a class object of the view.
+
+        '''
+        return DemoView
+
+
+
+class DemoView(View):
+    '''
+    A standard seismogram view.
+
+    Display the data as a timeseries.
+    '''
+
+    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
+        View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.t0 = None
+	self.lineColor = [x/255.0 for x in lineColor]
+
+        self.scaleBar = None
+
+        self.line = None
+
+
+
+    def plot(self, stream, color):
+
+
+        for trace in stream: 
+            timeArray = np.arange(0, trace.stats.npts)
+            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = timeArray + trace.stats.starttime.timestamp
+
+            # Check if the data is a ma.maskedarray
+            if np.ma.count_masked(trace.data):
+                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+
+            
+            if not self.line:
+                self.line, = self.dataAxes.plot(timeArray, trace.data * -1, color = color)
+            else:
+                self.line.set_xdata(timeArray)
+                self.line.set_ydata(trace.data * -1)
+
+            self.dataAxes.set_frame_on(False)
+            self.dataAxes.get_xaxis().set_visible(False)
+            self.dataAxes.get_yaxis().set_visible(False)
+            yLim = np.max(np.abs(trace.data))
+            self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
+
+
+        # Add the scale bar.
+        scaleLength = 10
+        unitsPerPixel = (2*yLim) / self.dataAxes.get_window_extent().height
+        scaleHeight = 3 * unitsPerPixel
+        if self.scaleBar:
+            self.scaleBar.remove()
+        self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
+                                  -yLim+scaleHeight/2.0), 
+                                  width=scaleLength, 
+                                  height=scaleHeight,
+                                  edgecolor = 'none',
+                                  facecolor = '0.75')
+        self.dataAxes.add_patch(self.scaleBar)
+        #self.dataAxes.axvspan(timeArray[0], timeArray[0] + 10, facecolor='0.5', alpha=0.5)
+
+
+    def setYLimits(self, bottom, top):
+        ''' Set the limits of the y-axes.
+        '''
+        self.dataAxes.set_ylim(bottom = bottom, top = top)
+
+
+    def setXLimits(self, left, right):
+        ''' Set the limits of the x-axes.
+        '''
+        self.logger.debug('Set limits: %f, %f', left, right)
+        self.dataAxes.set_xlim(left = left, right = right)
+
+        # Adjust the scale bar.
+
+
+
+    def getScalePixels(self):
+        yLim = self.dataAxes.get_xlim()
+        timeRange = yLim[1] - yLim[0]
+        width = self.dataAxes.get_window_extent().width
+        return  width / float(timeRange)
+
+
+
+
+
+
+class Zoom(PluginNode):
+    '''
+
+    '''
+    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = mode,
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.zoom_icon_16
+
+        self.beginLine = {}
+        self.endLine = {}
+        self.bg = {}
+        self.motionNotifyCid = []
+
+
+    def getHooks(self):
+        hooks = {}
+
+        hooks['button_press_event'] = self.onButtonPress
+        hooks['button_release_event'] = self.onButtonRelease
+
+        return hooks
+
+
+    def buildToolbarButton(self):
+        return 'Hallo hier spricht Zoom Plugin.'
+
+
+    def onButtonPress(self, event, dataManager=None, displayManager=None):
+        self.logger.debug('onButtonPress.')
+        #self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
+
+        #print 'Clicked mouse:\nxdata=%f, ydata=%f' % (event.xdata, event.ydata)
+        #print 'x=%f, y=%f' % (event.x, event.y)
+
+
+
+        viewport = displayManager.parent.viewPort
+        for curStation in viewport.stations:
+            for curChannel in curStation.channels.values():
+                for curView in curChannel.views.values():
+                    #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
+                    #curView.plotCanvas.canvas.restore_region(bg)
+
+                    if curView in self.endLine.keys():
+                        self.endLine[curView].set_visible(False)
+                        curView.dataAxes.draw_artist(self.endLine[curView])
+
+
+                    if curView in self.beginLine.keys():
+                        self.beginLine[curView].set_xdata(event.xdata)
+                    else:
+                        self.beginLine[curView] = curView.dataAxes.axvline(x=event.xdata)
+
+                    curView.plotCanvas.canvas.draw()
+
+                    cid = curView.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.onMouseMotion : callback(evt, dataManager, displayManager))
+                    self.motionNotifyCid.append((curView.plotCanvas.canvas, cid))
+
+
+    def onMouseMotion(self, event, dataManger=None, displayManager=None):
+        self.logger.debug('mouse motion')
+        self.logger.debug('x: %f', event.x)
+        if event.inaxes is not None:
+            self.logger.debug('xData: %f', event.xdata)
+
+        viewport = displayManager.parent.viewPort
+        for curStation in viewport.stations:
+            for curChannel in curStation.channels.values():
+                for curView in curChannel.views.values():
+                    if event.inaxes is None:
+                        inv = curView.dataAxes.transData.inverted()
+                        tmp = inv.transform((event.x, event.y))
+                        self.logger.debug('xTrans: %f', tmp[0])
+                        event.xdata = tmp[0]
+                    canvas = curView.plotCanvas.canvas
+                    if curView not in self.bg.keys():
+                        self.bg[curView] = canvas.copy_from_bbox(curView.dataAxes.bbox)
+                    canvas.restore_region(self.bg[curView])
+
+                    if curView not in self.endLine.keys():
+                        self.endLine[curView] = curView.dataAxes.axvline(x=event.xdata, animated=True)
+                    else:
+                        self.endLine[curView].set_xdata(event.xdata)
+                        self.endLine[curView].set_visible(True)
+
+                    curView.dataAxes.draw_artist(self.endLine[curView])
+                    canvas.blit()
+
+
+
+    def onButtonRelease(self, event, dataManager=None, displayManager=None):
+        self.logger.debug('onButtonRelease')
+        for canvas, cid in self.motionNotifyCid:
+            canvas.mpl_disconnect(cid)
+
+        self.motionNotifyCid = []
+        self.bg = {} 
+
+        # Call the setTimeLimits of the displayManager.
+
+
+
+
 

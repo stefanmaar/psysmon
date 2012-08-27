@@ -49,7 +49,7 @@ def nodeFactory():
 def pluginFactory():
     ''' Provide some plugins.
     '''
-    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter
+    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter, DemoPlotter
 
     pluginTemplates = []
 
@@ -80,6 +80,13 @@ def pluginFactory():
                             )
     pluginTemplates.append(myPluginTemplate)
 
+
+    myPluginTemplate = DemoPlotter(name = 'demo plotter',
+                            category = 'views',
+                            tags = None,
+                            nodeClass = 'TraceDisplay'
+                            )
+    pluginTemplates.append(myPluginTemplate)
 
 
     myPluginTemplate = Zoom(name = 'zoom',
