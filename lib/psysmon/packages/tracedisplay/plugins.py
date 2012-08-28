@@ -69,10 +69,10 @@ class SelectStation(PluginNode):
 
         # Create a checkbox list holding the station names.
         #sampleList = ['ALBA', 'SITA', 'GILA']
-        displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayOptions.getSCNL('show')]
+        displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayManager.getSCNL('show')]
 
         # Create a unique list containing SNL. Preserve the sort order.
-        self.stationList = self.parent.displayOptions.getSNL('available')
+        self.stationList = self.parent.displayManager.getSNL('available')
 
         stationListString = [":".join(x) for x in self.stationList]
         lb = wx.CheckListBox(parent = foldPanel, 
@@ -103,9 +103,9 @@ class SelectStation(PluginNode):
         # Remove all entries with the selected station from the
         # showStations.
         if not self.lb.IsChecked(index):
-            self.parent.displayOptions.hideStation(self.stationList[index])
+            self.parent.displayManager.hideStation(self.stationList[index])
         else:
-            self.parent.displayOptions.showStation(self.stationList[index])
+            self.parent.displayManager.showStation(self.stationList[index])
 
 
 
@@ -146,13 +146,13 @@ class SelectChannel(PluginNode):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.channelList = sorted(self.parent.displayOptions.availableChannels)
+        self.channelList = sorted(self.parent.displayManager.availableChannels)
 
         lb = wx.CheckListBox(parent = foldPanel,
                              id = wx.ID_ANY,
                              choices = self.channelList)
 
-        ind = [m for m,x in enumerate(self.channelList) if x in self.parent.displayOptions.showChannels]
+        ind = [m for m,x in enumerate(self.channelList) if x in self.parent.displayManager.showChannels]
         lb.SetChecked(ind)
 
         # Bind the events.
@@ -181,9 +181,9 @@ class SelectChannel(PluginNode):
         # Remove all entries with the selected station from the
         # showStations.
         if not self.lb.IsChecked(index):
-            self.parent.displayOptions.hideChannel(self.channelList[index])
+            self.parent.displayManager.hideChannel(self.channelList[index])
         else:
-            self.parent.displayOptions.showChannel(self.channelList[index])
+            self.parent.displayManager.showChannel(self.channelList[index])
 
 
 

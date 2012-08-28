@@ -250,7 +250,7 @@ class TraceDisplayDlg(wx.Frame):
 
         # Create the display option.
         inventoryDbController = InventoryDatabaseController(self.project)
-        self.displayOptions = DisplayOptions(parent = self,
+        self.displayManager = DisplayManager(parent = self,
                                              inventory = inventoryDbController.load())
         del(inventoryDbController)
 
@@ -428,7 +428,7 @@ class TraceDisplayDlg(wx.Frame):
         ''' Advance the display time by one step. 
         '''
         oldFocus = wx.Window.FindFocus()
-        self.displayOptions.advanceTime()
+        self.displayManager.advanceTime()
         self.updateDisplay()
         oldFocus.SetFocus()
 
@@ -437,7 +437,7 @@ class TraceDisplayDlg(wx.Frame):
         ''' Decrease the display time by one step.
         '''
         oldFocus = wx.Window.FindFocus()
-        self.displayOptions.decreaseTime()
+        self.displayManager.decreaseTime()
         self.updateDisplay()
         oldFocus.SetFocus()
 
@@ -445,14 +445,14 @@ class TraceDisplayDlg(wx.Frame):
     def setDuration(self, duration):
         ''' Set a new duration of the displayed time period.
         '''
-        self.displayOptions.setDuration(duration)
+        self.displayManager.setDuration(duration)
         self.updateDisplay()
 
 
     def setStartTime(self, startTime):
         ''' Set the new start time of the displayed time period.
         '''
-        self.displayOptions.setStartTime(startTime)
+        self.displayManager.setStartTime(startTime)
         self.updateDisplay()
     
 
@@ -487,7 +487,7 @@ class TraceDisplayDlg(wx.Frame):
         hooks = plugin.getHooks()
 
         # Set the callbacks of the views.
-        self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayOptions)
+        self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
         
 
 
@@ -500,10 +500,10 @@ class TraceDisplayDlg(wx.Frame):
         
         if plugin.active == True:
             plugin.setInactive()
-            self.displayOptions.removeAddonTool(plugin)
+            self.displayManager.removeAddonTool(plugin)
         else:
             plugin.setActive()
-            self.displayOptions.registerAddonTool(plugin)
+            self.displayManager.registerAddonTool(plugin)
 
         self.updateDisplay()
 
@@ -564,15 +564,15 @@ class TraceDisplayDlg(wx.Frame):
         '''
         # Create the necessary containers.
         # TODO: Call these method only, if the displayed stations or
-        if self.displayOptions.stationsChanged:
-            self.displayOptions.createContainers() 
-            self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayOptions.getSCNL('show')])
-            self.displayOptions.stationsChanged = False
+        if self.displayManager.stationsChanged:
+            self.displayManager.createContainers() 
+            self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayManager.getSCNL('show')])
+            self.displayManager.stationsChanged = False
 
         # TODO: Request the needed data from the wave client.
-        self.dataManager.requestStream(startTime = self.displayOptions.startTime,
-                                       endTime = self.displayOptions.endTime,
-                                       scnl = self.displayOptions.getSCNL('show'))
+        self.dataManager.requestStream(startTime = self.displayManager.startTime,
+                                       endTime = self.displayManager.endTime,
+                                       scnl = self.displayManager.getSCNL('show'))
 
 
         if self.dataManager.origStream:
@@ -583,7 +583,7 @@ class TraceDisplayDlg(wx.Frame):
             # Plot the data using the addon tools.
             addonPlugins = [x for x in self.plugins if x.mode == 'addon' and x.active]
             for curPlugin in addonPlugins:
-                curPlugin.plot(self.displayOptions, self.dataManager)
+                curPlugin.plot(self.displayManager, self.dataManager)
 
 
 
@@ -592,8 +592,8 @@ class TraceDisplayDlg(wx.Frame):
         self.viewPort.Update()
 
         # Update the time information panel.
-        self.datetimeInfo.setTime(self.displayOptions.startTime, 
-                                  self.displayOptions.endTime, 
+        self.datetimeInfo.setTime(self.displayManager.startTime, 
+                                  self.displayManager.endTime, 
                                   None)
         self.datetimeInfo.Refresh()
         return
@@ -655,7 +655,7 @@ class ShortCutOptions:
 
 
 
-class DisplayOptions:
+class DisplayManager:
 
 
     def __init__(self, parent, inventory):
@@ -842,7 +842,7 @@ class DisplayOptions:
 
         # Plot the data of the station only using the addon tools.
         for curPlugin in addonPlugins:
-            curPlugin.plotStation(displayManager = self.parent.displayOptions,
+            curPlugin.plotStation(displayManager = self.parent.displayManager,
                            dataManager = self.parent.dataManager,
                            station = [station2Show,])
         
