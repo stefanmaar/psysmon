@@ -28,12 +28,12 @@ website = "http://www.stefanmertl.com"
 
 def nodeFactory():
     from tracedisplay import TraceDisplay
-    
+
     nodeTemplates = []
 
     # Create a pSysmon collection node template and add it to the package.
     options = {}
-    
+
     myNodeTemplate = TraceDisplay(name = 'tracedisplay',
                                   mode = 'editable',
                                   category = 'Display',
@@ -54,7 +54,6 @@ def pluginFactory():
     pluginTemplates = []
 
     myPluginTemplate = SelectStation(name = 'select station',
-                                     mode = 'option',
                                      category = 'view',
                                      tags = ['station', 'view', 'select'],
                                      nodeClass = 'TraceDisplay'
@@ -64,7 +63,6 @@ def pluginFactory():
 
 
     myPluginTemplate = SelectChannel(name = 'select channel',
-                                     mode = 'option',
                                      category = 'view',
                                      tags = ['channel', 'view', 'select'],
                                      nodeClass = 'TraceDisplay'
@@ -90,7 +88,6 @@ def pluginFactory():
 
 
     myPluginTemplate = Zoom(name = 'zoom',
-                            mode = 'interactive',
                             category = 'interactive',
                             tags = None,
                             nodeClass = 'TraceDisplay'

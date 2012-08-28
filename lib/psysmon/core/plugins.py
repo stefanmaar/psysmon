@@ -126,7 +126,7 @@ class PluginNode:
     def buildMenu(self):
         ''' Build the menu which is added to the parent's menu bar.
         '''
-        pass
+        return None
 
 
 
@@ -134,32 +134,20 @@ class PluginNode:
         ''' Create the foldpanel GUI.
 
         '''
-        pass
-
-
-
-    def getHooks(self):
-        ''' Register the mouse event hooks for interactive plugins.
-
-        '''
-        pass
-
-
-
-    def buildToolbarButton(self):
-        pass
+        return None
 
 
 
 
-class AddonPlugin(PluginNode):
-    ''' The AddonPlugin class.
 
-    This is a addon plugin, that's capable of creating individual views 
-    which are used in the tracedisplay.
+class OptionPlugin(PluginNode):
+    ''' The OptionPlugin class.
+
+    This is an option plugin. It provides GUI elements to the user to change various 
+    options used for displaying the data in the tracedisplay (e.g. which stations are shown or 
+    which channels are shown,...).
     '''
-
-    def __init__(self, name, mode, category, tags, nodeClass, icons = None, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, nodeClass, icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -168,8 +156,6 @@ class AddonPlugin(PluginNode):
         ----------
         name : String
             The name of the plugin-node.
-        mode : String
-            The mode of the plugin-node (option, command, interactive, addon).
         category : String
             The category of the plugin-node.
         tags : list of String
@@ -188,7 +174,104 @@ class AddonPlugin(PluginNode):
         '''
         PluginNode.__init__(self,
                             name = name,
-                            mode = mode,
+                            mode = 'option',
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            icons = icons,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+
+
+class InteractivePlugin(PluginNode):
+    ''' The InteractivePlugin class.
+
+    The interactive plugin allows the user to interact with the parent window using 
+    mouse clicks.
+    '''
+    def __init__(self, name, category, tags, nodeClass, icons = None, parent = None, docEntryPoint = None):
+        ''' The constructor.
+
+        Create an instance of the PluginNode.
+
+        Parameters
+        ----------
+        name : String
+            The name of the plugin-node.
+        category : String
+            The category of the plugin-node.
+        tags : list of String
+            A list of strings containing the tags of the collection node.
+            These values are not limited but they should contain one of 
+            the three development state tags:
+             - stable
+             - experimental
+             - damaged
+        nodeClass : String
+            The name of the class for which the plugin-node has been written.
+        icons : Dictionary of python images
+            The key of the dictionary is the state of the icon ('active', 'inactive', 'selected').
+            The pSysmon icons in the :class:psysmon.artwork.icons module should be used.
+        parent : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The parent collectionNode which has loaded the plugin.
+        docEntryPoint : String
+            The path to where the documentation's index.html file can be found.
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = 'interactive',
+                            category = category,
+                            tags = tags,
+                            nodeClass = nodeClass,
+                            icons = icons,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+
+    def getHooks(self):
+        ''' Register the mouse event hooks for interactive plugins.
+
+        '''
+        return None
+
+
+
+class AddonPlugin(PluginNode):
+    ''' The AddonPlugin class.
+
+    This is an addon plugin, that's capable of creating individual views 
+    which are used in the tracedisplay.
+    '''
+
+    def __init__(self, name, category, tags, nodeClass, icons = None, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        Create an instance of the PluginNode.
+
+        Parameters
+        ----------
+        name : String
+            The name of the plugin-node.
+        category : String
+            The category of the plugin-node.
+        tags : list of String
+            A list of strings containing the tags of the collection node.
+            These values are not limited but they should contain one of 
+            the three development state tags:
+             - stable
+             - experimental
+             - damaged
+        nodeClass : String
+            The name of the class for which the plugin-node has been written.
+        parent : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The parent collectionNode which has loaded the plugin.
+        docEntryPoint : String
+            The path to where the documentation's index.html file can be found.
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = 'addon',
                             category = category,
                             tags = tags,
                             nodeClass = nodeClass,

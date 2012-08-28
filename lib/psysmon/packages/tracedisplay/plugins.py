@@ -23,28 +23,27 @@ import wx
 import time
 import numpy as np
 from matplotlib.patches import Rectangle
-from psysmon.core.plugins import PluginNode, AddonPlugin
+from psysmon.core.plugins import OptionPlugin, AddonPlugin, InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
 
 
-class SelectStation(PluginNode):
+class SelectStation(OptionPlugin):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
         ''' The constructor
 
         '''
 
-        PluginNode.__init__(self, 
-                            name = name, 
-                            mode = mode,
-                            category = category,
-                            tags = tags, 
-                            nodeClass = nodeClass,
-                            parent = parent,
-                            docEntryPoint = docEntryPoint)
+        OptionPlugin.__init__(self,
+                              name = name,
+                              category = category,
+                              tags = tags,
+                              nodeClass = nodeClass,
+                              parent = parent,
+                              docEntryPoint = docEntryPoint)
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -52,9 +51,6 @@ class SelectStation(PluginNode):
 
         self.icons['active'] = icons.pin_map_icon_16
 
-
-    def buildMenu(self):
-        self.logger.debug('Building the menu.')
 
 
     def buildFoldPanel(self, parent):
@@ -75,8 +71,8 @@ class SelectStation(PluginNode):
         self.stationList = self.parent.displayManager.getSNL('available')
 
         stationListString = [":".join(x) for x in self.stationList]
-        lb = wx.CheckListBox(parent = foldPanel, 
-                             id = wx.ID_ANY, 
+        lb = wx.CheckListBox(parent = foldPanel,
+                             id = wx.ID_ANY,
                              choices = stationListString)
 
         ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
@@ -111,23 +107,22 @@ class SelectStation(PluginNode):
 
 
 
-class SelectChannel(PluginNode):
+class SelectChannel(OptionPlugin):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
         ''' The constructor.
 
         '''
 
-        PluginNode.__init__(self,
-                            name = name,
-                            mode = mode,
-                            category = category,
-                            tags = tags,
-                            nodeClass = nodeClass,
-                            parent = parent,
-                            docEntryPoint = docEntryPoint)
+        OptionPlugin.__init__(self,
+                              name = name,
+                              category = category,
+                              tags = tags,
+                              nodeClass = nodeClass,
+                              parent = parent,
+                              docEntryPoint = docEntryPoint)
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -195,14 +190,13 @@ class SeismogramPlotter(AddonPlugin):
         ''' The constructor.
 
         '''
-        PluginNode.__init__(self,
-                            name = name,
-                            mode = 'addon',
-                            category = category,
-                            tags = tags,
-                            nodeClass = nodeClass,
-                            parent = parent,
-                            docEntryPoint = docEntryPoint)
+        AddonPlugin.__init__(self,
+                             name = name,
+                             category = category,
+                             tags = tags,
+                             nodeClass = nodeClass,
+                             parent = parent,
+                             docEntryPoint = docEntryPoint)
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -287,7 +281,7 @@ class SeismogramView(View):
 
         start = time.clock()
 
-        for trace in stream: 
+        for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray * 1/trace.stats.sampling_rate
             timeArray = timeArray + trace.stats.starttime.timestamp
@@ -333,8 +327,8 @@ class SeismogramView(View):
         if self.scaleBar:
             self.scaleBar.remove()
         self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
-                                  -yLim+scaleHeight/2.0), 
-                                  width=scaleLength, 
+                                  -yLim+scaleHeight/2.0),
+                                  width=scaleLength,
                                   height=scaleHeight,
                                   edgecolor = 'none',
                                   facecolor = '0.75')
@@ -369,22 +363,21 @@ class SeismogramView(View):
 
 
 
-class Zoom(PluginNode):
+class Zoom(InteractivePlugin):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
         ''' The constructor.
 
         '''
-        PluginNode.__init__(self,
-                            name = name,
-                            mode = mode,
-                            category = category,
-                            tags = tags,
-                            nodeClass = nodeClass,
-                            parent = parent,
-                            docEntryPoint = docEntryPoint)
+        InteractivePlugin.__init__(self,
+                                   name = name,
+                                   category = category,
+                                   tags = tags,
+                                   nodeClass = nodeClass,
+                                   parent = parent,
+                                   docEntryPoint = docEntryPoint)
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -406,9 +399,6 @@ class Zoom(PluginNode):
 
         return hooks
 
-
-    def buildToolbarButton(self):
-        return 'Hallo hier spricht Zoom Plugin.'
 
 
     def onButtonPress(self, event, dataManager=None, displayManager=None):
@@ -480,7 +470,7 @@ class Zoom(PluginNode):
             canvas.mpl_disconnect(cid)
 
         self.motionNotifyCid = []
-        self.bg = {} 
+        self.bg = {}
 
         # Call the setTimeLimits of the displayManager.
 
@@ -498,14 +488,13 @@ class DemoPlotter(AddonPlugin):
         ''' The constructor.
 
         '''
-        PluginNode.__init__(self,
-                            name = name,
-                            mode = 'addon',
-                            category = category,
-                            tags = tags,
-                            nodeClass = nodeClass,
-                            parent = parent,
-                            docEntryPoint = docEntryPoint)
+        AddonPlugin.__init__(self,
+                             name = name,
+                             category = category,
+                             tags = tags,
+                             nodeClass = nodeClass,
+                             parent = parent,
+                             docEntryPoint = docEntryPoint)
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -589,7 +578,7 @@ class DemoView(View):
     def plot(self, stream, color):
 
 
-        for trace in stream: 
+        for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray * 1/trace.stats.sampling_rate
             timeArray = timeArray + trace.stats.starttime.timestamp
@@ -598,7 +587,7 @@ class DemoView(View):
             if np.ma.count_masked(trace.data):
                 timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
 
-            
+
             if not self.line:
                 self.line, = self.dataAxes.plot(timeArray, trace.data * -1, color = color)
             else:
@@ -619,8 +608,8 @@ class DemoView(View):
         if self.scaleBar:
             self.scaleBar.remove()
         self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
-                                  -yLim+scaleHeight/2.0), 
-                                  width=scaleLength, 
+                                  -yLim+scaleHeight/2.0),
+                                  width=scaleLength,
                                   height=scaleHeight,
                                   edgecolor = 'none',
                                   facecolor = '0.75')
@@ -649,126 +638,6 @@ class DemoView(View):
         timeRange = yLim[1] - yLim[0]
         width = self.dataAxes.get_window_extent().width
         return  width / float(timeRange)
-
-
-
-
-
-
-class Zoom(PluginNode):
-    '''
-
-    '''
-    def __init__(self, name, mode, category, tags, nodeClass, parent=None, docEntryPoint=None):
-        ''' The constructor.
-
-        '''
-        PluginNode.__init__(self,
-                            name = name,
-                            mode = mode,
-                            category = category,
-                            tags = tags,
-                            nodeClass = nodeClass,
-                            parent = parent,
-                            docEntryPoint = docEntryPoint)
-
-        # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        self.icons['active'] = icons.zoom_icon_16
-
-        self.beginLine = {}
-        self.endLine = {}
-        self.bg = {}
-        self.motionNotifyCid = []
-
-
-    def getHooks(self):
-        hooks = {}
-
-        hooks['button_press_event'] = self.onButtonPress
-        hooks['button_release_event'] = self.onButtonRelease
-
-        return hooks
-
-
-    def buildToolbarButton(self):
-        return 'Hallo hier spricht Zoom Plugin.'
-
-
-    def onButtonPress(self, event, dataManager=None, displayManager=None):
-        self.logger.debug('onButtonPress.')
-        #self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
-
-        #print 'Clicked mouse:\nxdata=%f, ydata=%f' % (event.xdata, event.ydata)
-        #print 'x=%f, y=%f' % (event.x, event.y)
-
-
-
-        viewport = displayManager.parent.viewPort
-        for curStation in viewport.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
-                    #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
-                    #curView.plotCanvas.canvas.restore_region(bg)
-
-                    if curView in self.endLine.keys():
-                        self.endLine[curView].set_visible(False)
-                        curView.dataAxes.draw_artist(self.endLine[curView])
-
-
-                    if curView in self.beginLine.keys():
-                        self.beginLine[curView].set_xdata(event.xdata)
-                    else:
-                        self.beginLine[curView] = curView.dataAxes.axvline(x=event.xdata)
-
-                    curView.plotCanvas.canvas.draw()
-
-                    cid = curView.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.onMouseMotion : callback(evt, dataManager, displayManager))
-                    self.motionNotifyCid.append((curView.plotCanvas.canvas, cid))
-
-
-    def onMouseMotion(self, event, dataManger=None, displayManager=None):
-        self.logger.debug('mouse motion')
-        self.logger.debug('x: %f', event.x)
-        if event.inaxes is not None:
-            self.logger.debug('xData: %f', event.xdata)
-
-        viewport = displayManager.parent.viewPort
-        for curStation in viewport.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
-                    if event.inaxes is None:
-                        inv = curView.dataAxes.transData.inverted()
-                        tmp = inv.transform((event.x, event.y))
-                        self.logger.debug('xTrans: %f', tmp[0])
-                        event.xdata = tmp[0]
-                    canvas = curView.plotCanvas.canvas
-                    if curView not in self.bg.keys():
-                        self.bg[curView] = canvas.copy_from_bbox(curView.dataAxes.bbox)
-                    canvas.restore_region(self.bg[curView])
-
-                    if curView not in self.endLine.keys():
-                        self.endLine[curView] = curView.dataAxes.axvline(x=event.xdata, animated=True)
-                    else:
-                        self.endLine[curView].set_xdata(event.xdata)
-                        self.endLine[curView].set_visible(True)
-
-                    curView.dataAxes.draw_artist(self.endLine[curView])
-                    canvas.blit()
-
-
-
-    def onButtonRelease(self, event, dataManager=None, displayManager=None):
-        self.logger.debug('onButtonRelease')
-        for canvas, cid in self.motionNotifyCid:
-            canvas.mpl_disconnect(cid)
-
-        self.motionNotifyCid = []
-        self.bg = {} 
-
-        # Call the setTimeLimits of the displayManager.
 
 
 
