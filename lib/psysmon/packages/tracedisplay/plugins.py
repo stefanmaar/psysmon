@@ -26,6 +26,7 @@ from matplotlib.patches import Rectangle
 from psysmon.core.plugins import OptionPlugin, AddonPlugin, InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
+from obspy.core import UTCDateTime
 
 
 class SelectStation(OptionPlugin):
@@ -389,6 +390,8 @@ class Zoom(InteractivePlugin):
         self.endLine = {}
         self.bg = {}
         self.motionNotifyCid = []
+        self.startTime = None
+        self.endTime = None
 
 
     def getHooks(self):
@@ -408,7 +411,7 @@ class Zoom(InteractivePlugin):
         #print 'Clicked mouse:\nxdata=%f, ydata=%f' % (event.xdata, event.ydata)
         #print 'x=%f, y=%f' % (event.x, event.y)
 
-
+        self.startTime = event.xdata
 
         viewport = displayManager.parent.viewPort
         for curStation in viewport.stations:
@@ -438,6 +441,7 @@ class Zoom(InteractivePlugin):
         self.logger.debug('x: %f', event.x)
         if event.inaxes is not None:
             self.logger.debug('xData: %f', event.xdata)
+            self.endTime = event.xdata
 
         viewport = displayManager.parent.viewPort
         for curStation in viewport.stations:
@@ -472,7 +476,23 @@ class Zoom(InteractivePlugin):
         self.motionNotifyCid = []
         self.bg = {}
 
+
+        # Delete all begin- and end lines from the axes.
+        for curView in self.beginLine.keys():
+            curView.dataAxes.lines.remove(self.beginLine[curView])
+            curView.dataAxes.lines.remove(self.endLine[curView])
+
+        self.beginLine = {}
+        self.endLine = {}
+
+
+
         # Call the setTimeLimits of the displayManager.
+        # The timebase of the plots is unixseconds.
+        displayManager.setTimeLimits(UTCDateTime(self.startTime),
+                                     UTCDateTime(self.endTime))
+
+        displayManager.parent.updateDisplay()
 
 
 
