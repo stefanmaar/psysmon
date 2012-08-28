@@ -255,7 +255,7 @@ class TraceDisplayDlg(wx.Frame):
         del(inventoryDbController)
 
         # Create the shortcut options.
-        self.shortCutOptions = ShortCutOptions()
+        self.shortcutManager = ShortcutManager()
 
         # Create the dataManager.
         self.dataManager = DataManager(self)
@@ -420,8 +420,10 @@ class TraceDisplayDlg(wx.Frame):
         self.logger.debug('Binding key events.')
         self.viewPort.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
-        self.shortCutOptions.addAction(('WXK_RIGHT',), self.advanceTime)
-        self.shortCutOptions.addAction(('WXK_LEFT',), self.decreaseTime)
+        self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
+        self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
+        self.shortcutManager.addAction(('"-"',), self.growTimePeriod)
+        self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
 
 
     def advanceTime(self):
@@ -440,6 +442,19 @@ class TraceDisplayDlg(wx.Frame):
         self.displayManager.decreaseTime()
         self.updateDisplay()
         oldFocus.SetFocus()
+
+    def growTimePeriod(self, ratio = 50):
+        ''' Grow the time period by a given ratio.
+        '''
+        self.displayManager.growTimePeriod(ratio)
+        self.updateDisplay()
+
+
+    def shrinkTimePeriod(self, ratio = 50):
+        ''' Grow the time period by a given ratio.
+        '''
+        self.displayManager.shrinkTimePeriod(ratio)
+        self.updateDisplay()
 
 
     def setDuration(self, duration):
@@ -518,6 +533,8 @@ class TraceDisplayDlg(wx.Frame):
         keyCode = event.GetKeyCode()
         keyName = keyMap.get(keyCode, None)
 
+        self.logger.debug('Keycode: %d', keyCode)
+
         if keyName is None:
             if keyCode < 256:
                 if keyCode == 0:
@@ -544,7 +561,8 @@ class TraceDisplayDlg(wx.Frame):
         pressedKey.append(keyName)
         pressedKeyString = modString + keyName
         self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
-        action = self.shortCutOptions.getAction(tuple(pressedKey))
+        action = self.shortcutManager.getAction(tuple(pressedKey))
+        print pressedKey
 
         if action:
             action()
@@ -601,7 +619,7 @@ class TraceDisplayDlg(wx.Frame):
 
 
 
-class ShortCutOptions:
+class ShortcutManager:
 
 
     def __init__(self):
@@ -755,6 +773,24 @@ class DisplayManager:
         interval = self.endTime - self.startTime
         self.endTime = self.startTime
         self.startTime = self.startTime - interval
+
+
+    def growTimePeriod(self, ratio = 50):
+        ''' Grow the time period by a given ratio.
+        '''
+        duration = self.endTime - self.startTime
+        growAmount = duration * ratio/100.0
+        self.setTimeLimits(self.startTime - growAmount/2.0,
+                           self.endTime + growAmount/2.0)
+
+
+    def shrinkTimePeriod(self, ratio = 50):
+        ''' Grow the time period by a given ratio.
+        '''
+        duration = self.endTime - self.startTime
+        shrinkAmount = duration * ratio/100.0
+        self.setTimeLimits(self.startTime + shrinkAmount/2.0,
+                           self.endTime - shrinkAmount/2.0)
 
 
     def setDuration(self, duration):
