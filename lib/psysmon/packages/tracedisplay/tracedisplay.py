@@ -770,7 +770,15 @@ class DisplayManager:
         duration = self.endTime - self.startTime
         self.startTime = startTime
         self.endTime = startTime + duration
-        
+
+
+    def setTimeLimits(self, startTime, endTime):
+        ''' Set the start- and endTime of the displayed time period.
+
+        '''
+        self.startTime = startTime
+        self.endTime = endTime
+
 
 
     def hideStation(self, snl):
