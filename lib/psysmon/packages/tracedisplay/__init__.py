@@ -96,3 +96,24 @@ def pluginFactory():
 
     return pluginTemplates
 
+
+
+def processingNodeFactory():
+    ''' Provide some processing nodes.
+    '''
+    from processingNodes import Detrend
+
+    procNodeTemplates = []
+
+    options = {}
+
+    myProcNodeTemplate = Detrend(name = 'detrend',
+                                 mode = 'uneditable',
+                                 category = 'test',
+                                 tags = ['remove', 'mean'],
+                                 options = options
+                                 )
+
+    procNodeTemplates.append(myProcNodeTemplate)
+
+    return procNodeTemplates
