@@ -30,6 +30,7 @@ import wx.lib.colourdb
 from obspy.core import Stream
 import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
+from psysmon.core.processingStack import ProcessingStack
 from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
 from obspy.core.utcdatetime import UTCDateTime
 import container
@@ -247,6 +248,9 @@ class TraceDisplayDlg(wx.Frame):
         for curPlugin in self.plugins:
             curPlugin.parent = self
 
+
+        # Get the processing nodes from the project.
+        self.processingNodes = self.project.getProcessingNodes()
 
         # Create the display option.
         inventoryDbController = InventoryDatabaseController(self.project)
@@ -1248,6 +1252,10 @@ class DataManager():
 
         self.procStream = None
 
+        self.processingStack = ProcessingStack('my stack',
+                                                self.project,
+                                                self.parent.displayManager.inventory)
+        self.processingStack.addNode(self.parent.processingNodes[0])
 
 
     def requestStream(self, startTime, endTime, scnl):
@@ -1330,7 +1338,8 @@ class DataManager():
         if not scnl:
             # No SCNL is specified, process the whole stream.
             self.procStream = self.origStream.copy()
-            self.procStream.detrend(type = 'constant')
+            #self.procStream.detrend(type = 'constant')
+            self.processingStack.execute(self.procStream)
         else:
             # Process the stream of the specified scnl only.
             for curScnl in scnl:
@@ -1339,8 +1348,10 @@ class DataManager():
                                                    network = curScnl[2],
                                                    location = curScnl[3])
                 curStream = curStream.copy()
-                curStream.detrend(type = 'constant')
+                #curStream.detrend(type = 'constant')
+                self.processingStack.execute(curStream)
                 self.procStream += curStream
+
 
 
 
