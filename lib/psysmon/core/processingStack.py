@@ -122,13 +122,18 @@ class ProcessingStack:
     def execute(self, stream):
         ''' Execute the stack.
 
+        Parameters
+        ----------
+
+        stream : :class:`obspy.core.Stream`
+            The data to process.
         '''
-        for curNode in self.stackNodes:
-            if self.stackNodes.isEnabled():
-                self.stackNodes.execute(stream)
-        
-        
-         
+        for curNode in self.nodes:
+            if curNode.isEnabled():
+                curNode.execute(stream)
+
+
+
 
 
 class ProcessingNode:
@@ -165,6 +170,12 @@ class ProcessingNode:
         # The enabled state of the node.
         self.enabled = True
 
+
+    def isEnabled(self):
+        ''' Check the enabled state of the node.
+
+        '''
+        return self.enabled
 
 
     def edit(self):
