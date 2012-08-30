@@ -1320,6 +1320,12 @@ class DataManager():
         ''' Process the data stream using the passed processing stack.
 
         '''
+        # Copy the origStream to the procStream.
+
+        # Execute the processing stack.
+        # Pass the procStream to the execute functon of the processing
+        # stack.
+
         # TODO: Add the real processing stack class.
         if not scnl:
             # No SCNL is specified, process the whole stream.
@@ -1337,8 +1343,6 @@ class DataManager():
                 self.procStream += curStream
 
 
-        
-        
 
 
 
