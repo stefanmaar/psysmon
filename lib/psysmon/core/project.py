@@ -289,6 +289,13 @@ class Project:
         return plugins
 
 
+    def getProcessingNodes(self):
+        ''' Get all available processing Nodes.
+
+        '''
+        return copy.copy(self.psyBase.packageMgr.processingNodes)
+
+
 
     def setCollectionNodeProject(self):
         '''Set the project attribute of each node in all collections of 
