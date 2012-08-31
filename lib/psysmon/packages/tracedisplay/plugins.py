@@ -183,6 +183,82 @@ class SelectChannel(OptionPlugin):
 
 
 
+class ProcessingStack(OptionPlugin):
+    '''
+
+    '''
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor
+
+        '''
+
+        OptionPlugin.__init__(self,
+                              name = name,
+                              category = category,
+                              tags = tags,
+                              nodeClass = nodeClass,
+                              parent = parent,
+                              docEntryPoint = docEntryPoint)
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.layers_1_icon_16
+
+
+
+    def buildFoldPanel(self, parent):
+        foldPanel = wx.Panel(parent = parent, id = wx.ID_ANY)
+
+
+        self.processingStack = self.parent.dataManager.processingStack
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        # Create the buttons to control the stack.
+        addButton = wx.Button(foldPanel, wx.ID_ANY, "add")
+        removeButton = wx.Button(foldPanel, wx.ID_ANY, "remove")
+        runButton = wx.Button(foldPanel, wx.ID_ANY, "run")
+
+        # Fill the button sizer.
+        buttonSizer.Add(addButton, 1, wx.EXPAND|wx.ALL)
+        buttonSizer.Add(removeButton, 1, wx.EXPAND|wx.ALL)
+        buttonSizer.Add(runButton, 1, wx.EXPAND|wx.ALL)
+
+        # Fill the nodes list with the nodes in the processing stack.
+        nodeNames = [x.name for x in self.processingStack.nodes]
+        isActive = [m for m,x in enumerate(self.processingStack) if x.isEnabled() == True]
+
+        self.nodeListBox = wx.CheckListBox(parent = foldPanel,
+                                           id = wx.ID_ANY,
+                                           choices = nodeNames)
+        self.nodeListBox.SetChecked(isActive)
+
+        # Create the panel holding the node options.
+        self.nodeOptions = wx.Panel(foldPanel, id = wx.ID_ANY)
+        self.nodeOptions.SetMinSize((-1, 200))
+        self.nodeOptions.SetBackgroundColour('lightblue3')
+
+        # Add the elements to the main sizer.
+        sizer.Add(buttonSizer, pos=(0,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeListBox, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeOptions, pos=(2,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+
+        sizer.AddGrowableRow(1)
+        sizer.AddGrowableRow(2)
+        sizer.AddGrowableCol(0)
+
+        foldPanel.SetSizer(sizer)
+        #foldPanel.SetMinSize(self.nodeListBox.GetBestSize())
+
+        return foldPanel
+
+
+
+
 class SeismogramPlotter(AddonPlugin):
     '''
 

@@ -49,10 +49,12 @@ def nodeFactory():
 def pluginFactory():
     ''' Provide some plugins.
     '''
-    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter, DemoPlotter
+    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter, DemoPlotter, ProcessingStack
 
     pluginTemplates = []
 
+    ########################################################
+    # The select station options plugin
     myPluginTemplate = SelectStation(name = 'select station',
                                      category = 'view',
                                      tags = ['station', 'view', 'select'],
@@ -62,6 +64,8 @@ def pluginFactory():
 
 
 
+    ########################################################
+    # The select channel options plugin
     myPluginTemplate = SelectChannel(name = 'select channel',
                                      category = 'view',
                                      tags = ['channel', 'view', 'select'],
@@ -71,28 +75,47 @@ def pluginFactory():
 
 
 
+    ########################################################
+    # The plot seismogram addon plugin.
     myPluginTemplate = SeismogramPlotter(name = 'plot seismogram',
-                            category = 'views',
+                            category = 'visualize',
                             tags = None,
                             nodeClass = 'TraceDisplay'
                             )
     pluginTemplates.append(myPluginTemplate)
 
 
+
+    ########################################################
+    # The demo plotter addon plugin.
     myPluginTemplate = DemoPlotter(name = 'demo plotter',
-                            category = 'views',
+                            category = 'visualize',
                             tags = None,
                             nodeClass = 'TraceDisplay'
                             )
     pluginTemplates.append(myPluginTemplate)
 
 
+
+    ########################################################
+    # The the zoom interactive plugin.
     myPluginTemplate = Zoom(name = 'zoom',
-                            category = 'interactive',
+                            category = 'view',
                             tags = None,
                             nodeClass = 'TraceDisplay'
                             )
     pluginTemplates.append(myPluginTemplate)
+
+
+    ########################################################
+    # The processing stack GUI options plugin.
+    myPluginTemplate = ProcessingStack(name = 'processing stack',
+                                       category = 'process',
+                                       tags = ['process'],
+                                       nodeClass = 'TraceDisplay'
+                                       )
+    pluginTemplates.append(myPluginTemplate)
+
 
     return pluginTemplates
 
