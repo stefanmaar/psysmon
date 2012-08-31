@@ -112,7 +112,6 @@ def processingNodeFactory():
                                  category = 'test',
                                  tags = ['remove', 'mean'],
                                  options = options,
-                                 nodeClass = 'TraceDisplay'
                                  )
 
     procNodeTemplates.append(myProcNodeTemplate)
