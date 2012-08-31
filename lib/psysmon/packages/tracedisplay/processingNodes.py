@@ -26,7 +26,7 @@ class Detrend(ProcessingNode):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, options, nodeClass, docEntryPoint=None, parentStack = None):
+    def __init__(self, name, mode, category, tags, options,  docEntryPoint=None, parentStack = None):
         ''' The constructor
 
         '''
@@ -37,7 +37,6 @@ class Detrend(ProcessingNode):
                                 category = category,
                                 tags = tags,
                                 options = options,
-                                nodeClass = nodeClass,
                                 docEntryPoint = docEntryPoint,
                                 parentStack = parentStack)
 
