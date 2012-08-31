@@ -145,14 +145,14 @@ class ProcessingNode:
     of obspy Stream objects is supported.
     The return value has to be of the same type as the data passed to the processing node.
     '''
-    def __init__(self, name, mode, category, tags, options, docEntryPoint=None, parentStack=None):
+    def __init__(self, name, mode, category, tags, options, nodeClass = 'common', docEntryPoint=None, parentStack=None, *args):
         ''' The constructor
 
         '''
         # The name of the stack node.
         self.name = name
 
-        # The mode of the stack node.
+        # The mode of the stack node (editable, uneditable).
         self.mode = mode
 
         # The category of the stack node.
@@ -163,6 +163,16 @@ class ProcessingNode:
 
         # The options of the stack node.
         self.options = options
+
+        # The class to which the processing node is assigned to.
+        # User *common* for nodes which can be used by every class.
+        # Nodes with a specified nodeClass usually depend on some special 
+        # variables which have to be passed to them using the variable args 
+        # argument.
+        self.nodeClass = nodeClass
+
+        # The entry point of the documentation of the node.
+        self.docEnctryPoint = docEntryPoint
 
         # The parent stack holding the stack node.
         self.parentStack = parentStack

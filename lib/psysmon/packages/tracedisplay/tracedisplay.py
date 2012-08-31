@@ -250,7 +250,7 @@ class TraceDisplayDlg(wx.Frame):
 
 
         # Get the processing nodes from the project.
-        self.processingNodes = self.project.getProcessingNodes()
+        self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
 
         # Create the display option.
         inventoryDbController = InventoryDatabaseController(self.project)

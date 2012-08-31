@@ -85,7 +85,7 @@ class PackageManager:
         self.plugins = {}
 
         # The processing nodes managed by the package manager.
-        self.processingNodes = []
+        self.processingNodes = {}
 
         # Search for available packages.
         self.scan4Package()
@@ -258,17 +258,22 @@ class PackageManager:
                 self.plugins[curKey].append(curPlugin)
             else:
                 self.plugins[curKey] = [curPlugin, ]
-    
-    
+
+
     def addProcessingNodes(self, procNodes):
         ''' Add the processing nodes to the dictionary.
-        
+
         Parameters
         ----------
         procNodes : List of :class:`~psysmon.core.processingStack.ProcessingNode`
             A list of processing nodes to be added to the package manager.
         '''
-        self.processingNodes.extend(procNodes)
+        for curNode in procNodes:
+            curKey = curNode.nodeClass
+            if curKey in self.processingNodes.keys():
+                self.processingNodes[curKey].append(curNode)
+            else:
+                self.processingNodes[curKey] = [curNode, ]
 
 
 

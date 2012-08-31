@@ -289,11 +289,17 @@ class Project:
         return plugins
 
 
-    def getProcessingNodes(self):
+    def getProcessingNodes(self, selection = ('common',)):
         ''' Get all available processing Nodes.
 
         '''
-        return copy.copy(self.psyBase.packageMgr.processingNodes)
+        procNodes = []
+
+        for curKey in self.psyBase.packageMgr.processingNodes.keys():
+            if curKey in selection:
+                procNodes.extend(copy.copy(self.psyBase.packageMgr.processingNodes[curKey]))
+
+        return procNodes
 
 
 
