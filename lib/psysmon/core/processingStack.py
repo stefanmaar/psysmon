@@ -90,7 +90,7 @@ class ProcessingStack:
         else:
             self.nodes.insert(position, node)
 
-    
+
     def popNode(self, position):
         ''' Remove a node from the stack.
 
@@ -186,6 +186,13 @@ class ProcessingNode:
 
         '''
         return self.enabled
+
+
+    def toggleEnabled(self):
+        ''' Toggle the enabled state of the node.
+
+        '''
+        self.enabled = not self.enabled
 
 
     def edit(self):
