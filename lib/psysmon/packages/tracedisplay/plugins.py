@@ -251,10 +251,22 @@ class ProcessingStack(OptionPlugin):
         sizer.AddGrowableRow(2)
         sizer.AddGrowableCol(0)
 
+        # Bind the events.
+        self.nodeListBox.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
+
         foldPanel.SetSizer(sizer)
         #foldPanel.SetMinSize(self.nodeListBox.GetBestSize())
 
         return foldPanel
+
+
+    def onBoxChecked(self, event):
+        index = event.GetSelection()
+        label = self.nodeListBox.GetString(index)
+        self.logger.debug('Checked item %d, label %s.', index, label)
+
+        self.processingStack[index].toggleEnabled()
+
 
 
 
