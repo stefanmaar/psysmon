@@ -338,17 +338,17 @@ class TraceDisplayDlg(wx.Frame):
                                               Position(0))
 
         self.mgr.AddPane(self.foldPanelBar,
-                         wx.aui.AuiPaneInfo().Left().
+                         wx.aui.AuiPaneInfo().Right().
                                               Name('tool panels').
                                               Caption('tool panels').
-                                              Layer(1).
+                                              Layer(2).
                                               Row(0).
                                               Position(0))
         self.mgr.AddPane(self.ribbon,
                          wx.aui.AuiPaneInfo().Top().
                                               Name('palette').
                                               Caption('palette').
-                                              Layer(2).
+                                              Layer(1).
                                               Row(0).
                                               Position(0))
 
