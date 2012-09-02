@@ -252,12 +252,27 @@ class ProcessingStack(OptionPlugin):
         sizer.AddGrowableCol(0)
 
         # Bind the events.
+        self.nodeListBox.Bind(wx.EVT_LISTBOX, self.onNodeSelected, self.nodeListBox)
         self.nodeListBox.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
 
         foldPanel.SetSizer(sizer)
         #foldPanel.SetMinSize(self.nodeListBox.GetBestSize())
 
+        self.foldPanel = foldPanel
+
         return foldPanel
+
+
+    def onNodeSelected(self, event):
+        index = event.GetSelection()
+        #selectedNode = event.GetString()
+        sizer = self.foldPanel.GetSizer()
+        sizer.Detach(self.nodeOptions)
+        self.nodeOptions.Destroy()
+        self.nodeOptions = self.processingStack[index].getEditPanel(self.foldPanel)
+        sizer.Add(self.nodeOptions, pos=(2,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Layout() 
+        
 
 
     def onBoxChecked(self, event):
