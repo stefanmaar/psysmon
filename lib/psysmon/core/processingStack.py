@@ -188,6 +188,7 @@ class ProcessingNode:
         return self.enabled
 
 
+
     def toggleEnabled(self):
         ''' Toggle the enabled state of the node.
 
@@ -195,11 +196,22 @@ class ProcessingNode:
         self.enabled = not self.enabled
 
 
+
     def edit(self):
         ''' Edit the options of the stack node.
 
         '''
         assert False, 'edit must be defined'
+
+
+
+    def getEditPanel(self, parent):
+        ''' The method to build and return the edit panel for the processing 
+        stack GUI.
+
+        '''
+        assert False, 'getEditPanel must be defined'
+
 
 
     def execute(self, stream):
