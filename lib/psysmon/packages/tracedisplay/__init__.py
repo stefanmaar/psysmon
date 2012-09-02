@@ -129,6 +129,7 @@ def processingNodeFactory():
     procNodeTemplates = []
 
     options = {}
+    options['method'] = 'constant'
 
     myProcNodeTemplate = Detrend(name = 'detrend',
                                  mode = 'uneditable',
