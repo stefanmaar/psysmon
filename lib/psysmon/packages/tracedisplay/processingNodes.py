@@ -20,6 +20,7 @@
 
 import logging
 from psysmon.core.processingStack import ProcessingNode
+from psysmon.core.guiBricks import OptionsEditPanel, StaticBoxContainer, SingleChoiceField
 
 
 class Detrend(ProcessingNode):
@@ -50,6 +51,31 @@ class Detrend(ProcessingNode):
         pass
 
 
+    def getEditPanel(self, parent):
+
+        fieldSize = (250, 30)
+        editPanel = OptionsEditPanel(property = self.options,
+                                     parent = parent
+                                    )
+        editPanel.addPage('Values')
+
+        container = StaticBoxContainer(label = 'detrend parameters',
+                                       parent = editPanel)
+        editPanel.addContainer(container, 'Values')
+
+        choices = ['simple', 'linear', 'constant']
+        curField = SingleChoiceField(parent = editPanel,
+                                     name = 'detrend method',
+                                     propertyKey = 'method',
+                                     size = fieldSize,
+                                     choices = choices)
+        editPanel.addField(curField, container)
+
+        return editPanel
+
+        
+
+
     def execute(self, stream):
         ''' Execute the stack node.
 
@@ -59,5 +85,5 @@ class Detrend(ProcessingNode):
             The data to process.
         '''
         self.logger.debug('Executing the processing node.')
-        stream.detrend(type = 'constant')
+        stream.detrend(type = self.options['method'])
 
