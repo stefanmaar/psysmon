@@ -292,8 +292,10 @@ class ProcessingStack(OptionPlugin):
 
         if val == wx.ID_OK:
             node2Add = dlg.getSelection()
-            self.processingStack.addNode(node2Add) 
+            self.processingStack.addNode(node2Add, self.nodeListBox.GetSelection()) 
             self.updateNodeList()
+
+        dlg.Destroy()
         
 
     def onNodeSelected(self, event):
