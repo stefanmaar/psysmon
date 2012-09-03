@@ -27,6 +27,8 @@ from psysmon.core.plugins import OptionPlugin, AddonPlugin, InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
 from obspy.core import UTCDateTime
+import wx.lib.mixins.listctrl as listmix
+from psysmon.core.gui import psyContextMenu
 
 
 class SelectStation(OptionPlugin):
@@ -217,7 +219,7 @@ class ProcessingStack(OptionPlugin):
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        
+
         # Create the buttons to control the stack.
         addButton = wx.Button(foldPanel, wx.ID_ANY, "add")
         removeButton = wx.Button(foldPanel, wx.ID_ANY, "remove")
@@ -252,8 +254,10 @@ class ProcessingStack(OptionPlugin):
         sizer.AddGrowableCol(0)
 
         # Bind the events.
-        self.nodeListBox.Bind(wx.EVT_LISTBOX, self.onNodeSelected, self.nodeListBox)
-        self.nodeListBox.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
+        foldPanel.Bind(wx.EVT_BUTTON, self.onRun, runButton)
+        foldPanel.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
+        foldPanel.Bind(wx.EVT_LISTBOX, self.onNodeSelected, self.nodeListBox)
+        foldPanel.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
 
         foldPanel.SetSizer(sizer)
         #foldPanel.SetMinSize(self.nodeListBox.GetBestSize())
@@ -262,6 +266,35 @@ class ProcessingStack(OptionPlugin):
 
         return foldPanel
 
+
+    def updateNodeList(self):
+        self.nodeListBox.Clear()
+        nodeNames = [x.name for x in self.processingStack.nodes]
+        isActive = [m for m,x in enumerate(self.processingStack) if x.isEnabled() == True]
+        self.nodeListBox.AppendItems(nodeNames)
+        self.nodeListBox.SetChecked(isActive)
+        
+
+
+    def onRun(self, event):
+        ''' Re-run the processing stack.
+        '''
+        self.parent.updateDisplay()
+
+
+    def onAdd(self, event):
+        ''' Add a processing node to the stack.
+
+        Open a dialog field to select from the available processing nodes.
+        '''
+        dlg = PStackAddNodeDialog(parent = self.foldPanel, availableNodes = self.parent.processingNodes)
+        val = dlg.ShowModal()
+
+        if val == wx.ID_OK:
+            node2Add = dlg.getSelection()
+            self.processingStack.addNode(node2Add) 
+            self.updateNodeList()
+        
 
     def onNodeSelected(self, event):
         index = event.GetSelection()
@@ -272,7 +305,7 @@ class ProcessingStack(OptionPlugin):
         self.nodeOptions = self.processingStack[index].getEditPanel(self.foldPanel)
         sizer.Add(self.nodeOptions, pos=(2,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
         sizer.Layout() 
-        
+
 
 
     def onBoxChecked(self, event):
@@ -766,3 +799,199 @@ class DemoView(View):
 
 
 
+class PStackAddNodeDialog(wx.Dialog):
+    ''' Dialog to add a processing node to the stack.
+
+    '''
+    def __init__(self, parent=None, availableNodes = None, size = (200,400)):
+        ''' The constructor.
+        '''
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Add a processing node", style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size=size)
+        
+        # Use standard button IDs.
+        okButton = wx.Button(self, wx.ID_OK)
+        okButton.SetDefault()
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+
+        # Sizer to layout the gui elements.
+        sizer = wx.GridBagSizer(5,5)
+        btnSizer = wx.StdDialogButtonSizer()
+
+        self.nodeInventoryPanel = PStackNodeInventoryPanel(parent = self, availableNodes = availableNodes)
+
+        # Add the buttons to the button sizer. 
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        
+        # Add the elements to the base sizer.        
+        sizer.Add(self.nodeInventoryPanel, pos=(0,0), flag = wx.EXPAND|wx.ALL, border= 2)
+        sizer.Add(btnSizer, pos=(1,0), span=(1,2), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(sizer)
+
+
+       
+    def getSelection(self):
+        return self.nodeInventoryPanel.selectedNode 
+
+
+
+
+class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
+
+    def __init__(self, parent, availableNodes, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent = parent, id = id)
+
+        self.availableNodes = availableNodes
+
+        self.selectedNode = None
+        
+        self.itemDataMap = {}
+    
+        # Create the icons for column sorting.
+        self.il = wx.ImageList(16, 16)
+        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
+        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
+
+        # The sizer used for the panel layout.
+        sizer = wx.GridBagSizer(5, 5)
+        
+        # The search field to do search while typing.
+        self.searchButton = wx.SearchCtrl(self, size=(200,-1), style=wx.TE_PROCESS_ENTER)
+        self.searchButton.SetDescriptiveText('Search processing nodes')
+        self.searchButton.ShowCancelButton(True)
+        self.Bind(wx.EVT_TEXT, self.onDoSearch, self.searchButton)
+        self.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self.onDoSearch, self.searchButton)
+        self.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self.onCancelSearch, self.searchButton)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onDoSearch, self.searchButton)
+        
+        sizer.Add(self.searchButton, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)
+        
+        # The processing node listbox.
+        self.nodeListCtrl = NodeListCtrl(self, id=wx.ID_ANY,
+                                 style=wx.LC_REPORT 
+                                 | wx.BORDER_NONE
+                                 | wx.LC_SINGLE_SEL
+                                 | wx.LC_SORT_ASCENDING
+                                 )
+
+        self.nodeListCtrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+
+
+        columns = {1: 'name', 2: 'mode', 3: 'category', 4: 'tags'}
+
+        for colNum, name in columns.iteritems():
+            self.nodeListCtrl.InsertColumn(colNum, name)
+
+        self.fillNodeList(self.availableNodes)
+
+        sizer.Add(self.nodeListCtrl, pos=(1, 0), flag=wx.EXPAND|wx.ALL, border=0)
+
+        sizer.AddGrowableCol(0)
+        sizer.AddGrowableCol(1)
+        sizer.AddGrowableRow(1)
+
+        self.SetSizerAndFit(sizer)
+        
+        # Bind the select item event to track the selected processing
+        # node.
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onNodeItemSelected, self.nodeListCtrl)
+   
+
+    
+    def onDoSearch(self, evt):
+        foundNodes = self.searchNodes(self.searchButton.GetValue())
+        self.updateNodeInvenotryList(foundNodes)
+    
+    
+    def onCancelSearch(self, evt):
+        self.fillNodeList(self.availableNodes)
+        self.searchButton.SetValue(self.searchButton.GetDescriptiveText())
+    
+    
+    def onNodeItemSelected(self, evt):
+        nodeName = evt.GetItem().GetText()
+        for curNode in self.availableNodes:
+            if nodeName == curNode.name:
+                self.selectedNode = curNode
+
+
+    def searchNodes(self, searchString):
+        ''' Find the processing nodes containing the *searchString* in their 
+        name or their tags.
+
+        
+        Parameters
+        ----------
+        searchString : String
+            The string to search for.
+
+
+        Returns
+        -------
+        nodesFound : List of :class:`~psysmon.core.packageNodes.CollectionNode` instances.
+            The nodes found matching the *searchString*.
+        '''
+        nodesFound = {}
+        for curNode in self.availableNodes:
+            if searchString in ','.join([curNode.name]+curNode.tags):
+                nodesFound[curNode.name] = curNode
+
+        return nodesFound
+
+
+
+    def fillNodeList(self, nodeTemplates):
+        index = 0
+        self.nodeListCtrl.DeleteAllItems()
+
+        for curNode in nodeTemplates:
+            self.nodeListCtrl.InsertStringItem(index, curNode.name)
+            self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
+            self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
+            self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
+            self.itemDataMap[index] = (curNode.name, curNode.mode, curNode.category, ', '.join(curNode.tags))
+            self.nodeListCtrl.SetItemData(index, index)
+            index += 1
+    
+    
+    def updateNodeInvenotryList(self, nodeTemplates):
+        index = 0
+        self.nodeListCtrl.DeleteAllItems()
+
+        for curNode in nodeTemplates.itervalues():
+            self.nodeListCtrl.InsertStringItem(index, curNode.name)
+            self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
+            self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
+            self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
+            self.itemDataMap[index] = (curNode.name, curNode.mode, curNode.category, ', '.join(curNode.tags))
+            self.nodeListCtrl.SetItemData(index, index)
+            index += 1
+         
+
+
+    def onCollectionNodeHelp(self, event):
+        pass
+
+
+
+class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=0):
+        wx.ListCtrl.__init__(self, parent, id, pos, size, style)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
+
+        cmData = (("help", parent.onCollectionNodeHelp),)
+
+        # create the context menu.
+        self.contextMenu = psyContextMenu(cmData)
+
+        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
+
+    def onShowContextMenu(self, event):
+        pos = event.GetPosition()
+        pos = self.ScreenToClient(pos)
+        self.PopupMenu(self.contextMenu, pos)
