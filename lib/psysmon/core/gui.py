@@ -535,7 +535,7 @@ class Logger:
 
 
 ## The collection listbox.
-#       
+#
 class CollectionListBox(wx.SimpleHtmlListBox):
 
     ## The constructor
@@ -1016,7 +1016,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
             dlg = wx.MessageDialog(None, msg, 
                                    "pSysmon runtime error.",
                                    wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()    
+            dlg.ShowModal()
 
     ## Show the node's online help file.
     # 
