@@ -42,8 +42,8 @@ class Detrend(ProcessingNode):
                                 parentStack = parentStack)
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        #loggerName = __name__ + "." + self.__class__.__name__
+        #self.logger = logging.getLogger(loggerName)
 
 
 
@@ -73,7 +73,7 @@ class Detrend(ProcessingNode):
 
         return editPanel
 
-        
+
 
 
     def execute(self, stream):
@@ -84,6 +84,6 @@ class Detrend(ProcessingNode):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
-        self.logger.debug('Executing the processing node.')
+        #self.logger.debug('Executing the processing node.')
         stream.detrend(type = self.options['method'])
 
