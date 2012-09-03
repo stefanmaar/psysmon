@@ -30,6 +30,7 @@ The pSysmon processingStack module.
 This module contains the pSysmon processingStack system.
 '''
 
+import copy
 
 class ProcessingStack:
     ''' The ProcessingStack class.
@@ -71,7 +72,7 @@ class ProcessingStack:
         return self.nodes[index]
 
 
-    def addNode(self, node, position = -1):
+    def addNode(self, nodeTemplate, position = -1):
         ''' Add a node to the processing stack.
 
         Insert a node before a specified position in the processing stack.
@@ -84,6 +85,7 @@ class ProcessingStack:
         position : Integer
             The position in the stack before which the node should be inserted.
         '''
+        node = copy.deepcopy(nodeTemplate)
         node.parentStack = self
         if position==-1:
             self.nodes.append(node)
