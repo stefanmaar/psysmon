@@ -632,7 +632,7 @@ class FloatSpinField(Field):
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, propertyKey, size, parent=None, increment=0.1, digits=3):
+    def __init__(self, name, propertyKey, size, parent=None, min_val=None, max_val=None, increment=0.1, digits=3):
         Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
 
         # Create the field label.
@@ -646,6 +646,8 @@ class FloatSpinField(Field):
         self.spinCtrl = FS.FloatSpin(parent=self, 
                                   id=wx.ID_ANY, 
                                   size=(size[0]*self.ctrlRatio, size[1]),
+                                  min_val = min_val,
+                                  max_val = max_val,
                                   increment=increment,
                                   digits=digits,
                                   agwStyle=FS.FS_LEFT)
