@@ -133,14 +133,18 @@ class FilterBandPass(ProcessingNode):
         curField = FloatSpinField(parent = editPanel,
                                   name = 'min. frequency',
                                   propertyKey = 'freqmin',
-                                  size = fieldSize
+                                  size = fieldSize,
+                                  digits = 2,
+                                  min_val = 0
                                  )
         editPanel.addField(curField, container)
 
         curField = FloatSpinField(parent = editPanel,
                                   name = 'max. frequency',
                                   propertyKey = 'freqmax',
-                                  size = fieldSize
+                                  size = fieldSize,
+                                  digits = 2,
+                                  min_val = 0
                                  )
         editPanel.addField(curField, container)
 
