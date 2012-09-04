@@ -3,6 +3,7 @@
 import wx
 from wx.lib.stattext import GenStaticText as StaticText
 import  wx.lib.filebrowsebutton as filebrowse
+import wx.lib.intctrl as intctrl
 
 try:
     from agw import floatspin as FS
@@ -495,6 +496,70 @@ class TextEditField(Field):
         self.textCtrl.SetValue(value)
 
 
+
+## The IntegerRangeField class.
+#
+# A field to edit integer values within a limited range.
+# The field consits of a label and a SpinCtrl element.
+class IntegerCtrlField(Field):
+
+    ## The constructor
+    #
+    # @param self The object pointer.
+    # @param name The name of the field. Is used as the label too.
+    # @param propertyKey The key of the collection node property edited by this field.
+    # @param size The size of the field. A tuple. (width, height)
+    # @param parent The parent wxPython window of this field.
+    # @param range The range limits of the spincontrol. A tuple (min, max).
+    def __init__(self, name, propertyKey, size, parent=None):
+        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+
+        # Create the field label.
+        self.labelElement = StaticText(parent=self, 
+                                       ID=wx.ID_ANY, 
+                                       label=self.label,
+                                       style=wx.ALIGN_RIGHT)
+        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
+
+        # Create the field spincontrol.
+        self.intCtrl = intctrl.IntCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
+
+        # Add the elements to the field sizer.
+        self.sizer.Add(self.labelElement, pos=(0, 0), 
+                       flag=wx.ALIGN_CENTER_VERTICAL|
+                       wx.ALL, 
+                       border=2)
+        self.sizer.Add(self.intCtrl, pos=(0, 1), flag=wx.ALL, border=2)
+
+        # Set the sizer properties.
+        self.sizer.AddGrowableCol(1)
+        self.sizer.AddGrowableRow(0)
+        self.SetSizer(self.sizer)
+
+        # Bind the events.
+        self.Bind(intctrl.EVT_INT, self.onValueChange, self.intCtrl)
+
+
+    def onValueChange(self, event):
+        self.setPropertyValue()
+
+    ## Set the corresponding value in the property dictionary.
+    #
+    # @param self The object pointer.
+    # @param property The property dictionary to be changed.
+    def setPropertyValue(self):
+        if self.propertyKey in self.property.keys():
+            self.property[self.propertyKey] = self.intCtrl.GetValue()
+
+    ## Set the default value of the field element.  
+    #
+    # @param self The object pointer.
+    # @param value The value to be set.      
+    def setDefaultValue(self, value):
+        self.defaultValue = value
+        self.intCtrl.SetValue(value)
+
+
 ## The IntegerRangeField class.
 #
 # A field to edit integer values within a limited range.
@@ -557,7 +622,7 @@ class IntegerRangeField(Field):
 #
 # A field to edit float values within a limited range.
 # The field consits of a label and a SpinCtrl element.
-class FloatRangeField(Field):
+class FloatSpinField(Field):
 
     ## The constructor
     #
@@ -567,7 +632,7 @@ class FloatRangeField(Field):
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, propertyKey, size, parent=None, range=(0,100), increment=0.1, digits=3):
+    def __init__(self, name, propertyKey, size, parent=None, increment=0.1, digits=3):
         Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
 
         # Create the field label.
@@ -581,8 +646,6 @@ class FloatRangeField(Field):
         self.spinCtrl = FS.FloatSpin(parent=self, 
                                   id=wx.ID_ANY, 
                                   size=(size[0]*self.ctrlRatio, size[1]),
-                                  min_val=range[0],
-                                  max_val=range[1],
                                   increment=increment,
                                   digits=digits,
                                   agwStyle=FS.FS_LEFT)
@@ -599,13 +662,20 @@ class FloatRangeField(Field):
         self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
+        # Bind the events.
+        self.Bind(FS.EVT_FLOATSPIN, self.onValueChange, self.spinCtrl)
+
+
+    def onValueChange(self, event):
+        self.setPropertyValue()
+
     ## Set the corresponding value in the property dictionary.
     #
     # @param self The object pointer.
     # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        if self.propertyKey in property.keys():
-            property[self.propertyKey] = float(self.spinCtrl.GetValue())
+    def setPropertyValue(self):
+        if self.propertyKey in self.property.keys():
+            self.property[self.propertyKey] = float(self.spinCtrl.GetValue())
 
     ## Set the default value of the field element.  
     #
