@@ -124,20 +124,42 @@ def pluginFactory():
 def processingNodeFactory():
     ''' Provide some processing nodes.
     '''
-    from processingNodes import Detrend
+    from processingNodes import Detrend, FilterBandPass
 
     procNodeTemplates = []
 
+    ########################################################
+    # Detrend a timeseries.
     options = {}
     options['method'] = 'constant'
 
     myProcNodeTemplate = Detrend(name = 'detrend',
-                                 mode = 'uneditable',
+                                 mode = 'editable',
                                  category = 'test',
                                  tags = ['remove', 'mean'],
                                  options = options,
                                  )
 
     procNodeTemplates.append(myProcNodeTemplate)
+
+
+
+    ########################################################
+    # Bandpass filter.
+    options = {}
+    options['freqmin'] = 1
+    options['freqmax'] = 15
+    options['zerophase'] = False
+    options['corners'] = 4
+
+    myProcNodeTemplate = FilterBandPass(name = 'bandpass filter',
+                                        mode = 'editable',
+                                        category = 'frequency',
+                                        tags = ['filter', 'bandpass'],
+                                        options = options,
+                                       )
+
+    procNodeTemplates.append(myProcNodeTemplate)
+
 
     return procNodeTemplates

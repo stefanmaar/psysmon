@@ -20,7 +20,7 @@
 
 import logging
 from psysmon.core.processingStack import ProcessingNode
-from psysmon.core.guiBricks import OptionsEditPanel, StaticBoxContainer, SingleChoiceField
+from psysmon.core.guiBricks import OptionsEditPanel, StaticBoxContainer, SingleChoiceField, IntegerCtrlField, FloatSpinField
 
 
 class Detrend(ProcessingNode):
@@ -57,11 +57,11 @@ class Detrend(ProcessingNode):
         editPanel = OptionsEditPanel(property = self.options,
                                      parent = parent
                                     )
-        editPanel.addPage('Values')
+        editPanel.addPage('detrend')
 
         container = StaticBoxContainer(label = 'detrend parameters',
                                        parent = editPanel)
-        editPanel.addContainer(container, 'Values')
+        editPanel.addContainer(container, 'detrend')
 
         choices = ['simple', 'linear', 'constant']
         curField = SingleChoiceField(parent = editPanel,
@@ -87,3 +87,85 @@ class Detrend(ProcessingNode):
         #self.logger.debug('Executing the processing node.')
         stream.detrend(type = self.options['method'])
 
+
+
+
+class FilterBandPass(ProcessingNode):
+    '''
+
+    '''
+    def __init__(self, name, mode, category, tags, options,  docEntryPoint=None, parentStack = None):
+        ''' The constructor
+
+        '''
+
+        ProcessingNode.__init__(self,
+                                name = name,
+                                mode = mode,
+                                category = category,
+                                tags = tags,
+                                options = options,
+                                docEntryPoint = docEntryPoint,
+                                parentStack = parentStack)
+
+        # Create the logging logger instance.
+        #loggerName = __name__ + "." + self.__class__.__name__
+        #self.logger = logging.getLogger(loggerName)
+
+
+
+    def edit(self):
+        pass
+
+
+    def getEditPanel(self, parent):
+
+        fieldSize = (250, 30)
+        editPanel = OptionsEditPanel(property = self.options,
+                                     parent = parent
+                                    )
+        editPanel.addPage('bandpass filter')
+
+        container = StaticBoxContainer(label = 'filter parameters',
+                                       parent = editPanel)
+        editPanel.addContainer(container, 'bandpass filter')
+
+        curField = FloatSpinField(parent = editPanel,
+                                  name = 'min. frequency',
+                                  propertyKey = 'freqmin',
+                                  size = fieldSize
+                                 )
+        editPanel.addField(curField, container)
+
+        curField = FloatSpinField(parent = editPanel,
+                                  name = 'max. frequency',
+                                  propertyKey = 'freqmax',
+                                  size = fieldSize
+                                 )
+        editPanel.addField(curField, container)
+
+        curField = IntegerCtrlField(parent = editPanel,
+                                    name = 'corners',
+                                    propertyKey = 'corners',
+                                    size = fieldSize
+                                   )
+        editPanel.addField(curField, container)
+        
+        return editPanel
+
+
+
+
+    def execute(self, stream):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        #self.logger.debug('Executing the processing node.')
+        stream.filter('bandpass',
+                      freqmin = self.options['freqmin'],
+                      freqmax = self.options['freqmax']
+                     )
