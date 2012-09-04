@@ -463,14 +463,14 @@ class TextEditField(Field):
         #self.labelElement.SetBackgroundColour('green')
 
         # Create the field text control.
-        self.textCtrl = wx.TextCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
+        self.controlElement = wx.TextCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
 
         # Add the elements to the field sizer.
         self.sizer.Add(self.labelElement, pos=(0, 0), 
                        flag=wx.ALIGN_CENTER_VERTICAL|
                        wx.ALL, 
                        border=2)
-        self.sizer.Add(self.textCtrl, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
+        self.sizer.Add(self.controlElement, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
 
         # Specify the sizer properties.
         self.sizer.AddGrowableCol(1)
@@ -484,7 +484,7 @@ class TextEditField(Field):
     # @param property The property dictionary to be changed.
     def setPropertyValue(self, property):
         if self.propertyKey in property.keys():
-            property[self.propertyKey] = self.textCtrl.GetValue().strip()
+            property[self.propertyKey] = self.controlElement.GetValue().strip()
 
 
     ## Set the default value of the field element.  
@@ -493,7 +493,7 @@ class TextEditField(Field):
     # @param value The value to be set.  
     def setDefaultValue(self, value):
         self.defaultValue = value
-        self.textCtrl.SetValue(value)
+        self.controlElement.SetValue(value)
 
 
 
