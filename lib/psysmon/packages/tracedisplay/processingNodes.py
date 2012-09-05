@@ -54,7 +54,7 @@ class Detrend(ProcessingNode):
     def getEditPanel(self, parent):
 
         fieldSize = (250, 30)
-        editPanel = OptionsEditPanel(property = self.options,
+        editPanel = OptionsEditPanel(options = self.options,
                                      parent = parent
                                     )
         editPanel.addPage('detrend')
@@ -66,10 +66,11 @@ class Detrend(ProcessingNode):
         choices = ['simple', 'linear', 'constant']
         curField = SingleChoiceField(parent = editPanel,
                                      name = 'detrend method',
-                                     propertyKey = 'method',
+                                     optionsKey = 'method',
                                      size = fieldSize,
                                      choices = choices)
-        editPanel.addField(curField, container)
+        container.addField(curField)
+
 
         return editPanel
 
@@ -121,7 +122,7 @@ class FilterBandPass(ProcessingNode):
     def getEditPanel(self, parent):
 
         fieldSize = (250, 30)
-        editPanel = OptionsEditPanel(property = self.options,
+        editPanel = OptionsEditPanel(options = self.options,
                                      parent = parent
                                     )
         editPanel.addPage('bandpass filter')
@@ -132,29 +133,30 @@ class FilterBandPass(ProcessingNode):
 
         curField = FloatSpinField(parent = editPanel,
                                   name = 'min. frequency',
-                                  propertyKey = 'freqmin',
+                                  optionsKey = 'freqmin',
                                   size = fieldSize,
                                   digits = 2,
                                   min_val = 0
                                  )
-        editPanel.addField(curField, container)
+        container.addField(curField)
 
         curField = FloatSpinField(parent = editPanel,
                                   name = 'max. frequency',
-                                  propertyKey = 'freqmax',
+                                  optionsKey = 'freqmax',
                                   size = fieldSize,
                                   digits = 2,
                                   min_val = 0
                                  )
-        editPanel.addField(curField, container)
+        container.addField(curField)
 
         curField = IntegerCtrlField(parent = editPanel,
                                     name = 'corners',
-                                    propertyKey = 'corners',
+                                    optionsKey = 'corners',
                                     size = fieldSize
                                    )
-        editPanel.addField(curField, container)
-        
+        container.addField(curField)
+
+
         return editPanel
 
 
@@ -172,4 +174,81 @@ class FilterBandPass(ProcessingNode):
         stream.filter('bandpass',
                       freqmin = self.options['freqmin'],
                       freqmax = self.options['freqmax']
+                     )
+
+
+
+class FilterLowPass(ProcessingNode):
+    '''
+
+    '''
+    def __init__(self, name, mode, category, tags, options,  docEntryPoint=None, parentStack = None):
+        ''' The constructor
+
+        '''
+
+        ProcessingNode.__init__(self,
+                                name = name,
+                                mode = mode,
+                                category = category,
+                                tags = tags,
+                                options = options,
+                                docEntryPoint = docEntryPoint,
+                                parentStack = parentStack)
+
+        # Create the logging logger instance.
+        #loggerName = __name__ + "." + self.__class__.__name__
+        #self.logger = logging.getLogger(loggerName)
+
+
+
+    def edit(self):
+        pass
+
+
+    def getEditPanel(self, parent):
+
+        fieldSize = (250, 30)
+        editPanel = OptionsEditPanel(options = self.options,
+                                     parent = parent
+                                    )
+        editPanel.addPage('lowpass filter')
+
+        container = StaticBoxContainer(label = 'filter parameters',
+                                       parent = editPanel)
+        editPanel.addContainer(container, 'lowpass filter')
+
+        curField = FloatSpinField(parent = editPanel,
+                                  name = 'cutoff frequency',
+                                  optionsKey = 'freq',
+                                  size = fieldSize,
+                                  digits = 2,
+                                  min_val = 0
+                                 )
+        container.addField(curField)
+
+        curField = IntegerCtrlField(parent = editPanel,
+                                    name = 'corners',
+                                    optionsKey = 'corners',
+                                    size = fieldSize
+                                   )
+        container.addField(curField)
+
+
+        return editPanel
+
+
+
+
+    def execute(self, stream):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        #self.logger.debug('Executing the processing node.')
+        stream.filter('lowpass',
+                      freq = self.options['freq']
                      )
