@@ -110,8 +110,8 @@ def pluginFactory():
     ########################################################
     # The processing stack GUI options plugin.
     myPluginTemplate = ProcessingStack(name = 'processing stack',
-                                       category = 'process',
-                                       tags = ['process'],
+                                       category = 'proc',
+                                       tags = ['process data'],
                                        nodeClass = 'TraceDisplay'
                                        )
     pluginTemplates.append(myPluginTemplate)
@@ -124,7 +124,7 @@ def pluginFactory():
 def processingNodeFactory():
     ''' Provide some processing nodes.
     '''
-    from processingNodes import Detrend, FilterBandPass
+    from processingNodes import Detrend, FilterBandPass, FilterLowPass
 
     procNodeTemplates = []
 
@@ -161,5 +161,20 @@ def processingNodeFactory():
 
     procNodeTemplates.append(myProcNodeTemplate)
 
+
+    ########################################################
+    # Bandpass filter.
+    options = {}
+    options['freq'] = 10
+    options['zerophase'] = False
+    options['corners'] = 4
+
+    myProcNodeTemplate = FilterLowPass(name = 'lowpass filter',
+                                        mode = 'editable',
+                                        category = 'frequency',
+                                        tags = ['filter', 'lowpass'],
+                                        options = options,
+                                       )
+    procNodeTemplates.append(myProcNodeTemplate)
 
     return procNodeTemplates
