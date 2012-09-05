@@ -1,5 +1,3 @@
-
-
 import wx
 from wx.lib.stattext import GenStaticText as StaticText
 import  wx.lib.filebrowsebutton as filebrowse
@@ -10,22 +8,37 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as FS
 
+import  wx.lib.rcsizer  as rcs
+
 ## The Field class.
 # 
 # The Field class acts as a superclass of all EditDialog fields. 
 # It's an abstract class requiring some methods to be implemented by the 
 # subclasses.
 class Field(wx.Panel):
+    ''' A GUI field.
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
-    # @param size The size of the field. A tuple (width, height).
-    # @param parent The parent wxPython window of this field.
-    def __init__(self, name, propertyKey, size, parent=None):
+    The Field class acts as a superclass for all gui-bricks. It's an abstract 
+    class requiring some methods to be implemented by the subclasses.
+    '''
 
+    def __init__(self, name, optionsKey, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        optionsKey : String
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
         wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY)
 
         #self.SetBackgroundStyle(wx.BG_STYLE_COLOUR)
@@ -40,21 +53,19 @@ class Field(wx.Panel):
         #
         self.name = name
 
-        ## The key of the related node property.
+        ## The key of the related node options.
         #
-        self.propertyKey = propertyKey
+        self.optionsKey = optionsKey
 
-        # The property dictionary.
-        self.property = None
+        # The options dictionary.
+        self.options = None
 
         ## The size of the field.
         #
         self.size = size
 
-
         ## The label of the field.
         self.label = name + ":"
-
 
         ## The ratio of the label area.
         self.labelRatio = 0.4
@@ -68,18 +79,29 @@ class Field(wx.Panel):
         # field.
         self.defaultValue = None
 
+        # The label element.
+        self.labelElement = None
 
+        # The control element.
+        self.controlElement = None
 
         ## The field layout manager.
         self.sizer = wx.GridBagSizer(5,5)
+        #self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        #self.sizer = rcs.RowColSizer()
 
+        #self.sizer.AddGrowableCol(0)
+        #self.sizer.AddGrowableCol(1)
+        #self.sizer.AddGrowableRow(0)
 
-    ## Set the corresponding value in the property dictionary.
+        self.SetSizer(self.sizer)
+
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        assert False, 'setPropertyValue must be defined'
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self):
+        assert False, 'setOptionsValue must be defined'
 
     ## Set the default value of the field element.  
     #
@@ -89,77 +111,77 @@ class Field(wx.Panel):
         assert False, 'setDefaultValue must be defined'
 
 
+    def addLabel(self, labelElement):
+        self.labelElement = labelElement
+        self.sizer.Add(labelElement, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, border=1)
+    
+
+    def addControl(self, controlElement):
+        self.controlElement = controlElement
+        self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
+
+        #self.sizer.Layout()
+
+
 ## The OptionsEditPanel
 #
 # This class provides an easy to use edit dialog for pSysmon collection nodes.
 # One can choose from a set of fields which can be used to change the values 
 # of the collection node properties.        
 class OptionsEditPanel(wx.Panel):
+    ''' The options edit panel.
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param property The CollectionNode property being edited with the EditDialog.
-    # @param parent The parent wxPython window.
-    # @param id The wxPython id.
-    # @param title The dialog's title.
-    # @param size The dialog's size.
-    def __init__(self, property, parent=None, id=wx.ID_ANY,
+    This class provides the base container to edit pSysmon nodes (e.g. collection 
+    nodes or processing nodes). One can choose from a set of fields which can be
+    used to change the values of the options of the related node.
+    '''
+    def __init__(self, options, parent=None, id=wx.ID_ANY,
                  size=(400,600)):
         wx.Panel.__init__(self, parent=parent, 
                           id=id)
-        #self.SetMinSize(size)  
-
-        ## The node property being edited with the dialog.
-        #
-        self.property = property
 
 
-        ## A dictionary of pages created in the notebook.
-        #
+        # The node options being edited with the dialog.
+        self.options = options
+
+        # A dictionary of pages created in the notebook.
         self.pages = {}
 
-        ## A dictionary of page sizers associated with the pages.
-        #
+        # A dictionary of page sizers associated with the pages.
         self.pageSizers = {}
 
-        ## The list of container panels holding the fields.
-        #
+        # The list of container panels holding the fields.
         self.fieldContainer = {}
 
         # Create the UI elements.
         self.initUI()
 
 
-    ## Create the dialog's user interface.  
-    #
     def initUI(self):
-        # The dialog's sizer.
+        ''' Create the user interface of the panel.
+
+        '''
+        # The sizers of the panel.
         self.sizer = wx.GridBagSizer(5,10)
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(0)
+
+        # The panel manages the content in a notebook.
         self.notebook = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
         self.sizer.Add(self.notebook, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)  
 
-        # Create the dialog buttons.
-        #okButton = wx.Button(self, wx.ID_OK)
-        #okButton.SetDefault()
-        #cancelButton = wx.Button(self, wx.ID_CANCEL)
-        #btnSizer = wx.StdDialogButtonSizer()
-        #btnSizer.AddButton(okButton)
-        #btnSizer.AddButton(cancelButton)
-        #btnSizer.Realize()
-        #self.sizer.Add(btnSizer, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=4)
-
         self.SetSizer(self.sizer)
-
-        # Bind the button events.
-        #self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
-        #self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
 
 
 
     def addPage(self, name):
+        ''' Add a page to the notebook of the panel.
+
+        Parameters
+        ----------
+        name : String
+            The name of the page.
+        '''
         # All fields are children of the fieldPanel.
         # The field elements should be parents of the same panel to ensure a 
         # consistent tab traversal. 
@@ -173,6 +195,9 @@ class OptionsEditPanel(wx.Panel):
 
 
     def addContainer(self, container, pageName):
+        ''' Add a container to the page of a notebook.
+
+        '''
         if not self.pages:
             print "No dialog pages found. Create one first."
             return
@@ -187,31 +212,11 @@ class OptionsEditPanel(wx.Panel):
         print "Adding container at row %d" % row
         self.pageSizers[pageName].Add(container, pos=(row, 0), flag=wx.EXPAND|wx.ALL, border=4)
 
-        container.property = self.property
+        container.options = self.options
 
         print "Adding container with name %s to the dictionary" % container.GetName()
         self.fieldContainer[container.GetName()] = container
 
-
-    ## Add a field to the dialog.
-    #
-    # The field is added to the dialog fieldlist and the field elements are 
-    # initialized with the property values.
-    def addField(self, field, container):
-
-        if not self.fieldContainer:
-            print "No field container found. Create one first."
-            return
-
-        if not container in self.fieldContainer.values():
-            print "The specified container is not in the container list."
-            return
-
-        container.addField(field)
-        #container.Fit()
-        #self.notebook.Fit()
-        #self.Fit()
-        #field.SetSize(field.GetBestSize())
 
 
 
@@ -226,12 +231,12 @@ class EditDialog(wx.Frame):
     ## The constructor
     #
     # @param self The object pointer.
-    # @param property The CollectionNode property being edited with the EditDialog.
+    # @param options The CollectionNode options being edited with the EditDialog.
     # @param parent The parent wxPython window.
     # @param id The wxPython id.
     # @param title The dialog's title.
     # @param size The dialog's size.
-    def __init__(self, property, parent=None, id=wx.ID_ANY, title='edit node', 
+    def __init__(self, options, parent=None, id=wx.ID_ANY, title='edit node', 
                  size=(400,600)):
         wx.Frame.__init__(self, parent=parent, 
                           id=id, 
@@ -240,9 +245,9 @@ class EditDialog(wx.Frame):
                           style=wx.DEFAULT_FRAME_STYLE)
         self.SetMinSize(size)  
 
-        ## The node property being edited with the dialog.
+        ## The node options being edited with the dialog.
         #
-        self.property = property
+        self.options = options
 
 
         ## A dictionary of pages created in the notebook.
@@ -293,10 +298,10 @@ class EditDialog(wx.Frame):
 
     ## Handle the ok button click.
     #
-    # Update all property values and close the dialog.  
+    # Update all options values and close the dialog.  
     def onOk(self, event):
         for curContainer in self.fieldContainer.values():
-            curContainer.setPropertyValue()
+            curContainer.setOptionsValue()
 
         self.Destroy()
 
@@ -339,7 +344,7 @@ class EditDialog(wx.Frame):
         print "Adding container at row %d" % row
         self.pageSizers[pageName].Add(container, pos=(row, 0), flag=wx.EXPAND|wx.ALL, border=4)
 
-        container.property = self.property
+        container.options = self.options
 
         print "Adding container with name %s to the dictionary" % container.GetName()
         self.fieldContainer[container.GetName()] = container
@@ -350,7 +355,7 @@ class EditDialog(wx.Frame):
     ## Add a field to the dialog.
     #
     # The field is added to the dialog fieldlist and the field elements are 
-    # initialized with the property values.
+    # initialized with the options values.
     def addField(self, field, container):
 
         if not self.fieldContainer:
@@ -395,9 +400,9 @@ class StaticBoxContainer(wx.Panel):
         ## The parent editDialog.
         self.parentEditDialog = None
 
-        ## The node property being edited with the dialog.
+        ## The node options being edited with the dialog.
         #
-        self.property = None
+        self.options = None
 
         ## The list of fields hold by the container.
         self.fieldList = []
@@ -418,41 +423,65 @@ class StaticBoxContainer(wx.Panel):
     def addField(self, field):
         # Set the new field parent.
         field.Reparent(self)
-        field.property = self.property
+        field.options = self.options
 
-        if field.propertyKey in self.property.keys():
-            field.setDefaultValue(self.property[field.propertyKey])
+        if field.optionsKey in self.options.keys():
+            field.setDefaultValue(self.options[field.optionsKey])
 
         self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
 
         self.fieldList.append(field)
 
+        self.adjustLabelSize()
 
-    ## Set the property values of all the fields in the container.
+
+    def adjustLabelSize(self):
+        
+        labelWidth = [x.labelElement.GetBestSize()[0] for x in self.fieldList]
+        maxWidth = max(labelWidth)
+        for curField in self.fieldList:
+            curSize = curField.labelElement.GetBestSize()
+            curField.labelElement.SetMinSize((maxWidth, curSize[1]))
+
+        #self.sizer.Layout()
+        
+
+
+    ## Set the options values of all the fields in the container.
     #
     # @param self The object pointer. 
-    def setPropertyValue(self):
+    def setOptionsValue(self):
         for curField in self.fieldList:
-            curField.setPropertyValue(self.property)
+            curField.setOptionsValue(self.options)
 
 
 
 
-## The TextEditField class.
-#
-# A field to edit String values. 
-# It consits of a label and a TextCtrl element.
 class TextEditField(Field):
+    ''' A text edit field.
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    def __init__(self, name, propertyKey, size, parent=None):
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+    A field to edit String values.
+    It consits of a label and a TextCtrl element.
+    '''
+
+    def __init__(self, name, optionsKey, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        optionsKey : String
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -460,7 +489,6 @@ class TextEditField(Field):
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
         self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
-        #self.labelElement.SetBackgroundColour('green')
 
         # Create the field text control.
         self.controlElement = wx.TextCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
@@ -478,13 +506,13 @@ class TextEditField(Field):
         self.SetSizer(self.sizer)
 
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        if self.propertyKey in property.keys():
-            property[self.propertyKey] = self.controlElement.GetValue().strip()
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self, options):
+        if self.optionskey in options.keys():
+            options[self.optionsKey] = self.controlElement.GetValue().strip()
 
 
     ## Set the default value of the field element.  
@@ -507,49 +535,52 @@ class IntegerCtrlField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, propertyKey, size, parent=None):
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+    def __init__(self, name, optionsKey, size, parent=None):
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
                                        ID=wx.ID_ANY, 
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
+        #self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
 
         # Create the field spincontrol.
-        self.intCtrl = intctrl.IntCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
+        self.controlElement = intctrl.IntCtrl(self, wx.ID_ANY)
 
         # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|
-                       wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.intCtrl, pos=(0, 1), flag=wx.ALL, border=2)
+        #self.sizer.Add(self.labelElement, pos=(0, 0), 
+        #               flag=wx.ALIGN_CENTER_VERTICAL|
+        #               wx.ALL, 
+        #               border=2)
+        #self.sizer.Add(self.intCtrl, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
+
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
 
         # Set the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
+        #self.sizer.AddGrowableCol(1)
+        #self.sizer.AddGrowableRow(0)
+        #self.SetSizer(self.sizer)
 
         # Bind the events.
-        self.Bind(intctrl.EVT_INT, self.onValueChange, self.intCtrl)
+        self.Bind(intctrl.EVT_INT, self.onValueChange, self.controlElement)
 
 
     def onValueChange(self, event):
-        self.setPropertyValue()
+        self.setOptionsValue()
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self):
-        if self.propertyKey in self.property.keys():
-            self.property[self.propertyKey] = self.intCtrl.GetValue()
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self):
+        if self.optionsKey in self.options.keys():
+            self.options[self.optionsKey] = self.controlElement.GetValue()
 
     ## Set the default value of the field element.  
     #
@@ -557,7 +588,7 @@ class IntegerCtrlField(Field):
     # @param value The value to be set.      
     def setDefaultValue(self, value):
         self.defaultValue = value
-        self.intCtrl.SetValue(value)
+        self.controlElement.SetValue(value)
 
 
 ## The IntegerRangeField class.
@@ -570,12 +601,12 @@ class IntegerRangeField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, propertyKey, size, parent=None, range=(0,100)):
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+    def __init__(self, name, optionsKey, size, parent=None, range=(0,100)):
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -600,13 +631,13 @@ class IntegerRangeField(Field):
         self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        if self.propertyKey in property.keys():
-            property[self.propertyKey] = self.spinCtrl.GetValue()
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self, options):
+        if self.optionsKey in options.keys():
+            options[self.optionsKey] = self.spinCtrl.GetValue()
 
     ## Set the default value of the field element.  
     #
@@ -628,24 +659,22 @@ class FloatSpinField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, propertyKey, size, parent=None, min_val=None, max_val=None, increment=0.1, digits=3):
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+    def __init__(self, name, optionsKey, size, parent=None, min_val=None, max_val=None, increment=0.1, digits=3):
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
                                        ID=wx.ID_ANY, 
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
 
         # Create the field spincontrol.
         self.spinCtrl = FS.FloatSpin(parent=self, 
-                                  id=wx.ID_ANY, 
-                                  size=(size[0]*self.ctrlRatio, size[1]),
+                                  id=wx.ID_ANY,
                                   min_val = min_val,
                                   max_val = max_val,
                                   increment=increment,
@@ -653,31 +682,34 @@ class FloatSpinField(Field):
                                   agwStyle=FS.FS_LEFT)
 
         # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|
-                       wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.spinCtrl, pos=(0, 1), flag=wx.ALL, border=2)
+        self.addLabel(self.labelElement)
+        #self.sizer.Add(self.labelElement, pos=(0, 0), 
+        #               flag=wx.ALIGN_CENTER_VERTICAL|
+        #               wx.ALL, 
+        #               border=2)
+        self.addControl(self.spinCtrl)
+        #self.sizer.Add(self.spinCtrl, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
 
         # Set the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
+        #self.sizer.AddGrowableCol(1)
+        #self.sizer.AddGrowableRow(0)
+        #self.SetSizer(self.sizer)
+        self.sizer.Layout()
 
         # Bind the events.
         self.Bind(FS.EVT_FLOATSPIN, self.onValueChange, self.spinCtrl)
 
 
     def onValueChange(self, event):
-        self.setPropertyValue()
+        self.setOptionsValue()
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self):
-        if self.propertyKey in self.property.keys():
-            self.property[self.propertyKey] = float(self.spinCtrl.GetValue())
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self):
+        if self.optionsKey in self.options.keys():
+            self.options[self.optionsKey] = float(self.spinCtrl.GetValue())
 
     ## Set the default value of the field element.  
     #
@@ -700,12 +732,12 @@ class SingleChoiceField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, propertyKey, size, parent=None, choices=[]):
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+    def __init__(self, name, optionsKey, size, parent=None, choices=[]):
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -715,38 +747,39 @@ class SingleChoiceField(Field):
         #self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
 
         # Create the field text control.
-        self.choiceCtrl = wx.Choice(self, 
-                                    wx.ID_ANY, 
-                                    size=(size[0]*self.ctrlRatio, size[1]),
-                                    choices=choices)
+        self.controlElement = wx.Choice(self, 
+                                        wx.ID_ANY,
+                                        choices=choices)
 
         # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|
-                       wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.choiceCtrl, pos=(0, 1), flag=wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, border=2)
+        #self.sizer.Add(self.labelElement, pos=(0, 0), 
+        #               flag=wx.ALIGN_CENTER_VERTICAL|
+        #               wx.ALL, 
+        #               border=2)
+        #self.sizer.Add(self.choiceCtrl, pos=(0, 1), flag=wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, border=2)
 
         # Specify the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
-
+        #self.sizer.AddGrowableCol(1)
+        #self.sizer.AddGrowableRow(0)
+        #self.SetSizer(self.sizer)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+        self.sizer.Layout()
 
         # Bind the events.
-        self.Bind(wx.EVT_CHOICE, self.onChoiceSelect, self.choiceCtrl)
+        self.Bind(wx.EVT_CHOICE, self.onChoiceSelect, self.controlElement)
 
 
     def onChoiceSelect(self, event):
-        self.setPropertyValue()
+        self.setOptionsValue()
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self):
-        if self.propertyKey in self.property.keys():
-            self.property[self.propertyKey] = self.choiceCtrl.GetStringSelection()
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self):
+        if self.optionsKey in self.options.keys():
+            self.options[self.optionsKey] = self.choiceCtrl.GetStringSelection()
 
 
     ## Set the default value of the field element.  
@@ -755,8 +788,8 @@ class SingleChoiceField(Field):
     # @param value The value to be set.  
     def setDefaultValue(self, value):
         self.defaultValue = value
-        pos = self.choiceCtrl.FindString(value)
-        self.choiceCtrl.SetSelection(pos)
+        pos = self.controlElement.FindString(value)
+        self.controlElement.SetSelection(pos)
 
 
 ## The MultiChoiceField class.
@@ -769,12 +802,12 @@ class MultiChoiceField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, propertyKey, size, parent=None, choices=[]):
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+    def __init__(self, name, optionsKey, size, parent=None, choices=[]):
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -802,18 +835,18 @@ class MultiChoiceField(Field):
         self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        if self.propertyKey in property.keys():
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self, options):
+        if self.optionsKey in options.keys():
             selections = self.listBox.GetSelections()
             selectedStrings = []
             for k in selections:
                 selectedStrings.append(self.listBox.GetString(k))
 
-            property[self.propertyKey] = selectedStrings
+            options[self.optionsKey] = selectedStrings
 
 
     ## Set the default value of the field element.  
@@ -838,13 +871,13 @@ class FileBrowseField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, propertyKey, size, parent=None):
+    def __init__(self, name, optionsKey, size, parent=None):
 
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -874,13 +907,13 @@ class FileBrowseField(Field):
         self.SetSizer(self.sizer)
 
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        if self.propertyKey in property.keys():                
-            property[self.propertyKey] = self.fileBrowseButton.GetValue()
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self, options):
+        if self.optionsKey in options.keys():                
+            options[self.optionsKey] = self.fileBrowseButton.GetValue()
 
 
     ## Set the default value of the field element.  
@@ -904,13 +937,13 @@ class DirBrowseField(Field):
     #
     # @param self The object pointer.
     # @param name The name of the field. Is used as the label too.
-    # @param propertyKey The key of the collection node property edited by this field.
+    # @param optionsKey The key of the collection node options edited by this field.
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, propertyKey, size, parent=None):
+    def __init__(self, name, optionsKey, size, parent=None):
 
-        Field.__init__(self, parent=parent, name=name, propertyKey=propertyKey, size=size)
+        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -944,13 +977,13 @@ class DirBrowseField(Field):
     def changeCallback(self, event):
         self.dirBrowseButton.startDirectory = event.GetString()
 
-    ## Set the corresponding value in the property dictionary.
+    ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
-    # @param property The property dictionary to be changed.
-    def setPropertyValue(self, property):
-        if self.propertyKey in property.keys():                
-            property[self.propertyKey] = self.dirBrowseButton.GetValue()
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self, options):
+        if self.optionsKey in options.keys():                
+            options[self.optionsKey] = self.dirBrowseButton.GetValue()
 
 
     ## Set the default value of the field element.  
