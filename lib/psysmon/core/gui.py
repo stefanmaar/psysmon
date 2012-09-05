@@ -2246,6 +2246,7 @@ class FoldPanelBar(scrolled.ScrolledPanel):
         foldPanel.SetMinSize(best)
         foldPanel.SetSize(best)
         self.sizer.Add(foldPanel, pos=(curRow, 0), flag=wx.EXPAND|wx.ALL, border=0)
+        self.sizer.AddGrowableRow(curRow)
         self.sizer.Layout()
         self.SetupScrolling()
 
