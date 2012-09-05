@@ -1,3 +1,4 @@
+import pdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -290,9 +291,9 @@ class TraceDisplayDlg(wx.Frame):
         #                                   agwStyle=fpb.FPB_VERTICAL)
 
         #self.foldPanelBar = psygui.FoldPanelBarSplitter(parent=self)
-        self.foldPanelBar = psygui.FoldPanelBar(parent=self)
+        #self.foldPanelBar = psygui.FoldPanelBar(parent=self)
 
-        self.foldPanelBar.SetBackgroundColour('white')
+        #self.foldPanelBar.SetBackgroundColour('white')
 
         self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
         self.eventInfo.SetBackgroundColour('khaki')
@@ -337,20 +338,16 @@ class TraceDisplayDlg(wx.Frame):
                                               Row(0).
                                               Position(0))
 
-        self.mgr.AddPane(self.foldPanelBar,
-                         wx.aui.AuiPaneInfo().Right().
-                                              Name('tool panels').
-                                              Caption('tool panels').
-                                              Layer(2).
-                                              Row(0).
-                                              Position(0))
+
         self.mgr.AddPane(self.ribbon,
                          wx.aui.AuiPaneInfo().Top().
                                               Name('palette').
                                               Caption('palette').
                                               Layer(1).
                                               Row(0).
-                                              Position(0))
+                                              Position(0).
+                                              BestSize(wx.Size(-1,50)).
+                                              MinSize(wx.Size(-1,80)))
 
 
         # Build the ribbon bar based on the plugins.
@@ -484,15 +481,38 @@ class TraceDisplayDlg(wx.Frame):
         self.logger.debug('Clicked the option tool: %s', plugin.name)
 
         if plugin.name not in self.foldPanels.keys():
-            curPanel = plugin.buildFoldPanel(self.foldPanelBar)
-            foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
-            self.foldPanels[plugin.name] = foldPanel
-        else:
-            if self.foldPanels[plugin.name].IsShown():
-                self.foldPanelBar.hidePanel(self.foldPanels[plugin.name])
-            else:
-                self.foldPanelBar.showPanel(self.foldPanels[plugin.name]) 
+            #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
+            #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
 
+            curPanel = plugin.buildFoldPanel(self)
+            self.mgr.AddPane(curPanel,
+                             wx.aui.AuiPaneInfo().Right().
+                                                  Name(plugin.name).
+                                                  Caption(plugin.name).
+                                                  Layer(2).
+                                                  Row(0).
+                                                  Position(0).
+                                                  BestSize(wx.Size(300,-1)).
+                                                  MinSize(wx.Size(200,100)).
+                                                  MinimizeButton(True).
+                                                  MaximizeButton(True))
+            self.mgr.Update() 
+            self.foldPanels[plugin.name] = curPanel
+        else:
+            if not self.foldPanels[plugin.name].IsShown():
+                curPanel = self.foldPanels[plugin.name]
+                self.mgr.AddPane(curPanel,
+                                 wx.aui.AuiPaneInfo().Right().
+                                                      Name(plugin.name).
+                                                      Caption(plugin.name).
+                                                      Layer(2).
+                                                      Row(0).
+                                                      Position(0).
+                                                      BestSize(wx.Size(300,-1)).
+                                                      MinSize(wx.Size(200,100)).
+                                                      MinimizeButton(True).
+                                                      MaximizeButton(True))
+                self.mgr.Update() 
 
 
 
@@ -602,10 +622,11 @@ class TraceDisplayDlg(wx.Frame):
             self.dataManager.processStream(stack = None)
 
 
-            # Plot the data using the addon tools.
-            addonPlugins = [x for x in self.plugins if x.mode == 'addon' and x.active]
-            for curPlugin in addonPlugins:
-                curPlugin.plot(self.displayManager, self.dataManager)
+        # Plot the data using the addon tools.
+        addonPlugins = [x for x in self.plugins if x.mode == 'addon' and x.active]
+        for curPlugin in addonPlugins:
+            curPlugin.plot(self.displayManager, self.dataManager)
+         
 
 
 
