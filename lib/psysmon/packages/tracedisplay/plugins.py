@@ -213,22 +213,26 @@ class ProcessingStack(OptionPlugin):
     def buildFoldPanel(self, parent):
         foldPanel = wx.Panel(parent = parent, id = wx.ID_ANY)
 
-
         self.processingStack = self.parent.dataManager.processingStack
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
-        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        buttonSizer = wx.BoxSizer(wx.VERTICAL)
 
         # Create the buttons to control the stack.
         addButton = wx.Button(foldPanel, wx.ID_ANY, "add")
+        #font = addButton.GetFont()
+        #font.SetPointSize(10)
+        #addButton.SetFont(font)
         removeButton = wx.Button(foldPanel, wx.ID_ANY, "remove")
+        #removeButton.SetFont(font)
         runButton = wx.Button(foldPanel, wx.ID_ANY, "run")
+        #runButton.SetFont(font)
 
         # Fill the button sizer.
-        buttonSizer.Add(addButton, 1, wx.EXPAND|wx.ALL)
-        buttonSizer.Add(removeButton, 1, wx.EXPAND|wx.ALL)
-        buttonSizer.Add(runButton, 1, wx.EXPAND|wx.ALL)
+        buttonSizer.Add(addButton, 0, wx.ALL)
+        buttonSizer.Add(removeButton, 0, wx.ALL)
+        buttonSizer.Add(runButton, 0, wx.ALL)
 
         # Fill the nodes list with the nodes in the processing stack.
         nodeNames = [x.name for x in self.processingStack.nodes]
@@ -236,21 +240,21 @@ class ProcessingStack(OptionPlugin):
 
         self.nodeListBox = wx.CheckListBox(parent = foldPanel,
                                            id = wx.ID_ANY,
-                                           choices = nodeNames)
+                                           choices = nodeNames,
+                                           size = (100, -1))
         self.nodeListBox.SetChecked(isActive)
-
-        # Create the panel holding the node options.
-        self.nodeOptions = wx.Panel(foldPanel, id = wx.ID_ANY)
-        self.nodeOptions.SetMinSize((-1, 200))
-        self.nodeOptions.SetBackgroundColour('lightblue3')
+        
+        # By default select the first processing node.
+        self.nodeListBox.SetSelection(0)
+        self.nodeOptions = self.processingStack[0].getEditPanel(foldPanel)
 
         # Add the elements to the main sizer.
-        sizer.Add(buttonSizer, pos=(0,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
-        sizer.Add(self.nodeListBox, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
-        sizer.Add(self.nodeOptions, pos=(2,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeListBox, pos=(0,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(buttonSizer, pos=(0,1), flag=wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeOptions, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
+        sizer.AddGrowableRow(0)
         sizer.AddGrowableRow(1)
-        sizer.AddGrowableRow(2)
         sizer.AddGrowableCol(0)
 
         # Bind the events.
@@ -260,8 +264,7 @@ class ProcessingStack(OptionPlugin):
         foldPanel.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
 
         foldPanel.SetSizer(sizer)
-        #foldPanel.SetMinSize(self.nodeListBox.GetBestSize())
-
+       
         self.foldPanel = foldPanel
 
         return foldPanel
@@ -292,7 +295,7 @@ class ProcessingStack(OptionPlugin):
 
         if val == wx.ID_OK:
             node2Add = dlg.getSelection()
-            self.processingStack.addNode(node2Add, self.nodeListBox.GetSelection()) 
+            self.processingStack.addNode(node2Add, self.nodeListBox.GetSelection()+1) 
             self.updateNodeList()
 
         dlg.Destroy()
@@ -305,7 +308,7 @@ class ProcessingStack(OptionPlugin):
         sizer.Detach(self.nodeOptions)
         self.nodeOptions.Destroy()
         self.nodeOptions = self.processingStack[index].getEditPanel(self.foldPanel)
-        sizer.Add(self.nodeOptions, pos=(2,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeOptions, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
         sizer.Layout() 
 
 
@@ -693,7 +696,7 @@ class DemoPlotter(AddonPlugin):
 
             if curStream:
                 #lineColor = [x/255.0 for x in curChannel.container.color]
-                curView.plot(curStream, [0.3, 0.7, 1])
+                curView.plot(curStream, [0.3, 0, 0])
 
             curView.setXLimits(left = displayManager.startTime.timestamp,
                                right = displayManager.endTime.timestamp)
