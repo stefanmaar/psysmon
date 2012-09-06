@@ -96,31 +96,36 @@ class Field(wx.Panel):
 
         self.SetSizer(self.sizer)
 
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self):
-        assert False, 'setOptionsValue must be defined'
-
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.   
-    def setDefaultValue(self):
-        assert False, 'setDefaultValue must be defined'
-
 
     def addLabel(self, labelElement):
         self.labelElement = labelElement
         self.sizer.Add(labelElement, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, border=1)
-    
+
 
     def addControl(self, controlElement):
         self.controlElement = controlElement
         self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
 
-        #self.sizer.Layout()
+    
+    def onValueChange(self, event):
+        self.setOptionsValue()
+
+
+    ## Set the corresponding value in the options dictionary.
+    #
+    # @param self The object pointer.
+    # @param options The options dictionary to be changed.
+    def setOptionsValue(self):
+        if self.optionsKey in self.options.keys():
+            self.options[self.optionsKey] = self.controlElement.GetValue()
+
+    ## Set the default value of the field element.  
+    #
+    # @param self The object pointer.
+    # @param value The value to be set.      
+    def setDefaultValue(self, value):
+        self.defaultValue = value
+        self.controlElement.SetValue(value)
 
 
 ## The OptionsEditPanel
@@ -436,7 +441,6 @@ class StaticBoxContainer(wx.Panel):
 
 
     def adjustLabelSize(self):
-        
         labelWidth = [x.labelElement.GetBestSize()[0] for x in self.fieldList]
         maxWidth = max(labelWidth)
         for curField in self.fieldList:
@@ -444,7 +448,7 @@ class StaticBoxContainer(wx.Panel):
             curField.labelElement.SetMinSize((maxWidth, curSize[1]))
 
         #self.sizer.Layout()
-        
+
 
 
     ## Set the options values of all the fields in the container.
@@ -488,42 +492,19 @@ class TextEditField(Field):
                                        ID=wx.ID_ANY, 
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
 
         # Create the field text control.
         self.controlElement = wx.TextCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
 
-        # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|
-                       wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.controlElement, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
-
-        # Specify the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
+        # Add the gui elements to the field.
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+    
+        # Bind the events.
+        self.Bind(wx.EVT_TEXT, self.onValueChange, self.controlElement)
 
 
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self, options):
-        if self.optionskey in options.keys():
-            options[self.optionsKey] = self.controlElement.GetValue().strip()
-
-
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.  
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.controlElement.SetValue(value)
-
-
+    
 
 ## The IntegerRangeField class.
 #
@@ -543,52 +524,22 @@ class IntegerCtrlField(Field):
         Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                       ID=wx.ID_ANY, 
-                                       label=self.label,
-                                       style=wx.ALIGN_RIGHT)
-        #self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
+        labelElement = StaticText(parent=self, 
+                                  ID=wx.ID_ANY, 
+                                  label=self.label,
+                                  style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        self.controlElement = intctrl.IntCtrl(self, wx.ID_ANY)
+        controlElement = intctrl.IntCtrl(self, wx.ID_ANY)
 
-        # Add the elements to the field sizer.
-        #self.sizer.Add(self.labelElement, pos=(0, 0), 
-        #               flag=wx.ALIGN_CENTER_VERTICAL|
-        #               wx.ALL, 
-        #               border=2)
-        #self.sizer.Add(self.intCtrl, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
-
-        self.addLabel(self.labelElement)
-        self.addControl(self.controlElement)
-
-        # Set the sizer properties.
-        #self.sizer.AddGrowableCol(1)
-        #self.sizer.AddGrowableRow(0)
-        #self.SetSizer(self.sizer)
+        # Add the gui elements to the field.
+        self.addLabel(labelElement)
+        self.addControl(controlElement)
 
         # Bind the events.
         self.Bind(intctrl.EVT_INT, self.onValueChange, self.controlElement)
 
 
-    def onValueChange(self, event):
-        self.setOptionsValue()
-
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self):
-        if self.optionsKey in self.options.keys():
-            self.options[self.optionsKey] = self.controlElement.GetValue()
-
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.      
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.controlElement.SetValue(value)
 
 
 ## The IntegerRangeField class.
@@ -609,43 +560,23 @@ class IntegerRangeField(Field):
         Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                       ID=wx.ID_ANY, 
-                                       label=self.label,
-                                       style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
+        labelElement = StaticText(parent=self, 
+                                  ID=wx.ID_ANY, 
+                                  label=self.label,
+                                  style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        self.spinCtrl = wx.SpinCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
-        self.spinCtrl.SetRange(range[0], range[1])
+        controlElement = wx.SpinCtrl(self, wx.ID_ANY)
+        controlElement.SetRange(range[0], range[1])
 
-        # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|
-                       wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.spinCtrl, pos=(0, 1), flag=wx.ALL, border=2)
+        # Add the gui elements to the field.
+        self.addLabel(labelElement)
+        self.addControl(controlElement)
 
-        # Set the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
+        # Bind the event.
+        self.Bind(wx.EVT_SPINCTRL, self.onValueChange, self.controlElement)
 
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self, options):
-        if self.optionsKey in options.keys():
-            options[self.optionsKey] = self.spinCtrl.GetValue()
 
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.      
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.spinCtrl.SetValue(value)
 
 
 
@@ -667,57 +598,26 @@ class FloatSpinField(Field):
         Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                       ID=wx.ID_ANY, 
-                                       label=self.label,
-                                       style=wx.ALIGN_RIGHT)
+        labelElement = StaticText(parent=self, 
+                                  ID=wx.ID_ANY, 
+                                  label=self.label,
+                                  style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        self.spinCtrl = FS.FloatSpin(parent=self, 
-                                  id=wx.ID_ANY,
-                                  min_val = min_val,
-                                  max_val = max_val,
-                                  increment=increment,
-                                  digits=digits,
-                                  agwStyle=FS.FS_LEFT)
+        controlElement = FS.FloatSpin(parent=self, 
+                                      id=wx.ID_ANY,
+                                      min_val = min_val,
+                                      max_val = max_val,
+                                      increment=increment,
+                                      digits=digits,
+                                      agwStyle=FS.FS_LEFT)
 
         # Add the elements to the field sizer.
-        self.addLabel(self.labelElement)
-        #self.sizer.Add(self.labelElement, pos=(0, 0), 
-        #               flag=wx.ALIGN_CENTER_VERTICAL|
-        #               wx.ALL, 
-        #               border=2)
-        self.addControl(self.spinCtrl)
-        #self.sizer.Add(self.spinCtrl, pos=(0, 1), flag=wx.EXPAND|wx.ALL, border=2)
-
-        # Set the sizer properties.
-        #self.sizer.AddGrowableCol(1)
-        #self.sizer.AddGrowableRow(0)
-        #self.SetSizer(self.sizer)
-        self.sizer.Layout()
+        self.addLabel(labelElement)
+        self.addControl(controlElement)
 
         # Bind the events.
-        self.Bind(FS.EVT_FLOATSPIN, self.onValueChange, self.spinCtrl)
-
-
-    def onValueChange(self, event):
-        self.setOptionsValue()
-
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self):
-        if self.optionsKey in self.options.keys():
-            self.options[self.optionsKey] = float(self.spinCtrl.GetValue())
-
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.      
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.spinCtrl.SetValue(value)
+        self.Bind(FS.EVT_FLOATSPIN, self.onValueChange, self.controlElement)
 
 
 
@@ -744,34 +644,19 @@ class SingleChoiceField(Field):
                                        ID=wx.ID_ANY, 
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
-        #self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
 
         # Create the field text control.
         self.controlElement = wx.Choice(self, 
                                         wx.ID_ANY,
                                         choices=choices)
 
-        # Add the elements to the field sizer.
-        #self.sizer.Add(self.labelElement, pos=(0, 0), 
-        #               flag=wx.ALIGN_CENTER_VERTICAL|
-        #               wx.ALL, 
-        #               border=2)
-        #self.sizer.Add(self.choiceCtrl, pos=(0, 1), flag=wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, border=2)
-
-        # Specify the sizer properties.
-        #self.sizer.AddGrowableCol(1)
-        #self.sizer.AddGrowableRow(0)
-        #self.SetSizer(self.sizer)
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
-        self.sizer.Layout()
 
         # Bind the events.
-        self.Bind(wx.EVT_CHOICE, self.onChoiceSelect, self.controlElement)
+        self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
 
 
-    def onChoiceSelect(self, event):
-        self.setOptionsValue()
 
     ## Set the corresponding value in the options dictionary.
     #
@@ -779,7 +664,7 @@ class SingleChoiceField(Field):
     # @param options The options dictionary to be changed.
     def setOptionsValue(self):
         if self.optionsKey in self.options.keys():
-            self.options[self.optionsKey] = self.choiceCtrl.GetStringSelection()
+            self.options[self.optionsKey] = self.controlElement.GetStringSelection()
 
 
     ## Set the default value of the field element.  
@@ -790,6 +675,7 @@ class SingleChoiceField(Field):
         self.defaultValue = value
         pos = self.controlElement.FindString(value)
         self.controlElement.SetSelection(pos)
+
 
 
 ## The MultiChoiceField class.
@@ -810,43 +696,37 @@ class MultiChoiceField(Field):
         Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                       ID=wx.ID_ANY, 
-                                       label=self.label,
-                                       style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
+        labelElement = StaticText(parent=self, 
+                                  ID=wx.ID_ANY, 
+                                  label=self.label,
+                                  style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.listBox = wx.ListBox(self, 
+        controlElement = wx.ListBox(self, 
                                     wx.ID_ANY, 
                                     size=(size[0]*self.ctrlRatio, size[1]),
                                     choices=choices,
                                     style=wx.LB_MULTIPLE)
 
-        # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_TOP|
-                       wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.listBox, pos=(0, 1), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, border=2)
+        self.addLabel(labelElement)
+        self.addControl(controlElement)
+        
+        # Bind the events.
+        self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
 
-        # Specify the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
 
     ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
-    def setOptionsValue(self, options):
-        if self.optionsKey in options.keys():
-            selections = self.listBox.GetSelections()
+    def setOptionsValue(self):
+        if self.optionsKey in self.options.keys():
+            selections = self.controlElement.GetSelections()
             selectedStrings = []
             for k in selections:
-                selectedStrings.append(self.listBox.GetString(k))
+                selectedStrings.append(self.controlElement.GetString(k))
 
-            options[self.optionsKey] = selectedStrings
+            self.options[self.optionsKey] = selectedStrings
 
 
     ## Set the default value of the field element.  
@@ -856,7 +736,7 @@ class MultiChoiceField(Field):
     def setDefaultValue(self, value):
         self.defaultValue = value
         for curValue in self.defaultValue:
-            self.listBox.SetStringSelection(curValue) 
+            self.controlElement.SetStringSelection(curValue) 
 
 
 
@@ -880,49 +760,22 @@ class FileBrowseField(Field):
         Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                       ID=wx.ID_ANY, 
-                                       label=self.label,
-                                       style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
+        labelElement = StaticText(parent=self, 
+                                  ID=wx.ID_ANY, 
+                                  label=self.label,
+                                  style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.fileBrowseButton = filebrowse.FileBrowseButton(self, 
-                                                            wx.ID_ANY, 
-                                                            size=(size[0]*self.ctrlRatio, size[1]),
-                                                            labelWidth=0,
-                                                            labelText='')
+        controlElement = filebrowse.FileBrowseButton(self, 
+                                                     wx.ID_ANY, 
+                                                     labelWidth=0,
+                                                     labelText='',
+                                                     changeCallback = self.onValueChange)
 
-        # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.fileBrowseButton, pos=(0, 1), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 
-                       border=2)
+        # Add the gui elements to the field.
+        self.addLabel(labelElement)
+        self.addControl(controlElement)
 
-        # Specify the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
-
-
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self, options):
-        if self.optionsKey in options.keys():                
-            options[self.optionsKey] = self.fileBrowseButton.GetValue()
-
-
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.  
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.fileBrowseButton.SetValue(value)
 
 
 
@@ -946,44 +799,27 @@ class DirBrowseField(Field):
         Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
+        labelElement = StaticText(parent=self, 
                                        ID=wx.ID_ANY, 
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
-        self.labelElement.SetMinSize((size[0]*self.labelRatio, -1))
 
         # Create the field text control.
-        self.dirBrowseButton = filebrowse.DirBrowseButton(self, 
-                                                          wx.ID_ANY, 
-                                                          size=(size[0]*self.ctrlRatio, size[1]),
-                                                          labelText='',
-                                                          changeCallback=self.changeCallback
-                                                          )
+        controlElement = filebrowse.DirBrowseButton(self, 
+                                                    wx.ID_ANY, 
+                                                    size=(size[0]*self.ctrlRatio, size[1]),
+                                                    labelText='',
+                                                    changeCallback=self.onValueChange
+                                                   )
 
-        # Add the elements to the field sizer.
-        self.sizer.Add(self.labelElement, pos=(0, 0), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, 
-                       border=2)
-        self.sizer.Add(self.dirBrowseButton, pos=(0, 1), 
-                       flag=wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 
-                       border=2)
-
-        # Specify the sizer properties.
-        self.sizer.AddGrowableCol(1)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizer(self.sizer)
+        # Add the gui elements to the field.
+        self.addLabel(labelElement)
+        self.addControl(controlElement)
 
 
-    def changeCallback(self, event):
+    def onValueChange(self, event):
         self.dirBrowseButton.startDirectory = event.GetString()
-
-    ## Set the corresponding value in the options dictionary.
-    #
-    # @param self The object pointer.
-    # @param options The options dictionary to be changed.
-    def setOptionsValue(self, options):
-        if self.optionsKey in options.keys():                
-            options[self.optionsKey] = self.dirBrowseButton.GetValue()
+        self.setOptionsValue()
 
 
     ## Set the default value of the field element.  
@@ -992,6 +828,6 @@ class DirBrowseField(Field):
     # @param value The value to be set.  
     def setDefaultValue(self, value):
         self.defaultValue = value
-        self.dirBrowseButton.SetValue(value)
-        self.dirBrowseButton.startDirectory = value
+        self.controlElement.SetValue(value)
+        self.controlElement.startDirectory = value
 
