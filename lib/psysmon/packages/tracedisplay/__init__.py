@@ -49,7 +49,7 @@ def nodeFactory():
 def pluginFactory():
     ''' Provide some plugins.
     '''
-    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter, DemoPlotter, ProcessingStack
+    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter, DemoPlotter, ProcessingStack, SpectrogramPlotter
 
     pluginTemplates = []
 
@@ -95,6 +95,15 @@ def pluginFactory():
                             )
     pluginTemplates.append(myPluginTemplate)
 
+    
+    ########################################################
+    # The spectrogram plotter addon plugin.
+    myPluginTemplate = SpectrogramPlotter(name = 'spectrogram plotter',
+                                          category = 'visualize',
+                                          tags = None,
+                                          nodeClass = 'TraceDisplay'
+                                         )
+    pluginTemplates.append(myPluginTemplate)
 
 
     ########################################################

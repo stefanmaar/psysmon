@@ -29,6 +29,7 @@ from container import View
 from obspy.core import UTCDateTime
 import wx.lib.mixins.listctrl as listmix
 from psysmon.core.gui import psyContextMenu
+from obspy.imaging.spectrogram import spectrogram
 
 
 class SelectStation(OptionPlugin):
@@ -804,6 +805,148 @@ class DemoView(View):
         return  width / float(timeRange)
 
 
+
+class SpectrogramPlotter(AddonPlugin):
+    '''
+
+    '''
+    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+        ''' The constructor.
+
+        '''
+        AddonPlugin.__init__(self,
+                             name = name,
+                             category = category,
+                             tags = tags,
+                             nodeClass = nodeClass,
+                             parent = parent,
+                             docEntryPoint = docEntryPoint)
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Define the plugin icons.
+        self.icons['active'] = icons.twitter_icon_16
+
+
+    def plot(self, displayManager, dataManager):
+        ''' Plot all available stations.
+
+        '''
+        self.plotStation(displayManager, dataManager, displayManager.showStations)
+
+
+    def plotStation(self, displayManager, dataManager, station):
+        ''' Plot one or more stations.
+
+        '''
+        for curStation in station:
+            self.plotChannel(displayManager, dataManager, curStation.channels)
+
+
+
+    def plotChannel(self, displayManager, dataManager, channels):
+        ''' Plot one or more channels.
+
+        '''
+        stream = dataManager.procStream
+
+        for curChannel in channels:
+            curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
+            curStream = stream.select(station = curChannel.parent.name,
+                                     channel = curChannel.name,
+                                     network = curChannel.parent.network,
+                                     location = curChannel.parent.location)
+
+            if curStream:
+                #lineColor = [x/255.0 for x in curChannel.container.color]
+                curView.plot(curStream, [0.3, 0, 0])
+
+            curView.setXLimits(left = displayManager.startTime.timestamp,
+                               right = displayManager.endTime.timestamp)
+            curView.draw()
+
+
+
+
+    def getViewClass(self):
+        ''' Get a class object of the view.
+
+        '''
+        return SpectrogramView
+
+
+
+class SpectrogramView(View):
+    '''
+    A standard seismogram view.
+
+    Display the data as a timeseries.
+    '''
+
+    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
+        View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.t0 = None
+
+
+    def plot(self, stream, color):
+
+
+        for trace in stream:
+            timeArray = np.arange(0, trace.stats.npts)
+            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = timeArray + trace.stats.starttime.timestamp
+
+            # Check if the data is a ma.maskedarray
+            if np.ma.count_masked(trace.data):
+                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+
+            if self.dataAxes.images:
+                self.dataAxes.images.pop()
+
+
+            spectrogram(trace.data, 
+                        samp_rate = trace.stats.sampling_rate,
+                        axes = self.dataAxes)
+
+
+            extent = self.dataAxes.images[0].get_extent()
+            newExtent = (extent[0] + trace.stats.starttime.timestamp,
+                         extent[1] + trace.stats.starttime.timestamp,
+                         extent[2],
+                         extent[3])
+            self.dataAxes.images[0].set_extent(newExtent)
+            self.dataAxes.set_frame_on(False)
+
+
+
+    def setYLimits(self, bottom, top):
+        ''' Set the limits of the y-axes.
+        '''
+        self.dataAxes.set_ylim(bottom = bottom, top = top)
+
+
+    def setXLimits(self, left, right):
+        ''' Set the limits of the x-axes.
+        '''
+        self.logger.debug('Set limits: %f, %f', left, right)
+        self.dataAxes.set_xlim(left = left, right = right)
+
+        # Adjust the scale bar.
+
+
+
+    #def getScalePixels(self):
+    #    yLim = self.dataAxes.get_xlim()
+    #    timeRange = yLim[1] - yLim[0]
+    #    width = self.dataAxes.get_window_extent().width
+    #    return  width / float(timeRange)
 
 
 
