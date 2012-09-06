@@ -372,10 +372,13 @@ class SeismogramPlotter(AddonPlugin):
 
         for curChannel in channels:
             curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
-            curStream = stream.select(station = curChannel.parent.name,
-                                     channel = curChannel.name,
-                                     network = curChannel.parent.network,
-                                     location = curChannel.parent.location)
+            if stream:
+                curStream = stream.select(station = curChannel.parent.name,
+                                         channel = curChannel.name,
+                                         network = curChannel.parent.network,
+                                         location = curChannel.parent.location)
+            else:
+                curStream = None
 
             if curStream:
                 lineColor = [x/255.0 for x in curChannel.container.color]
