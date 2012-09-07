@@ -32,6 +32,7 @@ This module contains the classes needed to run the pSysmon package system.
 
 import os
 import sys
+import pkgutil
 from sqlalchemy import MetaData
 
 class PackageManager:
@@ -108,6 +109,12 @@ class PackageManager:
         '''
 
         for curDir in self.packageDirectories:
+            #import psysmon.packages
+            #pkg = psysmon.packages
+            #prefix = pkg.__name__ + '.'
+            #for importer, modname, ispkg in pkgutil.iter_modules(pkg.__path__, prefix):
+            #    print "importer: %s; modname: %s; ispkg: %s\n" % (importer, modname, ispkg)
+
             self.parent.logger.debug("Scanning directory %s", curDir)
             packages2Register = [ name for name in os.listdir(curDir) 
                                   if os.path.isdir(os.path.join(curDir, name)) 
@@ -246,7 +253,7 @@ class PackageManager:
 
     def addPlugins(self, plugins):
         ''' Add the plugins to a map.
-        
+
         Parameters
         ----------
         plugins : List of :class:`~psysmon.core.plugins.PluginNode`
