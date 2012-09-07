@@ -147,7 +147,7 @@ class ProcessingNode:
     of obspy Stream objects is supported.
     The return value has to be of the same type as the data passed to the processing node.
     '''
-    def __init__(self, name, mode, category, tags, options, nodeClass = 'common', docEntryPoint=None, parentStack=None, *args):
+    def __init__(self, name, mode, category, tags, options = {}, nodeClass = 'common', docEntryPoint=None, parentStack=None, *args):
         ''' The constructor
 
         '''
