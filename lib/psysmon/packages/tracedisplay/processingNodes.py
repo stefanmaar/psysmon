@@ -27,19 +27,21 @@ class Detrend(ProcessingNode):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, options,  docEntryPoint=None, parentStack = None):
+    nodeClass = 'common'
+
+    def __init__(self):
         ''' The constructor
 
         '''
-
         ProcessingNode.__init__(self,
-                                name = name,
-                                mode = mode,
-                                category = category,
-                                tags = tags,
-                                options = options,
-                                docEntryPoint = docEntryPoint,
-                                parentStack = parentStack)
+                                name = 'detrend',
+                                mode = 'editable',
+                                category = 'test',
+                                tags = ['remove', 'mean']
+                               )
+
+        self.options['method'] = 'constant'
+
 
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
@@ -95,19 +97,24 @@ class FilterBandPass(ProcessingNode):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, options,  docEntryPoint=None, parentStack = None):
+    nodeClass = 'common'
+
+    def __init__(self):
         ''' The constructor
 
         '''
 
         ProcessingNode.__init__(self,
-                                name = name,
-                                mode = mode,
-                                category = category,
-                                tags = tags,
-                                options = options,
-                                docEntryPoint = docEntryPoint,
-                                parentStack = parentStack)
+                                name = 'bandpass filter',
+                                mode = 'editable',
+                                category = 'frequency',
+                                tags = ['filter', 'bandpass']
+                               )
+
+        self.options['freqmin'] = 1
+        self.options['freqmax'] = 15
+        self.options['zerophase'] = False
+        self.options['corners'] = 4
 
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
@@ -182,20 +189,23 @@ class FilterLowPass(ProcessingNode):
     '''
 
     '''
-    def __init__(self, name, mode, category, tags, options,  docEntryPoint=None, parentStack = None):
+    nodeClass = 'common'
+
+    def __init__(self):
         ''' The constructor
 
         '''
 
         ProcessingNode.__init__(self,
-                                name = name,
-                                mode = mode,
-                                category = category,
-                                tags = tags,
-                                options = options,
-                                docEntryPoint = docEntryPoint,
-                                parentStack = parentStack)
-
+                                name = 'lowpass filter',
+                                mode = 'editable',
+                                category = 'frequency',
+                                tags = ['filter', 'lowpass'],
+                               )
+    
+        self.options['freq'] = 10
+        self.options['zerophase'] = False
+        self.options['corners'] = 4
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
         #self.logger = logging.getLogger(loggerName)
@@ -250,5 +260,86 @@ class FilterLowPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('lowpass',
+                      freq = self.options['freq']
+                     )
+
+
+
+
+class FilterHighPass(ProcessingNode):
+    '''
+
+    '''
+    nodeClass = 'common'
+
+    def __init__(self):
+        ''' The constructor
+
+        '''
+
+        ProcessingNode.__init__(self,
+                                name = 'highpass filter',
+                                mode = 'editable',
+                                category = 'frequency',
+                                tags = ['filter', 'highpass']
+                               )
+    
+        self.options['freq'] = 10
+        self.options['zerophase'] = False
+        self.options['corners'] = 4
+        # Create the logging logger instance.
+        #loggerName = __name__ + "." + self.__class__.__name__
+        #self.logger = logging.getLogger(loggerName)
+
+
+
+    def edit(self):
+        pass
+
+
+    def getEditPanel(self, parent):
+
+        fieldSize = (250, 30)
+        editPanel = OptionsEditPanel(options = self.options,
+                                     parent = parent
+                                    )
+        editPanel.addPage('highpass filter')
+
+        container = StaticBoxContainer(label = 'filter parameters',
+                                       parent = editPanel)
+        editPanel.addContainer(container, 'highpass filter')
+
+        curField = FloatSpinField(parent = editPanel,
+                                  name = 'cutoff frequency',
+                                  optionsKey = 'freq',
+                                  size = fieldSize,
+                                  digits = 2,
+                                  min_val = 0
+                                 )
+        container.addField(curField)
+
+        curField = IntegerCtrlField(parent = editPanel,
+                                    name = 'corners',
+                                    optionsKey = 'corners',
+                                    size = fieldSize
+                                   )
+        container.addField(curField)
+
+
+        return editPanel
+
+
+
+
+    def execute(self, stream):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        #self.logger.debug('Executing the processing node.')
+        stream.filter('highpass',
                       freq = self.options['freq']
                      )

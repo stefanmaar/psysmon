@@ -95,7 +95,7 @@ def pluginFactory():
                             )
     pluginTemplates.append(myPluginTemplate)
 
-    
+
     ########################################################
     # The spectrogram plotter addon plugin.
     myPluginTemplate = SpectrogramPlotter(name = 'spectrogram plotter',
@@ -133,57 +133,15 @@ def pluginFactory():
 def processingNodeFactory():
     ''' Provide some processing nodes.
     '''
-    from processingNodes import Detrend, FilterBandPass, FilterLowPass
+    from processingNodes import Detrend
+    from processingNodes import FilterBandPass
+    from processingNodes import FilterLowPass
+    from processingNodes import FilterHighPass
 
-    procNodeTemplates = []
-
-    ########################################################
-    # Detrend a timeseries.
-    options = {}
-    options['method'] = 'constant'
-
-    myProcNodeTemplate = Detrend(name = 'detrend',
-                                 mode = 'editable',
-                                 category = 'test',
-                                 tags = ['remove', 'mean'],
-                                 options = options,
-                                 )
-
-    procNodeTemplates.append(myProcNodeTemplate)
-
-
-
-    ########################################################
-    # Bandpass filter.
-    options = {}
-    options['freqmin'] = 1
-    options['freqmax'] = 15
-    options['zerophase'] = False
-    options['corners'] = 4
-
-    myProcNodeTemplate = FilterBandPass(name = 'bandpass filter',
-                                        mode = 'editable',
-                                        category = 'frequency',
-                                        tags = ['filter', 'bandpass'],
-                                        options = options,
-                                       )
-
-    procNodeTemplates.append(myProcNodeTemplate)
-
-
-    ########################################################
-    # Bandpass filter.
-    options = {}
-    options['freq'] = 10
-    options['zerophase'] = False
-    options['corners'] = 4
-
-    myProcNodeTemplate = FilterLowPass(name = 'lowpass filter',
-                                        mode = 'editable',
-                                        category = 'frequency',
-                                        tags = ['filter', 'lowpass'],
-                                        options = options,
-                                       )
-    procNodeTemplates.append(myProcNodeTemplate)
+    procNodeTemplates = [Detrend,
+                         FilterBandPass,
+                         FilterLowPass,
+                         FilterHighPass]
 
     return procNodeTemplates
+
