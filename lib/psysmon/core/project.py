@@ -293,11 +293,13 @@ class Project:
         ''' Get all available processing Nodes.
 
         '''
-        procNodes = []
+        #procNodes = []
 
         for curKey in self.psyBase.packageMgr.processingNodes.keys():
             if curKey in selection:
-                procNodes.extend(copy.copy(self.psyBase.packageMgr.processingNodes[curKey]))
+                #procNodes.extend(copy.copy(self.psyBase.packageMgr.processingNodes[curKey]))
+                procNodes = [curNode() for curNode  in self.psyBase.packageMgr.processingNodes[curKey]]
+                #procNodes.extend(self.psyBase.packageMgr.processingNodes[curKey]())
 
         return procNodes
 
