@@ -429,14 +429,14 @@ class SeismogramView(View):
 
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = timeArray / trace.stats.sampling_rate
             timeArray = timeArray + trace.stats.starttime.timestamp
             stop = time.clock()
             self.logger.debug('Prepared data (%.5fs)', stop - start)
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+                timeArray = np.ma.array(timeArray, mask=trace.data.mask)
 
 
             self.t0 = trace.stats.starttime
