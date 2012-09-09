@@ -1959,10 +1959,27 @@ class CreateNewProjectDlg(wx.Dialog):
         self.edit['baseDir'].SetValidator(NotEmptyValidator())         # Not empty.
         self.edit['dbHost'].SetValidator(NotEmptyValidator())        # Not empty.
         self.edit['user'].SetValidator(NotEmptyValidator())        # Not empty.
+        self.edit['agencyURI'].SetValidator(NotEmptyValidator())        # Not empty.
+        self.edit['authorURI'].SetValidator(NotEmptyValidator())        # Not empty.
         #self.edit['userPwd'].SetValidator(NotEmptyValidator())        # Not empty.
+
+        # Show the example URI.
+        self.edit['resourceId'].SetValue('smi:AGENCY_URI.AUTHOR_URI/psysmon/NAME')
 
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['name'])
+        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['authorURI'])
+        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['agencyURI'])
+
+    def onUpdateRid(self, event):
+        agency_uri  = self.edit['agencyURI'].GetValue()
+        author_uri = self.edit['authorURI'].GetValue()
+        project_uri = self.edit['name'].GetValue()
+        project_uri = project_uri.lower().replace(' ', '_')
+
+        rid = 'smi:' + agency_uri + '.' + author_uri + '/psysmon/' + project_uri
+        self.edit['resourceId'].SetValue(rid)
 
     def onBaseDirBrowse(self, event):
 
@@ -2002,7 +2019,12 @@ class CreateNewProjectDlg(wx.Dialog):
                ("base directory:", "baseDir", wx.TE_LEFT, True, self.onBaseDirBrowse),
                ("database host:", "dbHost", wx.TE_RIGHT, False, ""),
                ("user:", "user", wx.TE_RIGHT, False, ""),
-               ("user pwd:", "userPwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, "")
+               ("user pwd:", "userPwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, ""),
+               ("author name:", "authorName", wx.TE_RIGHT, False, ""),
+               ("author URI:", "authorURI", wx.TE_RIGHT, False, ""),
+               ("agency name:", "agencyName", wx.TE_RIGHT, False, ""),
+               ("agency URI:", "agencyURI", wx.TE_RIGHT, False, ""),
+               ("resource ID:", "resourceId", wx.TE_RIGHT, False, "")
                )
 
     def createDialogFields(self):
