@@ -125,54 +125,54 @@ class CollectionNode:
     # collection node. This dictionary is used to initialize a new collection node
     # and to save the user input for this collection node during the sessions.
     # @param parent The parent package of the collection node.
-    def __init__(self, name, mode, category, tags, options, requires=None, provides=None, docEntryPoint=None, parent=None, project=None):
+    
+    name = None
+    
+    ## The type of the collection node.
+    #
+    # Each collection node can specify it's type. Currently there are three
+    # allowed values:
+    # - editable The user can edit the node paramters.
+    # - uneditable There are no node parameters to edit.
+    # - standalone The node is not included in the collection execution. Each
+    # node can be executed individually using the collection listbox context menu.
+    mode = None
 
-        ## The name of the collection node.
-        self.name = name
+    # The category of the collection node.
+    category = None
 
-        ## The type of the collection node.
-        #
-        # Each collection node can specify it's type. Currently there are three
-        # allowed values:
-        # - editable The user can edit the node paramters.
-        # - uneditable There are no node parameters to edit.
-        # - standalone The node is not included in the collection execution. Each
-        # node can be executed individually using the collection listbox context menu.
-        self.mode = mode
+    ## The tags assigned to the collection node.
+    #
+    # The tags attribute is a list of Strings.@n
+    # Additionally to the category, one or more tags can be assigned to the
+    # collection node. These tags can be used when creating sub-selections of
+    # all available collection nodes.@n
+    # For example, a set of nodes has been created for the processing tasks
+    # at a certain institution or for a special project, one could tag these
+    # nodes with the institution name or the project name to make it easy for
+    # users to select these nodes or also to hide these nodes from their
+    # collection node inventory.@n
+    # The tag values are not limited but they should contain one of the three
+    # development state tags:
+    # - stable
+    # - experimental
+    # - damaged
+    tags = []
 
-        ## The category of the collection node.
-        self.category = category
+    ## The collection node options.
+    #
+    # Each collection node can have a set of parameters which can be edited
+    # by the user and which are used when executing the collection node.
+    # These properties will also be saved with the collection node during
+    # the pSysmon sessions.@n
+    # The @e property attribute is a dictionary with the property name as it's key.@n
+    # @note Usually, the property values are defined in the pkgInit file.
+    options = {}
 
-        ## The tags assigned to the collection node.
-        #
-        # The tags attribute is a list of Strings.@n
-        # Additionally to the category, one or more tags can be assigned to the
-        # collection node. These tags can be used when creating sub-selections of
-        # all available collection nodes.@n
-        # For example, a set of nodes has been created for the processing tasks
-        # at a certain institution or for a special project, one could tag these
-        # nodes with the institution name or the project name to make it easy for
-        # users to select these nodes or also to hide these nodes from their
-        # collection node inventory.@n
-        # The tag values are not limited but they should contain one of the three
-        # development state tags:
-        # - stable
-        # - experimental
-        # - damaged
-        self.tags = tags
+    # The entry point of the documentation of the collection node.
+    docEntryPoint = None
 
-        ## The collection node properties.
-        #
-        # Each collection node can have a set of parameters which can be edited
-        # by the user and which are used when executing the collection node.
-        # These properties will also be saved with the collection node during
-        # the pSysmon sessions.@n
-        # The @e property attribute is a dictionary with the property name as it's key.@n
-        # @note Usually, the property values are defined in the pkgInit file.
-        self.options = options
-
-        self.docEntryPoint = docEntryPoint
-
+    def __init__(self, requires=None, provides=None, docEntryPoint=None, parent=None, project=None):
         ## The package which contains the collection node.
         self.parentPackage = parent
 
