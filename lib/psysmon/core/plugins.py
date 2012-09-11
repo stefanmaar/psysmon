@@ -38,8 +38,14 @@ class PluginNode:
     ''' The PluginNode class.
     Each collection node can load plugins which provide some functionality to the node.
     '''
+    # The class to which the plugin is assigned to.
+    # User *common* for plugins which can be used by every class.
+    # Nodes with a specified nodeClass usually depend on some special 
+    # variables which have to be passed to them using the variable kwargs 
+    # argument.
+    nodeClass = 'common'
 
-    def __init__(self, name, mode, category, tags, nodeClass, icons = None, parent=None, docEntryPoint=None):
+    def __init__(self, name, mode, category, tags, options = {}, icons = None, parent=None, docEntryPoint=None, *kwargs):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -77,9 +83,6 @@ class PluginNode:
 
         # The tags of the plugin.
         self.tags = tags
-
-        # The class to which the plugin belongs to.
-        self.nodeClass = nodeClass
 
         # The parent collection node which contains the plugin.
         self.parent = parent
@@ -147,7 +150,7 @@ class OptionPlugin(PluginNode):
     options used for displaying the data in the tracedisplay (e.g. which stations are shown or 
     which channels are shown,...).
     '''
-    def __init__(self, name, category, tags, nodeClass, icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -177,7 +180,6 @@ class OptionPlugin(PluginNode):
                             mode = 'option',
                             category = category,
                             tags = tags,
-                            nodeClass = nodeClass,
                             icons = icons,
                             parent = parent,
                             docEntryPoint = docEntryPoint)
@@ -190,7 +192,7 @@ class InteractivePlugin(PluginNode):
     The interactive plugin allows the user to interact with the parent window using 
     mouse clicks.
     '''
-    def __init__(self, name, category, tags, nodeClass, icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -223,7 +225,6 @@ class InteractivePlugin(PluginNode):
                             mode = 'interactive',
                             category = category,
                             tags = tags,
-                            nodeClass = nodeClass,
                             icons = icons,
                             parent = parent,
                             docEntryPoint = docEntryPoint)
@@ -244,7 +245,7 @@ class AddonPlugin(PluginNode):
     which are used in the tracedisplay.
     '''
 
-    def __init__(self, name, category, tags, nodeClass, icons = None, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, icons = None, parent=None, docEntryPoint=None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -274,7 +275,6 @@ class AddonPlugin(PluginNode):
                             mode = 'addon',
                             category = category,
                             tags = tags,
-                            nodeClass = nodeClass,
                             icons = icons,
                             parent = parent,
                             docEntryPoint = docEntryPoint)
