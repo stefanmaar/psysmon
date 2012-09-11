@@ -244,8 +244,8 @@ class PackageManager:
 
 
         # Set the collection node template runtime attributes.
-        curPkg.setPyPackageName(pkgName)
-        curPkg.setBaseDir(os.path.join(packageDir, pkgBaseDir))
+        #curPkg.setPyPackageName(pkgName)
+        #curPkg.setBaseDir(os.path.join(packageDir, pkgBaseDir))
 
         # Add the package to the packages list.
         self.packages[curPkg.name] = curPkg
