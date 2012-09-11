@@ -187,6 +187,10 @@ class TraceDisplay(CollectionNode):
     '''
 
     '''
+    name = 'tracedisplay'
+    mode = 'editable'
+    category = 'Display'
+    tags = ['development']
 
     def edit(self):
         pass

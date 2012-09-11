@@ -16,6 +16,10 @@ class EventExample(CollectionNode):
     The inherited log method can be used to display messages in the pSysmon 
     log area.
     '''
+    name = 'event example node'
+    mode = 'uneditable'
+    category = 'Example'
+    tags = ['stable', 'example']
 
     def edit(self):
         msg = "Editing the node %s." % self.name

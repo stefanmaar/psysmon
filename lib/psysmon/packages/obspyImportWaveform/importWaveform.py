@@ -13,6 +13,14 @@ import os
 # 
 class ImportWaveform(CollectionNode):
 
+    name = 'import waveform'
+    mode = 'editable'
+    category = 'Data Import'
+    tags = ['stable']
+    options = {}
+    options['inputFiles'] = []                     # The files to import.
+    options['lastDir'] = ""                        # The last used directory.
+
     def edit(self):
         dlg = ImportWaveformEditDlg(self, self.project, None)
         dlg.Show()

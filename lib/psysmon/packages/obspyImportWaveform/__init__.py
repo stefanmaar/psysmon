@@ -29,19 +29,7 @@ website = "http://www.stefanmertl.com"
 def nodeFactory():
     from importWaveform import ImportWaveform
 
-    nodeTemplates = []
-
-    # Create a pSysmon collection node template and add it to the package.
-    options = {}
-    options['inputFiles'] = []                     # The files to import.
-    options['lastDir'] = ""                        # The last used directory.
-    myNodeTemplate = ImportWaveform(name = 'import waveform',
-                                    mode = 'editable',
-                                    category = 'Data Import',
-                                    tags = ['stable'],
-                                    options = options
-                                    )
-    nodeTemplates.append(myNodeTemplate)
+    nodeTemplates = [ImportWaveform, ]
 
     return nodeTemplates
 

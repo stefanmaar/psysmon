@@ -26,6 +26,16 @@ description = "The example packages"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 
+
+def nodeFactory():
+    from exampleNode import ExampleNode
+
+    nodeTemplates = [ExampleNode, ]
+
+    return nodeTemplates
+
+
+
 def databaseFactory(base):
     from sqlalchemy import Column
     from sqlalchemy import Integer, String
@@ -47,23 +57,6 @@ def databaseFactory(base):
 
 
 
-def nodeFactory():
-    from exampleNode import ExampleNode
-
-    nodeTemplates = []
-
-    myTemplate = ExampleNode(name = 'example node',
-                             mode = 'editable',
-                             category = 'Example',
-                             tags = ['stable', 'example'],
-                             options = None,
-                             docEntryPoint = 'exampleNode.html',
-                             requires = None, 
-                             provides = ('exp2InputData', )
-                           )
-    nodeTemplates.append(myTemplate)
-
-    return nodeTemplates
 
 
 

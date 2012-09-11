@@ -38,15 +38,20 @@ class ExampleNode2(CollectionNode):
     is demonstrated. The output has been set by the example node.
     '''
 
+    name = 'example node 2'
+    mode = 'editable'
+    category = 'Example'
+    tags = ['stable', 'example']
+
     def edit(self):
         msg = "Editing the node %s." % self.name
 
 
     def execute(self, prevModuleOutput={}):
         self.logger.debug("Executing the node %s." % self.name)
-        
+
         requiredData = self.requireData(origin = 'example node')
-        
+
         app = PSysmonApp()
 
         dlg = wx.MessageDialog(None, str(requiredData),

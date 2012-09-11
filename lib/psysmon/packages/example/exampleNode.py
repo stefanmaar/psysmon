@@ -1,5 +1,3 @@
-
-
 from psysmon.core.packageNodes import CollectionNode
 import time
 import wx
@@ -18,6 +16,11 @@ class ExampleNode(CollectionNode):
     The inherited log method can be used to display messages in the pSysmon 
     log area.
     '''
+    name = 'example node'
+    mode = 'editable'
+    category = 'Example'
+    tags = ['stable', 'example']
+    docEntryPoint = 'exampleNode.html'
 
     def edit(self):
         msg = "Editing the node %s." % self.name

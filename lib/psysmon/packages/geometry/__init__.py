@@ -30,27 +30,9 @@ def nodeFactory():
     from applyGeometry import ApplyGeometry
     from editGeometry import EditGeometry
 
-    nodeTemplates = []
-
-    # Create a pSysmon collection node template and add it to the package.
-    options = {}
-    myNodeTemplate = EditGeometry(name = 'edit geometry',
-                                  mode = 'standalone',
-                                  category = 'Geometry',
-                                  tags = ['stable'],
-                                  options = options
-                                  )
-    nodeTemplates.append(myNodeTemplate) 
-
-    # Create a pSysmon collection node template and add it to the package.
-    options = {}
-    myNodeTemplate = ApplyGeometry(name = 'apply geometry',
-                                   mode = 'uneditable',
-                                   category = 'Geometry',
-                                   tags = ['stable'],
-                                   options = options
-                                   )
-    nodeTemplates.append(myNodeTemplate)
+    nodeTemplates = [ApplyGeometry,
+                     EditGeometry
+                    ]
 
     return nodeTemplates
 

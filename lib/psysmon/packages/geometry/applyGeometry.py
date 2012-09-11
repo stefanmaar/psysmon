@@ -31,6 +31,13 @@ import logging
 #
 # The apply geometry collection node is an uneditable node.
 class ApplyGeometry(CollectionNode):
+    ''' The apply geometry class.
+
+    '''
+    name = 'apply geometry'
+    mode = 'uneditable'
+    category = 'Geometry'
+    tags = ['stable']
 
 
     ## The edit method.

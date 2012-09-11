@@ -29,19 +29,7 @@ website = "http://www.stefanmertl.com"
 def nodeFactory():
     from tracedisplay import TraceDisplay
 
-    nodeTemplates = []
-
-    # Create a pSysmon collection node template and add it to the package.
-    options = {}
-
-    myNodeTemplate = TraceDisplay(name = 'tracedisplay',
-                                  mode = 'editable',
-                                  category = 'Display',
-                                  tags = ['development'],
-                                  options = options
-                                  )
-
-    nodeTemplates.append(myNodeTemplate)
+    nodeTemplates = [TraceDisplay, ]
 
     return nodeTemplates
 
@@ -49,82 +37,21 @@ def nodeFactory():
 def pluginFactory():
     ''' Provide some plugins.
     '''
-    from plugins import SelectStation, SelectChannel, Zoom, SeismogramPlotter, DemoPlotter, ProcessingStack, SpectrogramPlotter
+    from plugins import SelectStation
+    from plugins import SelectChannel 
+    from plugins import Zoom
+    from plugins import SeismogramPlotter
+    from plugins import DemoPlotter
+    from plugins import ProcessingStack
+    from plugins import SpectrogramPlotter
 
-    pluginTemplates = []
-
-    ########################################################
-    # The select station options plugin
-    myPluginTemplate = SelectStation(name = 'select station',
-                                     category = 'view',
-                                     tags = ['station', 'view', 'select'],
-                                     nodeClass = 'TraceDisplay'
-                                     )
-    pluginTemplates.append(myPluginTemplate)
-
-
-
-    ########################################################
-    # The select channel options plugin
-    myPluginTemplate = SelectChannel(name = 'select channel',
-                                     category = 'view',
-                                     tags = ['channel', 'view', 'select'],
-                                     nodeClass = 'TraceDisplay'
-                                     )
-    pluginTemplates.append(myPluginTemplate)
-
-
-
-    ########################################################
-    # The plot seismogram addon plugin.
-    myPluginTemplate = SeismogramPlotter(name = 'plot seismogram',
-                            category = 'visualize',
-                            tags = None,
-                            nodeClass = 'TraceDisplay'
-                            )
-    pluginTemplates.append(myPluginTemplate)
-
-
-
-    ########################################################
-    # The demo plotter addon plugin.
-    myPluginTemplate = DemoPlotter(name = 'demo plotter',
-                            category = 'visualize',
-                            tags = None,
-                            nodeClass = 'TraceDisplay'
-                            )
-    pluginTemplates.append(myPluginTemplate)
-
-
-    ########################################################
-    # The spectrogram plotter addon plugin.
-    myPluginTemplate = SpectrogramPlotter(name = 'spectrogram plotter',
-                                          category = 'visualize',
-                                          tags = None,
-                                          nodeClass = 'TraceDisplay'
-                                         )
-    pluginTemplates.append(myPluginTemplate)
-
-
-    ########################################################
-    # The the zoom interactive plugin.
-    myPluginTemplate = Zoom(name = 'zoom',
-                            category = 'view',
-                            tags = None,
-                            nodeClass = 'TraceDisplay'
-                            )
-    pluginTemplates.append(myPluginTemplate)
-
-
-    ########################################################
-    # The processing stack GUI options plugin.
-    myPluginTemplate = ProcessingStack(name = 'processing stack',
-                                       category = 'proc',
-                                       tags = ['process data'],
-                                       nodeClass = 'TraceDisplay'
-                                       )
-    pluginTemplates.append(myPluginTemplate)
-
+    pluginTemplates = [SelectStation,
+                       SelectChannel,
+                       Zoom,
+                       ProcessingStack,
+                       SeismogramPlotter,
+                       DemoPlotter,
+                       SpectrogramPlotter]
 
     return pluginTemplates
 

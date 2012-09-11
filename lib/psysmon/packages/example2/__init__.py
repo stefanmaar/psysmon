@@ -29,17 +29,6 @@ website = "http://www.stefanmertl.com"
 def nodeFactory():
     from exampleNode2 import ExampleNode2
 
-    nodeTemplates = []
-
-    myTemplate = ExampleNode2(name = 'example node 2',
-                              mode = 'editable',
-                              category = 'Example',
-                              tags = ['stable', 'example'],
-                              options = None,
-                              docEntryPoint = None,
-                              requires = ('exp2InputData', ),
-                              provides = None
-                              )
-    nodeTemplates.append(myTemplate)
+    nodeTemplates = [ExampleNode2, ]
 
     return nodeTemplates

@@ -56,10 +56,11 @@ class EditGeometry(CollectionNode):
     '''
     The EditGeometry class.
     '''
+    name = 'edit geometry'
+    mode = 'standalone'
+    category = 'Geometry'
+    tags = ['stable']
 
-    ## The edit method.
-    #
-    # The EditGeometry node is a standalone node - ignore the edit method.
     def edit(self):
         '''
         The edit method.

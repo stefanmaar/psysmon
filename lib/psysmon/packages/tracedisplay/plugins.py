@@ -36,18 +36,17 @@ class SelectStation(OptionPlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
         ''' The constructor
 
         '''
-
         OptionPlugin.__init__(self,
-                              name = name,
-                              category = category,
-                              tags = tags,
-                              nodeClass = nodeClass,
-                              parent = parent,
-                              docEntryPoint = docEntryPoint)
+                              name = 'select station',
+                              category = 'view',
+                              tags = ['station', 'view', 'select'],
+                             )
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -115,18 +114,18 @@ class SelectChannel(OptionPlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
         ''' The constructor.
 
         '''
 
         OptionPlugin.__init__(self,
-                              name = name,
-                              category = category,
-                              tags = tags,
-                              nodeClass = nodeClass,
-                              parent = parent,
-                              docEntryPoint = docEntryPoint)
+                              name = 'select channel',
+                              category = 'view',
+                              tags = ['channel', 'view', 'select'],
+                             )
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -190,18 +189,18 @@ class ProcessingStack(OptionPlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
         ''' The constructor
 
         '''
 
         OptionPlugin.__init__(self,
-                              name = name,
-                              category = category,
-                              tags = tags,
-                              nodeClass = nodeClass,
-                              parent = parent,
-                              docEntryPoint = docEntryPoint)
+                              name = 'processing stack',
+                              category = 'proc',
+                              tags = ['process', 'data']
+                             )
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -329,17 +328,17 @@ class SeismogramPlotter(AddonPlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
         ''' The constructor.
 
         '''
         AddonPlugin.__init__(self,
-                             name = name,
-                             category = category,
-                             tags = tags,
-                             nodeClass = nodeClass,
-                             parent = parent,
-                             docEntryPoint = docEntryPoint)
+                             name = 'plot seismogram',
+                             category = 'visualize',
+                             tags = None
+                            )
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -513,18 +512,17 @@ class Zoom(InteractivePlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
         ''' The constructor.
 
         '''
         InteractivePlugin.__init__(self,
-                                   name = name,
-                                   category = category,
-                                   tags = tags,
-                                   nodeClass = nodeClass,
-                                   parent = parent,
-                                   docEntryPoint = docEntryPoint)
-
+                                   name = 'zoom',
+                                   category = 'view',
+                                   tags = None
+                                  )
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
@@ -649,17 +647,17 @@ class DemoPlotter(AddonPlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
         ''' The constructor.
 
         '''
         AddonPlugin.__init__(self,
-                             name = name,
-                             category = category,
-                             tags = tags,
-                             nodeClass = nodeClass,
-                             parent = parent,
-                             docEntryPoint = docEntryPoint)
+                             name = 'demo plotter',
+                             category = 'visualize',
+                             tags = None
+                            )
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -810,17 +808,17 @@ class SpectrogramPlotter(AddonPlugin):
     '''
 
     '''
-    def __init__(self, name, category, tags, nodeClass, parent=None, docEntryPoint=None):
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
         ''' The constructor.
 
         '''
         AddonPlugin.__init__(self,
-                             name = name,
-                             category = category,
-                             tags = tags,
-                             nodeClass = nodeClass,
-                             parent = parent,
-                             docEntryPoint = docEntryPoint)
+                             name = 'spectrogram plotter',
+                             category = 'visualize',
+                             tags = None
+                            )
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__

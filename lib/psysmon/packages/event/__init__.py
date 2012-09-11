@@ -147,17 +147,7 @@ def databaseFactory(base):
 def nodeFactory():
     from collection_nodes import EventExample
 
-    nodeTemplates = []
-
-    myTemplate = EventExample(name = 'event example node',
-                              mode = 'uneditable',
-                              category = 'Example',
-                              tags = ['stable', 'example'],
-                              options = None,
-                              requires = None, 
-                              provides = ('exp2InputData', )
-                             )
-    nodeTemplates.append(myTemplate)
+    nodeTemplates = [EventExample, ]
 
     return nodeTemplates
 
