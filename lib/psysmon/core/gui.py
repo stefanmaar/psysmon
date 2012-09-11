@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -1952,40 +1953,40 @@ class CreateNewProjectDlg(wx.Dialog):
         sizer.Fit(self)
 
         # Add some default values.
-        self.edit['dbHost'].SetValue('localhost')
+        self.edit['db_host'].SetValue('localhost')
 
         # Add the validators.
         self.edit['name'].SetValidator(NotEmptyValidator())         # Not empty.
-        self.edit['baseDir'].SetValidator(NotEmptyValidator())         # Not empty.
-        self.edit['dbHost'].SetValidator(NotEmptyValidator())        # Not empty.
-        self.edit['user'].SetValidator(NotEmptyValidator())        # Not empty.
-        self.edit['agencyURI'].SetValidator(NotEmptyValidator())        # Not empty.
-        self.edit['authorURI'].SetValidator(NotEmptyValidator())        # Not empty.
+        self.edit['basedir'].SetValidator(NotEmptyValidator())         # Not empty.
+        self.edit['db_host'].SetValidator(NotEmptyValidator())        # Not empty.
+        self.edit['user_name'].SetValidator(NotEmptyValidator())        # Not empty.
+        self.edit['agency_uri'].SetValidator(NotEmptyValidator())        # Not empty.
+        self.edit['author_uri'].SetValidator(NotEmptyValidator())        # Not empty.
         #self.edit['userPwd'].SetValidator(NotEmptyValidator())        # Not empty.
 
         # Show the example URI.
-        self.edit['resourceId'].SetValue('smi:AGENCY_URI.AUTHOR_URI/psysmon/NAME')
+        self.edit['resource_id'].SetValue('smi:AGENCY_URI.AUTHOR_URI/psysmon/NAME')
 
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
         self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['name'])
-        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['authorURI'])
-        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['agencyURI'])
+        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['author_uri'])
+        self.Bind(wx.EVT_TEXT, self.onUpdateRid, self.edit['agency_uri'])
 
     def onUpdateRid(self, event):
-        agency_uri  = self.edit['agencyURI'].GetValue()
-        author_uri = self.edit['authorURI'].GetValue()
+        agency_uri  = self.edit['agency_uri'].GetValue()
+        author_uri = self.edit['author_uri'].GetValue()
         project_uri = self.edit['name'].GetValue()
         project_uri = project_uri.lower().replace(' ', '_')
 
         rid = 'smi:' + agency_uri + '.' + author_uri + '/psysmon/' + project_uri
-        self.edit['resourceId'].SetValue(rid)
+        self.edit['resource_id'].SetValue(rid)
 
     def onBaseDirBrowse(self, event):
 
         # Create the directory dialog.
         dlg = wx.DirDialog(self, message="Choose a directory:",
-                           defaultPath=self.edit['baseDir'].GetValue(),
+                           defaultPath=self.edit['basedir'].GetValue(),
                            style=wx.DD_DEFAULT_STYLE
                            #| wx.DD_DIR_MUST_EXIST
                            #| wx.DD_CHANGE_DIR
@@ -1993,7 +1994,7 @@ class CreateNewProjectDlg(wx.Dialog):
 
         # Get the selected directory
         if dlg.ShowModal() == wx.ID_OK:
-            self.edit['baseDir'].SetValue(dlg.GetPath())
+            self.edit['basedir'].SetValue(dlg.GetPath())
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
@@ -2002,10 +2003,13 @@ class CreateNewProjectDlg(wx.Dialog):
         isValid = self.Validate()
 
         if(isValid):
+            keys_2_pass = ['name', 'basedir', 'db_host', 'user_name', 'user_pwd',
+                           'author_name', 'author_uri', 'agency_name', 'agency_uri']
             projectData = {};
-            for _, curKey, _, _, _ in self.dialogData():
-                projectData[curKey] = self.edit[curKey].GetValue()
-
+            for _, curKey, _, _, _, _ in self.dialogData():
+                if curKey in keys_2_pass:
+                    projectData[curKey] = self.edit[curKey].GetValue()
+            
             projectCreated = self.createProject(projectData)
             #pub.sendMessage("createNewDbUserDlg.createUser", userData)
             if(projectCreated):
@@ -2015,16 +2019,16 @@ class CreateNewProjectDlg(wx.Dialog):
 
 
     def dialogData(self):
-        return(("name:", "name", wx.TE_RIGHT, False, ""),
-               ("base directory:", "baseDir", wx.TE_LEFT, True, self.onBaseDirBrowse),
-               ("database host:", "dbHost", wx.TE_RIGHT, False, ""),
-               ("user:", "user", wx.TE_RIGHT, False, ""),
-               ("user pwd:", "userPwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, ""),
-               ("author name:", "authorName", wx.TE_RIGHT, False, ""),
-               ("author URI:", "authorURI", wx.TE_RIGHT, False, ""),
-               ("agency name:", "agencyName", wx.TE_RIGHT, False, ""),
-               ("agency URI:", "agencyURI", wx.TE_RIGHT, False, ""),
-               ("resource ID:", "resourceId", wx.TE_RIGHT, False, "")
+        return(("name:", "name", wx.TE_RIGHT, False, "", 'edit'),
+               ("base directory:", "basedir", wx.TE_LEFT, True, self.onBaseDirBrowse, 'edit'),
+               ("database host:", "db_host", wx.TE_RIGHT, False, "", 'edit'),
+               ("username:", "user_name", wx.TE_RIGHT, False, "", 'edit'),
+               ("user pwd:", "user_pwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, "", 'edit'),
+               ("author name:", "author_name", wx.TE_RIGHT, False, "", 'edit'),
+               ("author URI:", "author_uri", wx.TE_RIGHT, False, "", 'edit'),
+               ("agency name:", "agency_name", wx.TE_RIGHT, False, "", 'edit'),
+               ("agency URI:", "agency_uri", wx.TE_RIGHT, False, "", 'edit'),
+               ("resource ID:", "resource_id", wx.TE_RIGHT, False, "", 'static')
                )
 
     def createDialogFields(self):
@@ -2032,10 +2036,14 @@ class CreateNewProjectDlg(wx.Dialog):
         gbSizer = wx.GridBagSizer(5, 5)
         rowCount = 0
 
-        for curLabel, curKey, curStyle, hasBrowseBtn, curBtnHandler in dialogData:
+        for curLabel, curKey, curStyle, hasBrowseBtn, curBtnHandler, curType in dialogData:
             self.label[curKey] = wx.StaticText(self, wx.ID_ANY, curLabel)
             self.edit[curKey] = wx.TextCtrl(self, size=(300, -1), 
                                             style=curStyle)
+
+            if curType == 'static':
+                self.edit[curKey].SetEditable(False)
+                self.edit[curKey].Disable()
 
             if(hasBrowseBtn):
                 browseButton = wx.Button(self, wx.ID_ANY, "browse", (50,-1))
@@ -2047,6 +2055,11 @@ class CreateNewProjectDlg(wx.Dialog):
                             flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.ALL)
 
                 self.Bind(wx.EVT_BUTTON, curBtnHandler, browseButton)
+            elif(curStyle == 'static'):
+                gbSizer.Add(self.label[curKey], pos=(rowCount, 0),
+                            flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                gbSizer.Add(self.edit[curKey], pos=(rowCount, 1),
+                            flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             else:
                 gbSizer.Add(self.label[curKey], pos=(rowCount, 0),
                             flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
@@ -2062,6 +2075,7 @@ class CreateNewProjectDlg(wx.Dialog):
     def createProject(self, projectData):
 
         try:
+            ipdb.set_trace() ############################## Breakpoint ##############################
             self.psyBase.createPsysmonProject(**projectData)
             return True
         except Exception as e:

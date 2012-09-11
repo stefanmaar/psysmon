@@ -125,7 +125,9 @@ class Project:
 
     '''
 
-    def __init__(self, psyBase, name, baseDir, user, dbDialect='mysql', dbDriver=None, dbHost='localhost', dbName="", dbVersion={}, createTime="", dbTables={}):
+    def __init__(self, psyBase, name, baseDir, user, 
+                 dbDialect='mysql', dbDriver=None, dbHost='localhost', 
+                 dbName="", dbVersion={}, createTime="", dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -274,7 +276,7 @@ class Project:
 
         Parameters
         ----------
-        name : String
+        name : Tuple or list of String
             The name of the class for which the plugins should be returned.
 
         Returns
@@ -284,22 +286,30 @@ class Project:
 
         '''
         plugins = []
-        for curTemplate in self.psyBase.packageMgr.plugins[name]:
-            plugins.append(copy.copy(curTemplate))
+
+        # Check for single string arguments.
+        if isinstance(name, str):
+            name = (name,)
+
+        for curName in name:
+            plugins.extend([curPlugin() for curPlugin in self.psyBase.packageMgr.plugins[curName]])
         return plugins
+
 
 
     def getProcessingNodes(self, selection = ('common',)):
         ''' Get all available processing Nodes.
 
         '''
-        #procNodes = []
+        procNodes = []
 
-        for curKey in self.psyBase.packageMgr.processingNodes.keys():
-            if curKey in selection:
-                #procNodes.extend(copy.copy(self.psyBase.packageMgr.processingNodes[curKey]))
-                procNodes = [curNode() for curNode  in self.psyBase.packageMgr.processingNodes[curKey]]
-                #procNodes.extend(self.psyBase.packageMgr.processingNodes[curKey]())
+        # Check for single string arguments.
+        if isinstance(selection, str):
+            selection = (selection, )
+
+        for curKey in selection:
+            if curKey in self.psyBase.packageMgr.processingNodes.keys():
+                procNodes.extend([curNode() for curNode  in self.psyBase.packageMgr.processingNodes[curKey]])
 
         return procNodes
 
@@ -639,7 +649,8 @@ class Project:
             The position before which to add the node to the 
             collection. -1 to add it at the end of the collection (default).
         '''
-        node = copy.deepcopy(nodeTemplate)
+        #node = copy.deepcopy(nodeTemplate)
+        node = nodeTemplate()
         node.project = self
         self.activeUser.addNode2Collection(node, position)
 
@@ -761,7 +772,8 @@ class User:
         The user name.
     '''
 
-    def __init__(self, user, userMode):
+    def __init__(self, user_name, user_mode, author_name, author_uri,
+                 agency_name, agency_uri):
         '''The constructor.
 
         Parameters
@@ -781,7 +793,7 @@ class User:
         self.logger = logging.getLogger(loggerName)
 
         ## The user name.
-        self.name = user
+        self.name = user_name
 
         # The user's password.
         self.pwd = None
@@ -790,7 +802,19 @@ class User:
         #
         # The user privileges. 
         # Allowed values are: admin, editor.
-        self.mode = userMode
+        self.mode = user_mode
+
+        # The real name of the author.
+        self.author_name = author_name
+
+        # The URI of the author.
+        self.author_uri = author_uri
+
+        # The name of the agency of the author.
+        self.agency_name = agency_name
+
+        # The URI of the agency.
+        self.agnecy_uri = agency_uri
 
         # The user collection.
         self.collection = {}
