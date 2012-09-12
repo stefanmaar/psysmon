@@ -41,7 +41,6 @@ from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
-from collections import namedtuple
 
 
 class Base:
@@ -327,7 +326,8 @@ class Base:
         '''
         Close a pSysmon project.
 
-        This sets the project attribute to None.
+        Close the currently active project by setting the project attribute to 
+        None.
         '''
         self.project = None
 
@@ -374,6 +374,7 @@ class Collection:
         ----------
         name : String
             The name of the collection.
+
         tmpDir : String
             The project's temporary directory.
         '''
