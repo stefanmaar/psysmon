@@ -3,11 +3,14 @@ import os
 import copy
 import psysmon
 from psysmon.core.base import Base
-#from psysmon.core.waveclient import PsysmonDbWaveClient,EarthwormWaveClient
 import psysmon.core.gui as psygui
+from psysmon.core.project import User
 
 
-def createPsyBase():
+def create_psybase():
+    ''' Create the psysmon base instance.
+
+    '''
     # Get the pSysmon base directory.
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
@@ -17,28 +20,37 @@ def createPsyBase():
 
     return psyBase
 
-       
 
-def createBareProject(psy_base):
+
+def create_dbtest_project(psybase):
+    ''' Create a new project with parameters set to access the unit_test test 
+    database.
+    '''
+    
     name = 'unit_test'
     base_dir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/03_pSysmonProjects'
-    username = 'unit_test'
-    user = psysmon.core.project.User(username, 'admin')
+    user = User(user_name = 'unit_test',
+                user_pwd = '',
+                user_mode = 'admin',
+                author_name = 'Stefan Test',
+                author_uri = 'stest',
+                agency_name = 'University of Test',
+                agency_uri = 'at.uot'
+               )
     db_host = 'localhost'
-    project = psysmon.core.project.Project(psyBase = psy_base,
-                                                name = name,
-                                                baseDir = base_dir,
-                                                user = user,
-                                                dbHost = db_host)
-
-    project.activeUser = project.user[0]
+    project = psysmon.core.project.Project(psybase = psybase,
+                                           name = name,
+                                           base_dir = base_dir,
+                                           user = user,
+                                           dbHost = db_host
+                                          )
 
     return project
 
 
 
 
-def prepareProject(test_case):
+def prepare_project(test_case):
         # Configure the logger.
         logger = logging.getLogger('psysmon')
         logger.setLevel(psysmon.logConfig['level'])
