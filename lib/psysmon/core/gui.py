@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -2075,7 +2074,6 @@ class CreateNewProjectDlg(wx.Dialog):
     def createProject(self, projectData):
 
         try:
-            ipdb.set_trace() ############################## Breakpoint ##############################
             self.psyBase.createPsysmonProject(**projectData)
             return True
         except Exception as e:
