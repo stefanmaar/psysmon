@@ -32,10 +32,8 @@ import logging
 import os
 import sys
 import thread
-import multiprocessing
 import subprocess
 import copy
-from psysmon.core.waveclient import PsysmonDbWaveClient
 from wx.lib.pubsub import Publisher as pub
 from wx import CallAfter
 from datetime import datetime
@@ -53,8 +51,8 @@ class Project:
 
     Attributes
     ----------
-    activeUser : String
-        The currently active user.
+    activeUser : :class:`~User' instance
+        The currently active user running the project.
 
     baseDir : String
         The project's base directory. The *projectDir* resides in this directory.
@@ -118,9 +116,10 @@ class Project:
     saved : Boolean
         Is the project saved?
 
-    user : List of Strings
+    user : List of :class:`~User` instances
         A list of users associated with the project.
         The user creating the project is always the admin user.
+
 
 
     '''
@@ -215,7 +214,7 @@ class Project:
         self.user = []
 
         # The currently active user.
-        self.activeUser = ""
+        self.activeUser = None
 
         # Add the user(s) to the project user list.
         if isinstance(user, list):
@@ -228,7 +227,7 @@ class Project:
         self.waveclient = {}
 
         # The default waveclient.
-        self.defaultWaveclient = 'earthworm localhost'
+        self.defaultWaveclient = 'main client'
 
         # The association of the SCNLs to the data sources (the waveclients).
         self.scnlDataSources = {}
