@@ -43,6 +43,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from psysmon.core.collectionExecutionControl import CecServer
+from obspy.core import UTCDateTime
 
 
 class Project:
@@ -54,10 +55,10 @@ class Project:
     activeUser : :class:`~User' instance
         The currently active user running the project.
 
-    baseDir : String
+    base_dir : String
         The project's base directory. The *projectDir* resides in this directory.
 
-    createTime : :class:`datetime.datetime`
+    createTime : :class:`obspy.core.UTCDateTime.UTCDateTime` instance
         The time when the project has been created.
 
     cur : 
@@ -113,6 +114,12 @@ class Project:
         The project file holding all project settings.
         It is saved in the projectDir folder.
 
+    rid : String
+        The resource identifier of the current project-user:
+        smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
+
+        It is used for QuakeML compatible resource identification.
+
     saved : Boolean
         Is the project saved?
 
@@ -120,39 +127,60 @@ class Project:
         A list of users associated with the project.
         The user creating the project is always the admin user.
 
+    waveclient : Dictionary of :class:`~psysmon.core.waveclient.WaveClient' instances
+        The waveclients available for the project. The key of the dictionary 
+        is the name of the waveclient.
 
-
+    defaultWaveclient : String
+        The name of the default waveclient. The default waveclient is used if 
+        no individual assignement of a SCNL data stream to a data source is 
+        available.
     '''
 
-    def __init__(self, psyBase, name, baseDir, user, 
+
+    def __init__(self, psybase, name, base_dir, user, 
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
-                 dbName="", dbVersion={}, createTime="", dbTables={}):
+                 dbName="", dbVersion={}, createTime=None, dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
 
         Parameters
         ----------
+        psybase : :class:`~psysmon.core.base.Base`
+            The related pSysmon base instance.
+
         name : String
             The name of the project.
-        baseDir : String
+
+        base_dir : String
             The base directory of the project.
-        user : String
+
+        user : :class:`~User` instance
             The admin user of the project.
+
         dbDialect : String
-            The database dialect to be used by sqlalchemy.
+            The database dialect to be used by sqlalchemy (default: mysql).
+
         dbDriver : String
-            The database driver to be used by sqlalchemy.
-        dbHost : String
-            The database host.
+            The database driver to be used by sqlalchemy (default: None).
+
+        dbHost : String 
+            The database host (default: localhost).
+
         dbName : String
-            The name of the database associated with the project.
+            The name of the database associated with the project (default: "").
+            
         dbVersion : Dictionary of Strings
             The database structure version used by the project. The name of 
-            the package is the key of the dictionary.
-        dbTableNames : Dictionary of Strings
+            the package is the key of the dictionary (default: {}).
+
+        createTime : :class:`~psysmon.core.UTCDateTime`
+            The time when the project has been created (default: UTCDateTime())
+
+        dbTables : Dictionary of Strings
             The database tablenames used by the project. The name of the table 
-            (without prefix) is the key of the dictionary.
+            (without prefix) is the key of the dictionary (default: {}).
         '''
 
         # The logger.
@@ -160,22 +188,22 @@ class Project:
         self.logger = logging.getLogger(loggerName)
 
         # The parent psysmon base.
-        self.psyBase = psyBase
+        self.psybase = psybase
 
         # The project name.
         self.name = name
 
         # The time when the project has been created.
         if not createTime:
-            self.createTime = datetime.utcnow()
+            self.createTime = UTCDateTime()
         else:
             self.createTime = createTime
 
         # The project's base directory. 
-        self.baseDir = baseDir
+        self.base_dir = base_dir
 
         # The project directory.
-        self.projectDir = os.path.join(self.baseDir, self.name)
+        self.projectDir = os.path.join(self.base_dir, self.name)
 
         # The database engine to be used.
         self.dbDialect = dbDialect
@@ -222,6 +250,8 @@ class Project:
         else:
             self.user.append(user)
 
+        self.setActiveUser(self.user[0].name)
+
 
         # The project's waveclients.
         self.waveclient = {}
@@ -241,7 +271,7 @@ class Project:
         # The following attributes can't be pickled and therefore have
         # to be removed.
         del result['logger']
-        result['psyBase'] = None
+        result['psybase'] = None
         #del result['dbEngine']
         #del result['dbSessionClass']
         #del result['dbBase']
@@ -270,6 +300,22 @@ class Project:
             self.logger = logging.getLogger(loggerName)
 
 
+    def get_rid(self):
+        ''' Get the resource id of the current project-user.
+
+        Returns
+        -------
+        rid : String
+            The resource id of the current project user:
+            smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
+        '''
+        project_uri = self.name.lower().replace(' ', '_')
+        return 'smi:' + self.activeUser.get_rid() + '/psysmon/' + project_uri
+
+    # Define an attribute usint the property function.
+    rid = property(get_rid)
+
+
     def getPlugins(self, name):
         ''' Get the available plugins for a specified class name.
 
@@ -291,7 +337,7 @@ class Project:
             name = (name,)
 
         for curName in name:
-            plugins.extend([curPlugin() for curPlugin in self.psyBase.packageMgr.plugins[curName]])
+            plugins.extend([curPlugin() for curPlugin in self.psybase.packageMgr.plugins[curName]])
         return plugins
 
 
@@ -307,8 +353,8 @@ class Project:
             selection = (selection, )
 
         for curKey in selection:
-            if curKey in self.psyBase.packageMgr.processingNodes.keys():
-                procNodes.extend([curNode() for curNode  in self.psyBase.packageMgr.processingNodes[curKey]])
+            if curKey in self.psybase.packageMgr.processingNodes.keys():
+                procNodes.extend([curNode() for curNode  in self.psybase.packageMgr.processingNodes[curKey]])
 
         return procNodes
 
@@ -378,7 +424,7 @@ class Project:
 
 
 
-    def connect2Db(self, passwd):
+    def connect2Db(self):
         '''Connect to the mySQL database.
 
         This method creates the database connection and the database cursor 
@@ -395,8 +441,8 @@ class Project:
         else:
             dialectString = self.dbDialect
 
-        if passwd:
-            engineString = dialectString + "://" + self.activeUser.name + ":" + passwd + "@" + self.dbHost + "/" + self.dbName
+        if self.activeUser.pwd:
+            engineString = dialectString + "://" + self.activeUser.name + ":" + self.activeUser.pwd + "@" + self.dbHost + "/" + self.dbName
         else:
             engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
@@ -418,15 +464,13 @@ class Project:
         return self.dbSessionClass()
 
 
-    def setActiveUser(self, userName, pwd):
+    def setActiveUser(self, userName):
         '''Set the active user of the project.
 
         Parameters
         ----------
         userName : String
-        The name of the user to activate.
-        pwd : String
-            The user's password.
+            The name of the user to activate.
 
         Returns
         -------
@@ -436,8 +480,7 @@ class Project:
         for curUser in self.user:
             if curUser.name == userName:
                 self.activeUser = curUser
-                self.activeUser.pwd = pwd
-                self.connect2Db(pwd)
+                #self.connect2Db(pwd)
                 return True
 
         return False
@@ -753,12 +796,17 @@ class User:
     of the :class:`User` class is created. The pSysmon users are managed within 
     the pSysmon :class:`Project`.
 
+    Each user holds a set of uniform resource identifier attributes (agency_uri, 
+    author_uri) which are used to build a resource identifier compatible to the 
+    QuakeML definition. The psysmon resource identifier is built the following 
+    way: smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
+
     Attributes
     ----------
-    activeCollection (:class:`~psysmon.core.base.Collection)`
+    activeCollection : :class:`~psysmon.core.base.Collection`
         The currently active collection of the user.
 
-    collection (Dictionary of :class:`~psysmon.core.base.Collection` instances)
+    collection : Dictionary of :class:`~psysmon.core.base.Collection` instances
         The collections created by the user.
 
         The collections are stored in a dictionary with the collection name as 
@@ -768,23 +816,54 @@ class User:
         The user mode (admin, editor).
 
     name : String
-        The user name.
+        The database user name.
+
+    pwd : String
+        The database password of the user.
+
+    author_name : String
+        The real name of the user.
+
+    author_uri : String
+        The uniform resource identifier of the author. 
+
+    agency_name : String
+        The name of the agency to which the user is affiliated to.
+
+    agency_uri : String
+        The uniform resource identifier of the author.
+
     '''
 
-    def __init__(self, user_name, user_mode, author_name, author_uri,
+    def __init__(self, user_name, user_pwd, user_mode, author_name, author_uri,
                  agency_name, agency_uri):
         '''The constructor.
 
         Parameters
         ----------
-        user : String
+        user_name : String
             The user name.
 
-        userMode : String
+        user_pwd : String
+            The database password of the user.
+
+        user_mode : String
             The user privileges. Currently allowed values are:
 
             - admin
             - editor
+
+        author_name : String
+            The real name of the user.
+
+        author_uri : String
+            The uniform resource identifier of the author.
+
+        agency_name : String
+            The name of the agency to which the author is affiliated to.
+
+        agency_uri : String
+            The uniform resource identifier of the agency.
         '''
 
         # The logger.
@@ -795,7 +874,7 @@ class User:
         self.name = user_name
 
         # The user's password.
-        self.pwd = None
+        self.pwd = user_pwd
 
         ## The user mode.
         #
@@ -813,7 +892,7 @@ class User:
         self.agency_name = agency_name
 
         # The URI of the agency.
-        self.agnecy_uri = agency_uri
+        self.agency_uri = agency_uri
 
         # The user collection.
         self.collection = {}
@@ -846,6 +925,16 @@ class User:
             loggerName = __name__ + "." + self.__class__.__name__
             self.logger = logging.getLogger(loggerName)
 
+
+    def get_rid(self):
+        ''' Get the resource id of the user.
+
+        Returns
+        -------
+        rid : String
+            The resource id of the user (agency_uri.author_uri).
+        '''
+        return self.agency_uri + '.' + self.author_uri
 
 
 
@@ -1122,7 +1211,7 @@ class User:
             db = shelve.open(filename, flag='n')
             db['project'] = project
             db['collection'] = col2Proc
-            db['packages'] = project.psyBase.packageMgr.packages
+            db['packages'] = project.psybase.packageMgr.packages
             db['waveclient'] = [(x.name, x.mode, x.options) for x in project.waveclient.itervalues()]
             db.close()
 
@@ -1149,7 +1238,6 @@ class User:
 
         else:
             raise PsysmonError('No active collection found!') 
-
 
 
 
