@@ -48,6 +48,12 @@ def create_dbtest_project(psybase):
     return project
 
 
+def clear_database(project):
+        project.connect2Db()
+        project.dbMetaData.reflect(project.dbEngine)
+        project.dbMetaData.drop_all()
+        project.dbMetaData.clear()
+
 
 
 def prepare_project(test_case):
