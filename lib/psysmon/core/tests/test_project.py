@@ -18,6 +18,10 @@ class ProjectTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print "In setUpClass...\n"
+        cls.psybase = create_psybase()
+        cls.db_project = create_dbtest_project(cls.psybase)
+
+
 
     @classmethod
     def tearDownClass(cls):
@@ -34,9 +38,6 @@ class ProjectTestCase(unittest.TestCase):
                          agency_uri = 'at.uot'
                         )
 
-        self.psybase = create_psybase()
-
-        self.dbtest_project = create_dbtest_project(self.psybase)
 
 
     def tearDown(self):
@@ -57,8 +58,9 @@ class ProjectTestCase(unittest.TestCase):
     def test_database_connection(self):
         ''' Test the connection to the database.
         '''
-        self.dbtest_project.connect2Db()
-        self.assertEquals(str(self.dbtest_project.dbEngine), 'Engine(mysql://unit_test@localhost/psysmon_unit_test)')
+        self.db_project.connect2Db()
+        self.assertEquals(str(self.db_project.dbEngine), 'Engine(mysql://unit_test@localhost/psysmon_unit_test)')
+
 
 
 def suite():
