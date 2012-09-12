@@ -9,7 +9,6 @@ The pSysmon Core
 .. autosummary::
    :toctree: autogen
 
-   psysmon.pSysmon
    psysmon.core.base
    psysmon.core.project
    psysmon.core.packageSystem
