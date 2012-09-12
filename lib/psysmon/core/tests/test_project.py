@@ -8,7 +8,8 @@ import unittest
 from psysmon.core.project import Project, User
 from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_dbtest_project
-
+import os
+import tempfile
 
 class ProjectTestCase(unittest.TestCase):
     """
@@ -20,12 +21,14 @@ class ProjectTestCase(unittest.TestCase):
         print "In setUpClass...\n"
         cls.psybase = create_psybase()
         cls.db_project = create_dbtest_project(cls.psybase)
-
+        cls.base_dir = tempfile.mkdtemp()
 
 
     @classmethod
     def tearDownClass(cls):
         print "....in tearDownClass.\n"
+        os.removedirs(cls.base_dir)
+
 
     def setUp(self):
         print "Preparing the user and the project.\n"
@@ -39,16 +42,16 @@ class ProjectTestCase(unittest.TestCase):
                         )
 
 
-
     def tearDown(self):
         pass
+
 
     def test_rid(self):
         ''' Test the resource identifier.
         '''
         project = Project(psybase = self.psybase,
                           name = 'Test Project',
-                          base_dir = '/home/test/psysmon_projects',
+                          base_dir = self.base_dir,
                           user = self.user
                          )
 
