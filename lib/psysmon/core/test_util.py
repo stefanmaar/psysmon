@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import copy
 import psysmon
 from psysmon.core.base import Base
@@ -26,7 +27,7 @@ def create_dbtest_project(psybase):
     ''' Create a new project with parameters set to access the unit_test test 
     database.
     '''
-    
+
     name = 'unit_test'
     base_dir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/03_pSysmonProjects'
     user = User(user_name = 'unit_test',
@@ -48,11 +49,29 @@ def create_dbtest_project(psybase):
     return project
 
 
-def clear_database(project):
-        project.connect2Db()
-        project.dbMetaData.reflect(project.dbEngine)
-        project.dbMetaData.drop_all()
-        project.dbMetaData.clear()
+def clear_project_database(project):
+    project.connect2Db()
+    project.dbMetaData.reflect(project.dbEngine)
+    project.dbMetaData.drop_all()
+    project.dbMetaData.clear()
+
+
+def clear_project_filestructure(project):
+    shutil.rmtree(project.base_dir)
+
+
+def clear_project(project_file, user_name, user_pwd):
+    pass
+    psybase = create_psybase()
+    userdata = {}
+    userdata['user'] = user_name
+    userdata['pwd'] = user_pwd
+    psybase.loadPsysmonProject(project_file, userdata)
+
+    clear_project_database(psybase.project)
+    clear_project_filestructure(psybase.project)
+
+
 
 
 
