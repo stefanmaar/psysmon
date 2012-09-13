@@ -226,11 +226,11 @@ class CollectionNode:
         self.project = None
 
         # Track some instance attribute changes.
-        if not "mode" in dir(self):
-            self.mode = self.type
+        #if not "mode" in dir(self):
+        #    self.mode = self.type
 
-        if not "options" in dir(self):
-            self.options = self.property
+        #if not "options" in dir(self):
+        #    self.options = self.property
 
 
     ## Set the name of the collection node package.
