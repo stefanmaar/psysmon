@@ -1029,9 +1029,7 @@ class InventoryXmlParser:
                                       beginTime,
                                       endTime)
                 else:
-                    msg =  "Sensor to add (%s-%s-%s) not found in inventory.\nSkipping this sensor." % (sensorContent['recorder_serial'], 
-                                                                                                        sensorContent['sensor_serial'], 
-                                                                                                        sensorContent['rec_channel_name']) 
+                    msg =  "Sensor to add with label '%s' not found in inventory.\nSkipping this sensor." % sensorContent['sensorUnitLabel'], 
                     warnings.warn(msg)
             else:
                 msg = "Not all required fields presents!\nMissing keys:\n"
