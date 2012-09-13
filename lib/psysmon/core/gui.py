@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -263,7 +264,10 @@ class PSysmonGui(wx.Frame):
             dlg = ProjectLoginDlg()
             dlg.ShowModal()
             userData = dlg.userData
-            projectLoaded = self.psyBase.loadPsysmonProject(path, userData)
+            projectLoaded = self.psyBase.loadPsysmonProject(path, 
+                                                            user_name = userData['user'],
+                                                            user_pwd = userData['pwd']
+                                                            )
             #userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
 
             if not projectLoaded:
@@ -1927,6 +1931,10 @@ class CreateNewProjectDlg(wx.Dialog):
                            size=size, 
                            style=wx.DEFAULT_DIALOG_STYLE)
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         self.psyBase = psyBase
 
         # Use standard button IDs.
@@ -1956,7 +1964,7 @@ class CreateNewProjectDlg(wx.Dialog):
 
         # Add the validators.
         self.edit['name'].SetValidator(NotEmptyValidator())         # Not empty.
-        self.edit['basedir'].SetValidator(NotEmptyValidator())         # Not empty.
+        self.edit['base_dir'].SetValidator(NotEmptyValidator())         # Not empty.
         self.edit['db_host'].SetValidator(NotEmptyValidator())        # Not empty.
         self.edit['user_name'].SetValidator(NotEmptyValidator())        # Not empty.
         self.edit['agency_uri'].SetValidator(NotEmptyValidator())        # Not empty.
@@ -1985,7 +1993,7 @@ class CreateNewProjectDlg(wx.Dialog):
 
         # Create the directory dialog.
         dlg = wx.DirDialog(self, message="Choose a directory:",
-                           defaultPath=self.edit['basedir'].GetValue(),
+                           defaultPath=self.edit['base_dir'].GetValue(),
                            style=wx.DD_DEFAULT_STYLE
                            #| wx.DD_DIR_MUST_EXIST
                            #| wx.DD_CHANGE_DIR
@@ -1993,7 +2001,7 @@ class CreateNewProjectDlg(wx.Dialog):
 
         # Get the selected directory
         if dlg.ShowModal() == wx.ID_OK:
-            self.edit['basedir'].SetValue(dlg.GetPath())
+            self.edit['base_dir'].SetValue(dlg.GetPath())
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
@@ -2002,7 +2010,7 @@ class CreateNewProjectDlg(wx.Dialog):
         isValid = self.Validate()
 
         if(isValid):
-            keys_2_pass = ['name', 'basedir', 'db_host', 'user_name', 'user_pwd',
+            keys_2_pass = ['name', 'base_dir', 'db_host', 'user_name', 'user_pwd',
                            'author_name', 'author_uri', 'agency_name', 'agency_uri']
             projectData = {};
             for _, curKey, _, _, _, _ in self.dialogData():
@@ -2019,7 +2027,7 @@ class CreateNewProjectDlg(wx.Dialog):
 
     def dialogData(self):
         return(("name:", "name", wx.TE_RIGHT, False, "", 'edit'),
-               ("base directory:", "basedir", wx.TE_LEFT, True, self.onBaseDirBrowse, 'edit'),
+               ("base directory:", "base_dir", wx.TE_LEFT, True, self.onBaseDirBrowse, 'edit'),
                ("database host:", "db_host", wx.TE_RIGHT, False, "", 'edit'),
                ("username:", "user_name", wx.TE_RIGHT, False, "", 'edit'),
                ("user pwd:", "user_pwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, "", 'edit'),
@@ -2074,6 +2082,7 @@ class CreateNewProjectDlg(wx.Dialog):
     def createProject(self, projectData):
 
         try:
+            ipdb.set_trace() ############################## Breakpoint ##############################
             self.psyBase.createPsysmonProject(**projectData)
             return True
         except Exception as e:

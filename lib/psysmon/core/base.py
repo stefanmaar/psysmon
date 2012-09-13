@@ -178,7 +178,7 @@ class Base:
             conn.close()
 
 
-    def createPsysmonProject(self, name, basedir, db_host, user_name, user_pwd,
+    def createPsysmonProject(self, name, base_dir, db_host, user_name, user_pwd,
                              author_name, author_uri, agency_name, agency_uri):
         '''Create a pSysmon project.
 
@@ -222,6 +222,7 @@ class Base:
         # Create the admin user for the project.
         admin_user = psysmon.core.project.User(user_name = user_name, 
                                                user_mode = 'admin',
+                                               user_pwd = user_pwd,
                                                author_name = author_name,
                                                author_uri = author_uri,
                                                agency_name = agency_name,
@@ -229,24 +230,23 @@ class Base:
                                               )
 
         # Create the project instance.
-        self.project = psysmon.core.project.Project(psyBase = self,
+        self.project = psysmon.core.project.Project(psybase = self,
                                                     name = name,
                                                     user = admin_user,
-                                                    baseDir = basedir,
+                                                    base_dir = base_dir,
                                                     dbHost = db_host)
 
         # When creating a project, set the active user to the user creating 
         # the project (which is the *admin* user).
         self.project.activeUser = self.project.user[0]
         try:
-            self.project.connect2Db(user_pwd)    # Connect to the database.
+            self.project.connect2Db() 
         except Exception as e:
             msg = "Can't connect to the database.\n The database returned the following message:\n%s" % e
             raise PsysmonError(msg)     # If the connection fails, don't go on with the project creation.
 
         self.project.createDirectoryStructure()
         self.project.createDatabaseStructure(self.packageMgr.packages)
-        self.project.setActiveUser(user_name, user_pwd)               # Set the active user again to run all remaining project initialization methods.
 
         # By default add a psysmon Database waveclient with the name 'main
         # client'.
@@ -259,7 +259,7 @@ class Base:
         return True
 
 
-    def loadPsysmonProject(self, filename, userData):
+    def loadPsysmonProject(self, filename, user_name, user_pwd):
         '''
         Load a psysmon project.
 
@@ -273,9 +273,9 @@ class Base:
         '''
         db = shelve.open(filename)
         projectDir = os.path.dirname(filename)
-        self.project = psysmon.core.project.Project(psyBase = self,
+        self.project = psysmon.core.project.Project(psybase = self,
                                                     name = db['name'],
-                                                    baseDir=os.path.dirname(projectDir),
+                                                    base_dir=os.path.dirname(projectDir),
                                                     user=db['user'],
                                                     dbHost = db['dbHost'],
                                                     dbName = db['dbName'],
@@ -290,7 +290,7 @@ class Base:
         waveclients2Add = db['waveclient']
         db.close()
 
-        userSet = self.project.setActiveUser(userData['user'], userData['pwd'])
+        userSet = self.project.setActiveUser(user_name, user_pwd = user_pwd)
         if not userSet:
             self.project = None
             return False
