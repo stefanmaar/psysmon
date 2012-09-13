@@ -21,6 +21,10 @@ class EventExample(CollectionNode):
     category = 'Example'
     tags = ['stable', 'example']
 
+    def __init__(self):
+        CollectionNode.__init__(self)
+        self.options = {}
+
     def edit(self):
         msg = "Editing the node %s." % self.name
 
