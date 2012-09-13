@@ -72,6 +72,63 @@ class WaveClient:
         # and the option values as the value.
         self.options = {}
 
+        # The available data of the waveclient. This includes the
+        # currently displayed time period and the preloaded data in
+        # front and behind the time period.
+        self.stock = Stream()
+
+
+    def get_from_stock(self, network, station, location, channel, start_time, end_time):
+        ''' Get the data of the specified scnl from the stock data.
+        
+        Parameters
+        ----------
+        network : String
+            The network name.
+
+        station : String
+            The station name.
+
+        location : String
+            The location specifier.
+
+        channel : String
+            The channel name.
+
+        startTime : UTCDateTime
+            The begin datetime of the data to fetch.
+
+        endTime : UTCDateTime
+            The end datetime of the data to fetch.
+
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
+        
+        '''
+        if location == '--':
+            location = None
+
+        curStream = self.stock.select(station = station,
+                                      channel = channel,
+                                      network = network,
+                                      location = location)
+        curStream = curStream.copy()
+        curStream.trim(starttime = start_time, 
+                       endtime = end_time)
+
+        return curStream
+
+                                       
+    def add_to_stock(self, stream):
+        ''' Add the passed stream to the stock data.
+
+        '''
+        self.stock += stream
+        self.stock.merge(stream)
+
+
 
     def getWaveform(self, 
                     startTime,
@@ -291,6 +348,7 @@ class EarthwormWaveclient(WaveClient):
                              self.options['port'], 
                              timeout=2)
 
+
     def getWaveform(self,
                     startTime,
                     endTime, 
@@ -337,19 +395,71 @@ class EarthwormWaveclient(WaveClient):
             curNetwork = curScnl[2]
             curLocation = curScnl[3]
 
-            try:
-                self.logger.debug('Before getWaveform....')
-                curStream = self.client.getWaveform(curNetwork,
-                                                    curStation,
-                                                    curLocation,
-                                                    curChannel,
-                                                    startTime,
-                                                    endTime)
-                self.logger.debug('got waveform: %s', curStream)
+            stock_stream = self.get_from_stock(station = curStation,
+                                               channel = curChannel,
+                                               network = curNetwork,
+                                               location = curLocation,
+                                               start_time = startTime,
+                                               end_time = endTime)
+
+            if len(stock_stream) > 0:
+                cur_trace = stock_stream.traces[0]
+                cur_start_time = cur_trace.stats.starttime
+                cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                
+                stream += stock_stream
+
+                if startTime < cur_start_time:
+                    curStream = self.request_from_server(station = curStation,
+                                                         channel = curChannel,
+                                                         network = curNetwork,
+                                                         location = curLocation,
+                                                         start_time = startTime,
+                                                         end_time = cur_start_time)
+                    stream += curStream
+
+                if cur_end_time < endTime:
+                    curStream = self.request_from_server(station = curStation,
+                                                         channel = curChannel,
+                                                         network = curNetwork,
+                                                         location = curLocation,
+                                                         start_time = cur_end_time,
+                                                         end_time = endTime)
+                    stream += curStream
+                    
+            else:
+                curStream = self.request_from_server(station = curStation,
+                                                     channel = curChannel,
+                                                     network = curNetwork,
+                                                     location = curLocation,
+                                                     start_time = startTime,
+                                                     end_time = endTime)
                 stream += curStream
-                self.logger.debug('leave try')
-            except:
-                self.logger.debug("Error connecting to waveserver.")
+                                        
+            stream.merge()
+
+        self.add_to_stock(stream)
 
         return stream
+
+
+    def request_from_server(self, station, network, channel, location, start_time, end_time):
+
+        stream = Stream()
+
+        try:
+            self.logger.debug('Before getWaveform....')
+            stream = self.client.getWaveform(network,
+                                             station,
+                                             location,
+                                             channel,
+                                             start_time,
+                                             end_time)
+            self.logger.debug('got waveform: %s', stream)
+            self.logger.debug('leave try')
+        except:
+            self.logger.debug("Error connecting to waveserver.")
+
+        return stream
+
 
