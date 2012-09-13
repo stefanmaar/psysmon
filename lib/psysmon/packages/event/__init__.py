@@ -40,46 +40,9 @@ def databaseFactory(base):
     tables = []
 
     ###########################################################################
-    # AUTHOR_INFO table mapper class
-    class QmlAuthorInfo(base):
-        __tablename__ = 'qml_author_info'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
-
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
-        agency_id = Column(String(64), nullable = True)
-        agency_uri = Column(String(255), nullable = True)
-        author = Column(String(128), nullable = True)
-        author_uri = Column(String(255), nullable = True)
-
-
-    tables.append(QmlAuthorInfo)
-
-
-    ###########################################################################
-    # COMMENT table mapper class
-    class QmlComment(base):
-        __tablename__ = 'qml_comment'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
-
-        id = Column(Integer(10), primary_key = True, autoincrement = True)
-        parent_rid = Column(String(255), nullable = False)
-        author_info_id = Column(Integer(10),
-                                ForeignKey('qml_author_info.id',
-                                           onupdate = 'cascade',
-                                           ondelete = 'set null'),
-                                nullable = True)
-        text = Column(Text, nullable = True)
-        resource_id = Column(String(255), nullable = True)
-        creation_time = Column(DateTime(), nullable = True)
-        version = Column(String(30), nullable = True)
-
-    tables.append(QmlComment)
-
-
-    ###########################################################################
-    # EVENT_PARAMETERS table mapper class
-    class QmlEventParameters(base):
-        __tablename__  = 'qml_event_parameters'
+    # EVENT_SET table mapper class
+    class EventSetDb(base):
+        __tablename__  = 'event_set'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer(10), primary_key = True, autoincrement = True)
@@ -89,18 +52,18 @@ def databaseFactory(base):
         version = Column(String(30), nullable = True)
         UniqueConstraint('public_id')
 
-    tables.append(QmlEventParameters)
+    tables.append(EventSetDb)
 
 
     ###########################################################################
-    # EVENT_PARAMETERS table mapper class
-    class QmlEvent(base):
-        __tablename__  = 'qml_event'
+    # EVENT table mapper class
+    class EventDb(base):
+        __tablename__  = 'event'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer(10), primary_key = True, autoincrement = True)
         ev_param_id = Column(Integer(10), 
-                             ForeignKey('qml_event_parameters.id',
+                             ForeignKey('event_set.id',
                                         onupdate = 'cascade', 
                                         ondelete = 'set null'),
                              nullable = True)
@@ -114,13 +77,13 @@ def databaseFactory(base):
         version = Column(String(30), nullable = True)
         UniqueConstraint('public_id')
 
-    tables.append(QmlEvent)
+    tables.append(EventDb)
 
 
     ###########################################################################
     # DETECTION table mapper class
-    class QmlDetection(base):
-        __tablename__  = 'qml_detection'
+    class DetectionDb(base):
+        __tablename__  = 'detection'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer(10), primary_key = True, autoincrement = True)
@@ -136,7 +99,7 @@ def databaseFactory(base):
         version = Column(String(30), nullable = True)
         UniqueConstraint('public_id')
 
-    tables.append(QmlEvent)
+    tables.append(DetectionDb)
 
 
     return tables
