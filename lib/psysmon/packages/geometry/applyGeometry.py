@@ -40,6 +40,10 @@ class ApplyGeometry(CollectionNode):
     tags = ['stable']
 
 
+    def __init__(self):
+        CollectionNode.__init__(self)
+        self.options = {}
+
     ## The edit method.
     #
     # The EditGeometry node is an uneditable node - ignore the edit method.

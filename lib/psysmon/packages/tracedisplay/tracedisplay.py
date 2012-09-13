@@ -192,6 +192,11 @@ class TraceDisplay(CollectionNode):
     category = 'Display'
     tags = ['development']
 
+
+    def __init__(self):
+        CollectionNode.__init__(self)
+        self.options = {}
+
     def edit(self):
         pass
 

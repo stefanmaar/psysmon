@@ -61,6 +61,10 @@ class EditGeometry(CollectionNode):
     category = 'Geometry'
     tags = ['stable']
 
+    def __init__(self):
+        CollectionNode.__init__(self)
+        self.options = {}
+
     def edit(self):
         '''
         The edit method.

@@ -17,9 +17,12 @@ class ImportWaveform(CollectionNode):
     mode = 'editable'
     category = 'Data Import'
     tags = ['stable']
-    options = {}
-    options['inputFiles'] = []                     # The files to import.
-    options['lastDir'] = ""                        # The last used directory.
+
+    def __init__(self):
+        CollectionNode.__init__(self)
+        self.options = {}
+        self.options['inputFiles'] = []                     # The files to import.
+        self.options['lastDir'] = ""                        # The last used directory.
 
     def edit(self):
         dlg = ImportWaveformEditDlg(self, self.project, None)
