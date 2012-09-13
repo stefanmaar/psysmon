@@ -373,10 +373,15 @@ class SeismogramPlotter(AddonPlugin):
         for curChannel in channels:
             curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
             if stream:
+                if curChannel.parent.location == '--':
+                    cur_location = None
+                else:
+                    cur_location = curChannel.parent.location
+
                 curStream = stream.select(station = curChannel.parent.name,
                                          channel = curChannel.name,
                                          network = curChannel.parent.network,
-                                         location = curChannel.parent.location)
+                                         location = cur_location)
             else:
                 curStream = None
 
