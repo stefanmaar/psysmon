@@ -622,15 +622,13 @@ class TraceDisplayDlg(wx.Frame):
 
         if self.dataManager.origStream:
             # TODO: Apply the processing stack before plotting the data.
-            self.dataManager.processStream(stack = None)
+            self.dataManager.processStream()
 
 
         # Plot the data using the addon tools.
         addonPlugins = [x for x in self.plugins if x.mode == 'addon' and x.active]
         for curPlugin in addonPlugins:
             curPlugin.plot(self.displayManager, self.dataManager)
-         
-
 
 
         # Update the viewport to show the changes.
@@ -747,7 +745,7 @@ class DisplayManager:
 
         # The channels currently shown.
         # TODO: This should be selected by the user in the edit dialog.
-        self.showChannels = ['HHZ']
+        self.showChannels = ['BHZ']
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
@@ -871,9 +869,9 @@ class DisplayManager:
         snl : tuple (String, String, String)
             The station, network, location code of the station which should be hidden.
         '''
-        
+
         addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
-        
+
         # Get the selected station and set all currently active
         # channels.
         station2Show = self.getAvailableStation(snl)
@@ -882,7 +880,7 @@ class DisplayManager:
         for curChannel in station2Show.channels:
             for curPlugin in addonPlugins:
                 curChannel.addView(curPlugin.name, curPlugin.getViewClass())
-        
+
         # Create the necessary containers.
         stationContainer = self.createStationContainer(station2Show)
         for curChannel in station2Show.channels:
@@ -917,7 +915,7 @@ class DisplayManager:
             curPlugin.plotStation(displayManager = self.parent.displayManager,
                            dataManager = self.parent.dataManager,
                            station = [station2Show,])
-        
+
 
 
     def showChannel(self, channel):
@@ -1201,7 +1199,7 @@ class DisplayStation():
             for curChannel in self.channels:
                 if curChannel.name == curName:
                     break
-            
+
             if curChannel:
                 self.channels.remove(curChannel)
                 removedSCNL.append((self.name, curChannel.name, self.network, self.location))
@@ -1272,9 +1270,9 @@ class DataManager():
         #self.waveclient = self.project.waveclient['main client']
         #self.waveclient = self.project.waveclient['earthworm']
 
-        self.origStream = None
+        self.origStream = Stream()
 
-        self.procStream = None
+        self.procStream = Stream()
 
         self.processingStack = ProcessingStack('my stack',
                                                 self.project,
