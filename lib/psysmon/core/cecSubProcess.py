@@ -83,9 +83,10 @@ if __name__ == "__main__":
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
     psyBase = psybase.Base(psyBaseDir)
+    psyBase.project = project
 
     # Reinitialize the project.
-    project.connect2Db(project.activeUser.pwd)
+    project.connect2Db()
     project.loadDatabaseStructure(packages)
 
     for curName, curMode, curOptions in waveclients:
@@ -102,9 +103,8 @@ if __name__ == "__main__":
     collection.setNodeProject(project) 
     collection.createNodeLoggers()
 
-    project.psyBase = psyBase
-
-    logger.debug('psyBase: %s', project.psyBase)
+    project.psybase = psyBase
+    logger.debug('psyBase: %s', project.psybase)
 
     collection.setDataShelfFile(filename)
     collection.execute()
