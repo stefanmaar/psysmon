@@ -170,7 +170,7 @@ class Project:
 
         dbName : String
             The name of the database associated with the project (default: "").
-            
+
         dbVersion : Dictionary of Strings
             The database structure version used by the project. The name of 
             the package is the key of the dictionary (default: {}).
@@ -222,6 +222,9 @@ class Project:
 
         # A dictionary of the project databaser table names.
         self.dbTables = dbTables
+
+        # The sqlAlchemy database base instance.
+        self.dbBase = None
 
         # The sqlAlchemy database session.
         self.dbSessionClass = None
@@ -464,7 +467,7 @@ class Project:
         return self.dbSessionClass()
 
 
-    def setActiveUser(self, userName):
+    def setActiveUser(self, user_name, user_pwd = None):
         '''Set the active user of the project.
 
         Parameters
@@ -478,7 +481,9 @@ class Project:
             Has the user been created successfully?
         '''
         for curUser in self.user:
-            if curUser.name == userName:
+            if curUser.name == user_name:
+                if user_pwd is not None: 
+                    curUser.pwd = user_pwd
                 self.activeUser = curUser
                 #self.connect2Db(pwd)
                 return True
@@ -564,18 +569,21 @@ class Project:
         During pSysmon startup, from each package the databaseFactory method 
         is saved in the databaseFactory attribute of the 
         :class:`~psysmon.core.packageSystem.Package` instance. 
-        
+
         The loadDatabaseStructure iterates over all packages and checks for 
         existing databaseFactory methods. If present, they are executed to 
         retrieve the mapping classes. These classes are saved in the dbTables 
         attribute and can be used by everyone to access the database tables.
-        
+
         Parameters
         ----------
         packages : Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
             The packages to be used for the database structure creation.
             The key of the dictionary is the package name.
         '''
+
+        if not self.dbBase:
+            self.connect2Db()
 
         for _, curPkg in packages.iteritems():
             if not curPkg.databaseFactory:
