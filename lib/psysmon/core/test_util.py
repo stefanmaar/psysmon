@@ -49,27 +49,26 @@ def create_dbtest_project(psybase):
     return project
 
 
-def clear_project_database(project):
+def drop_project_database_tables(project):
     project.connect2Db()
     project.dbMetaData.reflect(project.dbEngine)
-    project.dbMetaData.drop_all()
-    project.dbMetaData.clear()
+    tables_to_remove = [table for key, table in project.dbMetaData.tables.items() if key.startswith(project.name)]
+    project.dbMetaData.drop_all(tables = tables_to_remove)
 
 
-def clear_project_filestructure(project):
-    shutil.rmtree(project.base_dir)
+def remove_project_filestructure(project):
+    shutil.rmtree(project.projectDir)
 
 
-def clear_project(project_file, user_name, user_pwd):
-    pass
+def remove_project(project_file, user_name, user_pwd):
     psybase = create_psybase()
     userdata = {}
     userdata['user'] = user_name
     userdata['pwd'] = user_pwd
-    psybase.loadPsysmonProject(project_file, userdata)
+    psybase.loadPsysmonProject(project_file, user_name, user_pwd)
 
-    clear_project_database(psybase.project)
-    clear_project_filestructure(psybase.project)
+    drop_project_database_tables(psybase.project)
+    remove_project_filestructure(psybase.project)
 
 
 
