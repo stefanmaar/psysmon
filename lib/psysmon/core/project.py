@@ -1159,6 +1159,11 @@ class User:
 
                 sleep(checkInterval)
 
+
+                # Here is some code using the pipe and the heartbeat of the 
+                # collection. I think this caused some unexpected crashes of 
+                # the GUI. Might be some event loop race conditions.
+
                 #if parentEnd.poll(checkInterval):
                     #msg = parentEnd.recv()
                     ##print msg
@@ -1225,9 +1230,9 @@ class User:
 
             # Start the collection using the cecClient as a subprocess.
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
-                                    stdout=subprocess.PIPE)
-            #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
+            #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
+            #                        stdout=subprocess.PIPE)
+            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
 
             msgTopic = "state.collection.execution"
             msg = {}
