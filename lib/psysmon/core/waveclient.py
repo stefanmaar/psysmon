@@ -241,12 +241,90 @@ class PsysmonDbWaveClient(WaveClient):
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
+        self.logger.debug("Getting the waveform...")
+        
 
-        self.logger.debug("Querying...")
+        stream = Stream()
 
-        self.logger.debug('startTime: %s', startTime)
-        self.logger.debug('endTime: %s', endTime)
+        # Filter the SCNL selections.
+        if scnl:
+            for stat, chan, net, loc in scnl:
+                # TODO: Check if the data is already available in the trunk.
+                stock_stream = self.get_from_stock(station = stat,
+                                                   channel = chan,
+                                                   network = net,
+                                                   location = loc,
+                                                   start_time = startTime,
+                                                   end_time = endTime)
 
+                if len(stock_stream) > 0:
+                    self.logger.debug('Found data in stock....\n%s', stock_stream.traces[0])
+                    cur_trace = stock_stream.traces[0]
+                    cur_start_time = cur_trace.stats.starttime
+                    cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                    
+                    stream += stock_stream
+
+                    if (startTime - cur_start_time) > 1/cur_trace.stats.sampling_rate:
+                        self.logger.debug('Get missing data in front...')
+                        curStream = self.load_from_file(station = stat,
+                                                        channel = chan,
+                                                        network = net,
+                                                        location = loc,
+                                                        start_time = startTime,
+                                                        end_time = cur_start_time)
+                        stream += curStream
+
+                    if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
+                        self.logger.debug('Get missing data in back...')
+                        print endTime - cur_end_time
+                        curStream = self.load_from_file(station = stat,
+                                                        channel = chan,
+                                                        network = net,
+                                                        location = loc,
+                                                        start_time = cur_end_time,
+                                                        end_time = endTime)
+                        stream += curStream
+                    
+                else:
+                    self.logger.debug('No stock data available...')
+                    curStream = self.load_from_file(station = stat,
+                                                    channel = chan,
+                                                    network = net,
+                                                    location = loc,
+                                                    start_time = startTime,
+                                                    end_time = endTime)
+                    
+                    stream += curStream
+                
+                stream.merge()
+
+        self.add_to_stock(stream)
+
+        self.logger.debug("....finished getting the waveform.")
+
+        return stream
+
+
+
+    def load_from_file(self, station, channel, network, location, start_time, end_time):
+        ''' Load the data from file.
+
+        Select all files containing data from the database.
+        Load the data of the given time priod from the files and add it 
+        to a stream which is returned.
+
+        Attributes
+        ----------
+
+
+        Returns
+        -------
+        stream : :class:`~obspy.core.Stream`
+            The data of the specified SCNL and time period loaded from the files.
+        '''
+        stream = Stream()
+        
         # Create the standard query.
         query = self.dbSession.query(self.traceheader.file_type,
                                      self.traceheader.filename, 
@@ -260,48 +338,41 @@ class PsysmonDbWaveClient(WaveClient):
                                       self.waveformDirAlias.user == self.project.activeUser.name)
 
         # Add the startTime filter option.
-        if startTime:
-            query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > startTime.getTimeStamp())
+        if start_time:
+            query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.getTimeStamp())
 
         # Add the endTime filter option.
-        if endTime:
-            query = query.filter(self.traceheader.begin_time < endTime.getTimeStamp())
+        if end_time:
+            query = query.filter(self.traceheader.begin_time < end_time.getTimeStamp())
 
         # Add the linkage between geometry ids.
         query = query.filter(self.traceheader.station_id == self.geomStation.id,
                              self.traceheader.sensor_id == self.geomSensor.id)
+        curQuery = query.filter(self.geomStation.name == station, 
+                                self.geomSensor.channel_name == channel,
+                                self.geomStation.net_name == network,
+                                self.geomStation.location == location)
 
-        stream = Stream()
+        # The sql query is issued in the for loop.
+        for curHeader in curQuery:
+            filename = os.path.join(curHeader.alias, curHeader.filename)
+            self.logger.debug("Loading file: %s", filename)
+            curStream = read(pathname_or_url = filename,
+                             format = curHeader.file_type,
+                             starttime = start_time,
+                             endtime = end_time)
 
-        # Filter the SCNL selections.
-        if scnl:
-            for stat, chan, net, loc in scnl:
-                curQuery = query.filter(self.geomStation.name == stat, 
-                                        self.geomSensor.channel_name == chan,
-                                        self.geomStation.net_name == net,
-                                        self.geomStation.location == loc)
-                for curHeader in curQuery:
-                    filename = os.path.join(curHeader.alias, curHeader.filename)
-                    self.logger.debug("Loading file: %s", filename)
-                    curStream = read(pathname_or_url = filename,
-                                     format = curHeader.file_type,
-                                     starttime = startTime,
-                                     endtime = endTime)
+            if not curStream:
+                continue
 
-                    if not curStream:
-                        continue
+            # Change the header values to the one loaded from the database.
+            for curTrace in curStream:
+                curTrace.stats.network = curHeader.net_name
+                curTrace.stats.station = curHeader.name
+                curTrace.stats.location = curHeader.location
+                curTrace.stats.channel = curHeader.channel_name
 
-                    # Change the header values to the one loaded from the database.
-                    for curTrace in curStream:
-                        curTrace.stats.network = curHeader.net_name
-                        curTrace.stats.station = curHeader.name
-                        curTrace.stats.location = curHeader.location
-                        curTrace.stats.channel = curHeader.channel_name
-
-                    stream += curStream
-
-
-        self.logger.debug("....finished.")
+            stream += curStream
 
         return stream
 
