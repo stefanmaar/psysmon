@@ -6,8 +6,8 @@ Created on May 17, 2011
 
 import unittest
 from psysmon.core.test_util import create_psybase
-from psysmon.core.test_util import clear_project_filestructure
-from psysmon.core.test_util import clear_project_database
+from psysmon.core.test_util import remove_project_filestructure
+from psysmon.core.test_util import drop_project_database_tables
 import tempfile
 import os
 
@@ -53,8 +53,8 @@ class ProjectTestCase(unittest.TestCase):
         self.psybase.createPsysmonProject(name, base_dir, db_host, user_name, user_pwd, 
                                           author_name, author_uri, agency_name, agency_uri)
 
-        clear_project_database(self.psybase.project)
-        clear_project_filestructure(self.psybase.project)
+        drop_project_database_tables(self.psybase.project)
+        remove_project_filestructure(self.psybase.project)
         self.psybase.closePsysmonProject()
 
 
@@ -83,14 +83,9 @@ class ProjectTestCase(unittest.TestCase):
 
         self.psybase.loadPsysmonProject(project_file, user_name, user_pwd)
 
-        clear_project_database(self.psybase.project)
-        clear_project_filestructure(self.psybase.project)
+        drop_project_database_tables(self.psybase.project)
+        remove_project_filestructure(self.psybase.project)
         self.psybase.closePsysmonProject()
-
-
-
-
-
 
 
 def suite():

@@ -31,7 +31,7 @@ This includes the file structure and the database tables.
 '''
 
 import sys
-from psysmon.core.test_util import clear_project
+from psysmon.core.test_util import remove_project
 
 def run():
     if len(sys.argv) <= 2:
@@ -46,7 +46,7 @@ def run():
     else:
         user_pwd = ''
 
-    clear_project(project_file, user_name, user_pwd)
+    remove_project(project_file, user_name, user_pwd)
 
 
 if __name__ == '__main__':
