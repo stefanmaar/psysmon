@@ -435,40 +435,24 @@ class SeismogramView(View):
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray / trace.stats.sampling_rate
             timeArray = timeArray + trace.stats.starttime.timestamp
-            stop = time.clock()
-            self.logger.debug('Prepared data (%.5fs)', stop - start)
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(trace.data):
                 timeArray = np.ma.array(timeArray, mask=trace.data.mask)
 
-
             self.t0 = trace.stats.starttime
-
-            start = time.clock()
-            print trace.stats.npts
-            print timeArray.shape
-            print trace.data.shape
+            
             if not self.line:
                 self.line, = self.dataAxes.plot(timeArray, trace.data, color = color)
             else:
-                self.logger.debug('Updating line %s', self.line)
                 self.line.set_xdata(timeArray)
                 self.line.set_ydata(trace.data)
-            stop = time.clock()
-            self.logger.debug('Plotted data (%.5fs)', stop -start)
 
-            start = time.clock()
             self.dataAxes.set_frame_on(False)
             self.dataAxes.get_xaxis().set_visible(False)
             self.dataAxes.get_yaxis().set_visible(False)
             yLim = np.max(np.abs(trace.data))
-            self.logger.debug('ylim: %f', yLim)
             self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
-            stop = time.clock()
-            self.logger.debug('Adjusted axes look (%.5fs)', stop - start)
-
-            self.logger.debug('time limits: %f, %f', timeArray[0], timeArray[-1])
 
         # Add the scale bar.
         scaleLength = 10
@@ -495,7 +479,7 @@ class SeismogramView(View):
     def setXLimits(self, left, right):
         ''' Set the limits of the x-axes.
         '''
-        self.logger.debug('Set limits: %f, %f', left, right)
+        #self.logger.debug('Set limits: %f, %f', left, right)
         self.dataAxes.set_xlim(left = left, right = right)
 
         # Adjust the scale bar.
