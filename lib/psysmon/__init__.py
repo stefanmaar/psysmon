@@ -74,7 +74,7 @@ def getLoggerFileHandler(filename=None):
         return
     ch = logging.FileHandler(filename)
     ch.setLevel(logConfig['level'])
-    formatter = logging.Formatter("#LOG# - %(asctime)s - %(process)d - %(levelname)s - %(name)s: %(message)s")
+    formatter = logging.Formatter("#LOG# - %(asctime)s - %(levelname)s - %(name)s: %(message)s")
     ch.setFormatter(formatter)
 
     return ch
