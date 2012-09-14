@@ -1188,7 +1188,6 @@ class User:
                 project.threadMutex = thread.allocate_lock()
 
             col2Proc = copy.deepcopy(self.activeCollection)
-            #col2Proc.setNodeProject(project)     # Reset the project of the nodes. This has been cleared by the setstate method.
             curTime = datetime.now()
             timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
             processName = col2Proc.name + "_" + timeStampString
@@ -1226,12 +1225,9 @@ class User:
 
             # Start the collection using the cecClient as a subprocess.
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
-            #proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
-            #                        executable=sys.executable, 
-            #                        stdout=subprocess.PIPE)
-            #proc = subprocess.Popen(['PSYSMON-SUBPROCESS', os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
-            #                        executable=sys.executable)
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
+            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
+                                    stdout=subprocess.PIPE)
+            #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
 
             msgTopic = "state.collection.execution"
             msg = {}
@@ -1242,7 +1238,7 @@ class User:
             msg['procName'] = col2Proc.procName
             pub.sendMessage(msgTopic, msg)
 
-            #thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+            thread.start_new_thread(processChecker, (proc, col2Proc.procName))
 
         else:
             raise PsysmonError('No active collection found!') 
