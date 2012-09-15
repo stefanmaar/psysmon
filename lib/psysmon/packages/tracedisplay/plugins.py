@@ -429,8 +429,6 @@ class SeismogramView(View):
 
     def plot(self, stream, color):
 
-        start = time.clock()
-
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray / trace.stats.sampling_rate
@@ -441,7 +439,7 @@ class SeismogramView(View):
                 timeArray = np.ma.array(timeArray, mask=trace.data.mask)
 
             self.t0 = trace.stats.starttime
-            
+
             if not self.line:
                 self.line, = self.dataAxes.plot(timeArray, trace.data, color = color)
             else:
@@ -683,7 +681,7 @@ class DemoPlotter(AddonPlugin):
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
-                                     location = curChannel.parent.location)
+                                     location = curChannel.parent.obspy_location)
 
             if curStream:
                 #lineColor = [x/255.0 for x in curChannel.container.color]
@@ -844,7 +842,7 @@ class SpectrogramPlotter(AddonPlugin):
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
-                                     location = curChannel.parent.location)
+                                     location = curChannel.parent.obspy_location)
 
             if curStream:
                 #lineColor = [x/255.0 for x in curChannel.container.color]
