@@ -265,6 +265,10 @@ class Project:
         # The association of the SCNLs to the data sources (the waveclients).
         self.scnlDataSources = {}
 
+        # The project preferences.
+        self.pref = ProjectPreferences()
+
+
     ## The __getstate__ method.
     #
     # Remove the project instance before pickling the instance.
@@ -791,6 +795,30 @@ class Project:
         # get a free port from the OS.
         self.cecServer = CecServer(0, self, packages);
         self.logger.info("CEC-Server port: %d", self.cecServer.port)
+
+
+
+
+class ProjectPreferences:
+    ''' The preferences of the project.
+
+    '''
+
+    def __init__(self):
+        ''' The constructor.
+
+        '''
+        # The pages (categories) of the project preferences.
+        self.pages = {}
+
+        # The logging verbose level.
+        log_messages = {}
+        log_messages['verbose'] = 'DEBUG'
+        log_messages['verbose_levels'] = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
+        self.pages['Logging'] = log_messages
+
+
+
 
 
 ## The pSysmon user.
