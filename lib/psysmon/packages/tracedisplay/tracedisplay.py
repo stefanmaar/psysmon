@@ -1161,7 +1161,7 @@ class DisplayManager:
 
             channelContainer.addView(viewContainer)
             channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-        
+
         return viewContainer
 
 
@@ -1174,21 +1174,63 @@ class DisplayManager:
 
 
 class DisplayStation():
+    ''' Handling the stations used in tracedisplay.
+
+    Attributes
+    ----------
+    station : 'class':`~psysmon.packages.geometry.inventory.Station`
+        The parent inventory station.
+    name : String
+        The name of the station.
+    network : String
+        The name of the network code.
+    location : String
+        The location identifier of the station ('--', '00', '01', ...)
+    obspy_location : String
+        The location identifier of the station (None, '00', '01', ...) in obspy 
+        style. The '--' location string is translated into the None value.
+    channels : List of 'class':`~DisplayChannel`
+        The channels contained in the station.
+    '''
 
     def __init__(self, station):
+        ''' The constructor.
 
+        Parameters
+        ----------
+        station : 'class':`~psysmon.packages.geometry.inventory.Station`
+            The parent inventory station.
+        '''
+        # The parent station.
         self.station = station
 
+        # The name of the station.
         self.name = station.name
 
+        # The network code.
         self.network = station.network
 
+        # The location code.
         self.location = station.location
 
+        # The channels contained in the station.
         self.channels = []
 
 
     def addChannel(self, channelName):
+        ''' Add a channel to the station.
+
+        Check if the channel with name *channelName* is already contained in the 
+        station. If not, create a new :class:`~DisplayChannel` instance and 
+        add it to the channels list.
+
+        Parameters
+        ----------
+        channelName : List of String
+            The name of the channel to add.
+        '''
+        if isinstance(channelName, basestring):
+            channelName = [channelName, ]
 
         channelNames = self.getChannelNames()
         for curName in channelName:
@@ -1198,34 +1240,103 @@ class DisplayStation():
 
 
     def removeChannel(self, channelName):
+        ''' Remove a channel from the station.
+
+        Remove the channel(s) with name *channelName* from the channels list.
+
+        Parameters
+        ----------
+        channelName : List of String
+            The names of the channel to remove from the station.
+
+        Returns
+        -------
+        removedSCNL : List of SCNL tuples
+            The SCNL codes of the removed channels.
+        '''
         removedSCNL = []
 
-        for curName in channelName:
-            for curChannel in self.channels:
-                if curChannel.name == curName:
-                    break
+        if isinstance(channelName, basestring):
+            channelName = [channelName, ]
 
-            if curChannel:
-                self.channels.remove(curChannel)
-                removedSCNL.append((self.name, curChannel.name, self.network, self.location))
+        channels_to_remove = [x for x in self.channels if x.name in channelName]
+        for curChannel in channels_to_remove:
+            self.channels.remove(curChannel)
+            removedSCNL.append((self.name, curChannel.name, self.network, self.location))
 
         return removedSCNL
 
 
 
     def getSCNL(self):
+        ''' Get the SCNL code of the channels of the station.
+
+        The station, channel, network, location (SCNL) code of the channels is 
+        widely used in seismological data processing.
+
+        Returns
+        -------
+        scnl : List of SCNL tuples
+            The SCNL code as a tuple (station, channel, network, location).
+        '''
         scnl = []
         for curChannel in self.channels:
             scnl.append((self.name, curChannel.name, self.network, self.location))
         return scnl
 
 
+
     def getSNL(self):
+        ''' The the SNL code of the station.
+
+        To easily identify a station, the station, network, location (SNL) code 
+        can be used.
+
+        Returns
+        -------
+        snl : Tuple
+            The SNL code of the station (station, network, location).
+        '''
         return (self.name, self.network, self.location)
 
 
     def getChannelNames(self):
+        ''' Get a list of the channel names contained in the station.
+
+        Returns
+        -------
+        channel_names : List of strings
+            The names of the channels contained in the station.
+        '''
         return [x.name for x in self.channels]
+
+
+    def get_obspy_location(self):
+        ''' Translate the '--' location into None.
+
+        Obspy uses the None value for the '--' location identifiere. It's 
+        convenient to keep the '--' location string for exporting data, 
+        requesting data from remote servers and so on. This method can be 
+        used when the obspy styled location is needed.
+
+        Use the obspy_location attribute of the class.
+
+        Returns
+        -------
+        obspy_location : String
+            The translation of the location string into a version, that 
+            obspy can work with.
+        '''
+        if self.location == '--':
+            return None
+        else:
+            return self.location
+
+
+    # The obspy package creates a None location from the '--' location string.
+    # Use the obspy_location property to translate the standard location string 
+    # to the obspy version.
+    obspy_location = property(get_obspy_location)
 
 
 
