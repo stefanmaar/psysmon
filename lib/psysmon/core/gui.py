@@ -38,6 +38,7 @@ import wx.aui
 import wx.html
 import wx.grid
 from wx import Choicebook
+from wx import Listbook
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
@@ -124,18 +125,21 @@ class PSysmonGui(wx.Frame):
     # @param self The Object pointer.
     def menuData(self):
         return (("File",
-                 ("&New project", "Create a new project.", self.onCreateNewProject),
-                 ("&Open project", "Open an existing project.", self.onOpenProject),
-                 ("&Close project", "Close the current project.", self.onCloseProject),
-                 ("&Save project", "Save the current project.", self.onSaveProject),
-                 ("", "", ""),
-                 ("&Exit", "Exit pSysmon.", self.onClose)),
+                 ("&New project", "Create a new project.", self.onCreateNewProject, True),
+                 ("&Open project", "Open an existing project.", self.onOpenProject, True),
+                 ("&Close project", "Close the current project.", self.onCloseProject, False),
+                 ("&Save project", "Save the current project.", self.onSaveProject, False),
+                 ("", "", "", True),
+                 ("&Exit", "Exit pSysmon.", self.onClose, True)),
                 ("Edit",
-                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser),
-                 ("Data sources", "Edit the data sources of the project.", self.onEditDataSources),
-                 ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources)),
+                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser, True)),
+                ("Project",
+                 ("Data sources", "Edit the data sources of the project.", self.onEditDataSources, False),
+                 ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources, False),
+                 ("", "", "", True),
+                 ("Project preferences","Edit the project preferences", self.onEditProjectPreferences, False)),
                 ("Help",
-                 ("&About", "About pSysmon", self.onAbout))
+                 ("&About", "About pSysmon", self.onAbout, True))
                )
 
     ## Create the PSysmonGui menubar.
@@ -163,12 +167,13 @@ class PSysmonGui(wx.Frame):
     def createMenu(self, menuData):
         menu = wx.Menu()
 
-        for curLabel, curStatus, curHandler in menuData:
+        for curLabel, curStatus, curHandler, editable in menuData:
             if not curLabel:
                 menu.AppendSeparator()
                 continue
 
             menuItem = menu.Append(wx.ID_ANY, curLabel, curStatus)
+            menuItem.Enable(editable)
             self.Bind(wx.EVT_MENU, curHandler, menuItem)
 
         return menu    
@@ -308,8 +313,21 @@ class PSysmonGui(wx.Frame):
                 self.logger.info("Loaded project %s successfully.", self.psyBase.project.name)
                 #self.psyBase.project.log('status', statusString)
 
+                # Enable the project menu.
+                labels_to_enable = ('Close project', 'Save project', 
+                                    'Data sources', 'SCNL data sources', 'Project preferences')
+                mb = self.GetMenuBar()
+                for cur_menu, cur_label in mb.GetMenus():
+                    m_items = cur_menu.GetMenuItems()
+                    items_to_enable = [x for x in m_items if x.GetItemLabelText() in labels_to_enable]
+                    for cur_item in items_to_enable:
+                        cur_item.Enable(True)
+
+
+
         # Destroy the dialog. 
         dlg.Destroy()
+
 
 
     ## Save project menu callback.
@@ -437,6 +455,21 @@ class PSysmonGui(wx.Frame):
             dlg.Destroy()
         else:
             self.logger.warning('You have to open a project first to edit the scnl data sources.')
+
+
+    def onEditProjectPreferences(self, event):
+        ''' The edit project preferences callback.
+
+        Parameters
+        ----------
+        event :
+            The event passed to the callback.
+        '''
+        if self.psyBase.project:
+            dlg = EditProjectPreferencesDlg(preferences = self.psyBase.project.pref)
+            dlg.ShowModal()
+        else:
+            self.logger.warning('You have to open a project first to edit the preferences.')
 
 
     ## Create new project menu callback.
@@ -1651,6 +1684,60 @@ class EarthwormWaveclientOptions(wx.Panel):
         return self.client
 
 
+
+class EditProjectPreferencesDlg(wx.Dialog):
+
+    def __init__(self, parent = None, preferences = None, size = (400, 600)):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Project Preferences", style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.pref = preferences
+
+        # Create the dialog buttons.
+        okButton = wx.Button(self, wx.ID_OK)
+        cancelButton = wx.Button(self, wx.ID_CANCEL)
+        okButton.SetDefault()
+
+        # Create the client's options pane.
+        #(curLabel, curPanel) = self.clientOptionPanels[client.mode]
+        #self.optionsPanel = curPanel(parent=self, client=client, project=self.psyBase.project)
+
+        # The main dialog sizer.
+        sizer = wx.GridBagSizer(5,5)
+
+        #sizer.Add(self.optionsPanel, pos=(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
+        self.listbook = Listbook(parent = self,
+                                 id = wx.ID_ANY,
+                                 style = wx.BK_LEFT)
+        self.build_pref_listbook()
+        sizer.Add(self.listbook, pos = (0,0),
+                  flag = wx.ALL|wx.EXPAND, border = 5)
+
+        # The button sizer.
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(okButton)
+        btnSizer.AddButton(cancelButton)
+        btnSizer.Realize()
+        sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizer(sizer)
+
+
+    def build_pref_listbook(self):
+        ''' Build the listbook based on the project preferences.
+
+        '''
+        pagenames = sorted(self.pref.pages.keys())
+
+        for cur_pagename in pagenames:
+            panel = wx.Panel(self, wx.ID_ANY)
+            self.listbook.AddPage(panel, cur_pagename)
 
 
 
