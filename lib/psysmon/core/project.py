@@ -44,6 +44,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from psysmon.core.collectionExecutionControl import CecServer
 from obspy.core import UTCDateTime
+from psysmon.core.preferences_manager import PreferencesManager
 
 
 class Project:
@@ -266,7 +267,7 @@ class Project:
         self.scnlDataSources = {}
 
         # The project preferences.
-        self.pref = ProjectPreferences()
+        self.pref = PreferencesManager()
 
 
     ## The __getstate__ method.
@@ -797,25 +798,6 @@ class Project:
         self.logger.info("CEC-Server port: %d", self.cecServer.port)
 
 
-
-
-class ProjectPreferences:
-    ''' The preferences of the project.
-
-    '''
-
-    def __init__(self):
-        ''' The constructor.
-
-        '''
-        # The pages (categories) of the project preferences.
-        self.pages = {}
-
-        # The logging verbose level.
-        log_messages = {}
-        log_messages['verbose'] = 'DEBUG'
-        log_messages['verbose_levels'] = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
-        self.pages['Logging'] = log_messages
 
 
 
