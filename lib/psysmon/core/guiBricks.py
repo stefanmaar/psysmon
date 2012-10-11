@@ -22,7 +22,7 @@ class Field(wx.Panel):
     class requiring some methods to be implemented by the subclasses.
     '''
 
-    def __init__(self, name, optionsKey, size, parent=None):
+    def __init__(self, name, pref_item, size, parent=None):
         ''' The constructor.
 
         Parameters
@@ -30,7 +30,7 @@ class Field(wx.Panel):
         name : String
             The name of the field. It is used as the field label.
 
-        optionsKey : String
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
             The key of the base option edited by this field.
 
         size : tuple (width, height)
@@ -53,12 +53,8 @@ class Field(wx.Panel):
         #
         self.name = name
 
-        ## The key of the related node options.
-        #
-        self.optionsKey = optionsKey
-
-        # The options dictionary.
-        self.options = None
+        ## The preference item bound to this field.
+        self.pref_item = pref_item
 
         ## The size of the field.
         #
@@ -106,18 +102,17 @@ class Field(wx.Panel):
         self.controlElement = controlElement
         self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
 
-    
+
     def onValueChange(self, event):
-        self.setOptionsValue()
+        self.setPrefValue()
 
 
     ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
-    def setOptionsValue(self):
-        if self.optionsKey in self.options.keys():
-            self.options[self.optionsKey] = self.controlElement.GetValue()
+    def setPrefValue(self):
+        self.pref_item.set_value = self.controlElement.GetValue()
 
     ## Set the default value of the field element.  
     #
@@ -636,8 +631,8 @@ class SingleChoiceField(Field):
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, optionsKey, size, parent=None, choices=[]):
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+    def __init__(self, name, pref_item, size, parent=None, choices=[]):
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -653,6 +648,9 @@ class SingleChoiceField(Field):
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
 
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
+
         # Bind the events.
         self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
 
@@ -662,9 +660,9 @@ class SingleChoiceField(Field):
     #
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
-    def setOptionsValue(self):
-        if self.optionsKey in self.options.keys():
-            self.options[self.optionsKey] = self.controlElement.GetStringSelection()
+    def setPrefValue(self):
+        print "Setting the value.\n"
+        self.pref_item.set_value(self.controlElement.GetStringSelection())
 
 
     ## Set the default value of the field element.  
