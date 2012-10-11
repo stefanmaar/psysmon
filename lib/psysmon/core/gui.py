@@ -38,7 +38,6 @@ import wx.aui
 import wx.html
 import wx.grid
 from wx import Choicebook
-from wx import Listbook
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import Publisher as pub
@@ -57,6 +56,8 @@ from wx.lib.mixins.inspection import InspectionMixin
 import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
 import wx.lib.platebtn as platebtn
+
+from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
 
 try:
     from agw import advancedsplash as splash
@@ -1682,62 +1683,6 @@ class EarthwormWaveclientOptions(wx.Panel):
         self.client.options['port'] = int(self.portEdit.GetValue())
         self.logger.debug(self.client.name)
         return self.client
-
-
-
-class EditProjectPreferencesDlg(wx.Dialog):
-
-    def __init__(self, parent = None, preferences = None, size = (400, 600)):
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Project Preferences", style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
-
-        # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        self.pref = preferences
-
-        # Create the dialog buttons.
-        okButton = wx.Button(self, wx.ID_OK)
-        cancelButton = wx.Button(self, wx.ID_CANCEL)
-        okButton.SetDefault()
-
-        # Create the client's options pane.
-        #(curLabel, curPanel) = self.clientOptionPanels[client.mode]
-        #self.optionsPanel = curPanel(parent=self, client=client, project=self.psyBase.project)
-
-        # The main dialog sizer.
-        sizer = wx.GridBagSizer(5,5)
-
-        #sizer.Add(self.optionsPanel, pos=(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
-        self.listbook = Listbook(parent = self,
-                                 id = wx.ID_ANY,
-                                 style = wx.BK_LEFT)
-        self.build_pref_listbook()
-        sizer.Add(self.listbook, pos = (0,0),
-                  flag = wx.ALL|wx.EXPAND, border = 5)
-
-        # The button sizer.
-        btnSizer = wx.StdDialogButtonSizer()
-        btnSizer.AddButton(okButton)
-        btnSizer.AddButton(cancelButton)
-        btnSizer.Realize()
-        sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
-
-        sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(0)
-
-        self.SetSizer(sizer)
-
-
-    def build_pref_listbook(self):
-        ''' Build the listbook based on the project preferences.
-
-        '''
-        pagenames = sorted(self.pref.pages.keys())
-
-        for cur_pagename in pagenames:
-            panel = wx.Panel(self, wx.ID_ANY)
-            self.listbook.AddPage(panel, cur_pagename)
 
 
 
