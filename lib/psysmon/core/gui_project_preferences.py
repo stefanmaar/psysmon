@@ -110,11 +110,11 @@ class PrefPagePanel(wx.Panel):
         ''' Build the gui elements required by the preference items.
 
         '''
-        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer = wx.GridBagSizer(5,5)
         # Find all groups.
         groups = list(set([x.group for x in self.items]))
 
-        for cur_group in groups:
+        for k, cur_group in enumerate(groups):
             # Create a static box container for the group.
             if cur_group is None:
                 container_label = ''
@@ -130,15 +130,16 @@ class PrefPagePanel(wx.Panel):
                     gui_element = guiclass(name = cur_item.name,
                                            pref_item = cur_item,
                                            size = (100, 10),
-                                           parent = self
+                                           parent = cur_container 
                                           )
                     cur_container.addField(gui_element)
                 else:
                     self.logger.warning('Item %s of mode %s has no guiclass.', 
                             cur_item.name, cur_item.mode)
 
-            sizer.Add(cur_container, 1)
+            sizer.Add(cur_container, pos = (k,0), flag = wx.ALL | wx.EXPAND, border = 2)
 
+        sizer.AddGrowableCol(0)
         self.SetSizer(sizer)
 
 
