@@ -33,6 +33,7 @@ main program.
 
 import wx
 import logging
+from psysmon.core.guiBricks import StaticBoxContainer
 
 class EditProjectPreferencesDlg(wx.Dialog):
 
@@ -87,7 +88,7 @@ class EditProjectPreferencesDlg(wx.Dialog):
         for cur_pagename in pagenames:
             panel = PrefPagePanel(parent = self, 
                                   id = wx.ID_ANY,
-                                  page = self.pref.pages[cur_pagename]
+                                  items = self.pref.pages[cur_pagename]
                                  )
             self.listbook.AddPage(panel, cur_pagename)
 
@@ -97,10 +98,10 @@ class PrefPagePanel(wx.Panel):
     ''' A panel representing a page of the preference manager.
 
     '''
-    def __init__(self, parent = None, id = wx.ID_ANY, page = None):
+    def __init__(self, parent = None, id = wx.ID_ANY, items = None):
         wx.Panel.__init__(self, parent = parent, id = id)
 
-        self.page = page
+        self.items = items
 
         self.init_ui()
 
@@ -111,10 +112,18 @@ class PrefPagePanel(wx.Panel):
         '''
         sizer = wx.BoxSizer(wx.VERTICAL)
         # Find all groups.
-        groups = list(set([x.group for x in self.page]))
+        groups = list(set([x.group for x in self.items]))
 
         for cur_group in groups:
-            groupitems = [x for x in self.page if x.group == cur_group]
+            # Create a static box container for the group.
+            if cur_group is None:
+                container_label = ''
+            else:
+                container_label = cur_group
+            cur_container = StaticBoxContainer(parent = self, 
+                                label = container_label)
+
+            groupitems = [x for x in self.items if x.group == cur_group]
             for cur_item in groupitems:
                 guiclass = cur_item.guiclass
                 if guiclass is not None:
@@ -123,10 +132,12 @@ class PrefPagePanel(wx.Panel):
                                            size = (100, 10),
                                            parent = self
                                           )
-                    sizer.Add(gui_element, 1)
+                    cur_container.addField(gui_element)
                 else:
                     self.logger.warning('Item %s of mode %s has no guiclass.', 
                             cur_item.name, cur_item.mode)
+
+            sizer.Add(cur_container, 1)
 
         self.SetSizer(sizer)
 
