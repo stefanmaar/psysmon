@@ -112,7 +112,7 @@ class Field(wx.Panel):
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
     def setPrefValue(self):
-        self.pref_item.set_value = self.controlElement.GetValue()
+        self.pref_item.set_value(self.controlElement.GetValue())
 
     ## Set the default value of the field element.  
     #
@@ -491,6 +491,9 @@ class TextEditField(Field):
         # Create the field text control.
         self.controlElement = wx.TextCtrl(self,
                                     wx.ID_ANY)
+        
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
 
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
@@ -499,8 +502,8 @@ class TextEditField(Field):
         # Bind the events.
         self.Bind(wx.EVT_TEXT, self.onValueChange, self.controlElement)
 
-
     
+
 
 ## The IntegerRangeField class.
 #
@@ -662,7 +665,6 @@ class SingleChoiceField(Field):
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
     def setPrefValue(self):
-        print "Setting the value.\n"
         self.pref_item.set_value(self.controlElement.GetStringSelection())
 
 
