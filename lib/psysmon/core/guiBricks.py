@@ -87,7 +87,7 @@ class Field(wx.Panel):
         #self.sizer = rcs.RowColSizer()
 
         #self.sizer.AddGrowableCol(0)
-        #self.sizer.AddGrowableCol(1)
+        self.sizer.AddGrowableCol(1)
         #self.sizer.AddGrowableRow(0)
 
         self.SetSizer(self.sizer)
