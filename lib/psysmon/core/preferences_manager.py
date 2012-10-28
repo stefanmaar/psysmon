@@ -30,6 +30,8 @@ Module for handling object preferences.
 from psysmon.core.guiBricks import SingleChoiceField
 from psysmon.core.guiBricks import TextEditField
 from psysmon.core.guiBricks import IntegerCtrlField
+from psysmon.core.guiBricks import IntegerRangeField
+from psysmon.core.guiBricks import FloatSpinField
 
 
 class PreferencesManager:
@@ -53,6 +55,8 @@ class PreferencesManager:
         self.gui_elements['single_choice'] = SingleChoiceField
         self.gui_elements['textedit'] = TextEditField
         self.gui_elements['integer_control'] = IntegerCtrlField
+        self.gui_elements['integer_range'] = IntegerRangeField
+        self.gui_elements['float_spin'] = FloatSpinField
 
 
     def __str__(self):
@@ -92,7 +96,7 @@ class PreferencesManager:
         '''
         if pagename in self.pages.keys():
             item.parent_page = pagename
-            
+
             if item.mode in self.gui_elements.keys():
                 item.guiclass = self.gui_elements[item.mode]
 
@@ -181,3 +185,30 @@ class PreferenceItem:
         '''
         print "preference_item - set_value\n"
         self.value = value
+
+
+
+class SingleChoicePrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, increment = 0.1, digits = 3, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'single_choice', **kwargs)
+        
+
+
+
+class FloatSpinPrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, increment = 0.1, digits = 3, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'float_spin', **kwargs)
+        
+        self.increment = increment
+
+        self.digits = digits
