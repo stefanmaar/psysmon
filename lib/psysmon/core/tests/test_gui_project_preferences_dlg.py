@@ -1,4 +1,3 @@
-import ipdb
 '''
 Created on May 17, 2011
 
@@ -8,6 +7,8 @@ Created on May 17, 2011
 import unittest
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.preferences_manager import PreferenceItem
+from psysmon.core.preferences_manager import SingleChoicePrefItem
+from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
 from psysmon.core.gui import PSysmonApp
 
@@ -36,18 +37,44 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
         # Add the logging page.
         self.pref.add_page('Logging')
 
-        # The logging verbose level.
-        item = PreferenceItem(name = 'verbose', 
+        # Add a single_choice field.
+        item = SingleChoicePrefItem(name = 'single_choice',
+                              group = 'test group 1',
+                              limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'),
                               value = 'ERROR',
-                              mode = 'single_choice',
-                              limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
 
-        # The logging verbose level.
-        item = PreferenceItem(name = 'textedit field', 
-                              value = 'this is a textedit field',
-                              mode = 'textedit'
+        # Add a textedit field.
+        item = PreferenceItem(name = 'textedit', 
+                              group = 'test group 1',
+                              mode = 'textedit',
+                              value = 'this is a textedit field'
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add a integer_control field.
+        item = PreferenceItem(name = 'integer_control', 
+                              group = 'test group 1',
+                              mode = 'integer_control',
+                              value = 10
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add an integer_range field.
+        item = PreferenceItem(name = 'integer_range', 
+                              group = 'test group 1',
+                              mode = 'integer_range',
+                              value = 10,
+                              limit = (0, 100)
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add an float_spin field.
+        item = FloatSpinPrefItem(name = 'float_spin', 
+                              group = 'test group 1',
+                              value = 10.3,
+                              limit = (0, 100)
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
 
