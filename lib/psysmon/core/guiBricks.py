@@ -557,31 +557,42 @@ class IntegerCtrlField(Field):
 # A field to edit integer values within a limited range.
 # The field consits of a label and a SpinCtrl element.
 class IntegerRangeField(Field):
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, optionsKey, size, parent=None, range=(0,100)):
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, 
+                       pref_item = pref_item, size=size)
 
         # Create the field label.
-        labelElement = StaticText(parent=self, 
+        self.labelElement = StaticText(parent=self, 
                                   ID=wx.ID_ANY, 
                                   label=self.label,
                                   style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        controlElement = wx.SpinCtrl(self, wx.ID_ANY)
-        controlElement.SetRange(range[0], range[1])
+        self.controlElement = wx.SpinCtrl(self, wx.ID_ANY)
+        self.controlElement.SetRange(pref_item.limit[0], pref_item.limit[1])
+
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
 
         # Add the gui elements to the field.
-        self.addLabel(labelElement)
-        self.addControl(controlElement)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
 
         # Bind the event.
         self.Bind(wx.EVT_SPINCTRL, self.onValueChange, self.controlElement)
@@ -596,35 +607,47 @@ class IntegerRangeField(Field):
 # The field consits of a label and a SpinCtrl element.
 class FloatSpinField(Field):
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, optionsKey, size, parent=None, min_val=None, max_val=None, increment=0.1, digits=3):
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, 
+                       pref_item = pref_item, size=size)
 
         # Create the field label.
-        labelElement = StaticText(parent=self, 
+        self.labelElement = StaticText(parent=self, 
                                   ID=wx.ID_ANY, 
                                   label=self.label,
                                   style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        controlElement = FS.FloatSpin(parent=self, 
+        self.controlElement = FS.FloatSpin(parent=self, 
                                       id=wx.ID_ANY,
-                                      min_val = min_val,
-                                      max_val = max_val,
-                                      increment=increment,
-                                      digits=digits,
+                                      min_val = pref_item.limit[0],
+                                      max_val = pref_item.limit[1],
+                                      increment = pref_item.increment,
+                                      digits = pref_item.digits,
                                       agwStyle=FS.FS_LEFT)
 
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
+
         # Add the elements to the field sizer.
-        self.addLabel(labelElement)
-        self.addControl(controlElement)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
 
         # Bind the events.
         self.Bind(FS.EVT_FLOATSPIN, self.onValueChange, self.controlElement)
