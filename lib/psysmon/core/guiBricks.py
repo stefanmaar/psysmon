@@ -423,10 +423,10 @@ class StaticBoxContainer(wx.Panel):
     def addField(self, field):
         # Set the new field parent.
         field.Reparent(self)
-        field.options = self.options
+        #field.options = self.options
 
-        if field.optionsKey in self.options.keys():
-            field.setDefaultValue(self.options[field.optionsKey])
+        #if field.optionsKey in self.options.keys():
+        #    field.setDefaultValue(self.options[field.optionsKey])
 
         self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
 
@@ -463,7 +463,7 @@ class TextEditField(Field):
     It consits of a label and a TextCtrl element.
     '''
 
-    def __init__(self, name, optionsKey, size, parent=None):
+    def __init__(self, name, pref_item, size, parent=None):
         ''' The constructor.
 
         Parameters
@@ -471,7 +471,7 @@ class TextEditField(Field):
         name : String
             The name of the field. It is used as the field label.
 
-        optionsKey : String
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
             The key of the base option edited by this field.
 
         size : tuple (width, height)
@@ -480,7 +480,7 @@ class TextEditField(Field):
         parent :
             The parent wxPyton window of this field.
         '''
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
         self.labelElement = StaticText(parent=self, 
@@ -489,7 +489,8 @@ class TextEditField(Field):
                                        style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.controlElement = wx.TextCtrl(self, wx.ID_ANY, size=(size[0]*self.ctrlRatio, size[1]))
+        self.controlElement = wx.TextCtrl(self,
+                                    wx.ID_ANY)
 
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)

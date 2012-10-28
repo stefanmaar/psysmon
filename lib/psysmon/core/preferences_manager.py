@@ -28,6 +28,7 @@ Module for handling object preferences.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 from psysmon.core.guiBricks import SingleChoiceField
+from psysmon.core.guiBricks import TextEditField
 
 
 class PreferencesManager:
@@ -49,6 +50,7 @@ class PreferencesManager:
         # A dictionary with the GUI element field classes.
         self.gui_elements = {}
         self.gui_elements['single_choice'] = SingleChoiceField
+        self.gui_elements['textedit'] = TextEditField
 
 
     def __str__(self):
