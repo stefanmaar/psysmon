@@ -30,112 +30,116 @@ class EditDialogTestCase(unittest.TestCase):
         fieldSize = (250, 30)
         largeFieldSize = (250, 90)
 
-        self.dlg = editDialog.EditDialog(property=self.property)
+        self.dlg = editDialog.EditDialog(options = None)
 
+        # Add two pages
         self.dlg.addPage('MyPage')
         self.dlg.addPage('Second Page')
 
+        # Add a file browse item.
+        item = 
+
         # Create a static box.
-        cont1 = editDialog.StaticBoxContainer(label='Parameters',
-                                              parent=self.dlg)
-        self.dlg.addContainer(cont1, 'MyPage')
+        #cont1 = editDialog.StaticBoxContainer(label='Parameters',
+        #                                      parent=self.dlg)
+        #self.dlg.addContainer(cont1, 'MyPage')
 
 
 
         # Add the fields to the dialog.
-        curField = editDialog.TextEditField(parent=self.dlg,
-                                       name="test",
-                                       propertyKey="prop1",
-                                       size=fieldSize)
-
-        self.dlg.addField(curField, cont1)
+        #curField = editDialog.TextEditField(parent=self.dlg,
+        #                               name="test",
+        #                               propertyKey="prop1",
+        #                               size=fieldSize)
+        #
+        #self.dlg.addField(curField, cont1)
 
 
         # Create a second static box.
-        curContainer = editDialog.StaticBoxContainer(label='Another box',
-                                                     parent=self.dlg)
-        self.dlg.addContainer(curContainer, 'Second Page')
+        #curContainer = editDialog.StaticBoxContainer(label='Another box',
+        #                                             parent=self.dlg)
+        #self.dlg.addContainer(curContainer, 'Second Page')
 
 
 
-        curField = editDialog.IntegerRangeField(parent=self.dlg,
-                                       name="test 2",
-                                       propertyKey="prop2",
-                                       size=fieldSize,
-                                       range=(10,20))
+        #curField = editDialog.IntegerRangeField(parent=self.dlg,
+        #                               name="test 2",
+        #                               propertyKey="prop2",
+        #                               size=fieldSize,
+        #                               range=(10,20))
 
-        self.dlg.addField(curField, curContainer)
-
-
-
-        curField = editDialog.FloatRangeField(parent=self.dlg,
-                                       name="floatSpin",
-                                       propertyKey="prop3",
-                                       size=fieldSize,
-                                       range=(0,1),
-                                       increment = 0.01,
-                                       digits=2)
-
-        self.dlg.addField(curField, curContainer)
-
-        curField = editDialog.FloatRangeField(parent=self.dlg,
-                                       name="floatSpin",
-                                       propertyKey="prop3",
-                                       size=fieldSize,
-                                       range=(0,1),
-                                       increment = 0.01,
-                                       digits=2)
-
-        self.dlg.addField(curField, curContainer)
-
-
-        curField = editDialog.FloatRangeField(parent=self.dlg,
-                                       name="floatSpin",
-                                       propertyKey="prop3",
-                                       size=fieldSize,
-                                       range=(0,1),
-                                       increment = 0.01,
-                                       digits=2)
-
-        self.dlg.addField(curField, curContainer)
+        #self.dlg.addField(curField, curContainer)
 
 
 
-        choices = ['choice 1', 'choice 2', 'choice 3', 'choice 4']
-        curField = editDialog.SingleChoiceField(parent=self.dlg,
-                                       name="single choice",
-                                       propertyKey="prop4",
-                                       size=fieldSize,
-                                       choices = choices)
+        #curField = editDialog.FloatRangeField(parent=self.dlg,
+        #                               name="floatSpin",
+        #                               propertyKey="prop3",
+        #                               size=fieldSize,
+        #                               range=(0,1),
+        #                               increment = 0.01,
+        #                               digits=2)
 
-        self.dlg.addField(curField, cont1)
+        #self.dlg.addField(curField, curContainer)
+
+        #curField = editDialog.FloatRangeField(parent=self.dlg,
+        #                               name="floatSpin",
+        #                               propertyKey="prop3",
+        #                               size=fieldSize,
+        #                               range=(0,1),
+        #                               increment = 0.01,
+        #                               digits=2)
+
+        #self.dlg.addField(curField, curContainer)
+
+
+        #curField = editDialog.FloatRangeField(parent=self.dlg,
+        #                               name="floatSpin",
+        #                               propertyKey="prop3",
+        #                               size=fieldSize,
+        #                               range=(0,1),
+        #                               increment = 0.01,
+        #                               digits=2)
+
+        #self.dlg.addField(curField, curContainer)
+
+
+
+        #choices = ['choice 1', 'choice 2', 'choice 3', 'choice 4']
+        #curField = editDialog.SingleChoiceField(parent=self.dlg,
+        #                               name="single choice",
+        #                               propertyKey="prop4",
+        #                               size=fieldSize,
+        #                               choices = choices)
+
+        #self.dlg.addField(curField, cont1)
 
 
         # A multiChoice field.
-        choices = ['mChoice 1', 'mChoice 2', 'mChoice 3', 'mChoice 4']
-        curField = editDialog.MultiChoiceField(parent=self.dlg,
-                                       name="multi choice",
-                                       propertyKey="prop5",
-                                       size=largeFieldSize,
-                                       choices = choices)
+        #choices = ['mChoice 1', 'mChoice 2', 'mChoice 3', 'mChoice 4']
+        #curField = editDialog.MultiChoiceField(parent=self.dlg,
+        #                               name="multi choice",
+        #                               propertyKey="prop5",
+        #                               size=largeFieldSize,
+        #                               choices = choices)
 
-        self.dlg.addField(curField, cont1)
+        #self.dlg.addField(curField, cont1)
 
 
         # A filebrowser field.
-        curField = editDialog.FileBrowseField(parent=self.dlg,
-                                              name="file browser",
-                                              propertyKey="prop6",
-                                              size=fieldSize)
-        self.dlg.addField(curField, cont1)
+        #curField = editDialog.FileBrowseField(parent=self.dlg,
+        #                                      name="file browser",
+        #                                      propertyKey="prop6",
+        #                                      size=fieldSize)
+        #self.dlg.addField(curField, cont1)
 
 
         # A dirbrowser field.
-        curField = editDialog.DirBrowseField(parent=self.dlg,
-                                             name="dir browser",
-                                             propertyKey="prop7",
-                                             size=fieldSize)
-        self.dlg.addField(curField, cont1)
+        #curField = editDialog.DirBrowseField(parent=self.dlg,
+        #                                     name="dir browser",
+        #                                     propertyKey="prop7",
+        #                                     size=fieldSize)
+        #self.dlg.addField(curField, cont1)
 
 
         # Show the dialog.

@@ -631,7 +631,7 @@ class SingleChoiceField(Field):
     # @param size The size of the field. A tuple. (width, height)
     # @param parent The parent wxPython window of this field.
     # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, pref_item, size, parent=None, choices=[]):
+    def __init__(self, name, pref_item, size, parent=None):
         Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
@@ -643,7 +643,7 @@ class SingleChoiceField(Field):
         # Create the field text control.
         self.controlElement = wx.Choice(self, 
                                         wx.ID_ANY,
-                                        choices=choices)
+                                        choices = pref_item.limit)
 
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)

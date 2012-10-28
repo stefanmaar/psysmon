@@ -27,6 +27,7 @@ Module for handling object preferences.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from psysmon.core.guiBricks import SingleChoiceField
 
 
 class PreferencesManager:
@@ -43,6 +44,11 @@ class PreferencesManager:
         '''
         # The pages (categories) of the project preferences.
         self.pages = {}
+        self.pages['preferences'] = []
+
+        # A dictionary with the GUI element field classes.
+        self.gui_elements = {}
+        self.gui_elements['single_choice'] = SingleChoiceField
 
 
     def __str__(self):
@@ -69,7 +75,7 @@ class PreferencesManager:
             self.pages[name] = []
 
 
-    def add_item(self, pagename, item):
+    def add_item(self, item, pagename = 'preferences'):
         ''' Add a preference item to a page of the manager.
 
         Parameters
@@ -81,7 +87,36 @@ class PreferencesManager:
             The item to be added to the page.
         '''
         if pagename in self.pages.keys():
+            item.parent_page = pagename
+            
+            if item.mode in self.gui_elements.keys():
+                item.guiclass = self.gui_elements[item.mode]
+
             self.pages[pagename].append(item)
+
+
+    def get_item(self, name, pagename = None):
+        ''' Get items with specified name [and pagename] from the preferences.
+
+        name : String
+            The name of the preferences item to find.
+
+        pagename : String
+            The name of the page to which the search should be limited.
+
+        '''
+        found_items = []
+        if pagename is not None:
+            if pagename in self.pages.keys():
+                found_items = [x for x in self.pages[pagename] if x.name == name]
+
+        else:
+            for cur_page in self.pages.values():
+                tmp = [x for x in cur_page if x.name == name]
+                found_items.extend(tmp)
+
+        return found_items
+
 
 
 
@@ -90,7 +125,7 @@ class PreferenceItem:
 
     '''
 
-    def __init__(self, name, value, mode, group = None, limit = None, parent_page = None, default = None):
+    def __init__(self, name, value, mode, group = None, limit = None, parent_page = None, default = None, guiclass = None):
         ''' The constructor.
 
         '''
@@ -117,12 +152,18 @@ class PreferenceItem:
         # The parent page of the PreferencesManager.
         self.parent_page = parent_page
 
+        # The GUI element which will be used to represent this field in
+        # dialogs, panels, .... . When using a 'custom' mode, this value should
+        # be set. For standard field modes, the gui_element will be set by the
+        # preferences manager.
+        self.guiclass = guiclass
+
 
     def __str__(self):
         ''' The string representation of the instance.
 
         '''
-        return 'PREF:\t%s, %s, %s' % (self.name, self.value, self.mode)
+        return 'PREF:\t%s, %s, %s, %s' % (self.name, self.value, self.mode, self.parent_page)
 
 
 

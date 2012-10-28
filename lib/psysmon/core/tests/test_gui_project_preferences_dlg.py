@@ -1,3 +1,4 @@
+import ipdb
 '''
 Created on May 17, 2011
 
@@ -41,7 +42,7 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
                               mode = 'single_choice',
                               limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
                              )
-        self.pref.add_item('Logging', item)                                    
+        self.pref.add_item(pagename = 'Logging', item = item)   
 
     def tearDown(self):
         pass

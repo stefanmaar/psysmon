@@ -33,7 +33,6 @@ main program.
 
 import wx
 import logging
-from psysmon.core.guiBricks import SingleChoiceField
 
 class EditProjectPreferencesDlg(wx.Dialog):
 
@@ -103,9 +102,6 @@ class PrefPagePanel(wx.Panel):
 
         self.page = page
 
-        self.gui_elements = {}
-        self.gui_elements['single_choice'] = SingleChoiceField
-
         self.init_ui()
 
 
@@ -120,14 +116,17 @@ class PrefPagePanel(wx.Panel):
         for cur_group in groups:
             groupitems = [x for x in self.page if x.group == cur_group]
             for cur_item in groupitems:
-                guiclass = self.gui_elements[cur_item.mode]
-                gui_element = guiclass(name = cur_item.name,
-                                       pref_item = cur_item,
-                                       size = (100, 10),
-                                       choices = cur_item.limit,
-                                       parent = self
-                                      )
-                sizer.Add(gui_element, 1)
+                guiclass = cur_item.guiclass
+                if guiclass is not None:
+                    gui_element = guiclass(name = cur_item.name,
+                                           pref_item = cur_item,
+                                           size = (100, 10),
+                                           parent = self
+                                          )
+                    sizer.Add(gui_element, 1)
+                else:
+                    self.logger.warning('Item %s of mode %s has no guiclass.', 
+                            cur_item.name, cur_item.mode)
 
         self.SetSizer(sizer)
 
