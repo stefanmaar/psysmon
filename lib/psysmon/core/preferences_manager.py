@@ -29,6 +29,7 @@ Module for handling object preferences.
 '''
 from psysmon.core.guiBricks import SingleChoiceField
 from psysmon.core.guiBricks import TextEditField
+from psysmon.core.guiBricks import IntegerCtrlField
 
 
 class PreferencesManager:
@@ -51,6 +52,7 @@ class PreferencesManager:
         self.gui_elements = {}
         self.gui_elements['single_choice'] = SingleChoiceField
         self.gui_elements['textedit'] = TextEditField
+        self.gui_elements['integer_control'] = IntegerCtrlField
 
 
     def __str__(self):

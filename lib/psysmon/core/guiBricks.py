@@ -489,20 +489,19 @@ class TextEditField(Field):
                                        style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.controlElement = wx.TextCtrl(self,
-                                    wx.ID_ANY)
-        
+        self.controlElement = wx.TextCtrl(self, wx.ID_ANY)
+
         # Set the default value of the field.
         self.setDefaultValue(pref_item.default)
 
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
-    
+
         # Bind the events.
         self.Bind(wx.EVT_TEXT, self.onValueChange, self.controlElement)
 
-    
+
 
 
 ## The IntegerRangeField class.
@@ -511,29 +510,41 @@ class TextEditField(Field):
 # The field consits of a label and a SpinCtrl element.
 class IntegerCtrlField(Field):
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param range The range limits of the spincontrol. A tuple (min, max).
-    def __init__(self, name, optionsKey, size, parent=None):
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name,
+                       pref_item = pref_item, size=size)
 
         # Create the field label.
-        labelElement = StaticText(parent=self, 
-                                  ID=wx.ID_ANY, 
-                                  label=self.label,
-                                  style=wx.ALIGN_RIGHT)
+        self.labelElement = StaticText(parent=self, 
+                                       ID=wx.ID_ANY, 
+                                       label=self.label,
+                                       style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        controlElement = intctrl.IntCtrl(self, wx.ID_ANY)
+        self.controlElement = intctrl.IntCtrl(self, wx.ID_ANY)
 
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
+        
         # Add the gui elements to the field.
-        self.addLabel(labelElement)
-        self.addControl(controlElement)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
 
         # Bind the events.
         self.Bind(intctrl.EVT_INT, self.onValueChange, self.controlElement)
