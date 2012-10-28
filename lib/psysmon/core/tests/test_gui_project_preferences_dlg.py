@@ -38,11 +38,19 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
 
         # The logging verbose level.
         item = PreferenceItem(name = 'verbose', 
-                              value = 'DEBUG',
+                              value = 'ERROR',
                               mode = 'single_choice',
                               limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # The logging verbose level.
+        item = PreferenceItem(name = 'textedit field', 
+                              value = 'this is a textedit field',
+                              mode = 'textedit'
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
 
     def tearDown(self):
         pass
