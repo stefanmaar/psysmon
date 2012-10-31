@@ -408,13 +408,15 @@ class StaticBoxContainer(wx.Panel):
         self.fieldList = []
 
         # Create the static box and it's sizer.
-        box = wx.StaticBox(self, id=wx.ID_ANY, label=label, name=label)
-        self.bSizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        #box = wx.StaticBox(self, id=wx.ID_ANY, label=label, name=label)
+        #self.bSizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        self.sizer = wx.GridBagSizer(5)
+        self.sizer.AddGrowableCol(0)
 
         # Create the sizer holding the static box.        
         #border = wx.BoxSizer()
         #border.Add(self.bSizer, wx.ID_ANY,  wx.VERTICAL|wx.EXPAND|wx.ALL, 2)
-        self.SetSizer(self.bSizer)
+        self.SetSizer(self.sizer)
 
 
     ## Add a field to the container.
@@ -428,7 +430,8 @@ class StaticBoxContainer(wx.Panel):
         #if field.optionsKey in self.options.keys():
         #    field.setDefaultValue(self.options[field.optionsKey])
 
-        self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
+        #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
+        self.sizer.Add(field, pos = (len(self.fieldList)+1, 0), flag=wx.EXPAND)
 
         self.fieldList.append(field)
 
@@ -442,7 +445,7 @@ class StaticBoxContainer(wx.Panel):
             curSize = curField.labelElement.GetBestSize()
             curField.labelElement.SetMinSize((maxWidth, curSize[1]))
 
-        #self.sizer.Layout()
+        #self.GetSizer().Layout()
 
 
 
@@ -661,15 +664,23 @@ class FloatSpinField(Field):
 # The choices are listed in a wx.Choice window.
 class SingleChoiceField(Field):
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param choices A list of choices from which the user can select one value.
     def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
         Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
@@ -718,50 +729,64 @@ class SingleChoiceField(Field):
 # A field to select multiple entries from a set of choices.
 # The choices are listed in a wx.ListBox window.
 class MultiChoiceField(Field):
+    ''' The MultiChoiceField class.
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, optionsKey, size, parent=None, choices=[]):
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+    A field to select multiple entries from a set of choices.
+    The choices are listed in a wx.ListBox window.
+    '''
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
-        labelElement = StaticText(parent=self, 
+        self.labelElement = StaticText(parent=self, 
                                   ID=wx.ID_ANY, 
                                   label=self.label,
                                   style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        controlElement = wx.ListBox(self, 
+        self.controlElement = wx.ListBox(self, 
                                     wx.ID_ANY, 
-                                    size=(size[0]*self.ctrlRatio, size[1]),
-                                    choices=choices,
+                                    choices = pref_item.limit,
                                     style=wx.LB_MULTIPLE)
 
-        self.addLabel(labelElement)
-        self.addControl(controlElement)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+        
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
         
         # Bind the events.
-        self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
+        self.Bind(wx.EVT_LISTBOX, self.onValueChange, self.controlElement)
+        #self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
 
 
     ## Set the corresponding value in the options dictionary.
     #
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
-    def setOptionsValue(self):
-        if self.optionsKey in self.options.keys():
-            selections = self.controlElement.GetSelections()
-            selectedStrings = []
-            for k in selections:
-                selectedStrings.append(self.controlElement.GetString(k))
+    def setPrefValue(self):
+        selections = self.controlElement.GetSelections()
+        selectedStrings = []
+        for k in selections:
+            selectedStrings.append(self.controlElement.GetString(k))
 
-            self.options[self.optionsKey] = selectedStrings
+        self.pref_item.set_value(selectedStrings)
 
 
     ## Set the default value of the field element.  
@@ -770,7 +795,7 @@ class MultiChoiceField(Field):
     # @param value The value to be set.  
     def setDefaultValue(self, value):
         self.defaultValue = value
-        for curValue in self.defaultValue:
+        for curValue in value:
             self.controlElement.SetStringSelection(curValue) 
 
 

@@ -32,6 +32,7 @@ from psysmon.core.guiBricks import TextEditField
 from psysmon.core.guiBricks import IntegerCtrlField
 from psysmon.core.guiBricks import IntegerRangeField
 from psysmon.core.guiBricks import FloatSpinField
+from psysmon.core.guiBricks import MultiChoiceField
 
 
 class PreferencesManager:
@@ -53,6 +54,7 @@ class PreferencesManager:
         # A dictionary with the GUI element field classes.
         self.gui_elements = {}
         self.gui_elements['single_choice'] = SingleChoiceField
+        self.gui_elements['multi_choice'] = MultiChoiceField
         self.gui_elements['textedit'] = TextEditField
         self.gui_elements['integer_control'] = IntegerCtrlField
         self.gui_elements['integer_range'] = IntegerRangeField
@@ -192,11 +194,23 @@ class SingleChoicePrefItem(PreferenceItem):
     '''
     '''
 
-    def __init__(self, name, value, increment = 0.1, digits = 3, **kwargs):
+    def __init__(self, name, value, **kwargs):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'single_choice', **kwargs)
         
+
+
+
+class MultiChoicePrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'multi_choice', **kwargs)
+
 
 
 

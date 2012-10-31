@@ -8,6 +8,7 @@ import unittest
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.preferences_manager import PreferenceItem
 from psysmon.core.preferences_manager import SingleChoicePrefItem
+from psysmon.core.preferences_manager import MultiChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
 from psysmon.core.gui import PSysmonApp
@@ -42,6 +43,14 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
                               group = 'test group 1',
                               limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'),
                               value = 'ERROR',
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add a multi_choice field.
+        item = MultiChoicePrefItem(name = 'multi_choice',
+                              group = 'test group 1',
+                              limit = ('value 1', 'value 2', 'value 3', 'value 4', 'value 5'),
+                              value = ['value 2', 'value 4'],
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
 
