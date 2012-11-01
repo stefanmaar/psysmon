@@ -33,7 +33,7 @@ main program.
 
 import wx
 import logging
-from psysmon.core.guiBricks import StaticBoxContainer
+from psysmon.core.guiBricks import PrefPagePanel
 
 class EditProjectPreferencesDlg(wx.Dialog):
 
@@ -91,60 +91,6 @@ class EditProjectPreferencesDlg(wx.Dialog):
                                   items = self.pref.pages[cur_pagename]
                                  )
             self.listbook.AddPage(panel, cur_pagename)
-
-
-
-class PrefPagePanel(wx.Panel):
-    ''' A panel representing a page of the preference manager.
-
-    '''
-    def __init__(self, parent = None, id = wx.ID_ANY, items = None):
-        wx.Panel.__init__(self, parent = parent, id = id)
-
-        self.items = items
-
-        self.init_ui()
-
-
-    def init_ui(self):
-        ''' Build the gui elements required by the preference items.
-
-        '''
-        sizer = wx.GridBagSizer(0,0)
-        # Find all groups.
-        groups = list(set([x.group for x in self.items]))
-
-        for k, cur_group in enumerate(groups):
-            # Create a static box container for the group.
-            if cur_group is None:
-                container_label = ''
-            else:
-                container_label = cur_group
-            cur_container = StaticBoxContainer(parent = self, 
-                                label = container_label)
-
-            groupitems = [x for x in self.items if x.group == cur_group]
-            for cur_item in groupitems:
-                guiclass = cur_item.guiclass
-                if guiclass is not None:
-                    gui_element = guiclass(name = cur_item.name,
-                                           pref_item = cur_item,
-                                           size = (100, 10),
-                                           parent = cur_container 
-                                          )
-                    cur_container.addField(gui_element)
-                else:
-                    self.logger.warning('Item %s of mode %s has no guiclass.', 
-                            cur_item.name, cur_item.mode)
-
-            sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, border = 10)
-
-        sizer.AddGrowableCol(0)
-        self.SetSizer(sizer)
-
-
-
-
 
 
 

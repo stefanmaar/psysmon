@@ -1,14 +1,14 @@
+import logging
 import wx
 from wx.lib.stattext import GenStaticText as StaticText
 import  wx.lib.filebrowsebutton as filebrowse
 import wx.lib.intctrl as intctrl
-
 try:
     from agw import floatspin as FS
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as FS
+#import wx.lib.rcsizer  as rcs
 
-import  wx.lib.rcsizer  as rcs
 
 ## The Field class.
 # 
@@ -123,35 +123,80 @@ class Field(wx.Panel):
         self.controlElement.SetValue(value)
 
 
+
+
+class PrefPagePanel(wx.Panel):
+    ''' A panel representing a page of the preference manager.
+
+    '''
+    def __init__(self, parent = None, id = wx.ID_ANY, items = None):
+        wx.Panel.__init__(self, parent = parent, id = id)
+
+        self.items = items
+
+        self.init_ui()
+
+
+    def init_ui(self):
+        ''' Build the gui elements required by the preference items.
+
+        '''
+        sizer = wx.GridBagSizer(0,0)
+        # Find all groups.
+        groups = list(set([x.group for x in self.items]))
+
+        for k, cur_group in enumerate(groups):
+            # Create a static box container for the group.
+            if cur_group is None:
+                container_label = ''
+            else:
+                container_label = cur_group
+            cur_container = StaticBoxContainer(parent = self, 
+                                label = container_label)
+
+            groupitems = [x for x in self.items if x.group == cur_group]
+            for cur_item in groupitems:
+                guiclass = cur_item.guiclass
+                if guiclass is not None:
+                    gui_element = guiclass(name = cur_item.name,
+                                           pref_item = cur_item,
+                                           size = (100, 10),
+                                           parent = cur_container 
+                                          )
+                    cur_container.addField(gui_element)
+                else:
+                    self.logger.warning('Item %s of mode %s has no guiclass.', 
+                            cur_item.name, cur_item.mode)
+
+            sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, border = 10)
+
+        sizer.AddGrowableCol(0)
+        self.SetSizer(sizer)
+
+
 ## The OptionsEditPanel
 #
 # This class provides an easy to use edit dialog for pSysmon collection nodes.
 # One can choose from a set of fields which can be used to change the values 
 # of the collection node properties.        
-class OptionsEditPanel(wx.Panel):
-    ''' The options edit panel.
+class PrefEditPanel(wx.Panel):
+    ''' The preferences edit panel.
 
     This class provides the base container to edit pSysmon nodes (e.g. collection 
     nodes or processing nodes). One can choose from a set of fields which can be
     used to change the values of the options of the related node.
     '''
-    def __init__(self, options, parent=None, id=wx.ID_ANY,
+    def __init__(self, pref, parent=None, id=wx.ID_ANY,
                  size=(400,600)):
         wx.Panel.__init__(self, parent=parent, 
                           id=id)
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # The node options being edited with the dialog.
-        self.options = options
-
-        # A dictionary of pages created in the notebook.
-        self.pages = {}
-
-        # A dictionary of page sizers associated with the pages.
-        self.pageSizers = {}
-
-        # The list of container panels holding the fields.
-        self.fieldContainer = {}
+        self.pref = pref
 
         # Create the UI elements.
         self.initUI()
@@ -166,56 +211,28 @@ class OptionsEditPanel(wx.Panel):
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(0)
 
-        # The panel manages the content in a notebook.
+        # The notebook holding the differnt pages of the preferences.
         self.notebook = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
-        self.sizer.Add(self.notebook, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)  
+        self.sizer.Add(self.notebook, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)
+        self.build_notebook()
+
 
         self.SetSizer(self.sizer)
 
 
 
-    def addPage(self, name):
-        ''' Add a page to the notebook of the panel.
-
-        Parameters
-        ----------
-        name : String
-            The name of the page.
-        '''
-        # All fields are children of the fieldPanel.
-        # The field elements should be parents of the same panel to ensure a 
-        # consistent tab traversal. 
-        self.pages[name] = wx.Panel(self.notebook, wx.ID_ANY)
-        self.pageSizers[name] = wx.GridBagSizer(5,10)
-        self.pageSizers[name].AddGrowableCol(0)
-        self.pages[name].SetSizer(self.pageSizers[name])
-        #self.sizer.Add(self.fieldPanel, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=0)
-
-        self.notebook.AddPage(self.pages[name], name) 
-
-
-    def addContainer(self, container, pageName):
-        ''' Add a container to the page of a notebook.
+    def build_notebook(self):
+        ''' Build the notebook based on the project preferences.
 
         '''
-        if not self.pages:
-            print "No dialog pages found. Create one first."
-            return
+        pagenames = sorted(self.pref.pages.keys())
 
-        if not pageName in self.pages.keys():
-            print "The specified page is not in the container list."
-            return
-
-        container.Reparent(self.pages[pageName])
-        row = len(self.fieldContainer)
-
-        print "Adding container at row %d" % row
-        self.pageSizers[pageName].Add(container, pos=(row, 0), flag=wx.EXPAND|wx.ALL, border=4)
-
-        container.options = self.options
-
-        print "Adding container with name %s to the dictionary" % container.GetName()
-        self.fieldContainer[container.GetName()] = container
+        for cur_pagename in pagenames:
+            panel = PrefPagePanel(parent = self.notebook, 
+                                  id = wx.ID_ANY,
+                                  items = self.pref.pages[cur_pagename]
+                                 )
+            self.notebook.AddPage(panel, cur_pagename)
 
 
 
