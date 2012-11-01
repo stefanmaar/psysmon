@@ -31,6 +31,7 @@ This module contains the pSysmon processingStack system.
 '''
 
 import copy
+from psysmon.core.preferences_manager import PreferencesManager
 
 class ProcessingStack:
     ''' The ProcessingStack class.
@@ -172,6 +173,9 @@ class ProcessingNode:
 
         # The options of the stack node.
         self.options = options
+
+        # The preferences of the stack node.
+        self.pref = PreferencesManager()
 
         # The entry point of the documentation of the node.
         self.docEnctryPoint = docEntryPoint
