@@ -59,7 +59,7 @@ class PreferencesManager:
         self.gui_elements['multi_choice'] = MultiChoiceField
         self.gui_elements['textedit'] = TextEditField
         self.gui_elements['integer_control'] = IntegerCtrlField
-        self.gui_elements['integer_range'] = IntegerRangeField
+        self.gui_elements['integer_spin'] = IntegerRangeField
         self.gui_elements['float_spin'] = FloatSpinField
         self.gui_elements['filebrowse'] = FileBrowseField
         self.gui_elements['dirbrowse'] = DirBrowseField
@@ -218,7 +218,7 @@ class SingleChoicePrefItem(PreferenceItem):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'single_choice', **kwargs)
-        
+
 
 
 
@@ -266,7 +266,37 @@ class FloatSpinPrefItem(PreferenceItem):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'float_spin', **kwargs)
-        
+
         self.increment = increment
 
         self.digits = digits
+
+
+class IntegerControlPrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'integer_control', **kwargs)
+
+
+class IntegerSpinPrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'integer_spin', **kwargs)
+
+
+class TextEditPrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'textedit', **kwargs)
