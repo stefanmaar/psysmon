@@ -1,4 +1,5 @@
 import logging
+import tempfile
 import os
 import shutil
 import copy
@@ -29,7 +30,7 @@ def create_dbtest_project(psybase):
     '''
 
     name = 'unit_test'
-    base_dir = '/home/stefan/01_gtd/04_aktuelleProjekte/pSysmon/03_pSysmonProjects'
+    project_dir = tempfile.mkdtemp()
     user = User(user_name = 'unit_test',
                 user_pwd = '',
                 user_mode = 'admin',
@@ -41,12 +42,32 @@ def create_dbtest_project(psybase):
     db_host = 'localhost'
     project = psysmon.core.project.Project(psybase = psybase,
                                            name = name,
-                                           base_dir = base_dir,
+                                           base_dir = project_dir,
                                            user = user,
                                            dbHost = db_host
                                           )
 
     return project
+
+
+def create_full_project(psybase):
+    ''' Create a complete project including database containing geometry and data.
+    '''
+    name = 'unit_test'
+    project_dir = tempfile.mkdtemp()
+    user_name = 'unit_test'
+    user_pwd = ''
+    author_name = 'Stefan Test'
+    author_uri = 'stest'
+    agency_name = 'University of Test'
+    agency_uri = 'at.uot'
+    db_host = 'localhost'
+
+    psybase.createPsysmonProject(name, project_dir, db_host, user_name,
+                user_pwd, author_name, author_uri, agency_name, agency_uri)
+
+
+
 
 
 def drop_project_database_tables(project):
