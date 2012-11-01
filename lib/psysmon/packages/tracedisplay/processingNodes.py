@@ -18,9 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 from psysmon.core.processingStack import ProcessingNode
-from psysmon.core.guiBricks import OptionsEditPanel, StaticBoxContainer, SingleChoiceField, IntegerCtrlField, FloatSpinField
+from psysmon.core.preferences_manager import SingleChoicePrefItem
+from psysmon.core.guiBricks import PrefEditPanel
 
 
 class Detrend(ProcessingNode):
@@ -40,12 +40,12 @@ class Detrend(ProcessingNode):
                                 tags = ['remove', 'mean']
                                )
 
-        self.options['method'] = 'constant'
-
-
-        # Create the logging logger instance.
-        #loggerName = __name__ + "." + self.__class__.__name__
-        #self.logger = logging.getLogger(loggerName)
+        # Add a single_choice field.
+        item = SingleChoicePrefItem(name = 'detrend method',
+                              limit = ('simple', 'linear', 'constant'),
+                              value = 'constant',
+                             )
+        self.pref.add_item(item = item)
 
 
 
@@ -55,24 +55,9 @@ class Detrend(ProcessingNode):
 
     def getEditPanel(self, parent):
 
-        fieldSize = (250, 30)
-        editPanel = OptionsEditPanel(options = self.options,
+        editPanel = PrefEditPanel(pref = self.pref,
                                      parent = parent
                                     )
-        editPanel.addPage('detrend')
-
-        container = StaticBoxContainer(label = 'detrend parameters',
-                                       parent = editPanel)
-        editPanel.addContainer(container, 'detrend')
-
-        choices = ['simple', 'linear', 'constant']
-        curField = SingleChoiceField(parent = editPanel,
-                                     name = 'detrend method',
-                                     optionsKey = 'method',
-                                     size = fieldSize,
-                                     choices = choices)
-        container.addField(curField)
-
 
         return editPanel
 
@@ -88,7 +73,7 @@ class Detrend(ProcessingNode):
             The data to process.
         '''
         #self.logger.debug('Executing the processing node.')
-        stream.detrend(type = self.options['method'])
+        stream.detrend(type = self.pref.get_value('detrend method'))
 
 
 
