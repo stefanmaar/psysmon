@@ -41,13 +41,16 @@ class ImportWaveform(CollectionNode):
 
             for curTrace in stream.traces:
                 print "Importing trace " + curTrace.getId()
-                dbData.append(self.getDbData(curFile['filename'], curFile['format'], curTrace))
+                cur_data = self.getDbData(curFile['filename'], curFile['format'], curTrace)
+                if cur_data is not None:
+                    dbData.append(cur_data)
 
-        print dbData   
+        self.logger.debug('dbData: %s', dbData)   
 
-        dbSession = self.project.getDbSession()
-        dbSession.add_all(dbData)
-        dbSession.commit()
+        if len(dbData) > 0:
+            dbSession = self.project.getDbSession()
+            dbSession.add_all(dbData)
+            dbSession.commit()
 
 
     ## Return a tuple of values to be inserted into the traceheader database.
@@ -85,7 +88,7 @@ class ImportWaveform(CollectionNode):
             return Header(**header2Insert)
         else:
             print "File %s is not inside a waveform directory. Skipping this trace." % filename
-            return ()
+            return None
 
 
 
