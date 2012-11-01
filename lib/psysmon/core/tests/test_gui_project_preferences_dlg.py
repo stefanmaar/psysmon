@@ -5,11 +5,14 @@ Created on May 17, 2011
 '''
 
 import unittest
+import os
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.preferences_manager import PreferenceItem
 from psysmon.core.preferences_manager import SingleChoicePrefItem
 from psysmon.core.preferences_manager import MultiChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
+from psysmon.core.preferences_manager import FileBrowsePrefItem
+from psysmon.core.preferences_manager import DirBrowsePrefItem
 from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
 from psysmon.core.gui import PSysmonApp
 
@@ -84,6 +87,22 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
                               group = 'test group 1',
                               value = 10.3,
                               limit = (0, 100)
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add an filebrowse field.
+        item = FileBrowsePrefItem(name = 'filebrowse', 
+                              group = 'test group 1',
+                              value = '',
+                              filemask = 'comma separated version (*.csv)|*.csv|' \
+                                        'all files (*)|*'
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add an dirbrowse field.
+        item = DirBrowsePrefItem(name = 'dirbrowse', 
+                              group = 'test group 1',
+                              value = '' 
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
 

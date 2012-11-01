@@ -33,6 +33,8 @@ from psysmon.core.guiBricks import IntegerCtrlField
 from psysmon.core.guiBricks import IntegerRangeField
 from psysmon.core.guiBricks import FloatSpinField
 from psysmon.core.guiBricks import MultiChoiceField
+from psysmon.core.guiBricks import FileBrowseField
+from psysmon.core.guiBricks import DirBrowseField
 
 
 class PreferencesManager:
@@ -59,6 +61,8 @@ class PreferencesManager:
         self.gui_elements['integer_control'] = IntegerCtrlField
         self.gui_elements['integer_range'] = IntegerRangeField
         self.gui_elements['float_spin'] = FloatSpinField
+        self.gui_elements['filebrowse'] = FileBrowseField
+        self.gui_elements['dirbrowse'] = DirBrowseField
 
 
     def __str__(self):
@@ -212,6 +216,30 @@ class MultiChoicePrefItem(PreferenceItem):
                 mode = 'multi_choice', **kwargs)
 
 
+
+class FileBrowsePrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, filemask = '*.*', **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'filebrowse', **kwargs)
+
+        self.filemask = filemask
+
+
+
+class DirBrowsePrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, start_directory = '.', **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'dirbrowse', **kwargs)
+
+        self.start_directory = start_directory
 
 
 class FloatSpinPrefItem(PreferenceItem):

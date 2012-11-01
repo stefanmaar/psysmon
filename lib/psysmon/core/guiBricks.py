@@ -801,93 +801,136 @@ class MultiChoiceField(Field):
 
 
 
-## The FileBrowseField class.
-#
-# A field to select multiple entries from a set of choices.
-# The choices are listed in a wx.ListBox window.
 class FileBrowseField(Field):
+    ''' The fileBrowseField class.
+    
+    A field to select a single file using a file select dialog.
+    '''
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, optionsKey, size, parent=None):
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
 
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
-        labelElement = StaticText(parent=self, 
+        self.labelElement = StaticText(parent=self, 
                                   ID=wx.ID_ANY, 
                                   label=self.label,
                                   style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        controlElement = filebrowse.FileBrowseButton(self, 
+        self.controlElement = filebrowse.FileBrowseButton(self, 
                                                      wx.ID_ANY, 
                                                      labelWidth=0,
                                                      labelText='',
+                                                     fileMask = pref_item.filemask,
                                                      changeCallback = self.onValueChange)
 
         # Add the gui elements to the field.
-        self.addLabel(labelElement)
-        self.addControl(controlElement)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
 
 
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
 
 
+    def setPrefValue(self):
+        ''' Set the value of the preference item bound to the field.
+        '''
+        self.pref_item.set_value(self.controlElement.GetValue())
 
-## The DirBrowseField class.
-#
-# A field to select multiple entries from a set of choices.
-# The choices are listed in a wx.ListBox window.
+
+    def setDefaultValue(self, value):
+        ''' Set the value of the field control element.
+
+        Parameters
+        ----------
+        value : String
+            The new value of the filebrowse control element.
+        '''
+        self.defaultValue = value
+        self.controlElement.SetValue(value)
+
+
 class DirBrowseField(Field):
+    ''' The DirBrowseField class.
 
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param name The name of the field. Is used as the label too.
-    # @param optionsKey The key of the collection node options edited by this field.
-    # @param size The size of the field. A tuple. (width, height)
-    # @param parent The parent wxPython window of this field.
-    # @param choices A list of choices from which the user can select one value.
-    def __init__(self, name, optionsKey, size, parent=None):
+    A field to select a single directory using a directory select dialog.
+    '''
 
-        Field.__init__(self, parent=parent, name=name, optionsKey=optionsKey, size=size)
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
-        labelElement = StaticText(parent=self, 
+        self.labelElement = StaticText(parent=self, 
                                        ID=wx.ID_ANY, 
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        controlElement = filebrowse.DirBrowseButton(self, 
+        self.controlElement = filebrowse.DirBrowseButton(self, 
                                                     wx.ID_ANY, 
-                                                    size=(size[0]*self.ctrlRatio, size[1]),
                                                     labelText='',
-                                                    changeCallback=self.onValueChange
+                                                    changeCallback=self.onValueChange,
+                                                    startDirectory = pref_item.start_directory
                                                    )
 
         # Add the gui elements to the field.
-        self.addLabel(labelElement)
-        self.addControl(controlElement)
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
 
 
-    def onValueChange(self, event):
-        self.dirBrowseButton.startDirectory = event.GetString()
-        self.setOptionsValue()
+    def setPrefValue(self):
+        ''' Set the value of the preference item bound to the field.
+        '''
+        self.pref_item.set_value(self.controlElement.GetValue())
+        self.pref_item.start_directory = self.pref_item.value
 
 
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.  
     def setDefaultValue(self, value):
+        ''' Set the value of the field control element.
+
+        Parameters
+        ----------
+        value : String
+            The new value of the filebrowse control element.
+        '''
         self.defaultValue = value
         self.controlElement.SetValue(value)
-        self.controlElement.startDirectory = value
+        #self.controlElement.startDirectory = value
+
 
