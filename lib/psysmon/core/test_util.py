@@ -1,12 +1,16 @@
 import logging
 import tempfile
 import os
+import os.path
+import glob
 import shutil
 import copy
 import psysmon
 from psysmon.core.base import Base
 import psysmon.core.gui as psygui
 from psysmon.core.project import User
+from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.inventory import InventoryDatabaseController
 
 
 def create_psybase():
@@ -66,6 +70,54 @@ def create_full_project(psybase):
     psybase.createPsysmonProject(name, project_dir, db_host, user_name,
                 user_pwd, author_name, author_uri, agency_name, agency_uri)
 
+    project = psybase.project
+
+    data_path = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(data_path, 'tests', 'data')
+
+    # Write the geometry from XML to Database.
+    inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
+    inventory = Inventory('test')
+    inventory.importFromXml(inventory_file)
+    dbController = InventoryDatabaseController(project)     
+    dbController.write(inventory)  
+
+    # Add the waveform directory to the project.
+    wf_dir = project.dbTables['waveform_dir']
+    wf_diralias = project.dbTables['waveform_dir_alias']
+    db_session = project.getDbSession()
+    new_wfdir = wf_dir(data_path, '')
+    new_alias = wf_diralias(project.activeUser.name,
+                            data_path)
+    new_wfdir.aliases.append(new_alias)
+    db_session.add(new_wfdir)
+    db_session.commit()
+    project.waveclient['main client'].loadWaveformDirList()
+
+    # Import the data files.
+    node_template = psybase.packageMgr.getCollectionNodeTemplate('import waveform')
+    node = node_template()
+    # Create a logger for the node.
+    loggerName = __name__+ "." + node.__class__.__name__
+    node.logger = logging.getLogger(loggerName)
+    node.project = project
+
+    filenames = glob.glob(os.path.join(data_path, 'ZAMG-seis_event00017*.msd'))
+    filelist = []
+    for cur_file in filenames:
+        filelist.append({'format': 'mseed', 'filename': cur_file})
+    node.options['inputFiles'] = filelist
+    node.execute()
+
+
+    # Apply the geometry.
+    node_template = psybase.packageMgr.getCollectionNodeTemplate('apply geometry')
+    node = node_template()
+    # Create a logger for the node.
+    loggerName = __name__+ "." + node.__class__.__name__
+    node.logger = logging.getLogger(loggerName)
+    node.project = project
+    node.execute()
 
 
 
