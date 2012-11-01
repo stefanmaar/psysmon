@@ -181,9 +181,6 @@ class PsysmonDbWaveClient(WaveClient):
         # The psysmon project owning the waveclient.
         self.project = project
 
-        # The current database session.
-        self.dbSession = project.getDbSession()
-
         # The traceheader database table.
         self.traceheader = self.project.dbTables['traceheader']
 
@@ -242,7 +239,7 @@ class PsysmonDbWaveClient(WaveClient):
             The requested waveform data. All traces are packed into one stream.
         '''
         self.logger.debug("Getting the waveform...")
-        
+
 
         stream = Stream()
 
@@ -262,7 +259,7 @@ class PsysmonDbWaveClient(WaveClient):
                     cur_trace = stock_stream.traces[0]
                     cur_start_time = cur_trace.stats.starttime
                     cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
-                    
+
                     stream += stock_stream
 
                     if (startTime - cur_start_time) > 1/cur_trace.stats.sampling_rate:
@@ -285,7 +282,7 @@ class PsysmonDbWaveClient(WaveClient):
                                                         start_time = cur_end_time,
                                                         end_time = endTime)
                         stream += curStream
-                    
+
                 else:
                     self.logger.debug('No stock data available...')
                     curStream = self.load_from_file(station = stat,
@@ -294,9 +291,9 @@ class PsysmonDbWaveClient(WaveClient):
                                                     location = loc,
                                                     start_time = startTime,
                                                     end_time = endTime)
-                    
+
                     stream += curStream
-                
+
                 stream.merge()
 
         self.add_to_stock(stream)
@@ -326,7 +323,8 @@ class PsysmonDbWaveClient(WaveClient):
         stream = Stream()
         
         # Create the standard query.
-        query = self.dbSession.query(self.traceheader.file_type,
+        dbSession = self.project.getDbSession()
+        query = dbSession.query(self.traceheader.file_type,
                                      self.traceheader.filename, 
                                      self.waveformDirAlias.alias,
                                      self.geomStation.net_name,
@@ -385,7 +383,7 @@ class PsysmonDbWaveClient(WaveClient):
         wfDir = self.waveformDir
         wfDirAlias = self.waveformDirAlias
 
-        dbSession = self.dbSession
+        dbSession = self.project.getDbSession()
         self.waveformDirList = dbSession.query(wfDir.id, 
                                                wfDir.directory, 
                                                wfDirAlias.alias, 
