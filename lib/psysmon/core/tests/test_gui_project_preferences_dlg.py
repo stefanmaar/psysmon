@@ -92,7 +92,7 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
 
         # Add an filebrowse field.
         item = FileBrowsePrefItem(name = 'filebrowse', 
-                              group = 'test group 1',
+                              group = 'test group 2',
                               value = '',
                               filemask = 'comma separated version (*.csv)|*.csv|' \
                                         'all files (*)|*'
@@ -101,7 +101,7 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
 
         # Add an dirbrowse field.
         item = DirBrowsePrefItem(name = 'dirbrowse', 
-                              group = 'test group 1',
+                              group = 'test group 2',
                               value = '' 
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
