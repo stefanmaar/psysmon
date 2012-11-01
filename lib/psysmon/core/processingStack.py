@@ -32,6 +32,7 @@ This module contains the pSysmon processingStack system.
 
 import copy
 from psysmon.core.preferences_manager import PreferencesManager
+from psysmon.core.guiBricks import PrefEditPanel
 
 class ProcessingStack:
     ''' The ProcessingStack class.
@@ -203,20 +204,14 @@ class ProcessingNode:
 
 
 
-    def edit(self):
-        ''' Edit the options of the stack node.
-
-        '''
-        assert False, 'edit must be defined'
-
-
 
     def getEditPanel(self, parent):
         ''' The method to build and return the edit panel for the processing 
         stack GUI.
 
         '''
-        assert False, 'getEditPanel must be defined'
+        return PrefEditPanel(pref = self.pref,
+                             parent = parent)
 
 
 

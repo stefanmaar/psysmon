@@ -20,12 +20,13 @@
 
 from psysmon.core.processingStack import ProcessingNode
 from psysmon.core.preferences_manager import SingleChoicePrefItem
-from psysmon.core.guiBricks import PrefEditPanel
 
 
 class Detrend(ProcessingNode):
-    '''
+    ''' Detrend a timeseries.
 
+    This node uses the detrend method of the obspy stream class to remove the 
+    trend from a timeseries. 
     '''
     nodeClass = 'common'
 
@@ -46,22 +47,6 @@ class Detrend(ProcessingNode):
                               value = 'constant',
                              )
         self.pref.add_item(item = item)
-
-
-
-    def edit(self):
-        pass
-
-
-    def getEditPanel(self, parent):
-
-        editPanel = PrefEditPanel(pref = self.pref,
-                                     parent = parent
-                                    )
-
-        return editPanel
-
-
 
 
     def execute(self, stream):
