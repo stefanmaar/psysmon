@@ -8,14 +8,11 @@ import unittest
 import psysmon
 import logging
 import os
-import glob
 from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 import psysmon.core.gui as psygui
-from psysmon.packages.geometry.inventory import Inventory
-from psysmon.packages.geometry.inventory import InventoryDatabaseController
 
 
 class TracedisplayTestCase(unittest.TestCase):
