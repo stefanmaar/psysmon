@@ -20,6 +20,8 @@
 
 from psysmon.core.processingStack import ProcessingNode
 from psysmon.core.preferences_manager import SingleChoicePrefItem
+from psysmon.core.preferences_manager import FloatSpinPrefItem
+from psysmon.core.preferences_manager import IntegerSpinPrefItem
 
 
 class Detrend(ProcessingNode):
@@ -81,61 +83,34 @@ class FilterBandPass(ProcessingNode):
                                 tags = ['filter', 'bandpass']
                                )
 
-        self.options['freqmin'] = 1
-        self.options['freqmax'] = 15
-        self.options['zerophase'] = False
-        self.options['corners'] = 4
+        # Add an float_spin field.
+        item = FloatSpinPrefItem(name = 'min. frequ.', 
+                              value = 1,
+                              limit = (0, None),
+                              digits = 1,
+                              increment = 1
+                             )
+        self.pref.add_item(item = item)
+
+        # Add an float_spin field.
+        item = FloatSpinPrefItem(name = 'max. frequ.', 
+                              value = 15,
+                              limit = (0, None),
+                              digits = 1,
+                              increment = 1
+                             )
+        self.pref.add_item(item = item)
+
+        # Add an float_spin field.
+        item = IntegerSpinPrefItem(name = 'corners', 
+                              value = 4,
+                              limit = (1, 30)
+                             )
+        self.pref.add_item(item = item)
 
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
         #self.logger = logging.getLogger(loggerName)
-
-
-
-    def edit(self):
-        pass
-
-
-    def getEditPanel(self, parent):
-
-        fieldSize = (250, 30)
-        editPanel = OptionsEditPanel(options = self.options,
-                                     parent = parent
-                                    )
-        editPanel.addPage('bandpass filter')
-
-        container = StaticBoxContainer(label = 'filter parameters',
-                                       parent = editPanel)
-        editPanel.addContainer(container, 'bandpass filter')
-
-        curField = FloatSpinField(parent = editPanel,
-                                  name = 'min. frequency',
-                                  optionsKey = 'freqmin',
-                                  size = fieldSize,
-                                  digits = 2,
-                                  min_val = 0
-                                 )
-        container.addField(curField)
-
-        curField = FloatSpinField(parent = editPanel,
-                                  name = 'max. frequency',
-                                  optionsKey = 'freqmax',
-                                  size = fieldSize,
-                                  digits = 2,
-                                  min_val = 0
-                                 )
-        container.addField(curField)
-
-        curField = IntegerCtrlField(parent = editPanel,
-                                    name = 'corners',
-                                    optionsKey = 'corners',
-                                    size = fieldSize
-                                   )
-        container.addField(curField)
-
-
-        return editPanel
-
 
 
 
@@ -149,8 +124,9 @@ class FilterBandPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('bandpass',
-                      freqmin = self.options['freqmin'],
-                      freqmax = self.options['freqmax']
+                      freqmin = self.pref.get_value('min. frequ.'),
+                      freqmax = self.pref.get_value('max. frequ.'),
+                      corners = self.pref.get_value('corners')
                      )
 
 
@@ -172,50 +148,28 @@ class FilterLowPass(ProcessingNode):
                                 category = 'frequency',
                                 tags = ['filter', 'lowpass'],
                                )
-    
-        self.options['freq'] = 10
-        self.options['zerophase'] = False
-        self.options['corners'] = 4
+
+        # Add an float_spin field.
+        item = FloatSpinPrefItem(name = 'frequ.', 
+                              value = 1,
+                              limit = (0, None),
+                              digits = 1,
+                              increment = 1
+                             )
+        self.pref.add_item(item = item)
+
+        # Add an float_spin field.
+        item = IntegerSpinPrefItem(name = 'corners', 
+                              value = 4,
+                              limit = (1, 30)
+                             )
+        self.pref.add_item(item = item)
+
+
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
         #self.logger = logging.getLogger(loggerName)
 
-
-
-    def edit(self):
-        pass
-
-
-    def getEditPanel(self, parent):
-
-        fieldSize = (250, 30)
-        editPanel = OptionsEditPanel(options = self.options,
-                                     parent = parent
-                                    )
-        editPanel.addPage('lowpass filter')
-
-        container = StaticBoxContainer(label = 'filter parameters',
-                                       parent = editPanel)
-        editPanel.addContainer(container, 'lowpass filter')
-
-        curField = FloatSpinField(parent = editPanel,
-                                  name = 'cutoff frequency',
-                                  optionsKey = 'freq',
-                                  size = fieldSize,
-                                  digits = 2,
-                                  min_val = 0
-                                 )
-        container.addField(curField)
-
-        curField = IntegerCtrlField(parent = editPanel,
-                                    name = 'corners',
-                                    optionsKey = 'corners',
-                                    size = fieldSize
-                                   )
-        container.addField(curField)
-
-
-        return editPanel
 
 
 
@@ -230,7 +184,7 @@ class FilterLowPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('lowpass',
-                      freq = self.options['freq']
+                      freq = self.pref.get_value('frequ.')
                      )
 
 
@@ -253,52 +207,26 @@ class FilterHighPass(ProcessingNode):
                                 category = 'frequency',
                                 tags = ['filter', 'highpass']
                                )
-    
-        self.options['freq'] = 10
-        self.options['zerophase'] = False
-        self.options['corners'] = 4
+
+        # Add an float_spin field.
+        item = FloatSpinPrefItem(name = 'frequ.', 
+                              value = 1,
+                              limit = (0, None),
+                              digits = 1,
+                              increment = 1
+                             )
+        self.pref.add_item(item = item)
+
+        # Add an float_spin field.
+        item = IntegerSpinPrefItem(name = 'corners', 
+                              value = 4,
+                              limit = (1, 30)
+                             )
+        self.pref.add_item(item = item)
+
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
         #self.logger = logging.getLogger(loggerName)
-
-
-
-    def edit(self):
-        pass
-
-
-    def getEditPanel(self, parent):
-
-        fieldSize = (250, 30)
-        editPanel = OptionsEditPanel(options = self.options,
-                                     parent = parent
-                                    )
-        editPanel.addPage('highpass filter')
-
-        container = StaticBoxContainer(label = 'filter parameters',
-                                       parent = editPanel)
-        editPanel.addContainer(container, 'highpass filter')
-
-        curField = FloatSpinField(parent = editPanel,
-                                  name = 'cutoff frequency',
-                                  optionsKey = 'freq',
-                                  size = fieldSize,
-                                  digits = 2,
-                                  min_val = 0
-                                 )
-        container.addField(curField)
-
-        curField = IntegerCtrlField(parent = editPanel,
-                                    name = 'corners',
-                                    optionsKey = 'corners',
-                                    size = fieldSize
-                                   )
-        container.addField(curField)
-
-
-        return editPanel
-
-
 
 
     def execute(self, stream):
@@ -311,5 +239,5 @@ class FilterHighPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('highpass',
-                      freq = self.options['freq']
+                      freq = self.pref.get_value('frequ.')
                      )
