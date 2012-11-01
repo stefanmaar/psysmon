@@ -5,9 +5,10 @@ Created on May 17, 2011
 '''
 
 import unittest
-import os
 from psysmon.core.preferences_manager import PreferencesManager
-from psysmon.core.preferences_manager import PreferenceItem
+from psysmon.core.preferences_manager import TextEditPrefItem
+from psysmon.core.preferences_manager import IntegerControlPrefItem
+from psysmon.core.preferences_manager import IntegerSpinPrefItem
 from psysmon.core.preferences_manager import SingleChoicePrefItem
 from psysmon.core.preferences_manager import MultiChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
@@ -58,25 +59,22 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
         self.pref.add_item(pagename = 'Logging', item = item)   
 
         # Add a textedit field.
-        item = PreferenceItem(name = 'textedit', 
+        item = TextEditPrefItem(name = 'textedit', 
                               group = 'test group 1',
-                              mode = 'textedit',
                               value = 'this is a textedit field'
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
 
         # Add a integer_control field.
-        item = PreferenceItem(name = 'integer_control', 
+        item = IntegerControlPrefItem(name = 'integer_control', 
                               group = 'test group 1',
-                              mode = 'integer_control',
                               value = 10
                              )
         self.pref.add_item(pagename = 'Logging', item = item)   
 
         # Add an integer_range field.
-        item = PreferenceItem(name = 'integer_range', 
+        item = IntegerSpinPrefItem(name = 'integer_range', 
                               group = 'test group 1',
-                              mode = 'integer_range',
                               value = 10,
                               limit = (0, 100)
                              )
