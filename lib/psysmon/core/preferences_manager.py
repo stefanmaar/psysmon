@@ -132,6 +132,22 @@ class PreferencesManager:
         return found_items
 
 
+    def get_value(self, name, pagename = None):
+        ''' Get items with specified name [and pagename] from the preferences.
+
+        name : String
+            The name of the preferences item to find.
+
+        pagename : String
+            The name of the page to which the search should be limited.
+
+        '''
+        found_items = self.get_item(name = name, pagename = pagename)
+        values = [x.value for x in found_items]
+        if len(values) == 1:
+            values = values[0]
+
+        return values
 
 
 class PreferenceItem:
