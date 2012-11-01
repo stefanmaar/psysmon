@@ -1,4 +1,3 @@
-import ipdb
 import unittest
 import psysmon
 import logging
@@ -33,7 +32,6 @@ class DatabaseTableCreation(unittest.TestCase):
         self.project.dbMetaData.drop_all()
         self.project.dbMetaData.clear()
 
-        ipdb.set_trace() ############################## Breakpoint ##############################
         self.project.createDatabaseStructure(self.psybase.packageMgr.packages)
 
 
