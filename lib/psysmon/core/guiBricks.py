@@ -408,15 +408,17 @@ class StaticBoxContainer(wx.Panel):
         self.fieldList = []
 
         # Create the static box and it's sizer.
-        #box = wx.StaticBox(self, id=wx.ID_ANY, label=label, name=label)
-        #self.bSizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        box = wx.StaticBox(self, id=wx.ID_ANY, label=label, name=label)
+        self.b_sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+
+        # Create the sizer holding the fields.
         self.sizer = wx.GridBagSizer(5)
         self.sizer.AddGrowableCol(0)
 
+        self.b_sizer.Add(self.sizer, 1, flag = wx.EXPAND)
+
         # Create the sizer holding the static box.        
-        #border = wx.BoxSizer()
-        #border.Add(self.bSizer, wx.ID_ANY,  wx.VERTICAL|wx.EXPAND|wx.ALL, 2)
-        self.SetSizer(self.sizer)
+        self.SetSizer(self.b_sizer)
 
 
     ## Add a field to the container.
