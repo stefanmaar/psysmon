@@ -1054,7 +1054,7 @@ class InventoryXmlParser:
                 continue
 
             # Create the Recorder instance.
-            net2Add = Network(name=content['code'],
+            net2Add = Network(name=curNetwork.attrib['code'],
                               description=content['description'],
                               type=content['type']) 
 
