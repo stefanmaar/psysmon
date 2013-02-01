@@ -215,6 +215,8 @@ class EditGeometryDlg(wx.Frame):
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
+                 ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
+                 ("", "", ""),
                  ("Save to database", "Save the selected inventory to database.", self.onSave2Db)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
@@ -249,6 +251,11 @@ class EditGeometryDlg(wx.Frame):
 
             self.inventories[curInventory.name] = curInventory
             self.inventoryTree.updateInventoryData()
+
+
+    def onAddRecorder(self, event):
+        self.logger.info("onAddRecorder menu clicked.")
+
 
     ## Save to database menu callback.
     #
@@ -285,6 +292,8 @@ class EditGeometryDlg(wx.Frame):
             if curInventory.hasChanged():
                 if curInventory.type.lower() == 'db':
                     curInventory.updateDb()
+
+        self.dbController.dbSession.close()
 
         # delete the frame
         self.Destroy()
