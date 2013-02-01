@@ -28,10 +28,13 @@ class EditGeometryDlgTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
+        print "removing temporary file structure....\n"
         remove_project_filestructure(cls.project)
+        print "removing temporary base directory....\n"
         os.removedirs(cls.project.base_dir)
-        print "....in tearDownClass.\n"
+        print "....finished cleaning up.\n"
 
 
     def setUp(self):
@@ -57,7 +60,6 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     def testDlg(self):
         self.node.execute()
         self.app.MainLoop()
-
 
 #def suite():
 #    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
