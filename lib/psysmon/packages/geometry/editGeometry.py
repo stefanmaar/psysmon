@@ -50,7 +50,8 @@ import numpy as np
 from mpl_toolkits.basemap import Basemap 
 from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
-
+from psysmon.packages.geometry.inventory import Recorder
+from psysmon.packages.geometry.inventory import Network
 
 class EditGeometry(CollectionNode):
     '''
@@ -189,6 +190,9 @@ class EditGeometryDlg(wx.Frame):
         # tell the manager to 'commit' all the changes just made
         self.mgr.Update()
 
+        # Bind some events.
+        self.Bind(wx.EVT_CLOSE, self.onExit)
+
 
     def loadInventoryFromDb(self):
         ''' Load the inventory from the project database.
@@ -215,6 +219,7 @@ class EditGeometryDlg(wx.Frame):
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
+                 ("Add network", "Add a network to the selected inventory.", self.onAddNetwork),
                  ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
                  ("", "", ""),
                  ("Save to database", "Save the selected inventory to database.", self.onSave2Db)),
@@ -255,6 +260,18 @@ class EditGeometryDlg(wx.Frame):
 
     def onAddRecorder(self, event):
         self.logger.info("onAddRecorder menu clicked.")
+        # Create the Recorder instance.
+        rec2Add = Recorder(serial='0000', 
+                           type = '1111') 
+        self.selectedInventory.addRecorder(rec2Add)
+        self.inventoryTree.updateInventoryData()
+
+
+    def onAddNetwork(self, event):
+        # Create the Recorder instance.
+        net2Add = Network(name = 'XX') 
+        self.selectedInventory.addNetwork(net2Add)
+        self.inventoryTree.updateInventoryData()
 
 
     ## Save to database menu callback.
@@ -287,6 +304,7 @@ class EditGeometryDlg(wx.Frame):
     # @param self The object pointer.
     # @param event The event object.
     def onExit(self, event):
+        self.logger.debug("onExit")
         # Check if an unsaved database inventory exists.
         for curInventory in self.inventories.itervalues():
             if curInventory.hasChanged():
@@ -512,6 +530,12 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.selectedInventory = pyData.parentInventory
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selectedInventory = pyData
+        elif(pyData.__class__.__name__ == 'Recorder'):
+            self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
+            self.Parent.selectedInventory = pyData.parentInventory
+        elif(pyData.__class__.__name__ == 'Network'):
+            self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
+            self.Parent.selectedInventory = pyData.parentInventory
 
     ## Update the inventory tree.
     #
@@ -623,6 +647,20 @@ class InventoryViewNotebook(wx.Notebook):
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onPageChanged)
 
 
+    def updateNetworkListView(self, network):
+        ''' Show the network data in the list view.
+        '''
+        self.logger.debug("updating the network listview") 
+        self.listViewPanel.showControlPanel('network', network)   
+
+
+    def updateRecorderListView(self, recorder):
+        ''' Show the recorder data in the list view.
+        '''
+        self.logger.debug("updating the recorder listview") 
+        self.listViewPanel.showControlPanel('recorder', recorder)   
+
+
     ## Show the station data in the list view.
     #
     def updateStationListView(self, station):
@@ -671,10 +709,13 @@ class ListViewPanel(wx.Panel):
         self.controlPanels = {}
         self.controlPanels['station'] = StationsPanel(self, wx.ID_ANY)
         #self.controlPanels['station'].SetBackgroundColour('maroon')
-
         self.controlPanels['sensor'] = SensorsPanel(self, wx.ID_ANY)
         #self.controlPanels['sensor'].SetBackgroundColour('orchid')
-        self.controlPanels['station'].Hide()
+        self.controlPanels['recorder'] = RecorderPanel(self, wx.ID_ANY)
+        self.controlPanels['network'] = NetworkPanel(self, wx.ID_ANY)
+
+        for cur_panel in self.controlPanels.values():
+            cur_panel.Hide()
 
         #sizer.Add(self.controlPanels['station'], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
         self.sizer.Add(self.controlPanels['sensor'], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
@@ -832,6 +873,205 @@ class MapViewPanel(wx.Panel):
         #m.drawparallels(np.arange(-60.,90.,30.),labels=[1,0,0,0])
         #m.drawmeridians(np.arange(0.,420.,60.),labels=[0,0,0,1])
 
+
+class NetworkPanel(wx.Panel):
+
+    def __init__(self, parent, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
+
+        ## The currently displayed station.
+        self.displayedNetwork = None;
+
+        self.sizer = wx.GridBagSizer(5, 5)
+
+        roAttr = wx.grid.GridCellAttr()
+        roAttr.SetReadOnly(True) 
+
+        # Create the recorder grid.
+        #stationColLabels = ['id', 'name', 'network', 'x', 'y', 'z', 'coordSystem', 'description']
+        fields = self.getNetworkFields()
+        self.network_grid = wx.grid.Grid(self, size=(-1, 100))
+        self.network_grid.CreateGrid(1, len(fields))
+
+        # Bind the stationGrid events.
+        #self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+
+        for k, (name, label, attr)  in enumerate(fields):
+            self.network_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.network_grid.SetColAttr(k, roAttr)
+
+        self.network_grid.AutoSizeColumns() 
+
+        self.sizer.Add(self.network_grid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        # Create the station grid.
+        fields = self.getStationFields()
+        self.station_grid = wx.grid.Grid(self, size=(100,100))
+        self.station_grid.CreateGrid(5, len(fields))
+
+        # Bind the stationGrid events.
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+
+        for k, (name, label, attr) in enumerate(fields):
+            self.station_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.station_grid.SetColAttr(k, roAttr)
+
+
+        self.sizer.Add(self.station_grid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        self.sizer.AddGrowableRow(1)
+        self.sizer.AddGrowableCol(0)
+        self.SetSizerAndFit(self.sizer)
+
+
+    def getNetworkFields(self):
+        ''' The recorder grid columns.
+        '''
+        tableField = []
+        tableField.append(('name', 'name', 'editable'))
+        tableField.append(('description', 'description', 'editable'))
+        tableField.append(('type', 'type', 'editable'))
+        return tableField
+
+
+    def getStationFields(self):
+        tableField = []
+        tableField.append(('id', 'id', 'readonly'))
+        tableField.append(('name', 'name', 'editable'))
+        tableField.append(('location', 'location', 'editable'))
+        tableField.append(('network', 'network', 'editable'))
+        tableField.append(('x', 'x', 'editable'))
+        tableField.append(('y', 'y', 'editable'))
+        tableField.append(('z', 'z', 'editable'))
+        tableField.append(('coordSystem', 'coord. system', 'editable'))
+        tableField.append(('description', 'description', 'editable'))
+        return tableField
+
+
+    def updateData(self, network):
+        ''' Update the displayed data.
+        '''
+        self.displayedRecorder = network
+
+        # Update the sensor grid fields.
+        self.setGridValues(network, self.network_grid, self.getNetworkFields(), 0)
+
+        self.network_grid.AutoSizeColumns()
+
+
+    def setGridValues(self, object, grid, fields, rowNumber):
+        ''' Set the grid values of the specified grid.
+        '''
+        for pos, (field, label, attr) in enumerate(fields):
+            if field and object[field]:
+                grid.SetCellValue(rowNumber, pos, str(object[field]))
+            grid.AutoSizeColumns()
+
+
+
+class RecorderPanel(wx.Panel):
+
+    def __init__(self, parent, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
+
+        ## The currently displayed station.
+        self.displayedRecorder = None;
+
+        self.sizer = wx.GridBagSizer(5, 5)
+
+        roAttr = wx.grid.GridCellAttr()
+        roAttr.SetReadOnly(True) 
+
+        # Create the recorder grid.
+        #stationColLabels = ['id', 'name', 'network', 'x', 'y', 'z', 'coordSystem', 'description']
+        fields = self.getStationFields()
+        self.recorder_grid = wx.grid.Grid(self, size=(-1, 100))
+        self.recorder_grid.CreateGrid(1, len(fields))
+
+        # Bind the stationGrid events.
+        #self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+
+        for k, (name, label, attr)  in enumerate(fields):
+            self.recorder_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.recorder_grid.SetColAttr(k, roAttr)
+
+        self.recorder_grid.AutoSizeColumns() 
+
+        self.sizer.Add(self.recorder_grid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        # Create the sensor grid.
+        fields = self.getSensorFields()
+        self.sensorGrid = wx.grid.Grid(self, size=(100,100))
+        self.sensorGrid.CreateGrid(5, len(fields))
+
+        # Bind the stationGrid events.
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+
+        for k, (name, label, attr) in enumerate(fields):
+            self.sensorGrid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.sensorGrid.SetColAttr(k, roAttr)
+
+
+        self.sizer.Add(self.sensorGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
+
+        self.sizer.AddGrowableRow(1)
+        self.sizer.AddGrowableCol(0)
+        self.SetSizerAndFit(self.sizer)
+
+
+    def getStationFields(self):
+        ''' The recorder grid columns.
+        '''
+        tableField = []
+        tableField.append(('id', 'id', 'readonly'))
+        tableField.append(('serial', 'serial', 'editable'))
+        tableField.append(('type', 'type', 'editable'))
+        return tableField
+
+
+    def getSensorFields(self):
+        ''' Get the sensor grid columns.
+        '''
+        tableField = []
+        tableField.append(('id', 'id', 'readonly'))
+        tableField.append(('label', 'label', 'readonly'))
+        tableField.append(('recorderSerial', 'rec.serial', 'readonly'))
+        tableField.append(('recorderType', 'rec. type', 'readonly'))
+        tableField.append(('serial', 'serial', 'readonly'))
+        tableField.append(('type', 'type', 'readonly'))
+        tableField.append(('recorderChannel', 'rec. channel', 'readonly'))
+        tableField.append(('channel', 'channel', 'readonly'))
+        tableField.append(('start', 'start', 'editable'))
+        tableField.append(('end', 'end', 'editable'))
+        return tableField
+
+
+    def updateData(self, recorder):
+        ''' Update the displayed data.
+        '''
+        self.displayedRecorder = recorder
+
+        # Update the sensor grid fields.
+        self.setGridValues(recorder, self.recorder_grid, self.getStationFields(), 0)
+
+        self.recorder_grid.AutoSizeColumns()
+
+
+    def setGridValues(self, object, grid, fields, rowNumber):
+        ''' Set the grid values of the specified grid.
+        '''
+        for pos, (field, label, attr) in enumerate(fields):
+            if field and object[field]:
+                grid.SetCellValue(rowNumber, pos, str(object[field]))
+            grid.AutoSizeColumns()
 
 
 

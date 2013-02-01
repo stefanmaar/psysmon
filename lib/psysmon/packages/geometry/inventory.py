@@ -77,11 +77,14 @@ class Inventory:
         self.networks = {}
 
 
-
     ## Add a recorder to the inventory.
     def addRecorder(self, recorder):
         self.recorders.append(recorder)
         recorder.setParentInventory(self)
+
+        msgTopic = 'inventory.add.recorder'
+        msg = (recorder,)
+        pub.sendMessage(msgTopic, msg)
 
 
     ## Remove a recorder from the inventory.
@@ -123,6 +126,10 @@ class Inventory:
     def addNetwork(self, network):
         self.networks[network.name] = network
         network.setParentInventory(self)
+        
+        msgTopic = 'inventory.add.network'
+        msg = (network,)
+        pub.sendMessage(msgTopic, msg)
 
 
     ## Remove a station from the inventory.
@@ -250,6 +257,10 @@ class InventoryDatabaseController:
                       'inventory.update.sensorAssignment')
         pub.subscribe(self.updateSensor2StationMapper,
                       'inventory.update.addSensor2Station')
+        pub.subscribe(self.addRecorder2Mapper,
+                      'inventory.add.recorder')
+        pub.subscribe(self.addNetwork2Mapper,
+                      'inventory.add.network')
 
 
     def __del__(self):
@@ -444,6 +455,7 @@ class InventoryDatabaseController:
 
         self.dbSession.add(rec2Add)
         self.dbSession.commit()
+        recorder.id = rec2Add.id
 
 
     def convertDbRecorder(self, dbRecorder):
@@ -540,9 +552,21 @@ class InventoryDatabaseController:
                 sensorTime2Add.child = self.mapper[curSensor]
                 station2Add.sensors.append(sensorTime2Add)
 
+        try:
+            self.dbSession.add(network2Add)
+            self.dbSession.commit()
+        except:
+            self.dbSession.rollback()
 
-        self.dbSession.add(network2Add)
-        self.dbSession.commit()
+
+    def addRecorder2Mapper(self, msg):
+        self.logger.debug("Adding recorder to mapper.")
+        self.insertRecorder(msg.data[0])
+
+
+    def addNetwork2Mapper(self, msg):
+        self.logger.debug("Adding Network to mapper.")
+        self.insertNetwork(msg.data[0])
 
 
     def updateStationMapper(self, msg):
@@ -1137,6 +1161,11 @@ class Recorder:
 
         ## The parent inventory.
         self.parentInventory = parentInventory
+
+
+    def __getitem__(self, name):
+        return self.__dict__[name]
+
 
     def __setitem__(self, name, value):
         self.__dict__[name] = value
