@@ -36,7 +36,7 @@ def create_dbtest_project(psybase):
     name = 'unit_test'
     project_dir = tempfile.mkdtemp()
     user = User(user_name = 'unit_test',
-                user_pwd = '',
+                user_pwd = 'test',
                 user_mode = 'admin',
                 author_name = 'Stefan Test',
                 author_uri = 'stest',
@@ -53,6 +53,27 @@ def create_dbtest_project(psybase):
 
     return project
 
+def create_empty_project(psybase):
+    ''' Create a complete project including database.
+    '''
+    name = 'unit_test'
+    project_dir = tempfile.mkdtemp()
+    user_name = 'unit_test'
+    user_pwd = 'test'
+    author_name = 'Stefan Test'
+    author_uri = 'stest'
+    agency_name = 'University of Test'
+    agency_uri = 'at.uot'
+    db_host = 'localhost'
+
+    psybase.createPsysmonProject(name, project_dir, db_host, user_name,
+                user_pwd, author_name, author_uri, agency_name, agency_uri)
+
+    project = psybase.project
+
+    return project
+
+
 
 def create_full_project(psybase):
     ''' Create a complete project including database containing geometry and data.
@@ -60,7 +81,7 @@ def create_full_project(psybase):
     name = 'unit_test'
     project_dir = tempfile.mkdtemp()
     user_name = 'unit_test'
-    user_pwd = ''
+    user_pwd = 'test'
     author_name = 'Stefan Test'
     author_uri = 'stest'
     agency_name = 'University of Test'
@@ -79,7 +100,7 @@ def create_full_project(psybase):
     inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
     inventory = Inventory('test')
     inventory.importFromXml(inventory_file)
-    dbController = InventoryDatabaseController(project)     
+    dbController = InventoryDatabaseController(project)
     dbController.write(inventory)  
 
     # Add the waveform directory to the project.
@@ -119,6 +140,8 @@ def create_full_project(psybase):
     node.project = project
     node.execute()
 
+    return project
+
 
 
 
@@ -130,6 +153,7 @@ def drop_project_database_tables(project):
 
 
 def remove_project_filestructure(project):
+    print "Removing project folder %s.\n" % project.projectDir
     shutil.rmtree(project.projectDir)
 
 
