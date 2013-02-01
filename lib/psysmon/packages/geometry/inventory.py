@@ -252,6 +252,11 @@ class InventoryDatabaseController:
                       'inventory.update.addSensor2Station')
 
 
+    def __del__(self):
+        ''' Clean up the database connection.
+        '''
+        self.dbSession.close()
+
 
     def load(self):
         ''' Load the inventory from the pSysmon database.
