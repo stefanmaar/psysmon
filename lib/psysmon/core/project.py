@@ -455,7 +455,7 @@ class Project:
             engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
         self.dbEngine = create_engine(engineString)
-        #self.dbEngine.echo = True
+        self.dbEngine.echo = True
         self.dbMetaData = MetaData(self.dbEngine)
         self.dbBase = declarative_base(metadata = self.dbMetaData)
         self.dbSessionClass = sessionmaker(bind=self.dbEngine)
