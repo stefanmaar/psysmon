@@ -457,11 +457,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def onShowContextMenu(self, evt):
         ''' Show the context menu.
         '''
-        #if not self.Parent.psyBase.project:
-        #    return
-        '''
         if(self.selected_item == 'station'):
-            self.logger.debug('Handling a station.')
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add sensor')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove station')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         elif(self.selected_item == 'sensor'):
             self.logger.debug('Handling a sensor.')
         elif(self.selected_item == 'inventory'):
@@ -469,24 +469,20 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         elif(self.selected_item == 'recorder'):
             self.logger.debug('Handling a recorder.')
         elif(self.selected_item == 'network'):
-            self.logger.debug('Handling a network')
-        '''
-
-        '''
-        try:
-            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.GetSelection())
-            if(selectedNode.mode == 'standalone'):
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'execute node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            elif(selectedNode.mode == 'uneditable'):
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'uneditable')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
-            else:
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'edit node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-        except PsysmonError as e:
-            pass
-        '''
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add station')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove network')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+        elif(self.selected_item == 'network_list'):
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add network')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove network')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+        else:
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
 
         pos = evt.GetPosition()
         pos = self.ScreenToClient(pos)
@@ -498,7 +494,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         '''
         if(self.selected_item == 'station'):
             self.logger.debug('Handling a station.')
-            self.Parent.addStation()
         elif(self.selected_item == 'sensor'):
             self.logger.debug('Handling a sensor.')
         elif(self.selected_item == 'inventory'):
@@ -506,9 +501,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         elif(self.selected_item == 'recorder'):
             self.logger.debug('Handling a recorder.')
         elif(self.selected_item == 'network'):
+            # Add a new station to the selected network.
             self.logger.debug('Handling a network')
             self.Parent.addStation()
         elif(self.selected_item == 'network_list'):
+            # Add a new network to the inventory.
             self.logger.debug('Handling a network_list')
             self.Parent.addNetwork()
 
