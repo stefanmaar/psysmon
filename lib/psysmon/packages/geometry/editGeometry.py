@@ -128,7 +128,7 @@ class EditGeometryDlg(wx.Frame):
         self.inventories = {}
 
         # The inventory currently selected by the user.
-        self.selectedInventory = None
+        self.selected_inventory = None
 
         # The network currently selected by the user.
         self.selected_network = None
@@ -210,7 +210,7 @@ class EditGeometryDlg(wx.Frame):
 
         self.inventories[curInventory.name] = curInventory
         self.inventoryTree.updateInventoryData()
-        self.selectedInventory = curInventory
+        self.selected_inventory = curInventory
 
 
     ## Define the EditGeometryDlg menus.  
@@ -269,19 +269,37 @@ class EditGeometryDlg(wx.Frame):
         # Create the Recorder instance.
         rec2Add = Recorder(serial='-9999', 
                            type = 'new recorder') 
-        self.selectedInventory.addRecorder(rec2Add)
+        self.selected_inventory.addRecorder(rec2Add)
         self.inventoryTree.updateInventoryData()
 
 
     def onAddNetwork(self, event):
-        # Create the Recorder instance.
+        ''' Handle the add network menu click.
+        '''
+        self.addNetwork()
+
+
+    def onAddStation(self, event):
+        ''' Handle the add station menu click.
+        '''
+        self.addStation()
+
+
+    def addNetwork(self):
+        ''' Add a new network to the inventory.
+        '''
+        if self.selected_inventory is None:
+            self.logger.error('You have to create or select an inventory first.')
+            return
+
         net2Add = Network(name = '-9999') 
-        self.selectedInventory.addNetwork(net2Add)
+        self.selected_inventory.addNetwork(net2Add)
         self.inventoryTree.updateInventoryData()
 
-    
-    def onAddStation(self, event):
-        # Create the Recorder instance.
+
+    def addStation(self):
+        ''' Add a new station to the inventory.
+        '''
         if self.selected_network is None:
             self.logger.error('You have to create or select a network first.')
             return
@@ -293,7 +311,7 @@ class EditGeometryDlg(wx.Frame):
                            y = 0,
                            z = 0,
                            coordSystem = 'epsg:4326') 
-        self.selectedInventory.addStation(station2Add)
+        self.selected_inventory.addStation(station2Add)
         self.inventoryTree.updateInventoryData()
 
     ## Save to database menu callback.
@@ -301,28 +319,28 @@ class EditGeometryDlg(wx.Frame):
     # @param self The object pointer.
     # @param event The event object.
     def onSave2Db(self, event):
-        if not self.selectedInventory:
+        if not self.selected_inventory:
             self.logger.info("No inventory selected.")
             return
 
-        if self.selectedInventory.__class__.__name__  != 'Inventory' :
+        if self.selected_inventory.__class__.__name__  != 'Inventory' :
             self.logger.info("Please select the inventory to be written to the database.")
             return
 
-        self.logger.debug("inventory type: %s",self.selectedInventory.type)
+        self.logger.debug("inventory type: %s",self.selected_inventory.type)
 
-        if self.selectedInventory.type not in 'db':
+        if self.selected_inventory.type not in 'db':
             self.logger.debug("Saving a non db inventory to the database.")
-            self.dbController.write(self.selectedInventory)
+            self.dbController.write(self.selected_inventory)
             self.loadInventoryFromDb()
 
         else:
             self.logger.debug("Updating the existing project inventory database.")
-            self.dbController.updateDb(self.selectedInventory)
+            self.dbController.updateDb(self.selected_inventory)
             cur_inventory = self.dbController.reloadDb()
             self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
-            self.selectedInventory = cur_inventory
+            self.selected_inventory = cur_inventory
             
 
         #self.inventoryTree.updateInventoryData()
@@ -405,8 +423,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.selected_item = None
 
         # Setup the context menu.
-        cmData = (("add", None),
-                  ("remove", None))
+        cmData = (("add", self.onAddElement),
+                  ("remove", self.onRemoveElement))
 
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
@@ -441,8 +459,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         '''
         #if not self.Parent.psyBase.project:
         #    return
-        self.logger.debug('selected_item: %s', self.selected_item)
-
+        '''
         if(self.selected_item == 'station'):
             self.logger.debug('Handling a station.')
         elif(self.selected_item == 'sensor'):
@@ -453,7 +470,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.logger.debug('Handling a recorder.')
         elif(self.selected_item == 'network'):
             self.logger.debug('Handling a network')
-
+        '''
 
         '''
         try:
@@ -475,6 +492,31 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         pos = self.ScreenToClient(pos)
         self.PopupMenu(self.contextMenu, pos)
 
+
+    def onAddElement(self, event):
+        ''' Handle the context menu add click.
+        '''
+        if(self.selected_item == 'station'):
+            self.logger.debug('Handling a station.')
+            self.Parent.addStation()
+        elif(self.selected_item == 'sensor'):
+            self.logger.debug('Handling a sensor.')
+        elif(self.selected_item == 'inventory'):
+            self.logger.debug('Handling an inventory.')
+        elif(self.selected_item == 'recorder'):
+            self.logger.debug('Handling a recorder.')
+        elif(self.selected_item == 'network'):
+            self.logger.debug('Handling a network')
+            self.Parent.addStation()
+        elif(self.selected_item == 'network_list'):
+            self.logger.debug('Handling a network_list')
+            self.Parent.addNetwork()
+
+
+    def onRemoveElement(self, event):
+        ''' Handle the context menu remove click.
+        '''
+        pass
 
 
     ## Handle the key pressed events.
@@ -605,32 +647,32 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         if(pyData.__class__.__name__ == 'Station'):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
-            self.Parent.selectedInventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parentInventory
             self.selected_item = 'station'
         elif(pyData.__class__.__name__ == 'Sensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
-            self.Parent.selectedInventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parentInventory
             self.selected_item = 'sensor'
         elif(pyData.__class__.__name__ == 'Inventory'):
-            self.Parent.selectedInventory = pyData
+            self.Parent.selected_inventory = pyData
             self.selected_item = 'inventory'
         elif(pyData.__class__.__name__ == 'Recorder'):
             self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
-            self.Parent.selectedInventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parentInventory
             self.selected_item = 'recorder'
         elif(pyData.__class__.__name__ == 'Network'):
             self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
-            self.Parent.selectedInventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parentInventory
             self.Parent.selected_network = pyData
             self.selected_item = 'network'
         elif(self.GetItemText(evt.GetItem()) == 'Networks'):
-            self.selected_item = 'network'
+            self.selected_item = 'network_list'
         elif(self.GetItemText(evt.GetItem()) == 'Recorders'):
-            self.selected_item = 'recorder'
+            self.selected_item = 'recorder_list'
         elif(self.GetItemText(evt.GetItem()) == 'unassigned stations'):
-            self.selected_item = 'station'
+            self.selected_item = 'unassigned_station_list'
         elif(self.GetItemText(evt.GetItem()) == 'unassigned sensors'):
-            self.selected_item = 'sensors'
+            self.selected_item = 'unassigned_sensor_list'
 
 
     ## Update the inventory tree.
@@ -781,7 +823,7 @@ class InventoryViewNotebook(wx.Notebook):
 
     def onPageChanged(self, event):
         if event.GetSelection() == 1:
-            self.updateMapView(self.Parent.selectedInventory)
+            self.updateMapView(self.Parent.selected_inventory)
         event.Skip()
 
 
