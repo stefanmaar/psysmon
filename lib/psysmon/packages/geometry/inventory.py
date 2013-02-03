@@ -74,7 +74,7 @@ class Inventory:
         self.stations = []
 
         ## The networks contained in the inventory.
-        self.networks = {}
+        self.networks = []
 
 
     ## Add a recorder to the inventory.
@@ -98,11 +98,16 @@ class Inventory:
         curNet = self.getNetwork(station.network)
         if curNet:
             curNet.addStation(station)
-        else:
-            # Append the station to the unassigned stations list.
-            self.stations.append(station)
+            station.setParentInventory(self)
 
-        station.setParentInventory(self)
+            msgTopic = 'inventory.add.station'
+            msg = (station,)
+            pub.sendMessage(msgTopic, msg)
+        else:
+            self.logger.error("The network %s of station %s doesn't exist in the inventory.", station.network, station.name)
+            # Append the station to the unassigned stations list.
+            #self.stations.append(station)
+
 
 
     ## Add a sensor to the inventory.
@@ -124,12 +129,16 @@ class Inventory:
 
     ## Add a Network to the inventory.
     def addNetwork(self, network):
-        self.networks[network.name] = network
-        network.setParentInventory(self)
-        
-        msgTopic = 'inventory.add.network'
-        msg = (network,)
-        pub.sendMessage(msgTopic, msg)
+        available_networks = [x.name for x in self.networks]
+        if network.name not in available_networks:
+            self.networks.append(network)
+            network.setParentInventory(self)
+
+            msgTopic = 'inventory.add.network'
+            msg = (network,)
+            pub.sendMessage(msgTopic, msg)
+        else:
+            self.logger.error('The network %s already exists in the inventory.', network.name)
 
 
     ## Remove a station from the inventory.
@@ -159,7 +168,7 @@ class Inventory:
 
     ## Refresh the inventory networks.
     def refreshNetworks(self):            
-        for curNetwork in self.networks.itervalues():
+        for curNetwork in self.networks:
             curNetwork.refreshStations(self.stations)
 
     ## Refresh the inventory recorders.
@@ -216,8 +225,12 @@ class Inventory:
 
     ## Get a network form the inventory.
     def getNetwork(self, code):
-        if self.networks.has_key(code):
-            return self.networks[code]
+        cur_network = [x for x in self.networks if x.name == code]
+        if len(cur_network) == 1:
+            return cur_network[0]
+        elif len(cur_network) > 1:
+            self.logger.error('Found more than one network with the same code %s in the inventory.', code)
+            return cur_network
         else:
             return None
 
@@ -261,6 +274,8 @@ class InventoryDatabaseController:
                       'inventory.add.recorder')
         pub.subscribe(self.addNetwork2Mapper,
                       'inventory.add.network')
+        pub.subscribe(self.addStation2Mapper,
+                      'inventory.add.station')
 
 
     def __del__(self):
@@ -456,6 +471,7 @@ class InventoryDatabaseController:
         self.dbSession.add(rec2Add)
         self.dbSession.commit()
         recorder.id = rec2Add.id
+        self.mapper[recorder] = rec2Add
 
 
     def convertDbRecorder(self, dbRecorder):
@@ -510,6 +526,8 @@ class InventoryDatabaseController:
                                    endTime = dbParam.end_time)
         return curParam
 
+
+
     def insertNetwork(self, network):
         ''' Insert a network in to the psysmon database.
 
@@ -526,7 +544,7 @@ class InventoryDatabaseController:
                                 network.description,
                                 network.type)
 
-        for curStation in network.stations.values():
+        for curStation in network.stations:
             station2Add = dbStation(network.name,
                                     curStation.name,
                                     curStation.location,
@@ -554,8 +572,55 @@ class InventoryDatabaseController:
 
         try:
             self.dbSession.add(network2Add)
-            self.dbSession.commit()
+            #self.dbSession.commit()
+            self.mapper[network] = network2Add
         except:
+            self.logger.exception("Couldn't commit to the database.")
+            self.dbSession.rollback()
+
+
+
+    def insertStation(self, station):
+        ''' Insert a station into the psysmon database.
+
+        Parameters
+        ----------
+        Station : :class:`Station`
+            The station to insert into the database.
+        '''
+        dbStation = self.project.dbTables['geom_station']
+        dbSensorTime = self.project.dbTables['geom_sensor_time']
+
+        station2Add = dbStation(station.network,
+                                station.name,
+                                station.location,
+                                station.x,
+                                station.y,
+                                station.z,
+                                station.coordSystem,
+                                station.description)
+
+        for curSensor, startTime, endTime in station.sensors:
+            if startTime:
+                startTime = startTime.getTimeStamp()
+
+            if endTime:
+                endTime = endTime.getTimeStamp()
+
+            sensorTime2Add = dbSensorTime(station.id,
+                                          curSensor.id,
+                                          startTime, 
+                                          endTime)
+
+            sensorTime2Add.child = self.mapper[curSensor]
+            station2Add.sensors.append(sensorTime2Add)
+
+        try:
+            self.dbSession.add(station2Add)
+            #self.dbSession.commit()
+            self.mapper[station] = station2Add
+        except:
+            self.logger.exception('Error when writing the station to the database.')
             self.dbSession.rollback()
 
 
@@ -565,8 +630,13 @@ class InventoryDatabaseController:
 
 
     def addNetwork2Mapper(self, msg):
-        self.logger.debug("Adding Network to mapper.")
+        self.logger.debug("Adding network to mapper.")
         self.insertNetwork(msg.data[0])
+
+
+    def addStation2Mapper(self, msg):
+        self.logger.debug("Adding station to mapper.")
+        self.insertStation(msg.data[0])
 
 
     def updateStationMapper(self, msg):
@@ -795,6 +865,16 @@ class InventoryDatabaseController:
 
         self.dbSession.commit()
         self.dbSession.flush()
+
+
+    def reloadDb(self):
+        ''' Reload the data from the database.
+        '''
+        self.dbSession.close()
+        self.dbSession = self.project.getDbSession()
+        inventory = self.load()
+        return inventory
+
 
 
 class InventoryXmlParser:
@@ -1687,8 +1767,10 @@ class Station:
 
 
     def __setitem__(self, name, value):
+        self.logger.debug("Setting the %s attribute to %s.", name, value)
         self.__dict__[name] = value
         self.hasChanged = True
+
 
         msgTopic = 'inventory.update.station'
         msg = (self, name, value)
@@ -1904,6 +1986,9 @@ class Station:
 class Network:
 
     def __init__(self, name, description=None, type=None, parentInventory=None):
+        # The logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         ## The parent inventory.
         self.parentInventory = parentInventory
@@ -1918,7 +2003,7 @@ class Network:
         self.type = type
 
         ## The stations contained in the network.
-        self.stations = {}
+        self.stations = []
 
         ## The database table name.
         self.dbTableName = 'geom_network'
@@ -1934,12 +2019,32 @@ class Network:
 
     ## The index and slicing operator.
     def __setitem__(self, name, value):
+        self.logger.debug("Setting the %s item to %s.", name, value)
         self.__dict__[name] = value
         self.hasChanged = True
+
+        if name == 'name':
+            for cur_station in self.stations:
+                # Set the station network value using the key to trigger the
+                # change notification of the station.
+                cur_station['network'] = value
 
         msgTopic = 'inventory.update.network'
         msg = (self, name, value)
         pub.sendMessage(msgTopic, msg)
+
+
+    #def __setattr__(self, name, value):
+    #    self.__dict__[name] = value
+    #    
+    #    if name == 'name':
+    #        for cur_station in self.stations:
+    #            cur_station.network = value
+
+        #msgTopic = 'inventory.update.network'
+        #msg = (self, name, value)
+        #pub.sendMessage(msgTopic, msg)
+
 
 
 
@@ -1956,14 +2061,25 @@ class Network:
         '''
         self.parentInventory = parentInventory
 
-        for curStation in self.stations.values():
+        for curStation in self.stations:
             curStation.setParentInventory(self.parentInventory)
 
-    ## Add a station to the network. 
+
     def addStation(self, station):
-        station.network = self.name
-        self.stations[(station.name, station.location)] = station
-        station.setParentInventory(self.parentInventory)
+        ''' Add a station to the network.
+
+        Parameters
+        ----------
+        station : :class:`Station`
+            The station instance to add to the network.
+        '''
+        available_sl = [(x.name, x.location) for x in self.stations]
+        if((station.name, station.location) not in available_sl):
+            station.network = self.name
+            self.stations.append(station)
+            station.setParentInventory(self.parentInventory)
+        else:
+            self.logger.error("The station with SL code %s is already in the network.", x.name + ':' + x.location)
 
 
     ## Refresh the station list.
@@ -1972,10 +2088,11 @@ class Network:
     # Remove stations that are no longer linked to the network.
     def refreshStations(self, stations):
         # Remove invalid stations from the network.
-        for curStation in self.stations.values():
-            if curStation.network != self.name:
-                self.stations.pop((curStation.name, curStation.location))
-                self.parentInventory.addStation(curStation)
+        stations_2_remove = [x for x in self.stations if x.network != self.name]
+
+        for curStation in stations_2_remove:
+            self.stations.remove(curStation)
+            self.parentInventory.addStation(curStation)
 
 
         for curStation in stations:

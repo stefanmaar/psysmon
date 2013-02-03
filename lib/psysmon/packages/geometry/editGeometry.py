@@ -44,7 +44,6 @@ import matplotlib
 matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
-
 from wx.lib.pubsub import Publisher as pub
 import numpy as np
 from mpl_toolkits.basemap import Basemap 
@@ -52,6 +51,9 @@ from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Network
+from psysmon.packages.geometry.inventory import Station
+from psysmon.core.gui import psyContextMenu
+
 
 class EditGeometry(CollectionNode):
     '''
@@ -127,6 +129,9 @@ class EditGeometryDlg(wx.Frame):
 
         # The inventory currently selected by the user.
         self.selectedInventory = None
+
+        # The network currently selected by the user.
+        self.selected_network = None
 
         # initialize the user interface
         self.initUI()
@@ -220,6 +225,7 @@ class EditGeometryDlg(wx.Frame):
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
                  ("Add network", "Add a network to the selected inventory.", self.onAddNetwork),
+                 ("Add station", "Add a station to the selected inventory.", self.onAddStation),
                  ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
                  ("", "", ""),
                  ("Save to database", "Save the selected inventory to database.", self.onSave2Db)),
@@ -261,18 +267,34 @@ class EditGeometryDlg(wx.Frame):
     def onAddRecorder(self, event):
         self.logger.info("onAddRecorder menu clicked.")
         # Create the Recorder instance.
-        rec2Add = Recorder(serial='0000', 
-                           type = '1111') 
+        rec2Add = Recorder(serial='-9999', 
+                           type = 'new recorder') 
         self.selectedInventory.addRecorder(rec2Add)
         self.inventoryTree.updateInventoryData()
 
 
     def onAddNetwork(self, event):
         # Create the Recorder instance.
-        net2Add = Network(name = 'XX') 
+        net2Add = Network(name = '-9999') 
         self.selectedInventory.addNetwork(net2Add)
         self.inventoryTree.updateInventoryData()
 
+    
+    def onAddStation(self, event):
+        # Create the Recorder instance.
+        if self.selected_network is None:
+            self.logger.error('You have to create or select a network first.')
+            return
+
+        station2Add = Station(name = '-9999', 
+                           location = '00',
+                           network = self.selected_network.name,
+                           x = 0,
+                           y = 0,
+                           z = 0,
+                           coordSystem = 'epsg:4326') 
+        self.selectedInventory.addStation(station2Add)
+        self.inventoryTree.updateInventoryData()
 
     ## Save to database menu callback.
     #
@@ -297,6 +319,14 @@ class EditGeometryDlg(wx.Frame):
         else:
             self.logger.debug("Updating the existing project inventory database.")
             self.dbController.updateDb(self.selectedInventory)
+            cur_inventory = self.dbController.reloadDb()
+            self.inventories[cur_inventory.name] = cur_inventory
+            self.inventoryTree.updateInventoryData()
+            self.selectedInventory = cur_inventory
+            
+
+        #self.inventoryTree.updateInventoryData()
+
 
 
     ## Exit menu callback.
@@ -372,6 +402,15 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         self.logger = self.GetParent().logger
 
+        self.selected_item = None
+
+        # Setup the context menu.
+        cmData = (("add", None),
+                  ("remove", None))
+
+        # create the context menu.
+        self.contextMenu = psyContextMenu(cmData)
+
         il = wx.ImageList(16, 16)
         self.icons = {}
         self.icons['xmlInventory'] = il.Add(icons.db_icon_16.GetBitmap()) 
@@ -390,10 +429,51 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         self.SetMinSize(size)
 
+        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.onItemSelectionChanged)
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.onBeginDrag)
         self.Bind(wx.EVT_TREE_END_DRAG, self.onEndDrag)
         self.Bind(wx.EVT_TREE_KEY_DOWN, self.onKeyDown)
+
+
+    def onShowContextMenu(self, evt):
+        ''' Show the context menu.
+        '''
+        #if not self.Parent.psyBase.project:
+        #    return
+        self.logger.debug('selected_item: %s', self.selected_item)
+
+        if(self.selected_item == 'station'):
+            self.logger.debug('Handling a station.')
+        elif(self.selected_item == 'sensor'):
+            self.logger.debug('Handling a sensor.')
+        elif(self.selected_item == 'inventory'):
+            self.logger.debug('Handling an inventory.')
+        elif(self.selected_item == 'recorder'):
+            self.logger.debug('Handling a recorder.')
+        elif(self.selected_item == 'network'):
+            self.logger.debug('Handling a network')
+
+
+        '''
+        try:
+            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.GetSelection())
+            if(selectedNode.mode == 'standalone'):
+                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'execute node')
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            elif(selectedNode.mode == 'uneditable'):
+                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'uneditable')
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+            else:
+                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'edit node')
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+        except PsysmonError as e:
+            pass
+        '''
+
+        pos = evt.GetPosition()
+        pos = self.ScreenToClient(pos)
+        self.PopupMenu(self.contextMenu, pos)
 
 
 
@@ -414,6 +494,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.logger.debug("OnBeginDrag")
         event.Allow()
         self.dragItem = event.GetItem()
+
 
     ## End drag'n drop for leaf items.
     def onEndDrag(self, event):
@@ -491,11 +572,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
     ## Handle the deletion of a sensor.
     def handleDeleteSensor(self, source):
-       
+
         self.logger.debug('Removing a sensor from station.')
-        
+
         sourceData = self.GetPyData(source)
-        
+
         self.logger.debug('%s', sourceData)
         if not isinstance(sourceData, tuple):
             self.logger.warning('The object you are trying to delete is not a sensor.')
@@ -525,17 +606,32 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         if(pyData.__class__.__name__ == 'Station'):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
             self.Parent.selectedInventory = pyData.parentInventory
+            self.selected_item = 'station'
         elif(pyData.__class__.__name__ == 'Sensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
             self.Parent.selectedInventory = pyData.parentInventory
+            self.selected_item = 'sensor'
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selectedInventory = pyData
+            self.selected_item = 'inventory'
         elif(pyData.__class__.__name__ == 'Recorder'):
             self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
             self.Parent.selectedInventory = pyData.parentInventory
+            self.selected_item = 'recorder'
         elif(pyData.__class__.__name__ == 'Network'):
             self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
             self.Parent.selectedInventory = pyData.parentInventory
+            self.Parent.selected_network = pyData
+            self.selected_item = 'network'
+        elif(self.GetItemText(evt.GetItem()) == 'Networks'):
+            self.selected_item = 'network'
+        elif(self.GetItemText(evt.GetItem()) == 'Recorders'):
+            self.selected_item = 'recorder'
+        elif(self.GetItemText(evt.GetItem()) == 'unassigned stations'):
+            self.selected_item = 'station'
+        elif(self.GetItemText(evt.GetItem()) == 'unassigned sensors'):
+            self.selected_item = 'sensors'
+
 
     ## Update the inventory tree.
     #
@@ -599,14 +695,12 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
             # Fill the networks.
-            for key in sorted(curInventory.networks.iterkeys()):
-                curNetwork = curInventory.networks[key]
+            for curNetwork in curInventory.networks:
                 curNetworkItem = self.AppendItem(networkItem, curNetwork.name)
                 self.SetItemPyData(curNetworkItem, curNetwork)
                 self.SetItemImage(curNetworkItem, self.icons['network'], wx.TreeItemIcon_Normal)
 
-                for key in sorted(curNetwork.stations.iterkeys()):
-                    curStation = curNetwork.stations[key]
+                for curStation in curNetwork.stations:
                     curStationItem = self.AppendItem(curNetworkItem, curStation.name+':'+curStation.location)
                     self.SetItemPyData(curStationItem, curStation)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
@@ -795,7 +889,7 @@ class MapViewPanel(wx.Panel):
 
         # Get the lon/lat limits of the inventory.
         lonLat = []
-        for curNet in inventory.networks.itervalues():
+        for curNet in inventory.networks:
             lonLat.extend([stat.getLonLat() for stat in curNet.stations.itervalues()])
             self.stations.extend([stat for stat in curNet.stations.itervalues()])
 
@@ -896,7 +990,7 @@ class NetworkPanel(wx.Panel):
         self.network_grid.CreateGrid(1, len(fields))
 
         # Bind the stationGrid events.
-        #self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+        self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onNetworkCellChange)
 
         for k, (name, label, attr)  in enumerate(fields):
             self.network_grid.SetColLabelValue(k, label)
@@ -955,7 +1049,7 @@ class NetworkPanel(wx.Panel):
     def updateData(self, network):
         ''' Update the displayed data.
         '''
-        self.displayedRecorder = network
+        self.displayedNetwork = network
 
         # Update the sensor grid fields.
         self.setGridValues(network, self.network_grid, self.getNetworkFields(), 0)
@@ -971,6 +1065,25 @@ class NetworkPanel(wx.Panel):
                 grid.SetCellValue(rowNumber, pos, str(object[field]))
             grid.AutoSizeColumns()
 
+
+    def onNetworkCellChange(self, evt):
+        ''' The network_grid cell edit callback.
+        '''
+        selectedParameter = self.network_grid.GetColLabelValue(evt.GetCol())
+        grid_fields = self.getNetworkFields();
+        colLabels = [x[1] for x in grid_fields]
+
+        if selectedParameter in colLabels:
+            ind = colLabels.index(selectedParameter)
+            fieldName = grid_fields[ind][0]
+            fieldAttr = grid_fields[ind][2]
+            if fieldAttr == 'editable':
+                self.displayedNetwork[fieldName] =  self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())
+                self.displayedNetwork.parentInventory.refreshNetworks()
+                self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+                self.logger.debug(self.GetParent().GetParent().GetParent())
+        else:
+            pass
 
 
 class RecorderPanel(wx.Panel):
