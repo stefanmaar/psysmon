@@ -10,7 +10,6 @@ from psysmon.core.base import Base
 import psysmon.core.gui as psygui
 from psysmon.core.project import User
 from psysmon.packages.geometry.inventory import Inventory
-from psysmon.packages.geometry.inventory import InventoryDatabaseController
 
 
 def create_psybase():

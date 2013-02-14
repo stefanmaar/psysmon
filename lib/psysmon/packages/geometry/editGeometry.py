@@ -34,7 +34,8 @@ import logging
 from threading import Thread
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
-from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
+from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.db_inventory import DbInventory
 from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
 from psysmon.artwork.icons import iconsBlack16 as icons
 import wx.aui
@@ -127,6 +128,9 @@ class EditGeometryDlg(wx.Frame):
         # The keys of the dictionaries are the inventory names.
         self.inventories = {}
 
+        # The inventory controlling the database.
+        self.db_inventory = DbInventory('db_inventory', self.psyProject)
+
         # The inventory currently selected by the user.
         self.selected_inventory = None
 
@@ -138,8 +142,8 @@ class EditGeometryDlg(wx.Frame):
 
         #self.initUserSelections()
 
-        # The inventory database controller.
-        self.dbController = InventoryDatabaseController(self.psyProject)
+        ## The inventory database controller.
+        #self.dbController = InventoryDatabaseController(self.psyProject)
 
         # Load the inventory from the database.
         self.loadInventoryFromDb()
@@ -204,7 +208,7 @@ class EditGeometryDlg(wx.Frame):
 
         '''
         try:
-            curInventory = self.dbController.load()
+            curInventory = self.db_inventory.load()
         except Warning as w:
                 print w
 
@@ -335,13 +339,16 @@ class EditGeometryDlg(wx.Frame):
             self.loadInventoryFromDb()
 
         else:
-            self.logger.debug("Updating the existing project inventory database.")
-            self.dbController.updateDb(self.selected_inventory)
-            cur_inventory = self.dbController.reloadDb()
-            self.inventories[cur_inventory.name] = cur_inventory
-            self.inventoryTree.updateInventoryData()
-            self.selected_inventory = cur_inventory
-            
+            if len(self.selected_inventory.stations) > 0:
+                self.logger.error('There are still unassigned stations in the inventory.\nAdd them to a network or remove them before writing the inventory to the database.')
+            else:
+                self.logger.debug("Updating the existing project inventory database.")
+                self.dbController.updateDb(self.selected_inventory)
+                cur_inventory = self.dbController.reloadDb()
+                self.inventories[cur_inventory.name] = cur_inventory
+                self.inventoryTree.updateInventoryData()
+                self.selected_inventory = cur_inventory
+
 
         #self.inventoryTree.updateInventoryData()
 
@@ -356,10 +363,11 @@ class EditGeometryDlg(wx.Frame):
         # Check if an unsaved database inventory exists.
         for curInventory in self.inventories.itervalues():
             if curInventory.hasChanged():
-                if curInventory.type.lower() == 'db':
-                    curInventory.updateDb()
+                self.logger.warning('There are unsaved elements in the inventory.')
+                #if curInventory.type.lower() == 'db':
+                #    curInventory.updateDb()
 
-        self.dbController.dbSession.close()
+        self.db_inventory.close()
 
         # delete the frame
         self.Destroy()
@@ -1296,7 +1304,9 @@ class StationsPanel(wx.Panel):
             fieldAttr = gridStationFields[ind][2]
             if fieldAttr == 'editable':
                 self.displayedStation[fieldName] =  self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
+                self.logger.debug('vor refreshNetworks')
                 self.displayedStation.parentInventory.refreshNetworks()
+                self.logger.debug('vor updateInventoryData')
                 self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
                 self.logger.debug(self.GetParent().GetParent().GetParent())
         else:

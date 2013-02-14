@@ -45,7 +45,7 @@ import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
 import psysmon
-from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
+from psysmon.packages.geometry.inventory import Inventory
 from psysmon.core.util import PsysmonError
 from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient

@@ -29,9 +29,11 @@ website = "http://www.stefanmertl.com"
 def nodeFactory():
     from applyGeometry import ApplyGeometry
     from editGeometry import EditGeometry
+    from convert_geometry import ConvertGeometryFile
 
     nodeTemplates = [ApplyGeometry,
-                     EditGeometry
+                     EditGeometry,
+                     ConvertGeometryFile
                     ]
 
     return nodeTemplates
@@ -48,12 +50,14 @@ def databaseFactory(base):
     # Create the geom_recorder table mapper class.
     class GeomRecorder(base):
         __tablename__ = 'geom_recorder'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
+        __table_args__ = (
+                          UniqueConstraint('serial', 'type'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
-        UniqueConstraint('serial', 'type')
 
         sensors = relationship('GeomSensor', 
                                cascade = 'all',
@@ -75,7 +79,10 @@ def databaseFactory(base):
     # Create the geom_sensor table mapper class.
     class GeomSensor(base):
         __tablename__ = 'geom_sensor'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
+        __table_args__ = (
+                          UniqueConstraint('recorder_id', 'serial', 'type', 'rec_channel_name', 'channel_name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         recorder_id = Column(Integer(10), 
@@ -88,7 +95,6 @@ def databaseFactory(base):
         type = Column(String(255), nullable=False)
         rec_channel_name = Column(String(10), nullable=False)
         channel_name = Column(String(10), nullable=False)
-        UniqueConstraint('recorder_id', 'serial', 'type', 'rec_channel_name', 'channel_name')
 
         parameters = relationship('GeomSensorParam', 
                                   cascade = 'all',
@@ -119,38 +125,41 @@ def databaseFactory(base):
     # Create the geom_sensor_param table mapper.
     class GeomSensorParam(base):
         __tablename__ = 'geom_sensor_param'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
+        __table_args__ = (
+                          UniqueConstraint('sensor_id', 'start_time', 'end_time'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=False, default=-1)
         start_time = Column(Float(53))
         end_time = Column(Float(53))
-        normalization_factor = Column(Float)
-        normalization_frequency = Column(Float)
-        type = Column(String(150))
+        tf_normalization_factor = Column(Float)
+        tf_normalization_frequency = Column(Float)
+        tf_type = Column(String(150))
         tf_units = Column(String(20))
         gain = Column(Float)
         sensitivity = Column(Float(53))
         sensitivity_units = Column(String(30))
         bitweight = Column(Float(53))
         bitweight_units = Column(String(15))
-        UniqueConstraint = ('sensor_id', 'start_time', 'end_time')
 
         tfPz = relationship('GeomTfPz', cascade='all')
 
 
-        def __init__(self, sensor_id, start_time, end_time, normalization_factor, 
-                     normalization_frequency, type, tf_units, gain, sensitivity, 
-                     bitweight, bitweight_units):
+        def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor, 
+                     tf_normalization_frequency, tf_type, tf_units, gain, sensitivity, 
+                     sensitivity_units, bitweight, bitweight_units):
             self.sensor_id = sensor_id
             self.start_time = start_time
             self.end_time = end_time
-            self.normalization_factor = normalization_factor
-            self.normalization_frequency = normalization_frequency
-            self.type = type
+            self.tf_normalization_factor = tf_normalization_factor
+            self.tf_normalization_frequency = tf_normalization_frequency
+            self.tf_type = tf_type
             self.tf_units = tf_units
             self.gain = gain
             self.sensitivity = sensitivity
+            self.sensitivity_units = sensitivity_units
             self.bitweight = bitweight
             self.bitweight_units = bitweight_units
 
@@ -205,37 +214,39 @@ def databaseFactory(base):
     # Create the geom_station table mapper class.
     class GeomStation(base):
         __tablename__ = 'geom_station'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
+        __table_args__ = (
+                          UniqueConstraint('network', 'name', 'location'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
-        net_name = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=False)
+        network = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=False)
         name = Column(String(10), nullable=False)
         location = Column(String(3), nullable=False)
-        X = Column(Float(53), nullable=False)
-        Y = Column(Float(53), nullable=False)
-        Z = Column(Float(53), nullable=False)
+        x = Column(Float(53), nullable=False)
+        y = Column(Float(53), nullable=False)
+        z = Column(Float(53), nullable=False)
         coord_system = Column(String(50), nullable=False)
         description = Column(String(255))
-        UniqueConstraint('net_name', 'name', 'location')
 
         sensors = relationship('GeomSensorTime', 
                                backref = 'parent')
 
 
-        def __init__(self, net_name, name, location, X, Y, Z, coord_system, 
+        def __init__(self, network, name, location, x, y, z, coord_system, 
                      description):
-            self.net_name = net_name
+            self.network = network
             self.name = name
             self.location = location
-            self.X = X
-            self.Y = Y
-            self.Z = Z
+            self.x = x 
+            self.y = y
+            self.z = z
             self.coord_system = coord_system
             self.description = description
 
 
         def __repr__(self):
-            return "Station\nname: %s\nlocation: %s\nX: %f\nY: %f\nZ: %f\ncoord_system: %s\ndescription: %s\n" % (self.name, self.location, self.X, self.Y, self.Z, self.coord_system, self.description)
+            return "Station\nname: %s\nlocation: %s\nx: %f\ny: %f\nz: %f\ncoord_system: %s\ndescription: %s\n" % (self.name, self.location, self.x, self.y, self.z, self.coord_system, self.description)
 
     tables.append(GeomStation)
 

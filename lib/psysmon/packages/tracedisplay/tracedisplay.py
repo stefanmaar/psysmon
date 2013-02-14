@@ -31,7 +31,7 @@ from obspy.core import Stream
 import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.processingStack import ProcessingStack
-from psysmon.packages.geometry.inventory import Inventory, InventoryDatabaseController
+from psysmon.packages.geometry.inventory import Inventory
 from obspy.core.utcdatetime import UTCDateTime
 import container
 try:
