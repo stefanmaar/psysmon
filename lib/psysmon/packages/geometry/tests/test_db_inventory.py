@@ -1,4 +1,3 @@
-import ipdb
 '''
 Created on May 17, 2011
 
@@ -328,7 +327,6 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(db_inventory_load.recorders[1].sensors[0].parameters), len(db_inventory.recorders[1].sensors[0].parameters))
         self.assertEqual(db_inventory_load.recorders[1].serial, db_inventory.recorders[1].serial)
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].serial, db_inventory.recorders[1].sensors[0].serial)
-        ipdb.set_trace() ############################## Breakpoint ##############################
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_poles, [complex('1+1j'), complex('1+2j')])
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_zeros, [complex('0+1j'), complex('0+2j')])
 
