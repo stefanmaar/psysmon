@@ -77,6 +77,13 @@ class Inventory:
         self.networks = []
 
 
+    def __str__(self):
+        ''' Print the string representation of the inventory.
+        '''
+        out = "Inventory %s of type %s\n" % (self.name, self.type) 
+        out =  out + str(len(self.networks)) + " network(s) in the inventory:\n"
+        return out
+
     ## Add a recorder to the inventory.
     def add_recorder(self, recorder):
         self.recorders.append(recorder)
@@ -233,7 +240,7 @@ class InventoryXmlParser:
         self.parent_inventory = parent_inventory
         self.filename = filename
 
-        # The logger instance.
+        # the logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
 
@@ -581,6 +588,13 @@ class Recorder:
         self.parent_inventory = parent_inventory
 
 
+    def __str__(self):
+        ''' Returns a readable representation of the Recorder instance.
+        '''
+        out = 'id:\t%s\nserial:\t%s\ntype:\t%s\n%d sensor(s):\n' % (str(self.id), self.serial, self.type, len(self.sensors))
+        return out
+
+
     def __getitem__(self, name):
         return self.__dict__[name]
 
@@ -693,7 +707,10 @@ class Sensor:
     #
     def __init__(self, serial, type, 
                  rec_channel_name, channel_name, label, id=None, recorder_id=None, 
-                 recorder_serial=None, recorder_type=None, parent_inventory=None):
+                 recorder_serial=None, recorder_type=None, parent_recorder=None):
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
 
         ## The database id of the sensor.
         self.id = id
@@ -740,13 +757,15 @@ class Sensor:
         self.parameters = []
 
 
-        # The inventory containing this sensor.
-        self.parent_inventory = parent_inventory
-
-
         # The parent recorder.
-        self.parentRecorder = None
+        self.parent_recorder = parent_recorder
 
+
+        # The inventory containing this sensor.
+        if self.parent_recorder is not None:
+            self.parent_inventory = parent_recorder.parent_inventory
+        else:
+            self.parent_inventory = None
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
@@ -786,61 +805,9 @@ class Sensor:
         parameter : :class:`SensorParameter`
             The sensor parameter instance to be added.
         '''
+        self.logger.debug('Adding parameter.')
         self.parameters.append(parameter)
 
-
-
-    ## Update the changed attribute fields in the database table.      
-    def dbUpdateRecorderAssignment(self, project, actions):
-
-        if not actions:
-            return
-
-        # Get all attributes names to process.
-        attrNames = [curAction['attrName'] for curAction in actions]
-        attrNames = list(set(attrNames))        # Remove duplicates.
-
-        if 'recorder_serial' in attrNames:
-            actions2Process = [curAction for curAction in actions if curAction['attrName'] == 'recorder_serial']
-            newRecSerial = actions2Process[0]['dataAfter']
-        else:
-            newRecSerial = self.recorder_serial
-
-        if 'recorder_type' in attrNames:
-            actions2Process = [curAction for curAction in actions if curAction['attrName'] == 'recorder_type']
-            newRecType = actions2Process[0]['dataAfter']
-        else:
-            newRecType = self.recorder_type
-
-
-        # Update the recorder id of the sensor.
-        tableName = project.dbTableNames['geom_recorder']
-        query = ("SELECT id FROM %s "
-                 "WHERE "
-                 "serial LIKE '%s' "
-                 "AND type LIKE '%s' "
-                 ) % (tableName, newRecSerial, newRecType)
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            if not res['data']:
-                newRecId = '-1'
-            else:
-                newRecId = res['data'][0]['id']
-        else:
-            self.logger.debug("%s", res['msg']) 
-
-        tableName = project.dbTableNames['geom_sensor']
-        query = ("UPDATE %s "
-                "SET recorder_id = %s "
-                "WHERE id = %s") % (tableName, newRecId, self.id)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            self.logger.debug("Successfully updated the sensor assignment of sensor %s-%s-%s.", self.recorder_serial, self.serial, self.rec_channel_name)
-        else:
-            self.logger.debug("%s", res['msg']) 
 
 
     ## Change the sensor deployment start time.
@@ -915,7 +882,8 @@ class SensorParameter:
     def __init__(self, sensor_id, gain, bitweight, bitweight_units, sensitivity, 
                  sensitivity_units, start_time, end_time, tf_type=None, 
                  tf_units=None, tf_normalization_factor=None, 
-                 tf_normalization_frequency=None, id=None):
+                 tf_normalization_frequency=None, tf_poles = [], tf_zeros = [],
+                 id=None, parent_sensor = None):
 
         ## The id of the sensor to which this SensorParamter instance is assigned 
         # to. 
@@ -955,14 +923,23 @@ class SensorParameter:
         self.id = id 
 
         ## The transfer function as PAZ.
-        self.tf_poles = []
-        self.tf_zeros = []
+        self.tf_poles = tf_poles
+        self.tf_zeros = tf_zeros
 
         # The start_time from which the parameters are valid.
         self.start_time = start_time
 
         # The end time up to which the parameters are valid.
         self.end_time = end_time
+
+        # The parent sensor holding the parameter.
+        self.parent_sensor = parent_sensor
+
+        # The inventory in which the parameter is contained.
+        if self.parent_sensor is not None:
+            self.parent_inventory = self.parent_sensor.parent_inventory
+        else:
+            self.parent_inventory = None
 
         # Indicates if the attributes have been changed.
         self.has_changed = False

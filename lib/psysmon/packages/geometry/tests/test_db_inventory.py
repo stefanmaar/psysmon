@@ -1,3 +1,4 @@
+import ipdb
 '''
 Created on May 17, 2011
 
@@ -273,26 +274,69 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertIsInstance(added_network, DbNetwork)
         self.assertEqual(len(db_inventory.networks), 1)
 
-        db_inventory.update_db()
+        # Commit the changes to the database.
+        db_inventory.commit()
         db_inventory.close()
 
+        # Load the networks from the database.
         db_inventory_load = DbInventory('test', self.project)
         db_inventory_load.load_networks()
         db_inventory_load.close()
 
 
-
-    '''
-    def test_update_db(self):
+    def test_load_recorder(self):
         db_inventory = DbInventory('test', self.project)
 
-        # Add a network to the db_inventory.
-        net_2_add = Network(name = 'XX', description = 'A test network.')
-        added_network = db_inventory.add_network(net_2_add)
+        added_recorder = []
 
-        db_inventory.update_db()
-    '''
-   
+        # Add a recorder.
+        rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder')
+        added_recorder.append(db_inventory.add_recorder(rec_2_add))
+
+        # Add a recorder with a sensor.
+        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ') 
+
+        parameter_2_add = SensorParameter(sensor_id = sensor_2_add.id,
+                                         gain = 1,
+                                         bitweight = 2,
+                                         bitweight_units = 'bw_units',
+                                         sensitivity = 3,
+                                         sensitivity_units = 'sens_units',
+                                         start_time = UTCDateTime('1976-06-20'),
+                                         end_time = UTCDateTime('2012-06-20'),
+                                         tf_poles = [complex('1+1j'), complex('1+2j')],
+                                         tf_zeros = [complex('0+1j'), complex('0+2j')])
+        sensor_2_add.add_parameter(parameter_2_add)
+        rec_2_add.add_sensor(sensor_2_add)
+        added_recorder.append(db_inventory.add_recorder(rec_2_add))
+
+        # Commit the changes to the database.
+        db_inventory.commit()
+        db_inventory.close()
+
+        # Load the networks from the database.
+        db_inventory_load = DbInventory('test_load', self.project)
+        db_inventory_load.load_recorders()
+        db_inventory_load.close()
+        self.assertEqual(len(db_inventory_load.recorders), len(db_inventory.recorders))
+        self.assertEqual(len(db_inventory_load.recorders[1].sensors), len(db_inventory.recorders[1].sensors))
+        self.assertEqual(len(db_inventory_load.recorders[1].sensors[0].parameters), len(db_inventory.recorders[1].sensors[0].parameters))
+        self.assertEqual(db_inventory_load.recorders[1].serial, db_inventory.recorders[1].serial)
+        self.assertEqual(db_inventory_load.recorders[1].sensors[0].serial, db_inventory.recorders[1].sensors[0].serial)
+        ipdb.set_trace() ############################## Breakpoint ##############################
+        self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_poles, [complex('1+1j'), complex('1+2j')])
+        self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_zeros, [complex('0+1j'), complex('0+2j')])
+
+
+
+
+
+
     ''' 
     def test_load_inventory(self):
         print "test_load_inventory\n"

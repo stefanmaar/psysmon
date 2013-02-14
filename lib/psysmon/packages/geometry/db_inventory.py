@@ -46,6 +46,8 @@ class DbInventory:
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        self.name = name
+
         self.type = 'db'
 
         self.project = project;
@@ -55,6 +57,23 @@ class DbInventory:
         self.networks = []
 
         self.recorders = []
+
+    
+    def __str__(self):
+        ''' Print the string representation of the inventory.
+        '''
+        out = "Inventory %s of type %s\n" % (self.name, self.type) 
+        
+        # Print the networks.
+        out =  out + str(len(self.networks)) + " network(s) in the inventory:\n"
+        out = out + "\n".join([net.__str__() for net in self.networks])
+
+        # Print the recorders.
+        out = out + '\n\n'
+        out =  out + str(len(self.recorders)) + " recorder(s) in the inventory:\n"
+        out = out + "\n".join([rec.__str__() for rec in self.recorders])
+        
+        return out
 
 
     def __del__(self):
@@ -69,10 +88,15 @@ class DbInventory:
         '''
         print "Closing the session.\n"
         self.db_session.close()
-    
-    
+
+
     def get_network(self, code):
         ''' Get a network from the inventory.
+
+        Parameters
+        ----------
+        coder : String
+            The code of the network.
         '''
         cur_network = [x for x in self.networks if x.name == code]
         if len(cur_network) == 1:
@@ -85,7 +109,7 @@ class DbInventory:
 
 
     def load_networks(self):
-        ''' Load the existing networks from the database.
+        ''' Load the networks from the database.
         '''
         geom_network_orm = self.project.dbTables['geom_network']
         for cur_geom_network in self.db_session.query(geom_network_orm).order_by(geom_network_orm.name):
@@ -96,6 +120,23 @@ class DbInventory:
 
             self.networks.append(db_network)
 
+
+    def load_recorders(self):
+        ''' Load the recorders from the database.
+        '''
+        geom_recorder_orm = self.project.dbTables['geom_recorder']
+        for cur_geom_recorder in self.db_session.query(geom_recorder_orm).order_by(geom_recorder_orm.serial):
+            db_recorder = DbRecorder.from_sqlalchemy_orm(self, cur_geom_recorder)
+
+            for cur_geom_sensor in cur_geom_recorder.sensors:
+                db_sensor = DbSensor.from_sqlalchemy_orm(db_recorder, cur_geom_sensor)
+                db_recorder.sensors.append(db_sensor)
+
+                for cur_geom_sensor_param in cur_geom_sensor.parameters:
+                    db_sensor_param = DbSensorParameter.from_sqlalchemy_orm(db_sensor, cur_geom_sensor_param)
+                    db_sensor.parameters.append(db_sensor_param)
+
+            self.recorders.append(db_recorder)
 
 
     def add_network(self, network):
@@ -123,7 +164,7 @@ class DbInventory:
 
 
     def remove_network(self, name):
-        ''' Remove a network from the inventory.
+        ''' Remove a network from the database inventory.
 
         Parameters
         ----------
@@ -145,7 +186,7 @@ class DbInventory:
 
 
     def add_station(self, station):
-        ''' Add a station to the inventory.
+        ''' Add a station to the database inventory.
         The station is added only, if a corresponding network is found.
 
         Parameters
@@ -207,8 +248,8 @@ class DbInventory:
 
 
 
-    def update_db(self):
-        ''' Update the database.
+    def commit(self):
+        ''' Commit the database changes.
         '''
         self.db_session.commit()
         self.db_session.flush()
@@ -368,20 +409,11 @@ class DbStation:
 
 
 
-class DbRecorder:
+class DbRecorder(Recorder):
 
     def __init__(self, parent_inventory, id, serial, type, geom_recorder = None):
-
-        self.parent_inventory = parent_inventory
-
-        self.id = id
-
-        self.serial = serial
-
-        self.type = type
-
-        self.sensors = []
-
+        Recorder.__init__(self, id = id, serial = serial, type = type, 
+                        parent_inventory = parent_inventory)
 
         if geom_recorder is None:
             # Create a new database recorder instance.
@@ -417,29 +449,27 @@ class DbRecorder:
         sensor : :class:`DbSensor`
             The sensor to add to the recorder.
         '''
+        sensor.recorder_id = self.id
+        sensor.recorder_serial = self.serial
+        sensor.recorder_type = self.type
+        sensor.parentRecorder = self
+        sensor.set_parent_inventory(self.parent_inventory)
         self.sensors.append(sensor)
         self.geom_recorder.sensors.append(sensor.geom_sensor)
         return sensor
 
 
 
-class DbSensor:
+class DbSensor(Sensor):
 
     def __init__(self, parent_recorder, serial, type, rec_channel_name,
                  channel_name, label, id, recorder_id, recorder_serial,
                  recorder_type, geom_sensor = None):
-        self.parent_recorder = parent_recorder
-        self.parent_inventory = parent_recorder.parent_inventory
-        self.serial = serial
-        self.type = type
-        self.rec_channel_name = rec_channel_name
-        self.channel_name = channel_name
-        self.label = label
-        self.id = id
-        self.recorder_id = recorder_id
-        self.recorder_serial = recorder_serial
-        self.recorder_type = recorder_type
-        self.parameters = []
+        Sensor.__init__(self, id = id, serial = serial, type = type,
+                        rec_channel_name = rec_channel_name, label = label,
+                        channel_name = channel_name, recorder_id = recorder_id,
+                        recorder_serial = recorder_serial, recorder_type = recorder_type,
+                        parent_recorder = parent_recorder)
 
         if geom_sensor is None:
             geom_sensor_orm = self.parent_inventory.project.dbTables['geom_sensor']
@@ -490,34 +520,37 @@ class DbSensor:
         parameter : :class:`DbSensorParameter`
             The parameter to add to the sensor.
         '''
+        self.logger.debug('Adding parameter.')
         self.parameters.append(parameter)
         self.geom_sensor.parameters.append(parameter.geom_sensor_parameter)
+        
+        # Add the tf poles and zeros to the database orm.
+        geom_tfpz_orm = self.parent_inventory.project.dbTables['geom_tf_pz']
+        for cur_pole in parameter.tf_poles:
+            parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 1, cur_pole.real, cur_pole.imag))
+        for cur_zero in parameter.tf_zeros:
+            parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 0, cur_zero.real, cur_zero.imag))
+
         return parameter
 
 
 
-class DbSensorParameter:
+class DbSensorParameter(SensorParameter):
 
     def __init__(self, parent_sensor, sensor_id, gain, bitweight,
                  bitweight_units, sensitivity, sensitivity_units, tf_type,
                  tf_units, tf_normalization_factor, tf_normalization_frequency,
-                 id, start_time, end_time, geom_sensor_parameter = None):
+                 id, start_time, end_time, tf_poles = [], tf_zeros = [],
+                 geom_sensor_parameter = None):
 
-        self.parent_sensor = parent_sensor
-        self.parent_inventory = parent_sensor.parent_inventory
-        self.sensor_id = id
-        self.gain = gain
-        self.bitweight = bitweight
-        self.bitweight_units = bitweight_units
-        self.sensitivity = sensitivity
-        self.sensitivity_units = sensitivity_units
-        self.tf_type = tf_type
-        self.tf_units = tf_units
-        self.tf_normalization_factor = tf_normalization_factor
-        self.tf_normalization_frequency = tf_normalization_frequency
-        self.id = id
-        self.start_time = start_time
-        self.end_time = end_time
+        SensorParameter.__init__(self, parent_sensor = parent_sensor,
+                                 sensor_id = sensor_id, gain = gain, bitweight = bitweight,
+                                 bitweight_units = bitweight_units, sensitivity = sensitivity,
+                                 sensitivity_units = sensitivity_units, 
+                                 start_time = start_time, end_time = end_time, tf_type = tf_type,
+                                 tf_units = tf_units, tf_normalization_factor = tf_normalization_factor,
+                                 tf_normalization_frequency = tf_normalization_frequency,
+                                 tf_poles = tf_poles, tf_zeros = tf_zeros, id = id)
 
         if geom_sensor_parameter is None:
             geom_sensor_param_orm = self.parent_inventory.project.dbTables['geom_sensor_param']
@@ -548,6 +581,8 @@ class DbSensorParameter:
                    tf_normalization_frequency = sensor_parameter.tf_normalization_frequency,
                    tf_type = sensor_parameter.tf_type,
                    tf_units = sensor_parameter.tf_units,
+                   tf_poles = sensor_parameter.tf_poles,
+                   tf_zeros = sensor_parameter.tf_zeros,
                    gain = sensor_parameter.gain,
                    bitweight = sensor_parameter.bitweight,
                    bitweight_units = sensor_parameter.bitweight_units,
@@ -557,8 +592,10 @@ class DbSensorParameter:
 
 
     @classmethod
-    def from_sqlalchemy_sensor_parameter(cls, parent_sensor, geom_sensor_parameter):
-        return cls(parent_sensor,
+    def from_sqlalchemy_orm(cls, parent_sensor, geom_sensor_parameter):
+
+
+        sensor = cls(parent_sensor,
                    sensor_id = geom_sensor_parameter.sensor_id,
                    start_time = geom_sensor_parameter.start_time,
                    end_time = geom_sensor_parameter.end_time,
@@ -573,3 +610,12 @@ class DbSensorParameter:
                    sensitivity_units = geom_sensor_parameter.sensitivity_units,
                    id = geom_sensor_parameter.id,
                    geom_sensor_parameter = geom_sensor_parameter)
+        
+        # Collect the poles and zeros of the transfer function.
+        for cur_pz in geom_sensor_parameter.tf_pz:
+            if cur_pz.type == 0:
+                sensor.tf_zeros.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
+            elif cur_pz.type == 1:
+                sensor.tf_poles.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
+
+        return sensor

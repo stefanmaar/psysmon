@@ -29,11 +29,9 @@ website = "http://www.stefanmertl.com"
 def nodeFactory():
     from applyGeometry import ApplyGeometry
     from editGeometry import EditGeometry
-    from convert_geometry import ConvertGeometryFile
 
     nodeTemplates = [ApplyGeometry,
-                     EditGeometry,
-                     ConvertGeometryFile
+                     EditGeometry
                     ]
 
     return nodeTemplates
@@ -144,7 +142,7 @@ def databaseFactory(base):
         bitweight = Column(Float(53))
         bitweight_units = Column(String(15))
 
-        tfPz = relationship('GeomTfPz', cascade='all')
+        tf_pz = relationship('GeomTfPz', cascade='all')
 
 
         def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor, 
