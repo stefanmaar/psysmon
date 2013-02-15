@@ -143,6 +143,14 @@ def create_full_project(psybase):
 
 
 
+def clear_project_database_tables(project):
+    project.connect2Db()
+    project.dbMetaData.reflect(project.dbEngine)
+    tables_to_clear = [table for table in reversed(project.dbMetaData.sorted_tables) if table.key.startswith(project.name)]
+    for cur_table in tables_to_clear:
+        project.dbEngine.execute(cur_table.delete())
+        
+
 
 def drop_project_database_tables(project):
     project.connect2Db()
