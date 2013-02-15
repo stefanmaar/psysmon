@@ -484,6 +484,28 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(added_recorder.type, 'changed type')
         self.assertEqual(added_recorder.geom_recorder.type, 'changed type')
 
+
+    def test_change_sensor(self):
+        db_inventory = DbInventory('test', self.project)
+
+        added_recorder = []
+
+        # Add a recorder with a sensor.
+        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ') 
+        rec_2_add.add_sensor(sensor_2_add)
+        added_recorder.append(db_inventory.add_recorder(rec_2_add))
+
+        cur_sensor = added_recorder[0].sensors[0]
+        test_attr = ['label', 'serial', 'type', 'rec_channel_name', 'channel_name']
+        for cur_attr in test_attr:
+            setattr(cur_sensor, cur_attr, 'changed_' + cur_attr)
+            self.assertEqual(getattr(cur_sensor, cur_attr), 'changed_' + cur_attr)
+
 def suite():
     #tests = ['test_load_recorder']
     #return unittest.TestSuite(map(DbInventoryTestCase, tests))
