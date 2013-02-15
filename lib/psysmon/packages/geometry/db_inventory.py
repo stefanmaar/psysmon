@@ -657,8 +657,8 @@ class DbSensorParameter(SensorParameter):
     def from_inventory_sensor_parameter(cls, parent_sensor, sensor_parameter):
         return cls(parent_sensor,
                    sensor_id = sensor_parameter.sensor_id,
-                   start_time = UTCDateTime(sensor_parameter.start_time),
-                   end_time = UTCDateTime(sensor_parameter.end_time),
+                   start_time = sensor_parameter.start_time,
+                   end_time = sensor_parameter.end_time,
                    tf_normalization_factor = sensor_parameter.tf_normalization_factor,
                    tf_normalization_frequency = sensor_parameter.tf_normalization_frequency,
                    tf_type = sensor_parameter.tf_type,
@@ -676,11 +676,10 @@ class DbSensorParameter(SensorParameter):
     @classmethod
     def from_sqlalchemy_orm(cls, parent_sensor, geom_sensor_parameter):
 
-
         sensor = cls(parent_sensor,
                    sensor_id = geom_sensor_parameter.sensor_id,
-                   start_time = geom_sensor_parameter.start_time.timestamp,
-                   end_time = geom_sensor_parameter.end_time.timestamp,
+                   start_time = UTCDateTime(geom_sensor_parameter.start_time),
+                   end_time = UTCDateTime(geom_sensor_parameter.end_time),
                    tf_normalization_factor = geom_sensor_parameter.tf_normalization_factor,
                    tf_normalization_frequency = geom_sensor_parameter.tf_normalization_frequency,
                    tf_type = geom_sensor_parameter.tf_type,
