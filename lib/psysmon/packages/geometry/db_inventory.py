@@ -606,6 +606,24 @@ class DbSensor(Sensor):
                    sensor.id)
 
 
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['label'] = 'label'
+        attr_map['serial'] = 'serial'
+        attr_map['type'] = 'type'
+        attr_map['rec_channel_name'] = 'rec_channel_name'
+        attr_map['channel_name'] = 'channel_name'
+
+        if attr in attr_map.keys():
+            self.__dict__[attr] = value
+            if 'geom_sensor' in self.__dict__:
+                setattr(self.geom_sensor, attr_map[attr], value)
+        else:
+            self.__dict__[attr] = value
+
+
     def add_parameter(self, parameter):
         ''' Add a parameter to the sensor
 
