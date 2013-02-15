@@ -44,7 +44,6 @@ class DbInventoryTestCase(unittest.TestCase):
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
         cls.project.dbEngine.echo = False
-        clear_project_database_tables(cls.project)
         #cls.full_project = create_full_project(cls.psybase)
         print "In setUpClass...\n"
 
