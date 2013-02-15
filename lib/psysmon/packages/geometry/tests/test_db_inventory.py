@@ -1,4 +1,3 @@
-import ipdb
 '''
 Created on May 17, 2011
 
@@ -37,8 +36,15 @@ class DbInventoryTestCase(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
+        # Configure the logger.
+        logger = logging.getLogger('psysmon')
+        logger.setLevel('DEBUG')
+        logger.addHandler(psysmon.getLoggerHandler())
+        
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
+        cls.project.dbEngine.echo = False
+        clear_project_database_tables(cls.project)
         #cls.full_project = create_full_project(cls.psybase)
         print "In setUpClass...\n"
 
@@ -55,10 +61,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        # Configure the logger.
-        logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
-        logger.addHandler(psysmon.getLoggerHandler())
+        pass
 
 
     def tearDown(self):
@@ -144,7 +147,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_station(self):
-        print "test_add_network\n"
+        print "test_add_station\n"
         db_inventory = DbInventory('test', self.project)
 
         # Add a network to the db_inventory.
@@ -209,7 +212,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_remove_station(self):
-        print "test_remove_network\n"
+        print "test_remove_station\n"
         db_inventory = DbInventory('test', self.project)
 
         # Add a network to the db_inventory.
@@ -394,7 +397,6 @@ class DbInventoryTestCase(unittest.TestCase):
 
         self.assertEqual(len(db_inventory_load.networks), len(db_inventory.networks))
         self.assertEqual(len(db_inventory_load.networks[1].stations), len(db_inventory.networks[1].stations))
-        ipdb.set_trace() ############################## Breakpoint ##############################
 
 
 
@@ -449,9 +451,9 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
 def suite():
-#    tests = ['testXmlImport']
-#    return unittest.TestSuite(map(InventoryTestCase, tests))
-    return unittest.makeSuite(DbInventoryTestCase, 'test')
+    tests = ['test_load_recorder']
+    return unittest.TestSuite(map(DbInventoryTestCase, tests))
+    #return unittest.makeSuite(DbInventoryTestCase, 'test')
 
 
 if __name__ == '__main__':
