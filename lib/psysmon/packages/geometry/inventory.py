@@ -847,7 +847,9 @@ class Sensor:
             The sensor parameter instance to be added.
         '''
         self.logger.debug('Adding parameter.')
-        self.parameters.append(parameter)
+        print "Adding parameter."
+        if parameter not in self.parameters:
+            self.parameters.append(parameter)
 
 
 
