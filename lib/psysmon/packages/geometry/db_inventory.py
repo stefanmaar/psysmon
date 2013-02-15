@@ -37,6 +37,7 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
+from obspy.core.utcdatetime import UTCDateTime
 
 
 class DbInventory:
@@ -116,7 +117,13 @@ class DbInventory:
             db_network = DbNetwork.from_sqlalchemy_orm(self, cur_geom_network)
 
             for cur_geom_station in cur_geom_network.stations:
-                pass
+                db_station = DbStation.from_sqlalchemy_orm(db_network, cur_geom_station)
+                for cur_geom_sensor in cur_geom_station.sensors:
+                    db_sensor = self.get_sensor(id = cur_geom_sensor.sensor_id)
+                    if len(db_sensor) == 1:
+                        db_station.sensors.append((db_sensor[0], UTCDateTime(cur_geom_sensor.start_time), UTCDateTime(cur_geom_sensor.end_time)))
+                    
+                db_network.stations.append(db_station)    
 
             self.networks.append(db_network)
 
@@ -199,6 +206,22 @@ class DbInventory:
         if cur_net is not None:
             db_station = DbStation.from_inventory_station(cur_net, station)
             added_station = cur_net.add_station(db_station)
+
+            for cur_sensor, cur_start_time, cur_end_time in station.sensors:
+                db_sensor = self.get_sensor(rec_serial = cur_sensor.parent_recorder.serial, 
+                                            sen_serial = cur_sensor.serial,
+                                            sen_type = cur_sensor.type,
+                                            rec_channel_name = cur_sensor.rec_channel_name)
+
+                if len(db_sensor) == 0:
+                    self.logger.error("The sensor %s is not available in the current inventory.", cur_sensor)
+                elif len(db_sensor) == 1:
+                    # Add the sensor to the station.
+                    db_station.add_sensor(db_sensor[0], start_time = cur_start_time, end_time = cur_end_time)
+                else:
+                    # Solve the problem if more than one sensor is
+                    # returned.
+                    pass
             return added_station
         else:
             self.logger.error('The network %s of the station is not found in the inventory.', station.network)
@@ -247,6 +270,42 @@ class DbInventory:
             return None
 
 
+    def get_sensor(self, rec_serial = None, sen_serial = None, sen_type = None,
+                   rec_channel_name = None, channel_name = None, id = None):
+        ''' Get a sensor from the inventory.
+
+        Parameters
+        ----------
+        rec_serial : String
+            The serial number of the recorder.
+
+        sen_serial : String
+            The serial number of the sensor.
+
+        sen_type : String
+            The type of the sensor.
+
+        rec_channel_name : String
+            The recorder channel name of the sensor.
+
+        channel_name : String
+            The assigned channel name of the sensor.
+        
+        id : Integer
+            The database id of the sensor
+        '''
+        if rec_serial is not None:
+            recorder_2_process = [x for x in self.recorders if x.serial == rec_serial]
+        else:
+            recorder_2_process = self.recorders
+
+        sensor = []
+        if len(recorder_2_process) > 0:
+            for cur_recorder in recorder_2_process:
+                sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = None))
+
+        return sensor
+    
 
     def commit(self):
         ''' Commit the database changes.
@@ -336,29 +395,12 @@ class DbNetwork:
 
 
 
-class DbStation:
+class DbStation(Station):
 
     def __init__(self, parent_network, network, name, location, x, y, z, coord_system, description, geom_station = None):
-
-        self.parent_network = parent_network
-
-        self.network = network
-
-        self.name = name
-
-        self.location = location
-
-        self.x = x
-
-        self.y = y
-
-        self.z = z
-
-        self.coord_system = coord_system
-
-        self.description = description
-
-        self.parent_inventory = parent_network.parent_inventory
+        Station.__init__(self, network = network, name = name, location = location,
+                         x = x, y = y, z = z, coord_system = coord_system,
+                         description = description, id = id, parent_network = parent_network)
 
         if geom_station is None:
             # Create a new database station instance.
@@ -378,16 +420,19 @@ class DbStation:
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_network, geom_station):
-        return cls(parent_network,
-                   geom_station.network,
-                   geom_station.name,
-                   geom_station.location,
-                   geom_station.x,
-                   geom_station.y,
-                   geom_station.z,
-                   geom_station.coord_system,
-                   geom_station.description,
-                   geom_station)
+        station = cls(parent_network,
+                      geom_station.network,
+                      geom_station.name,
+                      geom_station.location,
+                      geom_station.x,
+                      geom_station.y,
+                      geom_station.z,
+                      geom_station.coord_system,
+                      geom_station.description,
+                      geom_station)
+
+        return station
+
 
 
     @classmethod
@@ -406,6 +451,34 @@ class DbStation:
         self.network = network.name
         self.parent_network = network
         self.parent_inventory = network.parent_inventory
+
+
+    def add_sensor(self, sensor, start_time, end_time):
+        ''' Add a sensor to the station.
+
+        Parameters
+        ----------
+        sensor : :class:`DbSensor`
+            The :class:`DbSensor` instance to be added to the station.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the sensor has been operating at the station.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the sensor has been operating at the station. "None" if the station is still running.
+        '''
+        self.sensors.append((sensor, start_time, end_time))
+        self.has_changed = True
+        sensor.set_parent_inventory(self.parent_inventory)
+
+        # Add the sensor the the database orm.
+        geom_sensor_time_orm = self.parent_inventory.project.dbTables['geom_sensor_time']
+        geom_sensor_time = geom_sensor_time_orm(self.id, sensor.id, start_time.timestamp, end_time.timestamp)
+        geom_sensor_time.child = sensor.geom_sensor
+        self.geom_station.sensors.append(geom_sensor_time)
+
+        return sensor
+
 
 
 
@@ -463,8 +536,8 @@ class DbRecorder(Recorder):
 class DbSensor(Sensor):
 
     def __init__(self, parent_recorder, serial, type, rec_channel_name,
-                 channel_name, label, id, recorder_id, recorder_serial,
-                 recorder_type, geom_sensor = None):
+                 channel_name, label, id, recorder_id = None, recorder_serial = None,
+                 recorder_type = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
                         rec_channel_name = rec_channel_name, label = label,
                         channel_name = channel_name, recorder_id = recorder_id,
@@ -500,16 +573,25 @@ class DbSensor(Sensor):
 
     @classmethod
     def from_inventory_sensor(cls, parent_recorder, sensor):
-        return cls(parent_recorder,
-                   sensor.serial,
-                   sensor.type,
-                   sensor.rec_channel_name,
-                   sensor.channel_name,
-                   sensor.label,
-                   sensor.id,
-                   parent_recorder.id,
-                   parent_recorder.serial,
-                   parent_recorder.type)
+        if parent_recorder is not None:
+            return cls(parent_recorder,
+                       sensor.serial,
+                       sensor.type,
+                       sensor.rec_channel_name,
+                       sensor.channel_name,
+                       sensor.label,
+                       sensor.id,
+                       parent_recorder.id,
+                       parent_recorder.serial,
+                       parent_recorder.type)
+        else:
+            return cls(parent_recorder,
+                       sensor.serial,
+                       sensor.type,
+                       sensor.rec_channel_name,
+                       sensor.channel_name,
+                       sensor.label,
+                       sensor.id)
 
 
     def add_parameter(self, parameter):
@@ -555,8 +637,8 @@ class DbSensorParameter(SensorParameter):
         if geom_sensor_parameter is None:
             geom_sensor_param_orm = self.parent_inventory.project.dbTables['geom_sensor_param']
             self.geom_sensor_parameter = geom_sensor_param_orm(sensor_id = self.id,
-                                                     start_time = self.start_time,
-                                                     end_time = self.end_time,
+                                                     start_time = self.start_time.timestamp,
+                                                     end_time = self.end_time.timestamp,
                                                      tf_normalization_factor = self.tf_normalization_factor,
                                                      tf_normalization_frequency = self.tf_normalization_frequency,
                                                      tf_type = self.tf_type,
@@ -575,8 +657,8 @@ class DbSensorParameter(SensorParameter):
     def from_inventory_sensor_parameter(cls, parent_sensor, sensor_parameter):
         return cls(parent_sensor,
                    sensor_id = sensor_parameter.sensor_id,
-                   start_time = sensor_parameter.start_time,
-                   end_time = sensor_parameter.end_time,
+                   start_time = UTCDateTime(sensor_parameter.start_time),
+                   end_time = UTCDateTime(sensor_parameter.end_time),
                    tf_normalization_factor = sensor_parameter.tf_normalization_factor,
                    tf_normalization_frequency = sensor_parameter.tf_normalization_frequency,
                    tf_type = sensor_parameter.tf_type,
@@ -597,8 +679,8 @@ class DbSensorParameter(SensorParameter):
 
         sensor = cls(parent_sensor,
                    sensor_id = geom_sensor_parameter.sensor_id,
-                   start_time = geom_sensor_parameter.start_time,
-                   end_time = geom_sensor_parameter.end_time,
+                   start_time = geom_sensor_parameter.start_time.timestamp,
+                   end_time = geom_sensor_parameter.end_time.timestamp,
                    tf_normalization_factor = geom_sensor_parameter.tf_normalization_factor,
                    tf_normalization_frequency = geom_sensor_parameter.tf_normalization_frequency,
                    tf_type = geom_sensor_parameter.tf_type,
