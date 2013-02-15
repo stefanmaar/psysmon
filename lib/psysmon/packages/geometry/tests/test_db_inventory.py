@@ -1,3 +1,4 @@
+import ipdb
 '''
 Created on May 17, 2011
 
@@ -15,6 +16,7 @@ from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_empty_project
 from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
+from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 
 from psysmon.packages.geometry.db_inventory import DbInventory
@@ -60,6 +62,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def tearDown(self):
+        clear_project_database_tables(self.project)
         print "Es war sehr schoen - auf Wiederseh'n.\n"
 
 
@@ -106,6 +109,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(added_network.stations), 2)
         self.assertEqual(len(added_network.geom_network.stations), 2)
         self.assertEqual(added_network.stations[1], added_station)
+
+        db_inventory.close()
 
 
 
@@ -178,6 +183,30 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertIsInstance(added_station, DbStation)
         self.assertEqual(len(added_network_2.stations), 1)
 
+        # Add a station with a sensor to the YY network.
+        stat_2_add = Station(name = 'BBB',
+                             network = 'YY',
+                             location = '00',
+                             x = 0,
+                             y = 0,
+                             z = 0,
+                             coord_system = 'epsg:4316')
+
+        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ') 
+        rec_2_add.add_sensor(sensor_2_add)
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+
+        stat_2_add.add_sensor(sensor_2_add, UTCDateTime('1976-06-20'), UTCDateTime('2013-01-01'))
+        added_station = db_inventory.add_station(stat_2_add)
+        self.assertIsInstance(added_station, DbStation)
+        self.assertEqual(len(added_network_2.stations), 2)
+
+
 
     def test_remove_station(self):
         print "test_remove_network\n"
@@ -221,7 +250,9 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(added_network_2.geom_network.stations), 0)
 
 
+
     def test_add_recorder(self):
+        print "test_add_recorder\n"
         db_inventory = DbInventory('test', self.project)
 
         rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder')
@@ -265,6 +296,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_network(self):
+        print "test_load_network\n"
         db_inventory = DbInventory('test', self.project)
 
         # Add a network to the db_inventory.
@@ -277,13 +309,97 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory.commit()
         db_inventory.close()
 
+        clear_project_database_tables(self.project)
+
         # Load the networks from the database.
         db_inventory_load = DbInventory('test', self.project)
         db_inventory_load.load_networks()
         db_inventory_load.close()
 
 
+    def test_load_complete_network(self):
+        print "test_load_complete_network\n"
+        db_inventory = DbInventory('test', self.project)
+
+        # Add a network to the db_inventory.
+        net_2_add = Network(name = 'XX', description = 'A test network.')
+        added_network_1 = db_inventory.add_network(net_2_add)
+        self.assertIsInstance(added_network_1, DbNetwork)
+        self.assertEqual(len(db_inventory.networks), 1)
+
+        net_2_add = Network(name = 'YY', description = 'A second test network.')
+        added_network_2 = db_inventory.add_network(net_2_add)
+        self.assertIsInstance(added_network_2, DbNetwork)
+        self.assertEqual(len(db_inventory.networks), 2)
+
+        # Add a station to the XX network.
+        stat_2_add = Station(name = 'AAA',
+                             network = 'XX',
+                             location = '00',
+                             x = 0,
+                             y = 0,
+                             z = 0,
+                             coord_system = 'epsg:4316')
+        added_station = db_inventory.add_station(stat_2_add)
+        self.assertIsInstance(added_station, DbStation)
+        self.assertEqual(len(added_network_1.stations), 1)
+
+
+        # Add a station to the YY network.
+        stat_2_add = Station(name = 'AAA',
+                             network = 'YY',
+                             location = '00',
+                             x = 0,
+                             y = 0,
+                             z = 0,
+                             coord_system = 'epsg:4316')
+        added_station = db_inventory.add_station(stat_2_add)
+        self.assertIsInstance(added_station, DbStation)
+        self.assertEqual(len(added_network_2.stations), 1)
+
+        # Add a station with a sensor to the YY network.
+        stat_2_add = Station(name = 'BBB',
+                             network = 'YY',
+                             location = '00',
+                             x = 0,
+                             y = 0,
+                             z = 0,
+                             coord_system = 'epsg:4316')
+
+        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ') 
+        rec_2_add.add_sensor(sensor_2_add)
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+
+        stat_2_add.add_sensor(sensor_2_add, UTCDateTime('1976-06-20'), UTCDateTime('2013-01-01'))
+        added_station = db_inventory.add_station(stat_2_add)
+        self.assertIsInstance(added_station, DbStation)
+        self.assertEqual(len(added_network_2.stations), 2)
+
+
+        # Commit the changes to the database.
+        db_inventory.commit()
+        db_inventory.close()
+
+
+        # Load the networks from the database.
+        db_inventory_load = DbInventory('test', self.project)
+        db_inventory_load.load_recorders()
+        db_inventory_load.load_networks()
+        db_inventory_load.close()
+
+        self.assertEqual(len(db_inventory_load.networks), len(db_inventory.networks))
+        self.assertEqual(len(db_inventory_load.networks[1].stations), len(db_inventory.networks[1].stations))
+        ipdb.set_trace() ############################## Breakpoint ##############################
+
+
+
     def test_load_recorder(self):
+        print "test_load_recorder\n"
         db_inventory = DbInventory('test', self.project)
 
         added_recorder = []
@@ -331,19 +447,6 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_zeros, [complex('0+1j'), complex('0+2j')])
 
 
-
-
-
-
-    ''' 
-    def test_load_inventory(self):
-        print "test_load_inventory\n"
-        db_inventory = DbInventory('test', self.project)
-        print "load()\n"
-        db_inventory.load()
-        print "close()\n"
-        db_inventory.close()
-    ''' 
 
 def suite():
 #    tests = ['testXmlImport']
