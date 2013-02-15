@@ -281,7 +281,7 @@ class InventoryXmlParser:
 
         # The required tags which have to be present in the inventory.
         self.required_tags = {}
-        self.required_tags['recorder'] = ('type',)
+        self.required_tags['recorder'] = ('type', 'description')
         self.required_tags['sensorUnit'] = ('rec_channel_name', 'channel_name', 
                                         'sensor_serial', 'sensor_type')
         self.required_tags['channel_parameters'] = ('start_time', 'end_time', 
@@ -353,7 +353,8 @@ class InventoryXmlParser:
 
             # Create the Recorder instance.
             rec_2_add = Recorder(serial=cur_recorder.attrib['serial'], 
-                               type = recorder_content['type']) 
+                               type = recorder_content['type'],
+                               description = recorder_content['description']) 
 
             # Add the recorder to the inventory.
             self.parent_inventory.add_recorder(rec_2_add)
@@ -594,7 +595,7 @@ class Recorder:
     # @param serial The recorder serial number.
     # @param type The recorder type.
     # @param id The recorder database id.
-    def __init__(self, serial, type, id=None, parent_inventory=None):
+    def __init__(self, serial, type, description = None, id=None, parent_inventory=None):
         ## The recorder database id.
         # -1 if the recorder is not yet present in the database.
         self.id = id
@@ -604,6 +605,9 @@ class Recorder:
 
         ## The recorder type.
         self.type = type
+
+        # The description of the recorder.
+        self.description = description
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
