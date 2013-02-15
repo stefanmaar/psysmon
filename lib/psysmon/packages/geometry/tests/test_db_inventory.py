@@ -506,6 +506,43 @@ class DbInventoryTestCase(unittest.TestCase):
             setattr(cur_sensor, cur_attr, 'changed_' + cur_attr)
             self.assertEqual(getattr(cur_sensor, cur_attr), 'changed_' + cur_attr)
 
+
+    def test_change_sensor_parameter(self):
+        db_inventory = DbInventory('test', self.project)
+
+        added_recorder = []
+
+        # Add a recorder with a sensor.
+        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ') 
+        
+        parameter_2_add = SensorParameter(sensor_id = sensor_2_add.id,
+                                         gain = 1,
+                                         bitweight = 2,
+                                         bitweight_units = 'bw_units',
+                                         sensitivity = 3,
+                                         sensitivity_units = 'sens_units',
+                                         start_time = UTCDateTime('1976-06-20'),
+                                         end_time = UTCDateTime('2012-06-20'),
+                                         tf_poles = [complex('1+1j'), complex('1+2j')],
+                                         tf_zeros = [complex('0+1j'), complex('0+2j')])
+        
+        sensor_2_add.add_parameter(parameter_2_add)
+        rec_2_add.add_sensor(sensor_2_add)
+        added_recorder.append(db_inventory.add_recorder(rec_2_add))
+
+        cur_parameter = added_recorder[0].sensors[0].parameters[0]
+        
+        value = UTCDateTime('1976-01-01')
+        cur_parameter.start_time = value
+        self.assertEqual(cur_parameter.start_time, value)
+        self.assertEqual(cur_parameter.geom_sensor_parameter.start_time, value.timestamp) 
+
+
 def suite():
     #tests = ['test_load_recorder']
     #return unittest.TestSuite(map(DbInventoryTestCase, tests))
