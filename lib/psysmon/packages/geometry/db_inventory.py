@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -730,3 +731,30 @@ class DbSensorParameter(SensorParameter):
                 sensor.tf_poles.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
 
         return sensor
+    
+    
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['start_time'] = 'start_time'
+        attr_map['end_time'] = 'end_time'
+        attr_map['tf_normalization_factor'] = 'tf_normalization_factor'
+        attr_map['tf_normalization_frequency'] = 'tf_normalization_frequency'
+        attr_map['tf_type'] = 'tf_type'
+        attr_map['tf_units'] = 'tf_units'
+        attr_map['gain'] = 'gain'
+        attr_map['sensitivity'] = 'sensitivity'
+        attr_map['sensitivity_units'] = 'sensitivity_units'
+        attr_map['bitweight'] = 'bitweight'
+        attr_map['bitweight_units'] = 'bitweight_units'
+
+        if attr in attr_map.keys():
+            self.__dict__[attr] = value
+            if 'geom_sensor_parameter' in self.__dict__:
+                if (attr == 'start_time') or (attr == 'end_time'):
+                    setattr(self.geom_sensor_parameter, attr_map[attr], value.timestamp)
+                else:
+                    setattr(self.geom_sensor_parameter, attr_map[attr], value)
+        else:
+            self.__dict__[attr] = value
