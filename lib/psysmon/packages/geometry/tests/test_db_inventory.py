@@ -400,7 +400,6 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_recorder(self):
-        print "test_load_recorder\n"
         db_inventory = DbInventory('test', self.project)
 
         added_recorder = []
@@ -448,11 +447,31 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_zeros, [complex('0+1j'), complex('0+2j')])
 
 
+    
+    def test_change_network(self):
+        db_inventory = DbInventory('test', self.project)
+        
+        # Add a network to the db_inventory.
+        net_2_add = Network(name = 'XX', description = 'A test network.')
+        added_network = db_inventory.add_network(net_2_add)
+
+        added_network.name = 'YY'
+        added_network.description = 'changed description'
+        added_network.type = 'changed type'
+        
+        self.assertEqual(added_network.name, 'YY')
+        self.assertEqual(added_network.geom_network.name, 'YY')
+        self.assertEqual(added_network.description, 'changed description')
+        self.assertEqual(added_network.geom_network.description, 'changed description')
+        self.assertEqual(added_network.type, 'changed type')
+        self.assertEqual(added_network.geom_network.type, 'changed type')
+
+
 
 def suite():
-    tests = ['test_load_recorder']
-    return unittest.TestSuite(map(DbInventoryTestCase, tests))
-    #return unittest.makeSuite(DbInventoryTestCase, 'test')
+    #tests = ['test_load_recorder']
+    #return unittest.TestSuite(map(DbInventoryTestCase, tests))
+    return unittest.makeSuite(DbInventoryTestCase, 'test')
 
 
 if __name__ == '__main__':
