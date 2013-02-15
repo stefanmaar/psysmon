@@ -348,6 +348,22 @@ class DbNetwork:
         return cls(parent_inventory, network.name, network.description, network.type)
 
 
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['name'] = 'name'
+        attr_map['description'] = 'description'
+        attr_map['type'] = 'type'
+
+        if attr in attr_map.keys():
+            self.__dict__[attr] = value
+            if 'geom_network' in self.__dict__:
+                setattr(self.geom_network, attr_map[attr], value)
+        else:
+            self.__dict__[attr] = value
+
+
     def add_station(self, station):
         ''' Add a station to the network.
 
@@ -484,7 +500,7 @@ class DbStation(Station):
 
 class DbRecorder(Recorder):
 
-    def __init__(self, parent_inventory, id, serial, type, geom_recorder = None):
+    def __init__(self, parent_inventory, id, serial, type, description, geom_recorder = None):
         Recorder.__init__(self, id = id, serial = serial, type = type, 
                         parent_inventory = parent_inventory)
 
@@ -498,20 +514,37 @@ class DbRecorder(Recorder):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_inventory, geom_recorder):
-        return cls(parent_inventory,
-                   geom_recorder.id,
-                   geom_recorder.serial,
-                   geom_recorder.type,
+        return cls(parent_inventory = parent_inventory,
+                   id = geom_recorder.id,
+                   serial = geom_recorder.serial,
+                   type = geom_recorder.type,
+                   description = geom_recorder.description,
                    geom_recorder = geom_recorder)
 
 
     @classmethod
     def from_inventory_recorder(cls, parent_inventory, recorder):
-        return cls(parent_inventory,
-                   recorder.id,
-                   recorder.serial,
-                   recorder.type)
+        return cls(parent_inventory = parent_inventory,
+                   id = recorder.id,
+                   serial = recorder.serial,
+                   type = recorder.type,
+                   description = recorder.description)
 
+
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['serial'] = 'serial'
+        attr_map['type'] = 'type'
+        attr_map['description'] = 'description'
+
+        if attr in attr_map.keys():
+            self.__dict__[attr] = value
+            if 'geom_recorder' in self.__dict__:
+                setattr(self.geom_recorder, attr_map[attr], value)
+        else:
+            self.__dict__[attr] = value
 
 
     def add_sensor(self, sensor):
