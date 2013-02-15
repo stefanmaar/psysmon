@@ -56,6 +56,7 @@ def databaseFactory(base):
         id = Column(Integer(10), primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
+        description = Column(String(255), nullable=True)
 
         sensors = relationship('GeomSensor', 
                                cascade = 'all',
