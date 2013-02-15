@@ -187,14 +187,41 @@ class Inventory:
 
 
     ## Get a sensor from the inventory.
-    def get_sensor(self, rec_serial, sen_serial, rec_channel_name):
-        recorder_2_process = filter((lambda cur_rec: cur_rec.serial==rec_serial), self.recorders)
+    def get_sensor(self, rec_serial = None, sen_serial = None, sen_type = None,
+                   rec_channel_name = None, channel_name = None, id = None):
+        ''' Get a sensor from the inventory.
 
-        if recorder_2_process:
-            recorder_2_process = recorder_2_process[0]
-            return filter((lambda x: (x.serial==sen_serial) and (x.rec_channel_name == rec_channel_name)), recorder_2_process.sensors)
+        Parameters
+        ----------
+        rec_serial : String
+            The serial number of the recorder.
+
+        sen_serial : String
+            The serial number of the sensor.
+
+        sen_type : String
+            The type of the sensor.
+
+        rec_channel_name : String
+            The recorder channel name of the sensor.
+
+        channel_name : String
+            The assigned channel name of the sensor.
+
+        id : Integer
+            The database id of the sensor
+        '''
+        if rec_serial is not None:
+            recorder_2_process = [x for x in self.recorders if x.serial == rec_serial]
         else:
-            return None
+            recorder_2_process = self.recorders
+
+        if len(recorder_2_process) > 0:
+            sensor = [x.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = None) for x in recorder_2_process]
+            return sensor
+        else:
+            return []
+
 
     ## Get a sensor from the inventory by id.
     def get_sensor_by_id(self, id):
@@ -623,7 +650,7 @@ class Recorder:
         sensor.recorder_id = self.id
         sensor.recorder_serial = self.serial
         sensor.recorder_type = self.type
-        sensor.parentRecorder = self
+        sensor.parent_recorder = self
         self.sensors.append(sensor)
         self.sensors = list(set(self.sensors))
         sensor.set_parent_inventory(self.parent_inventory)
@@ -643,13 +670,53 @@ class Recorder:
             The removed sensor instance.
         '''
         if sensor in self.sensors:
-            sensor.parentRecorder = None
+            sensor.parent_recorder = None
             # sensor.recorder_id = None
             sensor.recorder_serial = None
             sensor.recorder_type = None
             return self.sensors.pop(self.sensors.index(sensor))
         else:
             return None
+
+
+    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None):
+        ''' Get a sensor from the recorder.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the sensor.
+
+        type : String
+            The type of the sensor.
+
+        rec_channel_name : String
+            The recorder channel name of the sensor.
+
+        channel_name : String
+            The assigned channel name of the sensor.
+
+        '''
+        sensor = self.sensors
+
+        if serial is not None:
+            sensor = [x for x in sensor if x.serial == serial]
+
+        if type is not None:
+            sensor = [x for x in sensor if x.type == type]
+
+        if rec_channel_name is not None:
+            sensor = [x for x in sensor if x.rec_channel_name == rec_channel_name]
+
+        if channel_name is not None:
+            sensor = [x for x in sensor if x.channel_name == channel_name]
+
+        if type is not None:
+            sensor = [x for x in sensor if x.id == id]
+
+        return sensor
+
+
 
     ## Refresh the sensor list.
     #
@@ -669,32 +736,6 @@ class Recorder:
         #        stations.remove(cur_station)
 
 
-
-    ## Update the recorder database entry.    
-    def updateDb(self, project):
-        # Write the recorder data to the geom_recorder table.
-        tableName = project.dbTableNames['geom_recorder']
-
-        query =  ("UPDATE %s "
-                  "%s "
-                  "WHERE id=%d") % (tableName, self.getUpdateString, self.id)
-
-        res = project.executeQuery(query)
-
-        if not res['isError']:
-            self.logger.debug("Successfully wrote the recorders to the database.")
-        else:
-            self.logger.debug("%s", res['msg'])  
-
-
-    ## Build the database query update string.
-    def getUpdateString(self):
-        updateString = ''
-        for curField in self.changedFields:
-            curStr = "SET %s = %s" %(curField, str(self[curField]))
-            updateString.join([curStr, ','])
-
-        return updateString[:-1]
 
 
 ## The sensor class.
@@ -988,7 +1029,7 @@ class Station:
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, name, location, x, y, z, parent_inventory=None, coord_system=None, description=None, network=None, id=None):
+    def __init__(self, name, location, x, y, z, parent_network=None, coord_system=None, description=None, network=None, id=None):
 
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
@@ -1053,8 +1094,14 @@ class Station:
         # 3. column: end time
         self.sensors = []
 
-        # The inventory containing this sensor.
-        self.parent_inventory = parent_inventory
+        # The network containing this station.
+        self.parent_network = parent_network
+
+        # The inventory containing this station.
+        if self.parent_network is not None:
+            self.parent_inventory = self.parent_network.parent_inventory
+        else:
+            self.parent_inventory = None
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
@@ -1094,6 +1141,7 @@ class Station:
         self.parent_inventory = parent_inventory
         for cur_sensor, begin_time, end_time in self.sensors:
             cur_sensor.set_parent_inventory(self.parent_inventory) 
+
 
     def get_lon_lat(self):
         '''
