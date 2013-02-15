@@ -467,6 +467,22 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(added_network.geom_network.type, 'changed type')
 
 
+    def test_change_recorder(self):
+        db_inventory = DbInventory('test', self.project)
+        
+        rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder', description = 'test description')
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+       
+        added_recorder.serial = 'BBBB'
+        added_recorder.type = 'changed type'
+        added_recorder.description = 'changed description' 
+        
+        self.assertEqual(added_recorder.serial, 'BBBB')
+        self.assertEqual(added_recorder.geom_recorder.serial, 'BBBB')
+        self.assertEqual(added_recorder.description, 'changed description')
+        self.assertEqual(added_recorder.geom_recorder.description, 'changed description')
+        self.assertEqual(added_recorder.type, 'changed type')
+        self.assertEqual(added_recorder.geom_recorder.type, 'changed type')
 
 def suite():
     #tests = ['test_load_recorder']
