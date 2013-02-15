@@ -651,9 +651,6 @@ class Recorder:
 
     ## Add a sensor to the recorder.
     def add_sensor(self, sensor):
-        sensor.recorder_id = self.id
-        sensor.recorder_serial = self.serial
-        sensor.recorder_type = self.type
         sensor.parent_recorder = self
         self.sensors.append(sensor)
         self.sensors = list(set(self.sensors))
@@ -675,9 +672,6 @@ class Recorder:
         '''
         if sensor in self.sensors:
             sensor.parent_recorder = None
-            # sensor.recorder_id = None
-            sensor.recorder_serial = None
-            sensor.recorder_type = None
             return self.sensors.pop(self.sensors.index(sensor))
         else:
             return None
@@ -751,8 +745,8 @@ class Sensor:
     #
     #
     def __init__(self, serial, type, 
-                 rec_channel_name, channel_name, label, id=None, recorder_id=None, 
-                 recorder_serial=None, recorder_type=None, parent_recorder=None):
+                 rec_channel_name, channel_name, label, id=None, 
+                 parent_recorder=None):
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
@@ -762,15 +756,6 @@ class Sensor:
 
         ## The sensor label specified by the user.
         self.label = label
-
-        ## The id of the recorder to which the sensor is attached to.
-        self.recorder_id = recorder_id
-
-        ## The serial of the recorder to which the sensor is attached to.
-        self.recorder_serial = recorder_serial
-
-        ## The type of the recorder to which the sensor is attached to.
-        self.recorder_type = recorder_type
 
         ## The serial number of the sensor.
         self.serial = serial

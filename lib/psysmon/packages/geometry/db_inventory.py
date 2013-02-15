@@ -555,9 +555,6 @@ class DbRecorder(Recorder):
         sensor : :class:`DbSensor`
             The sensor to add to the recorder.
         '''
-        sensor.recorder_id = self.id
-        sensor.recorder_serial = self.serial
-        sensor.recorder_type = self.type
         sensor.parentRecorder = self
         sensor.set_parent_inventory(self.parent_inventory)
         self.sensors.append(sensor)
@@ -569,13 +566,10 @@ class DbRecorder(Recorder):
 class DbSensor(Sensor):
 
     def __init__(self, parent_recorder, serial, type, rec_channel_name,
-                 channel_name, label, id, recorder_id = None, recorder_serial = None,
-                 recorder_type = None, geom_sensor = None):
+                 channel_name, label, id, recorder_type = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
                         rec_channel_name = rec_channel_name, label = label,
-                        channel_name = channel_name, recorder_id = recorder_id,
-                        recorder_serial = recorder_serial, recorder_type = recorder_type,
-                        parent_recorder = parent_recorder)
+                        channel_name = channel_name, parent_recorder = parent_recorder)
 
         if geom_sensor is None:
             geom_sensor_orm = self.parent_inventory.project.dbTables['geom_sensor']
@@ -598,33 +592,18 @@ class DbSensor(Sensor):
                    geom_sensor.channel_name,
                    geom_sensor.label,
                    geom_sensor.id,
-                   geom_sensor.recorder_id,
-                   parent_recorder.serial,
-                   parent_recorder.type,
                    geom_sensor)
 
 
     @classmethod
     def from_inventory_sensor(cls, parent_recorder, sensor):
-        if parent_recorder is not None:
-            return cls(parent_recorder,
-                       sensor.serial,
-                       sensor.type,
-                       sensor.rec_channel_name,
-                       sensor.channel_name,
-                       sensor.label,
-                       sensor.id,
-                       parent_recorder.id,
-                       parent_recorder.serial,
-                       parent_recorder.type)
-        else:
-            return cls(parent_recorder,
-                       sensor.serial,
-                       sensor.type,
-                       sensor.rec_channel_name,
-                       sensor.channel_name,
-                       sensor.label,
-                       sensor.id)
+        return cls(parent_recorder,
+                   sensor.serial,
+                   sensor.type,
+                   sensor.rec_channel_name,
+                   sensor.channel_name,
+                   sensor.label,
+                   sensor.id)
 
 
     def add_parameter(self, parameter):
