@@ -60,7 +60,18 @@ class DbInventory:
 
         self.recorders = []
 
-    
+        # The unassigned stations.
+        # This shouldn't be used in the db inventory. I have added them to 
+        # be compatible with the normal inventory.
+        self.stations = []
+
+        # The unassigned sensors. 
+        # This shouldn't be used in the db inventory. I have added them to 
+        # be compatible with the normal inventory.
+        self.sensors = []
+
+
+
     def __str__(self):
         ''' Print the string representation of the inventory.
         '''
@@ -83,6 +94,28 @@ class DbInventory:
         '''
         print "Deleting DbInventory - closing the session.\n"
         self.db_session.close()
+
+
+    def has_changed(self):
+        ''' Check if any element in the inventory has been changed.
+        '''
+        for cur_recorder in self.recorders:
+            if cur_recorder.has_changed:
+                self.logger.debug('Recorder changed')
+                return True
+
+            for cur_sensor in cur_recorder.sensors:
+                if cur_sensor.has_changed:
+                    self.logger.debug('Sensor changed')
+                    return True
+
+        for cur_network in self.networks:
+            if cur_network.has_changed:
+                self.logger.debug('Network changed.')
+                return True
+
+        return False
+
 
 
     def close(self):
@@ -123,7 +156,7 @@ class DbInventory:
                     db_sensor = self.get_sensor(id = cur_geom_sensor.sensor_id)
                     if len(db_sensor) == 1:
                         db_station.sensors.append((db_sensor[0], UTCDateTime(cur_geom_sensor.start_time), UTCDateTime(cur_geom_sensor.end_time)))
-                    
+
                 db_network.stations.append(db_station)    
 
             self.networks.append(db_network)
@@ -145,6 +178,13 @@ class DbInventory:
                     db_sensor.parameters.append(db_sensor_param)
 
             self.recorders.append(db_recorder)
+
+
+    def load(self):
+        ''' Load the inventory from the database.
+        '''
+        self.load_recorders()
+        self.load_networks()
 
 
     def add_network(self, network):
@@ -331,6 +371,8 @@ class DbNetwork:
 
         self.stations = []
 
+        self.has_changed = False
+
         if geom_network is None:
             # Create a new database network instance.
             geom_network_orm = self.parent_inventory.project.dbTables['geom_network']
@@ -349,6 +391,12 @@ class DbNetwork:
         return cls(parent_inventory, network.name, network.description, network.type)
 
 
+    def __getitem__(self, name):
+        ''' The index and slicing operator.
+        '''
+        return self.__dict__[name]
+
+
     def __setattr__(self, attr, value):
         ''' Control the attribute assignements.
         '''
@@ -357,12 +405,19 @@ class DbNetwork:
         attr_map['description'] = 'description'
         attr_map['type'] = 'type'
 
+        self.__dict__[attr] = value
+       
         if attr in attr_map.keys():
-            self.__dict__[attr] = value
             if 'geom_network' in self.__dict__:
                 setattr(self.geom_network, attr_map[attr], value)
-        else:
-            self.__dict__[attr] = value
+
+        if attr == 'name' and 'stations' in self.__dict__:
+            for cur_station in self.stations:
+                # Set the station network value using the key to trigger the
+                # change notification of the station.
+                cur_station.network = value
+        
+        self.__dict__['has_changed'] = True
 
 
     def add_station(self, station):
