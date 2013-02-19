@@ -13,7 +13,6 @@ from obspy.core.utcdatetime import UTCDateTime
 
 from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_empty_project
-from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
@@ -40,7 +39,7 @@ class DbInventoryTestCase(unittest.TestCase):
         logger = logging.getLogger('psysmon')
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler())
-        
+
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
         cls.project.dbEngine.echo = False
@@ -447,10 +446,10 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_zeros, [complex('0+1j'), complex('0+2j')])
 
 
-    
+
     def test_change_network(self):
         db_inventory = DbInventory('test', self.project)
-        
+
         # Add a network to the db_inventory.
         net_2_add = Network(name = 'XX', description = 'A test network.')
         added_network = db_inventory.add_network(net_2_add)
@@ -458,7 +457,7 @@ class DbInventoryTestCase(unittest.TestCase):
         added_network.name = 'YY'
         added_network.description = 'changed description'
         added_network.type = 'changed type'
-        
+
         self.assertEqual(added_network.name, 'YY')
         self.assertEqual(added_network.geom_network.name, 'YY')
         self.assertEqual(added_network.description, 'changed description')
@@ -469,14 +468,14 @@ class DbInventoryTestCase(unittest.TestCase):
 
     def test_change_recorder(self):
         db_inventory = DbInventory('test', self.project)
-        
+
         rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder', description = 'test description')
         added_recorder = db_inventory.add_recorder(rec_2_add)
-       
+
         added_recorder.serial = 'BBBB'
         added_recorder.type = 'changed type'
         added_recorder.description = 'changed description' 
-        
+
         self.assertEqual(added_recorder.serial, 'BBBB')
         self.assertEqual(added_recorder.geom_recorder.serial, 'BBBB')
         self.assertEqual(added_recorder.description, 'changed description')
@@ -519,7 +518,7 @@ class DbInventoryTestCase(unittest.TestCase):
                               rec_channel_name = '001',
                               channel_name = 'HHZ',
                               label = 'AAAA-001-HHZ') 
-        
+
         parameter_2_add = SensorParameter(sensor_id = sensor_2_add.id,
                                          gain = 1,
                                          bitweight = 2,
@@ -530,13 +529,13 @@ class DbInventoryTestCase(unittest.TestCase):
                                          end_time = UTCDateTime('2012-06-20'),
                                          tf_poles = [complex('1+1j'), complex('1+2j')],
                                          tf_zeros = [complex('0+1j'), complex('0+2j')])
-        
+
         sensor_2_add.add_parameter(parameter_2_add)
         rec_2_add.add_sensor(sensor_2_add)
         added_recorder.append(db_inventory.add_recorder(rec_2_add))
 
         cur_parameter = added_recorder[0].sensors[0].parameters[0]
-        
+
         value = UTCDateTime('1976-01-01')
         cur_parameter.start_time = value
         self.assertEqual(cur_parameter.start_time, value)
