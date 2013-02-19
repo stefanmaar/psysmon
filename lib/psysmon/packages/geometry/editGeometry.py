@@ -208,13 +208,14 @@ class EditGeometryDlg(wx.Frame):
 
         '''
         try:
-            curInventory = self.db_inventory.load()
+            self.db_inventory.load()
+            cur_inventory = self.db_inventory
         except Warning as w:
                 print w
 
-        self.inventories[curInventory.name] = curInventory
+        self.inventories[cur_inventory.name] = cur_inventory
         self.inventoryTree.updateInventoryData()
-        self.selected_inventory = curInventory
+        self.selected_inventory = cur_inventory
 
 
     ## Define the EditGeometryDlg menus.  
@@ -296,8 +297,8 @@ class EditGeometryDlg(wx.Frame):
             self.logger.error('You have to create or select an inventory first.')
             return
 
-        net2Add = Network(name = '-9999') 
-        self.selected_inventory.addNetwork(net2Add)
+        net2Add = Network(name = '-9999', description = 'A new network.') 
+        self.selected_inventory.add_network(net2Add)
         self.inventoryTree.updateInventoryData()
 
 
@@ -327,7 +328,7 @@ class EditGeometryDlg(wx.Frame):
             self.logger.info("No inventory selected.")
             return
 
-        if self.selected_inventory.__class__.__name__  != 'Inventory' :
+        if self.selected_inventory.__class__.__name__ is not 'Inventory'  and self.selected_inventory.__class__.__name__ is not 'DbInventory':
             self.logger.info("Please select the inventory to be written to the database.")
             return
 
@@ -343,11 +344,14 @@ class EditGeometryDlg(wx.Frame):
                 self.logger.error('There are still unassigned stations in the inventory.\nAdd them to a network or remove them before writing the inventory to the database.')
             else:
                 self.logger.debug("Updating the existing project inventory database.")
-                self.dbController.updateDb(self.selected_inventory)
-                cur_inventory = self.dbController.reloadDb()
-                self.inventories[cur_inventory.name] = cur_inventory
-                self.inventoryTree.updateInventoryData()
-                self.selected_inventory = cur_inventory
+                self.db_inventory.commit()
+                
+                # TODO: Check if it's needed to reload the database to get the
+                # autoincrement ids.
+                #cur_inventory = self.dbController.reloadDb()
+                #self.inventories[cur_inventory.name] = cur_inventory
+                #self.inventoryTree.updateInventoryData()
+                #self.selected_inventory = cur_inventory
 
 
         #self.inventoryTree.updateInventoryData()
@@ -362,10 +366,8 @@ class EditGeometryDlg(wx.Frame):
         self.logger.debug("onExit")
         # Check if an unsaved database inventory exists.
         for curInventory in self.inventories.itervalues():
-            if curInventory.hasChanged():
+            if curInventory.has_changed():
                 self.logger.warning('There are unsaved elements in the inventory.')
-                #if curInventory.type.lower() == 'db':
-                #    curInventory.updateDb()
 
         self.db_inventory.close()
 
@@ -665,9 +667,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
             self.Parent.selected_inventory = pyData.parentInventory
             self.selected_item = 'recorder'
-        elif(pyData.__class__.__name__ == 'Network'):
+        elif(pyData.__class__.__name__ == 'Network' or pyData.__class__.__name__ == 'DbNetwork'):
             self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
-            self.Parent.selected_inventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_network = pyData
             self.selected_item = 'network'
         elif(self.GetItemText(evt.GetItem()) == 'Networks'):
@@ -1125,8 +1127,12 @@ class NetworkPanel(wx.Panel):
             fieldName = grid_fields[ind][0]
             fieldAttr = grid_fields[ind][2]
             if fieldAttr == 'editable':
-                self.displayedNetwork[fieldName] =  self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())
-                self.displayedNetwork.parentInventory.refreshNetworks()
+                setattr(self.displayedNetwork, fieldName, self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol()))
+                #self.displayedNetwork[fieldName] =  self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())
+                # TODO: For non-db inventories, reassign the stations to the
+                # network.
+                if self.displayedNetwork.parent_inventory.type is not 'db':
+                    self.displayedNetwork.parent_inventory.refreshNetworks()
                 self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
                 self.logger.debug(self.GetParent().GetParent().GetParent())
         else:
