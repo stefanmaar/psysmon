@@ -243,15 +243,10 @@ class DbInventory:
         '''
         cur_net = self.get_network(station.network)
 
-        if cur_net is not None:
-            if station.__class__ is Station:
-                db_station = DbStation.from_inventory_station(cur_net, station)
-            else:
-                db_station = station
-                added_station = cur_net.add_station(db_station)
-                return db_station
+        if station.__class__ is Station:
+            db_station = DbStation.from_inventory_station(cur_net, station)
 
-            added_station = cur_net.add_station(db_station)
+            cur_net.add_station(db_station)
 
             for cur_sensor, cur_start_time, cur_end_time in station.sensors:
                 db_sensor = self.get_sensor(rec_serial = cur_sensor.parent_recorder.serial, 
@@ -268,10 +263,39 @@ class DbInventory:
                     # Solve the problem if more than one sensor is
                     # returned.
                     pass
-            return added_station
+        else:
+            db_station = station
+
+
+        if cur_net is not None:
+            cur_net.add_station(db_station)
         else:
             self.logger.error('The network %s of the station is not found in the inventory.', station.network)
-            return None
+            self.stations.append(db_station)
+
+        return db_station
+
+
+    def move_station(self, station):
+        ''' Add a station to the database inventory.
+        The station is added only, if a corresponding network is found.
+
+        Parameters
+        ----------
+        station : :class:`~psysmon.packages.geometery.inventory.Station` or :class:`DbStation`
+            The station to add to the inventory.
+        '''
+        cur_net = self.get_network(station.network)
+
+        if cur_net is not None:
+            cur_net.add_station(station)
+            # Check if the station has been a member of the unassigned
+            # stations.
+            if station in self.stations:
+                self.stations.remove(station)
+        else:
+            self.logger.error('The network %s of the station is not found in the inventory.', station.network)
+            self.stations.append(station)
 
 
     def remove_station(self, snl):
@@ -479,6 +503,8 @@ class DbNetwork:
             station_2_remove = station_2_remove[0]
             self.stations.remove(station_2_remove)
             self.geom_network.stations.remove(station_2_remove.geom_station)
+            station_2_remove.network = None
+            station_2_remove.parent_network = None
             return station_2_remove
         else:
             # This shouldn't happen.
