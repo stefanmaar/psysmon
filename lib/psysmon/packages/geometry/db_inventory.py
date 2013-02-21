@@ -238,13 +238,13 @@ class DbInventory:
 
         Parameters
         ----------
-        station : :class:`~psysmon.packages.geometery.inventory.Station`
+        station : :class:`~psysmon.packages.geometery.inventory.Station` or :class:`DbStation`
             The station to add to the inventory.
         '''
         cur_net = self.get_network(station.network)
 
         if cur_net is not None:
-            if isinstance(station, Station):
+            if station.__class__ is Station:
                 db_station = DbStation.from_inventory_station(cur_net, station)
             else:
                 db_station = station
