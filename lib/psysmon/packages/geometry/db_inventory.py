@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -76,7 +75,7 @@ class DbInventory:
         ''' Print the string representation of the inventory.
         '''
         out = "Inventory %s of type %s\n" % (self.name, self.type) 
-        
+
         # Print the networks.
         out =  out + str(len(self.networks)) + " network(s) in the inventory:\n"
         out = out + "\n".join([net.__str__() for net in self.networks])
@@ -85,7 +84,7 @@ class DbInventory:
         out = out + '\n\n'
         out =  out + str(len(self.recorders)) + " recorder(s) in the inventory:\n"
         out = out + "\n".join([rec.__str__() for rec in self.recorders])
-        
+
         return out
 
 
@@ -245,7 +244,13 @@ class DbInventory:
         cur_net = self.get_network(station.network)
 
         if cur_net is not None:
-            db_station = DbStation.from_inventory_station(cur_net, station)
+            if isinstance(station, Station):
+                db_station = DbStation.from_inventory_station(cur_net, station)
+            else:
+                db_station = station
+                added_station = cur_net.add_station(db_station)
+                return db_station
+
             added_station = cur_net.add_station(db_station)
 
             for cur_sensor, cur_start_time, cur_end_time in station.sensors:
@@ -331,7 +336,7 @@ class DbInventory:
 
         channel_name : String
             The assigned channel name of the sensor.
-        
+
         id : Integer
             The database id of the sensor
         '''
@@ -346,13 +351,25 @@ class DbInventory:
                 sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = None))
 
         return sensor
-    
+
 
     def commit(self):
         ''' Commit the database changes.
         '''
         self.db_session.commit()
-        self.db_session.flush()
+        #self.db_session.flush()
+
+        # update the ids of the inventory elements.
+        for cur_network in self.networks:
+            for cur_station in cur_network.stations:
+                cur_station.update_id()
+
+        for cur_recorder in self.recorders:
+            cur_recorder.update_id()
+            for cur_sensor in cur_recorder.sensors:
+                cur_sensor.update_id()
+                for cur_param in cur_sensor.parameters:
+                    cur_param.update_id()
 
 
 
@@ -360,6 +377,10 @@ class DbInventory:
 class DbNetwork:
 
     def __init__(self, parent_inventory, name, description, type, geom_network = None):
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         self.parent_inventory = parent_inventory
 
@@ -406,7 +427,7 @@ class DbNetwork:
         attr_map['type'] = 'type'
 
         self.__dict__[attr] = value
-       
+
         if attr in attr_map.keys():
             if 'geom_network' in self.__dict__:
                 setattr(self.geom_network, attr_map[attr], value)
@@ -416,7 +437,7 @@ class DbNetwork:
                 # Set the station network value using the key to trigger the
                 # change notification of the station.
                 cur_station.network = value
-        
+
         self.__dict__['has_changed'] = True
 
 
@@ -469,7 +490,7 @@ class DbNetwork:
 
 class DbStation(Station):
 
-    def __init__(self, parent_network, network, name, location, x, y, z, coord_system, description, geom_station = None):
+    def __init__(self, parent_network, network, name, location, x, y, z, coord_system, description, id = None, geom_station = None):
         Station.__init__(self, network = network, name = name, location = location,
                          x = x, y = y, z = z, coord_system = coord_system,
                          description = description, id = id, parent_network = parent_network)
@@ -492,16 +513,17 @@ class DbStation(Station):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_network, geom_station):
-        station = cls(parent_network,
-                      geom_station.network,
-                      geom_station.name,
-                      geom_station.location,
-                      geom_station.x,
-                      geom_station.y,
-                      geom_station.z,
-                      geom_station.coord_system,
-                      geom_station.description,
-                      geom_station)
+        station = cls(parent_network = parent_network,
+                      network = geom_station.network,
+                      name = geom_station.name,
+                      location = geom_station.location,
+                      x = geom_station.x,
+                      y = geom_station.y,
+                      z = geom_station.z,
+                      coord_system = geom_station.coord_system,
+                      description = geom_station.description,
+                      id = geom_station.id,
+                      geom_station = geom_station)
 
         return station
 
@@ -509,15 +531,38 @@ class DbStation(Station):
 
     @classmethod
     def from_inventory_station(cls, parent_network, station):
-        return cls(parent_network,
-                   station.network,
-                   station.name,
-                   station.location,
-                   station.x,
-                   station.y,
-                   station.z,
-                   station.coord_system,
-                   station.description)
+        return cls(parent_network = parent_network,
+                   network = station.network,
+                   name = station.name,
+                   location = station.location,
+                   x = station.x,
+                   y = station.y,
+                   z = station.z,
+                   coord_system = station.coord_system,
+                   description = station.description)
+
+
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['name'] = 'name'
+        attr_map['network'] = 'network'
+        attr_map['location'] = 'location'
+        attr_map['x'] = 'x'
+        attr_map['y'] = 'y'
+        attr_map['z'] = 'z'
+        attr_map['coord_system'] = 'coord_system'
+        attr_map['description'] = 'description'
+
+        self.__dict__[attr] = value
+
+        if attr in attr_map.keys():
+            if 'geom_station' in self.__dict__:
+                setattr(self.geom_station, attr_map[attr], value)
+
+        self.__dict__['has_changed'] = True
+
 
     def set_parent_network(self, network):
         self.network = network.name
@@ -552,11 +597,18 @@ class DbStation(Station):
         return sensor
 
 
+    def update_id(self):
+        ''' Update the database if from the geom_station instance.
+        '''
+        if self.geom_station is not None:
+            self.id = self.geom_station.id
+
+
 
 
 class DbRecorder(Recorder):
 
-    def __init__(self, parent_inventory, id, serial, type, description, geom_recorder = None):
+    def __init__(self, parent_inventory, serial, type, description, id = None, geom_recorder = None):
         Recorder.__init__(self, id = id, serial = serial, type = type, 
                         parent_inventory = parent_inventory)
 
@@ -581,7 +633,6 @@ class DbRecorder(Recorder):
     @classmethod
     def from_inventory_recorder(cls, parent_inventory, recorder):
         return cls(parent_inventory = parent_inventory,
-                   id = recorder.id,
                    serial = recorder.serial,
                    type = recorder.type,
                    description = recorder.description)
@@ -618,11 +669,18 @@ class DbRecorder(Recorder):
         return sensor
 
 
+    def update_id(self):
+        ''' Update the database if from the geom_recorder instance.
+        '''
+        if self.geom_recorder is not None:
+            self.id = self.geom_recorder.id
+
+
 
 class DbSensor(Sensor):
 
     def __init__(self, parent_recorder, serial, type, rec_channel_name,
-                 channel_name, label, id, recorder_type = None, geom_sensor = None):
+                 channel_name, label, id = None, recorder_type = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
                         rec_channel_name = rec_channel_name, label = label,
                         channel_name = channel_name, parent_recorder = parent_recorder)
@@ -641,25 +699,24 @@ class DbSensor(Sensor):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_recorder, geom_sensor):
-        return cls(parent_recorder,
-                   geom_sensor.serial,
-                   geom_sensor.type,
-                   geom_sensor.rec_channel_name,
-                   geom_sensor.channel_name,
-                   geom_sensor.label,
-                   geom_sensor.id,
-                   geom_sensor)
+        return cls(parent_recorder = parent_recorder,
+                   serial = geom_sensor.serial,
+                   type = geom_sensor.type,
+                   rec_channel_name = geom_sensor.rec_channel_name,
+                   channel_name = geom_sensor.channel_name,
+                   label = geom_sensor.label,
+                   id = geom_sensor.id,
+                   geom_sensor = geom_sensor)
 
 
     @classmethod
     def from_inventory_sensor(cls, parent_recorder, sensor):
-        return cls(parent_recorder,
-                   sensor.serial,
-                   sensor.type,
-                   sensor.rec_channel_name,
-                   sensor.channel_name,
-                   sensor.label,
-                   sensor.id)
+        return cls(parent_recorder = parent_recorder,
+                   serial = sensor.serial,
+                   type = sensor.type,
+                   rec_channel_name = sensor.rec_channel_name,
+                   channel_name = sensor.channel_name,
+                   label = sensor.label)
 
 
     def __setattr__(self, attr, value):
@@ -691,7 +748,7 @@ class DbSensor(Sensor):
         self.logger.debug('Adding parameter.')
         self.parameters.append(parameter)
         self.geom_sensor.parameters.append(parameter.geom_sensor_parameter)
-        
+
         # Add the tf poles and zeros to the database orm.
         geom_tfpz_orm = self.parent_inventory.project.dbTables['geom_tf_pz']
         for cur_pole in parameter.tf_poles:
@@ -700,6 +757,13 @@ class DbSensor(Sensor):
             parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 0, cur_zero.real, cur_zero.imag))
 
         return parameter
+
+
+    def update_id(self):
+        ''' Update the database if from the geom_sensor instance.
+        '''
+        if self.geom_sensor is not None:
+            self.id = self.geom_sensor.id
 
 
 
@@ -777,7 +841,7 @@ class DbSensorParameter(SensorParameter):
                    sensitivity_units = geom_sensor_parameter.sensitivity_units,
                    id = geom_sensor_parameter.id,
                    geom_sensor_parameter = geom_sensor_parameter)
-        
+
         # Collect the poles and zeros of the transfer function.
         for cur_pz in geom_sensor_parameter.tf_pz:
             if cur_pz.type == 0:
@@ -786,8 +850,8 @@ class DbSensorParameter(SensorParameter):
                 sensor.tf_poles.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
 
         return sensor
-    
-    
+
+
     def __setattr__(self, attr, value):
         ''' Control the attribute assignements.
         '''
@@ -813,3 +877,10 @@ class DbSensorParameter(SensorParameter):
                     setattr(self.geom_sensor_parameter, attr_map[attr], value)
         else:
             self.__dict__[attr] = value
+
+
+    def update_id(self):
+        ''' Update the database if from the geom_sensor instance.
+        '''
+        if self.geom_sensor_parameter is not None:
+            self.id = self.geom_sensor_parameter.id
