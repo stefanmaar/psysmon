@@ -1312,14 +1312,16 @@ class StationsPanel(wx.Panel):
                 value = self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
                 # If the network name has been changed, check if the
                 # network exists and if so, add the station to it.
+
                 if fieldName == 'network':
-                    new_net = self.displayedStation.parent_inventory.get_network(value)
-                    if new_net is not None:
-                        removed_station = self.displayedStation.parent_network.remove_station(name = self.displayedStation.name,
-                                                                                             location = self.displayedStation.location)
-                        new_net.add_station(removed_station)
+                    #new_net = self.displayedStation.parent_inventory.get_network(value)
+                    removed_station = self.displayedStation.parent_network.remove_station(name = self.displayedStation.name,
+                                                                                         location = self.displayedStation.location)
+                    setattr(self.displayedStation, fieldName, value)
+                    removed_station.parent_inventory.add_station(removed_station)
 
                 setattr(self.displayedStation, fieldName, value)
+
                 #self.displayedStation.parent_inventory.refreshNetworks()
                 self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
                 self.logger.debug(self.GetParent().GetParent().GetParent())
