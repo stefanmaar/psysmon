@@ -42,7 +42,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
-        cls.project.dbEngine.echo = False
+        cls.project.dbEngine.echo = True
         #cls.full_project = create_full_project(cls.psybase)
         print "In setUpClass...\n"
 
@@ -251,6 +251,43 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(added_network_2.geom_network.stations), 0)
 
 
+    def test_move_station(self):
+        db_inventory = DbInventory('test', self.project)
+
+        # Add a network to the db_inventory.
+        net_2_add = Network(name = 'XX', description = 'A test network.')
+        added_network_1 = db_inventory.add_network(net_2_add)
+
+        net_2_add = Network(name = 'YY', description = 'A second test network.')
+        added_network_2 = db_inventory.add_network(net_2_add)
+
+        # Add a station to the XX network.
+        stat_2_add = Station(name = 'AAA',
+                             network = 'XX',
+                             location = '00',
+                             x = 0,
+                             y = 0,
+                             z = 0,
+                             coord_system = 'epsg:4316')
+        added_station_1 = db_inventory.add_station(stat_2_add)
+
+        removed_station = added_network_1.remove_station(name = 'AAA', location = '00')
+        added_network_2.add_station(removed_station)
+
+        self.assertEqual(len(added_network_1.stations), 0)
+        self.assertEqual(len(added_network_2.stations), 1)
+        self.assertEqual(added_network_2.stations[0], added_station_1)
+        self.assertEqual(len(added_network_1.geom_network.stations), 0)
+        self.assertEqual(len(added_network_2.geom_network.stations), 1)
+
+        # Commit the changes to the database.
+        db_inventory.commit()
+
+        removed_station = added_network_2.remove_station(name = 'AAA', location = '00')
+        added_network_1.add_station(removed_station)
+
+        db_inventory.commit()
+        db_inventory.close()
 
     def test_add_recorder(self):
         print "test_add_recorder\n"
@@ -395,6 +432,15 @@ class DbInventoryTestCase(unittest.TestCase):
 
         self.assertEqual(len(db_inventory_load.networks), len(db_inventory.networks))
         self.assertEqual(len(db_inventory_load.networks[1].stations), len(db_inventory.networks[1].stations))
+        cur_station = db_inventory_load.networks[0].stations[0]
+        self.assertIsInstance(cur_station.id, long)
+        cur_station = db_inventory_load.networks[1].stations[0]
+        self.assertIsInstance(cur_station.id, long)
+        cur_recorder = db_inventory_load.recorders[0]
+        self.assertIsInstance(cur_recorder.id, long)
+        cur_sensor = cur_recorder.sensors[0]
+        self.assertIsInstance(cur_sensor.id, long)
+
 
 
 
@@ -438,12 +484,18 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory_load.load_recorders()
         db_inventory_load.close()
         self.assertEqual(len(db_inventory_load.recorders), len(db_inventory.recorders))
-        self.assertEqual(len(db_inventory_load.recorders[1].sensors), len(db_inventory.recorders[1].sensors))
-        self.assertEqual(len(db_inventory_load.recorders[1].sensors[0].parameters), len(db_inventory.recorders[1].sensors[0].parameters))
+        cur_recorder = db_inventory_load.recorders[0]
+        self.assertIsInstance(cur_recorder.id, long)
+        cur_recorder = db_inventory_load.recorders[1]
+        self.assertIsInstance(cur_recorder.id, long)
+        self.assertEqual(len(cur_recorder.sensors), len(db_inventory.recorders[1].sensors))
+        self.assertEqual(len(cur_recorder.sensors[0].parameters), len(db_inventory.recorders[1].sensors[0].parameters))
         self.assertEqual(db_inventory_load.recorders[1].serial, db_inventory.recorders[1].serial)
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].serial, db_inventory.recorders[1].sensors[0].serial)
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_poles, [complex('1+1j'), complex('1+2j')])
         self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].tf_zeros, [complex('0+1j'), complex('0+2j')])
+        self.assertEqual(db_inventory_load.recorders[1].sensors[0].parameters[0].id, 1)
+
 
 
 
@@ -464,6 +516,33 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(added_network.geom_network.description, 'changed description')
         self.assertEqual(added_network.type, 'changed type')
         self.assertEqual(added_network.geom_network.type, 'changed type')
+
+
+    def test_change_station(self):
+        db_inventory = DbInventory('test', self.project)
+
+        # Add a network to the db_inventory.
+        net_2_add = Network(name = 'XX', description = 'A test network.')
+        added_network = db_inventory.add_network(net_2_add)
+
+        # Add a station to the XX network.
+        stat_2_add = Station(name = 'AAA',
+                             network = 'XX',
+                             location = '00',
+                             x = 0,
+                             y = 0,
+                             z = 0,
+                             coord_system = 'epsg:4316')
+        added_station = db_inventory.add_station(stat_2_add)
+
+        cur_station = added_station
+        test_attr = [('name', 'BBB'), ('network', 'YY'), 
+                     ('location', '01'), ('x', 999), ('y', 999), ('z', 999),
+                     ('coord_system', 'epsg:0000')]
+        for cur_attr, cur_value in test_attr:
+            setattr(cur_station, cur_attr, cur_value)
+            self.assertEqual(getattr(cur_station, cur_attr), cur_value)
+            self.assertEqual(getattr(cur_station.geom_station, cur_attr), cur_value)
 
 
     def test_change_recorder(self):
