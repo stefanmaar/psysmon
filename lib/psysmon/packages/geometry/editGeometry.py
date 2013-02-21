@@ -1315,10 +1315,11 @@ class StationsPanel(wx.Panel):
 
                 if fieldName == 'network':
                     #new_net = self.displayedStation.parent_inventory.get_network(value)
-                    removed_station = self.displayedStation.parent_network.remove_station(name = self.displayedStation.name,
-                                                                                         location = self.displayedStation.location)
+                    if self.displayedStation.parent_network is not None:
+                        self.displayedStation.parent_network.remove_station(name = self.displayedStation.name,
+                                                                            location = self.displayedStation.location)
                     setattr(self.displayedStation, fieldName, value)
-                    removed_station.parent_inventory.add_station(removed_station)
+                    self.displayedStation.parent_inventory.move_station(self.displayedStation)
 
                 setattr(self.displayedStation, fieldName, value)
 
