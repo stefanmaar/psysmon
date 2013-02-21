@@ -315,8 +315,8 @@ class EditGeometryDlg(wx.Frame):
                            x = 0,
                            y = 0,
                            z = 0,
-                           coordSystem = 'epsg:4326') 
-        self.selected_inventory.addStation(station2Add)
+                           coord_system = 'epsg:4326') 
+        self.selected_inventory.add_station(station2Add)
         self.inventoryTree.updateInventoryData()
 
     ## Save to database menu callback.
@@ -345,7 +345,7 @@ class EditGeometryDlg(wx.Frame):
             else:
                 self.logger.debug("Updating the existing project inventory database.")
                 self.db_inventory.commit()
-                
+
                 # TODO: Check if it's needed to reload the database to get the
                 # autoincrement ids.
                 #cur_inventory = self.dbController.reloadDb()
@@ -652,20 +652,20 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         if isinstance(pyData, tuple):
             pyData = pyData[0]
 
-        if(pyData.__class__.__name__ == 'Station'):
+        if(pyData.__class__.__name__ == 'Station' or pyData.__class__.__name__ == 'DbStation'):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
-            self.Parent.selected_inventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parent_inventory
             self.selected_item = 'station'
         elif(pyData.__class__.__name__ == 'Sensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
-            self.Parent.selected_inventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parent_inventory
             self.selected_item = 'sensor'
         elif(pyData.__class__.__name__ == 'Inventory'):
             self.Parent.selected_inventory = pyData
             self.selected_item = 'inventory'
         elif(pyData.__class__.__name__ == 'Recorder'):
             self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
-            self.Parent.selected_inventory = pyData.parentInventory
+            self.Parent.selected_inventory = pyData.parent_inventory
             self.selected_item = 'recorder'
         elif(pyData.__class__.__name__ == 'Network' or pyData.__class__.__name__ == 'DbNetwork'):
             self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
@@ -1090,7 +1090,7 @@ class NetworkPanel(wx.Panel):
         tableField.append(('x', 'x', 'editable'))
         tableField.append(('y', 'y', 'editable'))
         tableField.append(('z', 'z', 'editable'))
-        tableField.append(('coordSystem', 'coord. system', 'editable'))
+        tableField.append(('coord_system', 'coord. system', 'editable'))
         tableField.append(('description', 'description', 'editable'))
         return tableField
 
@@ -1110,7 +1110,7 @@ class NetworkPanel(wx.Panel):
         ''' Set the grid values of the specified grid.
         '''
         for pos, (field, label, attr) in enumerate(fields):
-            if field and object[field]:
+            if field is not None and object[field] is not None:
                 grid.SetCellValue(rowNumber, pos, str(object[field]))
             grid.AutoSizeColumns()
 
@@ -1235,7 +1235,7 @@ class RecorderPanel(wx.Panel):
         ''' Set the grid values of the specified grid.
         '''
         for pos, (field, label, attr) in enumerate(fields):
-            if field and object[field]:
+            if field is not None and object[field] is not None:
                 grid.SetCellValue(rowNumber, pos, str(object[field]))
             grid.AutoSizeColumns()
 
@@ -1309,10 +1309,18 @@ class StationsPanel(wx.Panel):
             fieldName = gridStationFields[ind][0]
             fieldAttr = gridStationFields[ind][2]
             if fieldAttr == 'editable':
-                self.displayedStation[fieldName] =  self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
-                self.logger.debug('vor refreshNetworks')
-                self.displayedStation.parentInventory.refreshNetworks()
-                self.logger.debug('vor updateInventoryData')
+                value = self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
+                # If the network name has been changed, check if the
+                # network exists and if so, add the station to it.
+                if fieldName == 'network':
+                    new_net = self.displayedStation.parent_inventory.get_network(value)
+                    if new_net is not None:
+                        removed_station = self.displayedStation.parent_network.remove_station(name = self.displayedStation.name,
+                                                                                             location = self.displayedStation.location)
+                        new_net.add_station(removed_station)
+
+                setattr(self.displayedStation, fieldName, value)
+                #self.displayedStation.parent_inventory.refreshNetworks()
                 self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
                 self.logger.debug(self.GetParent().GetParent().GetParent())
         else:
@@ -1388,9 +1396,10 @@ class StationsPanel(wx.Panel):
 
     def setGridValues(self, object, grid, fields, rowNumber):
         for pos, (field, label, attr) in enumerate(fields):
-            if field and object[field]:
+            if field is not None and object[field] is not None:
                 grid.SetCellValue(rowNumber, pos, str(object[field]))
             grid.AutoSizeColumns()
+
 
     ## The station grid columns. 
     def getStationFields(self):
@@ -1402,7 +1411,7 @@ class StationsPanel(wx.Panel):
         tableField.append(('x', 'x', 'editable'))
         tableField.append(('y', 'y', 'editable'))
         tableField.append(('z', 'z', 'editable'))
-        tableField.append(('coordSystem', 'coord. system', 'editable'))
+        tableField.append(('coord_system', 'coord. system', 'editable'))
         tableField.append(('description', 'description', 'editable'))
         return tableField
 
@@ -1673,7 +1682,7 @@ class SensorsPanel(wx.Panel):
 
     def setGridValues(self, object, grid, fields, rowNumber):
         for pos, (field, label, attr) in enumerate(fields):
-            if field and object[field]:
+            if field is not None and object[field] is not None:
                 grid.SetCellValue(rowNumber, pos, str(object[field]))
             grid.AutoSizeColumns()
 
