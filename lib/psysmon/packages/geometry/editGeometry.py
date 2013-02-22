@@ -270,13 +270,7 @@ class EditGeometryDlg(wx.Frame):
 
 
     def onAddRecorder(self, event):
-        self.logger.info("onAddRecorder menu clicked.")
-        # Create the Recorder instance.
-        rec2Add = Recorder(serial='-9999', 
-                           type = 'new recorder') 
-        self.selected_inventory.addRecorder(rec2Add)
-        self.inventoryTree.updateInventoryData()
-
+        self.addRecorder()
 
     def onAddNetwork(self, event):
         ''' Handle the add network menu click.
@@ -318,6 +312,22 @@ class EditGeometryDlg(wx.Frame):
                            coord_system = 'epsg:4326') 
         self.selected_inventory.add_station(station2Add)
         self.inventoryTree.updateInventoryData()
+
+
+    def addRecorder(self):
+        ''' Add a recorder to the inventory.
+        '''
+        if self.selected_inventory is None:
+            self.logger.error('You have to create of select an inventory first.')
+            return
+        
+        # Create the Recorder instance.
+        rec_2_add = Recorder(serial='-9999', 
+                             type = 'new recorder') 
+        self.selected_inventory.add_recorder(rec_2_add)
+        self.inventoryTree.updateInventoryData()
+
+
 
     ## Save to database menu callback.
     #
@@ -476,8 +486,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.logger.debug('Handling a sensor.')
         elif(self.selected_item == 'inventory'):
             self.logger.debug('Handling an inventory.')
-        elif(self.selected_item == 'recorder'):
-            self.logger.debug('Handling a recorder.')
+        elif(self.selected_item == 'recorder_list'):
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add recorder')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove recorder')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
         elif(self.selected_item == 'network'):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add station')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
@@ -508,6 +521,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.logger.debug('Handling a sensor.')
         elif(self.selected_item == 'inventory'):
             self.logger.debug('Handling an inventory.')
+        elif(self.selected_item == 'recorder_list'):
+            self.logger.debug('Handling a recorder_list.')
+            self.Parent.addRecorder()
         elif(self.selected_item == 'recorder'):
             self.logger.debug('Handling a recorder.')
         elif(self.selected_item == 'network'):
