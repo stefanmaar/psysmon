@@ -835,8 +835,16 @@ class Sensor:
         self.has_changed = False
 
 
-    def __getitem__(self, name):
-        return self.__dict__[name]
+    def __getattr__(self, attrname):
+
+        if attrname == 'recorder_id':
+            return self.parent_recorder.id
+        elif attrname == 'recorder_serial':
+            return self.parent_recorder.serial
+        elif attrname == 'recorder_type':
+            return self.parent_recorder.type
+        else:
+            return self.__dict__[attrname]
 
 
     def __setitem__(self, name, value):
