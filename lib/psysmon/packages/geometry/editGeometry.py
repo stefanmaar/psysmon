@@ -1706,7 +1706,7 @@ class SensorsPanel(wx.Panel):
                 self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'zeros', 'readonly')), zeroStr) 
 
         # Update the transfer function plot.
-        if sensor.parameters[0][0]:
+        if len(sensor.parameters) > 0:
             self.updateTransferFunction(sensor.parameters[0][0])
 
 
@@ -1750,8 +1750,8 @@ class SensorsPanel(wx.Panel):
 
     def setGridValues(self, object, grid, fields, rowNumber):
         for pos, (field, label, attr) in enumerate(fields):
-            if field is not None and object[field] is not None:
-                grid.SetCellValue(rowNumber, pos, str(object[field]))
+            if field is not None and getattr(object, field) is not None:
+                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             grid.AutoSizeColumns()
 
 
@@ -1759,14 +1759,14 @@ class SensorsPanel(wx.Panel):
     def getSensorFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('recorderId', 'rec. id', 'readonly'))
-        tableField.append(('recorderSerial', 'rec. serial', 'readonly'))
-        tableField.append(('recorderType', 'rec. type', 'readonly'))
+        tableField.append(('recorder_id', 'rec. id', 'readonly'))
+        tableField.append(('recorder_serial', 'rec. serial', 'readonly'))
+        tableField.append(('recorder_type', 'rec. type', 'readonly'))
         tableField.append(('label', 'label', 'editable'))
         tableField.append(('serial', 'serial', 'editable'))
         tableField.append(('type', 'type', 'editable'))
-        tableField.append(('recChannelName', 'rec. channel', 'editable'))
-        tableField.append(('channelName', 'channel', 'editable'))
+        tableField.append(('rec_channel_name', 'rec. channel', 'editable'))
+        tableField.append(('channel_name', 'channel', 'editable'))
         return tableField
 
     def getParameterFields(self):
