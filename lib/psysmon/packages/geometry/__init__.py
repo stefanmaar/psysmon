@@ -146,9 +146,10 @@ def databaseFactory(base):
         tf_pz = relationship('GeomTfPz', cascade='all')
 
 
-        def __init__(self, start_time, end_time, tf_normalization_factor, 
+        def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor, 
                      tf_normalization_frequency, tf_type, tf_units, gain, sensitivity, 
                      sensitivity_units, bitweight, bitweight_units):
+            self.sensor_id = sensor_id
             self.start_time = start_time
             self.end_time = end_time
             self.tf_normalization_factor = tf_normalization_factor
