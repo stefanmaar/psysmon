@@ -491,6 +491,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove recorder')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+        elif(self.selected_item == 'recorder'):
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add sensor')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove recorder')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         elif(self.selected_item == 'network'):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add station')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
