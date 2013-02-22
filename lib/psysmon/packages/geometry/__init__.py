@@ -130,7 +130,7 @@ def databaseFactory(base):
                          )
 
         id = Column(Integer(10), primary_key=True, autoincrement=True)
-        sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=False, default=-1)
+        sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=True, default=-1)
         start_time = Column(Float(53))
         end_time = Column(Float(53))
         tf_normalization_factor = Column(Float)
@@ -146,10 +146,9 @@ def databaseFactory(base):
         tf_pz = relationship('GeomTfPz', cascade='all')
 
 
-        def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor, 
+        def __init__(self, start_time, end_time, tf_normalization_factor, 
                      tf_normalization_frequency, tf_type, tf_units, gain, sensitivity, 
                      sensitivity_units, bitweight, bitweight_units):
-            self.sensor_id = sensor_id
             self.start_time = start_time
             self.end_time = end_time
             self.tf_normalization_factor = tf_normalization_factor
