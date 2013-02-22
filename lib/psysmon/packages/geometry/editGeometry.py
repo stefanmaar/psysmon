@@ -1612,8 +1612,7 @@ class SensorsPanel(wx.Panel):
         if selectedParameter in colLabels:
             ind = colLabels.index(selectedParameter)
             fieldName = gridSensorFields[ind][0]
-            self.displayedSensor[fieldName] =  self.sensorGrid.GetCellValue(evt.GetRow(), evt.GetCol())
-            self.displayedSensor.parentInventory.refreshRecorders()
+            setattr(self.displayedSensor, fieldName, self.sensorGrid.GetCellValue(evt.GetRow(), evt.GetCol()))
             self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
         else:
             pass
