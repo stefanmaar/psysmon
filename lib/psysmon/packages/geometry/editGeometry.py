@@ -672,14 +672,14 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.selected_item = 'station'
-        elif(pyData.__class__.__name__ == 'Sensor'):
+        elif(pyData.__class__.__name__ == 'Sensor' or pyData.__class__.__name__ == 'DbSensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.selected_item = 'sensor'
-        elif(pyData.__class__.__name__ == 'Inventory'):
+        elif(pyData.__class__.__name__ == 'Inventory' or pyData.__class__.__name__ == 'DbInventory'):
             self.Parent.selected_inventory = pyData
             self.selected_item = 'inventory'
-        elif(pyData.__class__.__name__ == 'Recorder'):
+        elif(pyData.__class__.__name__ == 'Recorder' or pyData.__class__.__name__ == 'DbRecorder'):
             self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.selected_item = 'recorder'
@@ -1054,7 +1054,7 @@ class NetworkPanel(wx.Panel):
         self.network_grid = wx.grid.Grid(self, size=(-1, 100))
         self.network_grid.CreateGrid(1, len(fields))
 
-        # Bind the stationGrid events.
+        # Bind the network_grid events.
         self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onNetworkCellChange)
 
         for k, (name, label, attr)  in enumerate(fields):
@@ -1172,12 +1172,12 @@ class RecorderPanel(wx.Panel):
 
         # Create the recorder grid.
         #stationColLabels = ['id', 'name', 'network', 'x', 'y', 'z', 'coordSystem', 'description']
-        fields = self.getStationFields()
+        fields = self.getRecorderFields()
         self.recorder_grid = wx.grid.Grid(self, size=(-1, 100))
         self.recorder_grid.CreateGrid(1, len(fields))
 
-        # Bind the stationGrid events.
-        #self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+        # Bind the recorder_grid events.
+        self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onRecorderCellChange)
 
         for k, (name, label, attr)  in enumerate(fields):
             self.recorder_grid.SetColLabelValue(k, label)
@@ -1209,7 +1209,7 @@ class RecorderPanel(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
 
-    def getStationFields(self):
+    def getRecorderFields(self):
         ''' The recorder grid columns.
         '''
         tableField = []
@@ -1242,7 +1242,7 @@ class RecorderPanel(wx.Panel):
         self.displayedRecorder = recorder
 
         # Update the sensor grid fields.
-        self.setGridValues(recorder, self.recorder_grid, self.getStationFields(), 0)
+        self.setGridValues(recorder, self.recorder_grid, self.getRecorderFields(), 0)
 
         self.recorder_grid.AutoSizeColumns()
 
@@ -1254,6 +1254,26 @@ class RecorderPanel(wx.Panel):
             if field is not None and object[field] is not None:
                 grid.SetCellValue(rowNumber, pos, str(object[field]))
             grid.AutoSizeColumns()
+
+
+    def onRecorderCellChange(self, evt):
+        ''' The recorder_grid cell edit callback.
+        '''
+        selected_parameter = self.recorder_grid.GetColLabelValue(evt.GetCol())
+        grid_fields = self.getRecorderFields();
+        col_labels = [x[1] for x in grid_fields]
+        
+        if selected_parameter in col_labels:
+            ind = col_labels.index(selected_parameter)
+            fieldName = grid_fields[ind][0]
+            fieldAttr = grid_fields[ind][2]
+            if fieldAttr == 'editable':
+                setattr(self.displayedRecorder, fieldName, self.recorder_grid.GetCellValue(evt.GetRow(), evt.GetCol()))
+                self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+                self.logger.debug(self.GetParent().GetParent().GetParent())
+        else:
+            pass
+        
 
 
 
