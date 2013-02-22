@@ -290,7 +290,6 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory.close()
 
     def test_add_recorder(self):
-        print "test_add_recorder\n"
         db_inventory = DbInventory('test', self.project)
 
         rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder')
@@ -310,14 +309,13 @@ class DbInventoryTestCase(unittest.TestCase):
                               channel_name = 'HHZ',
                               label = 'AAAA-001-HHZ') 
 
-        parameter_2_add = SensorParameter(sensor_id = sensor_2_add.id,
-                                         gain = 1,
-                                         bitweight = 2,
-                                         bitweight_units = 'bw_units',
-                                         sensitivity = 3,
-                                         sensitivity_units = 'sens_units',
-                                         start_time = UTCDateTime('1976-06-20'),
-                                         end_time = UTCDateTime('2012-06-20'))
+        parameter_2_add = SensorParameter(gain = 1,
+                                          bitweight = 2,
+                                          bitweight_units = 'bw_units',
+                                          sensitivity = 3,
+                                          sensitivity_units = 'sens_units',
+                                          start_time = UTCDateTime('1976-06-20'),
+                                          end_time = UTCDateTime('2012-06-20'))
         sensor_2_add.add_parameter(parameter_2_add)
         rec_2_add.add_sensor(sensor_2_add)
 
@@ -331,6 +329,29 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertIsInstance(added_recorder.sensors[0].parameters[0], DbSensorParameter)
         self.assertEqual(len(added_recorder.geom_recorder.sensors[0].parameters), 1)
 
+
+    def test_add_sensor_parameter(self):
+        db_inventory = DbInventory('test', self.project)
+        
+        
+        rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder')
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ')
+        added_sensor = added_recorder.add_sensor(sensor_2_add)
+        
+        # Test a sensor with an open enddate.
+        parameter_2_add = SensorParameter(gain = 1,
+                                          bitweight = 2,
+                                          bitweight_units = 'bw_units',
+                                          sensitivity = 3,
+                                          sensitivity_units = 'sens_units',
+                                          start_time = UTCDateTime('1976-06-20'),
+                                          end_time = None)
+        added_sensor.add_parameter(parameter_2_add)
 
 
     def test_load_network(self):
@@ -461,16 +482,15 @@ class DbInventoryTestCase(unittest.TestCase):
                               channel_name = 'HHZ',
                               label = 'AAAA-001-HHZ') 
 
-        parameter_2_add = SensorParameter(sensor_id = sensor_2_add.id,
-                                         gain = 1,
-                                         bitweight = 2,
-                                         bitweight_units = 'bw_units',
-                                         sensitivity = 3,
-                                         sensitivity_units = 'sens_units',
-                                         start_time = UTCDateTime('1976-06-20'),
-                                         end_time = UTCDateTime('2012-06-20'),
-                                         tf_poles = [complex('1+1j'), complex('1+2j')],
-                                         tf_zeros = [complex('0+1j'), complex('0+2j')])
+        parameter_2_add = SensorParameter(gain = 1,
+                                          bitweight = 2,
+                                          bitweight_units = 'bw_units',
+                                          sensitivity = 3,
+                                          sensitivity_units = 'sens_units',
+                                          start_time = UTCDateTime('1976-06-20'),
+                                          end_time = UTCDateTime('2012-06-20'),
+                                          tf_poles = [complex('1+1j'), complex('1+2j')],
+                                          tf_zeros = [complex('0+1j'), complex('0+2j')])
         sensor_2_add.add_parameter(parameter_2_add)
         rec_2_add.add_sensor(sensor_2_add)
         added_recorder.append(db_inventory.add_recorder(rec_2_add))
@@ -598,16 +618,15 @@ class DbInventoryTestCase(unittest.TestCase):
                               channel_name = 'HHZ',
                               label = 'AAAA-001-HHZ') 
 
-        parameter_2_add = SensorParameter(sensor_id = sensor_2_add.id,
-                                         gain = 1,
-                                         bitweight = 2,
-                                         bitweight_units = 'bw_units',
-                                         sensitivity = 3,
-                                         sensitivity_units = 'sens_units',
-                                         start_time = UTCDateTime('1976-06-20'),
-                                         end_time = UTCDateTime('2012-06-20'),
-                                         tf_poles = [complex('1+1j'), complex('1+2j')],
-                                         tf_zeros = [complex('0+1j'), complex('0+2j')])
+        parameter_2_add = SensorParameter(gain = 1,
+                                          bitweight = 2,
+                                          bitweight_units = 'bw_units',
+                                          sensitivity = 3,
+                                          sensitivity_units = 'sens_units',
+                                          start_time = UTCDateTime('1976-06-20'),
+                                          end_time = UTCDateTime('2012-06-20'),
+                                          tf_poles = [complex('1+1j'), complex('1+2j')],
+                                          tf_zeros = [complex('0+1j'), complex('0+2j')])
 
         sensor_2_add.add_parameter(parameter_2_add)
         rec_2_add.add_sensor(sensor_2_add)
