@@ -186,6 +186,40 @@ class Inventory:
         self.type = 'xml'   
 
 
+    def get_recorder(self, serial = None, type = None, id = None):
+        ''' Get a recorder from the inventory.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the recorder.
+
+        type : String
+            The recorder type.
+
+        id : Integer
+            The database id of the recorder.
+
+        Returns
+        -------
+        recorder : List of :class:'~Recorder'
+            The recorder(s) in the inventory matching the search criteria.
+        '''
+        recorder = self.recorders
+
+        if serial is not None:
+            recorder = [x for x in recorder if x.serial == serial]
+
+        if type is not None:
+            recorder = [x for x in recorder if x.type == type]
+
+        if id is not None:
+            recorder = [x for x in recorder if x.id == id]
+
+        return recorder
+
+
+
     ## Get a sensor from the inventory.
     def get_sensor(self, rec_serial = None, sen_serial = None, sen_type = None,
                    rec_channel_name = None, channel_name = None, id = None):
