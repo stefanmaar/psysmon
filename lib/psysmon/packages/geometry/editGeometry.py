@@ -53,6 +53,7 @@ from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
+from psysmon.packages.geometry.inventory import Sensor
 from psysmon.core.gui import psyContextMenu
 
 
@@ -137,6 +138,9 @@ class EditGeometryDlg(wx.Frame):
         # The network currently selected by the user.
         self.selected_network = None
 
+        # The network currently selected by the user.
+        self.selected_recorder = None
+        
         # initialize the user interface
         self.initUI()
 
@@ -325,6 +329,24 @@ class EditGeometryDlg(wx.Frame):
         rec_2_add = Recorder(serial='-9999', 
                              type = 'new recorder') 
         self.selected_inventory.add_recorder(rec_2_add)
+        self.inventoryTree.updateInventoryData()
+
+
+    def addSensor(self):
+        ''' Add a sensor to the inventory.
+        '''
+        if self.selected_recorder is None:
+            self.logger.error('You have to create of select a recorder first.')
+            return
+
+        # Create the Sensor instance.
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              type = 'test sensor',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'AAAA-001-HHZ') 
+
+        self.selected_recorder.add_sensor(sensor_2_add)
         self.inventoryTree.updateInventoryData()
 
 
@@ -531,6 +553,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.addRecorder()
         elif(self.selected_item == 'recorder'):
             self.logger.debug('Handling a recorder.')
+            self.Parent.addSensor()
         elif(self.selected_item == 'network'):
             # Add a new station to the selected network.
             self.logger.debug('Handling a network')
@@ -687,6 +710,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         elif(pyData.__class__.__name__ == 'Recorder' or pyData.__class__.__name__ == 'DbRecorder'):
             self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_recorder = pyData
             self.selected_item = 'recorder'
         elif(pyData.__class__.__name__ == 'Network' or pyData.__class__.__name__ == 'DbNetwork'):
             self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
@@ -742,8 +766,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 curRecorderItem = self.AppendItem(recorderItem, curRecorder.serial + '(' + curRecorder.type + ')')
                 self.SetItemPyData(curRecorderItem, curRecorder)
                 self.SetItemImage(curRecorderItem, self.icons['recorder'], wx.TreeItemIcon_Normal)
-                for curSensor in sorted(curRecorder.sensors, key=lambda sensor: (sensor.serial, sensor.channelName)):
-                    item = self.AppendItem(curRecorderItem, curSensor.serial + ':' +curSensor.recChannelName + ':' + curSensor.channelName + ':' + curSensor.type)
+                for curSensor in sorted(curRecorder.sensors, key=lambda sensor: (sensor.serial, sensor.channel_name)):
+                    item = self.AppendItem(curRecorderItem, curSensor.serial + ':' +curSensor.rec_channel_name + ':' + curSensor.channel_name + ':' + curSensor.type)
 
                     self.SetItemPyData(item, curSensor)
                     self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
