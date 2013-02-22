@@ -660,10 +660,6 @@ class Recorder:
         return out
 
 
-    def __getitem__(self, name):
-        return self.__dict__[name]
-
-
     def __setitem__(self, name, value):
         self.__dict__[name] = value
         self.has_changed = True 
@@ -685,10 +681,10 @@ class Recorder:
 
     ## Add a sensor to the recorder.
     def add_sensor(self, sensor):
-        sensor.parent_recorder = self
-        self.sensors.append(sensor)
-        self.sensors = list(set(self.sensors))
-        sensor.set_parent_inventory(self.parent_inventory)
+        if sensor not in self.sensors:
+            self.sensors.append(sensor)
+            sensor.parent_recorder = self
+            sensor.set_parent_inventory(self.parent_inventory)
 
 
     def pop_sensor(self, sensor):
@@ -843,8 +839,6 @@ class Sensor:
             return self.parent_recorder.serial
         elif attrname == 'recorder_type':
             return self.parent_recorder.type
-        else:
-            return self.__dict__[attrname]
 
 
     def __setitem__(self, name, value):
@@ -1019,9 +1013,6 @@ class SensorParameter:
         self.has_changed = False
 
 
-    def __getitem__(self, name):
-        return self.__dict__[name]
-
 
     def __setitem__(self, name, value):
         self.__dict__[name] = value
@@ -1139,9 +1130,6 @@ class Station:
         # Indicates if the attributes have been changed.
         self.has_changed = False
 
-
-    def __getitem__(self, name):
-        return self.__dict__[name]
 
 
     def __setitem__(self, name, value):
@@ -1359,10 +1347,6 @@ class Network:
         # Indicates if the attributes have been changed.
         self.has_changed = False
 
-
-    ## The index and slicing operator.
-    def __getitem__(self, name):
-        return self.__dict__[name]
 
 
     ## The index and slicing operator.

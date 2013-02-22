@@ -471,11 +471,6 @@ class DbNetwork:
         return cls(parent_inventory, network.name, network.description, network.type)
 
 
-    def __getitem__(self, name):
-        ''' The index and slicing operator.
-        '''
-        return self.__dict__[name]
-
 
     def __setattr__(self, attr, value):
         ''' Control the attribute assignements.

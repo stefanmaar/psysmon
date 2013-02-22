@@ -1155,8 +1155,8 @@ class NetworkPanel(wx.Panel):
         ''' Set the grid values of the specified grid.
         '''
         for pos, (field, label, attr) in enumerate(fields):
-            if field is not None and object[field] is not None:
-                grid.SetCellValue(rowNumber, pos, str(object[field]))
+            if field is not None and getattr(object, field) is not None:
+                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             grid.AutoSizeColumns()
 
 
@@ -1280,8 +1280,8 @@ class RecorderPanel(wx.Panel):
         ''' Set the grid values of the specified grid.
         '''
         for pos, (field, label, attr) in enumerate(fields):
-            if field is not None and object[field] is not None:
-                grid.SetCellValue(rowNumber, pos, str(object[field]))
+            if field is not None and getattr(object, field) is not None:
+                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             grid.AutoSizeColumns()
 
 
@@ -1464,8 +1464,8 @@ class StationsPanel(wx.Panel):
 
     def setGridValues(self, object, grid, fields, rowNumber):
         for pos, (field, label, attr) in enumerate(fields):
-            if field is not None and object[field] is not None:
-                grid.SetCellValue(rowNumber, pos, str(object[field]))
+            if field is not None and getattr(object, field) is not None:
+                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             grid.AutoSizeColumns()
 
 
