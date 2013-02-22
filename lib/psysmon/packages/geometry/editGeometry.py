@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -1695,7 +1694,6 @@ class SensorsPanel(wx.Panel):
             ind = colLabels.index(selectedParameter)
             fieldName = gridParamFields[ind][0]
             converter = gridParamFields[ind][3]
-            ipdb.set_trace() ############################## Breakpoint ##############################
             setattr(sensorParameter2Process, fieldName, converter(self.paramGrid.GetCellValue(evt.GetRow(), evt.GetCol())))
             self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
         else:
