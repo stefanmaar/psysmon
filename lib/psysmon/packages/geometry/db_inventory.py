@@ -743,7 +743,7 @@ class DbRecorder(Recorder):
 class DbSensor(Sensor):
 
     def __init__(self, parent_recorder, serial, type, rec_channel_name,
-                 channel_name, label, id = None, recorder_type = None, geom_sensor = None):
+                 channel_name, label, id = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
                         rec_channel_name = rec_channel_name, label = label,
                         channel_name = channel_name, parent_recorder = parent_recorder)
@@ -808,18 +808,23 @@ class DbSensor(Sensor):
         parameter : :class:`DbSensorParameter`
             The parameter to add to the sensor.
         '''
-        self.logger.debug('Adding parameter.')
-        self.parameters.append(parameter)
-        self.geom_sensor.parameters.append(parameter.geom_sensor_parameter)
+        if parameter.__class__ is DbSensorParameter:
+            self.parameters.append(parameter)
+            self.geom_sensor.parameters.append(parameter.geom_sensor_parameter)
 
-        # Add the tf poles and zeros to the database orm.
-        geom_tfpz_orm = self.parent_inventory.project.dbTables['geom_tf_pz']
-        for cur_pole in parameter.tf_poles:
-            parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 1, cur_pole.real, cur_pole.imag))
-        for cur_zero in parameter.tf_zeros:
-            parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 0, cur_zero.real, cur_zero.imag))
+            # Add the tf poles and zeros to the database orm.
+            geom_tfpz_orm = self.parent_inventory.project.dbTables['geom_tf_pz']
+            for cur_pole in parameter.tf_poles:
+                parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 1, cur_pole.real, cur_pole.imag))
+            for cur_zero in parameter.tf_zeros:
+                parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 0, cur_zero.real, cur_zero.imag))
+        elif parameter.__class__ is SensorParameter:
+            parameter = self.add_parameter(DbSensorParameter.from_inventory_sensor_parameter(self, parameter))
+        else:
+            parameter = None
 
         return parameter
+
 
 
     def update_id(self):
@@ -832,14 +837,14 @@ class DbSensor(Sensor):
 
 class DbSensorParameter(SensorParameter):
 
-    def __init__(self, parent_sensor, sensor_id, gain, bitweight,
+    def __init__(self, parent_sensor, gain, bitweight,
                  bitweight_units, sensitivity, sensitivity_units, tf_type,
                  tf_units, tf_normalization_factor, tf_normalization_frequency,
                  id, start_time, end_time, tf_poles = [], tf_zeros = [],
                  geom_sensor_parameter = None):
 
         SensorParameter.__init__(self, parent_sensor = parent_sensor,
-                                 sensor_id = sensor_id, gain = gain, bitweight = bitweight,
+                                 gain = gain, bitweight = bitweight,
                                  bitweight_units = bitweight_units, sensitivity = sensitivity,
                                  sensitivity_units = sensitivity_units, 
                                  start_time = start_time, end_time = end_time, tf_type = tf_type,
@@ -849,9 +854,9 @@ class DbSensorParameter(SensorParameter):
 
         if geom_sensor_parameter is None:
             geom_sensor_param_orm = self.parent_inventory.project.dbTables['geom_sensor_param']
-            self.geom_sensor_parameter = geom_sensor_param_orm(sensor_id = self.id,
+            self.geom_sensor_parameter = geom_sensor_param_orm(sensor_id = parent_sensor.id,
                                                      start_time = self.start_time.timestamp,
-                                                     end_time = self.end_time.timestamp,
+                                                     end_time = None if self.end_time is None else self.end_time.timestamp,
                                                      tf_normalization_factor = self.tf_normalization_factor,
                                                      tf_normalization_frequency = self.tf_normalization_frequency,
                                                      tf_type = self.tf_type,
@@ -868,8 +873,7 @@ class DbSensorParameter(SensorParameter):
 
     @classmethod
     def from_inventory_sensor_parameter(cls, parent_sensor, sensor_parameter):
-        return cls(parent_sensor,
-                   sensor_id = sensor_parameter.sensor_id,
+        return cls(parent_sensor = parent_sensor,
                    start_time = sensor_parameter.start_time,
                    end_time = sensor_parameter.end_time,
                    tf_normalization_factor = sensor_parameter.tf_normalization_factor,
@@ -889,8 +893,7 @@ class DbSensorParameter(SensorParameter):
     @classmethod
     def from_sqlalchemy_orm(cls, parent_sensor, geom_sensor_parameter):
 
-        sensor = cls(parent_sensor,
-                   sensor_id = geom_sensor_parameter.sensor_id,
+        sensor = cls(parent_sensor = parent_sensor,
                    start_time = UTCDateTime(geom_sensor_parameter.start_time),
                    end_time = UTCDateTime(geom_sensor_parameter.end_time),
                    tf_normalization_factor = geom_sensor_parameter.tf_normalization_factor,

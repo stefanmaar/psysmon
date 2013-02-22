@@ -832,13 +832,16 @@ class Sensor:
 
 
     def __getattr__(self, attrname):
-
+        ''' Handle call of attributes which are derived from the parent recorder.
+        '''
         if attrname == 'recorder_id':
             return self.parent_recorder.id
         elif attrname == 'recorder_serial':
             return self.parent_recorder.serial
         elif attrname == 'recorder_type':
             return self.parent_recorder.type
+        else:
+            raise AttributeError(attrname)
 
 
     def __setitem__(self, name, value):
@@ -947,15 +950,11 @@ class SensorParameter:
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, sensor_id, gain, bitweight, bitweight_units, sensitivity, 
+    def __init__(self, gain, bitweight, bitweight_units, sensitivity, 
                  sensitivity_units, start_time, end_time, tf_type=None, 
                  tf_units=None, tf_normalization_factor=None, 
                  tf_normalization_frequency=None, tf_poles = [], tf_zeros = [],
                  id=None, parent_sensor = None):
-
-        ## The id of the sensor to which this SensorParamter instance is assigned 
-        # to. 
-        self.sensor_id = sensor_id
 
         ## The sensor gain.
         self.gain = gain
@@ -991,6 +990,12 @@ class SensorParameter:
         self.id = id 
 
         ## The transfer function as PAZ.
+        if tf_poles is None:
+            tf_poles = []
+
+        if tf_zeros is None:
+            tf_zeros = []
+
         self.tf_poles = tf_poles
         self.tf_zeros = tf_zeros
 
@@ -1013,12 +1018,17 @@ class SensorParameter:
         self.has_changed = False
 
 
+    def __getattr__(self, attrname):
+        ''' Handle call of attributes which are derived from the parent recorder.
+        '''
+        if attrname == 'sensor_id':
+            if self.parent_sensor is not None:
+                return self.parent_sensor.id
+            else:
+                return None
+        else:
+            raise AttributeError(attrname)
 
-    def __setitem__(self, name, value):
-        self.__dict__[name] = value
-        self.has_changed = True
-
-        self.logger.debug("Setting sensor Parameter: %s", name)
 
 
     def set_transfer_function(self, tf_type, tf_units, tf_normalization_factor, 

@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -54,6 +55,7 @@ from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Sensor
+from psysmon.packages.geometry.inventory import SensorParameter
 from psysmon.core.gui import psyContextMenu
 
 
@@ -140,6 +142,9 @@ class EditGeometryDlg(wx.Frame):
 
         # The network currently selected by the user.
         self.selected_recorder = None
+        
+        # The network currently selected by the user.
+        self.selected_sensor = None
         
         # initialize the user interface
         self.initUI()
@@ -336,7 +341,7 @@ class EditGeometryDlg(wx.Frame):
         ''' Add a sensor to the inventory.
         '''
         if self.selected_recorder is None:
-            self.logger.error('You have to create of select a recorder first.')
+            self.logger.error('You have to create or select a recorder first.')
             return
 
         # Create the Sensor instance.
@@ -348,6 +353,31 @@ class EditGeometryDlg(wx.Frame):
 
         self.selected_recorder.add_sensor(sensor_2_add)
         self.inventoryTree.updateInventoryData()
+
+
+    def addSensorParameter(self):
+        ''' Add a new sensor parameter to the inventory.
+        '''
+        if self.selected_sensor is None:
+            self.logger.error('You have to create or select a sensor first.')
+            return
+        
+        # Create the SensorParameter instance.
+        parameter_2_add = SensorParameter(gain = 1,
+                                          bitweight = 2,
+                                          bitweight_units = 'bw_units',
+                                          sensitivity = 3,
+                                          sensitivity_units = 'sens_units',
+                                          start_time = UTCDateTime('1970-01-01'),
+                                          end_time = None,
+                                          tf_poles = [-4.440 + 4.440j, -4.440 - 4.440j, -1.083 + 0.0j],
+                                          tf_zeros = [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                                          tf_normalization_factor = 1,
+                                          tf_normalization_frequency = 1)
+
+        self.selected_sensor.add_parameter(parameter_2_add)
+        self.inventoryTree.updateInventoryData()
+
 
 
 
@@ -505,7 +535,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove station')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         elif(self.selected_item == 'sensor'):
-            self.logger.debug('Handling a sensor.')
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add paramter')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove sensor')
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         elif(self.selected_item == 'inventory'):
             self.logger.debug('Handling an inventory.')
         elif(self.selected_item == 'recorder_list'):
@@ -545,22 +578,21 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         if(self.selected_item == 'station'):
             self.logger.debug('Handling a station.')
         elif(self.selected_item == 'sensor'):
-            self.logger.debug('Handling a sensor.')
+            # Add a new sensor parameter to the selected sensor.
+            self.Parent.addSensorParameter()  
         elif(self.selected_item == 'inventory'):
             self.logger.debug('Handling an inventory.')
         elif(self.selected_item == 'recorder_list'):
-            self.logger.debug('Handling a recorder_list.')
+            # Add a new recorder to the inventory.
             self.Parent.addRecorder()
         elif(self.selected_item == 'recorder'):
-            self.logger.debug('Handling a recorder.')
+            # Add a new sensor to the selected recorder.
             self.Parent.addSensor()
         elif(self.selected_item == 'network'):
             # Add a new station to the selected network.
-            self.logger.debug('Handling a network')
             self.Parent.addStation()
         elif(self.selected_item == 'network_list'):
             # Add a new network to the inventory.
-            self.logger.debug('Handling a network_list')
             self.Parent.addNetwork()
 
 
@@ -699,10 +731,14 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         if(pyData.__class__.__name__ == 'Station' or pyData.__class__.__name__ == 'DbStation'):
             self.Parent.inventoryViewNotebook.updateStationListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_network = pyData.parent_network
+            self.Parent.selected_station = pyData
             self.selected_item = 'station'
         elif(pyData.__class__.__name__ == 'Sensor' or pyData.__class__.__name__ == 'DbSensor'):
             self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_recorder = pyData.parent_recorder
+            self.Parent.selected_sensor = pyData
             self.selected_item = 'sensor'
         elif(pyData.__class__.__name__ == 'Inventory' or pyData.__class__.__name__ == 'DbInventory'):
             self.Parent.selected_inventory = pyData
@@ -1534,7 +1570,7 @@ class SensorsPanel(wx.Panel):
                   self.onSensorCellChange,
                   self.sensorGrid)
 
-        for k, (name, label, attr)  in enumerate(fields):
+        for k, (name, label, attr, converter)  in enumerate(fields):
             self.sensorGrid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.sensorGrid.SetColAttr(k, roAttr)
@@ -1557,7 +1593,7 @@ class SensorsPanel(wx.Panel):
                   self.onSensorParameterCellChange,
                   self.paramGrid)
 
-        for k, (name, label, attr)  in enumerate(fields):
+        for k, (name, label, attr, convert)  in enumerate(fields):
             self.paramGrid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.paramGrid.SetColAttr(k, roAttr)
@@ -1658,8 +1694,9 @@ class SensorsPanel(wx.Panel):
         elif selectedParameter in colLabels:
             ind = colLabels.index(selectedParameter)
             fieldName = gridParamFields[ind][0]
-            sensorParameter2Process[0][fieldName] =  self.paramGrid.GetCellValue(evt.GetRow(), evt.GetCol())
-            self.displayedSensor.parentInventory.refreshRecorders()
+            converter = gridParamFields[ind][3]
+            ipdb.set_trace() ############################## Breakpoint ##############################
+            setattr(sensorParameter2Process, fieldName, converter(self.paramGrid.GetCellValue(evt.GetRow(), evt.GetCol())))
             self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
         else:
             pass
@@ -1673,40 +1710,44 @@ class SensorsPanel(wx.Panel):
         self.setGridValues(sensor, self.sensorGrid, self.getSensorFields(), 0)
 
         # Update the parameter grid fields.
-        for k, (curParam, beginTime, endTime) in enumerate(sensor.parameters):
+        for k, curParam in enumerate(sensor.parameters):
             self.setGridValues(curParam, self.paramGrid, self.getParameterFields(), k)
 
-            if not endTime:
-                endTime = 'running'
+            if curParam.end_time is None:
+                endTimeString = 'running'
+            else:
+                endTimeString = str(curParam.end_time)
 
-            self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'start', 'editable')), str(beginTime))
-            self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'end', 'editable')), str(endTime))  
+            self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'start', 'editable', UTCDateTime)), str(curParam.start_time))
+            self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'end', 'editable', UTCDateTime)), endTimeString)  
 
             # Handle the poles.
             poleStr = None
-            for curPole in curParam.tfPoles:
-                if not poleStr:
-                    poleStr = curPole.__str__()
-                else:
-                    poleStr = poleStr + ',' + curPole.__str__()
+            if len(curParam.tf_poles) > 0:
+                for curPole in curParam.tf_poles:
+                    if not poleStr:
+                        poleStr = curPole.__str__()
+                    else:
+                        poleStr = poleStr + ',' + curPole.__str__()
 
             if poleStr:
-                self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'poles', 'readonly')), poleStr) 
+                self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'poles', 'readonly', str)), poleStr) 
 
             # Handle the zeros.
             zeroStr = None
-            for curZero in curParam.tfZeros:
-                if not zeroStr:
-                    zeroStr = curZero.__str__()
-                else:
-                    zeroStr = zeroStr + ',' + curZero.__str__()
+            if len(curParam.tf_zeros) > 0:
+                for curZero in curParam.tf_zeros:
+                    if not zeroStr:
+                        zeroStr = curZero.__str__()
+                    else:
+                        zeroStr = zeroStr + ',' + curZero.__str__()
 
             if zeroStr:
-                self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'zeros', 'readonly')), zeroStr) 
+                self.paramGrid.SetCellValue(k, self.getParameterFields().index((None, 'zeros', 'readonly', str)), zeroStr) 
 
         # Update the transfer function plot.
         if len(sensor.parameters) > 0:
-            self.updateTransferFunction(sensor.parameters[0][0])
+            self.updateTransferFunction(sensor.parameters[0])
 
 
         self.paramGrid.AutoSizeColumns() 
@@ -1718,13 +1759,13 @@ class SensorsPanel(wx.Panel):
         #paz['zeros'] = [0.0 +0.0j, 0.0 +0.0j, 0.0 +0.0j]
         #paz['gain'] = 0.4
 
-        if not parameter.tfPoles or not parameter.tfZeros or not parameter.tfNormalizationFactor:
+        if not parameter.tf_poles or not parameter.tf_zeros or not parameter.tf_normalization_factor:
             self.tfMagAxis.clear()
             self.tfPhaseAxis.clear()
             return
 
 
-        h,f = pazToFreqResp(parameter.tfPoles, parameter.tfZeros, parameter.tfNormalizationFactor, 0.005, 8192, freq=True)
+        h,f = pazToFreqResp(parameter.tf_poles, parameter.tf_zeros, parameter.tf_normalization_factor, 0.005, 8192, freq=True)
         #h,f = pazToFreqResp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
         phase = np.unwrap(np.arctan2(-h.imag, h.real)) #take negative of imaginary part
 
@@ -1748,7 +1789,7 @@ class SensorsPanel(wx.Panel):
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
-        for pos, (field, label, attr) in enumerate(fields):
+        for pos, (field, label, attr, converter) in enumerate(fields):
             if field is not None and getattr(object, field) is not None:
                 grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             grid.AutoSizeColumns()
@@ -1757,31 +1798,31 @@ class SensorsPanel(wx.Panel):
 
     def getSensorFields(self):
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('recorder_id', 'rec. id', 'readonly'))
-        tableField.append(('recorder_serial', 'rec. serial', 'readonly'))
-        tableField.append(('recorder_type', 'rec. type', 'readonly'))
-        tableField.append(('label', 'label', 'editable'))
-        tableField.append(('serial', 'serial', 'editable'))
-        tableField.append(('type', 'type', 'editable'))
-        tableField.append(('rec_channel_name', 'rec. channel', 'editable'))
-        tableField.append(('channel_name', 'channel', 'editable'))
+        tableField.append(('id', 'id', 'readonly', str))
+        tableField.append(('recorder_id', 'rec. id', 'readonly', str))
+        tableField.append(('recorder_serial', 'rec. serial', 'readonly', str))
+        tableField.append(('recorder_type', 'rec. type', 'readonly', str))
+        tableField.append(('label', 'label', 'editable', str))
+        tableField.append(('serial', 'serial', 'editable', str))
+        tableField.append(('type', 'type', 'editable', str))
+        tableField.append(('rec_channel_name', 'rec. channel', 'editable', str))
+        tableField.append(('channel_name', 'channel', 'editable', str))
         return tableField
 
     def getParameterFields(self):
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append((None, 'start', 'editable'))
-        tableField.append((None, 'end', 'editable'))
-        tableField.append(('bitweight', 'bitweight', 'editable'))
-        tableField.append(('bitweightUnits', 'bitweight units', 'editable'))
-        tableField.append(('gain', 'gain', 'editable'))
-        tableField.append(('sensitivity', 'sensitivity', 'editable'))
-        tableField.append(('sensitivityUnits', 'sensitivity units', 'editable'))
-        tableField.append(('tfNormalizationFactor', 'normalization factor', 'editable'))
-        tableField.append(('tfNormalizationFrequency', 'normalization frequ.', 'editable'))
-        tableField.append((None, 'poles', 'readonly'))      # Poles is a list. Handle them seperately
-        tableField.append((None, 'zeros', 'readonly'))      # Zeros is a list. Handle them seperately.
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append((None, 'start', 'editable', UTCDateTime))
+        tableField.append((None, 'end', 'editable', UTCDateTime))
+        tableField.append(('bitweight', 'bitweight', 'editable', float))
+        tableField.append(('bitweight_units', 'bitweight units', 'editable', str))
+        tableField.append(('gain', 'gain', 'editable', float))
+        tableField.append(('sensitivity', 'sensitivity', 'editable', float))
+        tableField.append(('sensitivity_units', 'sensitivity units', 'editable', str))
+        tableField.append(('tf_normalization_factor', 'normalization factor', 'editable', float))
+        tableField.append(('tf_normalization_frequency', 'normalization frequ.', 'editable', float))
+        tableField.append((None, 'poles', 'readonly', str))      # Poles is a list. Handle them seperately
+        tableField.append((None, 'zeros', 'readonly', str))      # Zeros is a list. Handle them seperately.
         return tableField
 
 
