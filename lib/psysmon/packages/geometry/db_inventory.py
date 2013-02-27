@@ -646,7 +646,17 @@ class DbStation(Station):
 
         # Add the sensor the the database orm.
         geom_sensor_time_orm = self.parent_inventory.project.dbTables['geom_sensor_time']
-        geom_sensor_time = geom_sensor_time_orm(self.id, sensor.id, start_time.timestamp, end_time.timestamp)
+        if start_time is not None:
+            start_time_timestamp = start_time.timestamp
+        else:
+            start_time_timestamp = None
+
+        if end_time is not None:
+            end_time_timestamp = end_time.timestamp
+        else:
+            end_time_timestamp = None
+
+        geom_sensor_time = geom_sensor_time_orm(self.id, sensor.id, start_time_timestamp, end_time_timestamp)
         geom_sensor_time.child = sensor.geom_sensor
         self.geom_station.sensors.append(geom_sensor_time)
 
