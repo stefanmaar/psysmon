@@ -1474,18 +1474,18 @@ class StationsPanel(wx.Panel):
 
         # Sort the station sensors and save the sorted list. This list is 
         # used when changing the sensor values in the inventory.
-        self.tableSensors = sorted(station.sensors, key = lambda sensor: (sensor[0].recorderSerial, sensor[0].serial, sensor[0].channelName))
+        self.tableSensors = sorted(station.sensors, key = lambda sensor: (sensor[0].recorder_serial, sensor[0].serial, sensor[0].channel_name))
         #self.tableSensors = sorted(station.sensors, key = attrgetter('channel'))
         # Set the sensor values.
         for k,(curSensor, startTime, endTime) in enumerate(self.tableSensors):
             self.sensorGrid.SetCellValue(k, 0, str(curSensor.id))
             self.sensorGrid.SetCellValue(k, 1, curSensor.label)
-            self.sensorGrid.SetCellValue(k, 2, curSensor.recorderSerial)
-            self.sensorGrid.SetCellValue(k, 3, curSensor.recorderType)
+            self.sensorGrid.SetCellValue(k, 2, curSensor.recorder_serial)
+            self.sensorGrid.SetCellValue(k, 3, curSensor.recorder_type)
             self.sensorGrid.SetCellValue(k, 4, curSensor.serial)
             self.sensorGrid.SetCellValue(k, 5, curSensor.type)
-            self.sensorGrid.SetCellValue(k, 6, curSensor.recChannelName)
-            self.sensorGrid.SetCellValue(k, 7, curSensor.channelName)
+            self.sensorGrid.SetCellValue(k, 6, curSensor.rec_channel_name)
+            self.sensorGrid.SetCellValue(k, 7, curSensor.channel_name)
             if startTime:
                 self.sensorGrid.SetCellValue(k, 8, str(startTime))
 
