@@ -833,8 +833,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     curStationItem = self.AppendItem(curNetworkItem, curStation.name+':'+curStation.location)
                     self.SetItemPyData(curStationItem, curStation)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
-                    for (curSensor, curBegin, curEnd) in sorted(curStation.sensors, key = lambda sensor: (sensor[0].recorderSerial, sensor[0].serial, sensor[0].recChannelName)):
-                        item = self.AppendItem(curStationItem, curSensor.recorderSerial + ':' + curSensor.serial + ':' + curSensor.recChannelName)
+                    for (curSensor, curBegin, curEnd) in sorted(curStation.sensors, key = lambda sensor: (sensor[0].recorder_serial, sensor[0].serial, sensor[0].rec_channel_name)):
+                        item = self.AppendItem(curStationItem, curSensor.recorder_serial + ':' + curSensor.serial + ':' + curSensor.rec_channel_name)
                         self.SetItemPyData(item, (curSensor, curBegin, curEnd))
                         self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
