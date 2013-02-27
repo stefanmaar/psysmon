@@ -681,7 +681,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         elif isinstance(targetData, psysmon.packages.geometry.inventory.Station):
             self.logger.debug("Dragging sensor to a station")
-            targetData.addSensor(sourceData, UTCDateTime('1976-01-01'), None)
+            targetData.add_sensor(sourceData, UTCDateTime('1976-01-01'), None)
 
 
         #targetData.addSensor(sourceData, None, None)
