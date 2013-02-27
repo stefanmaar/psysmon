@@ -1441,12 +1441,11 @@ class StationsPanel(wx.Panel):
         sensor = self.tableSensors[evt.GetRow()][0]
 
         if selectedParameter == 'start':
-            (timeSet, msg) = self.displayedStation.changeSensorStartTime(sensor, value)
+            (timeSet, msg) = self.displayedStation.change_sensor_start_time(sensor, value)
         elif selectedParameter == 'end':
-            (timeSet, msg) = self.displayedStation.changeSensorEndTime(sensor, value)
+            (timeSet, msg) = self.displayedStation.change_sensor_end_time(sensor, value)
 
         self.sensorGrid.SetCellValue(evt.GetRow(), evt.GetCol(), str(timeSet))
-        self.displayedStation.parentInventory.refreshNetworks()
 
         if msg:
             self.logger.debug("Message: %s", msg)
