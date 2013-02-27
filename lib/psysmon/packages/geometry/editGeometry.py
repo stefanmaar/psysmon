@@ -1431,6 +1431,7 @@ class StationsPanel(wx.Panel):
 
 
 
+
     ## The cell edit callback.    
     def onSensorTimeCellChange(self, evt):
         selectedParameter = self.sensorGrid.GetColLabelValue(evt.GetCol())
@@ -1439,11 +1440,15 @@ class StationsPanel(wx.Panel):
         self.logger.debug("Edited row: %d", evt.GetRow())
 
         sensor = self.tableSensors[evt.GetRow()][0]
+        start_time = self.tableSensors[evt.GetRow()][1]
+        end_time = self.tableSensors[evt.GetRow()][2]
 
         if selectedParameter == 'start':
-            (timeSet, msg) = self.displayedStation.change_sensor_start_time(sensor, value)
+            (timeSet, msg) = self.displayedStation.change_sensor_start_time(sensor, start_time, end_time, value)
+            self.tableSensors[evt.GetRow()] = (sensor, timeSet, end_time)
         elif selectedParameter == 'end':
-            (timeSet, msg) = self.displayedStation.change_sensor_end_time(sensor, value)
+            (timeSet, msg) = self.displayedStation.change_sensor_end_time(sensor, start_time, end_time, value)
+            self.tableSensors[evt.GetRow()] = (sensor, start_time, timeSet)
 
         self.sensorGrid.SetCellValue(evt.GetRow(), evt.GetCol(), str(timeSet))
 

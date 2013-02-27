@@ -640,6 +640,10 @@ class DbStation(Station):
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the sensor has been operating at the station. "None" if the station is still running.
         '''
+        if((sensor, start_time) in [(x[0], x[1]) for x in self.sensors]):
+            # The sensor is already assigned to the station for this timespan.
+            return None
+
         self.sensors.append((sensor, start_time, end_time))
         self.has_changed = True
         sensor.set_parent_inventory(self.parent_inventory)
@@ -670,7 +674,7 @@ class DbStation(Station):
             self.id = self.geom_station.id
 
 
-    def change_sensor_start_time(self, sensor, start_time):
+    def change_sensor_start_time(self, sensor, start_time, end_time, new_start_time):
         ''' Change the sensor deployment start time
 
         Parameters
@@ -681,42 +685,45 @@ class DbStation(Station):
         start_time : :class:`~obspy.core.utcdatetime.UTCDateTime or String
             A :class:`~obspy.core.utcdatetime.UTCDateTime` instance or a data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
         '''
-        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor and b == start_time and e == end_time]
 
-        if sensor_2_change:
+        if len(sensor_2_change) == 1:
             sensor_2_change = sensor_2_change[0]
             position = sensor_2_change[3]
+        elif len(sensor_2_change) > 1:
+            msg = 'More than one sensor found in the station.'
+            return(start_time, msg)
         else:
             msg = 'The sensor can''t be found in the station.'
-            return (None, msg)
+            return (start_time, msg)
 
         msg = ''    
 
 
-        if not isinstance(start_time, UTCDateTime):
+        if not isinstance(new_start_time, UTCDateTime):
             try:
-                start_time = UTCDateTime(start_time)
+                new_start_time = UTCDateTime(new_start_time)
             except:
-                start_time = sensor_2_change[2]
+                new_start_time = sensor_2_change[2]
                 msg = "The entered value is not a valid time."
 
 
-        if not sensor_2_change[2] or (sensor_2_change[2] and start_time < sensor_2_change[2]):
-            self.sensors[position] = (sensor_2_change[0], start_time, sensor_2_change[2])
+        if not sensor_2_change[2] or (sensor_2_change[2] and new_start_time < sensor_2_change[2]):
+            self.sensors[position] = (sensor_2_change[0], new_start_time, sensor_2_change[2])
             # Change the start-time in the ORM.
-            cur_geom_sensor_time = [x for x in self.geom_station.sensors if x.child is sensor.geom_sensor]
+            cur_geom_sensor_time = [x for x in self.geom_station.sensors if x.child is sensor.geom_sensor and UTCDateTime(x.start_time) == start_time]
             if len(cur_geom_sensor_time) == 1:
-                if start_time is not None:
-                    cur_geom_sensor_time[0].start_time = start_time.timestamp
+                if new_start_time is not None:
+                    cur_geom_sensor_time[0].start_time = new_start_time.timestamp
                 else:
-                    cur_geom_sensor_time[0].start_time = start_time
+                    cur_geom_sensor_time[0].start_time = new_start_time
             elif len(cur_geom_sensor_time) > 1:
                 self.logger.error('Found more than two sensor ORM children.')
         else:
-            start_time = sensor_2_change[1]
+            new_start_time = sensor_2_change[1]
             msg = "The end-time has to be larger than the begin time."
 
-        return (start_time, msg)
+        return (new_start_time, msg)
 
 
     def change_sensor_end_time(self, sensor, end_time):
