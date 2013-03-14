@@ -431,6 +431,17 @@ class DbInventory:
                     cur_param.update_id()
 
 
+    @classmethod
+    def from_inventory(cls, name, project, inventory):
+        db_inventory = cls(name = name, project = project)
+        for cur_recorder in inventory.recorders:
+            db_inventory.add_recorder(cur_recorder)
+
+        for cur_network in inventory.networks:
+            db_inventory.add_network(cur_network)
+
+        return db_inventory
+
 
 
 class DbNetwork(Network):
