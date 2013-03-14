@@ -655,6 +655,28 @@ class DbInventoryTestCase(unittest.TestCase):
             db_inventory.add_network(cur_network)
 
 
+        self.assertEqual(len(db_inventory.recorders), len(inventory.recorders))
+        self.assertEqual(len(db_inventory.networks), len(inventory.networks))
+
+        for k,cur_recorder in enumerate(db_inventory.recorders):
+            self.assertEqual(len(cur_recorder.sensors), len(inventory.recorders[k].sensors))
+
+        for k, cur_station in enumerate(db_inventory.networks[0].stations):
+            self.assertEqual(len(cur_station.sensors), len(inventory.networks[0].stations[k].sensors))
+
+
+        # Commit the changes to the database.
+        db_inventory.commit()
+        db_inventory.close()
+
+
+        # Load the networks from the database.
+        db_inventory_load = DbInventory('test', self.project)
+        db_inventory_load.load_recorders()
+        db_inventory_load.load_networks()
+        db_inventory_load.close()
+
+
 def suite():
     #tests = ['test_load_recorder']
     #return unittest.TestSuite(map(DbInventoryTestCase, tests))
