@@ -47,7 +47,7 @@ class Inventory:
     #
     # @param self The object pointer.
     # @param name The inventory name.
-    def __init__(self, name):
+    def __init__(self, name, type = None):
 
         # The logger.
         logger_name = __name__ + "." + self.__class__.__name__
@@ -62,7 +62,7 @@ class Inventory:
         # - xml
         # - db
         # - manual
-        self.type = None
+        self.type = type
 
         ## The recorders contained in the inventory.
         self.recorders = []
@@ -222,7 +222,8 @@ class Inventory:
 
     ## Get a sensor from the inventory.
     def get_sensor(self, rec_serial = None, sen_serial = None, sen_type = None,
-                   rec_channel_name = None, channel_name = None, id = None):
+                   rec_channel_name = None, channel_name = None, id = None,
+                   label = None):
         ''' Get a sensor from the inventory.
 
         Parameters
@@ -243,18 +244,20 @@ class Inventory:
             The assigned channel name of the sensor.
 
         id : Integer
-            The database id of the sensor
+            The database id of the sensor.
+        
+        label : String
+            The label of the sensor.
         '''
         if rec_serial is not None:
             recorder_2_process = [x for x in self.recorders if x.serial == rec_serial]
         else:
             recorder_2_process = self.recorders
 
-        if len(recorder_2_process) > 0:
-            sensor = [x.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = None) for x in recorder_2_process]
-            return sensor
-        else:
-            return []
+        sensor = []
+        for cur_recorder in recorder_2_process:
+            sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = id, label = label))
+        return sensor
 
 
     ## Get a sensor from the inventory by id.
@@ -297,9 +300,7 @@ class InventoryXmlParser:
     '''
     Parse a pSysmon inventory XML file.
     '''
-    def __init__(self, parent_inventory, filename):
-        self.parent_inventory = parent_inventory
-        self.filename = filename
+    def __init__(self):
 
         # the logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
@@ -332,23 +333,25 @@ class InventoryXmlParser:
 
 
 
-    def parse(self):
-        from xml.etree.ElementTree import parse
+    def parse(self, filename):
+        from lxml.etree import parse
 
         self.logger.debug("parsing file...\n")
 
+        inventory = Inventory('new xml inventory', type = 'xml')
+
         # Parse the xml file passed as argument.
-        tree = parse(self.filename)
-        inventory = tree.getroot()
+        tree = parse(filename)
+        inventory_root = tree.getroot()
 
         # Check if the root element is of type inventory.
-        if inventory.tag != 'inventory':
+        if inventory_root.tag != 'inventory':
             return
         else:
             self.logger.debug("found inventory root tag\n")
 
         # Set the name of the inventory.
-        self.parent_inventory.name = inventory.attrib['name']
+        inventory.name = inventory_root.attrib['name']
 
         # Get the recorders and stations of the inventory.
         recorders = tree.findall('recorder')
@@ -358,18 +361,20 @@ class InventoryXmlParser:
         # First process the recorders.
         # For each recorder create a Recorder object, add the channels to it and 
         # finally add it to the inventory.
-        self.process_recorders(recorders)
+        self.process_recorders(inventory, recorders)
 
-        self.process_networks(networks)  
+        self.process_networks(inventory, networks)  
 
-        self.process_stations(stations)
+        self.process_stations(inventory, stations)
 
         self.logger.debug("Success reading the XML file.")
+
+        return inventory
 
 
 
     ## Process the recorder element.
-    def process_recorders(self, recorders):
+    def process_recorders(self, inventory, recorders):
         for cur_recorder in recorders:
             recorder_content = self.parse_node(cur_recorder)
 
@@ -391,7 +396,7 @@ class InventoryXmlParser:
                                description = recorder_content['description']) 
 
             # Add the recorder to the inventory.
-            self.parent_inventory.add_recorder(rec_2_add)
+            inventory.add_recorder(rec_2_add)
 
             # Process the channels of the recorder.
             self.process_channels(cur_recorder, rec_2_add)
@@ -435,20 +440,11 @@ class InventoryXmlParser:
             missing_keys = self.keys_complete(content, self.required_tags['channel_parameters'])
             if not missing_keys:
                 self.logger.debug("Adding the channel parameters to the sensor")
-                parameter2Add = SensorParameter(sensor_id = sensor.id,
-                                                 gain = float(content['gain']),
-                                                 bitweight = float(content['bitweight']),
-                                                 bitweight_units = content['bitweight_units'],
-                                                 sensitivity = float(content['sensitivity']),
-                                                 sensitivity_units = content['sensitivity_units']
-                                                 )
-                self.process_response_paz(cur_parameter, parameter2Add)
-
                 # Convert the time strings to UTC times.
                 if content['start_time']:
-                    begin_time = UTCDateTime(content['start_time'])
+                    start_time = UTCDateTime(content['start_time'])
                 else:
-                    begin_time = None
+                    start_time = None
 
 
                 if content['end_time']:
@@ -456,9 +452,18 @@ class InventoryXmlParser:
                 else:
                     end_time = None
 
-                sensor.addParameter(parameter2Add, 
-                                    begin_time, 
-                                    end_time)
+                parameter2Add = SensorParameter(gain = float(content['gain']),
+                                                bitweight = float(content['bitweight']),
+                                                bitweight_units = content['bitweight_units'],
+                                                sensitivity = float(content['sensitivity']),
+                                                sensitivity_units = content['sensitivity_units'],
+                                                start_time = start_time,
+                                                end_time = end_time
+                                                 )
+                self.process_response_paz(cur_parameter, parameter2Add)
+
+
+                sensor.add_parameter(parameter2Add)
 
 
 
@@ -496,10 +501,10 @@ class InventoryXmlParser:
 
 
     ## Process the station elements.
-    def process_stations(self, stations):
+    def process_stations(self, inventory, stations):
         for cur_station in stations:
             station_content = self.parse_node(cur_station)
-            missing_attrib = self.keys_complete(cur_station.attrib, self.requiredAttributes['station'])
+            missing_attrib = self.keys_complete(cur_station.attrib, self.required_attributes['station'])
             missing_keys = self.keys_complete(station_content, self.required_tags['station'])
 
             if not missing_keys and not missing_attrib:
@@ -513,18 +518,18 @@ class InventoryXmlParser:
                                       network=station_content['network_code'] 
                                       )
 
-                self.parent_inventory.add_station(station2Add)
+                inventory.add_station(station2Add)
 
-                self.process_sensors(cur_station, station2Add)                      
+                self.process_sensors(inventory, cur_station, station2Add)                      
 
 
             else:
-                self.logger.debug("Not all required tags or attributes present.")
+                self.logger.error("Not all required tags or attributes present.")
                 self.logger.debug("%s", missing_keys)
                 self.logger.debug("%s", missing_attrib)
 
 
-    def process_sensors(self, station_node, station):
+    def process_sensors(self, inventory, station_node, station):
         sensors = station_node.findall('assignedSensorUnit')
         for cur_sensor in sensors:
             sensor_content = self.parse_node(cur_sensor)
@@ -537,9 +542,9 @@ class InventoryXmlParser:
                 #                                            senSerial = sensor_content['sensor_serial'],
                 #                                            rec_channel_name = sensor_content['rec_channel_name'])
                 self.logger.debug(sensor_content['sensorUnitLabel'])
-                sensor2Add = self.parent_inventory.getSensorByLabel(label=sensor_content['sensorUnitLabel'])
-                self.logger.debug("%s", sensor2Add)
-                if sensor2Add:
+                sensor_2_add = inventory.get_sensor(label=sensor_content['sensorUnitLabel'])
+                self.logger.debug("%s", sensor_2_add)
+                if sensor_2_add:
                     # Convert the time strings to UTC times.
                     if sensor_content['start_time']:
                         begin_time = UTCDateTime(sensor_content['start_time'])
@@ -552,9 +557,10 @@ class InventoryXmlParser:
                     else:
                         end_time = None
 
-                    station.add_sensor(sensor2Add, 
-                                      begin_time,
-                                      end_time)
+                    for cur_sensor in sensor_2_add:
+                        station.add_sensor(cur_sensor, 
+                                           begin_time,
+                                           end_time)
                 else:
                     msg =  "Sensor to add with label '%s' not found in inventory.\nSkipping this sensor." % sensor_content['sensorUnitLabel'], 
                     warnings.warn(msg)
@@ -565,12 +571,12 @@ class InventoryXmlParser:
 
 
      ## Process the network element.
-    def process_networks(self, networks):
+    def process_networks(self, inventory, networks):
         for cur_network in networks:
             content = self.parse_node(cur_network)
 
             # Test the recorder tags for completeness.
-            missing_attrib = self.keys_complete(cur_network.attrib, self.requiredAttributes['network'])
+            missing_attrib = self.keys_complete(cur_network.attrib, self.required_attributes['network'])
             missing_keys = self.keys_complete(content, self.required_tags['network']);
             if not missing_keys and not missing_attrib:
                 self.logger.debug("%s", content)
@@ -586,7 +592,7 @@ class InventoryXmlParser:
                               type=content['type']) 
 
             # Add the network to the inventory.
-            self.parent_inventory.add_network(net2Add)
+            inventory.add_network(net2Add)
 
 
     def get_node_text(self, xml_element, tag):
@@ -707,7 +713,7 @@ class Recorder:
             return None
 
 
-    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None):
+    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None, label = None):
         ''' Get a sensor from the recorder.
 
         Parameters
@@ -724,6 +730,8 @@ class Recorder:
         channel_name : String
             The assigned channel name of the sensor.
 
+        label : String
+            The label of the sensor.
         '''
         sensor = self.sensors
 
@@ -739,8 +747,11 @@ class Recorder:
         if channel_name is not None:
             sensor = [x for x in sensor if x.channel_name == channel_name]
 
-        if type is not None:
+        if id is not None:
             sensor = [x for x in sensor if x.id == id]
+
+        if label is not None:
+            sensor = [x for x in sensor if x.label == label]
 
         return sensor
 
@@ -875,7 +886,6 @@ class Sensor:
             The sensor parameter instance to be added.
         '''
         self.logger.debug('Adding parameter.')
-        print "Adding parameter."
         if parameter not in self.parameters:
             self.parameters.append(parameter)
 
@@ -1132,10 +1142,10 @@ class Station:
         self.parent_network = parent_network
 
         # The inventory containing this station.
+        self.parent_inventory = None
+
         if self.parent_network is not None:
             self.parent_inventory = self.parent_network.parent_inventory
-        else:
-            self.parent_inventory = None
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
@@ -1358,19 +1368,18 @@ class Network:
         self.has_changed = False
 
 
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        self.__dict__[attr] = value
 
-    ## The index and slicing operator.
-    def __setitem__(self, name, value):
-        self.logger.debug("Setting the %s item to %s.", name, value)
-        self.__dict__[name] = value
-        self.has_changed = True
-
-        if name == 'name':
+        if attr == 'name' and 'stations' in self.__dict__:
             for cur_station in self.stations:
                 # Set the station network value using the key to trigger the
                 # change notification of the station.
-                cur_station['network'] = value
+                cur_station.network = value
 
+        self.__dict__['has_changed'] = True
 
 
 
@@ -1399,7 +1408,6 @@ class Network:
         station : :class:`Station`
             The station instance to add to the network.
         '''
-        self.logger.debug('adding a station')
         available_sl = [(x.name, x.location) for x in self.stations]
         if((station.name, station.location) not in available_sl):
             station.network = self.name
@@ -1411,21 +1419,4 @@ class Network:
             return None
 
 
-    ## Refresh the station list.
-    #
-    # Check the association of the stations to the network. 
-    # Remove stations that are no longer linked to the network.
-    def refresh__stations(self, stations):
-        # Remove invalid stations from the network.
-        stations_2_remove = [x for x in self.stations if x.network != self.name]
-
-        for cur_station in stations_2_remove:
-            self.stations.remove(cur_station)
-            self.parent_inventory.add_station(cur_station)
-
-
-        for cur_station in stations:
-            if cur_station.network == self.name:
-                self.parent_inventory.add_station(cur_station)
-                stations.remove(cur_station)
 
