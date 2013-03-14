@@ -263,12 +263,13 @@ class TraceDisplayDlg(wx.Frame):
         self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
 
         # Create the display option.
-        db_inventory = DbInventory('test', self.project)
-        db_inventory.load_recorders()
-        db_inventory.load_networks()
-        db_inventory.close()
+        inventory = DbInventory.load_inventory(self.project)
+        #db_inventory = DbInventory('test', self.project)
+        #db_inventory.load_recorders()
+        #db_inventory.load_networks()
+        #db_inventory.close()
         self.displayManager = DisplayManager(parent = self,
-                                             inventory = db_inventory)
+                                             inventory = inventory)
 
         # Create the shortcut options.
         self.shortcutManager = ShortcutManager()
@@ -743,7 +744,7 @@ class DisplayManager:
         # Fill the available- and current station lists.
         for curNetwork in self.inventory.networks:
             for curStation in curNetwork.stations:
-                channels = set([x[0].channelName for x in curStation.sensors])
+                channels = set([x[0].channel_name for x in curStation.sensors])
                 self.availableStations.append(DisplayStation(curStation))
 
                 for curChannel in channels:
