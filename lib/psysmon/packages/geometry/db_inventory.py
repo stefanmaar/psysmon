@@ -154,9 +154,18 @@ class DbInventory:
                 for cur_geom_sensor in cur_geom_station.sensors:
                     db_sensor = self.get_sensor(id = cur_geom_sensor.sensor_id)
                     if len(db_sensor) == 1:
-                        db_station.sensors.append((db_sensor[0], UTCDateTime(cur_geom_sensor.start_time), UTCDateTime(cur_geom_sensor.end_time)))
+                        if cur_geom_sensor.start_time is not None:
+                            start_time = UTCDateTime(cur_geom_sensor.start_time)
+                        else:
+                            start_time = None
 
-                db_network.stations.append(db_station)    
+                        if cur_geom_sensor.end_time is not None:
+                            end_time = UTCDateTime(cur_geom_sensor.end_time)
+                        else:
+                            end_time = None
+                        db_station.sensors.append((db_sensor[0], start_time, end_time))
+
+                db_network.stations.append(db_station)
 
             self.networks.append(db_network)
 
@@ -197,12 +206,11 @@ class DbInventory:
         available_networks = [x.name for x in self.networks]
         if network.name not in available_networks:
             db_network = DbNetwork.from_inventory_network(self, network)
+            self.networks.append(db_network)
 
             for cur_station in network.stations:
-                db_station = DbStation.from_inventory_station(db_network, cur_station)
-                db_network.add_station(db_station)
+                self.add_station(cur_station)
 
-            self.networks.append(db_network)
             self.db_session.add(db_network.geom_network)
             return db_network
         else:
@@ -407,7 +415,7 @@ class DbInventory:
         sensor = []
         if len(recorder_2_process) > 0:
             for cur_recorder in recorder_2_process:
-                sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = None))
+                sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = id))
 
         return sensor
 
@@ -441,6 +449,19 @@ class DbInventory:
             db_inventory.add_network(cur_network)
 
         return db_inventory
+
+
+    @classmethod
+    def load_inventory(cls, project):
+        db_inventory = cls(name = 'db_inventory', project = project)
+        db_inventory.load_recorders()
+        db_inventory.load_networks()
+        db_inventory.close()
+
+        return db_inventory
+
+
+
 
 
 
@@ -1012,9 +1033,19 @@ class DbSensorParameter(SensorParameter):
     @classmethod
     def from_sqlalchemy_orm(cls, parent_sensor, geom_sensor_parameter):
 
+        if geom_sensor_parameter.start_time is not None:
+            start_time = UTCDateTime(geom_sensor_parameter.start_time)
+        else:
+            start_time = None
+
+        if geom_sensor_parameter.end_time is not None:
+            end_time = UTCDateTime(geom_sensor_parameter.end_time)
+        else:
+            end_time = None
+
         sensor = cls(parent_sensor = parent_sensor,
-                   start_time = UTCDateTime(geom_sensor_parameter.start_time),
-                   end_time = UTCDateTime(geom_sensor_parameter.end_time),
+                   start_time = start_time,
+                   end_time = end_time,
                    tf_normalization_factor = geom_sensor_parameter.tf_normalization_factor,
                    tf_normalization_frequency = geom_sensor_parameter.tf_normalization_frequency,
                    tf_type = geom_sensor_parameter.tf_type,
