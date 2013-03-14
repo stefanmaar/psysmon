@@ -102,6 +102,7 @@ def create_full_project(psybase):
     inventory = xmlparser.parse(inventory_file)
     db_inventory = DbInventory.from_inventory(name = 'test', project = project, inventory = inventory)
     db_inventory.commit()
+    db_inventory.close()
 
     # Add the waveform directory to the project.
     wf_dir = project.dbTables['waveform_dir']
@@ -113,6 +114,7 @@ def create_full_project(psybase):
     new_wfdir.aliases.append(new_alias)
     db_session.add(new_wfdir)
     db_session.commit()
+    db_session.close()
     project.waveclient['main client'].loadWaveformDirList()
 
     # Import the data files.
@@ -150,7 +152,30 @@ def clear_project_database_tables(project):
     tables_to_clear = [table for table in reversed(project.dbMetaData.sorted_tables) if table.key.startswith(project.name)]
     for cur_table in tables_to_clear:
         project.dbEngine.execute(cur_table.delete())
-        
+
+
+def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_name, project_name):
+    from sqlalchemy import create_engine, MetaData
+
+    if db_driver is not None:
+        dialect_string = db_dialect + "+" + db_driver
+    else:
+        dialect_string = db_dialect
+
+    if db_pwd is not None:
+        engine_string = dialect_string + "://" + db_user + ":" + db_pwd + "@" + db_host + "/" + db_name
+    else:
+        engine_string = dialect_string + "://" + db_user + "@" + db_host + "/" + db_name
+
+    db_engine = create_engine(engine_string)
+    db_engine.echo = False
+    db_metadata = MetaData(db_engine)
+
+    db_metadata.reflect(db_engine)
+    tables_to_clear = [table for table in reversed(db_metadata.sorted_tables) if table.key.startswith(project_name)]
+    for cur_table in tables_to_clear:
+        db_engine.execute(cur_table.delete())
+
 
 
 def drop_project_database_tables(project):
