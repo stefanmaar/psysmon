@@ -80,7 +80,7 @@ class ImportWaveform(CollectionNode):
                             Trace.stats.channel, Trace.stats.location, 
                             Trace.stats.sampling_rate, Trace.stats.npts, 
                             Trace.stats.starttime.isoformat(' '), 
-                            Trace.stats.starttime.getTimeStamp(),
+                            Trace.stats.starttime.timestamp,
                             None, None, None)))
 
             print header2Insert

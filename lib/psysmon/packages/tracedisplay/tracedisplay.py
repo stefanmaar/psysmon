@@ -32,6 +32,7 @@ import psysmon.core.gui as psygui
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.processingStack import ProcessingStack
 from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
 import container
 try:
@@ -262,10 +263,13 @@ class TraceDisplayDlg(wx.Frame):
         self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
 
         # Create the display option.
-        inventoryDbController = InventoryDatabaseController(self.project)
+        inventory = DbInventory.load_inventory(self.project)
+        #db_inventory = DbInventory('test', self.project)
+        #db_inventory.load_recorders()
+        #db_inventory.load_networks()
+        #db_inventory.close()
         self.displayManager = DisplayManager(parent = self,
-                                             inventory = inventoryDbController.load())
-        del(inventoryDbController)
+                                             inventory = inventory)
 
         # Create the shortcut options.
         self.shortcutManager = ShortcutManager()
@@ -738,9 +742,9 @@ class DisplayManager:
         self.stationsChanged = False
 
         # Fill the available- and current station lists.
-        for curNetwork in self.inventory.networks.values():
-            for curStation in curNetwork.stations.values():
-                channels = set([x[0].channelName for x in curStation.sensors])
+        for curNetwork in self.inventory.networks:
+            for curStation in curNetwork.stations:
+                channels = set([x[0].channel_name for x in curStation.sensors])
                 self.availableStations.append(DisplayStation(curStation))
 
                 for curChannel in channels:

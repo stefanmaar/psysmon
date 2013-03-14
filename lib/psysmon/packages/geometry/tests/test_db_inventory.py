@@ -28,6 +28,7 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
+from psysmon.packages.geometry.inventory import InventoryXmlParser
 
 class DbInventoryTestCase(unittest.TestCase):
     """
@@ -289,6 +290,7 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory.commit()
         db_inventory.close()
 
+
     def test_add_recorder(self):
         db_inventory = DbInventory('test', self.project)
 
@@ -332,8 +334,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
     def test_add_sensor_parameter(self):
         db_inventory = DbInventory('test', self.project)
-        
-        
+
         rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder')
         added_recorder = db_inventory.add_recorder(rec_2_add)
         sensor_2_add = Sensor(serial = 'AAAA',
@@ -342,7 +343,7 @@ class DbInventoryTestCase(unittest.TestCase):
                               channel_name = 'HHZ',
                               label = 'AAAA-001-HHZ')
         added_sensor = added_recorder.add_sensor(sensor_2_add)
-        
+
         # Test a sensor with an open enddate.
         parameter_2_add = SensorParameter(gain = 1,
                                           bitweight = 2,
@@ -638,6 +639,42 @@ class DbInventoryTestCase(unittest.TestCase):
         cur_parameter.start_time = value
         self.assertEqual(cur_parameter.start_time, value)
         self.assertEqual(cur_parameter.geom_sensor_parameter.start_time, value.timestamp) 
+
+
+    def test_xml_to_db_inventory(self):
+        db_inventory = DbInventory('test', self.project)
+
+        xml_file = 'data/simple_inventory.xml'
+        xml_parser = InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+
+        for cur_recorder in inventory.recorders:
+            db_inventory.add_recorder(cur_recorder)
+
+        for cur_network in inventory.networks:
+            db_inventory.add_network(cur_network)
+
+
+        self.assertEqual(len(db_inventory.recorders), len(inventory.recorders))
+        self.assertEqual(len(db_inventory.networks), len(inventory.networks))
+
+        for k,cur_recorder in enumerate(db_inventory.recorders):
+            self.assertEqual(len(cur_recorder.sensors), len(inventory.recorders[k].sensors))
+
+        for k, cur_station in enumerate(db_inventory.networks[0].stations):
+            self.assertEqual(len(cur_station.sensors), len(inventory.networks[0].stations[k].sensors))
+
+
+        # Commit the changes to the database.
+        db_inventory.commit()
+        db_inventory.close()
+
+
+        # Load the networks from the database.
+        db_inventory_load = DbInventory('test', self.project)
+        db_inventory_load.load_recorders()
+        db_inventory_load.load_networks()
+        db_inventory_load.close()
 
 
 def suite():

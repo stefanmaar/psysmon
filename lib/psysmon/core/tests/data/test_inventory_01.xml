@@ -2,6 +2,7 @@
 <inventory name="ALPAACT">
 	<recorder serial="e3358">
 		<type>Earthdata PR 6-24 Portable</type>
+                <description></description>
 		<sensorUnit label="G_NAWA-HHZ">
 		  <rec_channel_name>p0</rec_channel_name>
 			<channel_name>HHZ</channel_name>
@@ -51,6 +52,7 @@
 
         <recorder serial="9D6C">
 		<type>Reftek 130-01</type>
+                <description></description>
 		<sensorUnit label="GILA-HHZ-9D6C">
 		  <rec_channel_name>101</rec_channel_name>
 			<channel_name>HHZ</channel_name>
@@ -100,6 +102,7 @@
 
 	<recorder serial="T3L30">
 		<type>Guralp 3ESPD 30s</type>
+                <description></description>
 		<sensorUnit label="SITA-HHZ-T3L30">
 		  <rec_channel_name>HHZ</rec_channel_name>
 			<channel_name>HHZ</channel_name>
@@ -152,7 +155,7 @@
 		<xcoord>15.706528</xcoord>
 		<ycoord>47.767139</ycoord>
 		<elevation>614</elevation>
-		<coordSystem>epsg:4326</coordSystem>
+		<coord_system>epsg:4326</coord_system>
 		<description>Nasswald</description>
 		<network_code>XX</network_code>
 		<assignedSensorUnit>
@@ -170,14 +173,14 @@
 			<start_time>2010-05-11T00:00:00.000000Z</start_time>
 			<end_time></end_time>
 		</assignedSensorUnit>
-	</station>	
+	</station>
 
 	<station code="GILA">
 		<location>00</location>
 		<xcoord>15.887788</xcoord>
 		<ycoord>47.695770</ycoord>
 		<elevation>643</elevation>
-		<coordSystem>epsg:4326</coordSystem>
+		<coord_system>epsg:4326</coord_system>
 		<description>Grillenberg</description>
 		<network_code>XX</network_code>
                 <assignedSensorUnit>
@@ -195,14 +198,14 @@
 			<start_time>2010-02-04T00:00:00.000000Z</start_time>
 			<end_time></end_time>
 		</assignedSensorUnit>
-	</station>	
+	</station>
 
 	<station code="SITA">
 		<location>00</location>
 		<xcoord>15.622917</xcoord>
 		<ycoord>48.514472</ycoord>
 		<elevation>380</elevation>
-		<coordSystem>epsg:4326</coordSystem>
+		<coord_system>epsg:4326</coord_system>
 		<description>Schiltern</description>
 		<network_code>XX</network_code>
                 <assignedSensorUnit>
@@ -220,7 +223,7 @@
 			<start_time>2010-06-09T00:00:00.000000Z</start_time>
 			<end_time></end_time>
 		</assignedSensorUnit>
-	</station>	
+	</station>
 
 	<network code="XX">
 		<code>XX</code>

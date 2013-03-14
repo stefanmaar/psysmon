@@ -81,13 +81,33 @@ class Inventory:
         ''' Print the string representation of the inventory.
         '''
         out = "Inventory %s of type %s\n" % (self.name, self.type) 
+
+        # Print the networks.
         out =  out + str(len(self.networks)) + " network(s) in the inventory:\n"
+        out = out + "\n".join([net.__str__() for net in self.networks])
+
+        # Print the recorders.
+        out = out + '\n\n'
+        out =  out + str(len(self.recorders)) + " recorder(s) in the inventory:\n"
+        out = out + "\n".join([rec.__str__() for rec in self.recorders])
+
         return out
+
 
     ## Add a recorder to the inventory.
     def add_recorder(self, recorder):
-        self.recorders.append(recorder)
-        recorder.set_parent_inventory(self)
+        ''' Add a recorder to the inventory.
+
+        Parameters
+        ----------
+        recorder : :class:`~psysmon.packages.geometery.inventory.Recorder`
+            The recorder to add to the inventory.
+        '''
+        available_recorders = [(x.serial, x.type) for x in self.recorders]
+
+        if (recorder.serial, recorder.type) not in available_recorders:
+            self.recorders.append(recorder)
+            recorder.set_parent_inventory(self)
 
 
     ## Remove a recorder from the inventory.
@@ -126,8 +146,14 @@ class Inventory:
         sensor.set_parent_inventory(self)
 
 
-    ## Add a Network to the inventory.
     def add_network(self, network):
+        ''' Add a new network to the database inventory.
+
+        Parameters
+        ----------
+        network : :class:`psysmon.packages.geometry.inventory.Network`
+            The network to add to the database inventory.
+        '''
         available_networks = [x.name for x in self.networks]
         if network.name not in available_networks:
             self.networks.append(network)
@@ -293,6 +319,10 @@ class Inventory:
         else:
             return None
 
+
+    @classmethod
+    def from_db_inventory(cls, db_inventory):
+        pass
 
 
 
@@ -1218,9 +1248,21 @@ class Station:
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the sensor has been operating at the station. "None" if the station is still running.
         '''
+        if not isinstance(start_time, UTCDateTime):
+            if start_time is not None:
+                start_time = UTCDateTime(start_time)
+            else:
+                start_time = None
+
+        if not isinstance(end_time, UTCDateTime):
+            if end_time is not None:
+                end_time = UTCDateTime(end_time)
+            else:
+                end_time = None
+
         self.sensors.append((sensor, start_time, end_time))
         self.has_changed = True
-        sensor.set_parent_inventory(self.parent_inventory)
+        #sensor.set_parent_inventory(self.parent_inventory)
 
 
     def remove_sensor(self, sensor):

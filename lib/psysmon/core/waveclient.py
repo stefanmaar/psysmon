@@ -321,13 +321,13 @@ class PsysmonDbWaveClient(WaveClient):
             The data of the specified SCNL and time period loaded from the files.
         '''
         stream = Stream()
-        
+
         # Create the standard query.
         dbSession = self.project.getDbSession()
         query = dbSession.query(self.traceheader.file_type,
                                      self.traceheader.filename, 
                                      self.waveformDirAlias.alias,
-                                     self.geomStation.net_name,
+                                     self.geomStation.network,
                                      self.geomStation.name,
                                      self.geomStation.location,
                                      self.geomSensor.channel_name).\
@@ -337,18 +337,18 @@ class PsysmonDbWaveClient(WaveClient):
 
         # Add the startTime filter option.
         if start_time:
-            query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.getTimeStamp())
+            query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.timestamp)
 
         # Add the endTime filter option.
         if end_time:
-            query = query.filter(self.traceheader.begin_time < end_time.getTimeStamp())
+            query = query.filter(self.traceheader.begin_time < end_time.timestamp)
 
         # Add the linkage between geometry ids.
         query = query.filter(self.traceheader.station_id == self.geomStation.id,
                              self.traceheader.sensor_id == self.geomSensor.id)
         curQuery = query.filter(self.geomStation.name == station, 
                                 self.geomSensor.channel_name == channel,
-                                self.geomStation.net_name == network,
+                                self.geomStation.network == network,
                                 self.geomStation.location == location)
 
         # The sql query is issued in the for loop.
@@ -365,13 +365,14 @@ class PsysmonDbWaveClient(WaveClient):
 
             # Change the header values to the one loaded from the database.
             for curTrace in curStream:
-                curTrace.stats.network = curHeader.net_name
+                curTrace.stats.network = curHeader.network
                 curTrace.stats.station = curHeader.name
                 curTrace.stats.location = curHeader.location
                 curTrace.stats.channel = curHeader.channel_name
 
             stream += curStream
 
+        dbSession.close()
         return stream
 
 
@@ -392,6 +393,7 @@ class PsysmonDbWaveClient(WaveClient):
                                                      wfDir.id==wfDirAlias.wf_id
                                                     ).filter(wfDirAlias.user==self.project.activeUser.name).all()
 
+        dbSession.close()
 
 
 

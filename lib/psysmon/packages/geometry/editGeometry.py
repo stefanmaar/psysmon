@@ -267,14 +267,14 @@ class EditGeometryDlg(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             path = dlg.GetPath()
-            inventory_parser = InventoryXmlParser()
+            curInventory = Inventory("new inventory")
 
             try:
-                cur_inventory = inventory_parser.parse(path)
+                curInventory.importFromXml(path)
             except Warning as w:
                     print w
 
-            self.inventories[cur_inventory.name] = cur_inventory
+            self.inventories[curInventory.name] = curInventory
             self.inventoryTree.updateInventoryData()
 
 
@@ -400,11 +400,11 @@ class EditGeometryDlg(wx.Frame):
             self.logger.debug("Saving a non db inventory to the database.")
             for cur_recorder in self.selected_inventory.recorders:
                 self.db_inventory.add_recorder(cur_recorder)
+
             for cur_network in self.selected_inventory.networks:
                 self.db_inventory.add_network(cur_network)
+
             self.db_inventory.commit()
-            #self.dbController.write(self.selected_inventory)
-            #self.loadInventoryFromDb()
 
         else:
             if len(self.selected_inventory.stations) > 0:
@@ -421,7 +421,7 @@ class EditGeometryDlg(wx.Frame):
                 #self.selected_inventory = cur_inventory
 
 
-        #self.inventoryTree.updateInventoryData()
+        self.inventoryTree.updateInventoryData()
 
 
 
