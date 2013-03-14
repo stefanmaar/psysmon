@@ -35,6 +35,7 @@ from threading import Thread
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.inventory import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
 from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
 from psysmon.artwork.icons import iconsBlack16 as icons
@@ -266,14 +267,13 @@ class EditGeometryDlg(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             path = dlg.GetPath()
-            curInventory = Inventory("new inventory")
-
+            xmlparser = InventoryXmlParser()
             try:
-                curInventory.importFromXml(path)
+                cur_inventory = xmlparser.parse(path)
             except Warning as w:
                     print w
 
-            self.inventories[curInventory.name] = curInventory
+            self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
 
 
@@ -397,8 +397,13 @@ class EditGeometryDlg(wx.Frame):
 
         if self.selected_inventory.type not in 'db':
             self.logger.debug("Saving a non db inventory to the database.")
-            self.dbController.write(self.selected_inventory)
-            self.loadInventoryFromDb()
+            for cur_recorder in self.selected_inventory.recorders:
+                self.db_inventory.add_recorder(cur_recorder)
+
+            for cur_network in self.selected_inventory.networks:
+                self.db_inventory.add_network(cur_network)
+
+            self.db_inventory.commit()
 
         else:
             if len(self.selected_inventory.stations) > 0:
@@ -415,7 +420,7 @@ class EditGeometryDlg(wx.Frame):
                 #self.selected_inventory = cur_inventory
 
 
-        #self.inventoryTree.updateInventoryData()
+        self.inventoryTree.updateInventoryData()
 
 
 
