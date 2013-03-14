@@ -1,0 +1,84 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<inventory name="ALPAACT">
+        <recorder serial="9D6C">
+		<type>Reftek 130-01</type>
+                <description>A test recorder.</description>
+		<sensorUnit label="GILA-HHZ-9D6C">
+		  <rec_channel_name>101</rec_channel_name>
+			<channel_name>HHZ</channel_name>
+			<sensor_serial>1417</sensor_serial>
+			<sensor_type>Geospace Seismonitor 1Hz</sensor_type>
+			<channel_parameters>
+				<start_time>2009-01-01T00:00:00.000000Z</start_time>
+				<end_time></end_time>
+				<gain>32</gain>
+				<bitweight>1.5895E-6</bitweight>
+				<bitweight_units>V/count</bitweight_units>
+				<sensitivity>340.55</sensitivity>
+				<sensitivity_units>V/m/s</sensitivity_units>
+			</channel_parameters>
+		</sensorUnit>
+		<sensorUnit label="GILA-HHN-9D6C">
+		  <rec_channel_name>102</rec_channel_name>
+			<channel_name>HHN</channel_name>
+			<sensor_serial>1417</sensor_serial>
+			<sensor_type>Geospace Seismonitor 1Hz</sensor_type>
+			<channel_parameters>
+				<start_time>2009-01-01T00:00:00.000000Z</start_time>
+				<end_time></end_time>
+				<gain>32</gain>
+				<bitweight>1.5895E-6</bitweight>
+				<bitweight_units>V/count</bitweight_units>
+				<sensitivity>340.55</sensitivity>
+				<sensitivity_units>V/m/s</sensitivity_units>
+			</channel_parameters>
+		</sensorUnit>
+		<sensorUnit label="GILA-HHE-9D6C">
+		  <rec_channel_name>103</rec_channel_name>
+			<channel_name>HHE</channel_name>
+			<sensor_serial>1417</sensor_serial>
+			<sensor_type>Geospace Seismonitor 1Hz</sensor_type>
+			<channel_parameters>
+				<start_time>2009-01-01T00:00:00.000000Z</start_time>
+				<end_time></end_time>
+				<gain>32</gain>
+				<bitweight>1.5895E-6</bitweight>
+				<bitweight_units>V/count</bitweight_units>
+				<sensitivity>340.55</sensitivity>
+				<sensitivity_units>V/m/s</sensitivity_units>
+			</channel_parameters>
+		</sensorUnit>
+	</recorder>
+
+	<station code="GILA">
+		<location>00</location>
+		<xcoord>15.887788</xcoord>
+		<ycoord>47.695770</ycoord>
+		<elevation>643</elevation>
+		<coord_system>epsg:4326</coord_system>
+		<description>Grillenberg</description>
+		<network_code>XX</network_code>
+                <assignedSensorUnit>
+			<sensorUnitLabel>GILA-HHZ-9D6C</sensorUnitLabel>
+			<start_time>2010-02-04T00:00:00.000000Z</start_time>
+			<end_time></end_time>
+		</assignedSensorUnit>
+		<assignedSensorUnit>
+			<sensorUnitLabel>GILA-HHN-9D6C</sensorUnitLabel>
+			<start_time>2010-02-04T00:00:00.000000Z</start_time>
+			<end_time></end_time>
+		</assignedSensorUnit>
+		<assignedSensorUnit>
+			<sensorUnitLabel>GILA-HHE-9D6C</sensorUnitLabel>
+			<start_time>2010-02-04T00:00:00.000000Z</start_time>
+			<end_time></end_time>
+		</assignedSensorUnit>
+	</station>	
+
+	<network code="XX">
+		<code>XX</code>
+		<description>A simple test network</description>
+		<type>test network</type>
+	</network>
+
+</inventory>
