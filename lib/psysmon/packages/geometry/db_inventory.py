@@ -199,7 +199,7 @@ class DbInventory:
             db_network = DbNetwork.from_inventory_network(self, network)
 
             for cur_station in network.stations:
-                db_station = DbStation.from_inventory_station(self, cur_station)
+                db_station = DbStation.from_inventory_station(db_network, cur_station)
                 db_network.add_station(db_station)
 
             self.networks.append(db_network)
