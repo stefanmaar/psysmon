@@ -320,6 +320,10 @@ class Inventory:
             return None
 
 
+    @classmethod
+    def from_db_inventory(cls, db_inventory):
+        pass
+
 
 
 class InventoryXmlParser:
@@ -1244,9 +1248,21 @@ class Station:
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the sensor has been operating at the station. "None" if the station is still running.
         '''
+        if not isinstance(start_time, UTCDateTime):
+            if start_time is not None:
+                start_time = UTCDateTime(start_time)
+            else:
+                start_time = None
+
+        if not isinstance(end_time, UTCDateTime):
+            if end_time is not None:
+                end_time = UTCDateTime(end_time)
+            else:
+                end_time = None
+
         self.sensors.append((sensor, start_time, end_time))
         self.has_changed = True
-        sensor.set_parent_inventory(self.parent_inventory)
+        #sensor.set_parent_inventory(self.parent_inventory)
 
 
     def remove_sensor(self, sensor):
