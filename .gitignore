@@ -2,16 +2,16 @@
 *.pyc
 
 # Ignore the tmp folder.
-tmp/
+/tmp/
 
 # Ignore the data folder.
-data/
+/data/
 
 # Ignore the build folder.
 build/
 
 # Ignore the dist folder.
-dist/
+/dist/
 
 # Ignore the MANIFEST file.
 MANIFEST
@@ -20,8 +20,8 @@ MANIFEST
 *.swp
 
 # Ignore some doc folders
-doc/build/
-doc/source/autogen/
+/doc/build/
+/doc/source/autogen/
 
 # Ignore miniseed data files
 .msd
