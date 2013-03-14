@@ -15,15 +15,16 @@ class InventoryTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.inventory = Inventory('test')
-        
+
     def tearDown(self):
         print "Good by."
-    
+
     def testXmlImport(self):
         xmlFile = 'data/psysmonGeometry.xml'
         self.inventory.importFromXml(xmlFile)
-        
-        
+
+
+
 #def suite():
 #    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
 #    return suite
