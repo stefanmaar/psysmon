@@ -365,7 +365,7 @@ class PsysmonDbWaveClient(WaveClient):
 
             # Change the header values to the one loaded from the database.
             for curTrace in curStream:
-                curTrace.stats.network = curHeader.net_name
+                curTrace.stats.network = curHeader.network
                 curTrace.stats.station = curHeader.name
                 curTrace.stats.location = curHeader.location
                 curTrace.stats.channel = curHeader.channel_name
