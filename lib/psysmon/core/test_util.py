@@ -9,7 +9,8 @@ import psysmon
 from psysmon.core.base import Base
 import psysmon.core.gui as psygui
 from psysmon.core.project import User
-from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.inventory import InventoryXmlParser
+from psysmon.packages.geometry.db_inventory import DbInventory
 
 
 def create_psybase():
@@ -97,10 +98,10 @@ def create_full_project(psybase):
 
     # Write the geometry from XML to Database.
     inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
-    inventory = Inventory('test')
-    inventory.importFromXml(inventory_file)
-    dbController = InventoryDatabaseController(project)
-    dbController.write(inventory)  
+    xmlparser = InventoryXmlParser()
+    inventory = xmlparser.parse(inventory_file)
+    db_inventory = DbInventory.from_inventory(name = 'test', project = project, inventory = inventory)
+    db_inventory.commit()
 
     # Add the waveform directory to the project.
     wf_dir = project.dbTables['waveform_dir']
