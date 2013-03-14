@@ -433,25 +433,10 @@ class DbInventory:
 
 
 
-class DbNetwork:
+class DbNetwork(Network):
 
     def __init__(self, parent_inventory, name, description, type, geom_network = None):
-
-        # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        self.parent_inventory = parent_inventory
-
-        self.name = name
-
-        self.description = description
-
-        self.type = type
-
-        self.stations = []
-
-        self.has_changed = False
+        Network.__init__(self, name = name, description = description, type = type, parent_inventory = parent_inventory)
 
         if geom_network is None:
             # Create a new database network instance.
