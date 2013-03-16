@@ -345,6 +345,7 @@ class DbInventory:
 
             return db_recorder
         else:
+            self.logger.error('The recorder %s-%s already exists in the inventory.', recorder.serial, recorder.type)
             return None
 
 
