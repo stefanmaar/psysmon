@@ -1115,8 +1115,16 @@ class psyContextMenu(wx.Menu):
                 if cmLabel.lower() == "separator":
                     self.AppendSeparator()
                 else:
-                    item = self.Append(-1, cmLabel)
-                    self.Bind(wx.EVT_MENU, cmHandler, item)
+                    if isinstance(cmHandler, list) or isinstance(cmHandler, tuple):
+                        # This is a submenu.
+                        submenu = wx.Menu()
+                        for subLabel, subHandler in cmHandler:
+                            item = submenu.Append(-1, subLabel)
+                            self.Bind(wx.EVT_MENU, subHandler, item)
+                        self.AppendMenu(-1, cmLabel, submenu)
+                    else:
+                        item = self.Append(-1, cmLabel)
+                        self.Bind(wx.EVT_MENU, cmHandler, item)
 
 
 
