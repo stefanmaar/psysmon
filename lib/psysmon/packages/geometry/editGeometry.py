@@ -267,14 +267,14 @@ class EditGeometryDlg(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             path = dlg.GetPath()
-            curInventory = Inventory("new inventory")
+            inventory_parser = InventoryXmlParser()
 
             try:
-                curInventory.importFromXml(path)
+                cur_inventory = inventory_parser.parse(path)
             except Warning as w:
                     print w
 
-            self.inventories[curInventory.name] = curInventory
+            self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
 
 
