@@ -664,17 +664,16 @@ class DbInventoryTestCase(unittest.TestCase):
         for k, cur_station in enumerate(db_inventory.networks[0].stations):
             self.assertEqual(len(cur_station.sensors), len(inventory.networks[0].stations[k].sensors))
 
-
         # Commit the changes to the database.
         db_inventory.commit()
         db_inventory.close()
-
 
         # Load the networks from the database.
         db_inventory_load = DbInventory('test', self.project)
         db_inventory_load.load_recorders()
         db_inventory_load.load_networks()
         db_inventory_load.close()
+
 
 
 def suite():

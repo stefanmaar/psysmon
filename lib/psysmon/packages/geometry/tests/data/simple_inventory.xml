@@ -16,6 +16,18 @@
 				<bitweight_units>V/count</bitweight_units>
 				<sensitivity>340.55</sensitivity>
 				<sensitivity_units>V/m/s</sensitivity_units>
+				<response_paz>
+					<type></type>
+					<units></units>
+					<A0_normalization_factor>0.4</A0_normalization_factor>
+					<normalization_frequency>+1.00000E+00</normalization_frequency>
+					<complex_zero>0+0j</complex_zero>
+					<complex_zero>0+0j</complex_zero>
+					<complex_zero>0+0j</complex_zero>
+					<complex_pole>-4.440 + 4.440j</complex_pole>
+					<complex_pole>-4.440 - 4.440j</complex_pole>
+					<complex_pole>-1.083+0.0j</complex_pole>
+				</response_paz>
 			</channel_parameters>
 		</sensorUnit>
 		<sensorUnit label="GILA-HHN-9D6C">
@@ -31,6 +43,18 @@
 				<bitweight_units>V/count</bitweight_units>
 				<sensitivity>340.55</sensitivity>
 				<sensitivity_units>V/m/s</sensitivity_units>
+				<response_paz>
+					<type></type>
+					<units></units>
+					<A0_normalization_factor>0.4</A0_normalization_factor>
+					<normalization_frequency>+1.00000E+00</normalization_frequency>
+					<complex_zero>0+0j</complex_zero>
+					<complex_zero>0+0j</complex_zero>
+					<complex_zero>0+0j</complex_zero>
+					<complex_pole>-4.440 + 4.440j</complex_pole>
+					<complex_pole>-4.440 - 4.440j</complex_pole>
+					<complex_pole>-1.083+0.0j</complex_pole>
+				</response_paz>
 			</channel_parameters>
 		</sensorUnit>
 		<sensorUnit label="GILA-HHE-9D6C">
@@ -46,6 +70,18 @@
 				<bitweight_units>V/count</bitweight_units>
 				<sensitivity>340.55</sensitivity>
 				<sensitivity_units>V/m/s</sensitivity_units>
+				<response_paz>
+					<type></type>
+					<units></units>
+					<A0_normalization_factor>0.4</A0_normalization_factor>
+					<normalization_frequency>+1.00000E+00</normalization_frequency>
+					<complex_zero>0+0j</complex_zero>
+					<complex_zero>0+0j</complex_zero>
+					<complex_zero>0+0j</complex_zero>
+					<complex_pole>-4.440 + 4.440j</complex_pole>
+					<complex_pole>-4.440 - 4.440j</complex_pole>
+					<complex_pole>-1.083+0.0j</complex_pole>
+				</response_paz>
 			</channel_parameters>
 		</sensorUnit>
 	</recorder>
