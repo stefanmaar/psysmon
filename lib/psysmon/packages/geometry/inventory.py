@@ -309,7 +309,10 @@ class Inventory:
 
 
     ## Get a network form the inventory.
-    def get_network(self, code):
+    def get_network(self, code = None):
+        if code is None:
+            return self.networks
+
         cur_network = [x for x in self.networks if x.name == code]
         if len(cur_network) == 1:
             return cur_network[0]
@@ -1196,6 +1199,14 @@ class Station:
                 scnl.append(cur_scnl)
 
         return scnl
+
+
+    def get_snl(self):
+        return (self.name, self.network, self.location)
+
+
+    def get_snl_string(self):
+        return str.join(':', self.get_snl())
 
 
 
