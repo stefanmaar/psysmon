@@ -124,7 +124,7 @@ class DbInventory:
         self.db_session.close()
 
 
-    def get_network(self, code):
+    def get_network(self, code = None):
         ''' Get a network from the inventory.
 
         Parameters
@@ -132,6 +132,9 @@ class DbInventory:
         coder : String
             The code of the network.
         '''
+        if code is None:
+            return self.networks
+
         cur_network = [x for x in self.networks if x.name == code]
         if len(cur_network) == 1:
             return cur_network[0]
