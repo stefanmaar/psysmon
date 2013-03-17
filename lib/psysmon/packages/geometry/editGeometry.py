@@ -506,6 +506,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
 
+
         il = wx.ImageList(16, 16)
         self.icons = {}
         self.icons['xmlInventory'] = il.Add(icons.db_icon_16.GetBitmap()) 
@@ -540,10 +541,26 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove station')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         elif(self.selected_item == 'sensor'):
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add paramter')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove sensor')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            #self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add parameter')
+            #self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            #self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove sensor')
+            #self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            # Create the sensor context menu.
+            sub_data = []
+            for cur_network in self.GetParent().selected_inventory.get_network():
+                if len(cur_network.stations) > 0:
+                    for cur_station in cur_network.stations:
+                        sub_data.append((cur_station.get_snl_string(), self.on_assign_sensor_2_station))
+
+            cm_data = (("add", self.onAddElement),
+                       ("remove", self.onRemoveElement),
+                       ("assign to station", sub_data))
+
+            context_menu_sensor = psyContextMenu(cm_data)
+            pos = evt.GetPosition()
+            pos = self.ScreenToClient(pos)
+            self.PopupMenu(context_menu_sensor, pos)
+            return
         elif(self.selected_item == 'inventory'):
             self.logger.debug('Handling an inventory.')
         elif(self.selected_item == 'recorder_list'):
@@ -603,6 +620,12 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
     def onRemoveElement(self, event):
         ''' Handle the context menu remove click.
+        '''
+        pass
+
+
+    def on_assign_sensor_2_station(self, event):
+        ''' Assign a sensor to a station.
         '''
         pass
 
