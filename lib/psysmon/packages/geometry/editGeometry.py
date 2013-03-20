@@ -552,8 +552,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     for cur_station in cur_network.stations:
                         sub_data.append((cur_station.get_snl_string(), self.on_assign_sensor_2_station))
 
-            cm_data = (("add", self.onAddElement),
-                       ("remove", self.onRemoveElement),
+            cm_data = (("add parameter", self.onAddElement),
+                       ("remove sensor", self.onRemoveElement),
                        ("assign to station", sub_data))
 
             context_menu_sensor = psyContextMenu(cm_data)
@@ -628,7 +628,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         ''' Assign a sensor to a station.
         '''
         pass
-
 
     ## Handle the key pressed events.
     def onKeyDown(self, event):
