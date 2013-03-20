@@ -1111,6 +1111,10 @@ class psyContextMenu(wx.Menu):
         def __init__(self, cmData):
             wx.Menu.__init__(self)
 
+            # The logger.
+            loggerName = __name__ + "." + self.__class__.__name__
+            self.logger = logging.getLogger(loggerName)
+
             for cmLabel, cmHandler in cmData:
                 if cmLabel.lower() == "separator":
                     self.AppendSeparator()
@@ -1120,7 +1124,7 @@ class psyContextMenu(wx.Menu):
                         submenu = wx.Menu()
                         for subLabel, subHandler in cmHandler:
                             item = submenu.Append(-1, subLabel)
-                            self.Bind(wx.EVT_MENU, subHandler, item)
+                            submenu.Bind(wx.EVT_MENU, subHandler, item)
                         self.AppendMenu(-1, cmLabel, submenu)
                     else:
                         item = self.Append(-1, cmLabel)
