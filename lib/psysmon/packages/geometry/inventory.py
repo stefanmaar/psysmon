@@ -188,12 +188,12 @@ class Inventory:
 
 
     ## Refresh the inventory networks.
-    def refresh_networks(self):            
+    def refresh_networks(self):
         for cur_network in self.networks:
             cur_network.refresh_stations(self.stations)
 
     ## Refresh the inventory recorders.
-    def refresh_recorders(self):            
+    def refresh_recorders(self):
         for cur_recorder in self.recorders:
             cur_recorder.refresh_sensors()
 
@@ -271,7 +271,7 @@ class Inventory:
 
         id : Integer
             The database id of the sensor.
-        
+
         label : String
             The label of the sensor.
         '''
@@ -284,6 +284,39 @@ class Inventory:
         for cur_recorder in recorder_2_process:
             sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = id, label = label))
         return sensor
+
+
+    ## Get a station from the inventory.
+    def get_station(self, name = None, network = None, location = None,
+                    id = None):
+        ''' Get a station from the inventory.
+
+        Parameters
+        ----------
+        name : String
+            The name (code) of the station.
+
+        network : String
+            The name of the network of the station.
+
+        location : String
+            The location code of the station.
+
+        id : Integer
+            The database id of the station.
+        '''
+        if network is not None:
+            network_2_process = [x for x in self.networks if x.name == network]
+        else:
+            network_2_process = self.networks
+
+        station = []
+        for cur_network in network_2_process:
+            station.extend(cur_network.get_station(name = name, 
+                                                   location = location,
+                                                   id = id))
+        return station
+
 
 
     ## Get a sensor from the inventory by id.
@@ -1471,5 +1504,32 @@ class Network:
             self.logger.error("The station with SL code %s is already in the network.", x.name + ':' + x.location)
             return None
 
+
+    def get_station(self, name = None, location = None, id = None):
+        ''' Get a station from the network.
+
+        Parameters
+        ----------
+        name : String
+            The name (code) of the station.
+
+        location : String
+            The location code of the station.
+
+        id : Integer
+            The database id of the station.
+        '''
+        station = self.stations
+
+        if name is not None:
+            station = [x for x in station if x.name == name]
+
+        if location is not None:
+            station = [x for x in station if x.location == location]
+
+        if id is not None:
+            station = [x for x in station if x.id == id]
+
+        return station
 
 
