@@ -41,6 +41,9 @@ class DbInventoryTestCase(unittest.TestCase):
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler())
 
+        cls.data_path = os.path.dirname(os.path.abspath(__file__))
+        cls.data_path = os.path.join(cls.data_path, 'data')
+
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
         cls.project.dbEngine.echo = True
@@ -644,7 +647,7 @@ class DbInventoryTestCase(unittest.TestCase):
     def test_xml_to_db_inventory(self):
         db_inventory = DbInventory('test', self.project)
 
-        xml_file = 'data/simple_inventory.xml'
+        xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
         xml_parser = InventoryXmlParser()
         inventory = xml_parser.parse(xml_file)
 
