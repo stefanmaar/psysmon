@@ -168,7 +168,7 @@ def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_na
         engine_string = dialect_string + "://" + db_user + "@" + db_host + "/" + db_name
 
     db_engine = create_engine(engine_string)
-    db_engine.echo = False
+    db_engine.echo = True
     db_metadata = MetaData(db_engine)
 
     db_metadata.reflect(db_engine)
@@ -176,6 +176,27 @@ def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_na
     for cur_table in tables_to_clear:
         db_engine.execute(cur_table.delete())
 
+
+def drop_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_name, project_name):
+    from sqlalchemy import create_engine, MetaData
+
+    if db_driver is not None:
+        dialect_string = db_dialect + "+" + db_driver
+    else:
+        dialect_string = db_dialect
+
+    if db_pwd is not None:
+        engine_string = dialect_string + "://" + db_user + ":" + db_pwd + "@" + db_host + "/" + db_name
+    else:
+        engine_string = dialect_string + "://" + db_user + "@" + db_host + "/" + db_name
+
+    db_engine = create_engine(engine_string)
+    db_engine.echo = True
+    db_metadata = MetaData(db_engine)
+
+    db_metadata.reflect(db_engine)
+    tables_to_drop = [table for table in reversed(db_metadata.sorted_tables) if table.key.startswith(project_name)]
+    db_metadata.drop_all(tables = tables_to_drop)
 
 
 def drop_project_database_tables(project):
