@@ -627,7 +627,26 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def on_assign_sensor_2_station(self, event):
         ''' Assign a sensor to a station.
         '''
-        pass
+        item_id = event.GetId()
+        menu = event.GetEventObject()
+        label = menu.GetLabel(item_id)
+        name, network, location = label.split(':')
+        station = self.Parent.selected_inventory.get_station(name = name,
+                                                             network = network,
+                                                             location = location)
+
+        if len(station) == 1:
+            station = station[0]
+            station.add_sensor(self.Parent.selected_sensor,
+                                   start_time = UTCDateTime('1976-01-01'),
+                                   end_time = None)
+            self.updateInventoryData()
+        elif len(station) > 1:
+            self.logger.error('More than one station found. Expected exactly one. SNL = %s:%s:%s', name, network, location)
+        else:
+            self.logger.error('No station found. SNL = %s:%s:%s', name, network, location)
+
+
 
     ## Handle the key pressed events.
     def onKeyDown(self, event):
