@@ -32,6 +32,7 @@ inventory.
 '''
 
 import logging
+from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Recorder
@@ -40,7 +41,7 @@ from psysmon.packages.geometry.inventory import SensorParameter
 from obspy.core.utcdatetime import UTCDateTime
 
 
-class DbInventory:
+class DbInventory(Inventory):
 
     def __init__(self, name, project):
         # The logger.
