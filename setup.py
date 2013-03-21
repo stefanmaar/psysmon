@@ -112,20 +112,9 @@ if not checkForPackage('MySQLdb', '1.2.2'):
     sys.exit(1)
 
 # Checking for obspy.core
-if not checkForPackage('obspy.core', '0.6.2'):
+if not checkForPackage('obspy', '0.8.3'):
     sys.exit(1)
 
-# Checking for obspy.signal
-if not checkForPackage('obspy.signal', '0.6.1'):
-    sys.exit(1)
-
-# Checking for obspy.mseed
-if not checkForPackage('obspy.mseed', '0.6.1'):
-    sys.exit(1)
-
-# Checking for obspy.earthworm
-if not checkForPackage('obspy.earthworm', '0.1.0'):
-    sys.exit(1)
 
 printRaw("")
 printRaw("")
