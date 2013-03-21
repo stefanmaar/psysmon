@@ -1,23 +1,22 @@
-#!/usr/bin/env python
-
-# License
-#     This file is part of Seismon.
+# LICENSE
 #
-#     If you use Seismon in any program or publication, please inform and
-#     acknowledge its author Stefan Mertl (info@stefanmertl.com). 
-# 
-#     Seismon is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-# 
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-# 
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This file is part of pSysmon.
+#
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+#
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 Some setup helper functions.
 
@@ -31,6 +30,7 @@ Some setup helper functions.
 
 import os
 import sys
+import re
 from textwrap import fill
 
 if sys.version_info[0] < 3:
@@ -95,15 +95,28 @@ def checkForPackage(name, requiredVersion):
         printStatus(name, "missing")
         printMessage("You must install %s %s or later to build pSysmon." % (name, requiredVersion))
         return False
+    except AttributeError:
+        printStatus(name, "missing")
+        printMessage("No version string found in package %s." % name)
+        return False
+
+
 
     nn = __version__.split('.')
     for k,x in enumerate(nn):
-        nn[k] = int(x)
+        if x.isdigit():
+            nn[k] = int(x)
+        else:
+            tmp = re.split('[A-Za-z]', x)
+            if len(tmp) > 0:
+                nn[k] = int(tmp[0])
+            else:
+                nn[k] = 0
 
     checkPassed = False
     if nn[0] > rV[0]:
         checkPassed = True
-    elif nn[0] == rV[0] and nn[1] > rV[2]:
+    elif nn[0] == rV[0] and nn[1] > rV[1]:
         checkPassed = True
     elif nn[1] == rV[1] and nn[2] > rV[2]:
         checkPassed = True
