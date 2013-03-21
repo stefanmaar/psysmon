@@ -218,7 +218,9 @@ class DbInventory(Inventory):
             self.db_session.add(db_network.geom_network)
             return db_network
         else:
-            self.logger.error('The network %s already exists in the inventory.', network.name)
+            self.logger.warning('The network %s already exists in the inventory.', network.name)
+            for cur_station in network.stations:
+                self.add_station(cur_station)
             return None
 
 
