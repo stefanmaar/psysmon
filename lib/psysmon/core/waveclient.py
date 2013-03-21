@@ -24,7 +24,7 @@ Module for providing the waveform data from various sources.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 
+    GNU General Public License, Version 3
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
@@ -42,7 +42,7 @@ class WaveClient:
 
     '''
 
-    def __init__(self, name, mode): 
+    def __init__(self, name, mode):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -80,7 +80,7 @@ class WaveClient:
 
     def get_from_stock(self, network, station, location, channel, start_time, end_time):
         ''' Get the data of the specified scnl from the stock data.
-        
+
         Parameters
         ----------
         network : String
@@ -105,7 +105,7 @@ class WaveClient:
         -------
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
-        
+
         '''
         if location == '--':
             location = None
@@ -115,12 +115,12 @@ class WaveClient:
                                       network = network,
                                       location = location)
         curStream = curStream.copy()
-        curStream.trim(starttime = start_time, 
+        curStream.trim(starttime = start_time,
                        endtime = end_time)
 
         return curStream
 
-                                       
+
     def add_to_stock(self, stream):
         ''' Add the passed stream to the stock data.
 
@@ -130,12 +130,12 @@ class WaveClient:
 
 
 
-    def getWaveform(self, 
+    def getWaveform(self,
                     startTime,
                     endTime,
-                    network = None, 
-                    station = None, 
-                    location = None, 
+                    network = None,
+                    station = None,
+                    location = None,
                     channel = None):
         ''' Get the waveform data for the specified parameters.
 
@@ -170,12 +170,12 @@ class WaveClient:
 class PsysmonDbWaveClient(WaveClient):
     ''' The pSysmon database waveclient.
 
-    This class provides the connector to a pSysmon formatted SQL waveform 
-    database. 
+    This class provides the connector to a pSysmon formatted SQL waveform
+    database.
     '''
 
     def __init__(self, name, project):
-        
+
         WaveClient.__init__(self, name=name, mode='psysmonDb')
 
         # The psysmon project owning the waveclient.
@@ -308,7 +308,7 @@ class PsysmonDbWaveClient(WaveClient):
         ''' Load the data from file.
 
         Select all files containing data from the database.
-        Load the data of the given time priod from the files and add it 
+        Load the data of the given time priod from the files and add it
         to a stream which is returned.
 
         Attributes
@@ -325,14 +325,14 @@ class PsysmonDbWaveClient(WaveClient):
         # Create the standard query.
         dbSession = self.project.getDbSession()
         query = dbSession.query(self.traceheader.file_type,
-                                     self.traceheader.filename, 
+                                     self.traceheader.filename,
                                      self.waveformDirAlias.alias,
                                      self.geomStation.network,
                                      self.geomStation.name,
                                      self.geomStation.location,
                                      self.geomSensor.channel_name).\
                                filter(self.traceheader.wf_id ==self.waveformDir.id).\
-                               filter(self.waveformDir.id == self.waveformDirAlias.wf_id, 
+                               filter(self.waveformDir.id == self.waveformDirAlias.wf_id,
                                       self.waveformDirAlias.user == self.project.activeUser.name)
 
         # Add the startTime filter option.
@@ -346,7 +346,7 @@ class PsysmonDbWaveClient(WaveClient):
         # Add the linkage between geometry ids.
         query = query.filter(self.traceheader.station_id == self.geomStation.id,
                              self.traceheader.sensor_id == self.geomSensor.id)
-        curQuery = query.filter(self.geomStation.name == station, 
+        curQuery = query.filter(self.geomStation.name == station,
                                 self.geomSensor.channel_name == channel,
                                 self.geomStation.network == network,
                                 self.geomStation.location == location)
@@ -385,11 +385,11 @@ class PsysmonDbWaveClient(WaveClient):
         wfDirAlias = self.waveformDirAlias
 
         dbSession = self.project.getDbSession()
-        self.waveformDirList = dbSession.query(wfDir.id, 
-                                               wfDir.directory, 
-                                               wfDirAlias.alias, 
+        self.waveformDirList = dbSession.query(wfDir.id,
+                                               wfDir.directory,
+                                               wfDirAlias.alias,
                                                wfDir.description
-                                              ).join(wfDirAlias, 
+                                              ).join(wfDirAlias,
                                                      wfDir.id==wfDirAlias.wf_id
                                                     ).filter(wfDirAlias.user==self.project.activeUser.name).all()
 
@@ -415,14 +415,14 @@ class EarthwormWaveclient(WaveClient):
         self.options['port'] = port
 
         # The obspy earthworm waveserver client instance.
-        self.client = Client(self.options['host'], 
-                             self.options['port'], 
+        self.client = Client(self.options['host'],
+                             self.options['port'],
                              timeout=2)
 
 
     def getWaveform(self,
                     startTime,
-                    endTime, 
+                    endTime,
                     scnl):
         ''' Get the waveform data for the specified parameters.
 
@@ -459,7 +459,7 @@ class EarthwormWaveclient(WaveClient):
         self.logger.debug('endTime: %s', endTime)
         self.logger.debug("%s", scnl)
 
-        stream = Stream() 
+        stream = Stream()
         for curScnl in scnl:
             curStation = curScnl[0]
             curChannel = curScnl[1]
@@ -477,7 +477,7 @@ class EarthwormWaveclient(WaveClient):
                 cur_trace = stock_stream.traces[0]
                 cur_start_time = cur_trace.stats.starttime
                 cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
-                
+
                 stream += stock_stream
 
                 if startTime < cur_start_time:
@@ -497,7 +497,7 @@ class EarthwormWaveclient(WaveClient):
                                                          start_time = cur_end_time,
                                                          end_time = endTime)
                     stream += curStream
-                    
+
             else:
                 curStream = self.request_from_server(station = curStation,
                                                      channel = curChannel,
@@ -506,7 +506,7 @@ class EarthwormWaveclient(WaveClient):
                                                      start_time = startTime,
                                                      end_time = endTime)
                 stream += curStream
-                                        
+
             stream.merge()
 
         self.add_to_stock(stream)
