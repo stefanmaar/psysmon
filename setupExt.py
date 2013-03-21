@@ -92,6 +92,12 @@ def checkForPackage(name, requiredVersion):
         if name == 'PIL':
             mod = __import__('Image', globals(), locals(), ['VERSION'], -1)
             __version__ = mod.VERSION
+        elif name == 'cairo':
+            mod = __import__('cairo', globals(), locals(), ['version'], -1)
+            __version__ = mod.version
+        elif name == 'lxml':
+            mod = __import__('lxml.etree', globals(), locals(), ['__version__'], -1)
+            __version__ = mod.__version__
         else:
             mod = __import__(name, globals(), locals(), ['__version__'], -1)
             __version__ = mod.__version__
@@ -112,6 +118,7 @@ def checkForPackage(name, requiredVersion):
             nn[k] = int(x)
         else:
             tmp = re.split('[A-Za-z]', x)
+            tmp = [x for x in tmp if x.isdigit()]
             if len(tmp) > 0:
                 nn[k] = int(tmp[0])
             else:
