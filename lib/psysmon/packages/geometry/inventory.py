@@ -376,14 +376,14 @@ class InventoryXmlParser:
         self.required_attributes = {}
         self.required_attributes['inventory'] = ('name',)
         self.required_attributes['recorder'] = ('serial',)
-        self.required_attributes['sensorUnit'] = ('label',)
+        self.required_attributes['sensor_unit'] = ('label',)
         self.required_attributes['station'] = ('code',)
         self.required_attributes['network'] = ('code',)
 
         # The required tags which have to be present in the inventory.
         self.required_tags = {}
         self.required_tags['recorder'] = ('type', 'description')
-        self.required_tags['sensorUnit'] = ('rec_channel_name', 'channel_name', 
+        self.required_tags['sensor_unit'] = ('rec_channel_name', 'channel_name', 
                                         'sensor_serial', 'sensor_type')
         self.required_tags['channel_parameters'] = ('start_time', 'end_time', 
                                         'gain', 'bitweight', 'bitweight_units', 
@@ -394,7 +394,7 @@ class InventoryXmlParser:
         self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
         self.required_tags['station'] = ('location', 'xcoord', 'ycoord', 'elevation', 
                                         'coord_system', 'description', 'network_code')
-        self.required_tags['assignedSensorUnit'] = ('sensorUnitLabel', 'start_time', 'end_time')
+        self.required_tags['assignedSensorUnit'] = ('sensor_unit_label', 'start_time', 'end_time')
         self.required_tags['network'] = ('description', 'type')
 
 
@@ -471,12 +471,12 @@ class InventoryXmlParser:
 
     ## Process the channel elements.      
     def process_channels(self, recorder_node, recorder):
-        channels = recorder_node.findall('sensorUnit')
+        channels = recorder_node.findall('sensor_unit')
         for cur_channel in channels:
             channel_content = self.parse_node(cur_channel)
 
-            missing_attrib = self.keys_complete(cur_channel.attrib, self.required_attributes['sensorUnit'])
-            missing_keys = self.keys_complete(channel_content, self.required_tags['sensorUnit']);
+            missing_attrib = self.keys_complete(cur_channel.attrib, self.required_attributes['sensor_unit'])
+            missing_keys = self.keys_complete(channel_content, self.required_tags['sensor_unit']);
             if not missing_keys and not missing_attrib:
                 self.logger.debug("Adding sensor to recorder.")
                 sensor2Add = Sensor(serial=channel_content['sensor_serial'],
@@ -607,8 +607,8 @@ class InventoryXmlParser:
                 #sensor2Add = self.parent_inventory.getSensor(recSerial = sensor_content['recorder_serial'],
                 #                                            senSerial = sensor_content['sensor_serial'],
                 #                                            rec_channel_name = sensor_content['rec_channel_name'])
-                self.logger.debug(sensor_content['sensorUnitLabel'])
-                sensor_2_add = inventory.get_sensor(label=sensor_content['sensorUnitLabel'])
+                self.logger.debug(sensor_content['sensor_unit_label'])
+                sensor_2_add = inventory.get_sensor(label=sensor_content['sensor_unit_label'])
                 self.logger.debug("%s", sensor_2_add)
                 if sensor_2_add:
                     # Convert the time strings to UTC times.
@@ -628,7 +628,7 @@ class InventoryXmlParser:
                                            begin_time,
                                            end_time)
                 else:
-                    msg =  "Sensor to add with label '%s' not found in inventory.\nSkipping this sensor." % sensor_content['sensorUnitLabel'], 
+                    msg =  "Sensor to add with label '%s' not found in inventory.\nSkipping this sensor." % sensor_content['sensor_unit_label'], 
                     warnings.warn(msg)
             else:
                 msg = "Not all required fields presents!\nMissing keys:\n"
