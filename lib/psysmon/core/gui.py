@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -483,7 +482,6 @@ class PSysmonGui(wx.Frame):
     def onCreateNewProject(self, event):
         dlg = CreateNewProjectDlg(psyBase=self.psyBase)
         retval = dlg.ShowModal()
-        ipdb.set_trace() ############################## Breakpoint ##############################
 
 
 
