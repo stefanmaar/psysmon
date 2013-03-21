@@ -52,9 +52,10 @@ packages = [
             'psysmon',
             'psysmon.core',
             'psysmon.packages',
+            'psysmon.packages.example',
+            'psysmon.packages.example2',
             'psysmon.packages.geometry',
             'psysmon.packages.obspyImportWaveform',
-            'psysmon.packages.selectWaveform',
             'psysmon.packages.tracedisplay',
             'psysmon.artwork',
             'psysmon.artwork.icons'
@@ -107,7 +108,7 @@ if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
 if not checkForPackage('sqlalchemy', '0.7.5'):
     sys.exit(1)
 
-# Checking for SQLAlchemy
+# Checking for mysql-python
 if not checkForPackage('MySQLdb', '1.2.2'):
     sys.exit(1)
 
