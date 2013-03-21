@@ -84,28 +84,20 @@ if sys.platform == 'win32':
 printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
 
-# Checking for wx
-if not checkForPackage('wx', '2.8.11'):
+# Checking for basemap
+if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
     sys.exit(1)
 
-# Checking for numpy
-if not checkForPackage('numpy', '1.6.1'):
-    sys.exit(1)
-
-# Checking for scipy
-if not checkForPackage('scipy', '0.10.1'):
+# Checking for matplotlib
+if not checkForPackage('lxml', '3.1.0'):
     sys.exit(1)
 
 # Checking for matplotlib
 if not checkForPackage('matplotlib', '1.1.0'):
     sys.exit(1)
 
-# Checking for basemap
-if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
-    sys.exit(1)
-
-# Checking for sqlAlchemy
-if not checkForPackage('sqlalchemy', '0.7.5'):
+# Checking for numpy
+if not checkForPackage('numpy', '1.6.1'):
     sys.exit(1)
 
 # Checking for mysql-python
@@ -114,6 +106,26 @@ if not checkForPackage('MySQLdb', '1.2.2'):
 
 # Checking for obspy.core
 if not checkForPackage('obspy', '0.8.3'):
+    sys.exit(1)
+
+# Checking for PIL
+if not checkForPackage('PIL', '1.1.7'):
+    sys.exit(1)
+
+# Checking for py2cairo
+if not checkForPackage('cairo', '1.10.0'):
+    sys.exit(1)
+
+# Checking for scipy
+if not checkForPackage('scipy', '0.10.1'):
+    sys.exit(1)
+
+# Checking for sqlAlchemy
+if not checkForPackage('sqlalchemy', '0.7.5'):
+    sys.exit(1)
+
+# Checking for wx
+if not checkForPackage('wx', '2.8.11'):
     sys.exit(1)
 
 
