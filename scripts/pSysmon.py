@@ -52,18 +52,11 @@ Examples
         >>> import psysmon.pSysmon as psysmon
         >>> psysmon.run()
 '''
-
-from twisted.internet import wxreactor
-wxreactor.install()
-
 import psysmon
 import psysmon.core.gui as psygui
 import psysmon.core.base as psybase
 import os
 import logging
-
-# import t.i.reactor only after installing wxreactor:
-from twisted.internet import reactor
 
 
 def run():
@@ -92,11 +85,11 @@ def run():
     logger.setLevel(psysmon.logConfig['level'])
     logger.addHandler(psysmon.getLoggerHandler())
 
-    
+
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
     print "psyBaseDir: %s" % psyBaseDir
-    
+
     # Initialize the pSysmon base object.
     psyBase = psybase.Base(psyBaseDir)
 
@@ -111,10 +104,8 @@ def run():
 
     psysmonMain.Show()
 
-    reactor.registerWxApp(app)
+    app.MainLoop()
 
-    # Start the event loop
-    reactor.run()
 
 if __name__ == '__main__':
     run()

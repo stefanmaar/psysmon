@@ -27,13 +27,9 @@ The pSysmon main program.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
-#from twisted.internet import wxreactor
-#wxreactor.install()
-
 import psysmon
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 import psysmon.core.base as psybase
-#from twisted.internet import reactor
 import sys
 import shelve
 import wx
@@ -112,17 +108,4 @@ if __name__ == "__main__":
     logger.info('Finished the execution. Cleaning up....')
     logger.info('Deleting data file %s.', filename)
     os.remove(filename)
-
-    #reactor.registerWxApp(app)
-
-    # Create a CecClient and connect it to the project's CecServer.
-    #myClient = CecClient('localhost', port)
-    #myClient.connect()
-
-    # Start the twisted eventloop.
-    #reactor.run()
-
-
-
-
 

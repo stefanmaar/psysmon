@@ -42,7 +42,6 @@ from psysmon.core.util import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from psysmon.core.collectionExecutionControl import CecServer
 from obspy.core import UTCDateTime
 from psysmon.core.preferences_manager import PreferencesManager
 
@@ -787,15 +786,6 @@ class Project:
         msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
 
-    
-    def createCecServer(self, packages):
-        ''' Create a Collection-Execution-Control server for the project. 
-
-        '''
-        # Start the collection execution server. Use port 0 to
-        # get a free port from the OS.
-        self.cecServer = CecServer(0, self, packages);
-        self.logger.info("CEC-Server port: %d", self.cecServer.port)
 
 
 
