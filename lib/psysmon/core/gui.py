@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -314,15 +315,6 @@ class PSysmonGui(wx.Frame):
                 self.logger.info("Loaded project %s successfully.", self.psyBase.project.name)
                 #self.psyBase.project.log('status', statusString)
 
-                # Enable the project menu.
-                labels_to_enable = ('Close project', 'Save project', 
-                                    'Data sources', 'SCNL data sources', 'Project preferences')
-                mb = self.GetMenuBar()
-                for cur_menu, cur_label in mb.GetMenus():
-                    m_items = cur_menu.GetMenuItems()
-                    items_to_enable = [x for x in m_items if x.GetItemLabelText() in labels_to_enable]
-                    for cur_item in items_to_enable:
-                        cur_item.Enable(True)
 
 
 
@@ -406,7 +398,7 @@ class PSysmonGui(wx.Frame):
     ## Enable of disable the main GUI elements.
     #
     #
-    def enableGuiElements(self, state=True):
+    def enableGuiElements(self, state=True, mode = None):
         if(state):
             self.collectionPanel.Enable()
             self.collectionNodeInventoryPanel.Enable()
@@ -415,6 +407,17 @@ class PSysmonGui(wx.Frame):
             self.collectionPanel.Disable()
             self.collectionNodeInventoryPanel.Disable()
             self.loggingPanel.Disable()
+
+        if mode == 'project':
+            # Enable the project menu.
+            labels_to_enable = ('Close project', 'Save project', 
+                                'Data sources', 'SCNL data sources', 'Project preferences')
+            mb = self.GetMenuBar()
+            for cur_menu, cur_label in mb.GetMenus():
+                m_items = cur_menu.GetMenuItems()
+                items_to_enable = [x for x in m_items if x.GetItemLabelText() in labels_to_enable]
+                for cur_item in items_to_enable:
+                    cur_item.Enable(True)
 
     ## Create new db user menu callback.
     #
@@ -479,8 +482,11 @@ class PSysmonGui(wx.Frame):
     # @param event The event object.
     def onCreateNewProject(self, event):
         dlg = CreateNewProjectDlg(psyBase=self.psyBase)
-        dlg.ShowModal()
-        #dlg.Destroy()
+        retval = dlg.ShowModal()
+        ipdb.set_trace() ############################## Breakpoint ##############################
+
+
+
 
     def log(self, msgType, msg):
         '''
@@ -2059,13 +2065,13 @@ class CreateNewProjectDlg(wx.Dialog):
             for _, curKey, _, _, _, _ in self.dialogData():
                 if curKey in keys_2_pass:
                     projectData[curKey] = self.edit[curKey].GetValue()
-            
-            projectCreated = self.createProject(projectData)
-            #pub.sendMessage("createNewDbUserDlg.createUser", userData)
-            if(projectCreated):
-                self.GetParent().enableGuiElements()
-                self.Destroy()
 
+            try:
+                self.createProject(projectData)
+                self.GetParent().enableGuiElements(mode = 'project')
+                self.Destroy()
+            except Exception as e:
+                raise
 
 
     def dialogData(self):
@@ -2126,11 +2132,9 @@ class CreateNewProjectDlg(wx.Dialog):
 
         try:
             self.psyBase.createPsysmonProject(**projectData)
-            return True
         except Exception as e:
             self.logger.error("Error while creating the project: %s", e)
             raise
-            return False  
 
 
 
