@@ -329,6 +329,7 @@ class Base:
         Close the currently active project by setting the project attribute to 
         None.
         '''
+        del(self.project)
         self.project = None
 
 
