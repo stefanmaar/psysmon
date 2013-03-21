@@ -89,8 +89,12 @@ def checkForPackage(name, requiredVersion):
         rV[k] = int(x)
 
     try:
-        mod = __import__(name, globals(), locals(), ['__version__'], -1)
-        __version__ = mod.__version__
+        if name == 'PIL':
+            mod = __import__('Image', globals(), locals(), ['VERSION'], -1)
+            __version__ = mod.VERSION
+        else:
+            mod = __import__(name, globals(), locals(), ['__version__'], -1)
+            __version__ = mod.__version__
     except ImportError:
         printStatus(name, "missing")
         printMessage("You must install %s %s or later to build pSysmon." % (name, requiredVersion))
