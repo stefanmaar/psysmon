@@ -3,7 +3,7 @@
         <recorder serial="9D6C">
 		<type>Reftek 130-01</type>
                 <description>A test recorder.</description>
-		<sensorUnit label="GILA-HHZ-9D6C">
+		<sensor_unit label="GILA-HHZ-9D6C">
 		  <rec_channel_name>101</rec_channel_name>
 			<channel_name>HHZ</channel_name>
 			<sensor_serial>1417</sensor_serial>
@@ -29,8 +29,8 @@
 					<complex_pole>-1.083+0.0j</complex_pole>
 				</response_paz>
 			</channel_parameters>
-		</sensorUnit>
-		<sensorUnit label="GILA-HHN-9D6C">
+		</sensor_unit>
+		<sensor_unit label="GILA-HHN-9D6C">
 		  <rec_channel_name>102</rec_channel_name>
 			<channel_name>HHN</channel_name>
 			<sensor_serial>1417</sensor_serial>
@@ -56,8 +56,8 @@
 					<complex_pole>-1.083+0.0j</complex_pole>
 				</response_paz>
 			</channel_parameters>
-		</sensorUnit>
-		<sensorUnit label="GILA-HHE-9D6C">
+		</sensor_unit>
+		<sensor_unit label="GILA-HHE-9D6C">
 		  <rec_channel_name>103</rec_channel_name>
 			<channel_name>HHE</channel_name>
 			<sensor_serial>1417</sensor_serial>
@@ -83,7 +83,7 @@
 					<complex_pole>-1.083+0.0j</complex_pole>
 				</response_paz>
 			</channel_parameters>
-		</sensorUnit>
+		</sensor_unit>
 	</recorder>
 
 	<station code="GILA">
@@ -95,17 +95,17 @@
 		<description>Grillenberg</description>
 		<network_code>XX</network_code>
                 <assignedSensorUnit>
-			<sensorUnitLabel>GILA-HHZ-9D6C</sensorUnitLabel>
+			<sensor_unit_label>GILA-HHZ-9D6C</sensor_unit_label>
 			<start_time>2010-02-04T00:00:00.000000Z</start_time>
 			<end_time></end_time>
 		</assignedSensorUnit>
 		<assignedSensorUnit>
-			<sensorUnitLabel>GILA-HHN-9D6C</sensorUnitLabel>
+			<sensor_unit_label>GILA-HHN-9D6C</sensor_unit_label>
 			<start_time>2010-02-04T00:00:00.000000Z</start_time>
 			<end_time></end_time>
 		</assignedSensorUnit>
 		<assignedSensorUnit>
-			<sensorUnitLabel>GILA-HHE-9D6C</sensorUnitLabel>
+			<sensor_unit_label>GILA-HHE-9D6C</sensor_unit_label>
 			<start_time>2010-02-04T00:00:00.000000Z</start_time>
 			<end_time></end_time>
 		</assignedSensorUnit>
