@@ -305,7 +305,7 @@ class PSysmonGui(wx.Frame):
                 self.collectionPanel.refreshCollection()
 
                 # Activate the user interfaces.
-                self.enableGuiElements()
+                self.enableGuiElements(mode = 'project')
 
                 # Set the loaded project name as the title.
                 self.SetTitle(self.psyBase.project.name)
