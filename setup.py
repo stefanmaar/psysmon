@@ -62,7 +62,7 @@ packages = [
            ]
 
 # Define the scripts to be processed.
-scripts = ['scripts/pSysmon.py']
+scripts = ['scripts/psysmon']
 
 # Define some package data.
 packageDir = {'': 'lib',
