@@ -644,6 +644,21 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
 
     def onShowContextMenu(self, event):
+        try:
+            selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
+            if(selectedNode.mode == 'standalone'):
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            elif(selectedNode.mode == 'uneditable'):
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            else:
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+        except Exception:
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         self.PopupMenu(self.contextMenu, pos)
