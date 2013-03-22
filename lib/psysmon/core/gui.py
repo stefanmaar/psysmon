@@ -811,7 +811,7 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.
     def onCollectionDelete(self, event):
-        self.log.debug("Delete a collection.")
+        self.logger.debug("Delete a collection.")
 
 
 
