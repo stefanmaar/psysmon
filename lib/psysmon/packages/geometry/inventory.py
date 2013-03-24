@@ -393,8 +393,8 @@ class InventoryXmlParser:
         self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
         self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
         self.required_tags['station'] = ('location', 'xcoord', 'ycoord', 'elevation', 
-                                        'coord_system', 'description', 'network_code')
-        self.required_tags['assignedSensorUnit'] = ('sensor_unit_label', 'start_time', 'end_time')
+                                        'coord_system', 'description')
+        self.required_tags['assigned_sensor_unit'] = ('sensor_unit_label', 'start_time', 'end_time')
         self.required_tags['network'] = ('description', 'type')
 
 
@@ -421,7 +421,6 @@ class InventoryXmlParser:
 
         # Get the recorders and stations of the inventory.
         recorders = tree.findall('recorder')
-        stations = tree.findall('station')
         networks = tree.findall('network')
 
         # First process the recorders.
@@ -431,11 +430,111 @@ class InventoryXmlParser:
 
         self.process_networks(inventory, networks)  
 
-        self.process_stations(inventory, stations)
-
         self.logger.debug("Success reading the XML file.")
 
         return inventory
+
+
+    def export_xml(self, inventory, filename):
+        ''' Export an inventory to xml file.
+        '''
+        from lxml import etree
+
+        root = etree.Element('inventory', name = inventory.name)
+
+        for cur_recorder in inventory.recorders:
+            rec_element = etree.SubElement(root, 'recorder', serial = cur_recorder.serial)
+            type = etree.SubElement(rec_element, 'type')
+            type.text = cur_recorder.type
+            description = etree.SubElement(rec_element, 'description')
+            description.text = cur_recorder.description
+
+            for cur_sensor in cur_recorder.sensors:
+                sen_element = etree.SubElement(rec_element, 'sensor_unit', label = cur_sensor.label)
+                rec_channel_name = etree.SubElement(sen_element, 'rec_channel_name')
+                rec_channel_name.text = cur_sensor.rec_channel_name
+                channel_name = etree.SubElement(sen_element, 'channel_name')
+                channel_name.text = cur_sensor.channel_name
+                sensor_serial = etree.SubElement(sen_element, 'sensor_serial')
+                sensor_serial.text = cur_sensor.serial
+                sensor_type = etree.SubElement(sen_element, 'sensor_type')
+                sensor_type.text = cur_sensor.type
+
+                for cur_parameter in cur_sensor.parameters:
+                    par_element = etree.SubElement(sen_element, 'channel_parameters')
+                    start_time = etree.SubElement(par_element, 'start_time')
+                    if cur_parameter.start_time is not None:
+                        start_time.text = cur_parameter.start_time.isoformat()
+                    else:
+                        start_time.text = ''
+                    end_time = etree.SubElement(par_element, 'end_time')
+                    if cur_parameter.end_time is not None:
+                        end_time.text = cur_parameter.end_time.isoformat()
+                    else:
+                        end_time.text = ''
+                    gain = etree.SubElement(par_element, 'gain')
+                    gain.text = str(cur_parameter.gain)
+                    bitweight = etree.SubElement(par_element, 'bitweight')
+                    bitweight.text = str(cur_parameter.bitweight)
+                    bitweight_units = etree.SubElement(par_element, 'bitweight_units')
+                    bitweight_units.text = cur_parameter.bitweight_units
+                    sensitivity = etree.SubElement(par_element, 'sensitivity')
+                    sensitivity.text = str(cur_parameter.sensitivity)
+                    sensitivity_units = etree.SubElement(par_element, 'sensitivity_units')
+                    sensitivity_units.text = cur_parameter.sensitivity_units
+
+                    paz_element = etree.SubElement(par_element, 'response_paz')
+                    type = etree.SubElement(paz_element, 'type')
+                    type.text = cur_parameter.tf_type
+                    units = etree.SubElement(paz_element, 'units')
+                    units.text = cur_parameter.tf_units
+                    normalization_factor = etree.SubElement(paz_element, 'A0_normalization_factor')
+                    normalization_factor.text = str(cur_parameter.tf_normalization_factor)
+                    normalization_frequency = etree.SubElement(paz_element, 'normalization_frequency')
+                    normalization_frequency.text = str(cur_parameter.tf_normalization_frequency)
+                    for cur_zero in cur_parameter.tf_zeros:
+                        zero = etree.SubElement(paz_element, 'complex_zero')
+                        zero.text = str(cur_zero)
+                    for cur_pole in cur_parameter.tf_poles:
+                        pole = etree.SubElement(paz_element, 'complex_pole')
+                        pole.text = str(cur_pole)
+
+        for cur_network in inventory.networks:
+            net_element = etree.SubElement(root, 'network', code = cur_network.name)
+            description = etree.SubElement(net_element, 'description')
+            description.text = cur_network.description
+            type = etree.SubElement(net_element, 'type')
+            type.text = cur_network.type
+
+            for cur_station in cur_network.stations:
+                stat_element = etree.SubElement(net_element, 'station', code = cur_station.name)
+                location = etree.SubElement(stat_element, 'location')
+                location.text = cur_station.location
+                xcoord = etree.SubElement(stat_element, 'xcoord')
+                xcoord.text = str(cur_station.x)
+                ycoord = etree.SubElement(stat_element, 'ycoord')
+                ycoord.text = str(cur_station.y)
+                elevation = etree.SubElement(stat_element, 'elevation')
+                elevation.text = str(cur_station.z)
+                coord_system = etree.SubElement(stat_element, 'coord_system')
+                coord_system.text = cur_station.coord_system
+                description = etree.SubElement(stat_element, 'description')
+                description.text = cur_station.description
+
+                for cur_sensor, cur_start_time, cur_end_time in cur_station.sensors:
+                    sensor_element = etree.SubElement(stat_element, 'assigned_sensor_unit')
+                    start_time = etree.SubElement(sensor_element, 'start_time')
+                    if cur_start_time is not None:
+                        start_time.text = cur_start_time.isoformat()
+                    else:
+                        start_time.text = ''
+
+                    end_time = etree.SubElement(sensor_element, 'end_time')
+                    if cur_end_time is not None:
+                        end_time.text = cur_end_time.isoformat()
+                    else:
+                        end_time.text = ''
+
 
 
 
@@ -526,6 +625,7 @@ class InventoryXmlParser:
                                                 start_time = start_time,
                                                 end_time = end_time
                                                  )
+                self.logger.debug('Processing PAZ of parameter %s.', parameter2Add)
                 self.process_response_paz(cur_parameter, parameter2Add)
 
 
@@ -540,7 +640,7 @@ class InventoryXmlParser:
             content = self.parse_node(cur_tf)
             missing_keys = self.keys_complete(content, self.required_tags['response_paz'])
             if not missing_keys:
-                self.logger.debug("Adding the tf to the parameter")
+                self.logger.debug("Adding the tf to the parameter %s", parameter)
                 parameter.set_transfer_function(content['type'], 
                                               content['units'],
                                               float(content['A0_normalization_factor']), 
@@ -553,6 +653,7 @@ class InventoryXmlParser:
     def process_complex_zero(self, tf_node, parameter):
         cz = tf_node.findall('complex_zero')
         for curCz in cz:
+            self.logger.debug('Adding zero to the parameter %s', parameter)
             zero = curCz.text.replace(' ', '')
             parameter.tf_add_complex_zero(complex(zero))
 
@@ -567,7 +668,8 @@ class InventoryXmlParser:
 
 
     ## Process the station elements.
-    def process_stations(self, inventory, stations):
+    def process_stations(self, inventory, network_node, network):
+        stations = network_node.findall('station')
         for cur_station in stations:
             station_content = self.parse_node(cur_station)
             missing_attrib = self.keys_complete(cur_station.attrib, self.required_attributes['station'])
@@ -581,12 +683,12 @@ class InventoryXmlParser:
                                       z=station_content['elevation'],
                                       coord_system=station_content['coord_system'],
                                       description=station_content['description'],
-                                      network=station_content['network_code'] 
+                                      network=network.name 
                                       )
 
                 inventory.add_station(station2Add)
 
-                self.process_sensors(inventory, cur_station, station2Add)                      
+                self.process_sensors(inventory, cur_station, station2Add)
 
 
             else:
@@ -596,11 +698,11 @@ class InventoryXmlParser:
 
 
     def process_sensors(self, inventory, station_node, station):
-        sensors = station_node.findall('assignedSensorUnit')
+        sensors = station_node.findall('assigned_sensor_unit')
         for cur_sensor in sensors:
             sensor_content = self.parse_node(cur_sensor)
 
-            missing_keys = self.keys_complete(sensor_content, self.required_tags['assignedSensorUnit'])
+            missing_keys = self.keys_complete(sensor_content, self.required_tags['assigned_sensor_unit'])
 
             if not missing_keys: 
                 # Find the sensor in the inventory.
@@ -655,10 +757,12 @@ class InventoryXmlParser:
             # Create the Recorder instance.
             net2Add = Network(name=cur_network.attrib['code'],
                               description=content['description'],
-                              type=content['type']) 
+                              type=content['type'])
 
             # Add the network to the inventory.
             inventory.add_network(net2Add)
+
+            self.process_stations(inventory, cur_network, net2Add)
 
 
     def get_node_text(self, xml_element, tag):
@@ -1029,8 +1133,11 @@ class SensorParameter:
     def __init__(self, gain, bitweight, bitweight_units, sensitivity, 
                  sensitivity_units, start_time, end_time, tf_type=None, 
                  tf_units=None, tf_normalization_factor=None, 
-                 tf_normalization_frequency=None, tf_poles = [], tf_zeros = [],
+                 tf_normalization_frequency=None, tf_poles = None, tf_zeros = None,
                  id=None, parent_sensor = None):
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
 
         ## The sensor gain.
         self.gain = gain
@@ -1122,7 +1229,10 @@ class SensorParameter:
         ''' Add a complex zero to the transfer function PAZ.
 
         '''
+        self.logger.debug('Adding zero %s to parameter %s.', zero, self)
+        self.logger.debug('len(self.tf_zeros): %s', len(self.tf_zeros))
         self.tf_zeros.append(zero)
+        self.logger.debug('len(self.tf_zeros): %s', len(self.tf_zeros))
 
     def tf_add_complex_pole(self, pole):
         ''' Add a complec pole to the transfer function PAZ.
