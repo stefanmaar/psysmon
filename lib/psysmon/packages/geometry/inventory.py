@@ -94,6 +94,19 @@ class Inventory:
         return out
 
 
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['name', 'type', 'recorders', 'networks'] 
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
+
     ## Add a recorder to the inventory.
     def add_recorder(self, recorder):
         ''' Add a recorder to the inventory.
@@ -494,10 +507,10 @@ class InventoryXmlParser:
                     normalization_frequency.text = str(cur_parameter.tf_normalization_frequency)
                     for cur_zero in cur_parameter.tf_zeros:
                         zero = etree.SubElement(paz_element, 'complex_zero')
-                        zero.text = str(cur_zero)
+                        zero.text = str(cur_zero).replace('(', '').replace(')','')
                     for cur_pole in cur_parameter.tf_poles:
                         pole = etree.SubElement(paz_element, 'complex_pole')
-                        pole.text = str(cur_pole)
+                        pole.text = str(cur_pole).replace('(', '').replace(')', '')
 
         for cur_network in inventory.networks:
             net_element = etree.SubElement(root, 'network', code = cur_network.name)
@@ -522,7 +535,9 @@ class InventoryXmlParser:
                 description.text = cur_station.description
 
                 for cur_sensor, cur_start_time, cur_end_time in cur_station.sensors:
-                    sensor_element = etree.SubElement(stat_element, 'assigned_sensor_unit')
+                    sensor_element = etree.SubElement(stat_element, 'assigned_sensor_unit', )
+                    sensor_unit_label = etree.SubElement(sensor_element, 'sensor_unit_label')
+                    sensor_unit_label.text = cur_sensor.label
                     start_time = etree.SubElement(sensor_element, 'start_time')
                     if cur_start_time is not None:
                         start_time.text = cur_start_time.isoformat()
@@ -535,6 +550,12 @@ class InventoryXmlParser:
                     else:
                         end_time.text = ''
 
+        # Write the xml string to a file.
+        et = etree.ElementTree(root)
+        et.write(filename, pretty_print = True, xml_declaration = True, encoding = 'UTF-8')
+        #fid = open(filename, 'w')
+        #fid.write(etree.tostring(root, pretty_print = True))
+        #fid.close()
 
 
 
@@ -841,6 +862,21 @@ class Recorder:
         self.has_changed = True 
 
 
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['id', 'serial', 'type', 'description', 'has_changed',
+                                  'sensors']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
+
+
+
     def set_parent_inventory(self, parent_inventory):
         ''' Set the parent_inventory attribute.
 
@@ -1036,6 +1072,19 @@ class Sensor:
         pub.sendMessage(msgTopic, msg)
 
 
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['id', 'label', 'serial', 'type', 'rec_channel_name',
+                                  'channel_name', 'has_changed', 'parameters']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
+
     def set_parent_inventory(self, parent_inventory):
         ''' Set the parent_inventory attribute.
 
@@ -1213,6 +1262,20 @@ class SensorParameter:
             raise AttributeError(attrname)
 
 
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['gain', 'bitweight', 'bitweight_units', 'sensitivity', 'tf_type',
+                                  'tf_units', 'tf_normalization_factor', 'tf_normalization_frequency',
+                                  'id', 'tf_poles', 'tf_zeros', 'start_time', 'end_time',
+                                  'has_changed']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
 
     def set_transfer_function(self, tf_type, tf_units, tf_normalization_factor, 
                             tf_normalization_frequency):
@@ -1332,6 +1395,20 @@ class Station:
         self.logger.debug("Setting the %s attribute to %s.", name, value)
         self.__dict__[name] = value
         self.has_changed = True
+
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['id', 'name', 'location', 'description', 'x', 'y', 'z',
+                                  'coord_system', 'sensors', 'has_changed']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    self.logger.error('Attribute %s not matching %s != %s.', cur_attribute, str(getattr(self, cur_attribute)), str(getattr(other, cur_attribute)))
+                    return False
+
+            return True
+        else:
+            return False
 
 
     def get_scnl(self):
@@ -1578,6 +1655,16 @@ class Network:
         self.__dict__['has_changed'] = True
 
 
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['name', 'type', 'description', 'has_changed', 'stations'] 
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
 
 
     def set_parent_inventory(self, parent_inventory):
