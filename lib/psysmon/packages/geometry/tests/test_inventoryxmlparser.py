@@ -6,33 +6,38 @@ Created on May 17, 2011
 
 import unittest
 import logging
+import tempfile
+import os
 import psysmon
 from psysmon.packages.geometry.inventory import InventoryXmlParser
 from psysmon.packages.geometry.inventory import Inventory
 
-class InventoryTestCase(unittest.TestCase):
+class InventoryXmlParserTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
     """
     @classmethod
-    def setUpClas(cls):
-        pass
+    def setUpClass(cls):
+        cls.data_path = os.path.dirname(os.path.abspath(__file__))
+        cls.data_path = os.path.join(cls.data_path, 'data')
+
+        # Configure the logger.
+        cls.logger = logging.getLogger('psysmon')
+        cls.logger.setLevel('DEBUG')
+        cls.logger.addHandler(psysmon.getLoggerHandler())
 
     @classmethod
     def tearDownClass(cls):
         pass
 
     def setUp(self):
-        # Configure the logger.
-        logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
-        logger.addHandler(psysmon.getLoggerHandler())
+        pass
 
     def tearDown(self):
         pass
 
     def test_parse_xmlfile(self):
-        xml_file = 'data/simple_inventory.xml'
+        xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
         xml_parser = InventoryXmlParser()
         inventory = xml_parser.parse(xml_file)
 
@@ -51,12 +56,21 @@ class InventoryTestCase(unittest.TestCase):
         cur_station = cur_network.stations[0]
         self.assertEqual(len(cur_station.sensors), 3)
 
+    def test_export_xmlfile(self):
+        xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
+        xml_parser = InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+
+        outfile = tempfile.mkstemp()
+        xml_parser.export_xml(inventory, outfile)
+        #os.remove(outfile)
+
 
 
 def suite():
 #    tests = ['testXmlImport']
 #    return unittest.TestSuite(map(InventoryTestCase, tests))
-    return unittest.makeSuite(InventoryTestCase, 'test')
+    return unittest.makeSuite(InventoryXmlParserTestCase, 'test')
 
 
 if __name__ == '__main__':
