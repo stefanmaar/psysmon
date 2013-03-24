@@ -242,10 +242,11 @@ class EditGeometryDlg(wx.Frame):
                  ("Add station", "Add a station to the selected inventory.", self.onAddStation),
                  ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
                  ("", "", ""),
-                 ("Save to database", "Save the selected inventory to database.", self.onSave2Db)),
+                 ("Save to database", "Save the selected inventory to database.", self.onSave2Db),
+                 ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
-               )   
+               )
 
 
     ## Import from XML menu callback.
@@ -276,6 +277,34 @@ class EditGeometryDlg(wx.Frame):
 
             self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
+
+
+    def onExport2Xml(self, event):
+        if not self.selected_inventory:
+            self.logger.info("No inventory selected.")
+            return
+
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(), 
+            defaultFile="",
+            wildcard="xml file (*.xml)"\
+                     "All files (*.*)|*.*",
+            style=wx.SAVE | wx.CHANGE_DIR
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response, 
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            path = dlg.GetPath()
+            inventory_parser = InventoryXmlParser()
+
+            try:
+                inventory_parser.export_xml(self.selected_inventory, path)
+            except Warning as w:
+                    print w
+
 
 
     def onAddRecorder(self, event):
