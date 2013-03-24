@@ -62,8 +62,16 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         inventory = xml_parser.parse(xml_file)
 
         outfile = tempfile.mkstemp()
-        xml_parser.export_xml(inventory, outfile)
-        #os.remove(outfile)
+        xml_parser.export_xml(inventory, outfile[1])
+
+        # Read the created outputfile.
+        ei = xml_parser.parse(outfile[1])
+
+        # Compare the two inventories.
+        self.assertEqual(inventory, ei)
+
+        # Remove the output file.
+        os.remove(outfile[1])
 
 
 
