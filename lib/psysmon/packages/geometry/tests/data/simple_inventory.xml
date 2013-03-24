@@ -86,35 +86,35 @@
 		</sensor_unit>
 	</recorder>
 
-	<station code="GILA">
-		<location>00</location>
-		<xcoord>15.887788</xcoord>
-		<ycoord>47.695770</ycoord>
-		<elevation>643</elevation>
-		<coord_system>epsg:4326</coord_system>
-		<description>Grillenberg</description>
-		<network_code>XX</network_code>
-                <assignedSensorUnit>
-			<sensor_unit_label>GILA-HHZ-9D6C</sensor_unit_label>
-			<start_time>2010-02-04T00:00:00.000000Z</start_time>
-			<end_time></end_time>
-		</assignedSensorUnit>
-		<assignedSensorUnit>
-			<sensor_unit_label>GILA-HHN-9D6C</sensor_unit_label>
-			<start_time>2010-02-04T00:00:00.000000Z</start_time>
-			<end_time></end_time>
-		</assignedSensorUnit>
-		<assignedSensorUnit>
-			<sensor_unit_label>GILA-HHE-9D6C</sensor_unit_label>
-			<start_time>2010-02-04T00:00:00.000000Z</start_time>
-			<end_time></end_time>
-		</assignedSensorUnit>
-	</station>	
 
 	<network code="XX">
 		<code>XX</code>
 		<description>A simple test network</description>
 		<type>test network</type>
+
+                <station code="GILA">
+                        <location>00</location>
+                        <xcoord>15.887788</xcoord>
+                        <ycoord>47.695770</ycoord>
+                        <elevation>643</elevation>
+                        <coord_system>epsg:4326</coord_system>
+                        <description>Grillenberg</description>
+                        <assigned_sensor_unit>
+                                <sensor_unit_label>GILA-HHZ-9D6C</sensor_unit_label>
+                                <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                                <end_time></end_time>
+                        </assigned_sensor_unit>
+                        <assigned_sensor_unit>
+                                <sensor_unit_label>GILA-HHN-9D6C</sensor_unit_label>
+                                <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                                <end_time></end_time>
+                        </assigned_sensor_unit>
+                        <assigned_sensor_unit>
+                                <sensor_unit_label>GILA-HHE-9D6C</sensor_unit_label>
+                                <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                                <end_time></end_time>
+                        </assigned_sensor_unit>
+                </station>	
 	</network>
 
 </inventory>
