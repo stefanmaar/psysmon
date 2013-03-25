@@ -1397,7 +1397,8 @@ class DataManager():
         self.processingStack = ProcessingStack('my stack',
                                                 self.project,
                                                 self.parent.displayManager.inventory)
-        self.processingStack.addNode(self.parent.processingNodes[0])
+        detrend_node = [x for x in self.parent.processingNodes if x.name == 'detrend'][0]
+        self.processingStack.addNode(detrend_node)
 
 
     def requestStream(self, startTime, endTime, scnl):
