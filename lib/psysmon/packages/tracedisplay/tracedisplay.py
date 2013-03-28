@@ -735,7 +735,7 @@ class DisplayManager:
         self.availableChannels = []
 
         # The currently shown stations.
-        # This is a list of tuples containing the SCNL code (S, C, N, L).
+        # This is a list of DisplayStations instances.
         self.showStations = []
 
         # Indicates if the station configuration has changed.
@@ -754,7 +754,7 @@ class DisplayManager:
 
         # The channels currently shown.
         # TODO: This should be selected by the user in the edit dialog.
-        self.showChannels = ['BHZ']
+        self.showChannels = [self.availableChannels[0], self.availableChannels[2]]
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
@@ -771,7 +771,7 @@ class DisplayManager:
         for curStation in self.availableStations:
             if curStation.name == 'GILA' or curStation.name == 'SITA':
                 station2Add = DisplayStation(curStation)
-                station2Add.addChannel(['HHZ',])
+                station2Add.addChannel(self.showChannels)
                 for curChannel in station2Add.channels:
                     for curPlugin in addonPlugins:
                         curChannel.addView(curPlugin.name, 'my Type')
@@ -1219,6 +1219,7 @@ class DisplayStation():
 
         # The channels contained in the station.
         self.channels = []
+
 
 
     def addChannel(self, channelName):
