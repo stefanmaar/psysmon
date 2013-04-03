@@ -1813,12 +1813,12 @@ class AddDataSourceDlg(wx.Dialog):
         for curLabel, curClass in self.clientModes().itervalues():
             if curClass == PsysmonDbWaveClient:
                 panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook, project=self.psyBase.project)
-                panel.SetBackgroundColour('red')
+                #panel.SetBackgroundColour('red')
             elif curClass == EarthwormWaveclient:
                 panel = EarthwormWaveclientOptions(parent=self.modeChoiceBook, 
                                                    project=self.psyBase.project,
                                                    client=curClass(name='earthworm client'))
-                panel.SetBackgroundColour('green')
+                #panel.SetBackgroundColour('green')
 
             panel.SetMinSize((200, 200))
             self.modeChoiceBook.AddPage(panel, curLabel)
