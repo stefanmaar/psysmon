@@ -332,8 +332,8 @@ class PsysmonDbWaveClient(WaveClient):
                                      self.geomStation.location,
                                      self.geomSensor.channel_name).\
                                filter(self.traceheader.wf_id ==self.waveformDir.id).\
-                               filter(self.waveformDir.id == self.waveformDirAlias.wf_id,
-                                      self.waveformDirAlias.user == self.project.activeUser.name)
+                               filter(self.waveformDir.id == self.waveformDirAlias.wf_id).\
+                               filter(self.waveformDirAlias.user == self.project.activeUser.name)
 
         # Add the startTime filter option.
         if start_time:
@@ -344,12 +344,12 @@ class PsysmonDbWaveClient(WaveClient):
             query = query.filter(self.traceheader.begin_time < end_time.timestamp)
 
         # Add the linkage between geometry ids.
-        query = query.filter(self.traceheader.station_id == self.geomStation.id,
-                             self.traceheader.sensor_id == self.geomSensor.id)
-        curQuery = query.filter(self.geomStation.name == station,
-                                self.geomSensor.channel_name == channel,
-                                self.geomStation.network == network,
-                                self.geomStation.location == location)
+        query = query.filter(self.traceheader.station_id == self.geomStation.id).\
+                      filter(self.traceheader.sensor_id == self.geomSensor.id)
+        curQuery = query.filter(self.geomStation.name == station).\
+                         filter(self.geomSensor.channel_name == channel).\
+                         filter(self.geomStation.network == network).\
+                         filter(self.geomStation.location == location)
 
         # The sql query is issued in the for loop.
         for curHeader in curQuery:
