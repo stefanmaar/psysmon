@@ -18,15 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __author__ = "Stefan Mertl"
-__authorEmail__ = "info@stefanmertl.com"
+__authorEmail__ = "stefan@mertl-research.at"
 __description__ = "A seismological data processing and prototyping software."
 __longDescription__ = """pSysmon acts as a framework for developing and testing 
     of algorithms for seismological data processing. It can also be used for routine 
     data processing.
     """
-__website__ = "http://www.stefanmertl.com/science/"
+__website__ = "http://psysmon.mertl-research.at"
 __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
 __license__ = "GNU General Public Licence version 3"
 __keywords__ = "seismological prototyping prototype data processing earthquake"
