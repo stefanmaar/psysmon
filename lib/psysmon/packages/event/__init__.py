@@ -32,6 +32,7 @@ def databaseFactory(base):
     from sqlalchemy import String
     from sqlalchemy import Text
     from sqlalchemy import Float
+    from sqlalchemy.dialects.mysql import DOUBLE
     from sqlalchemy import DateTime
     from sqlalchemy import ForeignKey
     from sqlalchemy import UniqueConstraint
@@ -90,8 +91,8 @@ def databaseFactory(base):
                                         onupdate = 'cascade', 
                                         ondelete = 'set null'),
                              nullable = True)
-        start_time = Column(DateTime(), nullable = False)
-        end_time = Column(DateTime(), nullable = False)
+        start_time = Column(Float(53), nullable = False)
+        end_time = Column(Float(53), nullable = False)
         public_id = Column(String(255), nullable = True)
         pref_origin_id = Column(Integer(10), nullable = True)
         pref_magnitude_id = Column(Integer(10), nullable = True)
@@ -105,7 +106,7 @@ def databaseFactory(base):
         agency_uri = Column(String(255), nullable = True)
         author = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
-        creation_time = Column(DateTime(), nullable = True)
+        creation_time = Column(Float(53), nullable = True)
         version = Column(String(30), nullable = True)
 
 
@@ -147,7 +148,7 @@ def databaseFactory(base):
                            nullable = True)
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
-        creation_time = Column(DateTime(), nullable = True)
+        creation_time = Column(Float(53), nullable = True)
         version = Column(String(30), nullable = True)
         UniqueConstraint('public_id')
 
