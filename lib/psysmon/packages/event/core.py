@@ -19,91 +19,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from obspy.core.event import Event
+from obspy.core.event import Event as ObspyEvent
 from obspy.core.event import ResourceIdentifier
 from obspy.core.event import Comment
 from obspy.core.event import CreationInfo
 from obspy.core.utcdatetime import UTCDateTime
 
-class PsysmonEvent(Event):
+class Event(ObspyEvent):
 
-    def __init__(self, *args, **kwargs):
-        Event.__init__(self, *args, **kwargs)
+    def __init__(self, start_time, end_time, db_id = None, tags = [], *args, **kwargs):
+        ObspyEvent.__init__(self, *args, **kwargs)
+
+        # The unique database id.
+        self.db_id = db_id
+
+        # Check for None values in the event limits.
+        if start_time is None or end_time is None:
+            raise ValueError("None values are not allowed for the event time limits.")
+
+        # Check the event limits.
+        if end_time < start_time:
+            raise ValueError("The end_time %s is smaller than the start_time %s.", end_time, start_time)
+        elif end_time == start_time:
+            raise ValueError("The end_time %s is equal to the start_time %s.", end_time, start_time)
+
 
         # The start time of the event.
-        self.start_time = UTCDateTime()
+        self.start_time = UTCDateTime(start_time)
 
         # The end time of the event.
-        self.end_time = UTCDateTime()
-
-        # The number of stations on which the event is detected on.
-        self.num_stations = None
+        self.end_time = UTCDateTime(end_time)
 
         # The tags of the event.
         self.tags = []
-
-        # The id of the eventset.
-        self.set_id = None
-
-
-
-class EventParameters:
-    ''' An event container.
-
-    An event set can be used to group events into sets. The events are stored 
-    in a list.
-
-    Attributes
-    ----------
-    resource_id : :class:`~obspy.core.event.ResourceIdentifier`
-        The unique resource id of the eventset. Should be 
-        smi:psysmon.AUTHOR.PROJECTNAME/eventset/DB_EVENTSET_ID
-
-    mode : String
-        The mode of the event set (psysmon, bulletin).
-
-    events : List of :class:`PsysmonEvent`
-        The event instances contained in the event set.
-
-    '''
-
-    def __init__(self, 
-                 public_id = ResourceIdentifier(), 
-                 description = None, 
-                 comment = Comment(), 
-                 creation_info = CreationInfo()):
-        ''' The constructor.
-
-        Parameters
-        ---------
-        public_id : :class:`~obspy.core.event.ResourceIdentifier`
-            The unique resource id of the eventset. Should be 
-            smi:psysmon.AUTHOR.PROJECTNAME/eventset/DB_EVENTSET_ID
-
-        description : String
-            The description of the event parameters.
-
-        comment : :class:`~obspy.core.event.Comment`
-            The comment of the event parameters.
-
-        creation_info : :class:`~obspy.core.event.CreationInfo`
-            The creation information of the event parameters.
-        '''
-
-        # The resource id of the event set.
-        self.public_id = public_id
-
-        # The discription of the event parameters.
-        self.description = description
-
-        # The comment of the event parameters.
-        self.comment = comment
-
-        # The creation information of the event parameters.
-        self.creation_info = creation_info
-
-        # The mode of the event set (psysmon, bulletin).
-        self.mode = None
-
-        # The events contained in the event set.
-        self.events = []
