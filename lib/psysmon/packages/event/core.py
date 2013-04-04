@@ -20,6 +20,7 @@
 
 
 from obspy.core.event import Event as ObspyEvent
+from obspy.core.event import Catalog as ObspyCatalog
 from obspy.core.event import ResourceIdentifier
 from obspy.core.event import Comment
 from obspy.core.event import CreationInfo
@@ -52,3 +53,49 @@ class Event(ObspyEvent):
 
         # The tags of the event.
         self.tags = []
+
+
+    def write_to_database(self, project):
+        ''' Write the event to the pSysmon database.
+        '''
+        if self.db_id is None:
+            # If the db_id is None, insert a new event.
+            if self.creation_info.creation_time is not None:
+                creation_time = self.creation_info.creation_time.timestamp
+            else:
+                creation_time = None
+
+            db_session = project.getDbSession()
+            db_event_orm = project.dbTables['event']
+            db_event = db_event_orm(start_time = repr(self.start_time.timestamp),
+                                    end_time = repr(self.end_time.timestamp),
+                                    public_id = self.resource_id,
+                                    pref_origin_id = None,
+                                    pref_magnitude_id = None, 
+                                    pref_focmec_id = None,
+                                    ev_type = self.event_type,
+                                    ev_type_certainty = self.event_type_certainty,
+                                    agency_id = self.creation_info.agency_id,
+                                    agency_uri = self.creation_info.agency_uri,
+                                    author = self.creation_info.author,
+                                    author_uri = self.creation_info.author_uri,
+                                    creation_time = repr(creation_time),
+                                    version = self.creation_info.version
+                                   )
+            db_session.add(db_event)
+            db_session.commit()
+            db_session.close()
+
+        else:
+            # If the db_id is not None, update the existing event.
+            pass
+
+
+
+class Catalog(ObspyCatalog):
+
+    def __init__(self, db_id = None, *args, **kwargs):
+        ObspyCatalog.__init__(self, *args, **kwargs)
+
+        self.db_id = db_id
+
