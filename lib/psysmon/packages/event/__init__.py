@@ -41,43 +41,95 @@ def databaseFactory(base):
 
     ###########################################################################
     # EVENT_SET table mapper class
-    class EventSetDb(base):
-        __tablename__  = 'event_set'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
+    class EventCatalogDb(base):
+        __tablename__  = 'event_catalog'
+        __table_args__ = (
+                          UniqueConstraint('public_id'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key = True, autoincrement = True)
-        public_id = Column(String(255), nullable = False)
+        public_id = Column(String(255), nullable = True)
         description = Column(Text, nullable = True)
+        agency_id = Column(String(64), nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
         creation_time = Column(DateTime(), nullable = True)
         version = Column(String(30), nullable = True)
-        UniqueConstraint('public_id')
 
-    tables.append(EventSetDb)
+
+        def __init__(self, public_id, description, agency_id, agency_uri,
+                     author, author_uri, creation_time, version):
+            self.public_id = public_id
+            self.description = description
+            self.agency_id = agency_id
+            self.agency_uri = agency_uri
+            self.author = author
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+            self.version = version
+
+
+    tables.append(EventCatalogDb)
+
 
 
     ###########################################################################
     # EVENT table mapper class
     class EventDb(base):
         __tablename__  = 'event'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
+        __table_args__ = (
+                          UniqueConstraint('public_id'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
 
         id = Column(Integer(10), primary_key = True, autoincrement = True)
-        ev_param_id = Column(Integer(10), 
-                             ForeignKey('event_set.id',
+        ev_catalog_id = Column(Integer(10), 
+                             ForeignKey('event_catalog.id',
                                         onupdate = 'cascade', 
                                         ondelete = 'set null'),
                              nullable = True)
-        public_id = Column(String(255), nullable = False)
-        pref_origin_id = Column(String(255), nullable = True)
-        pref_magnitude_id = Column(String(255), nullable = True)
-        pref_focmec_id = Column(String(255), nullable = True)
-        ev_type = Column(String(50), nullable = True)
+        start_time = Column(DateTime(), nullable = False)
+        end_time = Column(DateTime(), nullable = False)
+        public_id = Column(String(255), nullable = True)
+        pref_origin_id = Column(Integer(10), nullable = True)
+        pref_magnitude_id = Column(Integer(10), nullable = True)
+        pref_focmec_id = Column(Integer(10), nullable = True)
+        ev_type = Column(Integer(10), nullable = True)
         ev_type_certainty = Column(String(50), nullable = True)
+        description = Column(Text, nullable = True)
+        comment = Column(Text, nullable = True)
+        tags = Column(String(255), nullable = True)
+        agency_id = Column(String(64), nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
         creation_time = Column(DateTime(), nullable = True)
         version = Column(String(30), nullable = True)
-        UniqueConstraint('public_id')
+
+
+        def __init__(self, start_time, end_time, public_id, pref_origin_id, 
+                     pref_magnitude_id, pref_focmec_id, ev_type, ev_type_certainty,
+                     agency_id, agency_uri, author, author_uri, creation_time, version):
+            self.start_time = start_time
+            self.end_time = end_time
+            self.public_id = public_id
+            self.pref_origin_id = pref_origin_id
+            self.pref_magnitude_id = pref_magnitude_id
+            self.pref_focmec_id = pref_focmec_id
+            self.ev_type = ev_type
+            self.ev_type_certainty = ev_type_certainty
+            self.agency_id = agency_id
+            self.agency_uri = agency_uri
+            self.author = author
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+            self.version = version
+
 
     tables.append(EventDb)
+
 
 
     ###########################################################################
