@@ -1,7 +1,7 @@
 
 
 from psysmon.core.packageNodes import CollectionNode
-from psysmon.packages.event.core import PsysmonEvent
+from psysmon.packages.event.core import Event
 
 
 class EventExample(CollectionNode):
@@ -30,7 +30,7 @@ class EventExample(CollectionNode):
 
     def execute(self, prevModuleOutput={}):
 
-        myEvent = PsysmonEvent(resource_id = 'smi:stefan/test')
+        myEvent = Event(resource_id = 'smi:stefan/test')
         print myEvent
 
 
