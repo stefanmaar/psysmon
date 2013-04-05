@@ -30,6 +30,7 @@ The pSysmon base module.
 This module contains the basic modules needed to run the pSysmon program.
 '''
 
+from psysmon.core.preferences_manager import PreferencesManager
 
 ## The CollectionNode class.
 #
@@ -159,15 +160,6 @@ class CollectionNode:
     # - damaged
     tags = []
 
-    ## The collection node options.
-    #
-    # Each collection node can have a set of parameters which can be edited
-    # by the user and which are used when executing the collection node.
-    # These properties will also be saved with the collection node during
-    # the pSysmon sessions.@n
-    # The @e property attribute is a dictionary with the property name as it's key.@n
-    # @note Usually, the property values are defined in the pkgInit file.
-    options = {}
 
     # The entry point of the documentation of the collection node.
     docEntryPoint = None
@@ -175,6 +167,9 @@ class CollectionNode:
     def __init__(self, requires=None, provides=None, docEntryPoint=None, parent=None, project=None):
         ## The package which contains the collection node.
         self.parentPackage = parent
+
+        # The preferences manager of the node.
+        self.pref_manager = PreferencesManager()
 
         ## The node's enabled state.
         #
