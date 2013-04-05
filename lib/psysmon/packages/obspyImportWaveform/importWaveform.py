@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -134,10 +133,13 @@ class ImportWaveform(CollectionNode):
             return None
 
 
-class MyGridTable(wx.grid.PyGridTableBase):
+class GridDataTable(wx.grid.PyGridTableBase):
     def __init__(self, data):
         wx.grid.PyGridTableBase.__init__(self)
         self.data = data
+
+        self.currentRows = self.GetNumberRows()
+        self.currentColumns = self.GetNumberCols()
 
     def GetNumberRows(self):
         """Return the number of rows in the grid"""
@@ -157,43 +159,43 @@ class MyGridTable(wx.grid.PyGridTableBase):
 
     def GetValue(self, row, col):
         """Return the value of a cell"""
-        return repr(self.data[row, col])
+        return repr(self.data[row])
 
     def SetValue(self, row, col, value):
         """Set the value of a cell"""
         pass
 
     def ResetView(self):
-            """Trim/extend the control's rows and update all values"""
-            self.GetView().BeginBatch()
-            for current, new, delmsg, addmsg in [
-                    (self.GetNumberRows(), self.GetNumberRows(), wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED),
-                    (self.GetNumberCols(), self.GetNumberCols(), wx.grid.GRIDTABLE_NOTIFY_COLS_DELETED, wx.grid.GRIDTABLE_NOTIFY_COLS_APPENDED),
-            ]:
-                    if new < current:
-                            msg = wx.grid.GridTableMessage(
-                                    self,
-                                    delmsg,
-                                    new,    # position
-                                    current-new,
-                            )
-                            self.GetView().ProcessTableMessage(msg)
-                    elif new > current:
-                            msg = wx.grid.GridTableMessage(
-                                    self,
-                                    addmsg,
-                                    new-current
-                            )
-                            self.GetView().ProcessTableMessage(msg)
-            self.UpdateValues()
-            self.GetView().EndBatch()
+        """Trim/extend the control's rows and update all values"""
+        self.GetView().BeginBatch()
+        for current, new, delmsg, addmsg in [
+                (self.currentRows, self.GetNumberRows(), wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED),
+                (self.currentColumns, self.GetNumberCols(), wx.grid.GRIDTABLE_NOTIFY_COLS_DELETED, wx.grid.GRIDTABLE_NOTIFY_COLS_APPENDED),
+        ]:
+                if new < current:
+                        msg = wx.grid.GridTableMessage(
+                                self,
+                                delmsg,
+                                new,    # position
+                                current-new,
+                        )
+                        self.GetView().ProcessTableMessage(msg)
+                elif new > current:
+                        msg = wx.grid.GridTableMessage(
+                                self,
+                                addmsg,
+                                new-current
+                        )
+                        self.GetView().ProcessTableMessage(msg)
+        self.UpdateValues()
+        self.GetView().EndBatch()
 
-            # The scroll bars aren't resized (at least on windows)
-            # Jiggling the size of the window rescales the scrollbars
-            #h,w = grid.GetSize()
-            #grid.SetSize((h+1, w))
-            #grid.SetSize((h, w))
-            #grid.ForceRefresh()
+        # The scroll bars aren't resized (at least on windows)
+        # Jiggling the size of the window rescales the scrollbars
+        #h,w = grid.GetSize()
+        #grid.SetSize((h+1, w))
+        #grid.SetSize((h, w))
+        #grid.ForceRefresh()
 
     def UpdateValues( self ):
             """Update all displayed values"""
@@ -201,11 +203,12 @@ class MyGridTable(wx.grid.PyGridTableBase):
             self.GetView().ProcessTableMessage(msg)
 
 
+
 class FileGrid(wx.grid.Grid):
     def __init__(self, parent, data):
         wx.grid.Grid.__init__(self, parent, wx.ID_ANY)
 
-        table = MyGridTable(data)
+        table = GridDataTable(data)
 
         self.SetTable(table, True)
 
@@ -401,8 +404,8 @@ class ImportWaveformEditDlg(wx.Frame):
                         #self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fsize)
                         matches.append(os.path.join(root, filename))
                         k += 1
-            ipdb.set_trace() ############################## Breakpoint ##############################
-            
+            self.file_grid.GetTable().data = matches
+            self.file_grid.GetTable().ResetView()
             #bar.Destroy()
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
