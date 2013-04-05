@@ -149,6 +149,24 @@ class PreferencesManager:
 
         return values
 
+    def set_value(self, name, value, pagename = None):
+        ''' Set the value of the specified item.
+
+        name : String
+            The name of the preferences item to set.
+
+        value : String
+            The new value of the preferences item.
+
+        pagename : String
+            The name of the page to which the search should be limited.
+        '''
+        found_items = self.get_item(name = name, pagename = pagename)
+        for cur_item in found_items:
+            cur_item.value = value
+
+        return found_items
+
 
 class PreferenceItem:
     ''' A project preferences item.
@@ -300,3 +318,11 @@ class TextEditPrefItem(PreferenceItem):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'textedit', **kwargs)
+
+
+class CustomPrefItem(PreferenceItem):
+    '''
+    '''
+    def __init__(self, name, value, **kwargs):
+        PreferenceItem.__init__(self, name = name, value = value,
+                                mode = 'custom', **kwargs)
