@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -167,6 +168,8 @@ class GridDataTable(wx.grid.PyGridTableBase):
         """Return the value of a cell"""
         if len(self.data) == 0:
             return ''
+        elif len(self.data) < row:
+            return ''
         else:
             return str(self.data[row][col])
 
@@ -201,7 +204,11 @@ class GridDataTable(wx.grid.PyGridTableBase):
                                 new-current
                         )
                         self.GetView().ProcessTableMessage(msg)
+
+
         self.UpdateValues()
+        self.currentRows = self.GetNumberRows()
+        self.currentColumns = self.GetNumberCols()
         self.GetView().EndBatch()
 
         # The scroll bars aren't resized (at least on windows)
@@ -419,6 +426,9 @@ class ImportWaveformEditDlg(wx.Frame):
 
 
     def onAddDirectory(self, event):
+        from obspy.core.util.base import ENTRY_POINTS
+        from pkg_resources import load_entry_point
+
         dlg = wx.DirDialog(self, "Choose a directory:",
                            style=wx.DD_DEFAULT_STYLE
                            | wx.DD_DIR_MUST_EXIST
@@ -452,10 +462,28 @@ class ImportWaveformEditDlg(wx.Frame):
                         #self.fileListCtrl.InsertStringItem(k, '???')
                         #self.fileListCtrl.SetStringItem(k, 1, os.path.join(root, filename))
                         #self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fsize)
-                        matches.append(('???', os.path.join(root, filename), fsize))
+
+                        # Check the file formats.
+                        EPS = ENTRY_POINTS['waveform']
+                        for format_ep in EPS.values():
+                            # search isFormat for given entry point
+                            isFormat = load_entry_point(format_ep.dist.key,
+                                'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
+                                'isFormat')
+                            # check format
+                            if isFormat(os.path.join(root,filename)):
+                                file_format = format_ep.name
+                                break;
+                        else:
+                            file_format = 'unknown'
+
+                        matches.append((file_format, os.path.join(root, filename), fsize))
                         k += 1
 
-            self.file_grid.GetTable().data = matches
+
+
+            matches = [x for x in matches if x not in self.file_grid.GetTable().data]
+            self.file_grid.GetTable().data.extend(matches)
             self.file_grid.GetTable().ResetView()
             #bar.Destroy()
         # Only destroy a dialog after you're done with it.
