@@ -137,17 +137,23 @@ class GridDataTable(wx.grid.PyGridTableBase):
     def __init__(self, data):
         wx.grid.PyGridTableBase.__init__(self)
         self.data = data
+        self.col_labels = ['type', 'filename', 'size']
 
         self.currentRows = self.GetNumberRows()
         self.currentColumns = self.GetNumberCols()
 
     def GetNumberRows(self):
         """Return the number of rows in the grid"""
-        return len(self.data)
+        if len(self.data) == 0:
+            n_rows = 25
+        else:
+            n_rows = len(self.data)
+
+        return n_rows
 
     def GetNumberCols(self):
         """Return the number of columns in the grid"""
-        return 1
+        return 3
 
     def IsEmptyCell(self, row, col):
         """Return True if the cell is empty"""
@@ -159,11 +165,19 @@ class GridDataTable(wx.grid.PyGridTableBase):
 
     def GetValue(self, row, col):
         """Return the value of a cell"""
-        return repr(self.data[row])
+        if len(self.data) == 0:
+            return ''
+        else:
+            return str(self.data[row][col])
 
     def SetValue(self, row, col, value):
         """Set the value of a cell"""
         pass
+
+    def GetColLabelValue(self, col):
+        ''' Get the column label.
+        '''
+        return self.col_labels[col]
 
     def ResetView(self):
         """Trim/extend the control's rows and update all values"""
@@ -192,10 +206,10 @@ class GridDataTable(wx.grid.PyGridTableBase):
 
         # The scroll bars aren't resized (at least on windows)
         # Jiggling the size of the window rescales the scrollbars
-        #h,w = grid.GetSize()
-        #grid.SetSize((h+1, w))
-        #grid.SetSize((h, w))
-        #grid.ForceRefresh()
+        h,w = self.GetView().GetSize()
+        self.GetView().SetSize((h+1, w))
+        self.GetView().SetSize((h, w))
+        self.GetView().ForceRefresh()
 
     def UpdateValues( self ):
             """Update all displayed values"""
@@ -212,6 +226,39 @@ class FileGrid(wx.grid.Grid):
 
         self.SetTable(table, True)
 
+        self.AutoSizeColumns(setAsMin = True)
+        self.SetMinSize((100, 100))
+        #self.SetMaxSize((-1, 600))
+
+
+    def doResize(self, event=None):
+            self.GetParent().Freeze()
+            self.AutoSize()
+            self.GetParent().Layout()
+
+            #the column which will be expanded
+            expandCol = 1
+
+            #calculate the total width of the other columns
+            otherWidths = 0
+            for i in [i for i in range(self.GetNumberCols()) if i != expandCol]:
+                colWidth = self.GetColSize(i)
+                otherWidths += colWidth
+
+            #add the width of the row label column
+            otherWidths += self.RowLabelSize
+
+            descWidth = self.Size[0] - otherWidths
+
+            self.SetColSize(expandCol, descWidth)
+
+            self.GetParent().Layout()
+
+            if event:
+                event.Skip()
+            self.GetParent().Thaw() 
+
+
 
 ## The pSysmon main GUI
 # 
@@ -223,7 +270,7 @@ class ImportWaveformEditDlg(wx.Frame):
     # @param self The Object pointer.
     # @param psyBase The pSysmn base object.
     def __init__(self, collectionNode, psyProject,  parent, id=-1, title='import waveform', 
-                 size=(300,200)):
+                 size=(640,480)):
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY, 
                            title=title, 
                            size=size,
@@ -237,8 +284,9 @@ class ImportWaveformEditDlg(wx.Frame):
         self.psyProject = psyProject
 
         self.initUI()
-
+        self.SetMinSize(self.GetBestSize())
         self.initUserSelections()
+
 
 
     def initUserSelections(self):
@@ -261,48 +309,51 @@ class ImportWaveformEditDlg(wx.Frame):
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5, 5)
+        grid_button_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        cmData = (("add files", self.onAddFiles),
-                 ("add directory", self.onAddDirectory))
+        # Create the grid editing buttons.
+        add_files_button = wx.Button(self, wx.ID_ANY, 'add files')
+        add_dir_button = wx.Button(self, wx.ID_ANY, 'add directory')
+        remove_selected_button = wx.Button(self, wx.ID_ANY, 'remove selected')
+        clear_button = wx.Button(self, wx.ID_ANY, 'clear list')
 
-        # create the context menu.
-        self.contextMenu = psyContextMenu(cmData)
+        # Fill the grid button sizer.
+        grid_button_sizer.Add(add_files_button, 0, wx.EXPAND|wx.ALL)
+        grid_button_sizer.Add(add_dir_button, 0, wx.EXPAND|wx.ALL)
+        grid_button_sizer.Add(remove_selected_button, 0, wx.EXPAND|wx.ALL)
+        grid_button_sizer.Add(clear_button, 0, wx.EXPAND|wx.ALL)
 
-        self.fileListCtrl = FileListCtrl(self, id=wx.ID_ANY,
-                                 style=wx.LC_REPORT 
-                                 | wx.BORDER_NONE
-                                 | wx.LC_EDIT_LABELS
-                                 | wx.LC_SORT_ASCENDING
-                                 )
-        sizer.Add(self.fileListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        #self.fileListCtrl = FileListCtrl(self, id=wx.ID_ANY,
+        #                         style=wx.LC_REPORT 
+        #                         | wx.BORDER_NONE
+        #                         | wx.LC_EDIT_LABELS
+        #                         | wx.LC_SORT_ASCENDING
+        #                         )
+        #sizer.Add(self.fileListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
 
-
-        fields = ('type', 'name', 'size')
         self.file_grid = FileGrid(self, data = [])
-        sizer.Add(self.file_grid, pos =(1,0), flag=wx.EXPAND|wx.ALL, border = 5)
+        sizer.Add(self.file_grid, pos =(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
+
+        sizer.Add(grid_button_sizer, pos=(0,1), flag = wx.EXPAND|wx.ALL, border = 5)
 
         btnSizer = wx.StdDialogButtonSizer()
         btnSizer.AddButton(okButton)
         btnSizer.AddButton(cancelButton)
         btnSizer.Realize()
-        sizer.Add(btnSizer, pos=(2,0), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(btnSizer, pos=(1,0), span = (1,2), flag=wx.EXPAND|wx.ALL, border=5)
         sizer.AddGrowableCol(0)
         sizer.AddGrowableRow(0)
-        sizer.AddGrowableRow(1)
 
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
         self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
-        self.fileListCtrl.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
+        self.Bind(wx.EVT_BUTTON, self.onAddFiles, add_files_button)
+        self.Bind(wx.EVT_BUTTON, self.onAddDirectory, add_dir_button)
+        self.Bind(wx.EVT_BUTTON, self.onClearList, clear_button)
 
+        #self.file_grid.doResize()
 
-    def onShowContextMenu(self, event):
-        print "Showing context menu."
-        pos = event.GetPosition()
-        pos = self.ScreenToClient(pos)
-        self.PopupMenu(self.contextMenu, pos)
-        print "Popup closed"
 
 
     def onOk(self, event):
@@ -396,19 +447,23 @@ class ImportWaveformEditDlg(wx.Frame):
                 for cur_pattern in filter_pattern:
                     for filename in fnmatch.filter(filenames, cur_pattern):
                         self.logger.info('Adding file %s', os.path.join(root, filename))
-                        #fsize = os.path.getsize(os.path.join(root, filename));
-                        fsize = 0
+                        fsize = os.path.getsize(os.path.join(root, filename));
                         fsize = fsize/1024.0
                         #self.fileListCtrl.InsertStringItem(k, '???')
                         #self.fileListCtrl.SetStringItem(k, 1, os.path.join(root, filename))
                         #self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fsize)
-                        matches.append(os.path.join(root, filename))
+                        matches.append(('???', os.path.join(root, filename), fsize))
                         k += 1
+
             self.file_grid.GetTable().data = matches
             self.file_grid.GetTable().ResetView()
             #bar.Destroy()
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
+
+
+    def onClearList(self, event):
+        self.file_grid.doResize()
 
 
     def getWildCardData(self):
