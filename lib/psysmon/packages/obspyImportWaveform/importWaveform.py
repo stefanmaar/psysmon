@@ -40,6 +40,7 @@ from psysmon.core.preferences_manager import CustomPrefItem
 import wx
 import wx.aui
 from obspy.core import read, Trace, Stream
+from operator import itemgetter
 
 
 
@@ -59,7 +60,7 @@ class ImportWaveform(CollectionNode):
         self.pref_manager.add_item(item = pref_item)
         pref_item = CustomPrefItem(name = 'last_dir', value = [])
         self.pref_manager.add_item(item = pref_item)
-        pref_item = CustomPrefItem(name = 'filter_pattern', value = ['*.msd', '.mseed', '*.MSEED'])
+        pref_item = CustomPrefItem(name = 'filter_pattern', value = ['*.msd', '*.mseed', '*.MSEED'])
         self.pref_manager.add_item(item = pref_item)
 
         #self.options = {}
@@ -143,6 +144,14 @@ class GridDataTable(wx.grid.PyGridTableBase):
         self.currentRows = self.GetNumberRows()
         self.currentColumns = self.GetNumberCols()
 
+        self.format_default = wx.grid.GridCellAttr()
+        self.format_not_known = wx.grid.GridCellAttr()
+        self.format_not_known.SetBackgroundColour("firebrick1")
+        self.format_known = wx.grid.GridCellAttr()
+        self.format_known.SetBackgroundColour("springgreen1")
+        self.format_not_checked = wx.grid.GridCellAttr()
+        self.format_not_checked.SetBackgroundColour("grey85")
+
     def GetNumberRows(self):
         """Return the number of rows in the grid"""
         if len(self.data) == 0:
@@ -182,6 +191,30 @@ class GridDataTable(wx.grid.PyGridTableBase):
         '''
         return self.col_labels[col]
 
+    def GetAttr(self, row, col, kind):
+        if len(self.data) == 0 or len(self.data) < row:
+            self.format_default.SetBackgroundColour(self.GetView().GetDefaultCellBackgroundColour())
+            attr = self.format_default
+        elif self.data[row][0] == 'unknown':
+            attr = self.format_not_known
+        elif self.data[row][0] == 'not checked':
+            attr =  self.format_not_checked
+        else:
+            attr =  self.format_known
+
+        attr.SetReadOnly(True)
+        attr.IncRef()
+        return attr
+
+
+    def sortColumn(self, col, reverse = False):
+        """
+        col -> sort the data based on the column indexed by col
+        """
+        self.data = sorted(self.data, key = itemgetter(col), reverse = reverse)
+        self.UpdateValues()
+
+
     def ResetView(self):
         """Trim/extend the control's rows and update all values"""
         self.GetView().BeginBatch()
@@ -218,6 +251,7 @@ class GridDataTable(wx.grid.PyGridTableBase):
         self.GetView().SetSize((h, w))
         self.GetView().ForceRefresh()
 
+
     def UpdateValues( self ):
             """Update all displayed values"""
             msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
@@ -236,6 +270,13 @@ class FileGrid(wx.grid.Grid):
         self.AutoSizeColumns(setAsMin = True)
         self.SetMinSize((100, 100))
         #self.SetMaxSize((-1, 600))
+
+        self.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.onLabelRightClicked)
+
+    def Reset(self):
+        """reset the view based on the data in the table.  Call
+        this when rows are added or destroyed"""
+        self.GetTable().ResetView()
 
 
     def doResize(self, event=None):
@@ -263,8 +304,38 @@ class FileGrid(wx.grid.Grid):
 
             if event:
                 event.Skip()
-            self.GetParent().Thaw() 
+            self.GetParent().Thaw()
 
+
+    def onLabelRightClicked(self, evt):
+        # Did we click on a row or a column?
+        row, col = evt.GetRow(), evt.GetCol()
+        if row == -1: self.colPopup(col, evt)
+        elif col == -1: self.rowPopup(row, evt)
+
+
+    def colPopup(self, col, evt):
+        """(col, evt) -> display a popup menu when a column label is
+        right clicked"""
+        x = self.GetColSize(col)/2
+        menu = wx.Menu()
+
+        xo, yo = evt.GetPosition()
+        self.SelectCol(col)
+        cols = self.GetSelectedCols()
+        self.Refresh()
+        sort_asc_menu = menu.Append(wx.ID_ANY, "sort column asc.")
+        sort_desc_menu = menu.Append(wx.ID_ANY, "sort column desc.")
+
+        def sort(event, reverse, self=self, col=col):
+            self.GetTable().sortColumn(col, reverse = reverse)
+            self.Reset()
+
+        self.Bind(wx.EVT_MENU, lambda event: sort(event, reverse=False), sort_asc_menu)
+        self.Bind(wx.EVT_MENU, lambda event: sort(event, reverse=True), sort_desc_menu)
+
+        self.PopupMenu(menu)
+        menu.Destroy()
 
 
 ## The pSysmon main GUI
@@ -289,6 +360,7 @@ class ImportWaveformEditDlg(wx.Frame):
 
         self.collectionNode = collectionNode
         self.psyProject = psyProject
+        self.check_file_format = True
 
         self.initUI()
         self.SetMinSize(self.GetBestSize())
@@ -297,15 +369,18 @@ class ImportWaveformEditDlg(wx.Frame):
 
 
     def initUserSelections(self):
-        if self.collectionNode.pref_manager.get_value('input_files'):
-            print "Set the list to the previously selected files."
+        filter_pattern = self.collectionNode.pref_manager.get_value('filter_pattern')
+        self.filter_pattern_text.SetValue(','.join(filter_pattern))
 
-            for k, curFile in enumerate(self.collectionNode.pref_manager.get_value('input_files')):
-                fSize = os.path.getsize(curFile['filename']);
-                fSize = fSize/1024.0
-                self.fileListCtrl.InsertStringItem(k, curFile['format'])
-                self.fileListCtrl.SetStringItem(k, 1, curFile['filename'])
-                self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fSize)
+        if self.collectionNode.pref_manager.get_value('input_files'):
+            self.file_grid.GetTable().data = self.collectionNode.pref_manager.get_value('input_files')
+            self.file_grid.GetTable().ResetView()
+            #for k, curFile in enumerate(self.collectionNode.pref_manager.get_value('input_files')):
+            #    fSize = os.path.getsize(curFile['filename']);
+            #    fSize = fSize/1024.0
+            #    self.fileListCtrl.InsertStringItem(k, curFile['format'])
+            #    self.fileListCtrl.SetStringItem(k, 1, curFile['filename'])
+            #    self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fSize)
 
 
     def initUI(self):
@@ -321,22 +396,19 @@ class ImportWaveformEditDlg(wx.Frame):
         # Create the grid editing buttons.
         add_files_button = wx.Button(self, wx.ID_ANY, 'add files')
         add_dir_button = wx.Button(self, wx.ID_ANY, 'add directory')
+        self.filter_pattern_text =wx.TextCtrl(self, wx.ID_ANY, '*')
+        file_format_checkbox = wx.CheckBox(self, -1, "check file format")#, (65, 40), (150, 20), wx.NO_BORDER)
+        file_format_checkbox.SetValue(self.check_file_format)
         remove_selected_button = wx.Button(self, wx.ID_ANY, 'remove selected')
         clear_button = wx.Button(self, wx.ID_ANY, 'clear list')
 
         # Fill the grid button sizer.
         grid_button_sizer.Add(add_files_button, 0, wx.EXPAND|wx.ALL)
         grid_button_sizer.Add(add_dir_button, 0, wx.EXPAND|wx.ALL)
+        grid_button_sizer.Add(self.filter_pattern_text, 0, wx.EXPAND|wx.ALL)
+        grid_button_sizer.Add(file_format_checkbox, 0, wx.EXPAND|wx.BOTTOM, border = 20)
         grid_button_sizer.Add(remove_selected_button, 0, wx.EXPAND|wx.ALL)
         grid_button_sizer.Add(clear_button, 0, wx.EXPAND|wx.ALL)
-
-        #self.fileListCtrl = FileListCtrl(self, id=wx.ID_ANY,
-        #                         style=wx.LC_REPORT 
-        #                         | wx.BORDER_NONE
-        #                         | wx.LC_EDIT_LABELS
-        #                         | wx.LC_SORT_ASCENDING
-        #                         )
-        #sizer.Add(self.fileListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
 
         self.file_grid = FileGrid(self, data = [])
         sizer.Add(self.file_grid, pos =(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
@@ -358,19 +430,15 @@ class ImportWaveformEditDlg(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onAddFiles, add_files_button)
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, add_dir_button)
         self.Bind(wx.EVT_BUTTON, self.onClearList, clear_button)
+        self.Bind(wx.EVT_CHECKBOX, self.onFileFormatCheck, file_format_checkbox)
+        self.Bind(wx.EVT_TEXT, self.onFilterPatternText, self.filter_pattern_text)
 
         #self.file_grid.doResize()
 
 
 
     def onOk(self, event):
-        inputFiles = []
-        for idx in range(self.fileListCtrl.GetItemCount()):
-            format = self.fileListCtrl.GetItem(idx, 0).GetText()
-            name = self.fileListCtrl.GetItem(idx, 1).GetText()
-            inputFiles.append({'format':format, 'filename':name})
-
-        self.collectionNode.pref_manager.set_value('input_files', inputFiles)
+        self.collectionNode.pref_manager.set_value('input_files', self.file_grid.GetTable().data)
         self.Destroy()
 
 
@@ -463,20 +531,25 @@ class ImportWaveformEditDlg(wx.Frame):
                         #self.fileListCtrl.SetStringItem(k, 1, os.path.join(root, filename))
                         #self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fsize)
 
-                        # Check the file formats.
-                        EPS = ENTRY_POINTS['waveform']
-                        for format_ep in EPS.values():
-                            # search isFormat for given entry point
-                            isFormat = load_entry_point(format_ep.dist.key,
-                                'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
-                                'isFormat')
-                            # check format
-                            if isFormat(os.path.join(root,filename)):
-                                file_format = format_ep.name
-                                break;
+                        if self.check_file_format is True:
+                            # Check the file formats.
+                            EPS = ENTRY_POINTS['waveform']
+                            for format_ep in [x for (key, x) in EPS.items() if key == 'MSEED']:
+                                # search isFormat for given entry point
+                                isFormat = load_entry_point(format_ep.dist.key,
+                                    'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
+                                    'isFormat')
+                                # check format
+                                self.logger.debug('Checking format with %s.', isFormat)
+                                if isFormat(os.path.join(root,filename)):
+                                    file_format = format_ep.name
+                                    break;
+                            else:
+                                file_format = 'unknown'
                         else:
-                            file_format = 'unknown'
+                            file_format = 'not checked'
 
+                        self.logger.debug('adding to matches')
                         matches.append((file_format, os.path.join(root, filename), fsize))
                         k += 1
 
@@ -488,10 +561,19 @@ class ImportWaveformEditDlg(wx.Frame):
             #bar.Destroy()
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
+        self.logger.debug('Exiting the onAddDirectory.')
 
 
     def onClearList(self, event):
         self.file_grid.doResize()
+
+    def onFileFormatCheck(self, event):
+        cb = event.GetEventObject()
+        self.check_file_format = cb.IsChecked()
+
+    def onFilterPatternText(self, event):
+        text = event.GetString()
+        self.collectionNode.pref_manager.set_value('filter_pattern', text.split(','))
 
 
     def getWildCardData(self):
