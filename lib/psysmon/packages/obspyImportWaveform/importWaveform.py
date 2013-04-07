@@ -448,6 +448,9 @@ class ImportWaveformEditDlg(wx.Frame):
 
 
     def onAddFiles(self, event):
+        from obspy.core.util.base import ENTRY_POINTS
+        from pkg_resources import load_entry_point
+
         wildCards = self.getWildCardData()
 
         wildCard = ""
@@ -462,7 +465,7 @@ class ImportWaveformEditDlg(wx.Frame):
             defaultDir=os.getcwd(), 
             defaultFile="",
             wildcard=wildCard,
-            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            style=wx.OPEN | wx.MULTIPLE
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -472,23 +475,37 @@ class ImportWaveformEditDlg(wx.Frame):
         if result == wx.ID_OK:
             # This returns a Python list of files that were selected.
             paths = dlg.GetPaths()
-            filterIndex= dlg.GetFilterIndex()
+            matches = []
 
-            keys = sorted(wildCards.keys())
+            for filename in paths:
+                self.logger.info('Adding file %s', filename)
+                fsize = os.path.getsize(filename);
+                fsize = fsize/1024.0
 
-            if(filterIndex < len(keys)):
-                fileFormat = keys[filterIndex]
-            else:
-                fileFormat = '???'
+                if self.check_file_format is True:
+                    # Check the file formats.
+                    EPS = ENTRY_POINTS['waveform']
+                    for format_ep in [x for (key, x) in EPS.items() if key == 'MSEED']:
+                        # search isFormat for given entry point
+                        isFormat = load_entry_point(format_ep.dist.key,
+                            'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
+                            'isFormat')
+                        # check format
+                        self.logger.debug('Checking format with %s.', isFormat)
+                        if isFormat(filename):
+                            file_format = format_ep.name
+                            break;
+                    else:
+                        file_format = 'unknown'
+                else:
+                    file_format = 'not checked'
 
-            index = 0
-            for curPath in paths:
-                fSize = os.path.getsize(curPath);
-                fSize = fSize/1024.0
-                self.fileListCtrl.InsertStringItem(index, fileFormat)
-                self.fileListCtrl.SetStringItem(index, 1, curPath)
-                self.fileListCtrl.SetStringItem(index, 2, "%.2f" % fSize)
-                index += 1
+                self.logger.debug('adding to matches')
+                matches.append((file_format, filename, fsize))
+
+            matches = [x for x in matches if x not in self.file_grid.GetTable().data]
+            self.file_grid.GetTable().data.extend(matches)
+            self.file_grid.GetTable().ResetView()
 
         dlg.Destroy()
 
@@ -578,7 +595,7 @@ class ImportWaveformEditDlg(wx.Frame):
 
     def getWildCardData(self):
         return {'mseed': 'miniSeed (*.msd; *.mseed)|*.msd;*.mseed| ', 
-                'gse2': 'gse2 (*.gse; *.gse2)|*.gse; *.gse2| ',
+                'gse2': 'gse2 (*.gse; *.gse2)|*.gse; *.gse2| '
                 }
 
 
