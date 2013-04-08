@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -25,7 +24,7 @@ The importWaveform module.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 
+    GNU General Public License, Version 3
     http://www.gnu.org/licenses/gpl-3.0.html
 
 This module contains the classes of the importWaveform dialog window.
@@ -155,7 +154,7 @@ class GridDataTable(wx.grid.PyGridTableBase):
     def GetNumberRows(self):
         """Return the number of rows in the grid"""
         if len(self.data) == 0:
-            n_rows = 25
+            n_rows = 1
         else:
             n_rows = len(self.data)
 
@@ -271,12 +270,30 @@ class FileGrid(wx.grid.Grid):
         self.SetMinSize((100, 100))
         #self.SetMaxSize((-1, 600))
 
+        self.last_selected_row = None
+
         self.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.onLabelRightClicked)
+        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onCellLeftClicked)
 
     def Reset(self):
         """reset the view based on the data in the table.  Call
         this when rows are added or destroyed"""
         self.GetTable().ResetView()
+
+    def removeRows(self, rows):
+        ''' Remove the rows specified by the indexes in rows.
+        '''
+        for k in rows:
+            self.GetTable().data.pop(k)
+
+        self.Reset()
+
+
+    def clear(self):
+        ''' Clear the data from the table.
+        '''
+        self.GetTable().data = []
+        self.Reset()
 
 
     def doResize(self, event=None):
@@ -312,6 +329,28 @@ class FileGrid(wx.grid.Grid):
         row, col = evt.GetRow(), evt.GetCol()
         if row == -1: self.colPopup(col, evt)
         elif col == -1: self.rowPopup(row, evt)
+
+
+    def onCellLeftClicked(self, evt):
+        if evt.ShiftDown() == True:
+            if evt.ControlDown() == False:
+                self.ClearSelection()
+
+            selected_row = evt.GetRow()
+            if selected_row >= self.last_selected_row:
+                for k in range(self.last_selected_row, selected_row + 1):
+                    self.SelectRow(k, addToSelected = True)
+            else:
+                for k in range(selected_row, self.last_selected_row + 1):
+                    self.SelectRow(k, addToSelected = True)
+
+        else:
+            if evt.ControlDown() == True:
+                add_to_selection = True
+            else:
+                add_to_selection = False
+            self.SelectRow(evt.GetRow(), addToSelected = add_to_selection)
+            self.last_selected_row = evt.GetRow()
 
 
     def colPopup(self, col, evt):
@@ -429,6 +468,7 @@ class ImportWaveformEditDlg(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
         self.Bind(wx.EVT_BUTTON, self.onAddFiles, add_files_button)
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, add_dir_button)
+        self.Bind(wx.EVT_BUTTON, self.onRemoveSelected, remove_selected_button)
         self.Bind(wx.EVT_BUTTON, self.onClearList, clear_button)
         self.Bind(wx.EVT_CHECKBOX, self.onFileFormatCheck, file_format_checkbox)
         self.Bind(wx.EVT_TEXT, self.onFilterPatternText, self.filter_pattern_text)
@@ -480,7 +520,7 @@ class ImportWaveformEditDlg(wx.Frame):
             for filename in paths:
                 self.logger.info('Adding file %s', filename)
                 fsize = os.path.getsize(filename);
-                fsize = fsize/1024.0
+                fsize = fsize/(1024.0*1024.0)           # Convert to MB
 
                 if self.check_file_format is True:
                     # Check the file formats.
@@ -501,7 +541,7 @@ class ImportWaveformEditDlg(wx.Frame):
                     file_format = 'not checked'
 
                 self.logger.debug('adding to matches')
-                matches.append((file_format, filename, fsize))
+                matches.append((file_format, filename, '%.2f' % fsize))
 
             matches = [x for x in matches if x not in self.file_grid.GetTable().data]
             self.file_grid.GetTable().data.extend(matches)
@@ -543,10 +583,7 @@ class ImportWaveformEditDlg(wx.Frame):
                     for filename in fnmatch.filter(filenames, cur_pattern):
                         self.logger.info('Adding file %s', os.path.join(root, filename))
                         fsize = os.path.getsize(os.path.join(root, filename));
-                        fsize = fsize/1024.0
-                        #self.fileListCtrl.InsertStringItem(k, '???')
-                        #self.fileListCtrl.SetStringItem(k, 1, os.path.join(root, filename))
-                        #self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fsize)
+                        fsize = fsize/(1024.0 * 1024.0)
 
                         if self.check_file_format is True:
                             # Check the file formats.
@@ -567,7 +604,7 @@ class ImportWaveformEditDlg(wx.Frame):
                             file_format = 'not checked'
 
                         self.logger.debug('adding to matches')
-                        matches.append((file_format, os.path.join(root, filename), fsize))
+                        matches.append((file_format, os.path.join(root, filename), '%.2f' % fsize))
                         k += 1
 
 
@@ -576,13 +613,20 @@ class ImportWaveformEditDlg(wx.Frame):
             self.file_grid.GetTable().data.extend(matches)
             self.file_grid.GetTable().ResetView()
             #bar.Destroy()
+
+        self.file_grid.doResize()
+
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
         self.logger.debug('Exiting the onAddDirectory.')
 
+    def onRemoveSelected(self, event):
+        self.logger.debug('Selected rows: %s', self.file_grid.GetSelectedRows())
+        self.file_grid.removeRows(self.file_grid.GetSelectedRows())
+
 
     def onClearList(self, event):
-        self.file_grid.doResize()
+        self.file_grid.clear()
 
     def onFileFormatCheck(self, event):
         cb = event.GetEventObject()
