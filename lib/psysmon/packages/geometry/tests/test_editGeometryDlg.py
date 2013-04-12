@@ -21,6 +21,11 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
+        # Configure the logger.
+        cls.logger = logging.getLogger('psysmon')
+        cls.logger.setLevel('DEBUG')
+        cls.logger.addHandler(psysmon.getLoggerHandler())
+
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
         print "In setUpClass...\n"
@@ -38,11 +43,6 @@ class EditGeometryDlgTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        # Configure the logger.
-        logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
-        logger.addHandler(psysmon.getLoggerHandler())
-
         self.app =psygui.PSysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('edit geometry')
