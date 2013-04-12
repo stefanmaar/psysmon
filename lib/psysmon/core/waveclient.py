@@ -30,6 +30,7 @@ Module for providing the waveform data from various sources.
 
 import logging
 import os
+import threading
 from obspy.core import read, Stream
 from obspy.earthworm import Client
 
@@ -76,6 +77,13 @@ class WaveClient:
         # currently displayed time period and the preloaded data in
         # front and behind the time period.
         self.stock = Stream()
+
+
+        # The threading lock object for the stock stream.
+        self.stock_lock = threading.Lock()
+
+        # The threads used for preloading data.
+        self.preload_threads = []
 
 
     def get_from_stock(self, network, station, location, channel, start_time, end_time):
@@ -125,8 +133,10 @@ class WaveClient:
         ''' Add the passed stream to the stock data.
 
         '''
+        self.stock_lock.acquire()
         self.stock += stream
         self.stock.merge(stream)
+        self.stock_lock.release()
 
 
 
@@ -165,6 +175,27 @@ class WaveClient:
             The requested waveform data. All traces are packed into one stream.
         '''
         assert False, 'getWaveform must be defined'
+
+
+class PreloadThread(threading.Thread):
+    ''' The waveclient preload thread.
+
+    This thread is used to preload the data of a waveclient.
+    '''
+
+    def __init__(self, start_time, end_time, scnl, group=None, target=None, name=None, verbose=None):
+        threading.Thread.__init__(self, group=group, target=target, name=name,
+                                  verbose=verbose)
+        self.start_time = start_time
+
+        self.end_time = end_time
+
+        self.scnl = scnl
+
+        self.target = target
+
+    def run(self):
+        self.target(self.start_time, self.end_time, self.scnl)
 
 
 class PsysmonDbWaveClient(WaveClient):
@@ -428,23 +459,14 @@ class EarthwormWaveclient(WaveClient):
 
         Parameters
         ----------
-        network : String
-            The network name.
-
-        station : String
-            The station name.
-
-        location : String
-            The location specifier.
-
-        channel : String
-            The channel name.
-
         startTime : UTCDateTime
             The begin datetime of the data to fetch.
 
         endTime : UTCDateTime
             The end datetime of the data to fetch.
+
+        scnl : List of tuples
+            The SCNL codes of the data to request.
 
 
         Returns
@@ -514,6 +536,7 @@ class EarthwormWaveclient(WaveClient):
         return stream
 
 
+
     def request_from_server(self, station, network, channel, location, start_time, end_time):
 
         stream = Stream()
@@ -528,9 +551,32 @@ class EarthwormWaveclient(WaveClient):
                                              end_time)
             self.logger.debug('got waveform: %s', stream)
             self.logger.debug('leave try')
-        except:
-            self.logger.debug("Error connecting to waveserver.")
+        except Exception as e:
+            self.logger.exception("Error connecting to waveserver: %s", e)
 
         return stream
+
+
+
+    def preload(self, start_time, end_time, scnl):
+        ''' Preload the data for the given timespan and the scnl.
+
+        Preloading is done as a thread.
+        '''
+        t = PreloadThread(name = 'daemon',
+                          start_time = start_time,
+                          end_time = end_time,
+                          scnl = scnl,
+                          target = self.getWaveform
+                         )
+        t.setDaemon(True)
+        t.start()
+        self.preload_threads.append(t)
+        return t
+
+
+
+
+
 
 
