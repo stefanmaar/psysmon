@@ -4,7 +4,7 @@ import ipdb
 # This file is part of pSysmon.
 #
 # If you use pSysmon in any program or publication, please inform and
-# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+# acknowledge its author Stefan Mertl (stefan@mertl-research.at).
 #
 # pSysmon is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
