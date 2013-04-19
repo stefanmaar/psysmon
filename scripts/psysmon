@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-
-# License
-#     This file is part of Seismon.
+# LICENSE
 #
-#     If you use Seismon in any program or publication, please inform and
-#     acknowledge its author Stefan Mertl (info@stefanmertl.com). 
-# 
-#     Seismon is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-# 
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-# 
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This file is part of pSysmon.
+#
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+#
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 The pSysmon main program.
 
@@ -38,20 +38,13 @@ Examples
     where the file pSysmon.py is located and type the following command in your 
     linux shell or your window command prompt:
 
-    >>> pSysmon.py
+    >>> psysmon
 
     or
 
-    >>> python pSysmon.py
-
-**Starting from a python shell**
-
-    To start psysmon from a python shell (e.g. ipython) use the following 
-    commands:
-
-        >>> import psysmon.pSysmon as psysmon
-        >>> psysmon.run()
+    >>> python psysmon
 '''
+
 import psysmon
 import psysmon.core.gui as psygui
 import psysmon.core.base as psybase
