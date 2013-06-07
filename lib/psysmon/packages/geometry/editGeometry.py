@@ -1095,8 +1095,8 @@ class MapViewPanel(wx.Panel):
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks:
-            lonLat.extend([stat.getLonLat() for stat in curNet.stations.itervalues()])
-            self.stations.extend([stat for stat in curNet.stations.itervalues()])
+            lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
+            self.stations.extend([stat for stat in curNet.stations])
 
         lonLatMin = np.min(lonLat, 0)
         lonLatMax = np.max(lonLat, 0)
