@@ -1114,7 +1114,9 @@ class MapViewPanel(wx.Panel):
         self.mapConfig['ellips'] = 'wgs84'
         self.mapConfig['lon_0'] = zone2UtmCentralMeridian(self.mapConfig['utmZone'])
         self.mapConfig['lat_0'] = 0
-        self.mapConfig['limits'] = np.hstack([np.floor(lonLatMin), np.ceil(lonLatMax)]) 
+        #self.mapConfig['limits'] = np.hstack([np.floor(lonLatMin), np.ceil(lonLatMax)]) 
+        map_extent = lonLatMax - lonLatMin
+        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent / 10., lonLatMax + map_extent / 10.]) 
         #self.mapConfig['lon_0'] = np.mean([lonLatMin[0], lonLatMax[0]])
         #self.mapConfig['lat_0'] = np.mean([lonLatMin[1], lonLatMax[1]])
 
@@ -1132,7 +1134,7 @@ class MapViewPanel(wx.Panel):
                            urcrnrlon = self.mapConfig['limits'][2],
                            urcrnrlat = self.mapConfig['limits'][3],
                            resolution='h',
-                           ax=self.mapAx, 
+                           ax=self.mapAx,
                            suppress_ticks=True)
 
         self.logger.debug('proj4string: %s', self.map.proj4string)
@@ -1140,7 +1142,14 @@ class MapViewPanel(wx.Panel):
         self.map.drawcountries()
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
-        #self.map.etopo()
+        try:
+            self.map.etopo()
+        except Exception as e:
+            self.logger.exception("Can't plot etopo:\n%s", e)
+            try:
+                self.map.bluemarble()
+            except Exception as e:
+                self.logger.exception("Can't plot bluemarble:\n%s", e)
 
         # Plot the stations.
         x,y = self.map(lon, lat)
