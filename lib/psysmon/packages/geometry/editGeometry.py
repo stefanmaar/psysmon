@@ -977,12 +977,22 @@ class InventoryViewNotebook(wx.Notebook):
         Initialize the map view panel with the selected inventory.
         '''
         self.logger.debug("Initializing the mapview")
-        #t = Thread(target = self.mapViewPanel.initMap, args = (inventory, ))
-        #t.setDaemon(True)
-        #t.start()
+
+        def init_map(panel, cur_inventory):
+            panel.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+            panel.mapViewPanel.initMap(cur_inventory)
+            panel.inventory = cur_inventory
+            panel.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+
         if inventory != self.inventory:
+            #t = Thread(target = init_map, args = (self, inventory))
+            #t.setDaemon(True)
+            #t.start()
+
+            wx.BeginBusyCursor()
             self.mapViewPanel.initMap(inventory)
             self.inventory = inventory
+            wx.EndBusyCursor()
 
     def onPageChanged(self, event):
         if event.GetSelection() == 1:
