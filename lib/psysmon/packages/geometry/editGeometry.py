@@ -1131,8 +1131,13 @@ class MapViewPanel(wx.Panel):
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
         #self.map.etopo()
+
+        # Plot the stations.
         x,y = self.map(lon, lat)
         self.map.scatter(x, y, s=100, marker='^', color='r', picker=5)
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.name)
+
         self.map.drawmapboundary()
         #self.map.ax.grid()
         self.map.drawparallels(np.arange(self.mapConfig['limits'][1], self.mapConfig['limits'][3], 0.5),
