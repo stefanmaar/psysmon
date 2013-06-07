@@ -699,9 +699,9 @@ class InventoryXmlParser:
             if not missing_keys and not missing_attrib:
                 station2Add = Station(name=cur_station.attrib['code'],
                                       location=station_content['location'],
-                                      x=station_content['xcoord'],
-                                      y=station_content['ycoord'],
-                                      z=station_content['elevation'],
+                                      x=float(station_content['xcoord']),
+                                      y=float(station_content['ycoord']),
+                                      z=float(station_content['elevation']),
                                       coord_system=station_content['coord_system'],
                                       description=station_content['description'],
                                       network=network.name 
@@ -1339,7 +1339,7 @@ class Station:
         # z pointing upwards.@n 
         # Depending on the coordinate system used x and y can also represent 
         # longitude and latitude.
-        self.x = x
+        self.x = float(x)
 
         ## The y coordinate of the station location.
         #
@@ -1348,7 +1348,7 @@ class Station:
         # z pointing upwards.@n 
         # Depending on the coordinate system used x and y can also represent 
         # longitude and latitude.
-        self.y = y
+        self.y = float(y)
 
         ## The z coordinate of the station location.
         #
@@ -1357,7 +1357,7 @@ class Station:
         # z pointing upwards.@n 
         # Depending on the coordinate system used x and y can also represent 
         # longitude and latitude.
-        self.z = z
+        self.z = float(z)
 
         ## The coordinate system in which the x/y coordinates are given.
         # 
