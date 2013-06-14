@@ -237,6 +237,7 @@ class EditGeometryDlg(wx.Frame):
     def menuData(self):
         return (("File",
                  ("Import from XML", "Import inventory from XML file.", self.onImportFromXml),
+                 ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml),
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
@@ -244,8 +245,7 @@ class EditGeometryDlg(wx.Frame):
                  ("Add station", "Add a station to the selected inventory.", self.onAddStation),
                  ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
                  ("", "", ""),
-                 ("Save to database", "Save the selected inventory to database.", self.onSave2Db),
-                 ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml)),
+                 ("Write to database", "Write the selected inventory to database.", self.onSave2Db)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
                )
@@ -533,6 +533,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         # Setup the context menu.
         cmData = (("add", self.onAddElement),
                   ("remove", self.onRemoveElement),
+                  ("separator", None),
+                  ("expand", self.on_expand_element),
                   ("collapse", self.on_collapse_element))
 
         # create the context menu.
@@ -662,6 +664,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         '''
         self.CollapseAllChildren(self.selected_tree_item_id)
 
+
+    def on_expand_element(self, event):
+        ''' Expand the selected element.
+        '''
+        self.ExpandAllChildren(self.selected_tree_item_id)
 
 
     def on_assign_sensor_2_station(self, event):
