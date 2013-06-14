@@ -37,7 +37,7 @@ from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
-from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
+import psysmon.packages.geometry.util as geom_util
 from psysmon.artwork.icons import iconsBlack16 as icons
 import wx.aui
 import wx.grid
@@ -48,7 +48,9 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 from wx.lib.pubsub import Publisher as pub
 import numpy as np
-from mpl_toolkits.basemap import Basemap 
+from mpl_toolkits.basemap import pyproj
+from mpl_toolkits.basemap import Basemap
+from matplotlib.patches import Polygon
 from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Recorder
@@ -1082,6 +1084,7 @@ class MapViewPanel(wx.Panel):
 
         self.mapFigure = Figure((8,4), dpi=75, facecolor='white')
         self.mapAx = self.mapFigure.add_subplot(111)
+        self.mapAx.set_aspect('equal')
         self.mapCanvas = FigureCanvas(self, -1, self.mapFigure)
 
         self.sizer.Add(self.mapCanvas, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
@@ -1090,9 +1093,66 @@ class MapViewPanel(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
 
-
-
     def initMap(self, inventory):
+        '''
+        Initialize the map parameters.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        '''
+        self.mapConfig = {}
+        self.stations = []
+
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        for curNet in inventory.networks:
+            lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
+            self.stations.extend([stat for stat in curNet.stations])
+
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0)
+        self.mapConfig['utmZone'] = geom_util.lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        self.mapConfig['ellips'] = 'wgs84'
+        self.mapConfig['lon_0'] = geom_util.zone2UtmCentralMeridian(self.mapConfig['utmZone'])
+        self.mapConfig['lat_0'] = 0
+        if np.mean([lonLatMin[1], lonLatMax[1]]) >= 0:
+            self.mapConfig['hemisphere'] = 'north'
+        else:
+            self.mapConfig['hemisphere'] = 'south'
+
+        map_extent = lonLatMax - lonLatMin
+        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent * 0.1, lonLatMax + map_extent * 0.1]) 
+
+        lon = [x[0] for x in lonLat]
+        lat = [x[1] for x in lonLat]
+
+        # Get the epsg code of the UTM projection.
+        search_dict = {'projection': 'utm', 'ellps': self.mapConfig['ellips'].upper(), 'zone': self.mapConfig['utmZone'], 'no_defs': True, 'units': 'm'}
+        if self.mapConfig['hemisphere'] == 'south':
+            search_dict['south'] = True
+
+        epsg_dict = geom_util.get_epsg_dict()
+        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+
+        # Setup the pyproj projection.projection
+        #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
+        proj = pyproj.Proj(init = 'epsg:'+code[0][0])
+
+        # Plot the stations.
+        x,y = proj(lon, lat)
+        self.mapAx.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.name)
+
+
+        # Add some map annotation.
+        self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
+            ha = 'right', transform = self.mapAx.transAxes)
+
+        self.mapCanvas.mpl_connect('pick_event', self.onPick)
+
+
+    def initMapBasemap(self, inventory):
         '''
         Initialize the map parameters.
 
@@ -1116,7 +1176,7 @@ class MapViewPanel(wx.Panel):
         self.mapConfig['lat_0'] = 0
         #self.mapConfig['limits'] = np.hstack([np.floor(lonLatMin), np.ceil(lonLatMax)]) 
         map_extent = lonLatMax - lonLatMin
-        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent / 10., lonLatMax + map_extent / 10.]) 
+        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent * 0.1, lonLatMax + map_extent * 0.1]) 
         #self.mapConfig['lon_0'] = np.mean([lonLatMin[0], lonLatMax[0]])
         #self.mapConfig['lat_0'] = np.mean([lonLatMin[1], lonLatMax[1]])
 
@@ -1133,17 +1193,35 @@ class MapViewPanel(wx.Panel):
                            llcrnrlat = self.mapConfig['limits'][1],
                            urcrnrlon = self.mapConfig['limits'][2],
                            urcrnrlat = self.mapConfig['limits'][3],
-                           resolution='h',
+                           resolution='i',
                            ax=self.mapAx,
                            suppress_ticks=True)
 
         self.logger.debug('proj4string: %s', self.map.proj4string)
 
-        self.map.drawcountries()
+        self.map.drawcountries(color = 'k')
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
+
+        #s_river = self.map.readshapefile('/home/stefan/01_gtd/04_aktuelleProjekte/2012-0007_pSysmon/01_src/psysmon/lib/psysmon/packages/geometry/data/naturalearth/10m_physical/ne_10m_rivers_lake_centerlines', 'rivers', drawbounds = False)
+
+
+        #for k, cur_river in enumerate(self.map.rivers):
+        #    xx, yy = zip(*cur_river)
+        #    if (max(xx) == 1e30 or max(yy) == 1e30):
+        #        continue
+        #    if (((min(xx) >= self.map.xmin and min(xx) <= self.map.xmax) or 
+        #        (max(xx) >= self.map.xmin and max(xx) <= self.map.xmax) or
+        #        (min(xx) <= self.map.xmin and max(xx) >= self.map.xmax)) and
+        #        ((min(yy) >= self.map.ymin and min(yy) <= self.map.ymax) or
+        #        (max(yy) >= self.map.ymin and max(yy) <= self.map.ymax) or
+        #        (min(yy) <= self.map.ymin and max(yy) >= self.map.ymax))):
+        #        print "plotting river %d" % k
+        #        self.map.plot(xx, yy, color = 'b', zorder = 2)
+
         try:
-            self.map.etopo()
+            pass
+            #self.map.etopo()
         except Exception as e:
             self.logger.exception("Can't plot etopo:\n%s", e)
             try:
@@ -1153,7 +1231,7 @@ class MapViewPanel(wx.Panel):
 
         # Plot the stations.
         x,y = self.map(lon, lat)
-        self.map.scatter(x, y, s=100, marker='^', color='r', picker=5)
+        self.map.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
         for cur_station, cur_x, cur_y in zip(self.stations, x, y):
             self.mapAx.text(cur_x, cur_y, cur_station.name)
 
