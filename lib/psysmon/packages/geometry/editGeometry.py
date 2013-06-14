@@ -532,7 +532,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         # Setup the context menu.
         cmData = (("add", self.onAddElement),
-                  ("remove", self.onRemoveElement))
+                  ("remove", self.onRemoveElement),
+                  ("collapse", self.on_collapse_element))
 
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
@@ -622,6 +623,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         pos = evt.GetPosition()
         pos = self.ScreenToClient(pos)
+        self.selected_tree_item_id = self.HitTest(pos)[0]
         self.PopupMenu(self.contextMenu, pos)
 
 
@@ -653,6 +655,13 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         ''' Handle the context menu remove click.
         '''
         pass
+
+
+    def on_collapse_element(self, event):
+        ''' Collapse the selected element.
+        '''
+        self.CollapseAllChildren(self.selected_tree_item_id)
+
 
 
     def on_assign_sensor_2_station(self, event):
@@ -917,8 +926,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                         self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
 
-        self.ExpandAll()
-
+            self.Expand(inventoryItem)
 
 
 class InventoryViewNotebook(wx.Notebook):
