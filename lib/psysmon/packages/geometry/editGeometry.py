@@ -1111,6 +1111,9 @@ class MapViewPropertiesPanel(wx.Panel):
         self.sizer = wx.GridBagSizer(5, 5)
 
         self.sizer.Add(self.pref_panel, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
+        self.sizer.AddGrowableRow(0)
+        self.sizer.AddGrowableCol(0)
+
 
         self.SetSizerAndFit(self.sizer)
 
