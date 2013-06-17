@@ -178,7 +178,7 @@ class PrefPagePanel(wx.Panel):
             for cur_item in groupitems:
                 guiclass = cur_item.guiclass
                 if guiclass is not None:
-                    gui_element = guiclass(name = cur_item.name,
+                    gui_element = guiclass(name = cur_item.label,
                                            pref_item = cur_item,
                                            size = (100, 10),
                                            parent = cur_container 
