@@ -957,8 +957,13 @@ class InventoryViewNotebook(wx.Notebook):
         #win = self.makePanel()
         #self.AddPage(win, "map view")
 
-        self.mapViewPanel = MapViewPanel(self)
-        self.AddPage(self.mapViewPanel, "map view")
+        self.mapViewSplitter = MapViewSplitter(self)
+        self.mapViewPanel = MapViewPanel(self.mapViewSplitter)
+        self.mapViewPropertiesPanel = MapViewPropertiesPanel(self.mapViewSplitter)
+        self.mapViewSplitter.SetMinimumPaneSize(200)
+        self.mapViewSplitter.SetSashGravity(1.)
+        self.mapViewSplitter.SplitVertically(self.mapViewPanel, self.mapViewPropertiesPanel, -200)
+        self.AddPage(self.mapViewSplitter, "map view")
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onPageChanged)
 
@@ -1051,7 +1056,7 @@ class ListViewPanel(wx.Panel):
 
 
 
-    def showControlPanel(self, name, data):   
+    def showControlPanel(self, name, data):
 
         activePanel = self.sizer.FindItemAtPosition((0,0))
         activePanel.GetWindow().Hide()
@@ -1062,6 +1067,43 @@ class ListViewPanel(wx.Panel):
         self.controlPanels[name].Show()
         self.sizer.Add(self.controlPanels[name], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
         self.sizer.Layout()
+
+
+
+class MapViewSplitter(wx.SplitterWindow):
+    ''' A splitter window used to separate the MapViewPanel and the MapViewPropertiesPanel.
+
+    '''
+    def __init__(self, parent, id = wx.ID_ANY):
+        wx.SplitterWindow.__init__(self, parent, id,
+                                   style = wx.SP_LIVE_UPDATE
+                                   )
+        self.logger = self.GetParent().logger
+
+
+class MapViewPropertiesPanel(wx.Panel):
+    ''' The editor panel for the mapview properties.
+
+    '''
+    def __init__(self, parent, id = wx.ID_ANY):
+        ''' The constructor.
+
+        Create an instance of the MapViewPanel class.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        :param parent: The parent object containing the panel.
+        :type self: A wxPython window.
+        :param id: The id of the panel.
+        :type id: 
+        '''
+        wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
+
+        self.sizer = wx.GridBagSizer(5, 5)
+
+        self.SetSizerAndFit(self.sizer)
 
 
 
