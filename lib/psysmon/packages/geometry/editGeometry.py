@@ -3,7 +3,7 @@
 # This file is part of pSysmon.
 #
 # If you use pSysmon in any program or publication, please inform and
-# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+# acknowledge its author Stefan Mertl (stefan@mertl-research.at).
 #
 # pSysmon is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ from psysmon.core.packageNodes import CollectionNode
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
-from psysmon.packages.geometry.util import lon2UtmZone, zone2UtmCentralMeridian, ellipsoids
+import psysmon.packages.geometry.util as geom_util
 from psysmon.artwork.icons import iconsBlack16 as icons
 import wx.aui
 import wx.grid
@@ -48,7 +48,9 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 from wx.lib.pubsub import Publisher as pub
 import numpy as np
-from mpl_toolkits.basemap import Basemap 
+from mpl_toolkits.basemap import pyproj
+from mpl_toolkits.basemap import Basemap
+from matplotlib.patches import Polygon
 from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Recorder
@@ -57,6 +59,8 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
 from psysmon.core.gui import psyContextMenu
+import psysmon.core.guiBricks as guibricks
+import psysmon.core.preferences_manager as pref_manager
 
 
 class EditGeometry(CollectionNode):
@@ -70,7 +74,8 @@ class EditGeometry(CollectionNode):
 
     def __init__(self):
         CollectionNode.__init__(self)
-        self.options = {}
+        pref_item = pref_manager.TextEditPrefItem(name = 'projection_coordinate_system', label = 'proj. coord. sys.', value = '')
+        self.pref_manager.add_item(item = pref_item)
 
     def edit(self):
         '''
@@ -235,6 +240,7 @@ class EditGeometryDlg(wx.Frame):
     def menuData(self):
         return (("File",
                  ("Import from XML", "Import inventory from XML file.", self.onImportFromXml),
+                 ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml),
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
@@ -242,8 +248,7 @@ class EditGeometryDlg(wx.Frame):
                  ("Add station", "Add a station to the selected inventory.", self.onAddStation),
                  ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
                  ("", "", ""),
-                 ("Save to database", "Save the selected inventory to database.", self.onSave2Db),
-                 ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml)),
+                 ("Write to database", "Write the selected inventory to database.", self.onSave2Db)),
                 ("Help",
                  ("&About", "About pSysmon", self.onAbout))
                )
@@ -530,7 +535,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         # Setup the context menu.
         cmData = (("add", self.onAddElement),
-                  ("remove", self.onRemoveElement))
+                  ("remove", self.onRemoveElement),
+                  ("separator", None),
+                  ("expand", self.on_expand_element),
+                  ("collapse", self.on_collapse_element))
 
         # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
@@ -620,6 +628,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         pos = evt.GetPosition()
         pos = self.ScreenToClient(pos)
+        self.selected_tree_item_id = self.HitTest(pos)[0]
         self.PopupMenu(self.contextMenu, pos)
 
 
@@ -651,6 +660,18 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         ''' Handle the context menu remove click.
         '''
         pass
+
+
+    def on_collapse_element(self, event):
+        ''' Collapse the selected element.
+        '''
+        self.CollapseAllChildren(self.selected_tree_item_id)
+
+
+    def on_expand_element(self, event):
+        ''' Expand the selected element.
+        '''
+        self.ExpandAllChildren(self.selected_tree_item_id)
 
 
     def on_assign_sensor_2_station(self, event):
@@ -915,8 +936,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                         self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
 
-        self.ExpandAll()
-
+            self.Expand(inventoryItem)
 
 
 class InventoryViewNotebook(wx.Notebook):
@@ -940,8 +960,13 @@ class InventoryViewNotebook(wx.Notebook):
         #win = self.makePanel()
         #self.AddPage(win, "map view")
 
-        self.mapViewPanel = MapViewPanel(self)
-        self.AddPage(self.mapViewPanel, "map view")
+        self.mapViewSplitter = MapViewSplitter(self)
+        self.mapViewPanel = MapViewPanel(self.mapViewSplitter)
+        self.mapViewPropertiesPanel = MapViewPropertiesPanel(self.mapViewSplitter)
+        self.mapViewSplitter.SetMinimumPaneSize(200)
+        self.mapViewSplitter.SetSashGravity(1.)
+        self.mapViewSplitter.SplitVertically(self.mapViewPanel, self.mapViewPropertiesPanel, -200)
+        self.AddPage(self.mapViewSplitter, "map view")
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onPageChanged)
 
@@ -977,12 +1002,22 @@ class InventoryViewNotebook(wx.Notebook):
         Initialize the map view panel with the selected inventory.
         '''
         self.logger.debug("Initializing the mapview")
-        #t = Thread(target = self.mapViewPanel.initMap, args = (inventory, ))
-        #t.setDaemon(True)
-        #t.start()
+
+        def init_map(panel, cur_inventory):
+            panel.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+            panel.mapViewPanel.initMap(cur_inventory)
+            panel.inventory = cur_inventory
+            panel.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+
         if inventory != self.inventory:
+            #t = Thread(target = init_map, args = (self, inventory))
+            #t.setDaemon(True)
+            #t.start()
+
+            wx.BeginBusyCursor()
             self.mapViewPanel.initMap(inventory)
             self.inventory = inventory
+            wx.EndBusyCursor()
 
     def onPageChanged(self, event):
         if event.GetSelection() == 1:
@@ -1024,7 +1059,7 @@ class ListViewPanel(wx.Panel):
 
 
 
-    def showControlPanel(self, name, data):   
+    def showControlPanel(self, name, data):
 
         activePanel = self.sizer.FindItemAtPosition((0,0))
         activePanel.GetWindow().Hide()
@@ -1035,6 +1070,52 @@ class ListViewPanel(wx.Panel):
         self.controlPanels[name].Show()
         self.sizer.Add(self.controlPanels[name], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
         self.sizer.Layout()
+
+
+
+class MapViewSplitter(wx.SplitterWindow):
+    ''' A splitter window used to separate the MapViewPanel and the MapViewPropertiesPanel.
+
+    '''
+    def __init__(self, parent, id = wx.ID_ANY):
+        wx.SplitterWindow.__init__(self, parent, id,
+                                   style = wx.SP_LIVE_UPDATE
+                                   )
+        self.logger = self.GetParent().logger
+
+
+
+class MapViewPropertiesPanel(wx.Panel):
+    ''' The editor panel for the mapview properties.
+
+    '''
+    def __init__(self, parent, id = wx.ID_ANY):
+        ''' The constructor.
+
+        Create an instance of the MapViewPanel class.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        :param parent: The parent object containing the panel.
+        :type self: A wxPython window.
+        :param id: The id of the panel.
+        :type id: 
+        '''
+        wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
+
+        pref_manager = wx.GetTopLevelParent(self).collectionNode.pref_manager
+        self.pref_panel = guibricks.PrefEditPanel(pref = pref_manager, parent = self)
+
+        self.sizer = wx.GridBagSizer(5, 5)
+
+        self.sizer.Add(self.pref_panel, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
+        self.sizer.AddGrowableRow(0)
+        self.sizer.AddGrowableCol(0)
+
+
+        self.SetSizerAndFit(self.sizer)
 
 
 
@@ -1072,14 +1153,13 @@ class MapViewPanel(wx.Panel):
 
         self.mapFigure = Figure((8,4), dpi=75, facecolor='white')
         self.mapAx = self.mapFigure.add_subplot(111)
+        self.mapAx.set_aspect('equal')
         self.mapCanvas = FigureCanvas(self, -1, self.mapFigure)
 
         self.sizer.Add(self.mapCanvas, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(0)
         self.SetSizerAndFit(self.sizer)
-
-
 
 
     def initMap(self, inventory):
@@ -1095,8 +1175,67 @@ class MapViewPanel(wx.Panel):
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks:
-            lonLat.extend([stat.getLonLat() for stat in curNet.stations.itervalues()])
-            self.stations.extend([stat for stat in curNet.stations.itervalues()])
+            lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
+            self.stations.extend([stat for stat in curNet.stations])
+
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0)
+        self.mapConfig['utmZone'] = geom_util.lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        self.mapConfig['ellips'] = 'wgs84'
+        self.mapConfig['lon_0'] = geom_util.zone2UtmCentralMeridian(self.mapConfig['utmZone'])
+        self.mapConfig['lat_0'] = 0
+        if np.mean([lonLatMin[1], lonLatMax[1]]) >= 0:
+            self.mapConfig['hemisphere'] = 'north'
+        else:
+            self.mapConfig['hemisphere'] = 'south'
+
+        map_extent = lonLatMax - lonLatMin
+        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent * 0.1, lonLatMax + map_extent * 0.1]) 
+
+        lon = [x[0] for x in lonLat]
+        lat = [x[1] for x in lonLat]
+
+        # Get the epsg code of the UTM projection.
+        search_dict = {'projection': 'utm', 'ellps': self.mapConfig['ellips'].upper(), 'zone': self.mapConfig['utmZone'], 'no_defs': True, 'units': 'm'}
+        if self.mapConfig['hemisphere'] == 'south':
+            search_dict['south'] = True
+
+        epsg_dict = geom_util.get_epsg_dict()
+        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+
+        # Setup the pyproj projection.projection
+        #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
+        proj = pyproj.Proj(init = 'epsg:'+code[0][0])
+
+        # Plot the stations.
+        x,y = proj(lon, lat)
+        self.mapAx.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.name)
+
+
+        # Add some map annotation.
+        self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
+            ha = 'right', transform = self.mapAx.transAxes)
+
+        self.mapCanvas.mpl_connect('pick_event', self.onPick)
+
+
+    def initMapBasemap(self, inventory):
+        '''
+        Initialize the map parameters.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
+        '''
+        self.mapConfig = {}
+        self.stations = []
+
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        for curNet in inventory.networks:
+            lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
+            self.stations.extend([stat for stat in curNet.stations])
 
         lonLatMin = np.min(lonLat, 0)
         lonLatMax = np.max(lonLat, 0)
@@ -1104,7 +1243,9 @@ class MapViewPanel(wx.Panel):
         self.mapConfig['ellips'] = 'wgs84'
         self.mapConfig['lon_0'] = zone2UtmCentralMeridian(self.mapConfig['utmZone'])
         self.mapConfig['lat_0'] = 0
-        self.mapConfig['limits'] = np.hstack([np.floor(lonLatMin), np.ceil(lonLatMax)]) 
+        #self.mapConfig['limits'] = np.hstack([np.floor(lonLatMin), np.ceil(lonLatMax)]) 
+        map_extent = lonLatMax - lonLatMin
+        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent * 0.1, lonLatMax + map_extent * 0.1]) 
         #self.mapConfig['lon_0'] = np.mean([lonLatMin[0], lonLatMax[0]])
         #self.mapConfig['lat_0'] = np.mean([lonLatMin[1], lonLatMax[1]])
 
@@ -1121,18 +1262,48 @@ class MapViewPanel(wx.Panel):
                            llcrnrlat = self.mapConfig['limits'][1],
                            urcrnrlon = self.mapConfig['limits'][2],
                            urcrnrlat = self.mapConfig['limits'][3],
-                           resolution='h',
-                           ax=self.mapAx, 
+                           resolution='i',
+                           ax=self.mapAx,
                            suppress_ticks=True)
 
         self.logger.debug('proj4string: %s', self.map.proj4string)
 
-        self.map.drawcountries()
+        self.map.drawcountries(color = 'k')
         self.map.drawcoastlines()
         self.map.drawrivers(color='b')
-        #self.map.etopo()
+
+        #s_river = self.map.readshapefile('/home/stefan/01_gtd/04_aktuelleProjekte/2012-0007_pSysmon/01_src/psysmon/lib/psysmon/packages/geometry/data/naturalearth/10m_physical/ne_10m_rivers_lake_centerlines', 'rivers', drawbounds = False)
+
+
+        #for k, cur_river in enumerate(self.map.rivers):
+        #    xx, yy = zip(*cur_river)
+        #    if (max(xx) == 1e30 or max(yy) == 1e30):
+        #        continue
+        #    if (((min(xx) >= self.map.xmin and min(xx) <= self.map.xmax) or 
+        #        (max(xx) >= self.map.xmin and max(xx) <= self.map.xmax) or
+        #        (min(xx) <= self.map.xmin and max(xx) >= self.map.xmax)) and
+        #        ((min(yy) >= self.map.ymin and min(yy) <= self.map.ymax) or
+        #        (max(yy) >= self.map.ymin and max(yy) <= self.map.ymax) or
+        #        (min(yy) <= self.map.ymin and max(yy) >= self.map.ymax))):
+        #        print "plotting river %d" % k
+        #        self.map.plot(xx, yy, color = 'b', zorder = 2)
+
+        try:
+            pass
+            #self.map.etopo()
+        except Exception as e:
+            self.logger.exception("Can't plot etopo:\n%s", e)
+            try:
+                self.map.bluemarble()
+            except Exception as e:
+                self.logger.exception("Can't plot bluemarble:\n%s", e)
+
+        # Plot the stations.
         x,y = self.map(lon, lat)
-        self.map.scatter(x, y, s=100, marker='^', color='r', picker=5)
+        self.map.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.name)
+
         self.map.drawmapboundary()
         #self.map.ax.grid()
         self.map.drawparallels(np.arange(self.mapConfig['limits'][1], self.mapConfig['limits'][3], 0.5),

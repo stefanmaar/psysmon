@@ -3,7 +3,7 @@
 # This file is part of pSysmon.
 #
 # If you use pSysmon in any program or publication, please inform and
-# acknowledge its author Stefan Mertl (info@stefanmertl.com).
+# acknowledge its author Stefan Mertl (stefan@mertl-research.at).
 #
 # pSysmon is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -173,7 +173,7 @@ class PreferenceItem:
 
     '''
 
-    def __init__(self, name, value, mode, group = None, limit = None, parent_page = None, default = None, guiclass = None):
+    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, guiclass = None):
         ''' The constructor.
 
         '''
@@ -182,6 +182,11 @@ class PreferenceItem:
 
         # The value of the item.
         self.value = value
+
+        # The label of the item.
+        self.label = label
+        if self.label is None:
+            self.label = self.name
 
         # The default value of this item.
         if default is None:

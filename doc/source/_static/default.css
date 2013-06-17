@@ -563,3 +563,18 @@ td.field-body  blockquote {
     padding-left: 30px;
     padding-bottom: 10px;
 }
+
+
+.viewcode-back {
+    float: right;
+}
+
+.viewcode-link {
+    float: right;
+}
+
+div.viewcode-block:target {
+    background-color: #f4debf;
+    border-top: 1px solid #ac9;
+    border-bottom: 1px solid #ac9;
+}
