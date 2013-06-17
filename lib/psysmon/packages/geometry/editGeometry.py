@@ -59,6 +59,8 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
 from psysmon.core.gui import psyContextMenu
+import psysmon.core.guiBricks as guibricks
+import psysmon.core.preferences_manager as pref_manager
 
 
 class EditGeometry(CollectionNode):
@@ -72,7 +74,8 @@ class EditGeometry(CollectionNode):
 
     def __init__(self):
         CollectionNode.__init__(self)
-        self.options = {}
+        pref_item = pref_manager.TextEditPrefItem(name = 'projection_coordinate_system', value = '')
+        self.pref_manager.add_item(item = pref_item)
 
     def edit(self):
         '''
@@ -1081,6 +1084,7 @@ class MapViewSplitter(wx.SplitterWindow):
         self.logger = self.GetParent().logger
 
 
+
 class MapViewPropertiesPanel(wx.Panel):
     ''' The editor panel for the mapview properties.
 
@@ -1101,7 +1105,12 @@ class MapViewPropertiesPanel(wx.Panel):
 
         self.logger = self.GetParent().logger
 
+        pref_manager = wx.GetTopLevelParent(self).collectionNode.pref_manager
+        self.pref_panel = guibricks.PrefEditPanel(pref = pref_manager, parent = self)
+
         self.sizer = wx.GridBagSizer(5, 5)
+
+        self.sizer.Add(self.pref_panel, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
 
         self.SetSizerAndFit(self.sizer)
 
