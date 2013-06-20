@@ -30,3 +30,7 @@ Attributes
    {%- endfor %}
 {% endif %}
 {% endblock %}
+
+Inheritence diagram
+-------------------
+    .. inheritance-diagram:: {{fullname}}
