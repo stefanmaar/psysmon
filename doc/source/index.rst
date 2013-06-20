@@ -16,6 +16,16 @@ The pSysmon Core
 
    .. comment to end block
 
+Core GUI modules
+-------------------
+.. autosummary::
+    :toctree: autogen
+
+    psysmon.core.gui
+    psysmon.core.guiBricks
+    psysmon.core.gui_project_preferences
+
+   .. comment to end block
 
 Main Packages
 -------------------
