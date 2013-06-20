@@ -39,7 +39,4 @@
    {%- endfor %}
    {% endif %}
 
-   .. rubric:: Inheritence diagram
-   .. inheritance-diagram:: {{fullname}}
-   
    {% endblock %}
