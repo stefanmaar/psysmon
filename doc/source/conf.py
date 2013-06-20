@@ -50,6 +50,9 @@ master_doc = 'index'
 project = u'pSysmon'
 copyright = u'2011, Stefan Mertl'
 
+# The inheritance diagram.
+inheritance_graph_attrs = dict(rankdir = 'TB', size='""')
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
