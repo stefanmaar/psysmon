@@ -10,11 +10,10 @@ body {
     letter-spacing: -0.01em;
     line-height: 150%;
     text-align: left;
-    /*background-color: #AFC1C4; */
-    background-color: #BFD1D4;
-    color: black;
+    background-color: #FFF;
+    color: #212721;
     padding: 0;
-    border: 1px solid #aaa;
+    border: 0px solid #aaa;
 
     margin: 0px 10% 0px 10%;
     min-width: 1000px;
@@ -22,12 +21,12 @@ body {
 }
 
 a {
-    color: #CA7900;
+    color: #426da9;
     text-decoration: none;
 }
 
 a:hover {
-    color: #2491CF;
+    color: #719949;
 }
 
 pre {
@@ -93,11 +92,11 @@ a tt {
     background-color: transparent;
     font-weight: bold;
     border: 0;
-    color: #CA7900;
+    color: #426da9;
 }
 
 a tt:hover {
-    color: #2491CF;
+    color: #719949;
 }
 
 dl {
@@ -129,7 +128,7 @@ dt {
 
 dt:target,
 .highlight {
-    background-color: #fbe54e;
+    background-color: #d6cf8d;
 }
 
 dl.class, dl.function {
@@ -204,11 +203,11 @@ div.related ul li a {
     margin: 0;
     padding: 0 5px 0 5px;
     line-height: 1.75em;
-    color: #EE9816;
+    color: #c1a01e;
 }
 
 div.related ul li a:hover {
-    color: #3CA8E7;
+    color: #719949;
 }
 
 div.body {
@@ -240,7 +239,7 @@ div.sphinxsidebar h4, div.sphinxsidebar h3 {
     padding: 0.1em 0 0.1em 0.5em;
     color: white;
     border: 1px solid #86989B;
-    background-color: #AFC1C4;
+    background-color: #a4c8e1;
 }
 
 div.sphinxsidebar ul {
@@ -270,7 +269,7 @@ h1 {
     margin: 0;
     padding: 0.7em 0 0.3em 0;
     font-size: 1.5em;
-    color: #11557C;
+    color: #212721;
 }
 
 h2 {
@@ -285,7 +284,7 @@ h3 {
 }
 
 h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
-    color: black!important;
+    color: #212721!important;
 }
 
 h1 a.anchor, h2 a.anchor, h3 a.anchor, h4 a.anchor, h5 a.anchor, h6 a.anchor {
@@ -308,16 +307,22 @@ h5 a.anchor:hover, h6 a.anchor:hover {
 
 table {
     border-collapse: collapse;
+    border: 0px;
     margin: 0 -0.5em 0 -0.5em;
 }
 
 table td, table th {
     padding: 0.2em 0.5em 0.2em 0.5em;
+    border: 0px;
+}
+
+table.docutils {
+    margin: 0px 0px 0px 10px;
 }
 
 div.footer {
-    background-color: #E3EFF1;
-    color: #86989B;
+    background-color: #a4c8e1;
+    color: #426da9;
     padding: 3px 8px 3px 0;
     clear: both;
     font-size: 0.8em;
