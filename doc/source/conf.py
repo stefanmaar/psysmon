@@ -94,7 +94,7 @@ exclude_patterns = ['_templates', '_ext']
 pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+modindex_common_prefix = ['psysmon.']
 
 
 # -- Options for HTML output ---------------------------------------------------
@@ -154,7 +154,7 @@ html_static_path = ['_static']
 #html_use_index = True
 
 # If true, the index is split into individual pages for each letter.
-#html_split_index = False
+html_split_index = True
 
 # If true, links to the reST sources are added to the pages.
 #html_show_sourcelink = True
@@ -174,7 +174,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pSysmondoc'
+htmlhelp_basename = 'psysmondoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
