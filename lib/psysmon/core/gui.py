@@ -44,10 +44,7 @@ from wx.lib.pubsub import Publisher as pub
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
-import psysmon
-from psysmon.packages.geometry.inventory import Inventory
 from psysmon.core.util import PsysmonError
-from psysmon.core.util import ActionHistory, Action
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 from datetime import datetime
@@ -63,7 +60,6 @@ try:
     from agw import advancedsplash as splash
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.advancedsplash as splash
-
 
 
 ## The pSysmon main application.
