@@ -44,8 +44,3 @@ Addon Packages
 
    .. comment to end block
 
-Inheritance Diagram
----------------------
-.. inheritance-diagram:: psysmon.core.base
-.. inheritance-diagram:: psysmon.core.project
-.. inheritance-diagram:: psysmon.core.packageSystem
