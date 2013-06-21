@@ -44,7 +44,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class Base:
-    '''The pSysmon Base class.
+    '''Handle low level objects of psysmon.
 
     The Base class is the lowest level class of the pSysmon model. It handles 
     the initialization of the pSysmon packages and stores the package objects.
@@ -270,6 +270,12 @@ class Base:
         ----------
         filename : String
             The filename of the project file.
+
+        user_name : String
+            The user name with which the project should be opened.
+
+        user_pwd: String
+            The password of the user.
         '''
         db = shelve.open(filename)
         projectDir = os.path.dirname(filename)
@@ -335,16 +341,8 @@ class Base:
 
 
 
-
-
-## The Collection class.
-#
-# A collection holds the associated CollectionNode in a list.
-# The collection controls the adding, removing, editing and execution of the 
-# CollectionNodes.
 class Collection:
-    '''
-    The Collection class.
+    ''' Manage a list of collection nodes.
 
     A collection holds the associated collection nodes in a list.
     The collection controls the adding, removing, editing and execution of the 
@@ -368,8 +366,7 @@ class Collection:
     '''
 
     def __init__(self, name, tmpDir):
-        '''
-        The constructor.
+        ''' The constructor.
 
         Parameters
         ----------
@@ -396,15 +393,18 @@ class Collection:
 
 
     def __getitem__(self, index):
-        '''
-        Get a node at a given position in the collection.
+        ''' Get a node at a given position in the collection.
 
         Parameters
         ----------
         index : Integer
             The index of the collection node to get from the list.
-        '''
 
+        Returns
+        -------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node at position index.
+        '''
         return self.nodes[index]
 
 
@@ -421,8 +421,7 @@ class Collection:
 
 
     def addNode(self, node, position=-1):
-        '''
-        Add a node to the collection.
+        ''' Add a node to the collection.
 
         Insert a node before a specified position in the collection . If the 
         position is set to -1, the node is appended at the end of the collection.
@@ -431,8 +430,8 @@ class Collection:
         ----------
         node : :class:`~psysmon.core.packageNodes.CollectionNode`
             The node to be added to the collection.
-        position : Integer
-            The position in the collection before which the node should be inserted.
+        position : Integer, optional
+            The position in the collection before which the node should be inserted (the default is -1).
         '''
 
         node.parentCollection = self
@@ -443,23 +442,28 @@ class Collection:
 
 
     def popNode(self, position):
-        '''
-        Remove a node from the collection.
+        ''' Remove a node from the collection.
+
+        Remove the node at position `position` from the collection.
 
         Parameters
         ----------
         position : Integer
             The position of the node which should be removed.
+
+        Returns
+        -------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The removed node.
         '''
         if len(self.nodes) > 0:
             return self.nodes.pop(position)
 
 
     def editNode(self, position):
-        '''
-        Edit a node.
+        ''' Edit a node.
 
-        Edit the node at a given position in the collection. This is done by 
+        Edit the node at a given position 'position' in the collection. This is done by 
         calling the :meth:`~psysmon.core.packageNodes.CollectionNode.edit()` 
         method of the according :class:`~psysmon.core.packageNodes.CollectionNode` instance.
 
@@ -472,10 +476,9 @@ class Collection:
 
 
     def executeNode(self, position):
-        '''
-        Execute a node at a given position.
+        ''' Execute a node at a given position.
 
-        Execute a node at *position*. This method is used to 
+        Execute a node at position 'position'. This method is used to 
         execute standalone collection nodes.
 
         Parameters
@@ -488,8 +491,7 @@ class Collection:
 
 
     def execute(self, client=None):
-        '''
-        Executing the collection.
+        ''' Executing the collection.
 
         Sequentially execute the nodes in the collection. The collection is designed 
         to be executed as a new process. The process is started in the :meth:`~psysmon.core.project.Project.executeCollection()` method of the :class:`~psysmon.core.project.Project` class.
@@ -551,8 +553,7 @@ class Collection:
 
 
     def setNodeProject(self, project):
-        '''
-        Set the the project attribute of all nodes in the collection.
+        ''' Set the the project attribute of all nodes in the collection.
 
         Parameters
         ----------
@@ -564,8 +565,9 @@ class Collection:
 
 
     def createNodeLoggers(self):
-        '''
-        Create a logging.logger instance for each node in the collection.
+        ''' Create a logger instance for each node in the collection.
+
+        For each node in the collection create a :class:`logging.logger` instance.
         '''
         for curNode in self.nodes:
             # Create the logger instance.
@@ -575,8 +577,7 @@ class Collection:
 
 
     def log(self, nodeName, mode, msg):
-        '''
-        Log messages to the collection's log file.
+        ''' Log messages to the collection's log file.
 
         The collection is executed as a process which has a unique id.
         For each process, a log file with the process ID as the filename is created 
@@ -618,19 +619,27 @@ class Collection:
     def pickleData(self, name, data, description, origin):
         ''' Save the data in the collection's data shelf.
 
+        The collection nodes of a collection can save data to the data shelf 
+        of the collection node. This data can be used by following collection 
+        nodes.
+
         Parameters
         ----------
+        name : String
+            The name of the variable to fetch from the collection's data shelf.
+
         data : Object
             The data to be saved in the collection's data shelf.
 
         description : String
             A short description of the data.
 
-        name : String
-            The name of the variable to fetch from the collection's data shelf.
-
         origin : String
             The name of the collection node pickling the data.
+
+        See Also
+        --------
+        provideData : :meth:`psysmon.core.packageNodes.CollectionNode.provideData`
         '''
         #nodeContent = namedtuple('nodeContent', 'name description origin')
         #nodeData = namedtuple('nodeData', 'name description origin data')
@@ -645,15 +654,25 @@ class Collection:
 
 
     def unpickleData(self, name=None, origin=None):
-        ''' Load the variable named *name* from the collection's data shelf.
+        ''' Load data from the data shelf of the collection.
+
 
         Parameters
         ----------
-        name : String
+        name : String, optional
             The name of the variable to fetch from the collection's data shelf.
 
-        origin : String
+        origin : String, optional
             The name of the collecionNode which created the nodeData.
+
+        Returns
+        -------
+        data : list of objects
+            The data loaded from the shelf. 
+
+        See Also
+        --------
+        requireData : :meth:`psysmon.core.packageNodes.CollectionNode.requireData`
         '''
 
         db = shelve.open(self.dataShelf)
