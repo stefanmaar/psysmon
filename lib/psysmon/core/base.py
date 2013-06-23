@@ -711,22 +711,29 @@ class Collection:
 
 
     def hasDataOnShelf(self, name):
-        ''' Check if the variable named *name* is available in the collection's 
-        data shelf.
+        ''' Check if a variable exists in the data shelf.
+
+        Query the data shelf of the collection for the variable with name 'name'.
 
         Parameters
         ----------
         name : String
             The name of the variable to fetch from the collection's data shelf.
+
+        Returns
+        -------
+        has_data : bool
+            True if the variable 'name' is contained in the data shelf, False 
+            otherwise.
         '''
         db = shelve.open(self.dataShelf)
         if name in db.keys():
-            retVal = True
+            has_data = True
         else:
-            retVal = False
+            has_data = False
         db.close()
 
-        return retVal
+        return has_data
 
 
     def getShelfContent(self):
