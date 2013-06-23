@@ -27,7 +27,7 @@ The pSysmon base module.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
-This module contains the basic modules needed to run the pSysmon program.
+This module contains the basic classes needed to run the pSysmon program.
 '''
 
 import os
