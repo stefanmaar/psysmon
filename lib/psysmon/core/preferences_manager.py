@@ -164,11 +164,12 @@ class PreferencesManager:
         found_items = self.get_item(name = name, pagename = pagename)
         for cur_item in found_items:
             cur_item.value = value
+            cur_item.update_gui_element()
 
         return found_items
 
 
-class PreferenceItem:
+class PreferenceItem(object):
     ''' A project preferences item.
 
     '''
@@ -181,7 +182,7 @@ class PreferenceItem:
         self.name = name
 
         # The value of the item.
-        self.value = value
+        self._value = value
 
         # The label of the item.
         self.label = label
@@ -212,6 +213,19 @@ class PreferenceItem:
         self.guiclass = guiclass
 
 
+        # The GUI element(s) linked to this preference item.
+        self.gui_element = []
+
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+
     def __str__(self):
         ''' The string representation of the instance.
 
@@ -220,17 +234,20 @@ class PreferenceItem:
 
 
 
-    def set_value(self, value):
-        ''' Set the value of the preference item.
+    def set_gui_element(self, element):
+        ''' Set the gui element displaying the preference item.
 
-        Parameters
-        ----------
-        value : depends on item mode
-            The value of the preference item.
         '''
-        print "preference_item - set_value\n"
-        self.value = value
+        if element not in self.gui_element:
+            self.gui_element.append(element)
 
+
+    def update_gui_element(self):
+        ''' Update the gui elements related to the item.
+
+        '''
+        for cur_element in self.gui_element:
+            cur_element.controlElement.SetValue(self.value)
 
 
 class SingleChoicePrefItem(PreferenceItem):
