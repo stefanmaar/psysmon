@@ -16,6 +16,13 @@ The pSysmon Core
 
    .. comment to end block
 
+Plugin System
+--------------
+.. autosummary::
+   :toctree: autogen
+
+   psysmon.core.plugins
+
 Core GUI modules
 -------------------
 .. autosummary::

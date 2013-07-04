@@ -27,7 +27,7 @@ The pSysmon base module.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
-This module contains the basic modules needed to run the pSysmon program.
+This module contains the basic classes needed to run the pSysmon program.
 '''
 
 import os
@@ -639,7 +639,7 @@ class Collection:
 
         See Also
         --------
-        provideData : :meth:`psysmon.core.packageNodes.CollectionNode.provideData`
+        psysmon.core.packageNodes.CollectionNode.provideData : Put data onto the data shelf of the collection.
         '''
         #nodeContent = namedtuple('nodeContent', 'name description origin')
         #nodeData = namedtuple('nodeData', 'name description origin data')
@@ -672,7 +672,7 @@ class Collection:
 
         See Also
         --------
-        requireData : :meth:`psysmon.core.packageNodes.CollectionNode.requireData`
+        psysmon.core.packageNodes.CollectionNode.requireData : Require data from a collection by a collection node.
         '''
 
         db = shelve.open(self.dataShelf)
@@ -711,41 +711,63 @@ class Collection:
 
 
     def hasDataOnShelf(self, name):
-        ''' Check if the variable named *name* is available in the collection's 
-        data shelf.
+        ''' Check if a variable exists in the data shelf.
+
+        Query the data shelf of the collection for the variable with name 'name'.
 
         Parameters
         ----------
         name : String
             The name of the variable to fetch from the collection's data shelf.
+
+        Returns
+        -------
+        has_data : bool
+            True if the variable 'name' is contained in the data shelf, False 
+            otherwise.
         '''
         db = shelve.open(self.dataShelf)
         if name in db.keys():
-            retVal = True
+            has_data = True
         else:
-            retVal = False
+            has_data = False
         db.close()
 
-        return retVal
+        return has_data
 
 
     def getShelfContent(self):
         ''' Get the content of the collections data shelf.
 
+        The content of the data shelf of a collection is saved in the 
+        dictionary with the key 'nodeDataContent'. This variable is a dictionary 
+        with the '(orgin, name)' as the key. It contains the name, description and 
+        origin of the data in the shelf.
+
+        Returns
+        -------
+        content : dictionary of tuples
+            A dictionary holding the name, description and origin of the data content.
+            The keys of the dictionary are tuples of (name, origin).
+
+        See also
+        --------
+        pickleData : Save data in the data shelf of the collection.
         '''
         db = shelve.open(self.dataShelf)
         if 'nodeDataContent' in db.keys():
-            retVal = db['nodeDataContent']
+            content = db['nodeDataContent']
         else:
-            retVal = None
+            content = None
         db.close()
 
-        return retVal
+        return content
 
 
     def clearShelf(self):
         ''' Clear all the data stored in the collection's shelf.
 
+        Not yet implemented.
         '''
         pass
         #db = shelve.open(self.dataShelf)

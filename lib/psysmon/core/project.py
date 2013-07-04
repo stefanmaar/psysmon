@@ -26,6 +26,8 @@ Module for handling the pSysmon project and users.
 :license:
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
+
+This module contains the classes for the project and user management.
 '''
 
 import logging
@@ -47,8 +49,11 @@ from psysmon.core.preferences_manager import PreferencesManager
 
 
 class Project:
-    '''The pSysmon Project class.
+    ''' The psysmon project.
 
+    The psysmon project handles low level communication with the database, 
+    provides the waveclients, handles the collection nodes and collections, 
+    manages the file structure and manages the users.
 
     Attributes
     ----------
@@ -159,26 +164,26 @@ class Project:
         user : :class:`~User` instance
             The admin user of the project.
 
-        dbDialect : String
+        dbDialect : String, optional
             The database dialect to be used by sqlalchemy (default: mysql).
 
-        dbDriver : String
+        dbDriver : String, optional
             The database driver to be used by sqlalchemy (default: None).
 
-        dbHost : String 
+        dbHost : String, optional
             The database host (default: localhost).
 
-        dbName : String
+        dbName : String, optional
             The name of the database associated with the project (default: "").
 
-        dbVersion : Dictionary of Strings
+        dbVersion : Dictionary of Strings, optional
             The database structure version used by the project. The name of 
             the package is the key of the dictionary (default: {}).
 
-        createTime : :class:`~psysmon.core.UTCDateTime`
+        createTime : :class:`~psysmon.core.UTCDateTime`, optional
             The time when the project has been created (default: UTCDateTime())
 
-        dbTables : Dictionary of Strings
+        dbTables : Dictionary of Strings, optional
             The database tablenames used by the project. The name of the table 
             (without prefix) is the key of the dictionary (default: {}).
         '''
@@ -294,10 +299,14 @@ class Project:
         return result
 
 
-    ## The __setstate__ method.
-    #
-    # Fill the attributes after unpickling.
     def __setstate__(self, d):
+        ''' Fill missing attributes afer unpickling.
+
+        Parameters
+        ----------
+        d : 
+
+        '''
         self.__dict__.update(d) # I *think* this is a safe way to do it
         print dir(self)
 
@@ -336,6 +345,11 @@ class Project:
         plugins : List of plugin objects
             A list of plugin objects which are associated with the specified class name.
 
+        See also
+        --------
+        psysmon.core.plugins
+        psysmon.core.plugins.PluginNode
+        psysmon.core.packageSystem.PackageManager
         '''
         plugins = []
 
