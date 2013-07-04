@@ -1149,6 +1149,8 @@ class MapViewPanel(wx.Panel):
 
         self.logger = self.GetParent().logger
 
+        self.pref_manager = wx.GetTopLevelParent(self).collectionNode.pref_manager
+
         self.sizer = wx.GridBagSizer(5, 5)
 
         self.mapFigure = Figure((8,4), dpi=75, facecolor='white')
@@ -1205,6 +1207,7 @@ class MapViewPanel(wx.Panel):
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
+        self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
         proj = pyproj.Proj(init = 'epsg:'+code[0][0])
 
         # Plot the stations.
