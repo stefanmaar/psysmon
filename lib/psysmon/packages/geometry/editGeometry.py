@@ -76,6 +76,8 @@ class EditGeometry(CollectionNode):
         CollectionNode.__init__(self)
         pref_item = pref_manager.TextEditPrefItem(name = 'projection_coordinate_system', label = 'proj. coord. sys.', value = '')
         self.pref_manager.add_item(item = pref_item)
+        pref_item = pref_manager.FileBrowsePrefItem(name = 'shape_file', label = 'shape file', value = '')
+        self.pref_manager.add_item(item = pref_item)
 
     def edit(self):
         '''
@@ -1105,17 +1107,32 @@ class MapViewPropertiesPanel(wx.Panel):
 
         self.logger = self.GetParent().logger
 
+        button_sizer = wx.BoxSizer(wx.VERTICAL)
+        # Create the buttons to control the stack.
+        redraw_map_button = wx.Button(self, wx.ID_ANY, "redraw map")
+        reset_button = wx.Button(self, wx.ID_ANY, "reset")
+
+        # Fill the button sizer.
+        button_sizer.Add(redraw_map_button, 0, wx.ALL)
+        button_sizer.Add(reset_button, 0, wx.ALL)
+
         pref_manager = wx.GetTopLevelParent(self).collectionNode.pref_manager
         self.pref_panel = guibricks.PrefEditPanel(pref = pref_manager, parent = self)
 
         self.sizer = wx.GridBagSizer(5, 5)
 
         self.sizer.Add(self.pref_panel, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
+        self.sizer.Add(button_sizer, pos = (0,1), flag = wx.ALL, border = 0)
         self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(0)
 
+        self.Bind(wx.EVT_BUTTON, self.on_redraw_map, redraw_map_button)
 
         self.SetSizerAndFit(self.sizer)
+
+
+    def on_redraw_map(self, event):
+        self.GetGrandParent().mapViewPanel.update_map()
 
 
 
@@ -1323,11 +1340,54 @@ class MapViewPanel(wx.Panel):
         self.logger.debug("picked a station: %s", pickedStation.name)
 
 
-    def updatemap(self):
+    def update_map(self):
         '''
         Update the map elements.
         '''
-        pass
+        # Clear the map.
+        self.mapAx.clear()
+        self.mapAx.set_xlim(0, 1)
+        self.mapAx.set_ylim(0, 1)
+        self.mapAx.autoscale(True)
+
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        lonLat.extend([stat.get_lon_lat() for stat in self.stations])
+
+        lon = [x[0] for x in lonLat]
+        lat = [x[1] for x in lonLat]
+
+        # Setup the pyproj projection.projection
+        proj = pyproj.Proj(init = self.pref_manager.get_value('projection_coordinate_system'))
+
+        # Plot the stations.
+        x,y = proj(lon, lat)
+        self.mapAx.scatter(x, y, s=100, marker='^', color='g', picker=5, zorder = 3)
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.name)
+
+        # Plot the shape file.
+        cur_shapefile = self.pref_manager.get_value('shape_file')
+        if len(cur_shapefile) > 0:
+            import shapefile
+            sf = shapefile.Reader(cur_shapefile)
+            shapes = sf.shapes()
+            for cur_shape in shapes:
+                print cur_shape.points
+                lon = [x[0] for x in cur_shape.points]
+                lat = [x[1] for x in cur_shape.points]
+
+            x,y = proj(lon, lat)
+            self.mapAx.plot(x, y)
+
+
+        # Add some map annotation.
+        self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
+            ha = 'right', transform = self.mapAx.transAxes)
+
+        #self.mapCanvas.mpl_connect('pick_event', self.onPick)
+
+        self.mapCanvas.draw()
 
 
     def createMap(self):
