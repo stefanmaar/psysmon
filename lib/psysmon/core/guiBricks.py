@@ -132,7 +132,7 @@ class Field(wx.Panel):
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
     def setPrefValue(self):
-        self.pref_item.set_value(self.controlElement.GetValue())
+        self.pref_item.value = self.controlElement.GetValue()
 
     ## Set the default value of the field element.  
     #
@@ -141,6 +141,8 @@ class Field(wx.Panel):
     def setDefaultValue(self, value):
         self.defaultValue = value
         self.controlElement.SetValue(value)
+
+
 
 
 
@@ -183,6 +185,7 @@ class PrefPagePanel(wx.Panel):
                                            size = (100, 10),
                                            parent = cur_container 
                                           )
+                    cur_item.set_gui_element(gui_element)
                     cur_container.addField(gui_element)
                 else:
                     self.logger.warning('Item %s of mode %s has no guiclass.', 
@@ -192,6 +195,8 @@ class PrefPagePanel(wx.Panel):
 
         sizer.AddGrowableCol(0)
         self.SetSizer(sizer)
+
+
 
 
 ## The OptionsEditPanel
@@ -253,7 +258,6 @@ class PrefEditPanel(wx.Panel):
                                   items = self.pref.pages[cur_pagename]
                                  )
             self.notebook.AddPage(panel, cur_pagename)
-
 
 
 
@@ -749,7 +753,7 @@ class SingleChoiceField(Field):
     # @param self The object pointer.
     # @param options The options dictionary to be changed.
     def setPrefValue(self):
-        self.pref_item.set_value(self.controlElement.GetStringSelection())
+        self.pref_item.value = self.controlElement.GetStringSelection()
 
 
     ## Set the default value of the field element.  
@@ -825,7 +829,7 @@ class MultiChoiceField(Field):
         for k in selections:
             selectedStrings.append(self.controlElement.GetString(k))
 
-        self.pref_item.set_value(selectedStrings)
+        self.pref_item.value = selectedStrings
 
 
     ## Set the default value of the field element.  
@@ -891,7 +895,7 @@ class FileBrowseField(Field):
     def setPrefValue(self):
         ''' Set the value of the preference item bound to the field.
         '''
-        self.pref_item.set_value(self.controlElement.GetValue())
+        self.pref_item.value = self.controlElement.GetValue()
 
 
     def setDefaultValue(self, value):
@@ -956,7 +960,7 @@ class DirBrowseField(Field):
     def setPrefValue(self):
         ''' Set the value of the preference item bound to the field.
         '''
-        self.pref_item.set_value(self.controlElement.GetValue())
+        self.pref_item.value = self.controlElement.GetValue()
         self.pref_item.start_directory = self.pref_item.value
 
 
