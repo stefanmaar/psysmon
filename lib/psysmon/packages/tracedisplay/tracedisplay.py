@@ -395,7 +395,11 @@ class TraceDisplayDlg(wx.Frame):
                 # the tool parameters in a foldpanel.
                 curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin), id=curTool.id)
+                                                             lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin: self.onInteractiveToolDropdownClicked(evt, curPlugin),
+                                                             id=curTool.id)
 
             elif curPlugin.mode == 'addon':
                 # Create a HybridTool. The dropdown menu allows to open
@@ -403,7 +407,11 @@ class TraceDisplayDlg(wx.Frame):
                 curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap(), help_string='Hallo Stefan')
                 #self.ribbonToolbars[curPlugin.category].SetToolClientData(curTool, 'test')
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin), id=curTool.id)
+                                                             lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin: self.onAddonToolDropdownClicked(evt, curPlugin),
+                                                             id=curTool.id)
 
 
             # Get all option plugins and build the foldpanels.
@@ -539,7 +547,7 @@ class TraceDisplayDlg(wx.Frame):
 
         # Set the callbacks of the views.
         self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
-        
+
 
 
     def onAddonToolClicked(self, event, plugin):
@@ -548,7 +556,7 @@ class TraceDisplayDlg(wx.Frame):
         Activate the tool.
         '''
         self.logger.debug('Clicked the addon tool: %s', plugin.name)
-        
+
         if plugin.active == True:
             plugin.setInactive()
             self.displayManager.removeAddonTool(plugin)
@@ -560,6 +568,29 @@ class TraceDisplayDlg(wx.Frame):
 
 
 
+    def onAddonToolDropdownClicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an addon plugin toolbar button.
+
+        '''
+        self.logger.debug('Clicked the addon tool dropdown button: %s', plugin.name)
+
+
+    def onInteractiveToolDropdownClicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an interactive plugin toolbar button.
+
+        '''
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, "edit preferences")
+        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
+        event.PopupMenu(menu)
+
+
+    def onEditToolPreferences(self, event, plugin):
+        ''' Handle the edit preferences dropdown click.
+
+        '''
+        self.logger.debug('Dropdown clicked -> editing preferences.')
+        plugin.editPreferences()
 
 
     def onKeyDown(self, event):
