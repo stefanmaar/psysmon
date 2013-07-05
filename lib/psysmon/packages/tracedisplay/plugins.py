@@ -30,6 +30,7 @@ from obspy.core import UTCDateTime
 import wx.lib.mixins.listctrl as listmix
 from psysmon.core.gui import psyContextMenu
 from obspy.imaging.spectrogram import spectrogram
+from psysmon.core.preferences_manager import IntegerSpinPrefItem
 
 
 class SelectStation(OptionPlugin):
@@ -523,6 +524,13 @@ class Zoom(InteractivePlugin):
         self.startTime = None
         self.endTime = None
 
+        # Add the plugin preferences.
+        item = IntegerSpinPrefItem(name = 'zoom ratio', 
+                              value = 20,
+                              limit = (1, 99)
+                             )
+        self.pref.add_item(item = item)
+
 
     def getHooks(self):
         hooks = {}
@@ -542,7 +550,7 @@ class Zoom(InteractivePlugin):
         elif event.button == 3:
             # Use the right mouse button to zoom out.
             self.startTime = event.xdata
-            ratio = 50
+            ratio = self.pref.get_value('zoom ratio')
             duration = displayManager.endTime - displayManager.startTime
             shrinkAmount = duration * ratio/100.0
             tmp = self.startTime
@@ -642,8 +650,7 @@ class Zoom(InteractivePlugin):
         # The timebase of the plots is unixseconds.
         if self.startTime == self.endTime:
             # This was a single click with no drag.
-            self.logger.debug('The zoom times are the same.')
-            ratio = 50
+            ratio = self.pref.get_value('zoom ratio')
             duration = displayManager.endTime - displayManager.startTime
             shrinkAmount = duration * ratio/100.0
             tmp = self.startTime
