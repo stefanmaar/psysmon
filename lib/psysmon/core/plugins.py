@@ -30,6 +30,8 @@ The pSysmon base module.
 This module contains the pSysmon plugin system.
 '''
 
+from psysmon.core.preferences_manager import PreferencesManager
+
 ## The PluginNode class.
 #
 # Each collection node can load plugins which provide some functionality to
@@ -45,7 +47,7 @@ class PluginNode:
     # argument.
     nodeClass = 'common'
 
-    def __init__(self, name, mode, category, tags, options = {}, icons = None, parent=None, docEntryPoint=None, *kwargs):
+    def __init__(self, name, mode, category, tags, icons = None, parent=None, docEntryPoint=None, *kwargs):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -86,6 +88,9 @@ class PluginNode:
 
         # The parent collection node which contains the plugin.
         self.parent = parent
+
+        # The preferences of the plugin.
+        self.pref = PreferencesManager()
 
         # The path to the html index file containing the documentation of the
         # plugin.
