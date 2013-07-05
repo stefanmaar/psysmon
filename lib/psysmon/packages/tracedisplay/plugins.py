@@ -535,13 +535,32 @@ class Zoom(InteractivePlugin):
 
 
     def onButtonPress(self, event, dataManager=None, displayManager=None):
-        self.logger.debug('onButtonPress.')
+        self.logger.debug('onButtonPress - button: %s', str(event.button))
+        if event.button == 2:
+            # Skip the middle mouse button.
+            return
+        elif event.button == 3:
+            # Use the right mouse button to zoom out.
+            self.startTime = event.xdata
+            ratio = 50
+            duration = displayManager.endTime - displayManager.startTime
+            shrinkAmount = duration * ratio/100.0
+            tmp = self.startTime
+            self.startTime = tmp - shrinkAmount*2.0
+            self.endTime = tmp + shrinkAmount*2.0
+            displayManager.setTimeLimits(UTCDateTime(self.startTime),
+                                         UTCDateTime(self.endTime))
+
+            displayManager.parent.updateDisplay()
+            return
+
         #self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
 
         #print 'Clicked mouse:\nxdata=%f, ydata=%f' % (event.xdata, event.ydata)
         #print 'x=%f, y=%f' % (event.x, event.y)
 
         self.startTime = event.xdata
+        self.endTime = event.xdata
 
         viewport = displayManager.parent.viewPort
         for curStation in viewport.stations:
@@ -609,8 +628,10 @@ class Zoom(InteractivePlugin):
 
         # Delete all begin- and end lines from the axes.
         for curView in self.beginLine.keys():
-            curView.dataAxes.lines.remove(self.beginLine[curView])
-            curView.dataAxes.lines.remove(self.endLine[curView])
+            if curView in self.beginLine.keys():
+                curView.dataAxes.lines.remove(self.beginLine[curView])
+            if curView in self.endLine.keys():
+                curView.dataAxes.lines.remove(self.endLine[curView])
 
         self.beginLine = {}
         self.endLine = {}
@@ -619,6 +640,20 @@ class Zoom(InteractivePlugin):
 
         # Call the setTimeLimits of the displayManager.
         # The timebase of the plots is unixseconds.
+        if self.startTime == self.endTime:
+            # This was a single click with no drag.
+            self.logger.debug('The zoom times are the same.')
+            ratio = 50
+            duration = displayManager.endTime - displayManager.startTime
+            shrinkAmount = duration * ratio/100.0
+            tmp = self.startTime
+            self.startTime = tmp - shrinkAmount/2.0
+            self.endTime = tmp + shrinkAmount/2.0
+        elif self.endTime < self.startTime:
+            tmp = self.startTime
+            self.startTime = self.endTime
+            self.endTime = tmp
+
         displayManager.setTimeLimits(UTCDateTime(self.startTime),
                                      UTCDateTime(self.endTime))
 
