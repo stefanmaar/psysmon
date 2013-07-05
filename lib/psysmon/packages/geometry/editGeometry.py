@@ -959,16 +959,21 @@ class InventoryViewNotebook(wx.Notebook):
         self.listViewPanel = ListViewPanel(self)
         self.AddPage(self.listViewPanel, "list view")
 
-        #win = self.makePanel()
-        #self.AddPage(win, "map view")
+        self.mapViewPanel = MapViewPanel(self)
+        self.AddPage(self.mapViewPanel, 'map view')
 
-        self.mapViewSplitter = MapViewSplitter(self)
-        self.mapViewPanel = MapViewPanel(self.mapViewSplitter)
-        self.mapViewPropertiesPanel = MapViewPropertiesPanel(self.mapViewSplitter)
-        self.mapViewSplitter.SetMinimumPaneSize(200)
-        self.mapViewSplitter.SetSashGravity(1.)
-        self.mapViewSplitter.SplitVertically(self.mapViewPanel, self.mapViewPropertiesPanel, -200)
-        self.AddPage(self.mapViewSplitter, "map view")
+        self.mapViewPropertiesPanel = MapViewPropertiesPanel(self)
+        self.AddPage(self.mapViewPropertiesPanel, 'map properties')
+
+        #self.mapViewSplitter = MapViewSplitter(self)
+        #self.mapViewPanel = MapViewPanel(self.mapViewSplitter)
+        #self.mapViewPropertiesPanel = MapViewPropertiesPanel(self.mapViewSplitter)
+        #self.mapViewPanel.SetMinSize((50, 50))
+        #self.mapViewPropertiesPanel.SetMinSize((-1, -1))
+        #self.mapViewSplitter.SetMinimumPaneSize(1)
+        #self.mapViewSplitter.SetSashGravity(1.)
+        #self.mapViewSplitter.SplitVertically(self.mapViewPanel, self.mapViewPropertiesPanel, -200)
+        #self.AddPage(self.mapViewSplitter, "map view")
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onPageChanged)
 
@@ -1085,6 +1090,23 @@ class MapViewSplitter(wx.SplitterWindow):
                                    )
         self.logger = self.GetParent().logger
 
+        self.SetSashSize(20)
+
+
+class MapViewAUI(wx.Frame):
+    ''' A AUI docking window to separate the MapViewPanel and the MapViewPropertiesPanel.
+
+    '''
+    def __init__(self, parent, id = wx.ID_ANY):
+        wx.Frame.__init__(self, parent = parent, id = id)
+
+        self.logger = self.GetParent().logger
+
+        self.mgr = wx.aui.AuiManager(self)
+
+        self.mgr.Update()
+
+
 
 
 class MapViewPropertiesPanel(wx.Panel):
@@ -1132,7 +1154,7 @@ class MapViewPropertiesPanel(wx.Panel):
 
 
     def on_redraw_map(self, event):
-        self.GetGrandParent().mapViewPanel.update_map()
+        self.GetParent().mapViewPanel.update_map()
 
 
 
@@ -1168,14 +1190,15 @@ class MapViewPanel(wx.Panel):
 
         self.pref_manager = wx.GetTopLevelParent(self).collectionNode.pref_manager
 
-        self.sizer = wx.GridBagSizer(5, 5)
+
+        self.sizer = wx.GridBagSizer(0, 0)
 
         self.mapFigure = Figure((8,4), dpi=75, facecolor='white')
         self.mapAx = self.mapFigure.add_subplot(111)
         self.mapAx.set_aspect('equal')
         self.mapCanvas = FigureCanvas(self, -1, self.mapFigure)
 
-        self.sizer.Add(self.mapCanvas, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        self.sizer.Add(self.mapCanvas, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=0)
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(0)
         self.SetSizerAndFit(self.sizer)
