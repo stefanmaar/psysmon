@@ -145,6 +145,13 @@ class PluginNode:
         return None
 
 
+    def editPreferences(self):
+        ''' Create a dialog to edit the preferences.
+
+        '''
+        self.logger.debug('Editing the preferences of plugin: %s', self.name)
+
+
 
 
 
