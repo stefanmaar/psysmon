@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-The pSysmon base module.
+Extend psysmon with custom code.
 
 :copyright:
     Mertl Research GmbH
@@ -37,11 +37,18 @@ from psysmon.core.preferences_manager import PreferencesManager
 # Each collection node can load plugins which provide some functionality to
 # the node. 
 class PluginNode:
-    ''' The PluginNode class.
-    Each collection node can load plugins which provide some functionality to the node.
+    ''' The base class of all plugin nodes.
+
+    This class is the base class on which all plugins are built.
+
+    Attributes
+    ----------
+    nodeClass : String
+        The name of the class which can use the plugin. User 'common' for 
+        a plugin that can be used by every class. Default is 'common'.
     '''
     # The class to which the plugin is assigned to.
-    # User *common* for plugins which can be used by every class.
+    # Use *common* for plugins which can be used by every class.
     # Nodes with a specified nodeClass usually depend on some special 
     # variables which have to be passed to them using the variable kwargs 
     # argument.
@@ -67,6 +74,8 @@ class PluginNode:
              - stable
              - experimental
              - damaged
+        icons : List of Strings
+            The icons used in the ribbonbar.
         nodeClass : String
             The name of the class for which the plugin-node has been written.
         parent : :class:`~psysmon.core.packageNodes.CollectionNode`
@@ -156,11 +165,9 @@ class PluginNode:
 
 
 class OptionPlugin(PluginNode):
-    ''' The OptionPlugin class.
+    ''' A plugin handling program options.
 
-    This is an option plugin. It provides GUI elements to the user to change various 
-    options used for displaying the data in the tracedisplay (e.g. which stations are shown or 
-    which channels are shown,...).
+    An option plugin organizes one or more options.
     '''
     def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
@@ -199,7 +206,7 @@ class OptionPlugin(PluginNode):
 
 
 class InteractivePlugin(PluginNode):
-    ''' The InteractivePlugin class.
+    ''' Interact with the user interface.
 
     The interactive plugin allows the user to interact with the parent window using 
     mouse clicks.
@@ -251,7 +258,7 @@ class InteractivePlugin(PluginNode):
 
 
 class AddonPlugin(PluginNode):
-    ''' The AddonPlugin class.
+    ''' Add algorithms that are executed before displaying the data.
 
     This is an addon plugin, that's capable of creating individual views 
     which are used in the tracedisplay.
