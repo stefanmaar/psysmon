@@ -137,6 +137,11 @@ class Base:
             The username of the user which should be created.
         userPwd : String
             The password of the user *username*.
+
+        See Also
+        --------
+        psysmon.core.project.Project.createDatabaseStructure
+
         '''
         try:
             dbDialect = 'mysql'
