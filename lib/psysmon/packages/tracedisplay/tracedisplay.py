@@ -390,6 +390,16 @@ class TraceDisplayDlg(wx.Frame):
                 curTool = self.ribbonToolbars[curPlugin.category].AddTool(k, curPlugin.icons['active'].GetBitmap())
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
                                                              lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
+            elif curPlugin.mode == 'command':
+                # Create a HybridTool. The dropdown menu allows to open
+                # the tool parameters in a foldpanel.
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin : self.onCommandToolClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin: self.onCommandToolDropdownClicked(evt, curPlugin),
+                                                             id=curTool.id)
             elif curPlugin.mode == 'interactive':
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
@@ -400,7 +410,6 @@ class TraceDisplayDlg(wx.Frame):
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
                                                              lambda evt, curPlugin=curPlugin: self.onInteractiveToolDropdownClicked(evt, curPlugin),
                                                              id=curTool.id)
-
             elif curPlugin.mode == 'addon':
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
@@ -535,6 +544,12 @@ class TraceDisplayDlg(wx.Frame):
                 self.mgr.Update() 
 
 
+    def onCommandToolClicked(self, event, plugin):
+        ''' Handle the click of a command plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the command tool: %s', plugin.name)
 
 
     def onInteractiveToolClicked(self, event, plugin):
@@ -573,6 +588,14 @@ class TraceDisplayDlg(wx.Frame):
 
         '''
         self.logger.debug('Clicked the addon tool dropdown button: %s', plugin.name)
+
+
+    def onCommandToolDropdownClicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an command plugin toolbar button.
+
+        '''
+        self.logger.debug('Clicked the command tool dropdown button: %s', plugin.name)
+
 
 
     def onInteractiveToolDropdownClicked(self, event, plugin):
