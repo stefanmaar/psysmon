@@ -44,7 +44,7 @@ class PluginNode:
     Attributes
     ----------
     nodeClass : String
-        The name of the class which can use the plugin. User 'common' for 
+        The name of the class which can use the plugin. Use 'common' for 
         a plugin that can be used by every class. Default is 'common'.
     '''
     # The class to which the plugin is assigned to.
@@ -197,6 +197,47 @@ class OptionPlugin(PluginNode):
         PluginNode.__init__(self,
                             name = name,
                             mode = 'option',
+                            category = category,
+                            tags = tags,
+                            icons = icons,
+                            parent = parent,
+                            docEntryPoint = docEntryPoint)
+
+
+class CommandPlugin(PluginNode):
+    ''' A plugin executing a single command.
+
+    A command plugin can be used to execute standalone programs which process the currently
+    displayed data and maybe present the results in a new window (e.g. frequency spectrum, audification, ...).
+    '''
+    def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
+        ''' The constructor.
+
+        Create an instance of the PluginNode.
+
+        Parameters
+        ----------
+        name : String
+            The name of the plugin-node.
+        category : String
+            The category of the plugin-node.
+        tags : list of String
+            A list of strings containing the tags of the collection node.
+            These values are not limited but they should contain one of 
+            the three development state tags:
+             - stable
+             - experimental
+             - damaged
+        nodeClass : String
+            The name of the class for which the plugin-node has been written.
+        parent : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The parent collectionNode which has loaded the plugin.
+        docEntryPoint : String
+            The path to where the documentation's index.html file can be found.
+        '''
+        PluginNode.__init__(self,
+                            name = name,
+                            mode = 'command',
                             category = category,
                             tags = tags,
                             icons = icons,
