@@ -117,12 +117,13 @@ class WaveClient:
         '''
         if location == '--':
             location = None
-
+        self.stock_lock.acquire()
         curStream = self.stock.select(station = station,
                                       channel = channel,
                                       network = network,
                                       location = location)
         curStream = curStream.copy()
+        self.stock_lock.release()
         curStream.trim(starttime = start_time,
                        endtime = end_time)
 
