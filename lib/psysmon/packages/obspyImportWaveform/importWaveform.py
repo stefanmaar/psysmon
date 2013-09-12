@@ -74,16 +74,20 @@ class ImportWaveform(CollectionNode):
         print "Executing the node %s." % self.name
         dbData = []
         for curFile in self.pref_manager.get_value('input_files'):
-            print("Processing file " + curFile['filename'])
-            stream = read(pathname_or_url=curFile['filename'],
-                             format = curFile['format'],
+            print("Processing file " + curFile[1])
+            if curFile[0] == 'not checked':
+                format = None
+            else:
+                format = curFile[0]
+            stream = read(pathname_or_url=curFile[1],
+                             format = format,
                              headonly=True)
 
             print stream
 
             for curTrace in stream.traces:
                 print "Importing trace " + curTrace.getId()
-                cur_data = self.getDbData(curFile['filename'], curFile['format'], curTrace)
+                cur_data = self.getDbData(curFile[1], format, curTrace)
                 if cur_data is not None:
                     dbData.append(cur_data)
 
