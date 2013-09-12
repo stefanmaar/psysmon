@@ -85,6 +85,10 @@ class WaveClient:
         # The threads used for preloading data.
         self.preload_threads = []
 
+        # The time-window in seconds of the stock stream before and after the currently
+        # displayed time-period. 
+        self.stock_window = 3600
+
 
     def get_from_stock(self, network, station, location, channel, start_time, end_time):
         ''' Get the data of the specified scnl from the stock data.
@@ -124,8 +128,10 @@ class WaveClient:
                                       location = location)
         curStream = curStream.copy()
         self.stock_lock.release()
+        self.logger.debug('Selected stream from stock: %s', curStream)
         curStream.trim(starttime = start_time,
                        endtime = end_time)
+        self.logger.debug('Trimmed stream to: %s', curStream)
 
         return curStream
 
@@ -139,6 +145,16 @@ class WaveClient:
         self.stock.merge(stream)
         self.stock_lock.release()
 
+
+    def trim_stock(self, start_time, end_time):
+        ''' Trim the stock streams.
+
+        '''
+        self.stock_lock.acquire()
+        self.stock.trim(starttime = start_time - self.stock_window, endtime = end_time + self.stock_window)
+        self.stock_lock.release()
+        self.logger.debug('Trimmed stock stream to %s - %s.', start_time - self.stock_window, end_time + self.stock_window)
+        self.logger.debug('stock: %s', self.stock)
 
 
     def getWaveform(self,
@@ -272,8 +288,11 @@ class PsysmonDbWaveClient(WaveClient):
         '''
         self.logger.debug("Getting the waveform...")
 
-
+        new_data = False
         stream = Stream()
+
+        # Trim the stock stream to new limits.
+        self.trim_stock(start_time = startTime, end_time = endTime)
 
         # Filter the SCNL selections.
         if scnl:
@@ -287,7 +306,8 @@ class PsysmonDbWaveClient(WaveClient):
                                                    end_time = endTime)
 
                 if len(stock_stream) > 0:
-                    self.logger.debug('Found data in stock....\n%s', stock_stream.traces[0])
+                    self.logger.debug('Found data in stock....\n%s', stock_stream)
+                    stock_stream.merge()
                     cur_trace = stock_stream.traces[0]
                     cur_start_time = cur_trace.stats.starttime
                     cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
@@ -303,6 +323,7 @@ class PsysmonDbWaveClient(WaveClient):
                                                         start_time = startTime,
                                                         end_time = cur_start_time)
                         stream += curStream
+                        new_data = True
 
                     if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
                         self.logger.debug('Get missing data in back...')
@@ -314,6 +335,7 @@ class PsysmonDbWaveClient(WaveClient):
                                                         start_time = cur_end_time,
                                                         end_time = endTime)
                         stream += curStream
+                        new_data = True
 
                 else:
                     self.logger.debug('No stock data available...')
@@ -325,10 +347,12 @@ class PsysmonDbWaveClient(WaveClient):
                                                     end_time = endTime)
 
                     stream += curStream
+                    new_data = True
 
                 stream.merge()
-
-        self.add_to_stock(stream)
+        if new_data:
+            self.add_to_stock(stream)
+            #self.trim_stock(start_time = startTime, end_time = endTime)
 
         self.logger.debug("....finished getting the waveform.")
 
