@@ -23,7 +23,7 @@ import wx
 import time
 import numpy as np
 from matplotlib.patches import Rectangle
-from psysmon.core.plugins import OptionPlugin, AddonPlugin, InteractivePlugin
+from psysmon.core.plugins import OptionPlugin, AddonPlugin, InteractivePlugin, CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
 from obspy.core import UTCDateTime
@@ -31,6 +31,29 @@ import wx.lib.mixins.listctrl as listmix
 from psysmon.core.gui import psyContextMenu
 from obspy.imaging.spectrogram import spectrogram
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
+
+
+class Audify(CommandPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        CommandPlugin.__init__(self,
+                              name = 'audify',
+                              category = 'audification',
+                              tags = ['audify', 'play', 'sound']
+                             )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.pin_map_icon_16
 
 
 class SelectStation(OptionPlugin):
@@ -46,7 +69,7 @@ class SelectStation(OptionPlugin):
         OptionPlugin.__init__(self,
                               name = 'select station',
                               category = 'view',
-                              tags = ['station', 'view', 'select'],
+                              tags = ['station', 'view', 'select']
                              )
 
         # Create the logging logger instance.
