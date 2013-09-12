@@ -1533,10 +1533,6 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         self.wfDirList = self.client.waveformDirList
 
-        self.history = ActionHistory(attrMap = {}, 
-                                     actionTypes = []
-                                     )
-
         self.updateWfListCtrl()
 
 
