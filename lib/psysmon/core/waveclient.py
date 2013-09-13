@@ -314,7 +314,7 @@ class PsysmonDbWaveClient(WaveClient):
 
                     stream += stock_stream
 
-                    if (startTime - cur_start_time) > 1/cur_trace.stats.sampling_rate:
+                    if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
                         self.logger.debug('Get missing data in front...')
                         curStream = self.load_from_file(station = stat,
                                                         channel = chan,
