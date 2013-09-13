@@ -63,6 +63,7 @@ class PreferencesManager:
         self.gui_elements['float_spin'] = FloatSpinField
         self.gui_elements['filebrowse'] = FileBrowseField
         self.gui_elements['dirbrowse'] = DirBrowseField
+        self.gui_elements['datetime_edit'] = TextEditField
 
 
     def __str__(self):
@@ -340,6 +341,16 @@ class TextEditPrefItem(PreferenceItem):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'textedit', **kwargs)
+
+
+class DateTimeEditPrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'datetime_edit', **kwargs)
 
 
 class CustomPrefItem(PreferenceItem):
