@@ -49,11 +49,35 @@ class Audify(CommandPlugin):
                               tags = ['audify', 'play', 'sound']
                              )
 
+
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.pin_map_icon_16
+
+
+    def run(self):
+        import pyo64 as pyo
+        import time
+
+        stream = self.parent.dataManager.procStream
+        filename = 'test.wav'
+        stream.write(filename, format = 'WAV', framerate = 500, rescale = True)
+
+        #s = pyo.Server().boot()
+        #s.start()
+        #snd = pyo.SNDS_PATH + "/transparent.aif"
+        #sf = pyo.SfPlayer(filename).mix(2).out()
+        #a = pyo.Sine(mul=0.1).mix(2).out()
+        #count = 0
+        #while sf.isOutputting() and count < 10:
+        #    self.logger.debug('isOutputting: %s; isPlaying: %s', sf.isOutputting(), sf.isPlaying())
+        #    time.sleep(0.2)
+        #    count += 1
+
+        #time.sleep(2)
+        self.logger.debug('Exit run.')
 
 
 class SelectStation(OptionPlugin):
@@ -300,7 +324,7 @@ class ProcessingStack(OptionPlugin):
         isActive = [m for m,x in enumerate(self.processingStack) if x.isEnabled() == True]
         self.nodeListBox.AppendItems(nodeNames)
         self.nodeListBox.SetChecked(isActive)
-        
+
 
 
     def onRun(self, event):
@@ -323,7 +347,7 @@ class ProcessingStack(OptionPlugin):
             self.updateNodeList()
 
         dlg.Destroy()
-        
+
 
     def onNodeSelected(self, event):
         index = event.GetSelection()
@@ -807,7 +831,8 @@ class DemoView(View):
                 self.line, = self.dataAxes.plot(timeArray, trace.data * -1, color = color)
             else:
                 self.line.set_xdata(timeArray)
-                self.line.set_ydata(trace.data * -1)
+                #self.line.set_ydata(trace.data * -1)
+                self.line.set_ydata(np.log10(trace.data))
 
             self.dataAxes.set_frame_on(False)
             self.dataAxes.get_xaxis().set_visible(False)
