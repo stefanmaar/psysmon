@@ -35,6 +35,8 @@ from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
 import container
+import psysmon.core.preferences_manager as pref_manager
+
 try:
     from agw import foldpanelbar as fpb
 except ImportError: # if it's not there locally, try the wxPython lib.
@@ -196,7 +198,14 @@ class TraceDisplay(CollectionNode):
 
     def __init__(self):
         CollectionNode.__init__(self)
-        self.options = {}
+        pref_item = pref_manager.TextEditPrefItem(name = 'start_time', label = 'start time', value = UTCDateTime('2012-08-03 00:00:00'))
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = pref_manager.TextEditPrefItem(name = 'end_time', label = 'end time', value = UTCDateTime('2012-08-03 00:05:00'))
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = pref_manager.TextEditPrefItem(name = 'show_channels', label = 'channels', value = ['HHZ',])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = pref_manager.TextEditPrefItem(name = 'show_stations', label = 'stations', value = ['AP01'])
+        self.pref_manager.add_item(item = pref_item)
 
     def edit(self):
         pass
@@ -212,7 +221,8 @@ class TraceDisplay(CollectionNode):
         # Get the plugins for this class.
         plugins = self.project.getPlugins(self.__class__.__name__)
 
-        tdDlg = TraceDisplayDlg(project = self.project,
+        tdDlg = TraceDisplayDlg(self,
+                                project = self.project,
                                 parent = None,
                                 id = wx.ID_ANY,
                                 title = "TraceDisplay Development",
@@ -233,7 +243,7 @@ class TraceDisplayDlg(wx.Frame):
 
     '''
 
-    def __init__(self, project, parent = None, id = wx.ID_ANY, title = "tracedisplay", 
+    def __init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay", 
                  plugins = None, size=(1000, 600)):
         ''' The constructor.
 
@@ -249,6 +259,9 @@ class TraceDisplayDlg(wx.Frame):
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+        # The parent collection node.
+        self.collection_node = collection_node
 
         # The parent project.
         self.project = project
@@ -777,9 +790,11 @@ class DisplayManager:
         # The inventory of the available geometry.
         self.inventory = inventory
 
+        pref_manager = self.parent.collection_node.pref_manager
+
         # The timespan to show.
-        self.startTime = UTCDateTime('2010-08-31 07:57:00')
-        self.endTime = UTCDateTime('2010-08-31 07:58:00')
+        self.startTime = pref_manager.get_value('start_time')
+        self.endTime = pref_manager.get_value('end_time')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # All stations that are contained in the inventory.
@@ -808,7 +823,8 @@ class DisplayManager:
 
         # The channels currently shown.
         # TODO: This should be selected by the user in the edit dialog.
-        self.showChannels = [self.availableChannels[0], self.availableChannels[2]]
+        show_channels = pref_manager.get_value('show_channels')
+        self.showChannels = [x for x in show_channels if x in self.availableChannels]
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
@@ -822,8 +838,9 @@ class DisplayManager:
         #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
         #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
         #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
+        show_stations = pref_manager.get_value('show_stations')
         for curStation in self.availableStations:
-            if curStation.name == 'GILA' or curStation.name == 'SITA':
+            if curStation.name in show_stations:
                 station2Add = DisplayStation(curStation)
                 station2Add.addChannel(self.showChannels)
                 for curChannel in station2Add.channels:
@@ -832,8 +849,6 @@ class DisplayManager:
                 self.showStations.append(station2Add)
         self.stationsChanged = True
 
-
-        #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00')]
         self.showStations = sorted(self.showStations, key = attrgetter('name'))
 
 
