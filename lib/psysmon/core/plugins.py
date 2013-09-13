@@ -245,6 +245,12 @@ class CommandPlugin(PluginNode):
                             docEntryPoint = docEntryPoint)
 
 
+    def run(self):
+        ''' Run the command of the plugin.
+        '''
+        return None
+
+
 
 class InteractivePlugin(PluginNode):
     ''' Interact with the user interface.
