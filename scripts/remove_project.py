@@ -35,7 +35,7 @@ from psysmon.core.test_util import remove_project
 
 def run():
     if len(sys.argv) <= 2:
-        print "At least 2 arguments required.\n"
+        print "At least 2 arguments required (project_file, username).\n"
         sys.exit()
 
     project_file = sys.argv[1]
