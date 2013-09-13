@@ -563,6 +563,7 @@ class TraceDisplayDlg(wx.Frame):
         Activate the tool.
         '''
         self.logger.debug('Clicked the command tool: %s', plugin.name)
+        plugin.run()
 
 
     def onInteractiveToolClicked(self, event, plugin):
