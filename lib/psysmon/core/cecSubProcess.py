@@ -45,8 +45,6 @@ class ExecutionFrame(wx.Frame):
 
 
 
-
-
 if __name__ == "__main__":
 
     # The process name and the temp. file are passes as arguments. 
