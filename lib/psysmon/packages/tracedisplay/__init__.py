@@ -44,7 +44,7 @@ def pluginFactory():
     from plugins import DemoPlotter
     from plugins import ProcessingStack
     from plugins import SpectrogramPlotter
-    from plugins import Audify
+    from plugins import SonificationPyoControl
 
     pluginTemplates = [SelectStation,
                        SelectChannel,
@@ -53,7 +53,7 @@ def pluginFactory():
                        SeismogramPlotter,
                        DemoPlotter,
                        SpectrogramPlotter,
-                       Audify]
+                       SonificationPyoControl]
 
     return pluginTemplates
 

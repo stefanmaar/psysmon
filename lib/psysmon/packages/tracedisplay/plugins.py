@@ -33,7 +33,7 @@ from obspy.imaging.spectrogram import spectrogram
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
 
 
-class Audify(CommandPlugin):
+class SonificationPyoControl(CommandPlugin):
     '''
 
     '''
@@ -44,9 +44,9 @@ class Audify(CommandPlugin):
 
         '''
         CommandPlugin.__init__(self,
-                              name = 'audify',
-                              category = 'audification',
-                              tags = ['audify', 'play', 'sound']
+                              name = 'pyo control',
+                              category = 'sonification',
+                              tags = ['sonify', 'pyo', 'play', 'sound']
                              )
 
 
