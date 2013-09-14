@@ -60,10 +60,17 @@ class Audify(CommandPlugin):
     def run(self):
         import pyo64 as pyo
         import time
+        import os
+
+        project = self.parent.project
 
         stream = self.parent.dataManager.procStream
-        filename = 'test.wav'
-        stream.write(filename, format = 'WAV', framerate = 500, rescale = True)
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+        sps = stream.traces[0].stats.sampling_rate
+        filename = os.path.join(project.tmpDir, 'test.wav')
+        stream.write(filename, format = 'WAV', framerate = sps, rescale = True)
 
         #s = pyo.Server().boot()
         #s.start()
