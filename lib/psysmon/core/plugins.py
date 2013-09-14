@@ -31,6 +31,8 @@ This module contains the pSysmon plugin system.
 '''
 
 from psysmon.core.preferences_manager import PreferencesManager
+from psysmon.core.guiBricks import PrefEditPanel
+
 
 ## The PluginNode class.
 #
@@ -151,14 +153,8 @@ class PluginNode:
         ''' Create the foldpanel GUI.
 
         '''
-        return None
-
-
-    def editPreferences(self):
-        ''' Create a dialog to edit the preferences.
-
-        '''
-        self.logger.debug('Editing the preferences of plugin: %s', self.name)
+        return PrefEditPanel(pref = self.pref,
+                             parent = panelBar)
 
 
 
