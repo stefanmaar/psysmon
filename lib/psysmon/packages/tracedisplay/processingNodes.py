@@ -48,7 +48,7 @@ class Detrend(ProcessingNode):
                               limit = ('simple', 'linear', 'constant'),
                               value = 'constant',
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
 
     def execute(self, stream):
@@ -60,7 +60,7 @@ class Detrend(ProcessingNode):
             The data to process.
         '''
         #self.logger.debug('Executing the processing node.')
-        stream.detrend(type = self.pref.get_value('detrend method'))
+        stream.detrend(type = self.pref_manager.get_value('detrend method'))
 
 
 
@@ -90,7 +90,7 @@ class FilterBandPass(ProcessingNode):
                               digits = 1,
                               increment = 1
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
         # Add an float_spin field.
         item = FloatSpinPrefItem(name = 'max. frequ.', 
@@ -99,14 +99,14 @@ class FilterBandPass(ProcessingNode):
                               digits = 1,
                               increment = 1
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
         # Add an float_spin field.
         item = IntegerSpinPrefItem(name = 'corners', 
                               value = 4,
                               limit = (1, 30)
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
@@ -124,9 +124,9 @@ class FilterBandPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('bandpass',
-                      freqmin = self.pref.get_value('min. frequ.'),
-                      freqmax = self.pref.get_value('max. frequ.'),
-                      corners = self.pref.get_value('corners')
+                      freqmin = self.pref_manager.get_value('min. frequ.'),
+                      freqmax = self.pref_manager.get_value('max. frequ.'),
+                      corners = self.pref_manager.get_value('corners')
                      )
 
 
@@ -156,14 +156,14 @@ class FilterLowPass(ProcessingNode):
                               digits = 1,
                               increment = 1
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
         # Add an float_spin field.
         item = IntegerSpinPrefItem(name = 'corners', 
                               value = 4,
                               limit = (1, 30)
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
 
         # Create the logging logger instance.
@@ -184,7 +184,7 @@ class FilterLowPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('lowpass',
-                      freq = self.pref.get_value('frequ.')
+                      freq = self.pref_manager.get_value('frequ.')
                      )
 
 
@@ -215,14 +215,14 @@ class FilterHighPass(ProcessingNode):
                               digits = 1,
                               increment = 1
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
         # Add an float_spin field.
         item = IntegerSpinPrefItem(name = 'corners', 
                               value = 4,
                               limit = (1, 30)
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
@@ -239,5 +239,5 @@ class FilterHighPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('highpass',
-                      freq = self.pref.get_value('frequ.')
+                      freq = self.pref_manager.get_value('frequ.')
                      )

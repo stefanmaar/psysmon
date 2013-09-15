@@ -271,7 +271,7 @@ class Project:
         self.scnlDataSources = {}
 
         # The project preferences.
-        self.pref = PreferencesManager()
+        self.pref_manager = PreferencesManager()
 
 
     ## The __getstate__ method.

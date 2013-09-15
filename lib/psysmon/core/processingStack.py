@@ -176,7 +176,7 @@ class ProcessingNode:
         self.options = options
 
         # The preferences of the stack node.
-        self.pref = PreferencesManager()
+        self.pref_manager = PreferencesManager()
 
         # The entry point of the documentation of the node.
         self.docEnctryPoint = docEntryPoint
@@ -210,7 +210,7 @@ class ProcessingNode:
         stack GUI.
 
         '''
-        return PrefEditPanel(pref = self.pref,
+        return PrefEditPanel(pref = self.pref_manager,
                              parent = parent)
 
 

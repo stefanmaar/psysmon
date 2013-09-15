@@ -101,7 +101,7 @@ class PluginNode:
         self.parent = parent
 
         # The preferences of the plugin.
-        self.pref = PreferencesManager()
+        self.pref_manager = PreferencesManager()
 
         # The path to the html index file containing the documentation of the
         # plugin.
@@ -117,6 +117,7 @@ class PluginNode:
         # interactive tools. For other tool modes, the active state is
         # always False.
         self.active = False
+
 
 
     def register(self, parent):
@@ -153,7 +154,7 @@ class PluginNode:
         ''' Create the foldpanel GUI.
 
         '''
-        return PrefEditPanel(pref = self.pref,
+        return PrefEditPanel(pref = self.pref_manager,
                              parent = panelBar)
 
 
