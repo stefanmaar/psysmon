@@ -30,6 +30,7 @@ from obspy.core import UTCDateTime
 import wx.lib.mixins.listctrl as listmix
 from psysmon.core.gui import psyContextMenu
 from obspy.imaging.spectrogram import spectrogram
+import psysmon.core.preferences_manager as preferences_manager
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
 
 
@@ -49,31 +50,55 @@ class SonificationPyoControl(CommandPlugin):
                               tags = ['sonify', 'pyo', 'play', 'sound']
                              )
 
+        import pyo64 as pyo
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        # The ribbonbar icon.
         self.icons['active'] = icons.pin_map_icon_16
 
+        # The pyo server mode.
+        pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack', 'coreaudio', 'offline', 'offline_nb'])
+        self.pref_manager.add_item(item = pref_item)
+        self.dev_names, self.dev_indexes = pyo.pa_get_output_devices()
+        dev_default = pyo.pa_get_default_output()
+        pref_item = preferences_manager.SingleChoicePrefItem(name = 'audio_device', label = 'audio devices', value = self.dev_names[self.dev_indexes.index(dev_default)], limit = self.dev_names)
+        self.pref_manager.add_item(item = pref_item)
+
+        self.pyo_server = None
 
     def run(self):
         import pyo64 as pyo
-        import time
-        import os
+        #import os
 
-        project = self.parent.project
+        #project = self.parent.project
 
-        stream = self.parent.dataManager.procStream
-        if len(stream.traces) != 1:
-            self.logger.error('Only streams with 1 traces are supported.')
-            return
-        sps = stream.traces[0].stats.sampling_rate
-        filename = os.path.join(project.tmpDir, 'test.wav')
-        stream.write(filename, format = 'WAV', framerate = sps, rescale = True)
+        #stream = self.parent.dataManager.procStream
+        #if len(stream.traces) != 1:
+        #    self.logger.error('Only streams with 1 traces are supported.')
+        #    return
+        #sps = stream.traces[0].stats.sampling_rate
+        #filename = os.path.join(project.tmpDir, 'test.wav')
+        #stream.write(filename, format = 'WAV', framerate = sps, rescale = True)
 
-        #s = pyo.Server().boot()
-        #s.start()
+        audio = self.pref_manager.get_value('server_mode')
+
+        if self.pyo_server is None:
+            self.pyo_server = pyo.Server(audio = audio)
+        else:
+            self.pyo_server.stop()
+            self.pyo_server.reinit(audio = audio)
+
+        output_device = self.pref_manager.get_value('audio_device')
+        output_index = self.dev_indexes[self.dev_names.index(output_device)]
+        self.pyo_server.setInOutDevice(output_index)
+        self.pyo_server.boot()
+        self.pyo_server.start()
+
+        # TODO: Change the icon to indicate that the server is running.
+
         #snd = pyo.SNDS_PATH + "/transparent.aif"
         #sf = pyo.SfPlayer(filename).mix(2).out()
         #a = pyo.Sine(mul=0.1).mix(2).out()
@@ -85,6 +110,42 @@ class SonificationPyoControl(CommandPlugin):
 
         #time.sleep(2)
         self.logger.debug('Exit run.')
+
+
+
+class SonificationPlayLoop(CommandPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        CommandPlugin.__init__(self,
+                              name = 'play loop',
+                              category = 'sonification',
+                              tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
+                             )
+
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The ribbonbar icon.
+        self.icons['active'] = icons.pin_map_icon_16
+
+        # The pyo server mode.
+        #pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack'])
+        #self.pref_manager.add_item(item = pref_item)
+
+
+    def run(self):
+        import pyo64 as pyo
+
+        self.sine = pyo.Sine(mul=0.1).mix(2).out()
 
 
 class SelectStation(OptionPlugin):
@@ -583,7 +644,7 @@ class Zoom(InteractivePlugin):
                               value = 20,
                               limit = (1, 99)
                              )
-        self.pref.add_item(item = item)
+        self.pref_manager.add_item(item = item)
 
 
     def getHooks(self):
@@ -604,7 +665,7 @@ class Zoom(InteractivePlugin):
         elif event.button == 3:
             # Use the right mouse button to zoom out.
             self.startTime = event.xdata
-            ratio = self.pref.get_value('zoom ratio')
+            ratio = self.pref_manager.get_value('zoom ratio')
             duration = displayManager.endTime - displayManager.startTime
             shrinkAmount = duration * ratio/100.0
             tmp = self.startTime
@@ -704,7 +765,7 @@ class Zoom(InteractivePlugin):
         # The timebase of the plots is unixseconds.
         if self.startTime == self.endTime:
             # This was a single click with no drag.
-            ratio = self.pref.get_value('zoom ratio')
+            ratio = self.pref_manager.get_value('zoom ratio')
             duration = displayManager.endTime - displayManager.startTime
             shrinkAmount = duration * ratio/100.0
             tmp = self.startTime
