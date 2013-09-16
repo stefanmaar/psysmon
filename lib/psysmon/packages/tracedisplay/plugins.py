@@ -36,7 +36,7 @@ from psysmon.core.preferences_manager import IntegerSpinPrefItem
 import pyo64 as pyo
 
 
-class SonificationPyoControl(CommandPlugin):
+class SonificationPyoControl(OptionPlugin):
     '''
 
     '''
@@ -46,7 +46,7 @@ class SonificationPyoControl(CommandPlugin):
         ''' The constructor
 
         '''
-        CommandPlugin.__init__(self,
+        OptionPlugin.__init__(self,
                               name = 'pyo control',
                               category = 'sonification',
                               tags = ['sonify', 'pyo', 'play', 'sound']
@@ -57,7 +57,7 @@ class SonificationPyoControl(CommandPlugin):
         self.logger = logging.getLogger(loggerName)
 
         # The ribbonbar icon.
-        self.icons['active'] = icons.pin_map_icon_16
+        self.icons['active'] = icons.cogs_icon_16
 
         # The pyo server mode.
         pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack', 'coreaudio', 'offline', 'offline_nb'])
@@ -95,6 +95,7 @@ class SonificationPyoControl(CommandPlugin):
         self.pyo_server.setInOutDevice(output_index)
         self.pyo_server.boot()
         self.pyo_server.start()
+        self.pyo_server._server.setAmpCallable(self.vu_meter)
 
         # TODO: Change the icon to indicate that the server is running.
 
@@ -124,10 +125,14 @@ class SonificationPyoControl(CommandPlugin):
                                        parent = fold_panel)
         sizer.Add(pref_panel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
-        vu_meter = pyolib._wxwidgets.VuMeter(parent = fold_panel)
-        sizer.Add(vu_meter, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
+        self.vu_meter = pyolib._wxwidgets.VuMeter(parent = fold_panel)
+        sizer.Add(self.vu_meter, 0, flag = wx.TOP|wx.BOTTOM, border = 1)
+
+        #server_gui = pyolib._wxwidgets.ServerGUI(parent = fold_panel)
+        #sizer.Add(server_gui, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
 
         fold_panel.SetSizer(sizer)
+
 
         return fold_panel
 
@@ -154,7 +159,7 @@ class SonificationPlayLoop(CommandPlugin):
         self.logger = logging.getLogger(loggerName)
 
         # The ribbonbar icon.
-        self.icons['active'] = icons.pin_map_icon_16
+        self.icons['active'] = icons.playback_play_icon_16
 
         # The pyo server mode.
         #pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack'])
@@ -164,7 +169,7 @@ class SonificationPlayLoop(CommandPlugin):
     def run(self):
         import pyo64 as pyo
 
-        self.sine = pyo.Sine(mul=0.1).mix(2).out()
+        self.sine = pyo.Sine(440, mul=0.1).mix(2).out()
 
 
 class SelectStation(OptionPlugin):
