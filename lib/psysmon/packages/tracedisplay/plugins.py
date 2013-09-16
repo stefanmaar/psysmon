@@ -29,9 +29,11 @@ from container import View
 from obspy.core import UTCDateTime
 import wx.lib.mixins.listctrl as listmix
 from psysmon.core.gui import psyContextMenu
+import psysmon.core.guiBricks as guiBricks
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
+import pyo64 as pyo
 
 
 class SonificationPyoControl(CommandPlugin):
@@ -49,8 +51,6 @@ class SonificationPyoControl(CommandPlugin):
                               category = 'sonification',
                               tags = ['sonify', 'pyo', 'play', 'sound']
                              )
-
-        import pyo64 as pyo
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -70,7 +70,6 @@ class SonificationPyoControl(CommandPlugin):
         self.pyo_server = None
 
     def run(self):
-        import pyo64 as pyo
         #import os
 
         #project = self.parent.project
@@ -111,6 +110,26 @@ class SonificationPyoControl(CommandPlugin):
         #time.sleep(2)
         self.logger.debug('Exit run.')
 
+
+    def buildFoldPanel(self, panel_bar):
+        ''' Create the foldpanel GUI.
+
+        '''
+        import pyolib._wxwidgets
+
+        fold_panel = wx.Panel(parent = panel_bar, id = wx.ID_ANY)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        pref_panel = guiBricks.PrefEditPanel(pref = self.pref_manager,
+                                       parent = fold_panel)
+        sizer.Add(pref_panel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+
+        vu_meter = pyolib._wxwidgets.VuMeter(parent = fold_panel)
+        sizer.Add(vu_meter, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
+
+        fold_panel.SetSizer(sizer)
+
+        return fold_panel
 
 
 class SonificationPlayLoop(CommandPlugin):
