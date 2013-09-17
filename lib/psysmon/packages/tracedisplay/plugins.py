@@ -69,7 +69,9 @@ class SonificationPyoControl(OptionPlugin):
 
         self.pyo_server = None
 
-    def run(self):
+        self.pyo_server_started = False
+
+    def start_pyo_server(self):
         #import os
 
         #project = self.parent.project
@@ -84,8 +86,9 @@ class SonificationPyoControl(OptionPlugin):
 
         audio = self.pref_manager.get_value('server_mode')
 
-        if self.pyo_server is None:
+        if self.pyo_server is None and not pyo.serverCreated():
             self.pyo_server = pyo.Server(audio = audio)
+            self.pyo_server.setVerbosity(15)
         else:
             self.pyo_server.stop()
             self.pyo_server.reinit(audio = audio)
@@ -93,7 +96,9 @@ class SonificationPyoControl(OptionPlugin):
         output_device = self.pref_manager.get_value('audio_device')
         output_index = self.dev_indexes[self.dev_names.index(output_device)]
         self.pyo_server.setInOutDevice(output_index)
-        self.pyo_server.boot()
+
+        if not pyo.serverBooted():
+            self.pyo_server.boot()
         self.pyo_server.start()
         self.pyo_server._server.setAmpCallable(self.vu_meter)
 
@@ -109,7 +114,13 @@ class SonificationPyoControl(OptionPlugin):
         #    count += 1
 
         #time.sleep(2)
-        self.logger.debug('Exit run.')
+
+    def stop_pyo_server(self):
+        ''' Stop the pyo server.
+
+        '''
+        self.pyo_server.stop()
+        self.logger.debug('Stopped the pyo server.')
 
 
     def buildFoldPanel(self, panel_bar):
@@ -123,18 +134,47 @@ class SonificationPyoControl(OptionPlugin):
         sizer = wx.BoxSizer(wx.VERTICAL)
         pref_panel = guiBricks.PrefEditPanel(pref = self.pref_manager,
                                        parent = fold_panel)
-        sizer.Add(pref_panel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(pref_panel, 0, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.start_button = wx.Button(fold_panel, wx.ID_ANY, 'start server')
+        button_sizer.Add(self.start_button, 0, flag = wx.EXPAND, border = 0)
+        self.shutdown_button = wx.Button(fold_panel, wx.ID_ANY, 'shutdown server')
+        button_sizer.Add(self.shutdown_button, 0, flag = wx.EXPAND, border = 0)
+        sizer.Add(button_sizer, 0, flag =wx.TOP|wx.LEFT, border = 5)
 
         self.vu_meter = pyolib._wxwidgets.VuMeter(parent = fold_panel)
-        sizer.Add(self.vu_meter, 0, flag = wx.TOP|wx.BOTTOM, border = 1)
+        sizer.Add(self.vu_meter, 0, flag = wx.TOP|wx.LEFT, border = 5)
 
         #server_gui = pyolib._wxwidgets.ServerGUI(parent = fold_panel)
         #sizer.Add(server_gui, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
 
+        fold_panel.Bind(wx.EVT_BUTTON, self.start_server_callback, self.start_button)
+        fold_panel.Bind(wx.EVT_BUTTON, self.shutdown_server_callback, self.shutdown_button)
+
         fold_panel.SetSizer(sizer)
 
-
         return fold_panel
+
+
+    def start_server_callback(self, evt):
+        if self.pyo_server_started == False:
+            self.start_pyo_server()
+            self.pyo_server_started = True
+            self.start_button.SetLabel('stop server')
+            self.shutdown_button.Disable()
+        else:
+            self.stop_pyo_server()
+            self.pyo_server_started = False
+            self.start_button.SetLabel('start server')
+            self.shutdown_button.Enable()
+
+    def shutdown_server_callback(self, evt):
+        if self.pyo_server.getIsStarted() == 1:
+            self.stop_pyo_server()
+            time.sleep(0.25)
+        self.pyo_server.shutdown()
+
 
 
 class SonificationPlayLoop(CommandPlugin):
@@ -169,8 +209,11 @@ class SonificationPlayLoop(CommandPlugin):
     def run(self):
         import pyo64 as pyo
 
-        self.sine = pyo.Sine(440, mul=0.1).mix(2).out()
-
+        #self.sine = pyo.Sine(440, mul=0.1).mix(2).out()
+        if pyo.serverBooted():
+            self.snd = pyo.SfPlayer(pyo.SNDS_PATH + '/transparent.aif', loop = False).mix(2).out()
+        else:
+            self.logger.error('No booted pyo server found.')
 
 class SelectStation(OptionPlugin):
     '''
