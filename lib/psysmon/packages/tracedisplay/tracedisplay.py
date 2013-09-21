@@ -1600,7 +1600,6 @@ class DataManager():
                                                    network = curScnl[2],
                                                    location = curScnl[3])
                 curStream = curStream.copy()
-                #curStream.detrend(type = 'constant')
                 self.processingStack.execute(curStream)
                 self.procStream += curStream
 
