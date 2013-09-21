@@ -34,6 +34,7 @@ from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
 import pyo64 as pyo
+import threading
 
 
 class SonificationPyoControl(OptionPlugin):
@@ -97,10 +98,13 @@ class SonificationPyoControl(OptionPlugin):
         output_index = self.dev_indexes[self.dev_names.index(output_device)]
         self.pyo_server.setInOutDevice(output_index)
 
-        if not pyo.serverBooted():
-            self.pyo_server.boot()
-        self.pyo_server.start()
-        self.pyo_server._server.setAmpCallable(self.vu_meter)
+        if audio == 'offline':
+            self.pyo_server.recordOptions(dur=10)
+        else:
+            if not pyo.serverBooted():
+                self.pyo_server.boot()
+            self.pyo_server.start()
+            self.pyo_server._server.setAmpCallable(self.vu_meter)
 
         # TODO: Change the icon to indicate that the server is running.
 
@@ -201,6 +205,12 @@ class SonificationPlayLoop(CommandPlugin):
         # The ribbonbar icon.
         self.icons['active'] = icons.playback_play_icon_16
 
+        # The pyo SfPlayer
+        self.sf = None
+
+        # The pyo output object.
+        self.out = None
+
         # The pyo server mode.
         #pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack'])
         #self.pref_manager.add_item(item = pref_item)
@@ -208,12 +218,47 @@ class SonificationPlayLoop(CommandPlugin):
 
     def run(self):
         import pyo64 as pyo
+        import os
+
+        pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
+        if len(pyo_control_plugin) == 1:
+            pyo_control_plugin = pyo_control_plugin[0]
+        else:
+            return
+
+        project = self.parent.project
+
+        stream = self.parent.dataManager.procStream
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+        sps = stream.traces[0].stats.sampling_rate
+        filename = os.path.join(project.tmpDir, 'test.wav')
+        stream.write(filename, format = 'WAV', framerate = sps, rescale = True)
+
+        if pyo_control_plugin.server_mode == 'offline':
+            pyo_server = pyo_control_plugin.pyo_server
+            fileinfo = pyo.sndinfo(filename)
+            length = fileinfo[1]
+            pyo_server.recordOptions(dur = length)
+            pyo_server.boot()
 
         #self.sine = pyo.Sine(440, mul=0.1).mix(2).out()
         if pyo.serverBooted():
-            self.snd = pyo.SfPlayer(pyo.SNDS_PATH + '/transparent.aif', loop = False).mix(2).out()
+            #self.snd = pyo.SfPlayer(pyo.SNDS_PATH + '/transparent.aif', loop = False).mix(2).out()
+            self.sf = pyo.SfPlayer(filename, interp = 2)
+            #log_comp = pyo.Log10(self.sf)
+            pva = pyo.PVAnal(self.sf, 2048)
+            pvt = pyo.PVShift(pva, 100)
+            pvs = pyo.PVSynth(pvt)
+            comp = pyo.Compress(pvs, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+            self.out = comp.mix(2).out()
         else:
             self.logger.error('No booted pyo server found.')
+
+        if pyo_control_plugin.server_mode == 'offline':
+            pyo_server.start()
+
 
 class SelectStation(OptionPlugin):
     '''
