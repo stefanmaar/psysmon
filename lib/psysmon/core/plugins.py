@@ -119,6 +119,14 @@ class PluginNode:
         self.active = False
 
 
+    def __getattr__(self, attrname):
+        ''' Handle call of attributes which are derived from the parent recorder.
+        '''
+        if attrname in self.pref_manager.get_name():
+            return self.pref_manager.get_value(attrname)
+        else:
+            raise AttributeError(attrname)
+
 
     def register(self, parent):
         ''' Register the plugin within a collection node.
