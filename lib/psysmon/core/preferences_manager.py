@@ -73,7 +73,7 @@ class PreferencesManager:
         out = ''
         for cur_name, cur_page in self.pages.items():
             for cur_item in cur_page:
-                out += str(cur_item)
+                out += str(cur_item) + '\n'
 
         return out
 
@@ -168,6 +168,34 @@ class PreferencesManager:
             cur_item.update_gui_element()
 
         return found_items
+
+
+    def get_name(self, pagename = None):
+        ''' Get all available preference names.
+
+        Parameters
+        ----------
+        pagename : String
+            The name of the page to which the search should be limited.
+
+        Returns
+        -------
+        found_items : List of String
+            The found preference names as a list.
+        '''
+        found_items = []
+        if pagename is not None:
+            if pagename in self.pages.keys():
+                found_items = [x.name for x in self.pages[pagename]]
+
+        else:
+            for cur_page in self.pages.values():
+                tmp = [x.name for x in cur_page]
+                found_items.extend(tmp)
+
+        return found_items
+
+
 
 
 class PreferenceItem(object):
