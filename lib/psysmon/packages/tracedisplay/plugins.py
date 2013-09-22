@@ -171,7 +171,7 @@ class SonificationPyoControl(OptionPlugin):
 
 
 
-class SonificationPlayLoop(CommandPlugin):
+class SonificationPlayPhaseVocoder(CommandPlugin):
     '''
 
     '''
@@ -182,9 +182,9 @@ class SonificationPlayLoop(CommandPlugin):
 
         '''
         CommandPlugin.__init__(self,
-                              name = 'play loop',
+                              name = 'phase vocoder',
                               category = 'sonification',
-                              tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
+                              tags = ['sonify', 'pyo', 'play', 'sound', 'vocoder']
                              )
 
 
@@ -202,8 +202,22 @@ class SonificationPlayLoop(CommandPlugin):
         self.out = None
 
         # The pyo server mode.
-        #pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack'])
-        #self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.IntegerSpinPrefItem(name = 'pva_fft_size', label = 'fft size', value = 1024, limit = [4, 100000])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'pvs_shift', label = 'freq. shift', value = 0, limit = [-10000, 10000])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_thr', label = 'comp. thr', value = -24, limit = [-100, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_ratio', label = 'comp. ratio', value = 2, limit = [-100, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_mul', label = 'comp. makeup gain', value = 1, limit = [-100, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_knee', label = 'comp. knee', value = 0, limit = [0, 1])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_risetime', label = 'comp. rise-time', value = 0.01, limit = [0, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_falltime', label = 'comp. fall-time', value = 0.1, limit = [0, 100])
+        self.pref_manager.add_item(item = pref_item)
 
 
     def run(self):
@@ -239,11 +253,14 @@ class SonificationPlayLoop(CommandPlugin):
             #self.snd = pyo.SfPlayer(pyo.SNDS_PATH + '/transparent.aif', loop = False).mix(2).out()
             self.sf = pyo.SfPlayer(filename, interp = 2)
             #log_comp = pyo.Log10(self.sf)
-            pva = pyo.PVAnal(self.sf, 2048)
-            pvt = pyo.PVShift(pva, 100)
+            pva = pyo.PVAnal(self.sf, self.pva_fft_size)
+            pvt = pyo.PVShift(pva, self.pvs_shift)
             pvs = pyo.PVSynth(pvt)
-            comp = pyo.Compress(pvs, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
-            self.out = comp.mix(2).out()
+            comp = pyo.Compress(pvs, thresh = self.comp_thr, ratio = self.comp_ratio,
+                                mul = self.comp_mul, knee = self.comp_knee,
+                                risetime = self.comp_risetime, falltime = self.comp_falltime)
+            clip = pyo.Clip(comp)
+            self.out = clip.mix(2).out()
         else:
             self.logger.error('No booted pyo server found.')
 
