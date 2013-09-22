@@ -22,6 +22,7 @@ from psysmon.core.processingStack import ProcessingNode
 from psysmon.core.preferences_manager import SingleChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
+import numpy as np
 
 
 class Detrend(ProcessingNode):
@@ -241,3 +242,85 @@ class FilterHighPass(ProcessingNode):
         stream.filter('highpass',
                       freq = self.pref_manager.get_value('frequ.')
                      )
+
+
+class ConvertToSensorUnits(ProcessingNode):
+    ''' Detrend a timeseries.
+
+    This node uses the detrend method of the obspy stream class to remove the 
+    trend from a timeseries. 
+    '''
+    nodeClass = 'common'
+
+    def __init__(self):
+        ''' The constructor
+
+        '''
+        ProcessingNode.__init__(self,
+                                name = 'convert to sensor units',
+                                mode = 'uneditable',
+                                category = 'test',
+                                tags = ['convert', 'unit', 'physical']
+                               )
+
+
+    def execute(self, stream):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        for tr in stream.traces:
+            station = self.parentStack.inventory.get_station(network = tr.stats.network,
+                                                             name = tr.stats.station,
+                                                             location = tr.stats.location)
+            if len(station) > 1:
+                raise ValueError('There are more than one stations. This is not yet supported.')
+            station = station[0]
+            sensor = station.get_sensor(channel_name = tr.stats.channel,
+                                        start_time = tr.stats.starttime,
+                                        end_time = tr.stats.endtime)
+            if len(sensor) > 1:
+                raise ValueError('There are more than one sensors. This is not yet supported.')
+            sensor = sensor[0]
+            param = sensor[0].get_parameter(start_time = tr.stats.starttime,
+                                            end_time = tr.stats.endtime)
+
+            if len(param) > 1:
+                raise ValueError('There are more than one parameters. This is not yet supported.')
+
+            param = param[0]
+
+            tr.data = tr.data * param.bitweight / (param.gain * param.sensitivity)
+
+
+class ScaleLog10(ProcessingNode):
+    ''' Apply a log10 scaling.
+
+    '''
+    nodeClass = 'common'
+
+    def __init__(self):
+        ''' The constructor
+
+        '''
+        ProcessingNode.__init__(self,
+                                name = 'scale log10',
+                                mode = 'uneditable',
+                                category = 'test',
+                                tags = ['convert', 'unit', 'physical']
+                               )
+
+
+    def execute(self, stream):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        for tr in stream.traces:
+            tr.data = np.sign(tr.data) * np.log10(np.abs(tr.data))
