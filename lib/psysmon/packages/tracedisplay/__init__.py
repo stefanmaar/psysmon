@@ -46,6 +46,8 @@ def pluginFactory():
     from plugins import SpectrogramPlotter
     from plugins import SonificationPyoControl
     from plugins import SonificationPlayLoop
+    from plugins import SonificationPlayParameterMapping
+    from plugins import SonificationPlayTimeCompress
 
     pluginTemplates = [SelectStation,
                        SelectChannel,
@@ -55,7 +57,9 @@ def pluginFactory():
                        DemoPlotter,
                        SpectrogramPlotter,
                        SonificationPyoControl,
-                       SonificationPlayLoop]
+                       SonificationPlayLoop,
+                       SonificationPlayParameterMapping,
+                       SonificationPlayTimeCompress]
 
     return pluginTemplates
 
@@ -68,11 +72,15 @@ def processingNodeFactory():
     from processingNodes import FilterBandPass
     from processingNodes import FilterLowPass
     from processingNodes import FilterHighPass
+    from processingNodes import ConvertToSensorUnits
+    from processingNodes import ScaleLog10
 
     procNodeTemplates = [Detrend,
                          FilterBandPass,
                          FilterLowPass,
-                         FilterHighPass]
+                         FilterHighPass,
+                         ConvertToSensorUnits,
+                         ScaleLog10]
 
     return procNodeTemplates
 

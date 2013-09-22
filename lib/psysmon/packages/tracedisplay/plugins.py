@@ -32,9 +32,9 @@ from psysmon.core.gui import psyContextMenu
 import psysmon.core.guiBricks as guiBricks
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
-from psysmon.core.preferences_manager import IntegerSpinPrefItem
 import pyo64 as pyo
 import threading
+import multiprocessing
 
 
 class SonificationPyoControl(OptionPlugin):
@@ -73,18 +73,6 @@ class SonificationPyoControl(OptionPlugin):
         self.pyo_server_started = False
 
     def start_pyo_server(self):
-        #import os
-
-        #project = self.parent.project
-
-        #stream = self.parent.dataManager.procStream
-        #if len(stream.traces) != 1:
-        #    self.logger.error('Only streams with 1 traces are supported.')
-        #    return
-        #sps = stream.traces[0].stats.sampling_rate
-        #filename = os.path.join(project.tmpDir, 'test.wav')
-        #stream.write(filename, format = 'WAV', framerate = sps, rescale = True)
-
         audio = self.pref_manager.get_value('server_mode')
 
         if self.pyo_server is None and not pyo.serverCreated():
@@ -163,6 +151,8 @@ class SonificationPyoControl(OptionPlugin):
 
     def start_server_callback(self, evt):
         if self.pyo_server_started == False:
+            #self.t = multiprocessing.Process(target = self.start_pyo_server)
+            #self.t.start()
             self.start_pyo_server()
             self.pyo_server_started = True
             self.start_button.SetLabel('stop server')
@@ -234,6 +224,7 @@ class SonificationPlayLoop(CommandPlugin):
             return
         sps = stream.traces[0].stats.sampling_rate
         filename = os.path.join(project.tmpDir, 'test.wav')
+        #stream.traces[0].data = stream.traces[0].data / np.log10(np.abs(stream.traces[0].data))
         stream.write(filename, format = 'WAV', framerate = sps, rescale = True)
 
         if pyo_control_plugin.server_mode == 'offline':
@@ -258,6 +249,182 @@ class SonificationPlayLoop(CommandPlugin):
 
         if pyo_control_plugin.server_mode == 'offline':
             pyo_server.start()
+
+
+class SonificationPlayTimeCompress(CommandPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        CommandPlugin.__init__(self,
+                              name = 'play time compress',
+                              category = 'sonification',
+                              tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
+                             )
+
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The ribbonbar icon.
+        self.icons['active'] = icons.playback_stop_icon_16
+
+        # The pyo SfPlayer
+        self.sf = None
+
+        # The pyo output object.
+        self.out = None
+
+        # The compression factor
+        pref_item = preferences_manager.IntegerSpinPrefItem(name = 'comp_factor', label = 'time comp.', value = 5, limit = (1, 1000))
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.CheckBoxPrefItem(name = 'play_loop', label = 'loop', value = True)
+        self.pref_manager.add_item(item = pref_item)
+
+
+    def run(self):
+        import pyo64 as pyo
+        import os
+
+        pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
+        if len(pyo_control_plugin) == 1:
+            pyo_control_plugin = pyo_control_plugin[0]
+        else:
+            return
+
+        project = self.parent.project
+
+        stream = self.parent.dataManager.procStream
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+        sps = stream.traces[0].stats.sampling_rate
+        filename = os.path.join(project.tmpDir, 'test.wav')
+        framerate = self.comp_factor * sps
+        stream.write(filename, format = 'WAV', framerate = framerate, rescale = True)
+
+        if pyo_control_plugin.server_mode == 'offline':
+            pyo_server = pyo_control_plugin.pyo_server
+            fileinfo = pyo.sndinfo(filename)
+            length = fileinfo[1]
+            pyo_server.recordOptions(dur = length)
+            pyo_server.boot()
+
+        if pyo.serverBooted():
+            self.sf = pyo.SfPlayer(filename, interp = 2, loop = self.play_loop)
+            comp = pyo.Compress(self.sf, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+            self.out = comp.mix(2).out()
+        else:
+            self.logger.error('No booted pyo server found.')
+
+        if pyo_control_plugin.server_mode == 'offline':
+            pyo_server.start()
+
+
+class PyoServerThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def end(self):
+        self._terminated = True
+
+    def run(self):
+        import pyo64 as pyo
+        import time
+
+        s = pyo.Server().boot()
+        s.start()
+        snd = pyo.SNDS_PATH + "/transparent.aif"
+        sf = pyo.SfPlayer(snd)
+        out = sf.mix(2).out() 
+        tf = pyo.TrigFunc(sf['trig'], self.end)
+
+
+
+class SonificationPlayParameterMapping(CommandPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        CommandPlugin.__init__(self,
+                              name = 'play parameter mapping',
+                              category = 'sonification',
+                              tags = ['sonify', 'pyo', 'play', 'parameter mapping']
+                             )
+
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The ribbonbar icon.
+        self.icons['active'] = icons.playback_prev_icon_16
+
+        # The pyo SfPlayer
+        self.noise = None
+
+        # The pyo output object.
+        self.out = None
+
+        # The pyo server mode.
+        #pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack'])
+        #self.pref_manager.add_item(item = pref_item)
+
+
+    def run(self):
+        import pyo64 as pyo
+
+        pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
+        if len(pyo_control_plugin) == 1:
+            pyo_control_plugin = pyo_control_plugin[0]
+        else:
+            return
+
+        project = self.parent.project
+
+        stream = self.parent.dataManager.procStream
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+        sps = stream.traces[0].stats.sampling_rate
+
+        if pyo.serverBooted():
+            tr = stream.traces[0]
+            noise_level = np.median(np.abs(tr.data))
+            noise_level = noise_level / 1.0e-6
+            if noise_level > 1:
+                noise_level = 1
+
+            self.logger.debug('noise_level: %s', noise_level)
+
+            if self.noise is None:
+                self.noise = pyo.BrownNoise(noise_level)
+                self.out = self.noise.mix(2).out()
+            else:
+                self.noise.setMul(noise_level)
+
+            fourier = np.fft.fft(tr.data)
+            n = tr.data.size
+            dt = 1/sps
+            freq = np.fft.fftfreq(n, d = dt)
+            abs_fourier = np.abs(fourier)
+            f_max = freq(abs_fourier == np.max(abs_fourier))[0]
+            self.logger.debug('f_max: %s', f_max)
+
+        else:
+            self.logger.error('No booted pyo server found.')
+
 
 
 class SelectStation(OptionPlugin):
@@ -679,8 +846,9 @@ class SeismogramView(View):
             self.dataAxes.get_yaxis().set_visible(False)
             yLim = np.max(np.abs(trace.data))
             self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
+            self.logger.debug('yLim: %s', yLim)
 
-        # Add the scale bar.
+        # Add the time scale bar.
         scaleLength = 10
         unitsPerPixel = (2*yLim) / self.dataAxes.get_window_extent().height
         scaleHeight = 3 * unitsPerPixel
@@ -752,10 +920,10 @@ class Zoom(InteractivePlugin):
         self.endTime = None
 
         # Add the plugin preferences.
-        item = IntegerSpinPrefItem(name = 'zoom ratio', 
-                              value = 20,
-                              limit = (1, 99)
-                             )
+        item = preferences_manager.IntegerSpinPrefItem(name = 'zoom ratio', 
+                                                       value = 20,
+                                                       limit = (1, 99)
+                                                      )
         self.pref_manager.add_item(item = item)
 
 
@@ -1012,7 +1180,7 @@ class DemoView(View):
             else:
                 self.line.set_xdata(timeArray)
                 #self.line.set_ydata(trace.data * -1)
-                self.line.set_ydata(np.log10(trace.data))
+                self.line.set_ydata(trace.data / np.log10(np.abs(trace.data)))
 
             self.dataAxes.set_frame_on(False)
             self.dataAxes.get_xaxis().set_visible(False)
