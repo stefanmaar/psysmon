@@ -35,6 +35,7 @@ from psysmon.core.guiBricks import FloatSpinField
 from psysmon.core.guiBricks import MultiChoiceField
 from psysmon.core.guiBricks import FileBrowseField
 from psysmon.core.guiBricks import DirBrowseField
+from psysmon.core.guiBricks import CheckBoxField
 
 
 class PreferencesManager:
@@ -64,6 +65,7 @@ class PreferencesManager:
         self.gui_elements['filebrowse'] = FileBrowseField
         self.gui_elements['dirbrowse'] = DirBrowseField
         self.gui_elements['datetime_edit'] = TextEditField
+        self.gui_elements['checkbox'] = CheckBoxField
 
 
     def __str__(self):
@@ -349,6 +351,16 @@ class IntegerControlPrefItem(PreferenceItem):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'integer_control', **kwargs)
+
+
+class CheckBoxPrefItem(PreferenceItem):
+    '''
+    '''
+
+    def __init__(self, name, value, **kwargs):
+
+        PreferenceItem.__init__(self, name = name, value = value, 
+                mode = 'checkbox', **kwargs)
 
 
 class IntegerSpinPrefItem(PreferenceItem):

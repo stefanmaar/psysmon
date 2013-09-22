@@ -644,6 +644,49 @@ class IntegerRangeField(Field):
         self.Bind(wx.EVT_SPINCTRL, self.onValueChange, self.controlElement)
 
 
+class CheckBoxField(Field):
+
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, 
+                       pref_item = pref_item, size=size)
+
+        # Create the field label.
+        self.labelElement = StaticText(parent=self, 
+                                  ID=wx.ID_ANY, 
+                                  label=self.label,
+                                  style=wx.ALIGN_RIGHT)
+
+        # Create the field spincontrol.
+        self.controlElement = wx.CheckBox(parent=self,
+                                          label = '',
+                                          id=wx.ID_ANY)
+
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
+
+        # Add the elements to the field sizer.
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+
+        # Bind the events.
+        self.Bind(wx.EVT_CHECKBOX, self.onValueChange, self.controlElement)
+
 
 
 
