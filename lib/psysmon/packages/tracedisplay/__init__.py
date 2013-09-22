@@ -45,7 +45,7 @@ def pluginFactory():
     from plugins import ProcessingStack
     from plugins import SpectrogramPlotter
     from plugins import SonificationPyoControl
-    from plugins import SonificationPlayLoop
+    from plugins import SonificationPlayPhaseVocoder
     from plugins import SonificationPlayParameterMapping
     from plugins import SonificationPlayTimeCompress
 
@@ -57,7 +57,7 @@ def pluginFactory():
                        DemoPlotter,
                        SpectrogramPlotter,
                        SonificationPyoControl,
-                       SonificationPlayLoop,
+                       SonificationPlayPhaseVocoder,
                        SonificationPlayParameterMapping,
                        SonificationPlayTimeCompress]
 
