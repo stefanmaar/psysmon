@@ -1109,6 +1109,26 @@ class Sensor:
             self.parameters.append(parameter)
 
 
+    def get_parameter(self, start_time = None, end_time = None):
+        ''' Get a sensor from the recorder.
+
+        Parameters
+        ----------
+
+        '''
+        parameter = self.parameters
+
+        if start_time is not None:
+            start_time = UTCDateTime(start_time)
+            parameter = [x for x in parameter if x.end_time is None or x.end_time > start_time]
+
+        if end_time is not None:
+            end_time = UTCDateTime(end_time)
+            parameter = [x for x in parameter if x.start_time is None or x.start_time < end_time]
+
+        return parameter
+
+
 
     ## Change the sensor deployment start time.
     #
@@ -1513,6 +1533,55 @@ class Station:
         #self.sensors.pop(self.sensors.index(sensor))
 
 
+    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None, label = None, start_time = None, end_time = None):
+        ''' Get a sensor from the recorder.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the sensor.
+
+        type : String
+            The type of the sensor.
+
+        rec_channel_name : String
+            The recorder channel name of the sensor.
+
+        channel_name : String
+            The assigned channel name of the sensor.
+
+        label : String
+            The label of the sensor.
+        '''
+        sensor = self.sensors
+
+        if serial is not None:
+            sensor = [x for x in sensor if x[0].serial == serial]
+
+        if type is not None:
+            sensor = [x for x in sensor if x[0].type == type]
+
+        if rec_channel_name is not None:
+            sensor = [x for x in sensor if x[0].rec_channel_name == rec_channel_name]
+
+        if channel_name is not None:
+            sensor = [x for x in sensor if x[0].channel_name == channel_name]
+
+        if id is not None:
+            sensor = [x for x in sensor if x[0].id == id]
+
+        if label is not None:
+            sensor = [x for x in sensor if x[0].label == label]
+
+        if start_time is not None:
+            start_time = UTCDateTime(start_time)
+            sensor = [x for x in sensor if x[2] is None or x[2] > start_time]
+
+        if end_time is not None:
+            end_time = UTCDateTime(end_time)
+            sensor = [x for x in sensor if x[1] is None or x[1] < end_time]
+
+        return sensor
 
 
 
