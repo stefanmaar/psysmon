@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -61,7 +62,7 @@ class SonificationPyoControl(OptionPlugin):
         self.icons['active'] = icons.cogs_icon_16
 
         # The pyo server mode.
-        pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack', 'coreaudio', 'offline', 'offline_nb'])
+        pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'jack', limit = ['portaudio', 'jack', 'coreaudio', 'offline', 'offline_nb'])
         self.pref_manager.add_item(item = pref_item)
         self.dev_names, self.dev_indexes = pyo.pa_get_output_devices()
         dev_default = pyo.pa_get_default_output()
@@ -76,7 +77,7 @@ class SonificationPyoControl(OptionPlugin):
         audio = self.pref_manager.get_value('server_mode')
 
         if self.pyo_server is None and not pyo.serverCreated():
-            self.pyo_server = pyo.Server(audio = audio)
+            self.pyo_server = pyo.Server(audio = audio, duplex = 0)
             self.pyo_server.setVerbosity(15)
         else:
             self.pyo_server.stop()
@@ -284,7 +285,6 @@ class SonificationPlayTimeCompress(CommandPlugin):
                               tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
                              )
 
-
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
@@ -295,20 +295,35 @@ class SonificationPlayTimeCompress(CommandPlugin):
         # The pyo SfPlayer
         self.sf = None
 
+        # The pyo input fader (used for crossfading).
+        self.fader = None
+
         # The pyo output object.
-        self.out = None
+        self.out_loop = None
+        self.out_single = None
+
+        self.ind = 0
 
         # The compression factor
-        pref_item = preferences_manager.IntegerSpinPrefItem(name = 'comp_factor', label = 'time comp.', value = 5, limit = (1, 1000))
+        pref_item = preferences_manager.IntegerSpinPrefItem(name = 'comp_factor', label = 'time comp.', value = 20, limit = (1, 1000))
         self.pref_manager.add_item(item = pref_item)
-        pref_item = preferences_manager.CheckBoxPrefItem(name = 'play_loop', label = 'loop', value = True)
+        pref_item = preferences_manager.CheckBoxPrefItem(name = 'loop_sound', label = 'loop', value = True)
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'fade_time', label = 'fade time [s]', value = 5, limit = (0, 1000))
         self.pref_manager.add_item(item = pref_item)
 
 
     def run(self):
-        import pyo64 as pyo
-        import os
+        if self.loop_sound is True:
+            self.play_loop()
+        else:
+            self.play_single()
 
+
+    def play_loop(self):
+        ''' Play the wav file in a loop using a soundtable.
+        '''
+        import os
         pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
         if len(pyo_control_plugin) == 1:
             pyo_control_plugin = pyo_control_plugin[0]
@@ -322,7 +337,7 @@ class SonificationPlayTimeCompress(CommandPlugin):
             self.logger.error('Only streams with 1 traces are supported.')
             return
         sps = stream.traces[0].stats.sampling_rate
-        filename = os.path.join(project.tmpDir, 'test.wav')
+        filename = os.path.join(project.tmpDir, 'sptc_wav_%02d.wav' % self.ind)
         framerate = self.comp_factor * sps
         stream.write(filename, format = 'WAV', framerate = framerate, rescale = True)
 
@@ -334,14 +349,80 @@ class SonificationPlayTimeCompress(CommandPlugin):
             pyo_server.boot()
 
         if pyo.serverBooted():
-            self.sf = pyo.SfPlayer(filename, interp = 2, loop = self.play_loop)
-            comp = pyo.Compress(self.sf, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
-            self.out = comp.mix(2).out()
+            if self.ind == 0:
+                self.file_table = pyo.SndTable(filename)
+                self.file_osc = pyo.Osc(self.file_table, freq = -self.file_table.getRate())
+                self.comp = pyo.Compress(self.file_osc, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+                self.ind = 1
+            else:
+                self.file_table1 = pyo.SndTable(filename)
+                self.file_osc1 = pyo.Osc(self.file_table1, freq = -self.file_table1.getRate())
+                self.comp1 = pyo.Compress(self.file_osc1, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+                self.ind = 0
+
+            if self.fader is None:
+                self.fader = pyo.InputFader(self.comp)
+            else:
+                self.logger.debug('Fading')
+                if self.ind == 1:
+                    self.fader.setInput(self.comp, fadetime = self.fade_time)
+                else:
+                    self.fader.setInput(self.comp1, fadetime = self.fade_time)
+
+            if self.out_loop is None:
+                self.out_loop = self.fader.mix(2).out()
         else:
             self.logger.error('No booted pyo server found.')
 
         if pyo_control_plugin.server_mode == 'offline':
             pyo_server.start()
+
+
+    def play_single(self):
+        ''' Play the sound file one time using sfplayer.
+        '''
+        import os
+
+        pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
+        if len(pyo_control_plugin) == 1:
+            pyo_control_plugin = pyo_control_plugin[0]
+        else:
+            return
+
+        project = self.parent.project
+
+        # Stop the output.
+        if self.out_loop is not None:
+            self.out_loop.stop()
+        if self.out_single is not None:
+            self.out_single.stop()
+
+        stream = self.parent.dataManager.procStream
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+        sps = stream.traces[0].stats.sampling_rate
+        filename = os.path.join(project.tmpDir, 'sptc_wav_%02d.wav' % self.ind)
+        framerate = self.comp_factor * sps
+        stream.write(filename, format = 'WAV', framerate = framerate, rescale = True)
+
+        if pyo_control_plugin.server_mode == 'offline':
+            pyo_server = pyo_control_plugin.pyo_server
+            fileinfo = pyo.sndinfo(filename)
+            length = fileinfo[1]
+            pyo_server.recordOptions(dur = length)
+            pyo_server.boot()
+
+        if pyo.serverBooted():
+            self.sf = pyo.SfPlayer(filename, interp = 2, loop = False)
+            comp = pyo.Compress(self.sf, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+            self.out_single = comp.mix(2).out()
+        else:
+            self.logger.error('No booted pyo server found.')
+
+        if pyo_control_plugin.server_mode == 'offline':
+            pyo_server.start()
+
 
 
 class PyoServerThread(threading.Thread):
