@@ -475,7 +475,8 @@ class TraceDisplayDlg(wx.Frame):
         oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTime()
         self.updateDisplay()
-        oldFocus.SetFocus()
+        if oldFocus is not None:
+            oldFocus.SetFocus()
 
 
     def decreaseTime(self):
@@ -1508,6 +1509,8 @@ class DataManager():
                                                 self.parent.displayManager.inventory)
         detrend_node = [x for x in self.parent.processingNodes if x.name == 'detrend'][0]
         self.processingStack.addNode(detrend_node)
+        #convert_to_sensor_units_node = [x for x in self.parent.processingNodes if x.name == 'convert to sensor units'][0]
+        #self.processingStack.addNode(convert_to_sensor_units_node)
 
 
     def requestStream(self, startTime, endTime, scnl):
