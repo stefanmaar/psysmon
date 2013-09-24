@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -424,6 +423,143 @@ class SonificationPlayTimeCompress(CommandPlugin):
             pyo_server.start()
 
 
+class SonificationLooperTimeCompress(OptionPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        OptionPlugin.__init__(self,
+                              name = 'loop time compress',
+                              category = 'sonification',
+                              tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
+                             )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The ribbonbar icon.
+        self.icons['active'] = icons.playback_next_icon_16
+
+        # The pyo output object.
+        self.out_loop = None
+
+        # The pyo loopers.
+        self.looper = None
+
+        # Indicate the runtime status of the looper.
+        self.looper_started = False
+
+        # The compression factor
+        pref_item = preferences_manager.IntegerSpinPrefItem(name = 'comp_factor', label = 'time comp.', value = 20, limit = (1, 1000))
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.SingleChoicePrefItem(name = 'loop_mode', label = 'loop mode', value = 'forward', limit = ['no loop', 'forward', 'backward', 'back-and-forth'])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'fade_time', label = 'fade time [s]', value = 5, limit = (0, 1000))
+        self.pref_manager.add_item(item = pref_item)
+
+        # The loop_mode translation.
+        self.loop_mode_val = {'no loop': 0, 'forward': 1, 'backward': 2, 'back-and-forth': 3}
+
+
+    def buildFoldPanel(self, panel_bar):
+        ''' Create the foldpanel GUI.
+
+        '''
+        import pyolib._wxwidgets
+
+        fold_panel = wx.Panel(parent = panel_bar, id = wx.ID_ANY)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        pref_panel = guiBricks.PrefEditPanel(pref = self.pref_manager,
+                                       parent = fold_panel)
+        sizer.Add(pref_panel, 0, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.start_looper_button = wx.Button(fold_panel, wx.ID_ANY, 'start')
+        button_sizer.Add(self.start_looper_button, 0, flag = wx.EXPAND, border = 0)
+        self.grab_sound_button = wx.Button(fold_panel, wx.ID_ANY, 'grab sound')
+        button_sizer.Add(self.grab_sound_button, 0, flag = wx.EXPAND, border = 0)
+        sizer.Add(button_sizer, 0, flag =wx.TOP|wx.LEFT, border = 5)
+        self.grab_sound_button.Disable()
+
+        self.vu_meter = pyolib._wxwidgets.VuMeter(parent = fold_panel)
+        sizer.Add(self.vu_meter, 0, flag = wx.TOP|wx.LEFT, border = 5)
+
+
+        fold_panel.Bind(wx.EVT_BUTTON, self.grab_sound_callback, self.grab_sound_button)
+        fold_panel.Bind(wx.EVT_BUTTON, self.start_looper_callback, self.start_looper_button)
+
+        fold_panel.SetSizer(sizer)
+
+        return fold_panel
+
+
+    def start_looper_callback(self, evt):
+        if self.looper_started == False:
+            self.start_looper()
+            self.start_looper_button.SetLabel('stop')
+            self.grab_sound_button.Enable()
+        else:
+            self.stop_looper()
+            self.looper_started = False
+            self.start_looper_button.SetLabel('start')
+            self.grab_sound_button.Disable()
+
+
+    def grab_sound_callback(self, evt):
+        #self.load_sound()
+        self.start_looper()
+
+
+    def start_looper(self):
+        ''' Play the wav file in a loop using a soundtable.
+        '''
+        if pyo.serverBooted():
+            filename = self.seismo_to_wav()
+            fileinfo = pyo.sndinfo(filename)
+            dur = fileinfo[1]
+            self.file_table = pyo.SndTable(filename)
+            self.looper = pyo.Looper(self.file_table, dur = dur, mode = self.loop_mode_val[self.loop_mode])
+            self.comp = pyo.Compress(self.looper, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+            self.out_loop = self.comp.mix(2).out()
+            self.looper_started = True
+        else:
+            self.logger.error('No booted pyo server found.')
+            self.looper_started = False
+
+
+    def seismo_to_wav(self):
+        import os
+        pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
+        if len(pyo_control_plugin) == 1:
+            pyo_control_plugin = pyo_control_plugin[0]
+        else:
+            return
+
+        project = self.parent.project
+
+        stream = self.parent.dataManager.procStream
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+        sps = stream.traces[0].stats.sampling_rate
+        filename = os.path.join(project.tmpDir, 'sltc_loop.wav')
+        framerate = self.comp_factor * sps
+        stream.write(filename, format = 'WAV', framerate = framerate, rescale = True)
+
+        return filename
+
+
+    def stop_looper(self):
+        self.out_loop.stop()
+
+
 
 class PyoServerThread(threading.Thread):
     def __init__(self):
@@ -522,6 +658,69 @@ class SonificationPlayParameterMapping(CommandPlugin):
 
         else:
             self.logger.error('No booted pyo server found.')
+
+
+
+class AutoPlay(CommandPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        CommandPlugin.__init__(self,
+                              name = 'autoplay',
+                              category = 'autoplay',
+                              tags = ['sonify', 'pyo', 'play', 'parameter mapping']
+                             )
+
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The ribbonbar icon.
+        self.icons['active'] = icons.playback_play_icon_16
+
+        # Start and stop the plugin.
+        self.keep_running = False
+
+        # The pyo server mode.
+        #pref_item = preferences_manager.SingleChoicePrefItem(name = 'server_mode', label = 'mode', value = 'portaudio', limit = ['portaudio', 'jack'])
+        #self.pref_manager.add_item(item = pref_item)
+
+
+    def run(self):
+        if self.keep_running is False:
+            self.t = threading.Thread(target = self.advance_time)
+            self.t.start()
+        else:
+            self.keep_running = False
+
+
+    def advance_time(self):
+        import time
+
+        audio_plugin = [x for x in self.parent.plugins if x.name == 'loop time compress']
+        if len(audio_plugin) == 1:
+            audio_plugin = audio_plugin[0]
+        else:
+            return
+
+        audio_plugin.start_looper_button.SetLabel('stop')
+        audio_plugin.grab_sound_button.Disable()
+
+        self.keep_running = True
+        while self.keep_running:
+            self.logger.debug('advance_time thread')
+            wx.CallAfter(self.parent.advanceTime)
+            audio_plugin.start_looper()
+            interval = self.parent.displayManager.endTime - self.parent.displayManager.startTime
+            self.logger.debug('waiting %f seconds....', interval)
+            time.sleep(interval)
 
 
 

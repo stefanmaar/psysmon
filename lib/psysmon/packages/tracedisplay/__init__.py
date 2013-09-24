@@ -48,6 +48,8 @@ def pluginFactory():
     from plugins import SonificationPlayPhaseVocoder
     from plugins import SonificationPlayParameterMapping
     from plugins import SonificationPlayTimeCompress
+    from plugins import SonificationLooperTimeCompress
+    from plugins import AutoPlay
 
     pluginTemplates = [SelectStation,
                        SelectChannel,
@@ -59,7 +61,9 @@ def pluginFactory():
                        SonificationPyoControl,
                        SonificationPlayPhaseVocoder,
                        SonificationPlayParameterMapping,
-                       SonificationPlayTimeCompress]
+                       SonificationPlayTimeCompress,
+                       SonificationLooperTimeCompress,
+                       AutoPlay]
 
     return pluginTemplates
 
