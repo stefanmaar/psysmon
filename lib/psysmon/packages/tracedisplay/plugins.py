@@ -450,10 +450,20 @@ class SonificationLooperTimeCompress(OptionPlugin):
         self.out_loop = None
 
         # The pyo loopers.
-        self.looper = None
+        self.looper = [None, None]
+
+        # The pyo compressor objects.
+        #self.comp = [None, None]
+        self.comp = None
+
+        # The pyo input fader.
+        self.fader = None
 
         # Indicate the runtime status of the looper.
         self.looper_started = False
+
+        # The current looper index.
+        self.looper_ind = 0
 
         # The compression factor
         pref_item = preferences_manager.IntegerSpinPrefItem(name = 'comp_factor', label = 'time comp.', value = 20, limit = (1, 1000))
@@ -525,9 +535,20 @@ class SonificationLooperTimeCompress(OptionPlugin):
             fileinfo = pyo.sndinfo(filename)
             dur = fileinfo[1]
             self.file_table = pyo.SndTable(filename)
-            self.looper = pyo.Looper(self.file_table, dur = dur, mode = self.loop_mode_val[self.loop_mode])
-            self.comp = pyo.Compress(self.looper, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
-            self.out_loop = self.comp.mix(2).out()
+            self.looper[self.looper_ind] = pyo.Looper(self.file_table, dur = dur, mode = self.loop_mode_val[self.loop_mode])
+            #self.comp[self.looper_ind] = pyo.Compress(self.looper[self.looper_ind], thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+            if self.looper_started is False:
+                #self.fader = pyo.InputFader(self.comp[self.looper_ind])
+                self.comp = pyo.Compress(self.looper[self.looper_ind], thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
+                self.out_loop = self.comp.mix(2).out()
+            else:
+                #self.fader.setInput(self.comp[self.looper_ind], fadetime = self.fade_time)
+                self.comp.setInput(self.looper[self.looper_ind], fadetime = self.fade_time)
+
+            if self.looper_ind == 0:
+                self.looper_ind = 1
+            else:
+                self.looper_ind = 0
             self.looper_started = True
         else:
             self.logger.error('No booted pyo server found.')
@@ -714,13 +735,16 @@ class AutoPlay(CommandPlugin):
         audio_plugin.grab_sound_button.Disable()
 
         self.keep_running = True
+        audio_plugin.start_looper()
+        interval = self.parent.displayManager.endTime - self.parent.displayManager.startTime
+        time.sleep(interval)
         while self.keep_running:
-            self.logger.debug('advance_time thread')
             wx.CallAfter(self.parent.advanceTime)
-            audio_plugin.start_looper()
+            wx.CallAfter(audio_plugin.start_looper)
             interval = self.parent.displayManager.endTime - self.parent.displayManager.startTime
-            self.logger.debug('waiting %f seconds....', interval)
+            self.logger.debug('waiting %f seconds ....', interval)
             time.sleep(interval)
+
 
 
 
