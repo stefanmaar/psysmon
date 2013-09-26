@@ -469,11 +469,11 @@ class TraceDisplayDlg(wx.Frame):
         self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
 
 
-    def advanceTime(self):
+    def advanceTime(self, time_step = None):
         ''' Advance the display time by one step. 
         '''
         oldFocus = wx.Window.FindFocus()
-        self.displayManager.advanceTime()
+        self.displayManager.advanceTime(time_step = time_step)
         self.updateDisplay()
         if oldFocus is not None:
             oldFocus.SetFocus()
@@ -506,6 +506,7 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.displayManager.setDuration(duration)
         self.updateDisplay()
+        print "##### end of set duration"
 
 
     def setStartTime(self, startTime):
@@ -901,13 +902,22 @@ class DisplayManager:
         self.channelColors = dict(zip(channelNames, self.channelColors))
 
 
-    def advanceTime(self):
+    def advanceTime(self, time_step = None):
         ''' Advance the time by one step.
 
         '''
-        interval = self.endTime - self.startTime
-        self.startTime = self.endTime
-        self.endTime = self.startTime + interval
+        if time_step is None:
+            interval = self.endTime - self.startTime
+            self.startTime = self.endTime
+            self.endTime = self.startTime + interval
+        else:
+            interval = self.endTime - self.startTime
+            self.startTime = self.startTime + time_step
+            self.endTime = self.startTime + interval
+
+        print "##### end of advanceTime"
+
+
 
 
     def decreaseTime(self):
