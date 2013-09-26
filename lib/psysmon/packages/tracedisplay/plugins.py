@@ -747,6 +747,169 @@ class AutoPlay(CommandPlugin):
 
 
 
+class RealTimeAutoPlay(CommandPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self): 
+        ''' The constructor
+
+        '''
+        CommandPlugin.__init__(self,
+                              name = 'realtime autoplay',
+                              category = 'realtime',
+                              tags = ['sonify', 'pyo', 'play', 'parameter mapping']
+                             )
+
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The ribbonbar icon.
+        self.icons['active'] = icons.playback_play_icon_16
+
+        self.snd_table = None
+
+        self.pos = 0
+
+        # The period to display.
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'display_time', label = 'display time', value = 20, limit = [1, 300])
+        self.pref_manager.add_item(item = pref_item)
+
+        # The period to preload.
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'preload_time', label = 'preload time', value = 10, limit = [1, 300])
+        self.pref_manager.add_item(item = pref_item)
+
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'norm_factor', label = 'norm. factor', value = 1e-6, limit = [0, 100])
+        self.pref_manager.add_item(item = pref_item)
+
+        pref_item = preferences_manager.IntegerSpinPrefItem(name = 'pva_fft_size', label = 'fft size', value = 1024, limit = [4, 100000])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'pvs_shift', label = 'freq. shift', value = 100, limit = [-10000, 10000])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_thr', label = 'comp. thr', value = -24, limit = [-100, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_ratio', label = 'comp. ratio', value = 2, limit = [-100, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_mul', label = 'comp. makeup gain', value = 1, limit = [-100, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_knee', label = 'comp. knee', value = 0, limit = [0, 1])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_risetime', label = 'comp. rise-time', value = 0.01, limit = [0, 100])
+        self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_falltime', label = 'comp. fall-time', value = 0.1, limit = [0, 100])
+        self.pref_manager.add_item(item = pref_item)
+
+
+
+    def run(self):
+        self.init_display()
+        print "##### after init_display"
+        self.init_sound_table()
+        print "##### after init_sound_table"
+        self.play()
+        print '---- end of run'
+
+    def init_display(self):
+        self.parent.setDuration(self.display_time)
+
+
+    def init_sound_table(self):
+        filename = self.seismo_to_wav()
+        self.snd_table = pyo.SndTable(filename)
+
+
+    def seismo_to_wav(self, time_span = None):
+        import os
+        pyo_control_plugin = [x for x in self.parent.plugins if x.name == 'pyo control']
+        if len(pyo_control_plugin) == 1:
+            pyo_control_plugin = pyo_control_plugin[0]
+        else:
+            return
+
+        project = self.parent.project
+
+        stream = self.get_stream(time_span = time_span)
+        sps = stream.traces[0].stats.sampling_rate
+        filename = os.path.join(project.tmpDir, 'srtap_soundfile.wav')
+        framerate = sps
+        stream.write(filename, format = 'WAV', framerate = framerate, rescale = False)
+
+        return filename
+
+
+    def get_stream(self, time_span = None):
+        stream = self.parent.dataManager.procStream.copy()
+        if len(stream.traces) != 1:
+            self.logger.error('Only streams with 1 traces are supported.')
+            return
+
+        if time_span is not None:
+            stream.trim(starttime = stream.traces[0].stats.endtime - self.preload_time)
+
+        if stream.traces[0].stats.endtime == self.parent.displayManager.endTime:
+            stream.traces[0].data = stream.traces[0].data[:-1]
+
+        return stream
+
+
+    def play(self):
+        if pyo.serverBooted():
+            #self.snd = pyo.SfPlayer(pyo.SNDS_PATH + '/transparent.aif', loop = False).mix(2).out()
+            #log_comp = pyo.Log10(self.sf)
+            print self.snd_table.getRate()
+            #self.phasor = pyo.Phasor(freq=self.snd_table.getRate())
+            #self.pointer = pyo.Pointer(table = self.snd_table, index = self.phasor).out()
+            self.osc = pyo.Osc(self.snd_table, freq = self.snd_table.getRate(), interp = 3)
+            self.metro = pyo.Metro(time = self.preload_time)
+            pva = pyo.PVAnal(self.osc, 1024)
+            pvt = pyo.PVShift(pva, 200)
+            pvs = pyo.PVSynth(pvt)
+            self.comp = pyo.Compress(pvs, thresh = self.comp_thr, ratio = self.comp_ratio,
+                                mul = self.comp_mul, knee = self.comp_knee,
+                                risetime = self.comp_risetime, falltime = self.comp_falltime)
+            self.clip = pyo.Clip(self.comp)
+            #self.out = self.osc.mix(2).out()
+            self.out = self.clip.mix(2).out()
+            self.metro.play()
+            # Wait a little bit to neglect the first metro trigger.
+            time.sleep(0.1)
+            self.trig_func = pyo.TrigFunc(self.metro, self.advance_time)
+        else:
+            self.logger.error('No booted pyo server found.')
+
+    def advance_time(self):
+        print '#### in advance_time'
+        wx.CallAfter(self.parent.advanceTime, self.preload_time)
+        wx.CallAfter(self.preload_data)
+        print '#### leaving advance_time'
+
+    def preload_data(self):
+        print '#### in preload_data'
+        #filename = self.seismo_to_wav()
+        #self.snd_table.insert(filename, pos = self.pos)
+        stream = self.get_stream(time_span = self.preload_time)
+        data = stream.traces[0].data / self.norm_factor
+        # data = data / np.max(np.abs(data))
+        self.logger.debug('data length: %d', len(data))
+        for k,x in enumerate(data):
+            self.snd_table.put(x, self.pos + k)
+
+        if self.pos == 0:
+            self.pos = self.pos + self.snd_table.getSize() / 2
+        else:
+            self.pos = 0
+        self.logger.debug('table insert position: %f', self.pos)
+        print "tablesize: %d" % self.snd_table.getSize()
+        print "table dur: %d" % self.snd_table.getDur()
+        print "osc freq: %f" % self.osc.freq
+        print "snd_table rate: %f" % self.snd_table.getRate()
+        print '#### leaving preload_data'
+
+
 
 class SelectStation(OptionPlugin):
     '''
