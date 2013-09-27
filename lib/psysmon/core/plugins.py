@@ -56,7 +56,7 @@ class PluginNode:
     # argument.
     nodeClass = 'common'
 
-    def __init__(self, name, mode, category, tags, icons = None, parent=None, docEntryPoint=None, *kwargs):
+    def __init__(self, name, mode, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None, *kwargs):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -76,6 +76,8 @@ class PluginNode:
              - stable
              - experimental
              - damaged
+        group : String
+            The group of the plugin-node. A group contains the categories (default = 'general').
         icons : List of Strings
             The icons used in the ribbonbar.
         nodeClass : String
@@ -90,6 +92,9 @@ class PluginNode:
 
         # The mode of the plugin.
         self.mode = mode
+
+        # The group of the plugin.
+        self.group = group
 
         # The category of the plugin.
         self.category = category
@@ -174,7 +179,7 @@ class OptionPlugin(PluginNode):
 
     An option plugin organizes one or more options.
     '''
-    def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -202,6 +207,7 @@ class OptionPlugin(PluginNode):
         PluginNode.__init__(self,
                             name = name,
                             mode = 'option',
+                            group = group,
                             category = category,
                             tags = tags,
                             icons = icons,
@@ -215,7 +221,7 @@ class CommandPlugin(PluginNode):
     A command plugin can be used to execute standalone programs which process the currently
     displayed data and maybe present the results in a new window (e.g. frequency spectrum, audification, ...).
     '''
-    def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -243,6 +249,7 @@ class CommandPlugin(PluginNode):
         PluginNode.__init__(self,
                             name = name,
                             mode = 'command',
+                            group = group,
                             category = category,
                             tags = tags,
                             icons = icons,
@@ -263,7 +270,7 @@ class InteractivePlugin(PluginNode):
     The interactive plugin allows the user to interact with the parent window using 
     mouse clicks.
     '''
-    def __init__(self, name, category, tags, icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -294,6 +301,7 @@ class InteractivePlugin(PluginNode):
         PluginNode.__init__(self,
                             name = name,
                             mode = 'interactive',
+                            group = group,
                             category = category,
                             tags = tags,
                             icons = icons,
@@ -316,7 +324,7 @@ class AddonPlugin(PluginNode):
     which are used in the tracedisplay.
     '''
 
-    def __init__(self, name, category, tags, icons = None, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -344,6 +352,7 @@ class AddonPlugin(PluginNode):
         PluginNode.__init__(self,
                             name = name,
                             mode = 'addon',
+                            group = group,
                             category = category,
                             tags = tags,
                             icons = icons,
