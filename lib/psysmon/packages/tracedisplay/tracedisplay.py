@@ -331,7 +331,7 @@ class TraceDisplayDlg(wx.Frame):
 
         # Create the toolRibbonBar
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
-        self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "Home")
+        #self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "general")
 
         # The station display area contains the datetimeInfo and the viewPort.
         # TODO: Maybe create a seperate class for this.
@@ -377,12 +377,17 @@ class TraceDisplayDlg(wx.Frame):
 
         # Build the ribbon bar based on the plugins.
         # First create all the pages according to the category.
+        self.ribbonPages = {}
         self.ribbonPanels = {}
         self.ribbonToolbars = {}
         self.foldPanels = {}
-        for curCategory in [x.category for x in self.plugins]:
+        for curGroup, curCategory in [(x.group, x.category) for x in self.plugins]:
+            if curGroup not in self.ribbonPages.keys():
+                self.logger.debug('Creating page %s', curGroup)
+                self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
+
             if curCategory not in self.ribbonPanels.keys():
-                self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.home,
+                self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.ribbonPages[curGroup],
                                                                     wx.ID_ANY,
                                                                     curCategory,
                                                                     wx.NullBitmap,
