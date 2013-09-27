@@ -34,7 +34,7 @@ from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 import pyo64 as pyo
 import threading
-import multiprocessing
+
 
 
 class SonificationPyoControl(OptionPlugin):
@@ -49,7 +49,8 @@ class SonificationPyoControl(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'pyo control',
-                              category = 'sonification',
+                              group = 'sonification',
+                              category = 'pyo',
                               tags = ['sonify', 'pyo', 'play', 'sound']
                              )
 
@@ -183,7 +184,8 @@ class SonificationPlayPhaseVocoder(CommandPlugin):
         '''
         CommandPlugin.__init__(self,
                               name = 'phase vocoder',
-                              category = 'sonification',
+                              group = 'sonification',
+                              category = 'single',
                               tags = ['sonify', 'pyo', 'play', 'sound', 'vocoder']
                              )
 
@@ -280,7 +282,8 @@ class SonificationPlayTimeCompress(CommandPlugin):
         '''
         CommandPlugin.__init__(self,
                               name = 'play time compress',
-                              category = 'sonification',
+                              group = 'sonification',
+                              category = 'single',
                               tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
                              )
 
@@ -435,7 +438,8 @@ class SonificationLooperTimeCompress(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'loop time compress',
-                              category = 'sonification',
+                              group = 'sonification',
+                              category = 'single',
                               tags = ['sonify', 'pyo', 'play', 'sound', 'loop']
                              )
 
@@ -614,7 +618,8 @@ class SonificationPlayParameterMapping(CommandPlugin):
         '''
         CommandPlugin.__init__(self,
                               name = 'play parameter mapping',
-                              category = 'sonification',
+                              group = 'sonification',
+                              category = 'single',
                               tags = ['sonify', 'pyo', 'play', 'parameter mapping']
                              )
 
@@ -694,7 +699,8 @@ class AutoPlay(CommandPlugin):
         '''
         CommandPlugin.__init__(self,
                               name = 'autoplay',
-                              category = 'autoplay',
+                              group = 'sonification',
+                              category = 'continuous',
                               tags = ['sonify', 'pyo', 'play', 'parameter mapping']
                              )
 
@@ -759,7 +765,8 @@ class RealTimeAutoPlay(CommandPlugin):
         '''
         CommandPlugin.__init__(self,
                               name = 'realtime autoplay',
-                              category = 'realtime',
+                              group = 'sonification',
+                              category = 'continuous',
                               tags = ['sonify', 'pyo', 'play', 'parameter mapping']
                              )
 
@@ -775,12 +782,16 @@ class RealTimeAutoPlay(CommandPlugin):
 
         self.pos = 0
 
+        self.last_sample = 0
+
+        self.counter = 1
+
         # The period to display.
-        pref_item = preferences_manager.FloatSpinPrefItem(name = 'display_time', label = 'display time', value = 20, limit = [1, 300])
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'display_time', label = 'display time', value = 10, limit = [1, 300])
         self.pref_manager.add_item(item = pref_item)
 
         # The period to preload.
-        pref_item = preferences_manager.FloatSpinPrefItem(name = 'preload_time', label = 'preload time', value = 10, limit = [1, 300])
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'preload_time', label = 'preload time', value = 1, limit = [1, 300])
         self.pref_manager.add_item(item = pref_item)
 
         pref_item = preferences_manager.FloatSpinPrefItem(name = 'norm_factor', label = 'norm. factor', value = 1e-6, limit = [0, 100])
@@ -818,8 +829,12 @@ class RealTimeAutoPlay(CommandPlugin):
 
 
     def init_sound_table(self):
+        stream = self.get_stream()
         filename = self.seismo_to_wav()
         self.snd_table = pyo.SndTable(filename)
+        data = stream.traces[0].data / self.norm_factor
+        for k,x in enumerate(data):
+            self.snd_table.put(x, self.pos + k)
 
 
     def seismo_to_wav(self, time_span = None):
@@ -836,6 +851,11 @@ class RealTimeAutoPlay(CommandPlugin):
         sps = stream.traces[0].stats.sampling_rate
         filename = os.path.join(project.tmpDir, 'srtap_soundfile.wav')
         framerate = sps
+        print '#### seismo_to_wav'
+        print stream.traces[0].data
+        stream.traces[0].data = stream.traces[0].data / self.norm_factor
+        print stream.traces[0].data
+        self.last_sample = stream.traces[0].data[-1]
         stream.write(filename, format = 'WAV', framerate = framerate, rescale = False)
 
         return filename
@@ -858,15 +878,10 @@ class RealTimeAutoPlay(CommandPlugin):
 
     def play(self):
         if pyo.serverBooted():
-            #self.snd = pyo.SfPlayer(pyo.SNDS_PATH + '/transparent.aif', loop = False).mix(2).out()
-            #log_comp = pyo.Log10(self.sf)
-            print self.snd_table.getRate()
-            #self.phasor = pyo.Phasor(freq=self.snd_table.getRate())
-            #self.pointer = pyo.Pointer(table = self.snd_table, index = self.phasor).out()
             self.osc = pyo.Osc(self.snd_table, freq = self.snd_table.getRate(), interp = 3)
             self.metro = pyo.Metro(time = self.preload_time)
-            pva = pyo.PVAnal(self.osc, 1024)
-            pvt = pyo.PVShift(pva, 200)
+            pva = pyo.PVAnal(self.osc, self.pva_fft_size)
+            pvt = pyo.PVShift(pva, self.pvs_shift)
             pvs = pyo.PVSynth(pvt)
             self.comp = pyo.Compress(pvs, thresh = self.comp_thr, ratio = self.comp_ratio,
                                 mul = self.comp_mul, knee = self.comp_knee,
@@ -875,7 +890,7 @@ class RealTimeAutoPlay(CommandPlugin):
             #self.out = self.osc.mix(2).out()
             self.out = self.clip.mix(2).out()
             self.metro.play()
-            # Wait a little bit to neglect the first metro trigger.
+            # Wait a little bit to ignore the first metro trigger.
             time.sleep(0.1)
             self.trig_func = pyo.TrigFunc(self.metro, self.advance_time)
         else:
@@ -892,16 +907,27 @@ class RealTimeAutoPlay(CommandPlugin):
         #filename = self.seismo_to_wav()
         #self.snd_table.insert(filename, pos = self.pos)
         stream = self.get_stream(time_span = self.preload_time)
+        print stream.traces[0].data
         data = stream.traces[0].data / self.norm_factor
+        print data
         # data = data / np.max(np.abs(data))
+
+        # Shift the data to match the last sample.
+        print '#### last_sample: %f' % self.last_sample
+        print '#### diff: %f' % (data[0] - self.last_sample)
+        #data = data + (data[0] - self.last_sample)
+        #self.last_sample = stream.traces[0].data[-1]
+
         self.logger.debug('data length: %d', len(data))
         for k,x in enumerate(data):
             self.snd_table.put(x, self.pos + k)
 
-        if self.pos == 0:
-            self.pos = self.pos + self.snd_table.getSize() / 2
-        else:
+        self.pos = self.pos + len(data)
+        if self.pos >= self.snd_table.getSize():
             self.pos = 0
+
+        #self.snd_table.save('/home/stefan/tmp/test_'+str(self.counter)+'.wav', sampletype = 2)
+        self.counter += 1
         self.logger.debug('table insert position: %f', self.pos)
         print "tablesize: %d" % self.snd_table.getSize()
         print "table dur: %d" % self.snd_table.getDur()
