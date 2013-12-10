@@ -68,10 +68,16 @@ class SonificationPyoControl(OptionPlugin):
         dev_default = pyo.pa_get_default_output()
         pref_item = preferences_manager.SingleChoicePrefItem(name = 'audio_device', label = 'audio devices', value = self.dev_names[self.dev_indexes.index(dev_default)], limit = self.dev_names)
         self.pref_manager.add_item(item = pref_item)
+        pref_item = preferences_manager.TextEditPrefItem(name = 'rec_wav_file', label = 'rec. filename', value = '')
+        self.pref_manager.add_item(item = pref_item)
 
         self.pyo_server = None
 
         self.pyo_server_started = False
+
+        self.is_recording = False
+
+
 
     def start_pyo_server(self):
         audio = self.pref_manager.get_value('server_mode')
@@ -116,6 +122,28 @@ class SonificationPyoControl(OptionPlugin):
         self.logger.debug('Stopped the pyo server.')
 
 
+    def start_record_pyo_server(self):
+        ''' Start the recording of the pyo server.
+        '''
+        if self.rec_wav_file == '':
+            filename = None
+        else:
+            filename = self.rec_wav_file
+
+        self.pyo_server.recordOptions(sampletype = 3)
+        self.pyo_server.recstart(filename)
+        self.is_recording = True
+
+
+
+    def stop_record_pyo_server(self):
+        ''' Start the recording of the pyo server.
+        '''
+        self.pyo_server.recstop()
+        self.is_recording = False
+
+
+
     def buildFoldPanel(self, panel_bar):
         ''' Create the foldpanel GUI.
 
@@ -134,6 +162,8 @@ class SonificationPyoControl(OptionPlugin):
         button_sizer.Add(self.start_button, 0, flag = wx.EXPAND, border = 0)
         self.shutdown_button = wx.Button(fold_panel, wx.ID_ANY, 'shutdown server')
         button_sizer.Add(self.shutdown_button, 0, flag = wx.EXPAND, border = 0)
+        self.record_button = wx.Button(fold_panel, wx.ID_ANY, 'rec. start')
+        button_sizer.Add(self.record_button, 0, flag = wx.EXPAND, border = 0)
         sizer.Add(button_sizer, 0, flag =wx.TOP|wx.LEFT, border = 5)
 
         self.vu_meter = pyolib._wxwidgets.VuMeter(parent = fold_panel)
@@ -144,6 +174,7 @@ class SonificationPyoControl(OptionPlugin):
 
         fold_panel.Bind(wx.EVT_BUTTON, self.start_server_callback, self.start_button)
         fold_panel.Bind(wx.EVT_BUTTON, self.shutdown_server_callback, self.shutdown_button)
+        fold_panel.Bind(wx.EVT_BUTTON, self.record_callback, self.record_button)
 
         fold_panel.SetSizer(sizer)
 
@@ -164,11 +195,21 @@ class SonificationPyoControl(OptionPlugin):
             self.start_button.SetLabel('start server')
             self.shutdown_button.Enable()
 
+
     def shutdown_server_callback(self, evt):
         if self.pyo_server.getIsStarted() == 1:
             self.stop_pyo_server()
             time.sleep(0.25)
         self.pyo_server.shutdown()
+
+
+    def record_callback(self, evt):
+        if self.is_recording == False:
+            self.start_record_pyo_server()
+            self.record_button.SetLabel('rec. stop')
+        else:
+            self.stop_record_pyo_server()
+            self.record_button.SetLabel('rec. start')
 
 
 
