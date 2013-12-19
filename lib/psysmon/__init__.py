@@ -29,7 +29,7 @@ __longDescription__ = """pSysmon acts as a framework for developing and testing
 __website__ = "http://psysmon.mertl-research.at"
 __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
 __license__ = "GNU General Public Licence version 3"
-__keywords__ = "seismological prototyping prototype data processing earthquake"
+__keywords__ = "seismological prototyping prototype data processing earthquake obspy"
 
 
 import logging
