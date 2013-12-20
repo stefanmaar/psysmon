@@ -1247,7 +1247,9 @@ class MapViewPanel(wx.Panel):
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
-        self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
+
+        #TODO The call in the next line prevents the creation of the map.
+        #self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
         proj = pyproj.Proj(init = 'epsg:'+code[0][0])
 
         # Plot the stations.
