@@ -34,7 +34,7 @@ from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 import pyo64 as pyo
 import threading
-
+#import paramiko
 
 
 class SonificationPyoControl(OptionPlugin):
