@@ -32,8 +32,112 @@ This module contains the classes needed to run the pSysmon package system.
 
 import os
 import sys
-import pkgutil
 from sqlalchemy import MetaData
+
+
+def scan_module_for_plugins(package_name, plugin_modules):
+    ''' Scan a module file for classes inherited from the PluginNode class.
+
+    Attributes
+    ----------
+    package_name : String
+        The name of the package containing the modules (e.g. psysmon.packages.tracedisplay).
+
+    plugin_modules : List of Strings
+        A list of strings containing the names of the module files.
+
+    Returns
+    -------
+    plugin_templates : List of class objects
+        A list of class objects which inherit from the PluginNode class.
+    '''
+    import inspect
+    import importlib
+    import psysmon.core.plugins
+
+    plugin_classes = (psysmon.core.plugins.AddonPlugin,
+                      psysmon.core.plugins.OptionPlugin,
+                      psysmon.core.plugins.InteractivePlugin,
+                      psysmon.core.plugins.CommandPlugin)
+
+    plugin_templates = []
+    for cur_plugin_module in plugin_modules:
+        try:
+            mod = importlib.import_module(package_name + '.' + cur_plugin_module)
+            for name, obj in inspect.getmembers(mod):
+                if inspect.isclass(obj):
+                    for cur_base in obj.__bases__:
+                        if cur_base in plugin_classes:
+                            plugin_templates.append(obj)
+                            break
+        except Exception, e:
+            print e
+    return plugin_templates
+
+
+def scan_module_for_collection_nodes(package_name, node_modules):
+    ''' Scan a module file for classes inherited from the CollectionNode class.
+
+    Attributes
+    ----------
+    package_name : String
+        The name of the package containing the modules (e.g. psysmon.packages.tracedisplay).
+
+    plugin_modules : List of Strings
+        A list of strings containing the names of the module files.
+
+    Returns
+    -------
+    plugin_templates : List of class objects
+        A list of class objects which inherit from the CollectionNode class.
+    '''
+    import inspect
+    import importlib
+    import psysmon.core.packageNodes
+
+    node_templates = []
+    for cur_node_module in node_modules:
+        try:
+            mod = importlib.import_module(package_name + '.' + cur_node_module)
+            for name, obj in inspect.getmembers(mod):
+                if inspect.isclass(obj) and psysmon.core.packageNodes.CollectionNode in obj.__bases__:
+                    node_templates.append(obj)
+        except Exception, e:
+            print e
+    return node_templates
+
+
+def scan_module_for_processing_nodes(package_name, node_modules):
+    ''' Scan a module file for classes inherited from the ProcessingNode class.
+
+    Attributes
+    ----------
+    package_name : String
+        The name of the package containing the modules (e.g. psysmon.packages.tracedisplay).
+
+    plugin_modules : List of Strings
+        A list of strings containing the names of the module files.
+
+    Returns
+    -------
+    plugin_templates : List of class objects
+        A list of class objects which inherit from the ProcessingNode class.
+    '''
+    import inspect
+    import importlib
+    import psysmon.core.processingStack
+
+    node_templates = []
+    for cur_node_module in node_modules:
+        try:
+            mod = importlib.import_module(package_name + '.' + cur_node_module)
+            for name, obj in inspect.getmembers(mod):
+                if inspect.isclass(obj) and psysmon.core.processingStack.ProcessingNode in obj.__bases__:
+                    node_templates.append(obj)
+        except Exception, e:
+            print e
+    return node_templates
+
 
 class PackageManager:
     '''The Package Manager keeps track of the pSysmon packages and 
@@ -221,31 +325,24 @@ class PackageManager:
             curPkg.databaseFactory = pkgModule.databaseFactory
 
         # Get the collection node templates.
-        if 'nodeFactory' in dir(pkgModule):
-            self.parent.logger.debug("Getting the collection node templates.")
-            nodes = pkgModule.nodeFactory()
-            for curNode in nodes:
-                curNode.parent = pkgName
-
-            curPkg.addCollectionNodeTemplate(nodes)
+        if 'collection_node_modules' in dir(pkgModule):
+            self.parent.logger.debug('Getting the collection nodes.')
+            node_templates = scan_module_for_collection_nodes(pkgModule.__name__, pkgModule.collection_node_modules)
+            for cur_node in node_templates:
+                cur_node.parent = pkgName
+            curPkg.addCollectionNodeTemplate(node_templates)
 
         # Get the plugins provided by the package.
-        if 'pluginFactory' in dir(pkgModule):
-            self.parent.logger.debug("Getting the plugin templates.")
-            plugins = pkgModule.pluginFactory()
-            self.addPlugins(plugins)
-
+        if 'plugin_modules' in dir(pkgModule):
+            self.parent.logger.debug('Getting the plugins.')
+            plugin_templates = scan_module_for_plugins(pkgModule.__name__, pkgModule.plugin_modules)
+            self.addPlugins(plugin_templates)
 
         # Get the processing nodes provided by the package.
-        if 'processingNodeFactory' in dir(pkgModule):
-            self.parent.logger.debug('Getting the processing node templates.');
-            procNodes = pkgModule.processingNodeFactory()
-            self.addProcessingNodes(procNodes)
-
-
-        # Set the collection node template runtime attributes.
-        #curPkg.setPyPackageName(pkgName)
-        #curPkg.setBaseDir(os.path.join(packageDir, pkgBaseDir))
+        if 'processing_node_modules' in dir(pkgModule):
+            self.parent.logger.debug('Getting the processing node templates')
+            proc_nodes = scan_module_for_processing_nodes(pkgModule.__name__, pkgModule.processing_node_modules)
+            self.addProcessingNodes(proc_nodes)
 
         # Add the package to the packages list.
         self.packages[curPkg.name] = curPkg
