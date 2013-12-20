@@ -25,15 +25,8 @@ minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version re
 description = "The example packages"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
-
-
-def nodeFactory():
-    from exampleNode import ExampleNode
-
-    nodeTemplates = [ExampleNode, ]
-
-    return nodeTemplates
-
+# Specify the module(s) where to search for collection node classes.
+collection_node_modules = ['exampleNode', ]
 
 
 def databaseFactory(base):

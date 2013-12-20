@@ -25,10 +25,6 @@ minPsysmonVersion = "0.0.1"
 description = "The second example package."
 website = "http://www.stefanmertl.com"
 
+# Specify the module(s) where to search for collection node classes.
+collection_node_modules = ['exampleNode2', ]
 
-def nodeFactory():
-    from exampleNode2 import ExampleNode2
-
-    nodeTemplates = [ExampleNode2, ]
-
-    return nodeTemplates

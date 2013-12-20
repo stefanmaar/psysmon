@@ -25,17 +25,9 @@ minPsysmonVersion = "0.0.1"
 description = "The geometry package."
 website = "http://www.stefanmertl.com"
 
-
-def nodeFactory():
-    from applyGeometry import ApplyGeometry
-    from editGeometry import EditGeometry
-
-    nodeTemplates = [ApplyGeometry,
-                     EditGeometry
-                    ]
-
-    return nodeTemplates
-
+# Specify the module(s) where to search for collection node classes.
+collection_node_modules = ['applyGeometry',
+                           'editGeometry']
 
 
 def databaseFactory(base):

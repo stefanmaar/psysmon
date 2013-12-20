@@ -25,14 +25,8 @@ minPsysmonVersion = "0.0.1"
 description = "The obspyImportWaveform packages"
 website = "http://www.stefanmertl.com"
 
-
-def nodeFactory():
-    from importWaveform import ImportWaveform
-
-    nodeTemplates = [ImportWaveform, ]
-
-    return nodeTemplates
-
+# Specify the module(s) where to search for collection node classes.
+collection_node_modules = ['importWaveform', ]
 
 
 def databaseFactory(base):
