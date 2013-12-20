@@ -34,6 +34,23 @@ from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
 
+def scan_module_for_plugins(package_name, plugin_modules):
+    import inspect
+    import importlib
+
+    plugin_templates = []
+    for cur_plugin_module in plugin_modules:
+        try:
+            mod = importlib.import_module(package_name + '.' + cur_plugin_module)
+            print mod
+            for name, obj in inspect.getmembers(mod):
+                if inspect.isclass(obj) and PluginNode in inspect.getmro(obj):
+                    print name
+                    plugin_templates.append(obj)
+        except Exception, e:
+            print e
+    return plugin_templates
+
 ## The PluginNode class.
 #
 # Each collection node can load plugins which provide some functionality to
