@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import psysmon.core.plugins
+
 name = "tracedisplay"
 version = "0.1.1"
 author = "Stefan Mertl"
@@ -37,37 +39,41 @@ def nodeFactory():
 def pluginFactory():
     ''' Provide some plugins.
     '''
-    from plugins import SelectStation
-    from plugins import SelectChannel 
-    from plugins import Zoom
-    from plugins import SeismogramPlotter
-    from plugins import DemoPlotter
-    from plugins import ProcessingStack
-    from plugins import SpectrogramPlotter
-    from plugins import SonificationPyoControl
-    from plugins import SonificationPlayPhaseVocoder
-    from plugins import SonificationPlayParameterMapping
-    from plugins import SonificationPlayTimeCompress
-    from plugins import SonificationLooperTimeCompress
-    from plugins import AutoPlay
-    from plugins import RealTimeAutoPlay
+    plugin_modules = ['plugins',]
+    plugin_templates = psysmon.core.plugins.scan_module_for_plugins(__name__, plugin_modules)
+    print plugin_templates
+    #from plugins import SelectStation
+    #from plugins import SelectChannel
+    #from plugins import Zoom
+    #from plugins import SeismogramPlotter
+    #from plugins import DemoPlotter
+    #from plugins import ProcessingStack
+    #from plugins import SpectrogramPlotter
+    #from plugins import SonificationPyoControl
+    #from plugins import SonificationPlayPhaseVocoder
+    #from plugins import SonificationPlayParameterMapping
+    #from plugins import SonificationPlayTimeCompress
+    #from plugins import SonificationLooperTimeCompress
+    #from plugins import AutoPlay
+    #from plugins import RealTimeAutoPlay
 
-    pluginTemplates = [SelectStation,
-                       SelectChannel,
-                       Zoom,
-                       ProcessingStack,
-                       SeismogramPlotter,
-                       DemoPlotter,
-                       SpectrogramPlotter,
-                       SonificationPyoControl,
-                       SonificationPlayPhaseVocoder,
-                       SonificationPlayParameterMapping,
-                       SonificationPlayTimeCompress,
-                       SonificationLooperTimeCompress,
-                       AutoPlay,
-                       RealTimeAutoPlay]
+    #pluginTemplates = [SelectStation,
+    #                   SelectChannel,
+    #                   Zoom,
+    #                   ProcessingStack,
+    #                   SeismogramPlotter,
+    #                   DemoPlotter,
+    #                   SpectrogramPlotter,
+    #                   SonificationPyoControl,
+    #                   SonificationPlayPhaseVocoder,
+    #                   SonificationPlayParameterMapping,
+    #                   SonificationPlayTimeCompress,
+    #                   SonificationLooperTimeCompress,
+    #                   AutoPlay,
+    #                   RealTimeAutoPlay]
 
-    return pluginTemplates
+    #print pluginTemplates
+    return plugin_templates
 
 
 
