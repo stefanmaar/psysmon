@@ -25,6 +25,8 @@ minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version re
 description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
+# Specify the module(s) where to search for collection node classes.
+collection_node_modules = ['collection_nodes', ]
 
 def databaseFactory(base):
     from sqlalchemy import Column
@@ -156,18 +158,4 @@ def databaseFactory(base):
 
 
     return tables
-
-
-
-
-def nodeFactory():
-    from collection_nodes import EventExample
-
-    nodeTemplates = [EventExample, ]
-
-    return nodeTemplates
-
-
-
-
 
