@@ -191,7 +191,7 @@ class PackageManager:
     :class:`Package` : The pSysmon package class.
     '''
 
-    def __init__(self, parent, packageDirectories):
+    def __init__(self, parent=None, packageDirectories = []):
         '''The constructor.
 
         Parameters
