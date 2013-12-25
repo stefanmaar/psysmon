@@ -119,6 +119,9 @@ class Base:
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(self, [self.packageDirectory])
 
+        # Load the psysmon packages.
+        self.packageMgr.scan4Package()
+
 
 
     def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):

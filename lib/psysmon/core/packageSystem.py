@@ -219,10 +219,6 @@ class PackageManager:
         # The processing nodes managed by the package manager.
         self.processingNodes = {}
 
-        # Search for available packages.
-        self.scan4Package()
-
-
 
     def scan4Package(self):
         '''Scan for available pSysmon packages.
