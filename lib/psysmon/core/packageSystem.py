@@ -251,9 +251,7 @@ class PackageManager:
                 self.parent.logger.debug("Registering package " + curPkg + ".")
                 pkgName = os.path.basename(curPkg)
                 try:
-                    # TODO: If multiple package directories are used,
-                    # the following import will not work. Change it.
-                    pkgName = "psysmon.packages."+pkgName
+                    sys.path.append(curDir)
                     pkgModule = __import__(pkgName)
                     pkgModule = sys.modules[pkgName]
                     isOk = self.checkPackage(pkgModule)
@@ -265,6 +263,7 @@ class PackageManager:
 
                 except IndexError:
                     self.parent.logger.debug("No init file found.")
+
 
 
 
