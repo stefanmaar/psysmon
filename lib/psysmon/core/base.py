@@ -107,7 +107,7 @@ class Base:
         # The psysmon base directory.
         self.baseDirectory = baseDir
 
-        # The psysmon base directory.
+        # The search path for psysmon packages.
         self.packageDirectory = os.path.join(self.baseDirectory, "packages")
 
         # The currently loaded pSysmon project.
@@ -117,7 +117,7 @@ class Base:
         self.version = version
 
         # The package manager handling the dynamically loaded packages.
-        self.packageMgr = psysmon.core.packageSystem.PackageManager(self, [self.packageDirectory])
+        self.packageMgr = psysmon.core.packageSystem.PackageManager(self, [self.packageDirectory, ])
 
         # Load the psysmon packages.
         self.packageMgr.scan4Package()
