@@ -53,6 +53,8 @@ if __name__ == "__main__":
 
     # Get the execution parameters from the ced file.
     db = shelve.open(filename)
+    package_directories = db['package_directories']
+    sys.path.extend(package_directories)
     project = db['project']
     collection = db['collection']
     packages = db['packages']
