@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-The pSysmon base module.
+The package node base classes.
 
 :copyright:
     Stefan Mertl
@@ -27,85 +27,37 @@ The pSysmon base module.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
-This module contains the basic modules needed to run the pSysmon program.
+This module contains the base classes of the nodes used in 
+the :mod:`~psysmon.core.packageSystem`.
 '''
 
 from psysmon.core.preferences_manager import PreferencesManager
 
-## The CollectionNode class.
-#
-# All collection nodes provided by packages have to be subclasses of the
-# CollectionNode class. The abstract class requires the @e edit and the @e execute
-# function to be defined by the subclass.
-#
-# @subsection sub1 CollectionNodeTemplates and CollectionNodes
-# When creating a pSysmon package in the pkgInit function one creates
-# CollectionNodeTemplates and adds them to the package. So how do CollectionNodeTemplates
-# and CollectionNodes work together?@n
-# As the class name already suggests, the CollectionNodeTemplate is a template
-# which can be used to create instances of the CollectionNode which is provided
-# by the package. Each CollectionNodeTemplate has an attribute named @e nodeClass.
-# This nodeClass has to be a class which is a subclass of the CollectionNode.@n
-#
-# @subsection example An example
-# Lets a look at the following CollectionNodeTemplate created in a pkgInit
-# function:
-#
-# @code
-#from psysmon.core.base import Package, CollectionNodeTemplate
-#
-#def pkgInit():
-#    # Create the pSysmon package.
-#    myPackage = Package(
-#                        name = 'obspyImportWaveform',
-#                        version = '0.1',
-#                        dependency = ''
-#                        )
-#
-#
-#    # Create a pSysmon collection node template and add it to the package.
-#    property = {}
-#    property['inputFiles'] = []                     # The files to import.
-#    property['lastDir'] = ""                        # The last used directory.
-#    myNodeTemplate = CollectionNodeTemplate(
-#                                            name = 'import waveform',
-#                                            type = 'editable',
-#                                            category = 'Data Import',
-#                                            tags = ['stable'],
-#                                            nodeClass = 'ImportWaveform',
-#                                            property = property
-#                                            )
-#
-#    myPackage.addCollectionNodeTemplate(myNodeTemplate)
-#
-#    return myPackage
-# @endcode
-#
-# In this code example, a CollectionNodeTemplate named @e import @e waveform is
-# created which has the nodeClass @e ImportWaveform. As we already have learned,
-# the class @e ImportWaveform is the actual class providing the functionality and
-# it has to be a subclass of the CollectionNode class.@n
-#
-# The basic skeleton of the ImportWaveform class should look like this:
-# @code
-#import psysmon.core.base
-#
-#class ImportWaveform(psysmon.core.base.CollectionNode):
-#
-#    def edit(self, psyProject):
-#        print "Editing the node %s." % self.name
-#
-#    def execute(self, psyProject, prevNodeOutput={}):
-#        print "Executing the node %s." % self.name
-#
-# @endcode
-#
-# The @e edit method is called when editing a collection node, the @e execute
-# method is called when executing the collection node.
-#
-# @see base.CollectionNodeTemplate
-# @see project.Project.addNode2Collection
 class CollectionNode:
+    ''' The base class of all psysmon collection nodes.
+
+    All collection nodes contained in psysmon packages have to inherit from 
+    the :class:`CollectionNode` class.
+
+    Attributes
+    ----------
+    mode : Sting
+        Specify the behavior in the collection. Allowed values are:
+        
+            - editable
+                The user can edit the node parameters.
+            - uneditable
+                There are no parameters to edit.
+            - standalone
+                The node is not included in the execution of the collection.
+                Each node can be executed individually using the context 
+                menu of the collection listbox.
+
+    name : String
+        The name of the collection node.
+
+
+    '''
 
     ## The CollectionNode constructor.
     #

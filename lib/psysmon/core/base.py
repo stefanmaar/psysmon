@@ -49,6 +49,11 @@ class Base:
     The Base class is the lowest level class of the pSysmon model. It handles 
     the initialization of the pSysmon packages and stores the package objects.
 
+    Parameters
+    ----------
+    baseDir : String
+        The pSysmon base directory. 
+
 
     Attributes
     ----------
@@ -352,6 +357,14 @@ class Collection:
     A collection holds the associated collection nodes in a list.
     The collection controls the adding, removing, editing and execution of the 
     collection nodes.
+
+    Parameters
+    ----------
+    name : String
+        The name of the collection.
+
+    tmpDir : String
+        The project's temporary directory.
 
     Attributes
     ----------

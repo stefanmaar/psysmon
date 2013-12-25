@@ -55,6 +55,43 @@ class Project:
     provides the waveclients, handles the collection nodes and collections, 
     manages the file structure and manages the users.
 
+    Parameters
+    ----------
+    psybase : :class:`~psysmon.core.base.Base`
+        The related pSysmon base instance.
+
+    name : String
+        The name of the project.
+
+    base_dir : String
+        The base directory of the project.
+
+    user : :class:`~User` instance
+        The admin user of the project.
+
+    dbDialect : String, optional
+        The database dialect to be used by sqlalchemy (default: mysql).
+
+    dbDriver : String, optional
+        The database driver to be used by sqlalchemy (default: None).
+
+    dbHost : String, optional
+        The database host (default: localhost).
+
+    dbName : String, optional
+        The name of the database associated with the project (default: "").
+
+    dbVersion : Dictionary of Strings, optional
+        The database structure version used by the project. The name of 
+        the package is the key of the dictionary (default: {}).
+
+    createTime : :class:`~psysmon.core.UTCDateTime`, optional
+        The time when the project has been created (default: UTCDateTime())
+
+    dbTables : Dictionary of Strings, optional
+        The database tablenames used by the project. The name of the table 
+        (without prefix) is the key of the dictionary (default: {}).
+
     Attributes
     ----------
     activeUser : :class:`~User' instance
@@ -119,6 +156,9 @@ class Project:
         The project file holding all project settings.
         It is saved in the projectDir folder.
 
+    psybase : :class:`psysmon.core.base.Base`
+        The related pSysmon base instance.
+
     rid : String
         The resource identifier of the current project-user:
         smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
@@ -128,11 +168,11 @@ class Project:
     saved : Boolean
         Is the project saved?
 
-    user : List of :class:`~User` instances
+    user : List of :class:`User` instances
         A list of users associated with the project.
         The user creating the project is always the admin user.
 
-    waveclient : Dictionary of :class:`~psysmon.core.waveclient.WaveClient' instances
+    waveclient : Dictionary of :class:`psysmon.core.waveclient.WaveClient' instances
         The waveclients available for the project. The key of the dictionary 
         is the name of the waveclient.
 
@@ -822,6 +862,32 @@ class User:
     author_uri) which are used to build a resource identifier compatible to the 
     QuakeML definition. The psysmon resource identifier is built the following 
     way: smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
+
+    Parameters
+    ----------
+    user_name : String
+        The user name.
+
+    user_pwd : String
+        The database password of the user.
+
+    user_mode : String
+        The user privileges. Currently allowed values are:
+
+        - admin
+        - editor
+
+    author_name : String
+        The real name of the user.
+
+    author_uri : String
+        The uniform resource identifier of the author.
+
+    agency_name : String
+        The name of the agency to which the author is affiliated to.
+
+    agency_uri : String
+        The uniform resource identifier of the agency.
 
     Attributes
     ----------

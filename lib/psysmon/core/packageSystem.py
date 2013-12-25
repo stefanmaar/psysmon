@@ -36,9 +36,21 @@ from sqlalchemy import MetaData
 
 
 def scan_module_for_plugins(package_name, plugin_modules):
-    ''' Scan a module file for classes inherited from the PluginNode class.
+    ''' Scan a module file for classes inherited from a plugin node class.
 
-    Attributes
+    This function checks the base classes of all classes contained in the 
+    specified list of module files. If one of the classes inherits from 
+    one of the following classes, it is added to the returned list of 
+    plugin templates.
+
+    The plugin classes which are searched for are:
+
+        - :class:`psysmon.core.plugins.AddonPlugin`
+        - :class:`psysmon.core.plugins.OptionPlugin`
+        - :class:`psysmon.core.plugins.InteractivePlugin`
+        - :class:`psysmon.core.plugins.CommandPlugin`
+
+    Parameters
     ----------
     package_name : String
         The name of the package containing the modules (e.g. psysmon.packages.tracedisplay).
@@ -76,9 +88,9 @@ def scan_module_for_plugins(package_name, plugin_modules):
 
 
 def scan_module_for_collection_nodes(package_name, node_modules):
-    ''' Scan a module file for classes inherited from the CollectionNode class.
+    ''' Scan a module file for classes inherited from the :class:`~psysmon.core.packageNodes.CollectionNode` class.
 
-    Attributes
+    Parameters
     ----------
     package_name : String
         The name of the package containing the modules (e.g. psysmon.packages.tracedisplay).
@@ -108,9 +120,9 @@ def scan_module_for_collection_nodes(package_name, node_modules):
 
 
 def scan_module_for_processing_nodes(package_name, node_modules):
-    ''' Scan a module file for classes inherited from the ProcessingNode class.
+    ''' Scan a module file for classes inherited from the :class:`~psysmon.core.processingStack.ProcessingNode` class.
 
-    Attributes
+    Parameters
     ----------
     package_name : String
         The name of the package containing the modules (e.g. psysmon.packages.tracedisplay).
@@ -147,6 +159,16 @@ class PackageManager:
     packageDirectories. A package manager can handle multiple 
     package directories.
 
+
+    Parameters
+    ----------
+    parent : obj
+        The parent object holding the package manager.
+
+    packageDir : List of Strings
+        The directories holding the pSysmon packages.
+
+
     Attributes
     ----------
     parent : Object
@@ -163,6 +185,7 @@ class PackageManager:
         A dictionary of plugins managed by the package manager. 
         Key: Name of the associated collection node.
 
+
     See Also
     --------
     :class:`Package` : The pSysmon package class.
@@ -173,8 +196,12 @@ class PackageManager:
 
         Parameters
         ----------
+        parent : obj
+            The parent object holding the package manager.
+
         packageDir : List of Strings
             The directories holding the pSysmon packages.
+
         '''
 
         # The parent object holding the package manager.
@@ -440,13 +467,22 @@ class Package:
     '''The pSysmon Package class.
 
     A pSysmon package provides the functionality to pSysmon. A package contains 
-    a set of :class:`psysmon.core.packageNodes.CollectionNode` templates which 
-    can be added to a collection by the pSysmon user.
+    a set of :class:`~psysmon.core.packageNodes.CollectionNode`, 
+    :mod:`~psysmon.core.plugins` and :class:`~psysmon.core.processingStack.ProcessingNode` templates which 
+    can be added to a collection by the pSysmon user. Custom database tables can be defined as well.
 
     pSysmon packages are realized as `Python packages <http://docs.python.org/tutorial/modules.html#packages>`_ 
     and the functionality is provided as `Python modules <http://docs.python.org/tutorial/modules.html#modules>`_  
     contained in the package.
 
+    Parameters
+    ----------
+    name : String
+        The name of the package.
+    version : String
+        The version of the package.
+    dependency : String [deprecated] 
+        A list of other packages needed to run this package.
 
     Attributes
     ----------
@@ -502,12 +538,41 @@ class Package:
         website (*String*)
             An URL to the website containing information about the package.
 
+    The following variables are optional:
+
+        collection_node_modules (*list of String*)
+            The module files in which psysmon should search for collection nodes.
+
+        plugin_modules (*list of String*)
+            The module files in which psysmon should search for plugins.
+
+        processing_node_modules (*list of String*)
+            The module files in which psysmon should search for processing nodes.
+
 
     Once the package is marked as a pSysmon package by setting the variables above, 
-    you can add the functionality to the package. This can be done by creating the 
-    *nodeFactory* function. The nodeFactory creates a list of nodes which are 
-    contained in the package. Take a look at the example_ to see how to use the 
-    nodeFactory.
+    you can add the functionality to the package by defining collecition nodes,
+    plugins and processing nodes. Moreover each package can add custom database 
+    tables to the psysmon database.
+
+    **Defining collection nodes**
+
+    Collection nodes are defined as classes which inherit from the :class:`psysmon.core.packageNodes.CollectionNode` class.
+    These classes can be defined in a module of your choice. To let psysmon know about 
+    the collection node, the module file which contains the collection node class has 
+    to be specified in the __init__.py file of the package. This is done by adding 
+    the name of the module file to the *collection_node_modules* list. The name relative 
+    to the psysmon package has to be given in the *collection_node_modules* list.
+    The method :meth:`psysmon.core.packageSystem.scan_module_for_collection_nodes` is used 
+    to search the module files for classes which inherit from the class :class:`psysmon.core.packageNodes.CollectionNode`.
+
+    **Defining plugins**
+
+    jj
+
+    **Defining processing nodes**
+
+    jj
 
     **Creating database tables**
 
@@ -536,7 +601,6 @@ class Package:
     the documentation of :class:`~psysmon.core.packageNodes.CollectionNode` for 
     more details on how to write your own collection nodes.
 
-
     .. _example:
 
     Examples
@@ -552,55 +616,49 @@ class Package:
         description = "The geometry package."
         website = "http://www.stefanmertl.com"
 
-
-        def nodeFactory():
-            from applyGeometry import ApplyGeometry
-            from editGeometry import EditGeometry
-
-            nodeTemplates = []
-
-            # Create a pSysmon collection node template and add it to the package.
-            options = {}
-            myNodeTemplate = EditGeometry(name = 'edit geometry',
-                                          mode = 'standalone',
-                                          category = 'Geometry',
-                                          tags = ['stable'],
-                                          options = options
-                                          )
-            nodeTemplates.append(myNodeTemplate) 
-
-            # Create a pSysmon collection node template and add it to the package.
-            options = {}
-            myNodeTemplate = ApplyGeometry(name = 'apply geometry',
-                                           mode = 'uneditable',
-                                           category = 'Geometry',
-                                           tags = ['stable'],
-                                           options = options
-                                           )
-            nodeTemplates.append(myNodeTemplate)
-
-            return nodeTemplates
+        # Specify the module(s) where to search for collection node classes.
+        collection_node_modules = ['applyGeometry',
+                                   'editGeometry']
 
 
+        def databaseFactory(base):
+            from sqlalchemy import Column, Integer, String, Float
+            from sqlalchemy import ForeignKey, UniqueConstraint
+            from sqlalchemy.orm import relationship
 
-        def databaseFactory():
-            queries=[]
+            tables = []
 
-            # The geom_recorder table.
-            myQuery = ("CREATE TABLE IF NOT EXISTS </PREFIX/>_geom_recorder "
-                      "("
-                      "id int(10) NOT NULL auto_increment,"
-                      "serial varchar(45) NOT NULL default '',"
-                      "type varchar(255) NOT NULL default '',"
-                      "PRIMARY KEY  (id),"
-                      "UNIQUE (serial, type)"
-                      ") "
-                      "ENGINE=MyISAM "
-                      "DEFAULT CHARSET=latin1 "
-                      "COLLATE latin1_general_cs")
-            queries.append(myQuery)
 
-            return queries
+            # Create the geom_recorder table mapper class.
+            class GeomRecorder(base):
+                __tablename__ = 'geom_recorder'
+                __table_args__ = (
+                                  UniqueConstraint('serial', 'type'),
+                                  {'mysql_engine': 'InnoDB'}
+                                 )
+
+                id = Column(Integer(10), primary_key=True, autoincrement=True)
+                serial = Column(String(45), nullable=False)
+                type = Column(String(255), nullable=False)
+                description = Column(String(255), nullable=True)
+
+                sensors = relationship('GeomSensor', 
+                                       cascade = 'all',
+                                       backref = 'parent')
+
+
+                def __init__(self, serial, type):
+                    self.serial = serial
+                    self.type = type
+
+
+                def __repr__(self):
+                    return "Recorder\\nid: %d\\nserial: %s\\ntype: %s\\n" % (self.id, self.serial, self.type)
+
+            tables.append(GeomRecorder)
+
+            return tables
+
 
 
 
