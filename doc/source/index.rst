@@ -11,8 +11,6 @@ The pSysmon Core
 
    psysmon.core.base
    psysmon.core.project
-   psysmon.core.packageSystem
-   psysmon.core.packageNodes
 
    .. comment to end block
 
@@ -21,7 +19,12 @@ Plugin System
 .. autosummary::
    :toctree: autogen
 
+   psysmon.core.packageSystem
+   psysmon.core.packageNodes
    psysmon.core.plugins
+   psysmon.core.processingStack
+
+   .. comment to end block
 
 Core GUI modules
 -------------------
