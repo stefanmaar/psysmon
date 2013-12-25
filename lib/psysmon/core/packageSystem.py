@@ -32,6 +32,7 @@ This module contains the classes needed to run the pSysmon package system.
 
 import os
 import sys
+import logging
 from sqlalchemy import MetaData
 
 
@@ -204,6 +205,10 @@ class PackageManager:
 
         '''
 
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         # The parent object holding the package manager.
         self.parent = parent
 
@@ -242,13 +247,13 @@ class PackageManager:
             #for importer, modname, ispkg in pkgutil.iter_modules(pkg.__path__, prefix):
             #    print "importer: %s; modname: %s; ispkg: %s\n" % (importer, modname, ispkg)
 
-            self.parent.logger.debug("Scanning directory %s", curDir)
+            self.logger.debug("Scanning directory %s", curDir)
             packages2Register = [ name for name in os.listdir(curDir) 
                                   if os.path.isdir(os.path.join(curDir, name)) 
                                   and name[0]!='.']
 
             for curPkg in packages2Register:
-                self.parent.logger.debug("Registering package " + curPkg + ".")
+                self.logger.debug("Registering package " + curPkg + ".")
                 pkgName = os.path.basename(curPkg)
                 try:
                     sys.path.append(curDir)
@@ -259,10 +264,10 @@ class PackageManager:
                     if isOk:
                         self.addPackage(pkgModule, pkgName, curPkg, curDir)
                     else:
-                        self.parent.logger.debug("Package check failed!")
+                        self.logger.debug("Package check failed!")
 
                 except IndexError:
-                    self.parent.logger.debug("No init file found.")
+                    self.logger.debug("No init file found.")
 
 
 
@@ -305,7 +310,7 @@ class PackageManager:
         tmp = dir(pkg2Check)
         for curAttr in requiredAttributes:
             if curAttr not in tmp:
-                self.parent.logger.debug("Attribute %s is missing!" % curAttr)
+                self.logger.debug("Attribute %s is missing!" % curAttr)
                 return False
 
         return True
@@ -343,12 +348,12 @@ class PackageManager:
 
         # Get the database queries.
         if 'databaseFactory' in dir(pkgModule):
-            self.parent.logger.debug("Getting the database factory method.")
+            self.logger.debug("Getting the database factory method.")
             curPkg.databaseFactory = pkgModule.databaseFactory
 
         # Get the collection node templates.
         if 'collection_node_modules' in dir(pkgModule):
-            self.parent.logger.debug('Getting the collection nodes.')
+            self.logger.debug('Getting the collection nodes.')
             node_templates = scan_module_for_collection_nodes(pkgModule.__name__, pkgModule.collection_node_modules)
             for cur_node in node_templates:
                 cur_node.parent = pkgName
@@ -356,13 +361,13 @@ class PackageManager:
 
         # Get the plugins provided by the package.
         if 'plugin_modules' in dir(pkgModule):
-            self.parent.logger.debug('Getting the plugins.')
+            self.logger.debug('Getting the plugins.')
             plugin_templates = scan_module_for_plugins(pkgModule.__name__, pkgModule.plugin_modules)
             self.addPlugins(plugin_templates)
 
         # Get the processing nodes provided by the package.
         if 'processing_node_modules' in dir(pkgModule):
-            self.parent.logger.debug('Getting the processing node templates')
+            self.logger.debug('Getting the processing node templates')
             proc_nodes = scan_module_for_processing_nodes(pkgModule.__name__, pkgModule.processing_node_modules)
             self.addProcessingNodes(proc_nodes)
 
