@@ -299,6 +299,7 @@ class Base:
                                                     dbHost = db['dbHost'],
                                                     dbName = db['dbName'],
                                                     pkg_version = db['pkg_version'],
+                                                    db_version = db['db_version'],
                                                     dbDriver = db['dbDriver'],
                                                     dbDialect = db['dbDialect']
                                                     )
