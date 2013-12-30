@@ -54,7 +54,7 @@ def create_dbtest_project(psybase):
     '''
 
     name = 'unit_test'
-    project_dir = tempfile.mkdtemp()
+    base_dir = tempfile.mkdtemp()
     user = User(user_name = 'unit_test',
                 user_pwd = 'test',
                 user_mode = 'admin',
@@ -66,12 +66,13 @@ def create_dbtest_project(psybase):
     db_host = 'localhost'
     project = psysmon.core.project.Project(psybase = psybase,
                                            name = name,
-                                           base_dir = project_dir,
+                                           base_dir = base_dir,
                                            user = user,
                                            dbHost = db_host
                                           )
 
     return project
+
 
 def create_empty_project(psybase):
     ''' Create a complete project including database.
