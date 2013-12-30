@@ -9,6 +9,7 @@ from psysmon.core.project import Project, User
 from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_dbtest_project
 import os
+import shutil
 import tempfile
 
 class ProjectTestCase(unittest.TestCase):
@@ -21,26 +22,18 @@ class ProjectTestCase(unittest.TestCase):
         print "In setUpClass...\n"
         cls.psybase = create_psybase()
         cls.db_project = create_dbtest_project(cls.psybase)
-        cls.base_dir = tempfile.mkdtemp()
+        cls.db_user = cls.db_project.activeUser
+        cls.db_base_dir = cls.db_project.base_dir
 
 
     @classmethod
     def tearDownClass(cls):
         print "....in tearDownClass.\n"
-        os.removedirs(cls.base_dir)
+        shutil.rmtree(cls.db_base_dir)
 
 
     def setUp(self):
-        print "Preparing the user and the project.\n"
-        self.user = User(user_name = 'test_user',
-                         user_pwd = '',
-                         user_mode = 'admin',
-                         author_name = 'Stefan Test',
-                         author_uri = 'stest',
-                         agency_name = 'University of Test',
-                         agency_uri = 'at.uot'
-                        )
-
+        pass
 
     def tearDown(self):
         pass
@@ -51,8 +44,8 @@ class ProjectTestCase(unittest.TestCase):
         '''
         project = Project(psybase = self.psybase,
                           name = 'Test Project',
-                          base_dir = self.base_dir,
-                          user = self.user
+                          base_dir = self.db_base_dir,
+                          user = self.db_user
                          )
 
         self.assertEquals(project.rid, 'smi:at.uot.stest/psysmon/test_project')
@@ -62,7 +55,26 @@ class ProjectTestCase(unittest.TestCase):
         ''' Test the connection to the database.
         '''
         self.db_project.connect2Db()
-        self.assertEquals(str(self.db_project.dbEngine), 'Engine(mysql://unit_test@localhost/psysmon_unit_test)')
+        self.assertEquals(str(self.db_project.dbEngine), 'Engine(mysql://unit_test:test@localhost/psysmon_unit_test)')
+
+
+    def test_create_directory_structure(self):
+        ''' Test the creation of the directory structure of the project.
+        '''
+        project = Project(psybase = self.psybase,
+                          name = 'My Test Project',
+                          base_dir = self.db_base_dir,
+                          user = self.db_user
+                         )
+        project.createDirectoryStructure()
+        self.assertEquals(project.projectDir, os.path.join(self.db_base_dir, 'my_test_project'))
+        self.assertTrue(os.path.isdir(project.projectDir))
+        self.assertTrue(os.path.isdir(os.path.join(project.projectDir, 'data')))
+        self.assertTrue(os.path.isdir(os.path.join(project.projectDir, 'tmp')))
+
+        # Remove the directory structure.
+        shutil.rmtree(project.projectDir)
+
 
 
 
