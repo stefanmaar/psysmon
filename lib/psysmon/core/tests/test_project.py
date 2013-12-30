@@ -6,10 +6,9 @@ Created on May 17, 2011
 
 import unittest
 import psysmon.core.project
-from psysmon.core.test_util import create_psybase
-from psysmon.core.test_util import create_dbtest_project
-from psysmon.core.test_util import drop_project_database_tables
+import psysmon.core.test_util as test_util
 import os
+import tempfile
 import shutil
 
 class ProjectTestCase(unittest.TestCase):
@@ -20,25 +19,29 @@ class ProjectTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print "In setUpClass...\n"
-        cls.psybase = create_psybase()
-        cls.db_project = create_dbtest_project(cls.psybase)
-        cls.db_user = cls.db_project.activeUser
-        cls.db_base_dir = cls.db_project.base_dir
 
 
     @classmethod
     def tearDownClass(cls):
         print "Cleaning up....\n"
-        drop_project_database_tables(cls.db_project)
-        shutil.rmtree(cls.db_base_dir)
         print "done.\n"
 
 
     def setUp(self):
-        pass
+        print "Setting up test method..."
+        self.psybase = test_util.create_psybase()
+        self.db_base_dir = tempfile.mkdtemp()
+        self.db_project = test_util.create_dbtest_project(self.psybase)
+        self.db_user = self.db_project.activeUser
 
     def tearDown(self):
-        pass
+        print "Tearing down test method..."
+        test_util.drop_project_database_tables(self.db_project)
+        shutil.rmtree(self.db_base_dir)
+        del self.db_user
+        del self.db_project
+        del self.psybase
+
 
     def test_rid(self):
         ''' Test the resource identifier.
@@ -46,7 +49,8 @@ class ProjectTestCase(unittest.TestCase):
         project = psysmon.core.project.Project(psybase = self.psybase,
                                        name = 'Test Project',
                                        base_dir = self.db_base_dir,
-                                       user = self.db_user
+                                       user = self.db_user,
+                                       db_version = {}
                                       )
 
         self.assertEquals(project.rid, 'smi:at.uot.stest/psysmon/test_project')
@@ -65,7 +69,8 @@ class ProjectTestCase(unittest.TestCase):
         project = psysmon.core.project.Project(psybase = self.psybase,
                           name = 'My Test Project',
                           base_dir = self.db_base_dir,
-                          user = self.db_user
+                          user = self.db_user,
+                          db_version = {}
                          )
         project.createDirectoryStructure()
         self.assertEquals(project.projectDir, os.path.join(self.db_base_dir, 'my_test_project'))
@@ -83,7 +88,9 @@ class ProjectTestCase(unittest.TestCase):
         import shelve
         import psysmon.core.waveclient
 
+        print self.db_project.db_version
         self.db_project.createDirectoryStructure()
+        print self.db_project.db_version
         self.db_project.save()
 
         self.assertTrue(os.path.isfile(os.path.join(self.db_project.projectDir, self.db_project.projectFile)))
