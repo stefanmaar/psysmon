@@ -26,7 +26,7 @@ import glob
 import shutil
 import copy
 import psysmon
-from psysmon.core.base import Base
+import psysmon.core.base
 import psysmon.core.gui as psygui
 from psysmon.core.project import User
 from psysmon.packages.geometry.inventory import InventoryXmlParser
@@ -42,7 +42,7 @@ def create_psybase():
     psyBaseDir = os.path.dirname(psyBaseDir)
 
     # Initialize the pSysmon base object.
-    psyBase = Base(psyBaseDir)
+    psyBase = psysmon.core.base.Base(psyBaseDir)
 
     return psyBase
 
@@ -68,7 +68,8 @@ def create_dbtest_project(psybase):
                                            name = name,
                                            base_dir = base_dir,
                                            user = user,
-                                           dbHost = db_host
+                                           dbHost = db_host,
+                                           db_version = {}
                                           )
 
     return project
@@ -170,7 +171,7 @@ def create_full_project(psybase):
 def clear_project_database_tables(project):
     project.connect2Db()
     project.dbMetaData.reflect(project.dbEngine)
-    tables_to_clear = [table for table in reversed(project.dbMetaData.sorted_tables) if table.key.startswith(project.name)]
+    tables_to_clear = [table for table in reversed(project.dbMetaData.sorted_tables) if table.key.startswith(project.slug)]
     for cur_table in tables_to_clear:
         project.dbEngine.execute(cur_table.delete())
 
@@ -178,6 +179,8 @@ def clear_project_database_tables(project):
 def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_name, project_name):
     from sqlalchemy import create_engine, MetaData
 
+    project_slug = project_name.lower().replace(' ', '_')
+
     if db_driver is not None:
         dialect_string = db_dialect + "+" + db_driver
     else:
@@ -193,7 +196,7 @@ def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_na
     db_metadata = MetaData(db_engine)
 
     db_metadata.reflect(db_engine)
-    tables_to_clear = [table for table in reversed(db_metadata.sorted_tables) if table.key.startswith(project_name)]
+    tables_to_clear = [table for table in reversed(db_metadata.sorted_tables) if table.key.startswith(project_slug)]
     for cur_table in tables_to_clear:
         db_engine.execute(cur_table.delete())
 
@@ -201,6 +204,8 @@ def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_na
 def drop_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_name, project_name):
     from sqlalchemy import create_engine, MetaData
 
+    project_slug = project_name.lower.replace(' ', '_')
+
     if db_driver is not None:
         dialect_string = db_dialect + "+" + db_driver
     else:
@@ -216,14 +221,14 @@ def drop_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_nam
     db_metadata = MetaData(db_engine)
 
     db_metadata.reflect(db_engine)
-    tables_to_drop = [table for table in reversed(db_metadata.sorted_tables) if table.key.startswith(project_name)]
+    tables_to_drop = [table for table in reversed(db_metadata.sorted_tables) if table.key.startswith(project_slug)]
     db_metadata.drop_all(tables = tables_to_drop)
 
 
 def drop_project_database_tables(project):
     project.connect2Db()
     project.dbMetaData.reflect(project.dbEngine)
-    tables_to_remove = [table for key, table in project.dbMetaData.tables.items() if key.startswith(project.name)]
+    tables_to_remove = [table for key, table in project.dbMetaData.tables.items() if key.startswith(project.slug)]
     project.dbMetaData.drop_all(tables = tables_to_remove)
 
 
