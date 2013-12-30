@@ -80,8 +80,8 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def setUp(self):
+        #clear_project_database_tables(self.project)
         pass
-
 
     def tearDown(self):
         clear_project_database_tables(self.project)
@@ -164,6 +164,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertIsInstance(removed_network, DbNetwork)
         self.assertEqual(added_network_2, removed_network)
 
+        db_inventory.close()
+
 
     def test_add_station(self):
         print "test_add_station\n"
@@ -228,6 +230,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertIsInstance(added_station, DbStation)
         self.assertEqual(len(added_network_2.stations), 2)
 
+        db_inventory.close()
+
 
 
     def test_remove_station(self):
@@ -270,6 +274,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(removed_station, added_station_2)
         self.assertEqual(len(added_network_2.stations), 0)
         self.assertEqual(len(added_network_2.geom_network.stations), 0)
+
+        db_inventory.close()
 
 
     def test_move_station(self):
@@ -351,6 +357,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertIsInstance(added_recorder.sensors[0].parameters[0], DbSensorParameter)
         self.assertEqual(len(added_recorder.geom_recorder.sensors[0].parameters), 1)
 
+        db_inventory.close()
+
 
     def test_add_sensor_parameter(self):
         db_inventory = DbInventory('test', self.project)
@@ -373,6 +381,8 @@ class DbInventoryTestCase(unittest.TestCase):
                                           start_time = UTCDateTime('1976-06-20'),
                                           end_time = None)
         added_sensor.add_parameter(parameter_2_add)
+
+        db_inventory.close()
 
 
     def test_load_network(self):
@@ -558,6 +568,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(added_network.type, 'changed type')
         self.assertEqual(added_network.geom_network.type, 'changed type')
 
+        db_inventory.close()
+
 
     def test_change_station(self):
         db_inventory = DbInventory('test', self.project)
@@ -586,6 +598,8 @@ class DbInventoryTestCase(unittest.TestCase):
             self.assertEqual(getattr(cur_station.geom_station, cur_attr), cur_value)
 
 
+        db_inventory.close()
+
     def test_change_recorder(self):
         db_inventory = DbInventory('test', self.project)
 
@@ -602,6 +616,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(added_recorder.geom_recorder.description, 'changed description')
         self.assertEqual(added_recorder.type, 'changed type')
         self.assertEqual(added_recorder.geom_recorder.type, 'changed type')
+
+        db_inventory.close()
 
 
     def test_change_sensor(self):
@@ -624,6 +640,8 @@ class DbInventoryTestCase(unittest.TestCase):
         for cur_attr in test_attr:
             setattr(cur_sensor, cur_attr, 'changed_' + cur_attr)
             self.assertEqual(getattr(cur_sensor, cur_attr), 'changed_' + cur_attr)
+
+        db_inventory.close()
 
 
     def test_change_sensor_parameter(self):
@@ -659,6 +677,8 @@ class DbInventoryTestCase(unittest.TestCase):
         cur_parameter.start_time = value
         self.assertEqual(cur_parameter.start_time, value)
         self.assertEqual(cur_parameter.geom_sensor_parameter.start_time, value.timestamp) 
+
+        db_inventory.close()
 
 
     def test_xml_to_db_inventory(self):
