@@ -53,7 +53,7 @@ def create_dbtest_project(psybase):
     database.
     '''
 
-    name = 'unit_test'
+    name = 'Unit Test'
     base_dir = tempfile.mkdtemp()
     user = User(user_name = 'unit_test',
                 user_pwd = 'test',
@@ -77,7 +77,7 @@ def create_dbtest_project(psybase):
 def create_empty_project(psybase):
     ''' Create a complete project including database.
     '''
-    name = 'unit_test'
+    name = 'Unit Test'
     project_dir = tempfile.mkdtemp()
     user_name = 'unit_test'
     user_pwd = 'test'
@@ -99,7 +99,7 @@ def create_empty_project(psybase):
 def create_full_project(psybase):
     ''' Create a complete project including database containing geometry and data.
     '''
-    name = 'unit_test'
+    name = 'Unit Test'
     project_dir = tempfile.mkdtemp()
     user_name = 'unit_test'
     user_pwd = 'test'
