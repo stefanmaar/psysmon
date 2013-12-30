@@ -81,8 +81,8 @@ class Project:
     dbName : String, optional
         The name of the database associated with the project (default: "").
 
-    dbVersion : Dictionary of Strings, optional
-        The database structure version used by the project. The name of 
+    pkg_version : Dictionary of Strings, optional
+        The package versions used by the project. The name of 
         the package is the key of the dictionary (default: {}).
 
     createTime : :class:`~psysmon.core.UTCDateTime`, optional
@@ -139,9 +139,9 @@ class Project:
         A dictionary of the project database table mapper classes.
         The name of the table is the key.
 
-    dbVersion : Dictionary of Strings
-        A dictionary holding the versions of the individual package database 
-        structures (key: package name).
+    pkg_version : Dictionary of Strings
+        A dictionary holding the versions of the individual packages 
+        used for the project (key: package name).
 
     logger : :class:`logging.logger`
         The logger instance.
@@ -168,6 +168,11 @@ class Project:
     saved : Boolean
         Is the project saved?
 
+    slug : String
+        A lowercase word with no blanks representing a compact 
+        form of the project name. The slug is the lowercas version of the name 
+        with all blanks replaced by underlines.
+
     user : List of :class:`User` instances
         A list of users associated with the project.
         The user creating the project is always the admin user.
@@ -185,7 +190,7 @@ class Project:
 
     def __init__(self, psybase, name, base_dir, user, 
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
-                 dbName="", dbVersion={}, createTime=None, dbTables={}):
+                 dbName="", pkg_version={}, createTime=None, dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -216,7 +221,7 @@ class Project:
         dbName : String, optional
             The name of the database associated with the project (default: "").
 
-        dbVersion : Dictionary of Strings, optional
+        pkg_version : Dictionary of Strings, optional
             The database structure version used by the project. The name of 
             the package is the key of the dictionary (default: {}).
 
@@ -238,6 +243,9 @@ class Project:
         # The project name.
         self.name = name
 
+        # The slug of the project name.
+        self.slug = self.name.lower().replace(' ', '_')
+
         # The time when the project has been created.
         if not createTime:
             self.createTime = UTCDateTime()
@@ -248,7 +256,7 @@ class Project:
         self.base_dir = base_dir
 
         # The project directory.
-        self.projectDir = os.path.join(self.base_dir, self.name)
+        self.projectDir = os.path.join(self.base_dir, self.slug)
 
         # The database engine to be used.
         self.dbDialect = dbDialect
@@ -275,10 +283,10 @@ class Project:
         self.dbSessionClass = None
 
         # The project file.
-        self.projectFile = self.name +".ppr"
+        self.projectFile = self.slug +".ppr"
 
         # The version dictionary of the package dtabase structures.
-        self.dbVersion = dbVersion
+        self.pkg_version = pkg_version
 
         # Is the project saved?
         self.saved = False
@@ -365,7 +373,7 @@ class Project:
             The resource id of the current project user:
             smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
         '''
-        project_uri = self.name.lower().replace(' ', '_')
+        project_uri = self.slug
         return 'smi:' + self.activeUser.get_rid() + '/psysmon/' + project_uri
 
     # Define an attribute usint the property function.
@@ -649,12 +657,12 @@ class Project:
                 continue
             else:
                 self.logger.info("%s: Retrieving the database tables.", curPkg.name)
-                self.dbVersion[curPkg.name] = curPkg.version
+                self.pkg_version[curPkg.name] = curPkg.version
                 tables = curPkg.databaseFactory(self.dbBase)
                 for curTable in tables:
                     # Add the table prefix.
                     curName = curTable.__table__.name
-                    curTable.__table__.name = self.name + "_" + curTable.__table__.name
+                    curTable.__table__.name = self.slug + "_" + curTable.__table__.name
                     self.dbTables[curName] = curTable
 
 
@@ -668,8 +676,8 @@ class Project:
             if not curPkg.dbTableCreateQueries:
                 continue
             else:
-                if curPkg.name in self.dbVersion:
-                    if(curPkg.version > self.dbVersion[curPkg.name]):
+                if curPkg.name in self.pkg_version:
+                    if(curPkg.version > self.pkg_version[curPkg.name]):
                         self.logger.info("An update of the package database is needed.")
                 else:
                     # The package database tables have not yet been created. Create it now.
@@ -690,7 +698,7 @@ class Project:
         db['dbDialect'] = self.dbDialect
         db['dbHost'] = self.dbHost
         db['dbName'] = self.dbName
-        db['dbVersion'] = self.dbVersion
+        db['pkg_version'] = self.pkg_version
         db['user'] = self.user
         db['createTime'] = self.createTime
         db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.itervalues()]
