@@ -298,7 +298,7 @@ class Base:
                                                     user=db['user'],
                                                     dbHost = db['dbHost'],
                                                     dbName = db['dbName'],
-                                                    dbVersion = db['dbVersion'],
+                                                    pkg_version = db['pkg_version'],
                                                     dbDriver = db['dbDriver'],
                                                     dbDialect = db['dbDialect']
                                                     )
