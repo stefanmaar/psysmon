@@ -5,6 +5,7 @@ Created on May 17, 2011
 '''
 
 import unittest
+import nose.plugins.attrib as nose_attrib
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.preferences_manager import TextEditPrefItem
 from psysmon.core.preferences_manager import IntegerControlPrefItem
@@ -17,6 +18,8 @@ from psysmon.core.preferences_manager import DirBrowsePrefItem
 from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
 from psysmon.core.gui import PSysmonApp
 
+
+@nose_attrib.attr('interactive')
 class ProjectPreferencesDlgTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
