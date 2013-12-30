@@ -140,8 +140,14 @@ class Project:
         The name of the table is the key.
 
     pkg_version : Dictionary of Strings
-        A dictionary holding the versions of the individual packages 
-        used for the project (key: package name).
+        The package version strings of the packages which were present 
+        when the project was created. The name of the package is the 
+        key of the dictionary.
+
+    db_version : Dictionary of Strings
+        The package version strings of the packages for which a database 
+        table was created. The name of the package is the key of the 
+        dictionary.
 
     logger : :class:`logging.logger`
         The logger instance.
@@ -190,7 +196,7 @@ class Project:
 
     def __init__(self, psybase, name, base_dir, user, 
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
-                 dbName="", pkg_version={}, createTime=None, dbTables={}):
+                 dbName="", createTime=None, dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -220,10 +226,6 @@ class Project:
 
         dbName : String, optional
             The name of the database associated with the project (default: "").
-
-        pkg_version : Dictionary of Strings, optional
-            The database structure version used by the project. The name of 
-            the package is the key of the dictionary (default: {}).
 
         createTime : :class:`~psysmon.core.UTCDateTime`, optional
             The time when the project has been created (default: UTCDateTime())
@@ -285,8 +287,14 @@ class Project:
         # The project file.
         self.projectFile = self.slug +".ppr"
 
-        # The version dictionary of the package dtabase structures.
-        self.pkg_version = pkg_version
+        # The version dictionary of the package versions.
+        self.pkg_version = {}
+        for cur_pkg in self.psybase.packageMgr.packages.itervalues():
+            self.pkg_version[cur_pkg.name] = cur_pkg.version
+
+        # The version dictionary of the packages which created at least 
+        # one database table.
+        self.db_version = {}
 
         # Is the project saved?
         self.saved = False
@@ -657,7 +665,7 @@ class Project:
                 continue
             else:
                 self.logger.info("%s: Retrieving the database tables.", curPkg.name)
-                self.pkg_version[curPkg.name] = curPkg.version
+                self.db_version[curPkg.name] = curPkg.version
                 tables = curPkg.databaseFactory(self.dbBase)
                 for curTable in tables:
                     # Add the table prefix.
@@ -699,6 +707,7 @@ class Project:
         db['dbHost'] = self.dbHost
         db['dbName'] = self.dbName
         db['pkg_version'] = self.pkg_version
+        db['db_version'] = self.db_version
         db['user'] = self.user
         db['createTime'] = self.createTime
         db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.itervalues()]
