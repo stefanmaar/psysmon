@@ -1,4 +1,3 @@
-import ipdb
 '''
 Created on May 17, 2011
 
@@ -107,7 +106,6 @@ class EventTestCase(unittest.TestCase):
         db_session.close()
         self.assertEqual(len(result), 1)
         tmp = result[0]
-        ipdb.set_trace() ############################## Breakpoint ##############################
         self.assertEqual(tmp.start_time, event.start_time.timestamp)
         self.assertEqual(tmp.end_time, event.end_time.timestamp)
         self.assertEqual(tmp.creation_time, event.creation_info.creation_time.timestamp)
