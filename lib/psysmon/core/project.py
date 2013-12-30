@@ -196,7 +196,7 @@ class Project:
 
     def __init__(self, psybase, name, base_dir, user, 
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
-                 dbName="", createTime=None, dbTables={}):
+                 pkg_version = None, dbName="", createTime=None, dbTables={}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -233,6 +233,11 @@ class Project:
         dbTables : Dictionary of Strings, optional
             The database tablenames used by the project. The name of the table 
             (without prefix) is the key of the dictionary (default: {}).
+    
+        pkg_version : Dictionary of Strings
+            The package version strings of the packages which were present 
+            when the project was created. The name of the package is the 
+            key of the dictionary.
         '''
 
         # The logger.
@@ -289,8 +294,11 @@ class Project:
 
         # The version dictionary of the package versions.
         self.pkg_version = {}
-        for cur_pkg in self.psybase.packageMgr.packages.itervalues():
-            self.pkg_version[cur_pkg.name] = cur_pkg.version
+        if pkg_version is None:
+            for cur_pkg in self.psybase.packageMgr.packages.itervalues():
+                self.pkg_version[cur_pkg.name] = cur_pkg.version
+        else:
+            self.pkg_version = pkg_version
 
         # The version dictionary of the packages which created at least 
         # one database table.
