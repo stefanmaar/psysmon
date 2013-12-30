@@ -5,16 +5,17 @@ Created on May 17, 2011
 '''
 
 import unittest
+import nose.plugins.attrib as nose_attrib
 import psysmon.core.guiBricks as editDialog
 import psysmon.core.gui as psygui
 
 
-
+@nose_attrib.attr('interactive')
 class EditDialogTestCase(unittest.TestCase):
     """
     Test suite for psysmon.core.editDialog.EditDialog
     """
-    def setUp(self):           
+    def setUp(self):
         self.app =psygui.PSysmonApp()
         self.app.Init()                 # The widget inspection tool can be called using CTRL+ALT+i
 
@@ -37,7 +38,7 @@ class EditDialogTestCase(unittest.TestCase):
         self.dlg.addPage('Second Page')
 
         # Add a file browse item.
-        item = 
+        #item = 
 
         # Create a static box.
         #cont1 = editDialog.StaticBoxContainer(label='Parameters',
