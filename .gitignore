@@ -13,6 +13,9 @@ build/
 # Ignore the dist folder.
 /dist/
 
+# Ignore the test_results folder.
+/test_results/
+
 # Ignore the MANIFEST file.
 MANIFEST
 
