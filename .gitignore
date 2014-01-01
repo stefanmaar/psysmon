@@ -16,6 +16,9 @@ build/
 # Ignore the test_results folder.
 /test_results/
 
+# Ignore the coverage folder
+.coverage
+
 # Ignore the MANIFEST file.
 MANIFEST
 
