@@ -204,7 +204,7 @@ def clear_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_na
 def drop_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_name, project_name):
     from sqlalchemy import create_engine, MetaData
 
-    project_slug = project_name.lower.replace(' ', '_')
+    project_slug = project_name.lower().replace(' ', '_')
 
     if db_driver is not None:
         dialect_string = db_dialect + "+" + db_driver
