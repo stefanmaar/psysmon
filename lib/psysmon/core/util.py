@@ -58,7 +58,7 @@
 #
 
 
-import datetime
+import json
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
 
@@ -92,7 +92,6 @@ def _pydate2wxdate(date):
      tt = date.timetuple()
      dmy = (tt[2], tt[1]-1, tt[0])
      return DateTimeFromDMY(*dmy)     
-
 
 
 class AttribDict(dict, object):
@@ -328,3 +327,110 @@ class Action:
         if self.style == 'METHOD':
             self.undoMethod(self.undoParameters)
 
+
+
+
+class ProjectFileEncoder(json.JSONEncoder):
+    ''' A JSON encoder for the pSysmon project file.
+    '''
+    def __init__(self):
+        json.JSONEncoder.__init__(self)
+        self.indent = 4
+        self.sort_keys = True
+
+    def default(self, obj):
+        ''' Convert pSysmon project objects to a dictionary.
+        '''
+        obj_class = obj.__class__.__name__
+        base_class = [x.__name__ for x in obj.__class__.__bases__]
+        print 'Converting %s' % obj_class
+        print 'Class bases: %s' % str(base_class)
+        if obj_class == 'Project':
+            d = self.convert_project(obj)
+        elif obj_class == 'UTCDateTime':
+            d = self.convert_utcdatetime(obj)
+        elif obj_class == 'User':
+            d = self.convert_user(obj)
+        elif obj_class == 'Collection':
+            d = self.convert_collection(obj)
+        elif 'CollectionNode' in base_class:
+            d = self.convert_collection_node(obj)
+        elif obj_class == 'PreferencesManager':
+            d = self.convert_preferencesmanager(obj)
+        elif 'PreferenceItem' in base_class:
+            d = self.convert_preferenceitem(obj)
+        else:
+            d = 'MISSING CONVERTER'
+
+        return d
+
+
+    def convert_project(self, obj):
+        attr = ['name', 'dbDriver', 'dbDialect', 'dbHost',
+                'dbName', 'pkg_version', 'db_version', 'createTime',
+                'defaultWaveclient', 'scnlDataSources', 'user']
+        d =  self.object_to_dict(obj, attr)
+        d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
+        return d
+
+
+    def convert_utcdatetime(self, obj):
+        return obj.isoformat()
+
+    def convert_user(self, obj):
+        attr = ['name', 'mode', 'author_name', 'author_uri', 
+                'agency_name', 'agency_uri', 'collection']
+        d = self.object_to_dict(obj, attr)
+        if obj.activeCollection is None:
+            d['activeCollection'] = obj.activeCollection
+        else:
+            d['activeCollection'] = obj.activeCollection.name
+
+        return d
+
+    def convert_collection(self, obj):
+        attr = ['name', 'nodes']
+        return self.object_to_dict(obj, attr)
+
+
+    def convert_collection_node(self, obj):
+        attr = ['name', 'parentPackage', 'enabled', 'requires', 'provides', 'pref_manager']
+        d = self.object_to_dict(obj, attr)
+        d['class'] = obj.__class__.__name__
+        d['module'] = obj.__module__
+
+        return d
+
+    def convert_preferencesmanager(self, obj):
+        attr = ['pages', ]
+        d = self.object_to_dict(obj, attr)
+        return d
+
+    def convert_preferenceitem(self, obj):
+        import inspect
+
+        attr = ['name', 'value', 'label', 'default', 'mode', 
+                'group', 'limit', 'guiclass', 'gui_element']
+        d = self.object_to_dict(obj, attr)
+        d['class'] = obj.__class__.__name__
+        d['module'] = obj.__module__
+
+        # Find any additional arguments.
+        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getargspec(obj.__init__)
+
+        for cur_arg in arg.args:
+            if cur_arg not in base_arg.args:
+                d[cur_arg] = getattr(obj, cur_arg)
+
+        return d
+
+
+    def object_to_dict(self, obj, attr):
+        ''' Copy selceted attributes of object to a dictionary.
+        '''
+        d = {}
+        for cur_attr in attr:
+            d[cur_attr] = getattr(obj, cur_attr)
+
+        return d
