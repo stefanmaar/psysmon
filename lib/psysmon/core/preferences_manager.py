@@ -256,7 +256,6 @@ class PreferenceItem(object):
     def value(self, value):
         self._value = value
 
-
     def __str__(self):
         ''' The string representation of the instance.
 

@@ -66,8 +66,8 @@ class Project:
     base_dir : String
         The base directory of the project.
 
-    user : :class:`~User` instance
-        The admin user of the project.
+    user : List of :class:`~User` instance
+        The users associated with the project.
 
     dbDialect : String, optional
         The database dialect to be used by sqlalchemy (default: mysql).
@@ -871,10 +871,6 @@ class Project:
         '''
         msgTopic = "log.general." + mode
         pub.sendMessage(msgTopic, msg)
-
-
-
-
 
 
 

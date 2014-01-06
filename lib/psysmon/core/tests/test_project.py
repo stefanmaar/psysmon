@@ -8,7 +8,6 @@ import unittest
 import psysmon.core.project
 import psysmon.core.test_util as test_util
 import os
-import tempfile
 import shutil
 
 class ProjectTestCase(unittest.TestCase):
@@ -30,8 +29,8 @@ class ProjectTestCase(unittest.TestCase):
     def setUp(self):
         print "Setting up test method..."
         self.psybase = test_util.create_psybase()
-        self.db_base_dir = tempfile.mkdtemp()
         self.db_project = test_util.create_dbtest_project(self.psybase)
+        self.db_base_dir = self.db_project.base_dir
         self.db_user = self.db_project.activeUser
 
     def tearDown(self):
@@ -133,8 +132,6 @@ class ProjectTestCase(unittest.TestCase):
         db.close()
 
         shutil.rmtree(self.db_project.projectDir)
-
-
 
 
 def suite():

@@ -62,6 +62,7 @@ import datetime
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
 
+
 class PsysmonError(Exception):
     def __init__(self, value):
         self.value = value
@@ -91,7 +92,6 @@ def _pydate2wxdate(date):
      tt = date.timetuple()
      dmy = (tt[2], tt[1]-1, tt[0])
      return DateTimeFromDMY(*dmy)     
-
 
 
 

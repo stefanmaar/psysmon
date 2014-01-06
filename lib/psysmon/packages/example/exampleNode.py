@@ -19,9 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from psysmon.core.packageNodes import CollectionNode
-import time
-import wx
-import psysmon.core.gui as psygui
 
 
 class ExampleNode(CollectionNode):
@@ -63,12 +60,12 @@ class ExampleNode(CollectionNode):
 
 
         self.provideData(name = 'test_data', 
-                         data = 'Hallihallo', 
+                         data = 'Hallo ',
                          description = 'Ein Test'
                          )
 
         self.provideData(name = 'my_data', 
-                         data = 'Stefan', 
+                         data = 'Stefan.',
                          description = 'Ein weiterer Test.'
                          )
 

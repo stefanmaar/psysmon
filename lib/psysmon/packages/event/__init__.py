@@ -42,6 +42,7 @@ def databaseFactory(base):
 
     tables = []
 
+
     ###########################################################################
     # EVENT_SET table mapper class
     class EventCatalogDb(base):

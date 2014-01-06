@@ -91,7 +91,6 @@ class PreferencesManagerTestCase(unittest.TestCase):
 
 
 
-
 def suite():
     return unittest.makeSuite(PreferencesManagerTestCase, 'test')
 
