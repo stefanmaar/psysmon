@@ -339,10 +339,6 @@ class Base:
             return True
 
 
-
-
-
-
     def closePsysmonProject(self):
         '''
         Close a pSysmon project.

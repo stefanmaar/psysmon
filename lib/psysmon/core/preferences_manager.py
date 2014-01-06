@@ -213,7 +213,7 @@ class PreferenceItem(object):
         self.name = name
 
         # The value of the item.
-        self._value = value
+        self.value = value
 
         # The label of the item.
         self.label = label
@@ -248,13 +248,14 @@ class PreferenceItem(object):
         self.gui_element = []
 
 
-    @property
-    def value(self):
-        return self._value
+    #@property
+    #def value(self):
+    #    return self._value
 
-    @value.setter
-    def value(self, value):
-        self._value = value
+    #@value.setter
+    #def value(self, value):
+    #    self._value = value
+
 
     def __str__(self):
         ''' The string representation of the instance.

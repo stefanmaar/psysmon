@@ -78,9 +78,9 @@ class CollectionNode:
     # collection node. This dictionary is used to initialize a new collection node
     # and to save the user input for this collection node during the sessions.
     # @param parent The parent package of the collection node.
-    
+
     name = None
-    
+
     ## The type of the collection node.
     #
     # Each collection node can specify it's type. Currently there are three
