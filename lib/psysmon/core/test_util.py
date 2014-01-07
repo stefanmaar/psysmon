@@ -33,7 +33,7 @@ from psysmon.packages.geometry.inventory import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
 
 
-def create_psybase():
+def create_psybase(package_directory = []):
     ''' Create the psysmon base instance.
 
     '''
@@ -42,7 +42,7 @@ def create_psybase():
     psyBaseDir = os.path.dirname(psyBaseDir)
 
     # Initialize the pSysmon base object.
-    psyBase = psysmon.core.base.Base(psyBaseDir)
+    psyBase = psysmon.core.base.Base(psyBaseDir, package_directory = package_directory)
 
     return psyBase
 
