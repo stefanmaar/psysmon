@@ -19,20 +19,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from psysmon.core.packageNodes import CollectionNode
+import psysmon.core.preferences_manager as pref_manager
 
-class ExampleNode(CollectionNode):
+
+class JsonPlainTestNode(CollectionNode):
+    ''' Plain test node.
+
+    This node has no function and no preferences.
     '''
-    An example node.
-
-    This node demonstrates the usage of pSysmon collection nodes.
-    The node inherints from the class :class:`~psysmon.core.base.CollectionNode`.
-
-    The creator of the node has to define the edit and the execute method.
-
-    The inherited log method can be used to display messages in the pSysmon 
-    log area.
-    '''
-    name = 'test node 1'
+    name = 'json plain testnode'
     mode = 'editable'
     category = 'Test'
     tags = ['stable', 'test']
@@ -40,23 +35,46 @@ class ExampleNode(CollectionNode):
 
     def __init__(self):
         CollectionNode.__init__(self)
-        self.options = {}
 
     def edit(self):
-        msg = "Editing the node %s." % self.name
+        pass
 
     def execute(self, prevModuleOutput={}):
-
-        self.provideData(name = 'test_data', 
-                         data = 'Hallihallo', 
-                         description = 'Ein Test'
-                         )
-
-        self.provideData(name = 'my_data', 
-                         data = 'Stefan', 
-                         description = 'Ein weiterer Test.'
-                         )
+        pass
 
 
 
+class JsonPreferencesTestNode(CollectionNode):
+    ''' Plain test node.
 
+    This node has no function and no preferences.
+    '''
+    name = 'json preferences testnode'
+    mode = 'editable'
+    category = 'Test'
+    tags = ['stable', 'test']
+    docEntryPoint = None
+
+    def __init__(self):
+        CollectionNode.__init__(self)
+        pref_item = pref_manager.TextEditPrefItem(name = 'filter_name',
+                                                  label = 'filter name',
+                                                  value = 'test filter')
+        self.pref_manager.add_item(item = pref_item)
+
+        pref_item = pref_manager.DirBrowsePrefItem(name = 'directory_browse',
+                                                   label = 'browse',
+                                                   value = '',
+                                                   start_directory = '/home')
+        self.pref_manager.add_item(item = pref_item)
+
+        pref_item = pref_manager.FloatSpinPrefItem(name = 'filter_cutoff',
+                                                   label = 'filter cutoff',
+                                                   value = '4.5')
+        self.pref_manager.add_item(item = pref_item)
+
+    def edit(self):
+        pass
+
+    def execute(self, prevModuleOutput={}):
+        pass
