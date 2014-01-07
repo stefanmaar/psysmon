@@ -64,8 +64,8 @@ class Base:
     logger : :class:`logging`
         The system logger used for debugging and system wide error logging.
 
-    packageDirectory : String
-        The psysmon packages directory.
+    packageDirectory : List of String
+        The psysmon packages directories.
 
     packageMgr : :class:`~psysmon.core.packageSystem.PackageManager`
         The package manager handles the dynamically loaded packages.
@@ -79,7 +79,7 @@ class Base:
 
     '''
 
-    def __init__(self, baseDir):
+    def __init__(self, baseDir, package_directory = []):
         '''The constructor.
 
         Create an instance of the Base class.
@@ -89,6 +89,10 @@ class Base:
         ----------
         baseDir : String
             The pSysmon base directory. 
+
+        package_directory : List of String
+            Directories outside the baseDir/packages directory which 
+            contain pSysmon packages.
         '''
 
         # The system logger used for debugging and system wide error logging.
@@ -108,7 +112,8 @@ class Base:
         self.baseDirectory = baseDir
 
         # The search path for psysmon packages.
-        self.packageDirectory = os.path.join(self.baseDirectory, "packages")
+        self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
+        self.packageDirectory.extend(package_directory)
 
         # The currently loaded pSysmon project.
         self.project = ""
@@ -117,7 +122,7 @@ class Base:
         self.version = version
 
         # The package manager handling the dynamically loaded packages.
-        self.packageMgr = psysmon.core.packageSystem.PackageManager(self, [self.packageDirectory, ])
+        self.packageMgr = psysmon.core.packageSystem.PackageManager(self, self.packageDirectory)
 
         # Load the psysmon packages.
         self.packageMgr.scan4Package()
