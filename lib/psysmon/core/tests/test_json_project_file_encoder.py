@@ -60,7 +60,13 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
 
         # Test empty project.
         expected_result = '''{
-    "createTime": "2013-01-01T00:00:00", 
+    "__class__": "Project", 
+    "__module__": "psysmon.core.project", 
+    "createTime": {
+        "__class__": "UTCDateTime", 
+        "__module__": "obspy.core.utcdatetime", 
+        "utcdatetime": "2013-01-01T00:00:00"
+    }, 
     "dbDialect": "mysql", 
     "dbDriver": null, 
     "dbHost": "localhost", 
@@ -80,6 +86,8 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "scnlDataSources": {}, 
     "user": [
         {
+            "__class__": "User", 
+            "__module__": "psysmon.core.project", 
             "activeCollection": null, 
             "agency_name": "University of Test", 
             "agency_uri": "at.uot", 
@@ -92,13 +100,20 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     ], 
     "waveclient": []
 }'''
+
         self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
 
         # Test project with empty collection
         self.db_project.createDirectoryStructure()
         self.db_project.addCollection('Test Collection')
         expected_result = '''{
-    "createTime": "2013-01-01T00:00:00", 
+    "__class__": "Project", 
+    "__module__": "psysmon.core.project", 
+    "createTime": {
+        "__class__": "UTCDateTime", 
+        "__module__": "obspy.core.utcdatetime", 
+        "utcdatetime": "2013-01-01T00:00:00"
+    }, 
     "dbDialect": "mysql", 
     "dbDriver": null, 
     "dbHost": "localhost", 
@@ -118,6 +133,8 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "scnlDataSources": {}, 
     "user": [
         {
+            "__class__": "User", 
+            "__module__": "psysmon.core.project", 
             "activeCollection": "Test Collection", 
             "agency_name": "University of Test", 
             "agency_uri": "at.uot", 
@@ -125,6 +142,8 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "author_uri": "stest", 
             "collection": {
                 "Test Collection": {
+                    "__class__": "Collection", 
+                    "__module__": "psysmon.core.base", 
                     "name": "Test Collection", 
                     "nodes": []
                 }
@@ -142,7 +161,13 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
         node_template = self.psybase.packageMgr.getCollectionNodeTemplate('json plain testnode')
         self.db_project.addNode2Collection(node_template)
         expected_result = '''{
-    "createTime": "2013-01-01T00:00:00", 
+    "__class__": "Project", 
+    "__module__": "psysmon.core.project", 
+    "createTime": {
+        "__class__": "UTCDateTime", 
+        "__module__": "obspy.core.utcdatetime", 
+        "utcdatetime": "2013-01-01T00:00:00"
+    }, 
     "dbDialect": "mysql", 
     "dbDriver": null, 
     "dbHost": "localhost", 
@@ -162,6 +187,8 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "scnlDataSources": {}, 
     "user": [
         {
+            "__class__": "User", 
+            "__module__": "psysmon.core.project", 
             "activeCollection": "Test Collection", 
             "agency_name": "University of Test", 
             "agency_uri": "at.uot", 
@@ -169,15 +196,21 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "author_uri": "stest", 
             "collection": {
                 "Test Collection": {
+                    "__class__": "Collection", 
+                    "__module__": "psysmon.core.base", 
                     "name": "Test Collection", 
                     "nodes": [
                         {
+                            "__class__": "JsonPlainTestNode", 
+                            "__module__": "test_package.test_node", 
                             "class": "JsonPlainTestNode", 
                             "enabled": true, 
                             "module": "test_package.test_node", 
                             "name": "json plain testnode", 
                             "parentPackage": null, 
                             "pref_manager": {
+                                "__class__": "PreferencesManager", 
+                                "__module__": "psysmon.core.preferences_manager", 
                                 "pages": {
                                     "preferences": []
                                 }
@@ -201,7 +234,13 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
         node_template = self.psybase.packageMgr.getCollectionNodeTemplate('json preferences testnode')
         self.db_project.addNode2Collection(node_template)
         expected_result = '''{
-    "createTime": "2013-01-01T00:00:00", 
+    "__class__": "Project", 
+    "__module__": "psysmon.core.project", 
+    "createTime": {
+        "__class__": "UTCDateTime", 
+        "__module__": "obspy.core.utcdatetime", 
+        "utcdatetime": "2013-01-01T00:00:00"
+    }, 
     "dbDialect": "mysql", 
     "dbDriver": null, 
     "dbHost": "localhost", 
@@ -221,6 +260,8 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "scnlDataSources": {}, 
     "user": [
         {
+            "__class__": "User", 
+            "__module__": "psysmon.core.project", 
             "activeCollection": "Test Collection", 
             "agency_name": "University of Test", 
             "agency_uri": "at.uot", 
@@ -228,15 +269,21 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "author_uri": "stest", 
             "collection": {
                 "Test Collection": {
+                    "__class__": "Collection", 
+                    "__module__": "psysmon.core.base", 
                     "name": "Test Collection", 
                     "nodes": [
                         {
+                            "__class__": "JsonPlainTestNode", 
+                            "__module__": "test_package.test_node", 
                             "class": "JsonPlainTestNode", 
                             "enabled": true, 
                             "module": "test_package.test_node", 
                             "name": "json plain testnode", 
                             "parentPackage": null, 
                             "pref_manager": {
+                                "__class__": "PreferencesManager", 
+                                "__module__": "psysmon.core.preferences_manager", 
                                 "pages": {
                                     "preferences": []
                                 }
@@ -245,20 +292,30 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
                             "requires": null
                         }, 
                         {
+                            "__class__": "JsonPreferencesTestNode", 
+                            "__module__": "test_package.test_node", 
                             "class": "JsonPreferencesTestNode", 
                             "enabled": true, 
                             "module": "test_package.test_node", 
                             "name": "json preferences testnode", 
                             "parentPackage": null, 
                             "pref_manager": {
+                                "__class__": "PreferencesManager", 
+                                "__module__": "psysmon.core.preferences_manager", 
                                 "pages": {
                                     "preferences": [
                                         {
+                                            "__class__": "TextEditPrefItem", 
+                                            "__module__": "psysmon.core.preferences_manager", 
                                             "class": "TextEditPrefItem", 
                                             "default": "test filter", 
                                             "group": null, 
                                             "gui_element": [], 
-                                            "guiclass": "MISSING CONVERTER", 
+                                            "guiclass": {
+                                                "ERROR": "MISSING CONVERTER", 
+                                                "__class__": "type", 
+                                                "__module__": "psysmon.core.guiBricks"
+                                            }, 
                                             "label": "filter name", 
                                             "limit": null, 
                                             "mode": "textedit", 
@@ -267,11 +324,17 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
                                             "value": "test filter"
                                         }, 
                                         {
+                                            "__class__": "DirBrowsePrefItem", 
+                                            "__module__": "psysmon.core.preferences_manager", 
                                             "class": "DirBrowsePrefItem", 
                                             "default": "", 
                                             "group": null, 
                                             "gui_element": [], 
-                                            "guiclass": "MISSING CONVERTER", 
+                                            "guiclass": {
+                                                "ERROR": "MISSING CONVERTER", 
+                                                "__class__": "type", 
+                                                "__module__": "psysmon.core.guiBricks"
+                                            }, 
                                             "label": "browse", 
                                             "limit": null, 
                                             "mode": "dirbrowse", 
@@ -281,12 +344,18 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
                                             "value": ""
                                         }, 
                                         {
+                                            "__class__": "FloatSpinPrefItem", 
+                                            "__module__": "psysmon.core.preferences_manager", 
                                             "class": "FloatSpinPrefItem", 
                                             "default": "4.5", 
                                             "digits": 3, 
                                             "group": null, 
                                             "gui_element": [], 
-                                            "guiclass": "MISSING CONVERTER", 
+                                            "guiclass": {
+                                                "ERROR": "MISSING CONVERTER", 
+                                                "__class__": "type", 
+                                                "__module__": "psysmon.core.guiBricks"
+                                            }, 
                                             "increment": 0.1, 
                                             "label": "filter cutoff", 
                                             "limit": null, 
