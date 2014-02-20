@@ -194,7 +194,8 @@ class Project:
     '''
 
 
-    def __init__(self, psybase, name, base_dir, user, 
+    def __init__(self, name, user,
+                 psybase = None, base_dir = '',
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
                  pkg_version = None, db_version = {}, dbName="", 
                  createTime=None, dbTables={}):
