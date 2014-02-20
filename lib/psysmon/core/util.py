@@ -61,6 +61,7 @@
 import json
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
+import psysmon.core.project
 
 
 class PsysmonError(Exception):
@@ -360,7 +361,13 @@ class ProjectFileEncoder(json.JSONEncoder):
         elif 'PreferenceItem' in base_class:
             d = self.convert_preferenceitem(obj)
         else:
-            d = 'MISSING CONVERTER'
+            d = {'ERROR': 'MISSING CONVERTER'}
+
+        # Add the class and module information to the dictionary.
+        tmp = {'__class__': obj.__class__.__name__,
+               '__module__': obj.__module__}
+        print d
+        d.update(tmp)
 
         return d
 
@@ -375,7 +382,7 @@ class ProjectFileEncoder(json.JSONEncoder):
 
 
     def convert_utcdatetime(self, obj):
-        return obj.isoformat()
+        return {'utcdatetime': obj.isoformat()}
 
     def convert_user(self, obj):
         attr = ['name', 'mode', 'author_name', 'author_uri', 
@@ -391,7 +398,6 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_collection(self, obj):
         attr = ['name', 'nodes']
         return self.object_to_dict(obj, attr)
-
 
     def convert_collection_node(self, obj):
         attr = ['name', 'parentPackage', 'enabled', 'requires', 'provides', 'pref_manager']
@@ -434,3 +440,70 @@ class ProjectFileEncoder(json.JSONEncoder):
             d[cur_attr] = getattr(obj, cur_attr)
 
         return d
+
+
+
+class ProjectFileDecoder(json.JSONDecoder):
+
+    def __init__(self):
+        json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+    def convert_object(self, d):
+        print "Converting dict: %s." % str(d)
+
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            module_name = d.pop('__module__')
+            module = __import__(module_name)
+
+            if class_name == 'Project':
+                inst = self.convert_project(d)
+            elif class_name == 'User':
+                inst = self.convert_user(d)
+            elif class_name == 'UTCDateTime':
+                inst = self.convert_utcdatetime(d)
+            else:
+                inst = {'ERROR': 'MISSING CONVERTER'}
+
+        else:
+            inst = d
+
+        return inst
+
+    def convert_project(self, d):
+        inst = psysmon.core.project.Project(psybase = None,
+                                            name = d['name'],
+                                            user = d['user'],
+                                            dbHost = d['dbHost'],
+                                            dbName = d['dbName'],
+                                            pkg_version = d['pkg_version'],
+                                            db_version = d['db_version'],
+                                            dbDriver = d['dbDriver'],
+                                            dbDialect = d['dbDialect'],
+                                            createTime = d['createTime']
+                                            )
+
+        inst.defaultWaveclient = d['defaultWaveclient']
+        inst.scnlDataSources = d['scnlDataSources']
+        inst.waveclient = d['waveclient']
+        return inst
+
+
+    def convert_user(self, d):
+        inst = psysmon.core.project.User(user_name = d['name'],
+                                         user_pwd = None,
+                                         user_mode = d['mode'],
+                                         author_name = d['author_name'],
+                                         author_uri = d['author_uri'],
+                                         agency_name = d['agency_name'],
+                                         agency_uri = d['agency_uri']
+                                         )
+        return inst
+
+
+    def convert_utcdatetime(self, d):
+        inst = UTCDateTime(d['utcdatetime'])
+        return inst
+
+
+
