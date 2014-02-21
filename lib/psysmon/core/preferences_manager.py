@@ -46,13 +46,16 @@ class PreferencesManager:
 
     '''
 
-    def __init__(self):
+    def __init__(self, pages = None):
         ''' The constructor.
 
         '''
         # The pages (categories) of the project preferences.
-        self.pages = {}
-        self.pages['preferences'] = []
+        if pages is None:
+            self.pages = {}
+            self.pages['preferences'] = []
+        else:
+            self.pages = pages
 
         # A dictionary with the GUI element field classes.
         self.gui_elements = {}
