@@ -344,8 +344,8 @@ class ProjectFileEncoder(json.JSONEncoder):
         '''
         obj_class = obj.__class__.__name__
         base_class = [x.__name__ for x in obj.__class__.__bases__]
-        print 'Converting %s' % obj_class
-        print 'Class bases: %s' % str(base_class)
+        #print 'Converting %s' % obj_class
+
         if obj_class == 'Project':
             d = self.convert_project(obj)
         elif obj_class == 'UTCDateTime':
@@ -367,7 +367,6 @@ class ProjectFileEncoder(json.JSONEncoder):
         tmp = {'__baseclass__': base_class,
                '__class__': obj.__class__.__name__,
                '__module__': obj.__module__}
-        print d
         d.update(tmp)
 
         return d
@@ -445,7 +444,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
 
     def convert_object(self, d):
-        print "Converting dict: %s." % str(d)
+        #print "Converting dict: %s." % str(d)
 
         if '__class__' in d:
             class_name = d.pop('__class__')
@@ -503,6 +502,7 @@ class ProjectFileDecoder(json.JSONDecoder):
                                          agency_name = d['agency_name'],
                                          agency_uri = d['agency_uri']
                                          )
+        inst.collection = d['collection']
         return inst
 
 
@@ -516,7 +516,8 @@ class ProjectFileDecoder(json.JSONDecoder):
         return inst
 
     def convert_collection(self, d):
-        inst = psysmon.core.base.Collection(name = d['name'])
+        inst = psysmon.core.base.Collection(name = d['name'], nodes = d['nodes'])
+
         return inst
 
 
