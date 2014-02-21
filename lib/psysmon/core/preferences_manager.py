@@ -208,7 +208,7 @@ class PreferenceItem(object):
 
     '''
 
-    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, guiclass = None):
+    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, guiclass = None, gui_element = []):
         ''' The constructor.
 
         '''
@@ -248,7 +248,7 @@ class PreferenceItem(object):
 
 
         # The GUI element(s) linked to this preference item.
-        self.gui_element = []
+        self.gui_element = gui_element
 
 
     #@property
