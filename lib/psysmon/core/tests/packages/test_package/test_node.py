@@ -55,8 +55,8 @@ class JsonPreferencesTestNode(CollectionNode):
     tags = ['stable', 'test']
     docEntryPoint = None
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
         pref_item = pref_manager.TextEditPrefItem(name = 'filter_name',
                                                   label = 'filter name',
                                                   value = 'test filter')
