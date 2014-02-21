@@ -389,7 +389,7 @@ class Collection:
         Collection log files are saved there.
     '''
 
-    def __init__(self, name, tmpDir = '.'):
+    def __init__(self, name, tmpDir = '.', nodes = []):
         ''' The constructor.
 
         Parameters
@@ -405,7 +405,7 @@ class Collection:
         self.name = name
 
         ## A list CollectionNode objects contained in the collection.
-        self.nodes = []
+        self.nodes = nodes
 
         ## The project's temporary directory.
         #
