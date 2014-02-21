@@ -40,8 +40,8 @@ class ApplyGeometry(CollectionNode):
     tags = ['stable']
 
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
         self.options = {}
 
     ## The edit method.

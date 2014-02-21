@@ -43,8 +43,8 @@ class ExampleNode2(CollectionNode):
     category = 'Example'
     tags = ['stable', 'example']
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
         self.options = {}
 
     def edit(self):

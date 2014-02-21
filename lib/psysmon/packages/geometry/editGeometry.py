@@ -72,8 +72,8 @@ class EditGeometry(CollectionNode):
     category = 'Geometry'
     tags = ['stable']
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
         pref_item = pref_manager.TextEditPrefItem(name = 'projection_coordinate_system', label = 'proj. coord. sys.', value = '')
         self.pref_manager.add_item(item = pref_item)
         pref_item = pref_manager.FileBrowsePrefItem(name = 'shape_file', label = 'shape file', value = '')

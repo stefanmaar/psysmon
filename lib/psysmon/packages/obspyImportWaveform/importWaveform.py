@@ -53,8 +53,8 @@ class ImportWaveform(CollectionNode):
     category = 'Data Import'
     tags = ['stable']
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
         pref_item = CustomPrefItem(name = 'input_files', value = [])
         self.pref_manager.add_item(item = pref_item)
         pref_item = CustomPrefItem(name = 'last_dir', value = [])

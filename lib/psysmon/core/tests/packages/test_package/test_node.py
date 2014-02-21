@@ -33,8 +33,8 @@ class JsonPlainTestNode(CollectionNode):
     tags = ['stable', 'test']
     docEntryPoint = None
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
 
     def edit(self):
         pass

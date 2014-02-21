@@ -39,8 +39,8 @@ class ExampleNode(CollectionNode):
     tags = ['stable', 'example']
     docEntryPoint = 'exampleNode.html'
 
-    def __init__(self):
-        CollectionNode.__init__(self)
+    def __init__(self, **args):
+        CollectionNode.__init__(self, **args)
         self.options = {}
 
     def edit(self):
