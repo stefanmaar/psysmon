@@ -389,7 +389,7 @@ class Collection:
         Collection log files are saved there.
     '''
 
-    def __init__(self, name, tmpDir):
+    def __init__(self, name, tmpDir = '.'):
         ''' The constructor.
 
         Parameters
