@@ -364,7 +364,8 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = {'ERROR': 'MISSING CONVERTER'}
 
         # Add the class and module information to the dictionary.
-        tmp = {'__class__': obj.__class__.__name__,
+        tmp = {'__baseclass__': base_class,
+               '__class__': obj.__class__.__name__,
                '__module__': obj.__module__}
         print d
         d.update(tmp)
@@ -400,11 +401,8 @@ class ProjectFileEncoder(json.JSONEncoder):
         return self.object_to_dict(obj, attr)
 
     def convert_collection_node(self, obj):
-        attr = ['name', 'parentPackage', 'enabled', 'requires', 'provides', 'pref_manager']
+        attr = ['enabled', 'requires', 'provides', 'pref_manager']
         d = self.object_to_dict(obj, attr)
-        d['class'] = obj.__class__.__name__
-        d['module'] = obj.__module__
-
         return d
 
     def convert_preferencesmanager(self, obj):
@@ -415,11 +413,9 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_preferenceitem(self, obj):
         import inspect
 
-        attr = ['name', 'value', 'label', 'default', 'mode', 
+        attr = ['name', 'value', 'label', 'default', 
                 'group', 'limit', 'guiclass', 'gui_element']
         d = self.object_to_dict(obj, attr)
-        d['class'] = obj.__class__.__name__
-        d['module'] = obj.__module__
 
         # Find any additional arguments.
         base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
@@ -454,7 +450,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         if '__class__' in d:
             class_name = d.pop('__class__')
             module_name = d.pop('__module__')
-            module = __import__(module_name)
+            base_class = d.pop('__baseclass__')
 
             if class_name == 'Project':
                 inst = self.convert_project(d)
@@ -462,6 +458,14 @@ class ProjectFileDecoder(json.JSONDecoder):
                 inst = self.convert_user(d)
             elif class_name == 'UTCDateTime':
                 inst = self.convert_utcdatetime(d)
+            elif class_name == 'Collection':
+                inst = self.convert_collection(d)
+            elif class_name == 'PreferencesManager':
+                inst = self.convert_pref_manager(d)
+            elif 'CollectionNode' in base_class:
+                inst = self.convert_collectionnode(d, class_name, module_name)
+            elif 'PreferenceItem' in base_class:
+                inst = self.convert_preferenceitem(d, class_name, module_name)
             else:
                 inst = {'ERROR': 'MISSING CONVERTER'}
 
@@ -486,6 +490,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         inst.defaultWaveclient = d['defaultWaveclient']
         inst.scnlDataSources = d['scnlDataSources']
         inst.waveclient = d['waveclient']
+
         return inst
 
 
@@ -506,4 +511,29 @@ class ProjectFileDecoder(json.JSONDecoder):
         return inst
 
 
+    def convert_pref_manager(self, d):
+        inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
+        return inst
+
+    def convert_collection(self, d):
+        inst = psysmon.core.base.Collection(name = d['name'])
+        return inst
+
+
+    def convert_collectionnode(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
+    def convert_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        return inst
 
