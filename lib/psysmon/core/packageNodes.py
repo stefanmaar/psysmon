@@ -116,17 +116,21 @@ class CollectionNode:
     # The entry point of the documentation of the collection node.
     docEntryPoint = None
 
-    def __init__(self, requires=None, provides=None, docEntryPoint=None, parent=None, project=None):
+    def __init__(self, requires=None, provides=None, parent=None, 
+                 project=None, enabled = True, pref_manager = None):
         ## The package which contains the collection node.
         self.parentPackage = parent
 
         # The preferences manager of the node.
-        self.pref_manager = PreferencesManager()
+        if pref_manager is None:
+            self.pref_manager = PreferencesManager()
+        else:
+            self.pref_manager = pref_manager
 
         ## The node's enabled state.
         #
         # Mark the collection node as enabled or disabled.
-        self.enabled = True
+        self.enabled = enabled
 
         ## The collection node's output.
         #
