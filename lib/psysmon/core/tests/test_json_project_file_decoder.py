@@ -1,5 +1,6 @@
 import unittest
 import psysmon.core.project
+import psysmon.core.preferences_manager
 import psysmon.core.test_util as test_util
 import shutil
 import psysmon.core.util as util
@@ -74,9 +75,14 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         self.assertEqual(len(collection.nodes), 2)
         self.assertEqual(collection.nodes[0].__class__.__name__, 'JsonPlainTestNode')
         self.assertEqual(collection.nodes[1].__class__.__name__, 'JsonPreferencesTestNode')
-
-        # TODO: Add test for the pref_manager of the collection nodes.
-        # TODO: Add test for the pref_manager items.
+        c_node = collection.nodes[0]
+        self.assertIsInstance(c_node.pref_manager, psysmon.core.preferences_manager.PreferencesManager)
+        self.assertEqual(len(c_node.pref_manager.pages), 1)
+        self.assertEqual(len(c_node.pref_manager.pages['preferences']), 0)
+        c_node = collection.nodes[1]
+        self.assertIsInstance(c_node.pref_manager, psysmon.core.preferences_manager.PreferencesManager)
+        self.assertEqual(len(c_node.pref_manager.pages), 1)
+        self.assertEqual(len(c_node.pref_manager.pages['preferences']), 6)
 
 
 def suite():
