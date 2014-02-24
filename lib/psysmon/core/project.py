@@ -40,12 +40,13 @@ from wx.lib.pubsub import Publisher as pub
 from wx import CallAfter
 from datetime import datetime
 import psysmon.core.base
-from psysmon.core.util import PsysmonError
+from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from obspy.core import UTCDateTime
 from psysmon.core.preferences_manager import PreferencesManager
+import psysmon.core.util
 
 
 class Project:
@@ -261,7 +262,7 @@ class Project:
         self.slug = self.name.lower().replace(' ', '_')
 
         # The time when the project has been created.
-        if not createTime:
+        if createTime is None:
             self.createTime = UTCDateTime()
         else:
             self.createTime = createTime
@@ -731,6 +732,17 @@ class Project:
         db['scnlDataSources'] = self.scnlDataSources
         db.close()
         self.saved = True 
+
+
+    def save_json(self):
+        ''' Save the project to a JSON formatted file.
+
+        '''
+        import json
+        fp = open(os.path.join(self.projectDir, self.projectFile), mode = 'w')
+        json.dump(self, fp = fp, cls = psysmon.core.util.ProjectFileEncoder)
+        fp.close()
+
 
 
     def addCollection(self, name):
