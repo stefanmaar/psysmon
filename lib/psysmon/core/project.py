@@ -270,9 +270,6 @@ class Project:
         # The project's base directory. 
         self.base_dir = base_dir
 
-        # The project directory.
-        self.projectDir = os.path.join(self.base_dir, self.slug)
-
         # The database engine to be used.
         self.dbDialect = dbDialect
 
@@ -338,7 +335,7 @@ class Project:
         self.waveclient = {}
 
         # The default waveclient.
-        self.defaultWaveclient = 'main client'
+        self.defaultWaveclient = None
 
         # The association of the SCNLs to the data sources (the waveclients).
         self.scnlDataSources = {}
@@ -346,6 +343,10 @@ class Project:
         # The project preferences.
         self.pref_manager = PreferencesManager()
 
+
+    @property
+    def projectDir(self):
+        return os.path.join(self.base_dir, self.slug)
 
     ## The __getstate__ method.
     #
