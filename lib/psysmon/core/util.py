@@ -64,14 +64,6 @@ from wx import DateTime, DateTimeFromDMY
 import psysmon.core.project
 
 
-class PsysmonError(Exception):
-    def __init__(self, value):
-        self.value = value
-        
-    def __str__(self):
-        return repr(self.value)
-
-
 def _wxdate2pydate(date):
      if date is None:
          return None
@@ -334,8 +326,8 @@ class Action:
 class ProjectFileEncoder(json.JSONEncoder):
     ''' A JSON encoder for the pSysmon project file.
     '''
-    def __init__(self):
-        json.JSONEncoder.__init__(self)
+    def __init__(self, **kwarg):
+        json.JSONEncoder.__init__(self, **kwarg)
         self.indent = 4
         self.sort_keys = True
 
@@ -440,7 +432,7 @@ class ProjectFileEncoder(json.JSONEncoder):
 
 class ProjectFileDecoder(json.JSONDecoder):
 
-    def __init__(self):
+    def __init__(self, **kwarg):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
 
     def convert_object(self, d):
