@@ -38,7 +38,7 @@ from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
-from psysmon.core.util import PsysmonError
+from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -79,7 +79,7 @@ class Base:
 
     '''
 
-    def __init__(self, baseDir, package_directory = []):
+    def __init__(self, baseDir, package_directory = None):
         '''The constructor.
 
         Create an instance of the Base class.
@@ -112,8 +112,10 @@ class Base:
         self.baseDirectory = baseDir
 
         # The search path for psysmon packages.
-        self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
-        self.packageDirectory.extend(package_directory)
+        if package_directory is None:
+            self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
+        else:
+            self.packageDirectory = package_directory
 
         # The currently loaded pSysmon project.
         self.project = ""
@@ -276,6 +278,12 @@ class Base:
 
         return True
 
+
+    def load_json_project(self, filename, user_name, user_pwd):
+        ''' Load a psysmon project from JSON formatted file.
+
+        '''
+        pass
 
 
     def loadPsysmonProject(self, filename, user_name, user_pwd):
