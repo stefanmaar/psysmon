@@ -198,9 +198,12 @@ class ProjectTestCase(unittest.TestCase):
 }'''
         self.assertMultiLineEqual(json_str, expected_json_str)
 
-        #project = json.load(fp, cls = psysmon.core.util.ProjectFileDecoder)
 
         shutil.rmtree(self.db_project.projectDir)
+
+
+
+
 
 
 def suite():
