@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -37,6 +38,7 @@ from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
+import psysmon.core.util
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine
@@ -269,12 +271,16 @@ class Base:
         self.project.createDatabaseStructure(self.packageMgr.packages)
 
         # By default add a psysmon Database waveclient with the name 'main
-        # client'.
-        waveclient = PsysmonDbWaveClient('main client', self.project)
-        self.project.addWaveClient(waveclient)
-        self.project.defaultWaveclient = 'main client'
+        # client'. Add the waveclient only, if the required packages are
+        # present.
+        required_packages = ['obspyImportWaveform', 'geometry']
+        available_packages = [x for x in self.packageMgr.packages.keys() if x in required_packages]
+        if required_packages == available_packages:
+            waveclient = PsysmonDbWaveClient('db client', self.project)
+            self.project.addWaveClient(waveclient)
+            self.project.defaultWaveclient = 'db client'
 
-        self.project.save()
+        self.project.save_json()
 
         return True
 
@@ -283,7 +289,40 @@ class Base:
         ''' Load a psysmon project from JSON formatted file.
 
         '''
-        pass
+        import json
+        project_dir = os.path.dirname(filename)
+        fp = open(filename, 'r')
+        self.project = json.load(fp, cls = psysmon.core.util.ProjectFileDecoder)
+        fp.close()
+
+        # Set some runtime dependent variables.
+        self.project.psybase = self
+        self.project.base_dir = os.path.dirname(project_dir)
+        self.project.updateDirectoryStructure()
+        self.project.setCollectionNodeProject()
+
+        # Set the project of the db_waveclient (if available).
+        for cur_waveclient in self.project.waveclient.itervalues():
+            if cur_waveclient.mode == 'PsysmonDbWaveClient':
+                cur_waveclient.project = self.project
+
+        userSet = self.project.setActiveUser(user_name, user_pwd = user_pwd)
+        if not userSet:
+            self.project = None
+            return False
+        else:
+            # Load the current database structure.
+            self.project.loadDatabaseStructure(self.packageMgr.packages)
+
+            # Check if the database tables have to be updated.
+            self.project.checkDbVersions(self.packageMgr.packages)
+
+            # Check if the default wave client exists.
+            if self.project.defaultWaveclient not in self.project.waveclient.keys():
+                self.project.defaultWaveclient = None
+
+            return True
+
 
 
     def loadPsysmonProject(self, filename, user_name, user_pwd):

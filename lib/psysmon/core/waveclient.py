@@ -43,7 +43,7 @@ class WaveClient:
 
     '''
 
-    def __init__(self, name, mode):
+    def __init__(self, name, stock_window = 3600, options = {}):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -64,14 +64,11 @@ class WaveClient:
         # The name of the waveclient.
         self.name = name
 
-        # The mode of the waveclient.
-        self.mode = mode
-
         # The options of the waveclient.
         # The options can vary depending on the mode of the waveclient.
         # The options attribute is a dictionary with the option name as the key
         # and the option values as the value.
-        self.options = {}
+        self.options = options
 
         # The available data of the waveclient. This includes the
         # currently displayed time period and the preloaded data in
@@ -87,7 +84,14 @@ class WaveClient:
 
         # The time-window in seconds of the stock stream before and after the currently
         # displayed time-period. 
-        self.stock_window = 3600
+        self.stock_window = stock_window
+
+    @property
+    def mode(self):
+        ''' The mode of the waveclient.
+
+        '''
+        return self.__class__.__name__
 
 
     def get_from_stock(self, network, station, location, channel, start_time, end_time):
@@ -222,34 +226,62 @@ class PsysmonDbWaveClient(WaveClient):
     database.
     '''
 
-    def __init__(self, name, project):
+    def __init__(self, name = 'psysmon db waveclient', project = None, **kwargs):
 
-        WaveClient.__init__(self, name=name, mode='psysmonDb')
+        WaveClient.__init__(self, name=name, **kwargs)
 
         # The psysmon project owning the waveclient.
         self.project = project
 
-        # The traceheader database table.
-        self.traceheader = self.project.dbTables['traceheader']
-
-        # The waveform directory table.
-        self.waveformDir = self.project.dbTables['waveform_dir']
-
-        # The waveform directory alias table.
-        self.waveformDirAlias = self.project.dbTables['waveform_dir_alias']
-
-        # The station database table.
-        self.geomStation = self.project.dbTables['geom_station']
-
-        # The senors database table.
-        self.geomSensor = self.project.dbTables['geom_sensor']
-
         # The list of the associated waveform directories.
         self.waveformDirList = []
 
-
         # Initialize the waveformDirList from the database.
         self.loadWaveformDirList()
+
+
+    @property
+    def traceheader(self):
+        # The traceheader database table.
+        if self.project is not None:
+            return self.project.dbTables['traceheader']
+        else:
+            return None
+
+    @property
+    def waveformDir(self):
+        # The waveform directory table.
+        if self.project is not None:
+            return self.project.dbTables['waveform_dir']
+        else:
+            return None
+
+    @property
+    def waveformDirAlias(self):
+        # The waveform directory alias table.
+        if self.project is not None:
+            return self.project.dbTables['waveform_dir_alias']
+        else:
+            return None
+
+
+    @property
+    def geomStation(self):
+        # The station database table.
+        if self.project is not None:
+            return self.project.dbTables['geom_station']
+        else:
+            return None
+
+    @property
+    def geomSensor(self):
+        # The senors database table.
+        if self.project is not None:
+            return self.project.dbTables['geom_sensor']
+        else:
+            return None
+
+
 
 
 
@@ -439,6 +471,9 @@ class PsysmonDbWaveClient(WaveClient):
         '''
         wfDir = self.waveformDir
         wfDirAlias = self.waveformDirAlias
+
+        if wfDir is None or wfDirAlias is None:
+            return
 
         dbSession = self.project.getDbSession()
         self.waveformDirList = dbSession.query(wfDir.id,

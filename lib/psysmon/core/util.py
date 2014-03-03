@@ -352,6 +352,8 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_preferencesmanager(obj)
         elif 'PreferenceItem' in base_class:
             d = self.convert_preferenceitem(obj)
+        elif 'WaveClient' in base_class:
+            d = self.convert_waveclient(obj)
         else:
             d = {'ERROR': 'MISSING CONVERTER'}
 
@@ -367,9 +369,9 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_project(self, obj):
         attr = ['name', 'dbDriver', 'dbDialect', 'dbHost',
                 'dbName', 'pkg_version', 'db_version', 'createTime',
-                'defaultWaveclient', 'scnlDataSources', 'user']
+                'defaultWaveclient', 'scnlDataSources', 'user', 'waveclient']
         d =  self.object_to_dict(obj, attr)
-        d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
+        #d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
         return d
 
 
@@ -418,6 +420,11 @@ class ProjectFileEncoder(json.JSONEncoder):
 
         return d
 
+    def convert_waveclient(self, obj):
+        attr = ['name', 'options', 'stock_window']
+        d = self.object_to_dict(obj, attr)
+        return d
+
 
     def object_to_dict(self, obj, attr):
         ''' Copy selceted attributes of object to a dictionary.
@@ -457,6 +464,8 @@ class ProjectFileDecoder(json.JSONDecoder):
                 inst = self.convert_collectionnode(d, class_name, module_name)
             elif 'PreferenceItem' in base_class:
                 inst = self.convert_preferenceitem(d, class_name, module_name)
+            elif 'WaveClient' in base_class:
+                inst = self.convert_waveclient(d, class_name, module_name)
             else:
                 inst = {'ERROR': 'MISSING CONVERTER'}
 
@@ -529,4 +538,14 @@ class ProjectFileDecoder(json.JSONDecoder):
         args = dict( (key.encode('ascii'), value) for key, value in d.items())
         inst = class_(**args)
         return inst
+
+
+    def convert_waveclient(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
 

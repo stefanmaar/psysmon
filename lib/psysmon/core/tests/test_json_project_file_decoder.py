@@ -85,6 +85,43 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         self.assertEqual(len(c_node.pref_manager.pages['preferences']), 6)
 
 
+
+    def test_json_waveclient_deserialization(self):
+        '''
+        '''
+        import psysmon.core.waveclient
+
+        packages_path = os.path.dirname(os.path.abspath(__file__))
+        packages_path = os.path.join(packages_path, 'waveclient_packages')
+        psybase = test_util.create_psybase(package_directory = [packages_path, ])
+        project = test_util.create_dbtest_project(psybase)
+        project.createDatabaseStructure(psybase.packageMgr.packages)
+
+        # Set the maxDiff attribute to None to enable long output of 
+        # non-equal strings tested with assertMultiLineEqual.
+        self.maxDiff = None
+
+        # Set the createTime of the project to a known value.
+        project.createTime = UTCDateTime('2013-01-01T00:00:00')
+
+        # Add a waveclient to the project.
+        waveclient = psysmon.core.waveclient.PsysmonDbWaveClient('db client', project)
+        project.addWaveClient(waveclient)
+        project.defaultWaveclient = 'db client'
+
+
+        encoder = util.ProjectFileEncoder()
+        decoder = util.ProjectFileDecoder()
+        json_project = encoder.encode(project)
+        project_obj = decoder.decode(json_project)
+
+        # TODO: Test the project_obj for validity.
+        print project_obj.waveclient['db client'].mode
+
+        base_dir = project.base_dir
+        test_util.drop_project_database_tables(project)
+        shutil.rmtree(base_dir)
+
 def suite():
     return unittest.makeSuite(ProjectFileDecoderTestCase, 'test')
 

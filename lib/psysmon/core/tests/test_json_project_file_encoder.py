@@ -76,16 +76,10 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "dbHost": "localhost", 
     "dbName": "psysmon_unit_test", 
     "db_version": {}, 
-    "defaultWaveclient": "main client", 
+    "defaultWaveclient": null, 
     "name": "Unit Test", 
     "pkg_version": {
-        "events": "0.0.1", 
-        "example": "0.1.1", 
-        "example 2": "0.1.1", 
-        "geometry": "0.1.1", 
-        "obspyImportWaveform": "0.1.1", 
-        "test_package_1": "0.1.1", 
-        "tracedisplay": "0.1.1"
+        "test_package_1": "0.1.1"
     }, 
     "scnlDataSources": {}, 
     "user": [
@@ -103,7 +97,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "name": "unit_test"
         }
     ], 
-    "waveclient": []
+    "waveclient": {}
 }'''
 
         self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
@@ -128,16 +122,10 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "dbHost": "localhost", 
     "dbName": "psysmon_unit_test", 
     "db_version": {}, 
-    "defaultWaveclient": "main client", 
+    "defaultWaveclient": null, 
     "name": "Unit Test", 
     "pkg_version": {
-        "events": "0.0.1", 
-        "example": "0.1.1", 
-        "example 2": "0.1.1", 
-        "geometry": "0.1.1", 
-        "obspyImportWaveform": "0.1.1", 
-        "test_package_1": "0.1.1", 
-        "tracedisplay": "0.1.1"
+        "test_package_1": "0.1.1"
     }, 
     "scnlDataSources": {}, 
     "user": [
@@ -163,7 +151,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "name": "unit_test"
         }
     ], 
-    "waveclient": []
+    "waveclient": {}
 }'''
         self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
 
@@ -188,16 +176,10 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "dbHost": "localhost", 
     "dbName": "psysmon_unit_test", 
     "db_version": {}, 
-    "defaultWaveclient": "main client", 
+    "defaultWaveclient": null, 
     "name": "Unit Test", 
     "pkg_version": {
-        "events": "0.0.1", 
-        "example": "0.1.1", 
-        "example 2": "0.1.1", 
-        "geometry": "0.1.1", 
-        "obspyImportWaveform": "0.1.1", 
-        "test_package_1": "0.1.1", 
-        "tracedisplay": "0.1.1"
+        "test_package_1": "0.1.1"
     }, 
     "scnlDataSources": {}, 
     "user": [
@@ -242,7 +224,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "name": "unit_test"
         }
     ], 
-    "waveclient": []
+    "waveclient": {}
 }'''
         self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
 
@@ -267,16 +249,10 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     "dbHost": "localhost", 
     "dbName": "psysmon_unit_test", 
     "db_version": {}, 
-    "defaultWaveclient": "main client", 
+    "defaultWaveclient": null, 
     "name": "Unit Test", 
     "pkg_version": {
-        "events": "0.0.1", 
-        "example": "0.1.1", 
-        "example 2": "0.1.1", 
-        "geometry": "0.1.1", 
-        "obspyImportWaveform": "0.1.1", 
-        "test_package_1": "0.1.1", 
-        "tracedisplay": "0.1.1"
+        "test_package_1": "0.1.1"
     }, 
     "scnlDataSources": {}, 
     "user": [
@@ -409,10 +385,98 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             "name": "unit_test"
         }
     ], 
-    "waveclient": []
+    "waveclient": {}
 }'''
         self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
 
+    def test_json_waveclient_serialization(self):
+        '''
+        '''
+        import psysmon.core.waveclient
+
+        packages_path = os.path.dirname(os.path.abspath(__file__))
+        packages_path = os.path.join(packages_path, 'waveclient_packages')
+        psybase = test_util.create_psybase(package_directory = [packages_path, ])
+        project = test_util.create_dbtest_project(psybase)
+        project.createDatabaseStructure(psybase.packageMgr.packages)
+
+        # Set the maxDiff attribute to None to enable long output of 
+        # non-equal strings tested with assertMultiLineEqual.
+        self.maxDiff = None
+
+        # Set the createTime of the project to a known value.
+        project.createTime = UTCDateTime('2013-01-01T00:00:00')
+
+        # Add a waveclient to the project.
+        waveclient = psysmon.core.waveclient.PsysmonDbWaveClient('db client', project)
+        project.addWaveClient(waveclient)
+        project.defaultWaveclient = 'db client'
+
+        encoder = util.ProjectFileEncoder()
+
+        # Test empty project.
+        expected_result = '''{
+    "__baseclass__": [], 
+    "__class__": "Project", 
+    "__module__": "psysmon.core.project", 
+    "createTime": {
+        "__baseclass__": [
+            "object"
+        ], 
+        "__class__": "UTCDateTime", 
+        "__module__": "obspy.core.utcdatetime", 
+        "utcdatetime": "2013-01-01T00:00:00"
+    }, 
+    "dbDialect": "mysql", 
+    "dbDriver": null, 
+    "dbHost": "localhost", 
+    "dbName": "psysmon_unit_test", 
+    "db_version": {
+        "geometry": "0.1.1", 
+        "obspyImportWaveform": "0.1.1"
+    }, 
+    "defaultWaveclient": "db client", 
+    "name": "Unit Test", 
+    "pkg_version": {
+        "geometry": "0.1.1", 
+        "obspyImportWaveform": "0.1.1"
+    }, 
+    "scnlDataSources": {}, 
+    "user": [
+        {
+            "__baseclass__": [], 
+            "__class__": "User", 
+            "__module__": "psysmon.core.project", 
+            "activeCollection": null, 
+            "agency_name": "University of Test", 
+            "agency_uri": "at.uot", 
+            "author_name": "Stefan Test", 
+            "author_uri": "stest", 
+            "collection": {}, 
+            "mode": "admin", 
+            "name": "unit_test"
+        }
+    ], 
+    "waveclient": {
+        "db client": {
+            "__baseclass__": [
+                "WaveClient"
+            ], 
+            "__class__": "PsysmonDbWaveClient", 
+            "__module__": "psysmon.core.waveclient", 
+            "mode": "psysmonDb", 
+            "name": "db client", 
+            "options": {}, 
+            "stock_window": 3600
+        }
+    }
+}'''
+
+        self.assertMultiLineEqual(encoder.encode(project), expected_result)
+
+        base_dir = project.base_dir
+        test_util.drop_project_database_tables(project)
+        shutil.rmtree(base_dir)
 
 def suite():
     return unittest.makeSuite(ProjectFileEncoderTestCase, 'test')

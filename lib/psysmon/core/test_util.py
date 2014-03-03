@@ -242,7 +242,8 @@ def remove_project(project_file, user_name, user_pwd):
     userdata = {}
     userdata['user'] = user_name
     userdata['pwd'] = user_pwd
-    psybase.loadPsysmonProject(project_file, user_name, user_pwd)
+    psybase.load_json_project(project_file, user_name, user_pwd)
+    #psybase.loadPsysmonProject(project_file, user_name, user_pwd)
 
     drop_project_database_tables(psybase.project)
     remove_project_filestructure(psybase.project)

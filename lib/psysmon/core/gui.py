@@ -44,7 +44,7 @@ from wx.lib.pubsub import Publisher as pub
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
-from psysmon.core.util import PsysmonError
+from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 from datetime import datetime
@@ -265,10 +265,15 @@ class PSysmonGui(wx.Frame):
             dlg = ProjectLoginDlg()
             dlg.ShowModal()
             userData = dlg.userData
-            projectLoaded = self.psyBase.loadPsysmonProject(path, 
-                                                            user_name = userData['user'],
-                                                            user_pwd = userData['pwd']
-                                                            )
+            projectLoaded = self.psyBase.load_json_project(path, 
+                                                           user_name = userData['user'],
+                                                           user_pwd = userData['pwd']
+                                                          )
+            #projectLoaded = self.psyBase.loadPsysmonProject(path, 
+            #                                                user_name = userData['user'],
+            #                                                user_pwd = userData['pwd']
+            #                                                )
+
             #userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
 
             if not projectLoaded:
@@ -330,7 +335,8 @@ class PSysmonGui(wx.Frame):
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
         else:
-            self.psyBase.project.save()
+            #self.psyBase.project.save()
+            self.psyBase.project.save_json()
 
 
     def onCloseProject(self, event):
