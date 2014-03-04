@@ -234,6 +234,12 @@ class CollectionNode:
         self.execute(prevNodeOutput)
 
 
+    def update_pref_manager(self, pref_manager):
+        ''' Update the existing preferences manager with the one passed as an argument.
+        '''
+        self.pref_manager.update(pref_manager)
+
+
     ## Log messages.
     #
     # The collection node is executed by a CollectionNode object. This object handles
@@ -280,7 +286,6 @@ class CollectionNode:
             The names of the variables to restore from the collection's 
             shelf.
         '''
-        
         print "Requiring data with name: %s and origin: %s" % (name, origin)
         return self.parentCollection.unpickleData(name=name, origin=origin)
 
