@@ -57,6 +57,7 @@ class JsonPreferencesTestNode(CollectionNode):
 
     def __init__(self, **args):
         CollectionNode.__init__(self, **args)
+
         pref_item = pref_manager.TextEditPrefItem(name = 'filter_name',
                                                   label = 'filter name',
                                                   value = 'test filter')
@@ -72,6 +73,7 @@ class JsonPreferencesTestNode(CollectionNode):
                                                    label = 'filter cutoff',
                                                    value = '4.5')
         self.pref_manager.add_item(item = pref_item)
+
 
     def edit(self):
         pass
