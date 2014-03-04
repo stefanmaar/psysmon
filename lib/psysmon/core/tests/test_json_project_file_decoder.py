@@ -55,6 +55,8 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         # Add a collection node containing preferences.
         node_template = self.psybase.packageMgr.getCollectionNodeTemplate('json preferences testnode')
         self.db_project.addNode2Collection(node_template)
+        # Change a value in the filter_cutoff pref_item.
+        self.db_project.activeUser.activeCollection.nodes[1].pref_manager.set_value('filter_cutoff', 10)
 
         encoder = util.ProjectFileEncoder()
         decoder = util.ProjectFileDecoder()
@@ -71,6 +73,7 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         self.assertEqual(project_obj.rid, 'smi:at.uot.stest/psysmon/unit_test')
         self.assertEqual(len(project_obj.activeUser.collection), 1)
         self.assertIsInstance(project_obj.activeUser.collection['Test Collection'], psysmon.core.base.Collection)
+        self.assertEqual(project_obj.activeUser.activeCollection, project_obj.activeUser.collection['Test Collection'])
         collection = project_obj.activeUser.collection['Test Collection']
         self.assertEqual(len(collection.nodes), 2)
         self.assertEqual(collection.nodes[0].__class__.__name__, 'JsonPlainTestNode')
@@ -82,7 +85,9 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         c_node = collection.nodes[1]
         self.assertIsInstance(c_node.pref_manager, psysmon.core.preferences_manager.PreferencesManager)
         self.assertEqual(len(c_node.pref_manager.pages), 1)
-        self.assertEqual(len(c_node.pref_manager.pages['preferences']), 6)
+        self.assertEqual(len(c_node.pref_manager.pages['preferences']), 3)
+        filter_item = c_node.pref_manager.get_item('filter_cutoff', 'preferences')[0]
+        self.assertEqual(filter_item.value, 10)
 
 
 
