@@ -378,6 +378,7 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_utcdatetime(self, obj):
         return {'utcdatetime': obj.isoformat()}
 
+
     def convert_user(self, obj):
         attr = ['name', 'mode', 'author_name', 'author_uri', 
                 'agency_name', 'agency_uri', 'collection']
@@ -389,19 +390,23 @@ class ProjectFileEncoder(json.JSONEncoder):
 
         return d
 
+
     def convert_collection(self, obj):
         attr = ['name', 'nodes']
         return self.object_to_dict(obj, attr)
+
 
     def convert_collection_node(self, obj):
         attr = ['enabled', 'requires', 'provides', 'pref_manager']
         d = self.object_to_dict(obj, attr)
         return d
 
+
     def convert_preferencesmanager(self, obj):
         attr = ['pages', ]
         d = self.object_to_dict(obj, attr)
         return d
+
 
     def convert_preferenceitem(self, obj):
         import inspect
@@ -419,6 +424,7 @@ class ProjectFileEncoder(json.JSONEncoder):
                 d[cur_arg] = getattr(obj, cur_arg)
 
         return d
+
 
     def convert_waveclient(self, obj):
         attr = ['name', 'options', 'stock_window']
@@ -474,6 +480,7 @@ class ProjectFileDecoder(json.JSONDecoder):
 
         return inst
 
+
     def convert_project(self, d):
         inst = psysmon.core.project.Project(psybase = None,
                                             name = d['name'],
@@ -504,6 +511,9 @@ class ProjectFileDecoder(json.JSONDecoder):
                                          agency_uri = d['agency_uri']
                                          )
         inst.collection = d['collection']
+
+        if d['activeCollection'] in inst.collection.keys():
+            inst.activeCollection = inst.collection[d['activeCollection']]
         return inst
 
 
@@ -524,10 +534,12 @@ class ProjectFileDecoder(json.JSONDecoder):
 
     def convert_collectionnode(self, d, class_name, module_name):
         import importlib
+        pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         args = dict( (key.encode('ascii'), value) for key, value in d.items())
         inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
         return inst
 
 
