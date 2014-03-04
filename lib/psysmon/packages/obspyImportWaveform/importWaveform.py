@@ -106,7 +106,7 @@ class ImportWaveform(CollectionNode):
         Header = self.project.dbTables['traceheader']
 
         wfDirId = ""
-        for curWfDir in self.project.waveclient['main client'].waveformDirList:
+        for curWfDir in self.project.waveclient['db client'].waveformDirList:
             if filename.startswith(curWfDir.alias):
                 wfDirId = curWfDir.id
                 break
