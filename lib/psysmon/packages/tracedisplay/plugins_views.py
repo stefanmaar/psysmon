@@ -139,22 +139,53 @@ class SeismogramView(View):
 
     def plot(self, stream, color):
 
-        for trace in stream:
-            timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray / trace.stats.sampling_rate
-            timeArray = timeArray + trace.stats.starttime.timestamp
 
-            # Check if the data is a ma.maskedarray
-            if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray, mask=trace.data.mask)
+        # Plotten der MinMax Daten aus pytswd.
+        #minmax_data = compute_minmax_data(tr.data, sample_step)
+        #time_step = sample_step / tr.stats.sampling_rate
+        #minmax_time = np.array([tr.stats.starttime.timestamp + x * time_step for x in range(len(tr.data) / sample_step)])
+        #minmax_time = minmax_time.repeat(2)
+        #ax1.plot(minmax_time - cur_starttime.timestamp, minmax_data, color = 'black')
+
+
+        #display_size = wx.GetDisplaySize()
+        axes_width = self.dataAxes.get_window_extent().width
+        data_plot_limit = axes_width * 0.75
+        print 'data_plot_limit: %f' % data_plot_limit
+        #data_plot_limit = 1e20
+        for trace in stream:
+            if trace.stats.npts > data_plot_limit and (len(trace) / trace.stats.sampling_rate) > 20:
+                # Plot minmax values
+                print 'Plotting in minmax mode.'
+                sample_step = np.ceil(len(trace.data) / data_plot_limit)
+                print "len(trace.data): %f" % len(trace.data)
+                print 'sample_step: %f' % sample_step
+                trace_data = self.compute_minmax_data(trace.data, sample_step)
+                time_step = sample_step / trace.stats.sampling_rate
+                minmax_time = np.array([trace.stats.starttime.timestamp + x * time_step for x in range(int(np.floor(len(trace.data) / sample_step)))])
+                minmax_time = minmax_time.repeat(2)
+                timeArray = minmax_time
+            else:
+                print 'Plotting in FULL mode.'
+                timeArray = np.arange(0, trace.stats.npts)
+                timeArray = timeArray / trace.stats.sampling_rate
+                timeArray = timeArray + trace.stats.starttime.timestamp
+
+                # Check if the data is a ma.maskedarray
+                if np.ma.count_masked(trace.data):
+                    timeArray = np.ma.array(timeArray, mask=trace.data.mask)
+
+                trace_data = trace.data
 
             self.t0 = trace.stats.starttime
 
+            print 'len(trace_data): %d' % len(trace_data)
+
             if not self.line:
-                self.line, = self.dataAxes.plot(timeArray, trace.data, color = color)
+                self.line, = self.dataAxes.plot(timeArray, trace_data, color = color)
             else:
                 self.line.set_xdata(timeArray)
-                self.line.set_ydata(trace.data)
+                self.line.set_ydata(trace_data)
 
             self.dataAxes.set_frame_on(False)
             self.dataAxes.get_xaxis().set_visible(False)
@@ -201,6 +232,25 @@ class SeismogramView(View):
         width = self.dataAxes.get_window_extent().width
         return  width / float(timeRange)
 
+
+    def compute_minmax_data(self, data, sample_step):
+        '''
+
+        '''
+        n_step = np.floor(len(data) / sample_step)
+        data = data[:n_step * sample_step]
+        data = data.reshape(n_step, sample_step)
+
+        # Calculate extreme_values and put them into new array.
+        min_data = data.min(axis=1)
+        max_data = data.max(axis=1)
+        min_data = np.ma.resize(min_data, (len(min_data), 1))
+        max_data = np.ma.resize(max_data, (len(max_data), 1))
+        minmax_data = np.ma.zeros((n_step*2, 1), dtype=np.float)
+        minmax_data[0:len(minmax_data):2] = min_data
+        minmax_data[1:len(minmax_data):2] = max_data
+
+        return minmax_data
 
 
 ############## DEMO PLUGIN FOR VIEWS ##########################################
