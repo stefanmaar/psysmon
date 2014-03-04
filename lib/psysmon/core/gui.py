@@ -1764,8 +1764,8 @@ class EditWaveclientDlg(wx.Dialog):
 
     def getClientOptionsPanels(self):
         clientModes = {}
-        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveclientOptions)
-        clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
+        clientModes['EarthwormWaveclient'] =  ('Earthworm', EarthwormWaveclientOptions)
+        clientModes['PsysmonDbWaveClient'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
         return clientModes
 
 
