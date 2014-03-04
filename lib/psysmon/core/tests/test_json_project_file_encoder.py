@@ -389,6 +389,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
 }'''
         self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
 
+
     def test_json_waveclient_serialization(self):
         '''
         '''
