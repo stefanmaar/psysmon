@@ -46,13 +46,16 @@ class PreferencesManager:
 
     '''
 
-    def __init__(self):
+    def __init__(self, pages = None):
         ''' The constructor.
 
         '''
         # The pages (categories) of the project preferences.
-        self.pages = {}
-        self.pages['preferences'] = []
+        if pages is None:
+            self.pages = {}
+            self.pages['preferences'] = []
+        else:
+            self.pages = pages
 
         # A dictionary with the GUI element field classes.
         self.gui_elements = {}
@@ -198,6 +201,17 @@ class PreferencesManager:
         return found_items
 
 
+    def update(self, pref_manager):
+        ''' Update the values of the preferences manager.
+        '''
+        for cur_key in pref_manager.pages.keys():
+            if cur_key in self.pages.keys():
+                for cur_item in pref_manager.pages[cur_key]:
+                    update_item = self.get_item(cur_item.name, cur_key)
+                    for cur_update_item in update_item:
+                        for cur_arg in cur_update_item.__dict__.keys():
+                            setattr(cur_update_item, cur_arg, getattr(cur_item, cur_arg))
+
 
 
 class PreferenceItem(object):
@@ -205,7 +219,7 @@ class PreferenceItem(object):
 
     '''
 
-    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, guiclass = None):
+    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, guiclass = None, gui_element = []):
         ''' The constructor.
 
         '''
@@ -245,7 +259,7 @@ class PreferenceItem(object):
 
 
         # The GUI element(s) linked to this preference item.
-        self.gui_element = []
+        self.gui_element = gui_element
 
 
     #@property

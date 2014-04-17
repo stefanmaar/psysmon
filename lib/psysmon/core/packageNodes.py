@@ -116,17 +116,21 @@ class CollectionNode:
     # The entry point of the documentation of the collection node.
     docEntryPoint = None
 
-    def __init__(self, requires=None, provides=None, docEntryPoint=None, parent=None, project=None):
+    def __init__(self, requires=None, provides=None, parent=None, 
+                 project=None, enabled = True, pref_manager = None):
         ## The package which contains the collection node.
         self.parentPackage = parent
 
         # The preferences manager of the node.
-        self.pref_manager = PreferencesManager()
+        if pref_manager is None:
+            self.pref_manager = PreferencesManager()
+        else:
+            self.pref_manager = pref_manager
 
         ## The node's enabled state.
         #
         # Mark the collection node as enabled or disabled.
-        self.enabled = True
+        self.enabled = enabled
 
         ## The collection node's output.
         #
@@ -230,6 +234,12 @@ class CollectionNode:
         self.execute(prevNodeOutput)
 
 
+    def update_pref_manager(self, pref_manager):
+        ''' Update the existing preferences manager with the one passed as an argument.
+        '''
+        self.pref_manager.update(pref_manager)
+
+
     ## Log messages.
     #
     # The collection node is executed by a CollectionNode object. This object handles
@@ -276,7 +286,6 @@ class CollectionNode:
             The names of the variables to restore from the collection's 
             shelf.
         '''
-        
         print "Requiring data with name: %s and origin: %s" % (name, origin)
         return self.parentCollection.unpickleData(name=name, origin=origin)
 

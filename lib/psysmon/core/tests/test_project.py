@@ -9,6 +9,7 @@ import psysmon.core.project
 import psysmon.core.test_util as test_util
 import os
 import shutil
+from obspy.core.utcdatetime import UTCDateTime
 
 class ProjectTestCase(unittest.TestCase):
     """
@@ -28,7 +29,9 @@ class ProjectTestCase(unittest.TestCase):
 
     def setUp(self):
         print "Setting up test method..."
-        self.psybase = test_util.create_psybase()
+        base_path= os.path.dirname(os.path.abspath(__file__))
+        packages_path = os.path.join(base_path, 'packages')
+        self.psybase = test_util.create_psybase(package_directory = [packages_path,])
         self.db_project = test_util.create_dbtest_project(self.psybase)
         self.db_base_dir = self.db_project.base_dir
         self.db_user = self.db_project.activeUser
@@ -132,6 +135,75 @@ class ProjectTestCase(unittest.TestCase):
         db.close()
 
         shutil.rmtree(self.db_project.projectDir)
+
+    def test_save_json_project(self):
+        ''' Test the saving of the project.
+        '''
+        # Set the maxDiff attribute to None to enable long output of 
+        # non-equal strings tested with assertMultiLineEqual.
+        self.maxDiff = None
+
+        # Set the createTime of the project to a known value.
+        self.db_project.createTime = UTCDateTime('2013-01-01T00:00:00')
+
+        self.db_project.createDirectoryStructure()
+
+        # Save the project to a JSON file.
+        self.db_project.save_json()
+
+        # Read the JSON file.
+        fp = open(os.path.join(self.db_project.projectDir, self.db_project.projectFile))
+        json_str = fp.read()
+        fp.close()
+
+        expected_json_str = '''{
+    "__baseclass__": [], 
+    "__class__": "Project", 
+    "__module__": "psysmon.core.project", 
+    "createTime": {
+        "__baseclass__": [
+            "object"
+        ], 
+        "__class__": "UTCDateTime", 
+        "__module__": "obspy.core.utcdatetime", 
+        "utcdatetime": "2013-01-01T00:00:00"
+    }, 
+    "dbDialect": "mysql", 
+    "dbDriver": null, 
+    "dbHost": "localhost", 
+    "dbName": "psysmon_unit_test", 
+    "db_version": {}, 
+    "defaultWaveclient": "main client", 
+    "name": "Unit Test", 
+    "pkg_version": {
+        "test_package_1": "0.1.1"
+    }, 
+    "scnlDataSources": {}, 
+    "user": [
+        {
+            "__baseclass__": [], 
+            "__class__": "User", 
+            "__module__": "psysmon.core.project", 
+            "activeCollection": null, 
+            "agency_name": "University of Test", 
+            "agency_uri": "at.uot", 
+            "author_name": "Stefan Test", 
+            "author_uri": "stest", 
+            "collection": {}, 
+            "mode": "admin", 
+            "name": "unit_test"
+        }
+    ], 
+    "waveclient": []
+}'''
+        self.assertMultiLineEqual(json_str, expected_json_str)
+
+
+        shutil.rmtree(self.db_project.projectDir)
+
+
+
+
 
 
 def suite():

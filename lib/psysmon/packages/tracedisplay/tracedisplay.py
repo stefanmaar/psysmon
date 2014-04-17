@@ -197,8 +197,8 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
     tags = ['development']
 
 
-    def __init__(self):
-        psysmon.core.packageNodes.CollectionNode.__init__(self)
+    def __init__(self, **args):
+        psysmon.core.packageNodes.CollectionNode.__init__(self, **args)
         pref_item = pref_manager.TextEditPrefItem(name = 'start_time', label = 'start time', value = UTCDateTime('2012-08-03 00:00:00'))
         self.pref_manager.add_item(item = pref_item)
         pref_item = pref_manager.TextEditPrefItem(name = 'end_time', label = 'end time', value = UTCDateTime('2012-08-03 00:05:00'))

@@ -61,14 +61,7 @@
 import json
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
-
-
-class PsysmonError(Exception):
-    def __init__(self, value):
-        self.value = value
-        
-    def __str__(self):
-        return repr(self.value)
+import psysmon.core.project
 
 
 def _wxdate2pydate(date):
@@ -333,8 +326,8 @@ class Action:
 class ProjectFileEncoder(json.JSONEncoder):
     ''' A JSON encoder for the pSysmon project file.
     '''
-    def __init__(self):
-        json.JSONEncoder.__init__(self)
+    def __init__(self, **kwarg):
+        json.JSONEncoder.__init__(self, **kwarg)
         self.indent = 4
         self.sort_keys = True
 
@@ -343,8 +336,8 @@ class ProjectFileEncoder(json.JSONEncoder):
         '''
         obj_class = obj.__class__.__name__
         base_class = [x.__name__ for x in obj.__class__.__bases__]
-        print 'Converting %s' % obj_class
-        print 'Class bases: %s' % str(base_class)
+        #print 'Converting %s' % obj_class
+
         if obj_class == 'Project':
             d = self.convert_project(obj)
         elif obj_class == 'UTCDateTime':
@@ -359,8 +352,16 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_preferencesmanager(obj)
         elif 'PreferenceItem' in base_class:
             d = self.convert_preferenceitem(obj)
+        elif 'WaveClient' in base_class:
+            d = self.convert_waveclient(obj)
         else:
-            d = 'MISSING CONVERTER'
+            d = {'ERROR': 'MISSING CONVERTER'}
+
+        # Add the class and module information to the dictionary.
+        tmp = {'__baseclass__': base_class,
+               '__class__': obj.__class__.__name__,
+               '__module__': obj.__module__}
+        d.update(tmp)
 
         return d
 
@@ -368,14 +369,15 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_project(self, obj):
         attr = ['name', 'dbDriver', 'dbDialect', 'dbHost',
                 'dbName', 'pkg_version', 'db_version', 'createTime',
-                'defaultWaveclient', 'scnlDataSources', 'user']
+                'defaultWaveclient', 'scnlDataSources', 'user', 'waveclient']
         d =  self.object_to_dict(obj, attr)
-        d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
+        #d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
         return d
 
 
     def convert_utcdatetime(self, obj):
-        return obj.isoformat()
+        return {'utcdatetime': obj.isoformat()}
+
 
     def convert_user(self, obj):
         attr = ['name', 'mode', 'author_name', 'author_uri', 
@@ -388,32 +390,30 @@ class ProjectFileEncoder(json.JSONEncoder):
 
         return d
 
+
     def convert_collection(self, obj):
         attr = ['name', 'nodes']
         return self.object_to_dict(obj, attr)
 
 
     def convert_collection_node(self, obj):
-        attr = ['name', 'parentPackage', 'enabled', 'requires', 'provides', 'pref_manager']
+        attr = ['enabled', 'requires', 'provides', 'pref_manager']
         d = self.object_to_dict(obj, attr)
-        d['class'] = obj.__class__.__name__
-        d['module'] = obj.__module__
-
         return d
+
 
     def convert_preferencesmanager(self, obj):
         attr = ['pages', ]
         d = self.object_to_dict(obj, attr)
         return d
 
+
     def convert_preferenceitem(self, obj):
         import inspect
 
-        attr = ['name', 'value', 'label', 'default', 'mode', 
+        attr = ['name', 'value', 'label', 'default', 
                 'group', 'limit', 'guiclass', 'gui_element']
         d = self.object_to_dict(obj, attr)
-        d['class'] = obj.__class__.__name__
-        d['module'] = obj.__module__
 
         # Find any additional arguments.
         base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
@@ -426,6 +426,12 @@ class ProjectFileEncoder(json.JSONEncoder):
         return d
 
 
+    def convert_waveclient(self, obj):
+        attr = ['name', 'options', 'stock_window']
+        d = self.object_to_dict(obj, attr)
+        return d
+
+
     def object_to_dict(self, obj, attr):
         ''' Copy selceted attributes of object to a dictionary.
         '''
@@ -434,3 +440,124 @@ class ProjectFileEncoder(json.JSONEncoder):
             d[cur_attr] = getattr(obj, cur_attr)
 
         return d
+
+
+
+class ProjectFileDecoder(json.JSONDecoder):
+
+    def __init__(self, **kwarg):
+        json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+    def convert_object(self, d):
+        #print "Converting dict: %s." % str(d)
+
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            module_name = d.pop('__module__')
+            base_class = d.pop('__baseclass__')
+
+            if class_name == 'Project':
+                inst = self.convert_project(d)
+            elif class_name == 'User':
+                inst = self.convert_user(d)
+            elif class_name == 'UTCDateTime':
+                inst = self.convert_utcdatetime(d)
+            elif class_name == 'Collection':
+                inst = self.convert_collection(d)
+            elif class_name == 'PreferencesManager':
+                inst = self.convert_pref_manager(d)
+            elif 'CollectionNode' in base_class:
+                inst = self.convert_collectionnode(d, class_name, module_name)
+            elif 'PreferenceItem' in base_class:
+                inst = self.convert_preferenceitem(d, class_name, module_name)
+            elif 'WaveClient' in base_class:
+                inst = self.convert_waveclient(d, class_name, module_name)
+            else:
+                inst = {'ERROR': 'MISSING CONVERTER'}
+
+        else:
+            inst = d
+
+        return inst
+
+
+    def convert_project(self, d):
+        inst = psysmon.core.project.Project(psybase = None,
+                                            name = d['name'],
+                                            user = d['user'],
+                                            dbHost = d['dbHost'],
+                                            dbName = d['dbName'],
+                                            pkg_version = d['pkg_version'],
+                                            db_version = d['db_version'],
+                                            dbDriver = d['dbDriver'],
+                                            dbDialect = d['dbDialect'],
+                                            createTime = d['createTime']
+                                            )
+
+        inst.defaultWaveclient = d['defaultWaveclient']
+        inst.scnlDataSources = d['scnlDataSources']
+        inst.waveclient = d['waveclient']
+
+        return inst
+
+
+    def convert_user(self, d):
+        inst = psysmon.core.project.User(user_name = d['name'],
+                                         user_pwd = None,
+                                         user_mode = d['mode'],
+                                         author_name = d['author_name'],
+                                         author_uri = d['author_uri'],
+                                         agency_name = d['agency_name'],
+                                         agency_uri = d['agency_uri']
+                                         )
+        inst.collection = d['collection']
+
+        if d['activeCollection'] in inst.collection.keys():
+            inst.activeCollection = inst.collection[d['activeCollection']]
+        return inst
+
+
+    def convert_utcdatetime(self, d):
+        inst = UTCDateTime(d['utcdatetime'])
+        return inst
+
+
+    def convert_pref_manager(self, d):
+        inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
+        return inst
+
+    def convert_collection(self, d):
+        inst = psysmon.core.base.Collection(name = d['name'], nodes = d['nodes'])
+
+        return inst
+
+
+    def convert_collectionnode(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
+    def convert_waveclient(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
