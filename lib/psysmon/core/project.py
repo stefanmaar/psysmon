@@ -36,7 +36,7 @@ import sys
 import thread
 import subprocess
 import copy
-from wx.lib.pubsub import Publisher as pub
+import wx.lib.pubsub.pub as pub
 from wx import CallAfter
 from datetime import datetime
 import psysmon.core.base
@@ -870,7 +870,7 @@ class Project:
             The log message to send.
         '''
         msgTopic = "log.general." + mode
-        pub.sendMessage(msgTopic, msg)
+        #pub.sendMessage(msgTopic, msg)
 
 
 
