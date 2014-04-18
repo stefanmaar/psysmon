@@ -40,7 +40,8 @@ import wx.grid
 from wx import Choicebook
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
-from wx.lib.pubsub import Publisher as pub
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
@@ -486,21 +487,6 @@ class PSysmonGui(wx.Frame):
         retval = dlg.ShowModal()
 
 
-
-
-    def log(self, msgType, msg):
-        '''
-        Send a log message.
-
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.gui.PSysmonGui`
-        :param msgType: The type of the message (status, warning, error).
-        :type msgType: String
-        '''
-        msgTopic = "log.general." + msgType
-        pub.sendMessage(msgTopic, msg)
-
-
     # DEFINE THE MESSAGE LISTENERS
 
     ## Listen to messages from the collectionNodeListCtrl.
@@ -566,14 +552,12 @@ class Logger:
 
 
     def onCollectionExecutionMessage(self, msg):
-        data = msg.data
-
-        if 'starting' in data['state']:
-            self.loggingArea.addThread(data)
-        elif 'running' in data['state']:
-            self.loggingArea.updateThread(data)
-        elif 'finished' in data['state']:
-            self.loggingArea.updateThread(data)
+        if 'starting' in msg['state']:
+            self.loggingArea.addThread(msg)
+        elif 'running' in msg['state']:
+            self.loggingArea.updateThread(msg)
+        elif 'finished' in msg['state']:
+            self.loggingArea.updateThread(msg)
 
 
 
@@ -917,16 +901,14 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
 
     def onCollectionExecutionMessage(self, msg):
-        data = msg.data
+        self.logger.debug('Received pubsub message: %s', msg)
 
-        self.logger.debug('Received pubsub message: %s', data)
-
-        if 'started' in data['state']:
-            self.addThread(data)
-        elif 'running' in data['state']:
-            self.updateThread(data)
-        elif 'stopped' in data['state']:
-            self.updateThread(data)
+        if 'started' in msg['state']:
+            self.addThread(msg)
+        elif 'running' in msg['state']:
+            self.updateThread(msg)
+        elif 'stopped' in msg['state']:
+            self.updateThread(msg)
 
 
 
@@ -1061,7 +1043,8 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
     def onCollectionNodeAdd(self, event):
         msg =  "Adding node template to collection: " + self.selectedCollectionNodeTemplate.name
-        pub.sendMessage("log.general.status", msg)
+        #pub.sendMessage("log.general.status", msg = msg)
+        self.logger.info(msg)
 
         try:
             pos = self.collectionPanel.selectedCollectionNodeIndex
@@ -1091,10 +1074,12 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
                 webbrowser.open(docFile)
             else:
                 msg =  "No documentation found for node %s " % self.selectedCollectionNodeTemplate.name
-                pub.sendMessage("log.general.status", msg)
+                #pub.sendMessage("log.general.status", msg = msg)
+                self.logger.warning(msg)
         else:
             msg =  "No documentation found for node %s " % self.selectedCollectionNodeTemplate.name
-            pub.sendMessage("log.general.status", msg)
+            #pub.sendMessage("log.general.status", msg = msg)
+            self.logger.warning(msg)
 
 
 
