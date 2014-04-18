@@ -311,7 +311,6 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
                                             "__module__": "psysmon.core.preferences_manager", 
                                             "default": "test filter", 
                                             "group": null, 
-                                            "gui_element": [], 
                                             "guiclass": {
                                                 "ERROR": "MISSING CONVERTER", 
                                                 "__baseclass__": [
@@ -333,7 +332,6 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
                                             "__module__": "psysmon.core.preferences_manager", 
                                             "default": "", 
                                             "group": null, 
-                                            "gui_element": [], 
                                             "guiclass": {
                                                 "ERROR": "MISSING CONVERTER", 
                                                 "__baseclass__": [
@@ -357,7 +355,6 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
                                             "default": "4.5", 
                                             "digits": 3, 
                                             "group": null, 
-                                            "gui_element": [], 
                                             "guiclass": {
                                                 "ERROR": "MISSING CONVERTER", 
                                                 "__baseclass__": [
