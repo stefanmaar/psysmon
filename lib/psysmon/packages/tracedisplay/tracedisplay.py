@@ -21,7 +21,8 @@
 import logging
 import itertools
 from operator import itemgetter, attrgetter
-from wx.lib.pubsub import Publisher as pub
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 import time
 import wx
 from wx import CallAfter

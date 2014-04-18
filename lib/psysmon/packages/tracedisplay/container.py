@@ -24,7 +24,8 @@ import time
 import wx
 import wx.lib.graphics
 from wx.lib.stattext import GenStaticText as StaticText
-from wx.lib.pubsub import Publisher as pub
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import wx.lib.scrolledpanel as scrolled
 from matplotlib.figure import Figure

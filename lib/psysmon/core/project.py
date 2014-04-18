@@ -30,13 +30,15 @@ Module for handling the pSysmon project and users.
 This module contains the classes for the project and user management.
 '''
 
+
 import logging
 import os
 import sys
 import thread
 import subprocess
 import copy
-import wx.lib.pubsub.pub as pub
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 from wx import CallAfter
 from datetime import datetime
 import psysmon.core.base
@@ -1268,7 +1270,7 @@ class User:
                     msg['pid'] = proc.pid
                     msg['procName'] = procName
                     msg['curTime'] = datetime.now()
-                    CallAfter(pub.sendMessage, msgTopic, msg)
+                    CallAfter(pub.sendMessage, msgTopic, msg = msg)
 
                 else:
                     self.logger.debug('Process %d is still running.', proc.pid)
@@ -1277,7 +1279,7 @@ class User:
                     msg['pid'] = proc.pid
                     msg['procName'] = procName
                     msg['curTime'] = datetime.now()
-                    CallAfter(pub.sendMessage, msgTopic, msg)
+                    CallAfter(pub.sendMessage, msgTopic, msg = msg)
 
                 sleep(checkInterval)
 
@@ -1330,7 +1332,7 @@ class User:
             msg['isError'] = False
             msg['pid'] = None
             msg['procName'] = col2Proc.procName
-            pub.sendMessage(msgTopic, msg)
+            pub.sendMessage(msgTopic, msg = msg)
 
             #(parentEnd, childEnd) = multiprocessing.Pipe()
             self.logger.debug("process name: %s" % col2Proc.procName)
@@ -1364,7 +1366,7 @@ class User:
             msg['isError'] = False
             msg['pid'] = proc.pid
             msg['procName'] = col2Proc.procName
-            pub.sendMessage(msgTopic, msg)
+            pub.sendMessage(msgTopic, msg = msg)
 
             thread.start_new_thread(processChecker, (proc, col2Proc.procName))
 
