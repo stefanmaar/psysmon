@@ -411,8 +411,10 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_preferenceitem(self, obj):
         import inspect
 
+        #attr = ['name', 'value', 'label', 'default', 
+        #        'group', 'limit', 'guiclass', 'gui_element']
         attr = ['name', 'value', 'label', 'default', 
-                'group', 'limit', 'guiclass', 'gui_element']
+                'group', 'limit', 'guiclass']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
