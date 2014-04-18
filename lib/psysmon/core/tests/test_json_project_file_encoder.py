@@ -462,7 +462,6 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
             ], 
             "__class__": "PsysmonDbWaveClient", 
             "__module__": "psysmon.core.waveclient", 
-            "mode": "psysmonDb", 
             "name": "db client", 
             "options": {}, 
             "stock_window": 3600
