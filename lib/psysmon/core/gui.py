@@ -111,9 +111,27 @@ class PSysmonGui(wx.Frame):
         #self.buildMenu()
         self.initUI()
 
-
         self.collectionNodeInventoryPanel.initNodeInventoryList()
 
+        self.load_config()
+
+
+
+    def load_config(self):
+        # Load the configuration data from the config file.
+        import platform
+        import json
+        if platform.system() == 'Linux':
+            config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
+            config_file = os.path.join(config_dir, 'psysmon.cfg')
+
+        if os.path.exists(config_file):
+            fp = open(config_file, 'r')
+            config = json.load(fp)
+            fp.close()
+
+        for cur_file in config['recent_files']:
+            self.filehistory.AddFileToHistory(cur_file)
 
 
     ## Define the PSysmonGui menus.  
@@ -125,6 +143,7 @@ class PSysmonGui(wx.Frame):
         return (("File",
                  ("&New project", "Create a new project.", self.onCreateNewProject, True),
                  ("&Open project", "Open an existing project.", self.onOpenProject, True),
+                 ("Open recent", "Open a recent project.", None, True),
                  ("&Close project", "Close the current project.", self.onCloseProject, False),
                  ("&Save project", "Save the current project.", self.onSaveProject, False),
                  ("", "", "", True),
@@ -174,7 +193,7 @@ class PSysmonGui(wx.Frame):
             menuItem.Enable(editable)
             self.Bind(wx.EVT_MENU, curHandler, menuItem)
 
-        return menu    
+        return menu
 
 
     ## Build the user interface.
@@ -184,6 +203,17 @@ class PSysmonGui(wx.Frame):
         self.mgr = wx.aui.AuiManager(self)
 
         self.createMenuBar()
+
+        # Add the file history to the File menu.
+        self.filehistory = wx.FileHistory()
+        menubar = self.GetMenuBar()
+        menus = menubar.GetMenus()
+        tmp = [x[0] for x in menus if x[1] == 'File']
+        if len(tmp) == 1:
+            tmp = tmp[0]
+            self.filehistory.UseMenu(tmp)
+        else:
+            self.logger.error("No File menu found. Couldn't add the filehistory.")
 
         self.collectionPanel = CollectionPanel(self, self.psyBase, size=(300, -1))
         self.collectionNodeInventoryPanel = CollectionNodeInventoryPanel(self, self.psyBase)
@@ -260,6 +290,9 @@ class PSysmonGui(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             path = dlg.GetPath()
+
+            self.filehistory.AddFileToHistory(path)
+
             #self.psyBase.loadPsysmonProject(path)
 
             # Quest for the user and the database password.
@@ -363,6 +396,23 @@ class PSysmonGui(wx.Frame):
     # @param self The object pointer.
     # @param event The event object.
     def onClose(self, event):
+        # Save the gui configuration to a JSON file
+        import json
+        import platform
+        if platform.system() == 'Linux':
+            config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
+            if not os.path.exists(config_dir):
+                os.mkdir(config_dir)
+            config_file = os.path.join(config_dir, 'psysmon.cfg')
+            config = {}
+            config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
+            try:
+                fp = open(config_file, mode = 'w')
+                json.dump(config, fp = fp)
+                fp.close()
+            except:
+                pass
+
         # deinitialize the frame manager
         self.mgr.UnInit()
         # delete the frame
