@@ -414,7 +414,7 @@ class ProjectFileEncoder(json.JSONEncoder):
         #attr = ['name', 'value', 'label', 'default', 
         #        'group', 'limit', 'guiclass', 'gui_element']
         attr = ['name', 'value', 'label', 'default', 
-                'group', 'limit', 'guiclass']
+                'group', 'limit']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
