@@ -33,7 +33,7 @@ from psysmon.packages.geometry.inventory import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
 
 
-def create_psybase(package_directory = []):
+def create_psybase(package_directory = None):
     ''' Create the psysmon base instance.
 
     '''
@@ -137,7 +137,7 @@ def create_full_project(psybase):
     db_session.add(new_wfdir)
     db_session.commit()
     db_session.close()
-    project.waveclient['main client'].loadWaveformDirList()
+    project.waveclient['db client'].loadWaveformDirList()
 
     # Import the data files.
     node_template = psybase.packageMgr.getCollectionNodeTemplate('import waveform')
@@ -150,8 +150,10 @@ def create_full_project(psybase):
     filenames = glob.glob(os.path.join(data_path, 'ZAMG-seis_event00017*.msd'))
     filelist = []
     for cur_file in filenames:
-        filelist.append({'format': 'mseed', 'filename': cur_file})
-    node.options['inputFiles'] = filelist
+        fsize = os.path.getsize(cur_file);
+        fsize = fsize/(1024.0*1024.0)           # Convert to MB
+        filelist.append(('mseed', cur_file, '%.2f' % fsize))
+    node.pref_manager.set_value('input_files', filelist)
     node.execute()
 
 
@@ -247,6 +249,18 @@ def remove_project(project_file, user_name, user_pwd):
 
     drop_project_database_tables(psybase.project)
     remove_project_filestructure(psybase.project)
+
+
+def clean_unittest_database():
+    db_dialect = 'mysql'
+    db_user = 'unit_test'
+    db_host = 'localhost'
+    db_name = 'psysmon_unit_test'
+    project_name = 'Unit Test'
+    db_pwd = 'test'
+    db_driver = None
+
+    drop_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_name, project_name)
 
 
 
