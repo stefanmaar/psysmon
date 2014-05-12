@@ -62,9 +62,6 @@ class ImportWaveform(CollectionNode):
         pref_item = CustomPrefItem(name = 'filter_pattern', value = ['*.msd', '*.mseed', '*.MSEED'])
         self.pref_manager.add_item(item = pref_item)
 
-        #self.options = {}
-        #self.options['inputFiles'] = []                     # The files to import.
-        #self.options['lastDir'] = ""                        # The last used directory.
 
     def edit(self):
         dlg = ImportWaveformEditDlg(self, self.project, None)
