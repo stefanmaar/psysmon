@@ -38,6 +38,3 @@ collection_node_modules = ['tracedisplay', ]
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = ['processingNodes', ]
 
-# Specify the module(s) where to search for processing node classes.
-processing_node_modules = ['processingNodes', ]
-
