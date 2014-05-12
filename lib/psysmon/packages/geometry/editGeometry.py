@@ -150,10 +150,10 @@ class EditGeometryDlg(wx.Frame):
 
         # The network currently selected by the user.
         self.selected_recorder = None
-        
+
         # The network currently selected by the user.
         self.selected_sensor = None
-        
+
         # initialize the user interface
         self.initUI()
 
