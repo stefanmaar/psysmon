@@ -15,12 +15,12 @@ from psysmon.core.preferences_manager import MultiChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.preferences_manager import FileBrowsePrefItem
 from psysmon.core.preferences_manager import DirBrowsePrefItem
-from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
+from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from psysmon.core.gui import PSysmonApp
 
 
 @nose_attrib.attr('interactive')
-class ProjectPreferencesDlgTestCase(unittest.TestCase):
+class ListbookPrefDialogTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
     """
@@ -116,7 +116,7 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
     def test_dialog_creation(self):
         ''' Test the creation of the dialog window.
         '''
-        dlg = EditProjectPreferencesDlg(preferences = self.pref)
+        dlg = ListbookPrefDialog(preferences = self.pref)
         dlg.ShowModal()
         dlg.Destroy()
         print self.pref
@@ -125,7 +125,7 @@ class ProjectPreferencesDlgTestCase(unittest.TestCase):
 
 
 def suite():
-    return unittest.makeSuite(ProjectPreferencesDlgTestCase, 'test')
+    return unittest.makeSuite(ListbookPrefDialogTestCase, 'test')
 
 
 if __name__ == '__main__':
