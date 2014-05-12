@@ -547,6 +547,9 @@ class ProjectFileDecoder(json.JSONDecoder):
 
     def convert_preferenceitem(self, d, class_name, module_name):
         import importlib
+        # Remove the guiclass element from the dictionary.
+        if 'guiclass' in d.keys():
+            d.pop('guiclass')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         args = dict( (key.encode('ascii'), value) for key, value in d.items())
