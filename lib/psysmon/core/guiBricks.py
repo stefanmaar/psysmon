@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import obspy.core.utcdatetime as udt
 import wx
 from wx.lib.stattext import GenStaticText as StaticText
 import  wx.lib.filebrowsebutton as filebrowse
@@ -28,6 +29,7 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as FS
 #import wx.lib.rcsizer  as rcs
+
 
 
 ## The Field class.
@@ -861,6 +863,66 @@ class DirBrowseField(Field):
         #self.controlElement.startDirectory = value
 
 
+class DateTimeEditField(Field):
+    ''' A date time edit field.
+
+    A field to edit datetime values.
+    '''
+
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
+
+        # Create the field label.
+        self.labelElement = StaticText(parent=self, 
+                                       ID=wx.ID_ANY, 
+                                       label=self.label,
+                                       style=wx.ALIGN_RIGHT)
+
+        # Create the field text control.
+        self.controlElement = wx.TextCtrl(self, wx.ID_ANY)
+
+        # Set the default value of the field.
+        self.setDefaultValue(pref_item.default)
+
+        # Add the gui elements to the field.
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+
+        # Bind the events.
+        self.Bind(wx.EVT_TEXT, self.onValueChange, self.controlElement)
+
+    ## Set the corresponding value in the options dictionary.
+    #
+    # @param self The object pointer.
+    # @param options The options dictionary to be changed.
+    def setPrefValue(self):
+        self.pref_item.value = udt.UTCDateTime(self.controlElement.GetValue())
+
+
+    ## Set the default value of the field element.  
+    #
+    # @param self The object pointer.
+    # @param value The value to be set.  
+    def setDefaultValue(self, value):
+        self.defaultValue = value
+        self.controlElement.SetValue(value.isoformat())
+
 
 # Define the assignment of the field type and the GUI representation.
 gui_elements = {}
@@ -872,5 +934,5 @@ gui_elements['integer_spin'] = IntegerRangeField
 gui_elements['float_spin'] = FloatSpinField
 gui_elements['filebrowse'] = FileBrowseField
 gui_elements['dirbrowse'] = DirBrowseField
-gui_elements['datetime_edit'] = TextEditField
+gui_elements['datetime'] = DateTimeEditField
 gui_elements['checkbox'] = CheckBoxField
