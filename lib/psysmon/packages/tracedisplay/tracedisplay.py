@@ -38,6 +38,7 @@ from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
 import container
 import psysmon.core.preferences_manager as pref_manager
+import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 
 try:
     from agw import foldpanelbar as fpb
@@ -200,18 +201,38 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
 
     def __init__(self, **args):
         psysmon.core.packageNodes.CollectionNode.__init__(self, **args)
-        pref_item = pref_manager.TextEditPrefItem(name = 'start_time', label = 'start time', value = UTCDateTime('2012-08-03 00:00:00'))
+
+        pref_item = pref_manager.DateTimeEditPrefItem(name = 'start_time',
+                                    label = 'start time',
+                                    value = UTCDateTime('2012-08-03T00:00:00'),
+                                    group = 'time range')
         self.pref_manager.add_item(item = pref_item)
-        pref_item = pref_manager.TextEditPrefItem(name = 'end_time', label = 'end time', value = UTCDateTime('2012-08-03 00:05:00'))
+
+        pref_item = pref_manager.FloatSpinPrefItem(name = 'duration',
+                                    label = 'duration',
+                                    value = 300.,
+                                    limit = (0, 86400),
+                                    group = 'time range')
         self.pref_manager.add_item(item = pref_item)
-        pref_item = pref_manager.TextEditPrefItem(name = 'show_channels', label = 'channels', value = ['HHZ',])
+
+        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
+                                                     label = 'channels',
+                                                     limit = ('HHZ', 'HHN', 'HHE'),
+                                                     value = ['HHZ',],
+                                                     group = 'component selection')
         self.pref_manager.add_item(item = pref_item)
-        pref_item = pref_manager.TextEditPrefItem(name = 'show_stations', label = 'stations', value = ['AP01'])
+
+        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_stations',
+                                                     label = 'stations',
+                                                     limit = ('AP01', 'AP02', 'AP03'),
+                                                     value = ['AP01'],
+                                                     group = 'component selection')
         self.pref_manager.add_item(item = pref_item)
 
     def edit(self):
-        pass
-
+        dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def execute(self, prevNodeOutput={}):
 
@@ -231,6 +252,33 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                 plugins = plugins)
 
         app.MainLoop()
+
+
+
+class TraceDisplayEditDlg(wx.Frame):
+    ''' The TraceDisplay edit dialog window.
+
+    '''
+    def __init__(self, collectionNode, psyProject,  parent, id=-1, title='tracedisplay preferences', 
+                 size=(640,480)):
+        wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY, 
+                           title=title, 
+                           size=size,
+                           style=wx.DEFAULT_FRAME_STYLE|wx.RESIZE_BORDER)
+
+        # Create the logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.collectionNode = collectionNode
+        self.psyProject = psyProject
+        self.check_file_format = True
+
+        self.initUI()
+        self.SetMinSize(self.GetBestSize())
+        self.initUserSelections()
+
+
 
 
 class TraceDisplayDlg(wx.Frame):
@@ -301,6 +349,11 @@ class TraceDisplayDlg(wx.Frame):
 
         # Show the frame. 
         self.Show(True)
+
+
+    def init_user_selection(self):
+        if self.collectionNode.property['start_time']:
+            pass
 
 
     def initUI(self):
@@ -823,7 +876,7 @@ class ShortcutManager:
 
 
 
-class DisplayManager:
+class DisplayManager(object):
 
 
     def __init__(self, parent, inventory):
@@ -842,7 +895,7 @@ class DisplayManager:
 
         # The timespan to show.
         self.startTime = pref_manager.get_value('start_time')
-        self.endTime = pref_manager.get_value('end_time')
+        self.endTime = self.startTime + pref_manager.get_value('duration')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # All stations that are contained in the inventory.
@@ -909,6 +962,7 @@ class DisplayManager:
         self.channelColors = dict(zip(channelNames, self.channelColors))
 
 
+
     def advanceTime(self, time_step = None):
         ''' Advance the time by one step.
 
@@ -922,7 +976,7 @@ class DisplayManager:
             self.startTime = self.startTime + time_step
             self.endTime = self.startTime + interval
 
-        print "##### end of advanceTime"
+        self.logger.debug("end of advanceTime")
 
 
 
