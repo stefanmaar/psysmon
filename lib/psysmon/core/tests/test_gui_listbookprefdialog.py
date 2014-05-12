@@ -6,6 +6,7 @@ Created on May 17, 2011
 
 import unittest
 import nose.plugins.attrib as nose_attrib
+import obspy.core.utcdatetime as udt
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.preferences_manager import TextEditPrefItem
 from psysmon.core.preferences_manager import IntegerControlPrefItem
@@ -15,6 +16,7 @@ from psysmon.core.preferences_manager import MultiChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.preferences_manager import FileBrowsePrefItem
 from psysmon.core.preferences_manager import DirBrowsePrefItem
+from psysmon.core.preferences_manager import DateTimeEditPrefItem
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from psysmon.core.gui import PSysmonApp
 
@@ -89,6 +91,13 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
                               value = 10.3,
                               limit = (0, 100)
                              )
+        self.pref.add_item(pagename = 'Logging', item = item)   
+
+        # Add a datetime_edit field.
+        item = DateTimeEditPrefItem(name = 'datetime', 
+                                    group = 'test group 1',
+                                    value = udt.UTCDateTime('2014-01-01T01:02:03.123456')
+                                    )
         self.pref.add_item(pagename = 'Logging', item = item)   
 
         # Add an filebrowse field.
