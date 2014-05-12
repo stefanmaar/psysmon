@@ -55,7 +55,7 @@ import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
 import wx.lib.platebtn as platebtn
 
-from psysmon.core.gui_project_preferences import EditProjectPreferencesDlg
+from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 
 try:
     from agw import advancedsplash as splash
@@ -522,7 +522,7 @@ class PSysmonGui(wx.Frame):
             The event passed to the callback.
         '''
         if self.psyBase.project:
-            dlg = EditProjectPreferencesDlg(preferences = self.psyBase.project.pref)
+            dlg = ListbookPrefDialog(preferences = self.psyBase.project.pref)
             dlg.ShowModal()
         else:
             self.logger.warning('You have to open a project first to edit the preferences.')
