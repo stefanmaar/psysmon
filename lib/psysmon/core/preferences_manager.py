@@ -27,15 +27,6 @@ Module for handling object preferences.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
-from psysmon.core.guiBricks import SingleChoiceField
-from psysmon.core.guiBricks import TextEditField
-from psysmon.core.guiBricks import IntegerCtrlField
-from psysmon.core.guiBricks import IntegerRangeField
-from psysmon.core.guiBricks import FloatSpinField
-from psysmon.core.guiBricks import MultiChoiceField
-from psysmon.core.guiBricks import FileBrowseField
-from psysmon.core.guiBricks import DirBrowseField
-from psysmon.core.guiBricks import CheckBoxField
 
 
 class PreferencesManager:
@@ -56,19 +47,6 @@ class PreferencesManager:
             self.pages['preferences'] = []
         else:
             self.pages = pages
-
-        # A dictionary with the GUI element field classes.
-        self.gui_elements = {}
-        self.gui_elements['single_choice'] = SingleChoiceField
-        self.gui_elements['multi_choice'] = MultiChoiceField
-        self.gui_elements['textedit'] = TextEditField
-        self.gui_elements['integer_control'] = IntegerCtrlField
-        self.gui_elements['integer_spin'] = IntegerRangeField
-        self.gui_elements['float_spin'] = FloatSpinField
-        self.gui_elements['filebrowse'] = FileBrowseField
-        self.gui_elements['dirbrowse'] = DirBrowseField
-        self.gui_elements['datetime_edit'] = TextEditField
-        self.gui_elements['checkbox'] = CheckBoxField
 
 
     def __str__(self):
@@ -108,9 +86,6 @@ class PreferencesManager:
         '''
         if pagename in self.pages.keys():
             item.parent_page = pagename
-
-            if item.mode in self.gui_elements.keys():
-                item.guiclass = self.gui_elements[item.mode]
 
             self.pages[pagename].append(item)
 
@@ -154,6 +129,7 @@ class PreferencesManager:
             values = values[0]
 
         return values
+
 
     def set_value(self, name, value, pagename = None):
         ''' Set the value of the specified item.
@@ -219,7 +195,7 @@ class PreferenceItem(object):
 
     '''
 
-    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, guiclass = None, gui_element = []):
+    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, gui_element = []):
         ''' The constructor.
 
         '''
@@ -251,13 +227,6 @@ class PreferenceItem(object):
         # The parent page of the PreferencesManager.
         self.parent_page = parent_page
 
-        # The GUI element which will be used to represent this field in
-        # dialogs, panels, .... . When using a 'custom' mode, this value should
-        # be set. For standard field modes, the gui_element will be set by the
-        # preferences manager.
-        self.guiclass = guiclass
-
-
         # The GUI element(s) linked to this preference item.
         self.gui_element = gui_element
 
@@ -269,6 +238,8 @@ class PreferenceItem(object):
     #@value.setter
     #def value(self, value):
     #    self._value = value
+
+
 
 
     def __str__(self):
