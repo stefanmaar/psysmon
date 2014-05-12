@@ -178,8 +178,8 @@ class PrefPagePanel(wx.Panel):
 
             groupitems = [x for x in self.items if x.group == cur_group]
             for cur_item in groupitems:
-                guiclass = cur_item.guiclass
-                if guiclass is not None:
+                if cur_item.mode in gui_elements.keys():
+                    guiclass = gui_elements[cur_item.mode]
                     gui_element = guiclass(name = cur_item.label,
                                            pref_item = cur_item,
                                            size = (100, 10),
@@ -262,165 +262,6 @@ class PrefEditPanel(wx.Panel):
 
 
 
-## The EditDialog class.
-#
-# This class provides an easy to use edit dialog for pSysmon collection nodes.
-# One can choose from a set of fields which can be used to change the values 
-# of the collection node properties.        
-class EditDialog(wx.Frame):
-
-    ## The constructor
-    #
-    # @param self The object pointer.
-    # @param options The CollectionNode options being edited with the EditDialog.
-    # @param parent The parent wxPython window.
-    # @param id The wxPython id.
-    # @param title The dialog's title.
-    # @param size The dialog's size.
-    def __init__(self, options, parent=None, id=wx.ID_ANY, title='edit node', 
-                 size=(400,600)):
-        wx.Frame.__init__(self, parent=parent, 
-                          id=id, 
-                          title=title, 
-                          pos=wx.DefaultPosition,
-                          style=wx.DEFAULT_FRAME_STYLE)
-        self.SetMinSize(size)  
-
-        ## The node options being edited with the dialog.
-        #
-        self.options = options
-
-
-        ## A dictionary of pages created in the notebook.
-        #
-        self.pages = {}
-
-        ## A dictionary of page sizers associated with the pages.
-        #
-        self.pageSizers = {}
-
-        ## The list of container panels holding the fields.
-        #
-        self.fieldContainer = {}
-
-        # Create the UI elements.
-        self.initUI()
-
-
-    ## Create the dialog's user interface.  
-    #
-    def initUI(self):
-        # The dialog's sizer.
-        self.sizer = wx.GridBagSizer(5,10)
-        self.sizer.AddGrowableCol(0)
-        self.sizer.AddGrowableRow(0)
-        self.notebook = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
-        self.sizer.Add(self.notebook, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)  
-
-        # Create the dialog buttons.
-        okButton = wx.Button(self, wx.ID_OK)
-        okButton.SetDefault()
-        cancelButton = wx.Button(self, wx.ID_CANCEL)
-        btnSizer = wx.StdDialogButtonSizer()
-        btnSizer.AddButton(okButton)
-        btnSizer.AddButton(cancelButton)
-        btnSizer.Realize()
-        self.sizer.Add(btnSizer, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=4)
-
-        self.SetSizerAndFit(self.sizer)
-
-        # Bind the button events.
-        self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
-        self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
-
-        #self.Bind(wx.EVT_SIZE, self.onResize)
-
-
-
-    ## Handle the ok button click.
-    #
-    # Update all options values and close the dialog.  
-    def onOk(self, event):
-        for curContainer in self.fieldContainer.values():
-            curContainer.setOptionsValue()
-
-        self.Destroy()
-
-    ## Handle the cancel button click.
-    # 
-    # Close the dialog.
-    def onCancel(self, event):
-        self.Destroy()
-
-
-    def onResize(self, event):
-        self.refit()
-
-
-    def addPage(self, name):
-        # All fields are children of the fieldPanel.
-        # The field elements should be parents of the same panel to ensure a 
-        # consistent tab traversal. 
-        self.pages[name] = wx.Panel(self.notebook, wx.ID_ANY)
-        self.pageSizers[name] = wx.GridBagSizer(5,10)
-        self.pageSizers[name].AddGrowableCol(0)
-        self.pages[name].SetSizer(self.pageSizers[name])
-        #self.sizer.Add(self.fieldPanel, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=0)
-
-        self.notebook.AddPage(self.pages[name], name) 
-
-
-    def addContainer(self, container, pageName):
-        if not self.pages:
-            print "No dialog pages found. Create one first."
-            return
-
-        if not pageName in self.pages.keys():
-            print "The specified page is not in the container list."
-            return
-
-        container.Reparent(self.pages[pageName])
-        row = len(self.fieldContainer)
-
-        print "Adding container at row %d" % row
-        self.pageSizers[pageName].Add(container, pos=(row, 0), flag=wx.EXPAND|wx.ALL, border=4)
-
-        container.options = self.options
-
-        print "Adding container with name %s to the dictionary" % container.GetName()
-        self.fieldContainer[container.GetName()] = container
-
-        self.notebook.Fit()
-        self.Fit()
-
-    ## Add a field to the dialog.
-    #
-    # The field is added to the dialog fieldlist and the field elements are 
-    # initialized with the options values.
-    def addField(self, field, container):
-
-        if not self.fieldContainer:
-            print "No field container found. Create one first."
-            return
-
-        if not container in self.fieldContainer.values():
-            print "The specified container is not in the container list."
-            return
-
-        container.addField(field)
-        container.Fit()
-        self.notebook.Fit()
-        self.Fit()
-        #field.SetSize(field.GetBestSize())
-
-
-    def refit(self):
-        self.notebook.Fit()
-        for curContainer in self.fieldContainer.values():
-            curContainer.SetSize(curContainer.GetBestSize())
-
-            for curField in curContainer.fieldList:
-                curField.SetSize(curField.GetBestSize())
 
 
 ## The StaticBoxContainer class.
@@ -1020,3 +861,16 @@ class DirBrowseField(Field):
         #self.controlElement.startDirectory = value
 
 
+
+# Define the assignment of the field type and the GUI representation.
+gui_elements = {}
+gui_elements['single_choice'] = SingleChoiceField
+gui_elements['multi_choice'] = MultiChoiceField
+gui_elements['textedit'] = TextEditField
+gui_elements['integer_control'] = IntegerCtrlField
+gui_elements['integer_spin'] = IntegerRangeField
+gui_elements['float_spin'] = FloatSpinField
+gui_elements['filebrowse'] = FileBrowseField
+gui_elements['dirbrowse'] = DirBrowseField
+gui_elements['datetime_edit'] = TextEditField
+gui_elements['checkbox'] = CheckBoxField
