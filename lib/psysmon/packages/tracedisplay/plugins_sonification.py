@@ -390,12 +390,12 @@ class SonificationPlayTimeCompress(CommandPlugin):
         if pyo.serverBooted():
             if self.ind == 0:
                 self.file_table = pyo.SndTable(filename)
-                self.file_osc = pyo.Osc(self.file_table, freq = -self.file_table.getRate())
+                self.file_osc = pyo.Osc(self.file_table, freq = self.file_table.getRate())
                 self.comp = pyo.Compress(self.file_osc, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
                 self.ind = 1
             else:
                 self.file_table1 = pyo.SndTable(filename)
-                self.file_osc1 = pyo.Osc(self.file_table1, freq = -self.file_table1.getRate())
+                self.file_osc1 = pyo.Osc(self.file_table1, freq = self.file_table1.getRate())
                 self.comp1 = pyo.Compress(self.file_osc1, thresh = -30, ratio = 6, mul = 2, knee = 0.2, risetime = 0.1, falltime = 0.1)
                 self.ind = 0
 
