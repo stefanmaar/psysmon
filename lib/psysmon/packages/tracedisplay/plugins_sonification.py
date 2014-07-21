@@ -195,6 +195,7 @@ class SonificationPyoControl(OptionPlugin):
         if self.pyo_server.getIsStarted() == 1:
             self.stop_pyo_server()
             time.sleep(0.25)
+        self.pyo_server_started = False
         self.pyo_server.shutdown()
 
 
@@ -248,7 +249,7 @@ class SonificationPlayPhaseVocoder(CommandPlugin):
         self.pref_manager.add_item(item = pref_item)
         pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_ratio', label = 'comp. ratio', value = 2, limit = [-100, 100])
         self.pref_manager.add_item(item = pref_item)
-        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_mul', label = 'comp. makeup gain', value = 1, limit = [-100, 100])
+        pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_mul', label = 'comp. makeup gain', value = 3, limit = [-100, 100])
         self.pref_manager.add_item(item = pref_item)
         pref_item = preferences_manager.FloatSpinPrefItem(name = 'comp_knee', label = 'comp. knee', value = 0, limit = [0, 1])
         self.pref_manager.add_item(item = pref_item)
@@ -822,6 +823,8 @@ class RealTimeAutoPlay(CommandPlugin):
 
         self.counter = 1
 
+        self.is_running = False
+
         # The period to display.
         pref_item = preferences_manager.FloatSpinPrefItem(name = 'display_time', label = 'display time', value = 10, limit = [1, 300])
         self.pref_manager.add_item(item = pref_item)
@@ -853,18 +856,27 @@ class RealTimeAutoPlay(CommandPlugin):
 
 
     def run(self):
-        self.init_display()
-        print "##### after init_display"
-        self.init_sound_table()
-        print "##### after init_sound_table"
-        self.play()
-        print '---- end of run'
+        if self.is_running is False:
+            self.init_display()
+            print "##### after init_display"
+            self.init_sound_table()
+            print "##### after init_sound_table"
+            self.play()
+            print '---- end of run'
+            self.is_running = True
+        else:
+            self.metro.stop()
+            self.out.stop()
+            self.is_running = False
+            print '>>>> Set is_playing to FALSE'
+            self.logger.debug('Stop playback. Set is_playing to FALSE.')
 
     def init_display(self):
         self.parent.setDuration(self.display_time)
 
 
     def init_sound_table(self):
+        self.pos = 0
         stream = self.get_stream()
         filename = self.seismo_to_wav()
         self.snd_table = pyo.SndTable(filename)
@@ -888,9 +900,9 @@ class RealTimeAutoPlay(CommandPlugin):
         filename = os.path.join(project.tmpDir, 'srtap_soundfile.wav')
         framerate = sps
         print '#### seismo_to_wav'
-        print stream.traces[0].data
+        #print stream.traces[0].data
         stream.traces[0].data = stream.traces[0].data / self.norm_factor
-        print stream.traces[0].data
+        #print stream.traces[0].data
         self.last_sample = stream.traces[0].data[-1]
         stream.write(filename, format = 'WAV', framerate = framerate, rescale = False)
 
@@ -943,9 +955,9 @@ class RealTimeAutoPlay(CommandPlugin):
         #filename = self.seismo_to_wav()
         #self.snd_table.insert(filename, pos = self.pos)
         stream = self.get_stream(time_span = self.preload_time)
-        print stream.traces[0].data
+        #print stream.traces[0].data
         data = stream.traces[0].data / self.norm_factor
-        print data
+        #print data
         # data = data / np.max(np.abs(data))
 
         # Shift the data to match the last sample.
