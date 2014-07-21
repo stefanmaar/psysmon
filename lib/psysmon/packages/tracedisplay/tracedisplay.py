@@ -204,7 +204,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
 
         pref_item = pref_manager.DateTimeEditPrefItem(name = 'start_time',
                                     label = 'start time',
-                                    value = UTCDateTime('2012-08-03T00:00:00'),
+                                    value = UTCDateTime('2012-07-09T00:00:00'),
                                     group = 'time range')
         self.pref_manager.add_item(item = pref_item)
 
@@ -1580,8 +1580,8 @@ class DataManager():
                                                 self.parent.displayManager.inventory)
         detrend_node = [x for x in self.parent.processingNodes if x.name == 'detrend'][0]
         self.processingStack.addNode(detrend_node)
-        #convert_to_sensor_units_node = [x for x in self.parent.processingNodes if x.name == 'convert to sensor units'][0]
-        #self.processingStack.addNode(convert_to_sensor_units_node)
+        convert_to_sensor_units_node = [x for x in self.parent.processingNodes if x.name == 'convert to sensor units'][0]
+        self.processingStack.addNode(convert_to_sensor_units_node)
 
 
     def requestStream(self, startTime, endTime, scnl):
