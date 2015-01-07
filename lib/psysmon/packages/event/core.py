@@ -26,9 +26,9 @@ from obspy.core.event import Comment
 from obspy.core.event import CreationInfo
 from obspy.core.utcdatetime import UTCDateTime
 
-class Event(ObspyEvent):
+class Event(object):
 
-    def __init__(self, start_time, end_time, db_id = None, tags = [], *args, **kwargs):
+    def __init__(self, start_time, end_time, db_id = None, tags = [], event_type = None, *args, **kwargs):
         ObspyEvent.__init__(self, *args, **kwargs)
 
         # The unique database id.
@@ -44,6 +44,9 @@ class Event(ObspyEvent):
         elif end_time == start_time:
             raise ValueError("The end_time %s is equal to the start_time %s.", end_time, start_time)
 
+
+        # The event type. Override the obspy event type.
+        self.event_type = event_type
 
         # The start time of the event.
         self.start_time = UTCDateTime(start_time)
