@@ -483,7 +483,12 @@ class DbNetwork(Network):
         if geom_network is None:
             # Create a new database network instance.
             geom_network_orm = self.parent_inventory.project.dbTables['geom_network']
-            self.geom_network = geom_network_orm(self.name, self.description, self.type,                                    self.agency_uri, self.author_uri, self.creation_time)
+            self.geom_network = geom_network_orm(name = self.name,
+                                    description = self.description,
+                                    type = self.type,
+                                    agency_uri = self.agency_uri,
+                                    author_uri = self.author_uri,
+                                    creation_time = self.creation_time)
         else:
             self.geom_network = geom_network
 
@@ -589,22 +594,29 @@ class DbNetwork(Network):
 
 class DbStation(Station):
 
-    def __init__(self, parent_network, network, name, location, x, y, z, coord_system, description, id = None, geom_station = None):
+    def __init__(self, parent_network, network, name, location,
+            x, y, z, coord_system, description,
+            author_uri, agency_uri, creation_time,
+            id = None, geom_station = None):
         Station.__init__(self, network = network, name = name, location = location,
                          x = x, y = y, z = z, coord_system = coord_system,
+                         author_uri = author_uri, agency_uri = agency_uri, creation_time = creation_time,
                          description = description, id = id, parent_network = parent_network)
 
         if geom_station is None:
             # Create a new database station instance.
             geom_station_orm = self.parent_inventory.project.dbTables['geom_station']
-            self.geom_station = geom_station_orm(self.network,
-                                                self.name,
-                                                self.location,
-                                                self.x,
-                                                self.y,
-                                                self.z,
-                                                self.coord_system,
-                                                self.description)
+            self.geom_station = geom_station_orm(network = self.network,
+                                                name = self.name,
+                                                location = self.location,
+                                                x = self.x,
+                                                y = self.y,
+                                                z = self.z,
+                                                coord_system = self.coord_system,
+                                                description = self.description,
+                                                agency_uri = self.agency_uri,
+                                                author_uri = self.author_uri,
+                                                creation_time = self.creation_time)
         else:
             self.geom_station = geom_station
 
@@ -622,6 +634,9 @@ class DbStation(Station):
                       coord_system = geom_station.coord_system,
                       description = geom_station.description,
                       id = geom_station.id,
+                      author_uri = geom_station.author_uri,
+                      agency_uri = geom_station.agency_uri,
+                      creation_time = geom_station.creation_time,
                       geom_station = geom_station)
 
         return station
@@ -638,7 +653,10 @@ class DbStation(Station):
                    y = station.y,
                    z = station.z,
                    coord_system = station.coord_system,
-                   description = station.description)
+                   description = station.description,
+                   author_uri = station.author_uri,
+                   agency_uri = station.agency_uri,
+                   creation_time = station.creation_time)
 
 
     def __setattr__(self, attr, value):
@@ -653,6 +671,9 @@ class DbStation(Station):
         attr_map['z'] = 'z'
         attr_map['coord_system'] = 'coord_system'
         attr_map['description'] = 'description'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
 
         self.__dict__[attr] = value
 
@@ -830,14 +851,21 @@ class DbStation(Station):
 
 class DbRecorder(Recorder):
 
-    def __init__(self, parent_inventory, serial, type, description, id = None, geom_recorder = None):
-        Recorder.__init__(self, id = id, serial = serial, type = type, 
+    def __init__(self, parent_inventory, serial, type, description,
+            author_uri, agency_uri, creation_time,
+            id = None, geom_recorder = None):
+        Recorder.__init__(self, id = id, serial = serial, type = type,
+                         author_uri = author_uri, agency_uri = agency_uri, creation_time = creation_time,
                         parent_inventory = parent_inventory)
 
         if geom_recorder is None:
             # Create a new database recorder instance.
             geom_recorder_orm = self.parent_inventory.project.dbTables['geom_recorder']
-            self.geom_recorder = geom_recorder_orm(self.serial, self.type)
+            self.geom_recorder = geom_recorder_orm(serial = self.serial,
+                                                   type = self.type,
+                                                   agency_uri = self.agency_uri,
+                                                   author_uri = self.author_uri,
+                                                   creation_time = self.creation_time)
         else:
             self.geom_recorder = geom_recorder
 
@@ -849,6 +877,9 @@ class DbRecorder(Recorder):
                    serial = geom_recorder.serial,
                    type = geom_recorder.type,
                    description = geom_recorder.description,
+                   author_uri = geom_recorder.author_uri,
+                   agency_uri = geom_recorder.agency_uri,
+                   creation_time = geom_recorder.creation_time,
                    geom_recorder = geom_recorder)
 
 
@@ -857,6 +888,9 @@ class DbRecorder(Recorder):
         return cls(parent_inventory = parent_inventory,
                    serial = recorder.serial,
                    type = recorder.type,
+                   author_uri = recorder.author_uri,
+                   agency_uri = recorder.agency_uri,
+                   creation_time = recorder.creation_time,
                    description = recorder.description)
 
 
@@ -867,6 +901,9 @@ class DbRecorder(Recorder):
         attr_map['serial'] = 'serial'
         attr_map['type'] = 'type'
         attr_map['description'] = 'description'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
@@ -909,9 +946,11 @@ class DbRecorder(Recorder):
 class DbSensor(Sensor):
 
     def __init__(self, parent_recorder, serial, type, rec_channel_name,
-                 channel_name, label, id = None, geom_sensor = None):
+                 channel_name, label, author_uri, agency_uri, creation_time,
+                 id = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
                         rec_channel_name = rec_channel_name, label = label,
+                         author_uri = author_uri, agency_uri = agency_uri, creation_time = creation_time,
                         channel_name = channel_name, parent_recorder = parent_recorder)
 
         if geom_sensor is None:
@@ -921,7 +960,10 @@ class DbSensor(Sensor):
                                                self.serial,
                                                self.type,
                                                self.rec_channel_name,
-                                               self.channel_name)
+                                               self.channel_name,
+                                               agency_uri = self.agency_uri,
+                                               author_uri = self.author_uri,
+                                               creation_time = self.creation_time)
         else:
             self.geom_sensor = geom_sensor
 
@@ -935,6 +977,9 @@ class DbSensor(Sensor):
                    channel_name = geom_sensor.channel_name,
                    label = geom_sensor.label,
                    id = geom_sensor.id,
+                   author_uri = geom_sensor.author_uri,
+                   agency_uri = geom_sensor.agency_uri,
+                   creation_time = geom_sensor.creation_time,
                    geom_sensor = geom_sensor)
 
 
@@ -945,7 +990,10 @@ class DbSensor(Sensor):
                    type = sensor.type,
                    rec_channel_name = sensor.rec_channel_name,
                    channel_name = sensor.channel_name,
-                   label = sensor.label)
+                   label = sensor.label,
+                   author_uri = sensor.author_uri,
+                   agency_uri = sensor.agency_uri,
+                   creation_time = sensor.creation_time)
 
 
     def __setattr__(self, attr, value):
@@ -957,6 +1005,9 @@ class DbSensor(Sensor):
         attr_map['type'] = 'type'
         attr_map['rec_channel_name'] = 'rec_channel_name'
         attr_map['channel_name'] = 'channel_name'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
@@ -1006,16 +1057,18 @@ class DbSensorParameter(SensorParameter):
     def __init__(self, parent_sensor, gain, bitweight,
                  bitweight_units, sensitivity, sensitivity_units, tf_type,
                  tf_units, tf_normalization_factor, tf_normalization_frequency,
-                 id, start_time, end_time, tf_poles = [], tf_zeros = [],
+                 id, start_time, end_time, author_uri, agency_uri, creation_time,
+                 tf_poles = [], tf_zeros = [],
                  geom_sensor_parameter = None):
 
         SensorParameter.__init__(self, parent_sensor = parent_sensor,
                                  gain = gain, bitweight = bitweight,
                                  bitweight_units = bitweight_units, sensitivity = sensitivity,
-                                 sensitivity_units = sensitivity_units, 
+                                 sensitivity_units = sensitivity_units,
                                  start_time = start_time, end_time = end_time, tf_type = tf_type,
                                  tf_units = tf_units, tf_normalization_factor = tf_normalization_factor,
                                  tf_normalization_frequency = tf_normalization_frequency,
+                                 author_uri = author_uri, agency_uri = agency_uri, creation_time = creation_time,
                                  tf_poles = tf_poles, tf_zeros = tf_zeros, id = id)
 
         if geom_sensor_parameter is None:
@@ -1031,8 +1084,10 @@ class DbSensorParameter(SensorParameter):
                                                      bitweight = self.bitweight,
                                                      bitweight_units = self.bitweight_units,
                                                      sensitivity = self.sensitivity,
-                                                     sensitivity_units = self.sensitivity_units
-                                            )
+                                                     sensitivity_units = self.sensitivity_units,
+                                                     agency_uri = self.agency_uri,
+                                                     author_uri = self.author_uri,
+                                                     creation_time = self.creation_time)
         else:
             self.geom_sensor_parameter = geom_sensor_parameter
 
@@ -1053,6 +1108,9 @@ class DbSensorParameter(SensorParameter):
                    bitweight_units = sensor_parameter.bitweight_units,
                    sensitivity = sensor_parameter.sensitivity,
                    sensitivity_units = sensor_parameter.sensitivity_units,
+                   author_uri = sensor_parameter.author_uri,
+                   agency_uri = sensor_parameter.agency_uri,
+                   creation_time = sensor_parameter.creation_time,
                    id = sensor_parameter.id)
 
 
@@ -1082,6 +1140,9 @@ class DbSensorParameter(SensorParameter):
                    sensitivity = geom_sensor_parameter.sensitivity,
                    sensitivity_units = geom_sensor_parameter.sensitivity_units,
                    id = geom_sensor_parameter.id,
+                   author_uri = geom_sensor_parameter.author_uri,
+                   agency_uri = geom_sensor_parameter.agency_uri,
+                   creation_time = geom_sensor_parameter.creation_time,
                    geom_sensor_parameter = geom_sensor_parameter)
 
         # Collect the poles and zeros of the transfer function.
@@ -1109,6 +1170,9 @@ class DbSensorParameter(SensorParameter):
         attr_map['sensitivity_units'] = 'sensitivity_units'
         attr_map['bitweight'] = 'bitweight'
         attr_map['bitweight_units'] = 'bitweight_units'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
