@@ -39,6 +39,7 @@ from psysmon.core.preferences_manager import CustomPrefItem
 import wx
 import wx.aui
 from obspy.core import read, Trace, Stream
+import obspy.core.utcdatetime as op_utcdatetime
 from operator import itemgetter
 
 
@@ -114,18 +115,22 @@ class ImportWaveform(CollectionNode):
             # Remove the waveform directory from the file path.
             relativeFilename = filename.replace(curWfDir.alias, '')
             relativeFilename = relativeFilename[1:]
-            labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path', 
-                      'network', 'recorder_serial', 'channel', 'location', 
-                      'sps', 'numsamp', 'begin_date', 'begin_time', 
-                      'station_id', 'recorder_id', 'sensor_id']
-            header2Insert = dict(zip(labels, (None, format, wfDirId, 
-                            relativeFilename, os.path.dirname(filename), 
-                            Trace.stats.network, Trace.stats.station, 
-                            Trace.stats.channel, Trace.stats.location, 
-                            Trace.stats.sampling_rate, Trace.stats.npts, 
-                            Trace.stats.starttime.isoformat(' '), 
+            labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path',
+                      'network', 'recorder_serial', 'channel', 'location',
+                      'sps', 'numsamp', 'begin_date', 'begin_time',
+                      'station_id', 'recorder_id', 'sensor_id',
+                      'agency_uri', 'author_uri', 'creation_time']
+            header2Insert = dict(zip(labels, (None, format, wfDirId,
+                            relativeFilename, os.path.dirname(filename),
+                            Trace.stats.network, Trace.stats.station,
+                            Trace.stats.channel, Trace.stats.location,
+                            Trace.stats.sampling_rate, Trace.stats.npts,
+                            Trace.stats.starttime.isoformat(' '),
                             Trace.stats.starttime.timestamp,
-                            None, None, None)))
+                            None, None, None,
+                            self.project.active_user.author_uri,
+                            self.project.active_user.agency_uri,
+                            op_utcdatetime.UTCDateTime().isoformat())))
 
             print header2Insert
 
