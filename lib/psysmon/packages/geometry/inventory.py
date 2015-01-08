@@ -1687,7 +1687,8 @@ class Station:
 ## The network class.
 class Network:
 
-    def __init__(self, name, description=None, type=None, parent_inventory=None):
+    def __init__(self, name, description=None, type=None, author_uri = None,
+            agency_uri = None, creation_time = None, parent_inventory=None):
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
@@ -1709,6 +1710,18 @@ class Network:
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
+
+        # The author of the network.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
 
 
     def __setattr__(self, attr, value):

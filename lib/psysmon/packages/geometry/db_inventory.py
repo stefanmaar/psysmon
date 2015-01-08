@@ -474,25 +474,41 @@ class DbInventory(Inventory):
 
 class DbNetwork(Network):
 
-    def __init__(self, parent_inventory, name, description, type, geom_network = None):
-        Network.__init__(self, name = name, description = description, type = type, parent_inventory = parent_inventory)
+    def __init__(self, parent_inventory, name, description, type,
+            author_uri, agency_uri, creation_time, geom_network = None):
+        Network.__init__(self, name = name, description = description, type = type,
+                author_uri = author_uri, agency_uri = agency_uri,
+                creation_time = creation_time, parent_inventory = parent_inventory)
 
         if geom_network is None:
             # Create a new database network instance.
             geom_network_orm = self.parent_inventory.project.dbTables['geom_network']
-            self.geom_network = geom_network_orm(self.name, self.description, self.type)
+            self.geom_network = geom_network_orm(self.name, self.description, self.type,                                    self.agency_uri, self.author_uri, self.creation_time)
         else:
             self.geom_network = geom_network
 
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_inventory, geom_network):
-        return cls(parent_inventory, geom_network.name, geom_network.description, geom_network.type, geom_network)
+        return cls(parent_inventory = parent_inventory,
+                   name = geom_network.name,
+                   description = geom_network.description,
+                   type = geom_network.type,
+                   author_uri = geom_network.author_uri,
+                   agency_uri = geom_network.agency_uri,
+                   creation_time = geom_network.creation_time,
+                   geom_network = geom_network)
 
 
     @classmethod
     def from_inventory_network(cls, parent_inventory, network):
-        return cls(parent_inventory, network.name, network.description, network.type)
+        return cls(parent_inventory = parent_inventory,
+                   name = network.name,
+                   description = network.description,
+                   type = network.type,
+                   author_uri = network.author_uri,
+                   agency_uri = network.agency_uri,
+                   creation_time = network.creation_time)
 
 
 
@@ -503,6 +519,9 @@ class DbNetwork(Network):
         attr_map['name'] = 'name'
         attr_map['description'] = 'description'
         attr_map['type'] = 'type'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
 
         self.__dict__[attr] = value
 

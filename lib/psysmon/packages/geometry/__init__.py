@@ -188,16 +188,23 @@ def databaseFactory(base):
         name = Column(String(10), primary_key=True, nullable=False)
         description = Column(String(255))
         type = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
 
         stations = relationship('GeomStation', 
                                 cascade = 'all', 
                                 backref = 'parent')
 
 
-        def __init__(self, name, description, type):
+        def __init__(self, name, description, type, agency_uri, author_uri, creation_time):
             self.name = name
             self.description = description
             self.type = type
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
 
     tables.append(GeomNetwork)
 
