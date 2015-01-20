@@ -55,21 +55,17 @@ def databaseFactory(base):
         id = Column(Integer(10), primary_key = True, autoincrement = True)
         public_id = Column(String(255), nullable = True)
         description = Column(Text, nullable = True)
-        agency = Column(String(64), nullable = True)
         agency_uri = Column(String(255), nullable = True)
-        author = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(DateTime(), nullable = True)
         version = Column(String(30), nullable = True)
 
 
-        def __init__(self, public_id, description, agency, agency_uri,
-                     author, author_uri, creation_time, version):
+        def __init__(self, public_id, description, agency_uri,
+                     author_uri, creation_time, version):
             self.public_id = public_id
             self.description = description
-            self.agency = agency
             self.agency_uri = agency_uri
-            self.author = author
             self.author_uri = author_uri
             self.creation_time = creation_time
             self.version = version
@@ -105,9 +101,7 @@ def databaseFactory(base):
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
         tags = Column(String(255), nullable = True)
-        agency = Column(String(64), nullable = True)
         agency_uri = Column(String(255), nullable = True)
-        author = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(Float(53), nullable = True)
         version = Column(String(30), nullable = True)
@@ -115,7 +109,7 @@ def databaseFactory(base):
 
         def __init__(self, start_time, end_time, public_id, pref_origin_id,
                      pref_magnitude_id, pref_focmec_id, ev_type, ev_type_certainty,
-                     agency, agency_uri, author, author_uri, creation_time, version):
+                     agency_uri, author_uri, creation_time, version):
             self.start_time = start_time
             self.end_time = end_time
             self.public_id = public_id
@@ -124,9 +118,7 @@ def databaseFactory(base):
             self.pref_focmec_id = pref_focmec_id
             self.ev_type = ev_type
             self.ev_type_certainty = ev_type_certainty
-            self.agency = agency
             self.agency_uri = agency_uri
-            self.author = author
             self.author_uri = author_uri
             self.creation_time = creation_time
             self.version = version
@@ -151,6 +143,8 @@ def databaseFactory(base):
                            nullable = True)
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
+        agency_uri = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
         creation_time = Column(Float(53), nullable = True)
         version = Column(String(30), nullable = True)
         UniqueConstraint('public_id')
