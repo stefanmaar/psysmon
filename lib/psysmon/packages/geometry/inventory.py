@@ -827,7 +827,8 @@ class Recorder:
     # @param serial The recorder serial number.
     # @param type The recorder type.
     # @param id The recorder database id.
-    def __init__(self, serial, type, description = None, id=None, parent_inventory=None):
+    def __init__(self, serial, type, description = None, id=None, parent_inventory=None,
+            author_uri = None, agency_uri = None, creation_time = None):
         ## The recorder database id.
         # -1 if the recorder is not yet present in the database.
         self.id = id
@@ -849,6 +850,18 @@ class Recorder:
 
         ## The parent inventory.
         self.parent_inventory = parent_inventory
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
 
 
     def __str__(self):
@@ -993,7 +1006,8 @@ class Sensor:
     #
     #
     def __init__(self, serial, type, 
-                 rec_channel_name, channel_name, label, id=None, 
+                 rec_channel_name, channel_name, label, id=None,
+                 author_uri = None, agency_uri = None, creation_time = None,
                  parent_recorder=None):
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
@@ -1047,6 +1061,19 @@ class Sensor:
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
+
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
 
 
     def __getattr__(self, attrname):
@@ -1200,11 +1227,13 @@ class SensorParameter:
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, gain, bitweight, bitweight_units, sensitivity, 
-                 sensitivity_units, start_time, end_time, tf_type=None, 
-                 tf_units=None, tf_normalization_factor=None, 
+    def __init__(self, gain, bitweight, bitweight_units, sensitivity,
+                 sensitivity_units, start_time, end_time, tf_type=None,
+                 tf_units=None, tf_normalization_factor=None,
                  tf_normalization_frequency=None, tf_poles = None, tf_zeros = None,
-                 id=None, parent_sensor = None):
+                 id=None, parent_sensor = None,
+                 author_uri = None, agency_uri = None, creation_time = None):
+
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
@@ -1270,6 +1299,18 @@ class SensorParameter:
         # Indicates if the attributes have been changed.
         self.has_changed = False
 
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
 
     def __getattr__(self, attrname):
         ''' Handle call of attributes which are derived from the parent recorder.
@@ -1333,7 +1374,9 @@ class Station:
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, name, location, x, y, z, parent_network=None, coord_system=None, description=None, network=None, id=None):
+    def __init__(self, name, location, x, y, z,
+            parent_network=None, coord_system=None, description=None, network=None, id=None,
+            author_uri = None, agency_uri = None, creation_time = None):
 
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
@@ -1409,6 +1452,18 @@ class Station:
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
 
 
 
@@ -1687,7 +1742,8 @@ class Station:
 ## The network class.
 class Network:
 
-    def __init__(self, name, description=None, type=None, parent_inventory=None):
+    def __init__(self, name, description=None, type=None, author_uri = None,
+            agency_uri = None, creation_time = None, parent_inventory=None):
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
@@ -1709,6 +1765,18 @@ class Network:
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
+
+        # The author of the network.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
 
 
     def __setattr__(self, attr, value):

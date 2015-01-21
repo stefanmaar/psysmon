@@ -49,15 +49,22 @@ def databaseFactory(base):
         serial = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
         description = Column(String(255), nullable=True)
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
 
         sensors = relationship('GeomSensor', 
                                cascade = 'all',
                                backref = 'parent')
 
 
-        def __init__(self, serial, type):
+        def __init__(self, serial, type,
+                agency_uri, author_uri, creation_time):
             self.serial = serial
             self.type = type
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
 
         def __repr__(self):
             return "Recorder\nid: %d\nserial: %s\ntype: %s\n" % (self.id, self.serial, self.type)
@@ -86,19 +93,26 @@ def databaseFactory(base):
         type = Column(String(255), nullable=False)
         rec_channel_name = Column(String(10), nullable=False)
         channel_name = Column(String(10), nullable=False)
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
 
         parameters = relationship('GeomSensorParam', 
                                   cascade = 'all',
                                   backref = 'parent')
 
 
-        def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name):
+        def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name,
+                agency_uri, author_uri, creation_time):
             self.recorder_id = recorder_id
             self.label = label
             self.serial = serial
             self.type = type
             self.rec_channel_name = rec_channel_name
             self.channel_name = channel_name
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
 
         def __repr__(self):
             return "id: %s\nrecorder_id: %s\nlabel: %s\nserial: %s\ntype: %s\nrec_channel_name: %s\nchannel_name: %s" % (str(self.id), 
@@ -134,12 +148,16 @@ def databaseFactory(base):
         sensitivity_units = Column(String(30))
         bitweight = Column(Float(53))
         bitweight_units = Column(String(15))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
 
         tf_pz = relationship('GeomTfPz', cascade='all')
 
 
-        def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor, 
-                     tf_normalization_frequency, tf_type, tf_units, gain, sensitivity, 
+        def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor,
+                     tf_normalization_frequency, tf_type, tf_units, gain, sensitivity,
+                     agency_uri, author_uri, creation_time,
                      sensitivity_units, bitweight, bitweight_units):
             self.sensor_id = sensor_id
             self.start_time = start_time
@@ -153,6 +171,9 @@ def databaseFactory(base):
             self.sensitivity_units = sensitivity_units
             self.bitweight = bitweight
             self.bitweight_units = bitweight_units
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
 
 
     tables.append(GeomSensorParam)
@@ -188,16 +209,24 @@ def databaseFactory(base):
         name = Column(String(10), primary_key=True, nullable=False)
         description = Column(String(255))
         type = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
 
         stations = relationship('GeomStation', 
                                 cascade = 'all', 
                                 backref = 'parent')
 
 
-        def __init__(self, name, description, type):
+        def __init__(self, name, description, type,
+                agency_uri, author_uri, creation_time):
             self.name = name
             self.description = description
             self.type = type
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
 
     tables.append(GeomNetwork)
 
@@ -219,13 +248,16 @@ def databaseFactory(base):
         z = Column(Float(53), nullable=False)
         coord_system = Column(String(50), nullable=False)
         description = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
 
         sensors = relationship('GeomSensorTime', 
                                backref = 'parent')
 
 
-        def __init__(self, network, name, location, x, y, z, coord_system, 
-                     description):
+        def __init__(self, network, name, location, x, y, z, coord_system,
+                     description, agency_uri, author_uri, creation_time):
             self.network = network
             self.name = name
             self.location = location
@@ -234,6 +266,9 @@ def databaseFactory(base):
             self.z = z
             self.coord_system = coord_system
             self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
 
 
         def __repr__(self):
