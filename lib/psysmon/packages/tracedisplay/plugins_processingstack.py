@@ -222,7 +222,7 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         sizer = wx.GridBagSizer(5, 5)
 
         # The search field to do search while typing.
-        self.searchButton = wx.SearchCtrl(self, size=(200,-1), style=wx.TE_PROCESS_ENTER)
+        self.searchButton = wx.SearchCtrl(self, size=(200, 30), style=wx.TE_PROCESS_ENTER)
         self.searchButton.SetDescriptiveText('Search processing nodes')
         self.searchButton.ShowCancelButton(True)
         self.Bind(wx.EVT_TEXT, self.onDoSearch, self.searchButton)
@@ -253,7 +253,6 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         sizer.Add(self.nodeListCtrl, pos=(1, 0), flag=wx.EXPAND|wx.ALL, border=0)
 
         sizer.AddGrowableCol(0)
-        sizer.AddGrowableCol(1)
         sizer.AddGrowableRow(1)
 
         self.SetSizerAndFit(sizer)

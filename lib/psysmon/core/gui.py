@@ -224,7 +224,7 @@ class PSysmonGui(wx.Frame):
         # Add the collection panel.
         self.mgr.AddPane(self.collectionPanel, wx.aui.AuiPaneInfo().Name("collection").
                           Caption("collection").Left().CloseButton(False).
-                          BestSize(wx.Size(300,-1)).MinSize(wx.Size(200,-1)))
+                          BestSize(wx.Size(200,-1)).MinSize(wx.Size(50,-1)))
 
         # Add the module inventory panel.
         self.mgr.AddPane(self.collectionNodeInventoryPanel, wx.aui.AuiPaneInfo().Name("module inventory").
@@ -722,12 +722,14 @@ class CollectionPanel(wx.Panel):
         self.SetBackgroundColour((255, 255, 255))
 
         self.collectionListCtrl = CollectionListCtrl(self, id=wx.ID_ANY,
+                                 size=(200, -1),
                                  style=wx.LC_REPORT 
                                  | wx.BORDER_NONE
                                  | wx.LC_SORT_ASCENDING
                                  | wx.LC_SINGLE_SEL
                                  | wx.LC_NO_HEADER
                                  )
+        self.collectionListCtrl.SetMinSize((200, -1))
 
         columns = {1: 'node'}
 
@@ -1031,8 +1033,9 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         sizer = wx.GridBagSizer(5, 5)
 
-        self.searchButton = wx.SearchCtrl(self, size=(200,-1), style=wx.TE_PROCESS_ENTER)
-        self.searchButton.SetDescriptiveText('Search collection nodes')
+        self.searchButton = wx.SearchCtrl(self, size=(200,30), style=wx.TE_PROCESS_ENTER)
+        self.searchButton.SetMinSize((-1, 30))
+        #self.searchButton.SetDescriptiveText('Search collection nodes')
         self.searchButton.ShowCancelButton(True)
         self.Bind(wx.EVT_TEXT, self.onDoSearch, self.searchButton)
         self.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self.onDoSearch, self.searchButton)
@@ -1041,11 +1044,13 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         sizer.Add(self.searchButton, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=2)
 
         self.nodeListCtrl = NodeListCtrl(self, id=wx.ID_ANY,
+                                 size = (400, -1),
                                  style=wx.LC_REPORT 
                                  | wx.BORDER_NONE
                                  | wx.LC_SINGLE_SEL
                                  | wx.LC_SORT_ASCENDING
                                  )
+        self.nodeListCtrl.SetMinSize((400, 100))
 
         self.nodeListCtrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
