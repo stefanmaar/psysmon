@@ -45,7 +45,7 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        id = Column(Integer, primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
         description = Column(String(255), nullable=True)
@@ -75,8 +75,8 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
-        recorder_id = Column(Integer(10), 
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        recorder_id = Column(Integer, 
                              ForeignKey('geom_recorder.id', 
                                         onupdate='cascade',
                                         ondelete='set null'), 
@@ -121,8 +121,8 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
-        sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=True, default=-1)
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=True, default=-1)
         start_time = Column(Float(53))
         end_time = Column(Float(53))
         tf_normalization_factor = Column(Float)
@@ -163,9 +163,9 @@ def databaseFactory(base):
         __tablename__ = 'geom_tf_pz'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
-        param_id = Column(Integer(10), ForeignKey('geom_sensor_param.id', onupdate='cascade'), nullable=False)
-        type = Column(Integer(2), nullable=False, default=1)
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        param_id = Column(Integer, ForeignKey('geom_sensor_param.id', onupdate='cascade'), nullable=False)
+        type = Column(Integer, nullable=False, default=1)
         complex_real = Column(Float, nullable=False)
         complex_imag = Column(Float, nullable=False)
 
@@ -210,7 +210,7 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        id = Column(Integer, primary_key=True, autoincrement=True)
         network = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=True)
         name = Column(String(10), nullable=False)
         location = Column(String(3), nullable=False)
@@ -247,8 +247,8 @@ def databaseFactory(base):
         __tablename__ = 'geom_sensor_time'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        stat_id = Column(Integer(10), ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
-        sensor_id = Column(Integer(10), ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
+        stat_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
         start_time = Column(Float(53), primary_key=True, nullable=False)
         end_time = Column(Float(53))
 

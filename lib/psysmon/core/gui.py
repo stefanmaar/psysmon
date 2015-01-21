@@ -130,8 +130,8 @@ class PSysmonGui(wx.Frame):
             config = json.load(fp)
             fp.close()
 
-        for cur_file in config['recent_files']:
-            self.filehistory.AddFileToHistory(cur_file)
+            for cur_file in config['recent_files']:
+                self.filehistory.AddFileToHistory(cur_file)
 
 
     ## Define the PSysmonGui menus.  
@@ -533,7 +533,7 @@ class PSysmonGui(wx.Frame):
     # @param self The object pointer.
     # @param event The event object.
     def onCreateNewProject(self, event):
-        dlg = CreateNewProjectDlg(psyBase=self.psyBase)
+        dlg = CreateNewProjectDlg(psyBase=self.psyBase, parent = self)
         retval = dlg.ShowModal()
 
 
@@ -742,7 +742,7 @@ class CollectionPanel(wx.Panel):
 
         sizer.AddGrowableCol(0)
         sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(1)
+        #sizer.AddGrowableCol(1)
         self.SetSizerAndFit(sizer)
 
 
@@ -1058,7 +1058,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         sizer.Add(self.nodeListCtrl, pos=(1, 0), flag=wx.EXPAND|wx.ALL, border=0)
 
         sizer.AddGrowableCol(0)
-        sizer.AddGrowableCol(1)
+        #sizer.AddGrowableCol(1)
         sizer.AddGrowableRow(1)
 
         self.SetSizerAndFit(sizer)
@@ -1248,7 +1248,7 @@ class CreateNewDbUserDlg(wx.Dialog):
             if(userCreated):
                 # Set the status message.
                 statusString = "Created the user %s successfully." % userData['userName']
-                self.GetParent().log('status', statusString)
+                self.GetParent().logger.info(statusString)
 
                 # Close the dialog.
                 self.Destroy()
@@ -1257,9 +1257,9 @@ class CreateNewDbUserDlg(wx.Dialog):
                 # Set the status message.
                 statusString = "Error while creating the user %s." % userData['userName']
                 if not self.GetParent():
-                    self.logger.debug("NO PARENT")
+                    self.GetParent().logger.debug("NO PARENT")
                 else:
-                    self.GetParent().log('status', statusString)
+                    self.GetParent().logger.error(statusString)
 
 
 
@@ -2021,7 +2021,7 @@ class CreateNewProjectDlg(wx.Dialog):
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, psyBase, parent=None, size=(500, 200)):
+    def __init__(self, psyBase, parent, size=(500, 200)):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, "Create a new project", 
                            size=size, 
                            style=wx.DEFAULT_DIALOG_STYLE)

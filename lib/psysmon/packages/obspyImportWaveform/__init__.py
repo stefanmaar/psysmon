@@ -33,7 +33,7 @@ def databaseFactory(base):
     from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
     from sqlalchemy.orm import relationship
     from sqlalchemy import ForeignKeyConstraint, UniqueConstraint
-    
+
     tables = []
 
     # Create the traceheader table mapper class.
@@ -55,22 +55,22 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        id = Column(Integer, primary_key=True, autoincrement=True)
         file_type = Column(String(10), nullable=False)
-        wf_id = Column(Integer(10), nullable=False, default=-1)
+        wf_id = Column(Integer, nullable=False, default=-1)
         filename = Column(String(255), nullable=False)
         orig_path = Column(Text, nullable=False)
         network = Column(String(10), nullable=False, default='')
         recorder_serial = Column(String(45), nullable=False)
         channel = Column(String(45), nullable=False)
         location = Column(String(3), nullable=False)
-        sps = Column(Integer(10), nullable=False)
-        numsamp = Column(Integer(10), nullable=False)
+        sps = Column(Integer, nullable=False)
+        numsamp = Column(Integer, nullable=False)
         begin_date = Column(String(26), nullable=False)
         begin_time = Column(Float(53), nullable=False)
-        station_id = Column(Integer(10), default=None)
-        recorder_id = Column(Integer(10), default=None)
-        sensor_id = Column(Integer(10), default=None)
+        station_id = Column(Integer, default=None)
+        recorder_id = Column(Integer, default=None)
+        sensor_id = Column(Integer, default=None)
         UniqueConstraint('file_type', 'wf_id', 'filename')
 
 
@@ -82,7 +82,7 @@ def databaseFactory(base):
         __tablename__ = 'waveform_dir'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        id = Column(Integer(10), primary_key=True, autoincrement=True)
+        id = Column(Integer, primary_key=True, autoincrement=True)
         directory = Column(String(255), nullable=False, unique=True)
         description = Column(String(255), nullable=False)
 
@@ -100,7 +100,7 @@ def databaseFactory(base):
         __tablename__ = 'waveform_dir_alias'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        wf_id = Column(Integer(10),
+        wf_id = Column(Integer,
                        ForeignKey('waveform_dir.id', onupdate="cascade"),
                        nullable=False, 
                        autoincrement=False, 

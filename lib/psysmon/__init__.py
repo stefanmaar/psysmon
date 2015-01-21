@@ -31,7 +31,6 @@ __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
 __license__ = "GNU General Public Licence version 3"
 __keywords__ = "seismological prototyping prototype data processing earthquake obspy"
 
-
 import logging
 import wx
 

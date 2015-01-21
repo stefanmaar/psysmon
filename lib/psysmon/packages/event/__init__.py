@@ -52,7 +52,7 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key = True, autoincrement = True)
+        id = Column(Integer, primary_key = True, autoincrement = True)
         public_id = Column(String(255), nullable = True)
         description = Column(Text, nullable = True)
         agency = Column(String(64), nullable = True)
@@ -88,8 +88,8 @@ def databaseFactory(base):
                           {'mysql_engine': 'InnoDB'}
                          )
 
-        id = Column(Integer(10), primary_key = True, autoincrement = True)
-        ev_catalog_id = Column(Integer(10),
+        id = Column(Integer, primary_key = True, autoincrement = True)
+        ev_catalog_id = Column(Integer,
                              ForeignKey('event_catalog.id',
                                         onupdate = 'cascade',
                                         ondelete = 'set null'),
@@ -97,10 +97,10 @@ def databaseFactory(base):
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
         public_id = Column(String(255), nullable = True)
-        pref_origin_id = Column(Integer(10), nullable = True)
-        pref_magnitude_id = Column(Integer(10), nullable = True)
-        pref_focmec_id = Column(Integer(10), nullable = True)
-        ev_type = Column(Integer(10), nullable = True)
+        pref_origin_id = Column(Integer, nullable = True)
+        pref_magnitude_id = Column(Integer, nullable = True)
+        pref_focmec_id = Column(Integer, nullable = True)
+        ev_type = Column(Integer, nullable = True)
         ev_type_certainty = Column(String(50), nullable = True)
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
@@ -142,9 +142,9 @@ def databaseFactory(base):
         __tablename__  = 'detection'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        id = Column(Integer(10), primary_key = True, autoincrement = True)
+        id = Column(Integer, primary_key = True, autoincrement = True)
         public_id = Column(String(255), nullable = False)
-        sensor_id = Column(Integer(10), 
+        sensor_id = Column(Integer, 
                            ForeignKey('geom_sensor.id',
                                       onupdate = 'cascade',
                                       ondelete = 'set null'),

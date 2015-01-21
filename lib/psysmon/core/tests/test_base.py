@@ -1,4 +1,3 @@
-import ipdb
 '''
 Created on May 17, 2011
 
@@ -113,7 +112,6 @@ class BaseTestCase(unittest.TestCase):
 
         self.psybase.load_json_project(project_file, user_name, user_pwd)
 
-        ipdb.set_trace() ############################## Breakpoint ##############################
         #test_util.drop_project_database_tables(self.psybase.project)
         #test_util.remove_project_filestructure(self.psybase.project)
         self.psybase.closePsysmonProject()

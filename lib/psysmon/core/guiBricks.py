@@ -109,7 +109,7 @@ class Field(wx.Panel):
         #self.sizer = rcs.RowColSizer()
 
         #self.sizer.AddGrowableCol(0)
-        self.sizer.AddGrowableCol(1)
+        #self.sizer.AddGrowableCol(1)
         #self.sizer.AddGrowableRow(0)
 
         self.SetSizer(self.sizer)
@@ -123,6 +123,7 @@ class Field(wx.Panel):
     def addControl(self, controlElement):
         self.controlElement = controlElement
         self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
+        self.sizer.AddGrowableCol(1)
 
 
     def onValueChange(self, event):
