@@ -71,6 +71,9 @@ def databaseFactory(base):
         station_id = Column(Integer, default=None)
         recorder_id = Column(Integer, default=None)
         sensor_id = Column(Integer, default=None)
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
         UniqueConstraint('file_type', 'wf_id', 'filename')
 
 
