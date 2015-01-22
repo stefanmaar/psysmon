@@ -136,7 +136,7 @@ class ImportWaveform(CollectionNode):
 
             return Header(**header2Insert)
         else:
-            print "File %s is not inside a waveform directory. Skipping this trace." % filename
+            self.logger.error("File %s is not inside a waveform directory. Skipping this trace.", filename)
             return None
 
 
