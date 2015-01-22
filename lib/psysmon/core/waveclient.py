@@ -472,6 +472,7 @@ class PsysmonDbWaveClient(WaveClient):
         wfDir = self.waveformDir
         wfDirAlias = self.waveformDirAlias
 
+        # Check if the waveform_dir database tables exist.
         if wfDir is None or wfDirAlias is None:
             return
 
