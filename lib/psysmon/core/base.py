@@ -301,6 +301,7 @@ class Base:
         self.project.updateDirectoryStructure()
         self.project.setCollectionNodeProject()
 
+
         # Set the project of the db_waveclient (if available).
         for cur_waveclient in self.project.waveclient.itervalues():
             if cur_waveclient.mode == 'PsysmonDbWaveClient':
@@ -320,6 +321,12 @@ class Base:
             # Check if the default wave client exists.
             if self.project.defaultWaveclient not in self.project.waveclient.keys():
                 self.project.defaultWaveclient = None
+
+            # Set some variables depending on the database.
+            for cur_waveclient in self.project.waveclient.itervalues():
+                if cur_waveclient.mode == 'PsysmonDbWaveClient':
+                    # Load the waveform directory list from database.
+                    cur_waveclient.loadWaveformDirList()
 
             return True
 
