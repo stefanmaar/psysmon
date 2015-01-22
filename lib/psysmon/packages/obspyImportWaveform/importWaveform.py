@@ -128,8 +128,8 @@ class ImportWaveform(CollectionNode):
                             Trace.stats.starttime.isoformat(' '),
                             Trace.stats.starttime.timestamp,
                             None, None, None,
-                            self.project.active_user.author_uri,
-                            self.project.active_user.agency_uri,
+                            self.project.activeUser.author_uri,
+                            self.project.activeUser.agency_uri,
                             op_utcdatetime.UTCDateTime().isoformat())))
 
             print header2Insert
