@@ -146,7 +146,8 @@ class PreferencesManager:
         found_items = self.get_item(name = name, pagename = pagename)
         for cur_item in found_items:
             cur_item.value = value
-            cur_item.update_gui_element()
+            if len(cur_item.gui_element) > 0:
+                cur_item.update_gui_element()
 
         return found_items
 
