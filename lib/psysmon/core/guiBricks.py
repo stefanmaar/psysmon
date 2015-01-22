@@ -185,7 +185,7 @@ class PrefPagePanel(wx.Panel):
                     guiclass = gui_elements[cur_item.mode]
                     gui_element = guiclass(name = cur_item.label,
                                            pref_item = cur_item,
-                                           size = (100, 10),
+                                           size = (100, -1),
                                            parent = cur_container 
                                           )
                     cur_item.set_gui_element(gui_element)
@@ -201,12 +201,6 @@ class PrefPagePanel(wx.Panel):
 
 
 
-
-## The OptionsEditPanel
-#
-# This class provides an easy to use edit dialog for pSysmon collection nodes.
-# One can choose from a set of fields which can be used to change the values 
-# of the collection node properties.        
 class PrefEditPanel(wx.Panel):
     ''' The preferences edit panel.
 
