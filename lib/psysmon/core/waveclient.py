@@ -496,9 +496,8 @@ class EarthwormWaveclient(WaveClient):
     The client uses the :class:`obspy.earthworm.Client` class.
     '''
 
-    def __init__(self, name, host='localhost', port=16022):
-        WaveClient.__init__(self, name=name, mode='earthworm')
-
+    def __init__(self, name = 'earthworm waveserver client', host='localhost', port=16022, **kwargs):
+        WaveClient.__init__(self, name=name, **kwargs)
 
         # The Earthworm waveserver host to which the client should connect.
         self.options['host'] = host
