@@ -1311,6 +1311,7 @@ class DisplayManager(object):
         sort_mode = self.pref_manager.get_value('sort_stations')
         if sort_mode == 'by name':
             self.showStations = sorted(self.showStations, key = attrgetter('name'))
+            self.availableStations = sorted(self.availableStations, key = attrgetter('name'))
 
 
 
