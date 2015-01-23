@@ -225,8 +225,8 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
 
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_stations',
                                                      label = 'stations',
-                                                     limit = ('AP01', 'AP02', 'AP03'),
-                                                     value = ['AP01'],
+                                                     limit = ('ALBA', 'BISA', 'SITA'),
+                                                     value = ['ALBA'],
                                                      group = 'component selection')
         self.pref_manager.add_item(item = pref_item)
 
@@ -349,6 +349,11 @@ class TraceDisplayDlg(wx.Frame):
 
         # Create the dataManager.
         self.dataManager = DataManager(self)
+
+        # Register the plugin shortcuts. This has to be done after the various
+        # manager instances were created.
+        for curPlugin in self.plugins:
+            curPlugin.register_keyboard_shortcuts()
 
         # Initialize the user interface.
         self.initUI()
@@ -578,6 +583,9 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.displayManager.shrinkTimePeriod(ratio)
         self.updateDisplay()
+
+
+
 
 
     def setDuration(self, duration):
@@ -979,11 +987,11 @@ class DisplayManager(object):
         show_stations = self.pref_manager.get_value('show_stations')
         for curStation in self.availableStations:
             if curStation.name in show_stations:
-                station2Add = DisplayStation(curStation)
+                station2Add = curStation
                 station2Add.addChannel(self.showChannels)
                 for curChannel in station2Add.channels:
                     for curPlugin in addonPlugins:
-                        curChannel.addView(curPlugin.name, 'my Type')
+                        curChannel.addView(curPlugin.name, curPlugin.getViewClass())
                 self.showStations.append(station2Add)
         self.stationsChanged = True
 
@@ -1042,6 +1050,26 @@ class DisplayManager(object):
         shrinkAmount = duration * ratio/100.0
         self.setTimeLimits(self.startTime + shrinkAmount/2.0,
                            self.endTime - shrinkAmount/2.0)
+
+
+    def show_next_station(self):
+        ''' Show the next station listed in the available stations.
+        '''
+        cur_station = self.showStations[-1]
+        ind = self.availableStations.index(cur_station) + 1
+        if ind < len(self.availableStations):
+            self.hideStation(cur_station.getSNL())
+            self.showStation(self.availableStations[ind].getSNL())
+
+
+    def show_prev_station(self):
+        ''' Show the previous station listed in the available stations.
+        '''
+        cur_station = self.showStations[0]
+        ind = self.availableStations.index(cur_station) - 1
+        if ind >= 0:
+            self.hideStation(cur_station.getSNL())
+            self.showStation(self.availableStations[ind].getSNL())
 
 
     def setDuration(self, duration):
@@ -1111,7 +1139,7 @@ class DisplayManager(object):
         for curChannel in station2Show.channels:
             curChanContainer = self.createChannelContainer(stationContainer, curChannel)
             for curViewName, (curViewType, ) in curChannel.views.items():
-                self.createViewContainer(curChanContainer, curViewName, curViewType) 
+                self.createViewContainer(curChanContainer, curViewName, curViewType)
 
         # Update the display
         self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
@@ -1189,7 +1217,7 @@ class DisplayManager(object):
         '''
         for curStation in self.showStations:
             for curChannel in curStation.channels:
-                curChannel.addView(plugin.name, 'my View')
+                curChannel.addView(plugin.name, plugin.getViewClass())
                 curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
                 self.createViewContainer(curChannelContainer, plugin.name, plugin.getViewClass())
 
@@ -1371,12 +1399,12 @@ class DisplayManager(object):
             channel.container = chanContainer
 
         return chanContainer
-        
-         
-                
+
+
+
     def createViewContainer(self, channelContainer, name, viewClass):
         '''
-        
+
         '''
         # Check if the container already exists in the channel.
         viewContainer = channelContainer.hasView(name)

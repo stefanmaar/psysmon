@@ -47,6 +47,14 @@ class SelectStation(OptionPlugin):
 
         self.icons['active'] = icons.pin_map_icon_16
 
+        self.lb = None
+
+
+    def register_keyboard_shortcuts(self):
+        ''' Register the keyboard shortcuts.
+        '''
+        self.parent.shortcutManager.addAction(('WXK_DOWN',), self.next_station)
+        self.parent.shortcutManager.addAction(('WXK_UP', ), self.prev_station)
 
 
     def buildFoldPanel(self, parent):
@@ -61,7 +69,7 @@ class SelectStation(OptionPlugin):
 
         # Create a checkbox list holding the station names.
         #sampleList = ['ALBA', 'SITA', 'GILA']
-        displayedStations = [(x[0],x[2],x[3]) for x in self.parent.displayManager.getSCNL('show')]
+        displayedStations = self.parent.displayManager.getSNL('show')
 
         # Create a unique list containing SNL. Preserve the sort order.
         self.stationList = self.parent.displayManager.getSNL('available')
@@ -99,6 +107,26 @@ class SelectStation(OptionPlugin):
         else:
             self.parent.displayManager.showStation(self.stationList[index])
 
+
+    def next_station(self):
+        ''' Display the next station.
+        '''
+        self.parent.displayManager.show_next_station()
+        if self.lb is not None:
+            displayedStations = self.parent.displayManager.getSNL('show')
+            ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
+            self.lb.SetChecked(ind)
+
+
+
+    def prev_station(self):
+        ''' Display the next station.
+        '''
+        self.parent.displayManager.show_prev_station()
+        if self.lb is not None:
+            displayedStations = self.parent.displayManager.getSNL('show')
+            ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
+            self.lb.SetChecked(ind)
 
 
 
