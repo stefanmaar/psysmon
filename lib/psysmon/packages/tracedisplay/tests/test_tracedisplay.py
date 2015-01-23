@@ -48,7 +48,7 @@ class TracedisplayTestCase(unittest.TestCase):
                               db_user = 'unit_test',
                               db_pwd = 'test',
                               project_name = 'unit_test')
-                              
+
 
         cls.psybase = create_psybase()
         create_full_project(cls.psybase)
@@ -77,7 +77,6 @@ class TracedisplayTestCase(unittest.TestCase):
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__
         self.node.logger = logging.getLogger(loggerName)
-        pass
 
 
     def tearDown(self):
@@ -86,7 +85,6 @@ class TracedisplayTestCase(unittest.TestCase):
     def testDlg(self):
         self.node.execute()
         self.app.MainLoop()
-        pass
 
 
 def suite():
