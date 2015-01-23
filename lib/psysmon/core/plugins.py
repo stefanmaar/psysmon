@@ -145,6 +145,12 @@ class PluginNode:
         self.parent = parent
 
 
+    def register_keyboard_shortcuts(self):
+        ''' Register the keyboard shortcuts.
+        '''
+        return None
+
+
     def setActive(self):
         ''' Set the active state of the plugin to True.
         '''
@@ -214,6 +220,8 @@ class OptionPlugin(PluginNode):
                             icons = icons,
                             parent = parent,
                             docEntryPoint = docEntryPoint)
+
+
 
 
 class CommandPlugin(PluginNode):
