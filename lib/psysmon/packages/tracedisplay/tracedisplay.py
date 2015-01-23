@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import psysmon
 import logging
 import itertools
 from operator import itemgetter, attrgetter
@@ -307,7 +308,8 @@ class TraceDisplayDlg(wx.Frame):
         self.SetMinSize(size)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         # The parent collection node.
@@ -460,13 +462,18 @@ class TraceDisplayDlg(wx.Frame):
         for k,curPlugin in enumerate(self.plugins):
             if curPlugin.mode == 'option':
                 # Create a tool.
-                curTool = self.ribbonToolbars[curPlugin.category].AddTool(k, curPlugin.icons['active'].GetBitmap())
+                curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = k, 
+                                                                          bitmap = curPlugin.icons['active'].GetBitmap(), 
+                                                                          help_string = curPlugin.name,
+                                                                          kind = ribbon.RIBBON_BUTTON_TOGGLE)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
                                                              lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
             elif curPlugin.mode == 'command':
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = k,
+                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                help_string = curPlugin.name)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onCommandToolClicked(evt, curPlugin),
                                                              id=curTool.id)
@@ -476,7 +483,9 @@ class TraceDisplayDlg(wx.Frame):
             elif curPlugin.mode == 'interactive':
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap())
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = k,
+                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                help_string = curPlugin.name)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin),
                                                              id=curTool.id)
@@ -486,7 +495,9 @@ class TraceDisplayDlg(wx.Frame):
             elif curPlugin.mode == 'addon':
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(k, curPlugin.icons['active'].GetBitmap(), help_string='Hallo Stefan')
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = k,
+                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                help_string = curPlugin.name)
                 #self.ribbonToolbars[curPlugin.category].SetToolClientData(curTool, 'test')
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin),
@@ -574,7 +585,7 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.displayManager.setStartTime(startTime)
         self.updateDisplay()
-    
+
 
 
     def onOptionToolClicked(self, event, plugin):
@@ -584,27 +595,12 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.logger.debug('Clicked the option tool: %s', plugin.name)
 
-        if plugin.name not in self.foldPanels.keys():
-            #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
-            #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
-
-            curPanel = plugin.buildFoldPanel(self)
-            self.mgr.AddPane(curPanel,
-                             wx.aui.AuiPaneInfo().Right().
-                                                  Name(plugin.name).
-                                                  Caption(plugin.name).
-                                                  Layer(2).
-                                                  Row(0).
-                                                  Position(0).
-                                                  BestSize(wx.Size(300,-1)).
-                                                  MinSize(wx.Size(200,100)).
-                                                  MinimizeButton(True).
-                                                  MaximizeButton(True))
-            self.mgr.Update() 
-            self.foldPanels[plugin.name] = curPanel
-        else:
-            if not self.foldPanels[plugin.name].IsShown():
-                curPanel = self.foldPanels[plugin.name]
+        cur_toolbar = event.GetEventObject()
+        if cur_toolbar.GetToolState(event.GetId()) != ribbon.RIBBON_TOOLBAR_TOOL_TOGGLED:
+            if plugin.name not in self.foldPanels.keys():
+                # The panel of the option tool does't exist. Create it and add
+                # it to the panel manager.
+                curPanel = plugin.buildFoldPanel(self)
                 self.mgr.AddPane(curPanel,
                                  wx.aui.AuiPaneInfo().Right().
                                                       Name(plugin.name).
@@ -615,8 +611,25 @@ class TraceDisplayDlg(wx.Frame):
                                                       BestSize(wx.Size(300,-1)).
                                                       MinSize(wx.Size(200,100)).
                                                       MinimizeButton(True).
-                                                      MaximizeButton(True))
-                self.mgr.Update() 
+                                                      MaximizeButton(True).
+                                                      CloseButton(False))
+                # TODO: Add a onOptionToolPanelClose method to handle clicks of
+                # the CloseButton in the AUI pane of the option tools. If the
+                # pane is closed, the toggle state of the ribbonbar button has
+                # be changed. The according event is aui.EVT_AUI_PANE_CLOSE.
+                self.mgr.Update()
+                self.foldPanels[plugin.name] = curPanel
+            else:
+                if not self.foldPanels[plugin.name].IsShown():
+                    curPanel = self.foldPanels[plugin.name]
+                    self.mgr.GetPane(curPanel).Show()
+                    self.mgr.Update()
+        else:
+            if self.foldPanels[plugin.name].IsShown():
+                curPanel = self.foldPanels[plugin.name]
+                self.mgr.GetPane(curPanel).Hide()
+                self.mgr.Update()
+
 
 
     def onCommandToolClicked(self, event, plugin):
@@ -635,6 +648,22 @@ class TraceDisplayDlg(wx.Frame):
 
         Activate the tool.
         '''
+        if plugin.cursor is not None:
+            if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
+                image = plugin.cursor.GetImage()
+                # since this image didn't come from a .cur file, tell it where the hotspot is
+                img_size = image.GetSize()
+                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
+                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
+
+                # make the image into a cursor
+                self.viewPort.SetCursor(wx.CursorFromImage(image))
+            else:
+                try:
+                    self.viewPort.SetCursor(wx.StockCursor(plugin.cursor))
+                except:
+                    pass
+
         self.logger.debug('Clicked the interactive tool: %s', plugin.name)
         hooks = plugin.getHooks()
 

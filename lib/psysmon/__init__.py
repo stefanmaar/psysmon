@@ -36,6 +36,7 @@ import wx
 
 logConfig = {}
 logConfig['level'] = 'DEBUG'
+logConfig['package_prefix'] = 'psysmon.package'
 
 
 class LoggingMainProcessFilter(logging.Filter):

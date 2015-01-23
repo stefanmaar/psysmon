@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import wx
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from obspy.core import UTCDateTime
@@ -44,6 +45,9 @@ class Zoom(InteractivePlugin):
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.zoom_icon_16
+        self.cursor = wx.CURSOR_MAGNIFIER
+        #self.cursor = icons.zoom_icon_16
+        #self.cursor_hotspot = (0.5, 0.5)
 
         self.beginLine = {}
         self.endLine = {}

@@ -309,6 +309,12 @@ class InteractivePlugin(PluginNode):
                             parent = parent,
                             docEntryPoint = docEntryPoint)
 
+        self.cursor = None
+
+        # The hotspot of the cursor image. It is measured relative to the
+        # top-left corner of the image (0 - 1).
+        self.cursor_hotspot = (0,0)
+
 
     def getHooks(self):
         ''' Register the mouse event hooks for interactive plugins.
