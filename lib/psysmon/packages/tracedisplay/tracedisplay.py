@@ -230,6 +230,14 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                                      group = 'component selection')
         self.pref_manager.add_item(item = pref_item)
 
+        pref_item = pref_manager.SingleChoicePrefItem(name = 'sort_stations',
+                                                      label = 'sort stations',
+                                                      limit = ('by name',),
+                                                      value = 'by name',
+                                                      group = 'component selection')
+        self.pref_manager.add_item(item = pref_item)
+
+
     def edit(self):
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
@@ -920,11 +928,11 @@ class DisplayManager(object):
         # The inventory of the available geometry.
         self.inventory = inventory
 
-        pref_manager = self.parent.collection_node.pref_manager
+        self.pref_manager = self.parent.collection_node.pref_manager
 
         # The timespan to show.
-        self.startTime = pref_manager.get_value('start_time')
-        self.endTime = self.startTime + pref_manager.get_value('duration')
+        self.startTime = self.pref_manager.get_value('start_time')
+        self.endTime = self.startTime + self.pref_manager.get_value('duration')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
         # All stations that are contained in the inventory.
@@ -953,7 +961,7 @@ class DisplayManager(object):
 
         # The channels currently shown.
         # TODO: This should be selected by the user in the edit dialog.
-        show_channels = pref_manager.get_value('show_channels')
+        show_channels = self.pref_manager.get_value('show_channels')
         self.showChannels = [x for x in show_channels if x in self.availableChannels]
 
         # The views currently shown. (viewName, viewType)
@@ -968,7 +976,7 @@ class DisplayManager(object):
         #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
         #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
         #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
-        show_stations = pref_manager.get_value('show_stations')
+        show_stations = self.pref_manager.get_value('show_stations')
         for curStation in self.availableStations:
             if curStation.name in show_stations:
                 station2Add = DisplayStation(curStation)
@@ -979,8 +987,7 @@ class DisplayManager(object):
                 self.showStations.append(station2Add)
         self.stationsChanged = True
 
-        self.showStations = sorted(self.showStations, key = attrgetter('name'))
-
+        self.sort_show_stations()
 
 
         # The trace color settings.
@@ -1293,8 +1300,18 @@ class DisplayManager(object):
         '''
         if station not in self.showStations:
             self.showStations.append(station)
-        
+            self.sort_show_stations()
+
         self.stationsChanged = True
+
+
+    def sort_show_stations(self):
+        ''' Sort the showen stations.
+        '''
+        sort_mode = self.pref_manager.get_value('sort_stations')
+        if sort_mode == 'by name':
+            self.showStations = sorted(self.showStations, key = attrgetter('name'))
+
 
 
     def createContainers(self):
