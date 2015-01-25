@@ -177,3 +177,17 @@ class Catalog(object):
 
         # The events of the catalog.
         self.events = events
+
+
+    def add_events(self, events):
+        ''' Add one or more events to the events.
+
+        Parameters
+        ----------
+        events : list of :class:`Event`
+            The events to add to the catalog.
+        '''
+        for cur_event in events:
+            cur_event.parent = self
+        self.events.extend(events)
+
