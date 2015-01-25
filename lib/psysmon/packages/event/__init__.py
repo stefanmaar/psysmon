@@ -57,7 +57,7 @@ def databaseFactory(base):
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
-        creation_time = Column(DateTime(), nullable = True)
+        creation_time = Column(String(30), nullable = True)
 
 
         def __init__(self, public_id, description, agency_uri,
@@ -101,7 +101,7 @@ def databaseFactory(base):
         tags = Column(String(255), nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
-        creation_time = Column(Float(53), nullable = True)
+        creation_time = Column(String(30), nullable = True)
 
 
         def __init__(self, start_time, end_time, public_id, pref_origin_id,
@@ -141,7 +141,7 @@ def databaseFactory(base):
         end_time = Column(Float(53), nullable = False)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
-        creation_time = Column(Float(53), nullable = True)
+        creation_time = Column(String(30), nullable = True)
         UniqueConstraint('public_id')
 
     tables.append(DetectionDb)
