@@ -104,9 +104,10 @@ def databaseFactory(base):
         creation_time = Column(String(30), nullable = True)
 
 
-        def __init__(self, start_time, end_time, public_id, pref_origin_id,
-                     pref_magnitude_id, pref_focmec_id, ev_type, ev_type_certainty,
-                     agency_uri, author_uri, creation_time):
+        def __init__(self, ev_catalog_id, start_time, end_time, public_id,
+                     pref_origin_id, pref_magnitude_id, pref_focmec_id, ev_type,
+                     ev_type_certainty, agency_uri, author_uri, creation_time):
+            ev_catalog_id = ev_catalog_id
             self.start_time = start_time
             self.end_time = end_time
             self.public_id = public_id
