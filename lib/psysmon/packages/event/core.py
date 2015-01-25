@@ -19,21 +19,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from obspy.core.event import Event as ObspyEvent
-from obspy.core.event import Catalog as ObspyCatalog
-from obspy.core.event import ResourceIdentifier
-from obspy.core.event import Comment
-from obspy.core.event import CreationInfo
-from obspy.core.utcdatetime import UTCDateTime
+import obspy.core.utcdatetime as utcdatetime
 
 class Event(object):
 
-    def __init__(self, start_time, end_time, db_id = None, tags = [], event_type = None, *args, **kwargs):
-        ObspyEvent.__init__(self, *args, **kwargs)
+    def __init__(self, start_time, end_time, db_id = None, public_id = None, event_type = None,
+            event_type_certainty = None, description = None, comment = None,
+            tags = [], agency_uri = None, author_uri = None, creation_time = None):
+        ''' Instance initialization
 
-        # The unique database id.
-        self.db_id = db_id
-
+        '''
+        # Check for correct input arguments.
         # Check for None values in the event limits.
         if start_time is None or end_time is None:
             raise ValueError("None values are not allowed for the event time limits.")
@@ -45,17 +41,41 @@ class Event(object):
             raise ValueError("The end_time %s is equal to the start_time %s.", end_time, start_time)
 
 
-        # The event type. Override the obspy event type.
-        self.event_type = event_type
+        # The unique database id.
+        self.db_id = db_id
+
+        # The unique public id.
+        self.public_id = public_id
 
         # The start time of the event.
-        self.start_time = UTCDateTime(start_time)
+        self.start_time = utcdatetime.UTCDateTime(start_time)
 
         # The end time of the event.
-        self.end_time = UTCDateTime(end_time)
+        self.end_time = utcdatetime.UTCDateTime(end_time)
+
+        # The event type.
+        self.event_type = event_type
+
+        # The certainty of the event_type.
+        self.event_type_certainty = event_type_certainty
+
+        # The description of the event.
+        self.description = description
+
+        # The comment added to the event.
+        self.comment = comment
 
         # The tags of the event.
-        self.tags = []
+        self.tags = tags
+
+        # The agency_uri of the creator.
+        self.agency_uri = agency_uri
+
+        # The author_uri of the creator.
+        self.author_uri = author_uri
+
+        # The time of creation of this event.
+        self.creation_time = utcdatetime.UTCDateTime(creation_time)
 
 
     def write_to_database(self, project):
@@ -63,42 +83,83 @@ class Event(object):
         '''
         if self.db_id is None:
             # If the db_id is None, insert a new event.
-            if self.creation_info.creation_time is not None:
-                creation_time = self.creation_info.creation_time.timestamp
+            if self.creation_time is not None:
+                creation_time = self.creation_time.isoformat()
             else:
                 creation_time = None
 
             db_session = project.getDbSession()
             db_event_orm = project.dbTables['event']
-            db_event = db_event_orm(start_time = repr(self.start_time.timestamp),
-                                    end_time = repr(self.end_time.timestamp),
-                                    public_id = self.resource_id,
+            db_event = db_event_orm(start_time = self.start_time.timestamp,
+                                    end_time = self.end_time.timestamp,
+                                    public_id = self.public_id,
                                     pref_origin_id = None,
-                                    pref_magnitude_id = None, 
+                                    pref_magnitude_id = None,
                                     pref_focmec_id = None,
                                     ev_type = self.event_type,
                                     ev_type_certainty = self.event_type_certainty,
-                                    agency_id = self.creation_info.agency_id,
-                                    agency_uri = self.creation_info.agency_uri,
-                                    author = self.creation_info.author,
-                                    author_uri = self.creation_info.author_uri,
-                                    creation_time = repr(creation_time),
-                                    version = self.creation_info.version
+                                    agency_uri = self.agency_uri,
+                                    author_uri = self.author_uri,
+                                    creation_time = creation_time
                                    )
             db_session.add(db_event)
             db_session.commit()
+            self.db_id = db_event.id
             db_session.close()
 
         else:
             # If the db_id is not None, update the existing event.
-            pass
+            db_session = project.getDbSession()
+            db_event_orm = project.dbTables['event']
+            query = db_session.query(db_event_orm).filter(db_event_orm.id == self.db_id)
+            if db_session.query(query.exists()):
+                db_event = query.scalar()
+                db_event.start_time = self.start_time.timestamp
+                db_event.end_time = self.end_time.timestamp
+                db_event.public_id = self.public_id
+                #db_event.pref_origin_id = self.pref_origin_id
+                #db_event.pref_magnitude_id = self.pref_magnitude_id
+                #db_event.pref_focmec_id = self.pref_focmec_id
+                db_event.ev_type = self.event_type
+                db_event.ev_type_certainty = self.event_type_certainty
+                db_event.agency_uri = self.agency_uri
+                db_event.author_uri = self.author_uri
+                if self.creation_time is not None:
+                    db_event.creation_time = self.creation_time.isoformat()
+                else:
+                    db_event.creation_time = None
+                db_session.commit()
+                db_session.close()
+            else:
+                raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
 
 
 
-class Catalog(ObspyCatalog):
 
-    def __init__(self, db_id = None, *args, **kwargs):
-        ObspyCatalog.__init__(self, *args, **kwargs)
+class Catalog(object):
 
+    def __init__(self, db_id = None, description = None, agency_uri = None,
+            author_uri = None, creation_time = None, events = []):
+        ''' Instance initialization.
+        '''
+
+        # The unique database ID.
         self.db_id = db_id
 
+        # The description of the catalog.
+        self.description = description
+
+        # The agency_uri of the creator.
+        self.agency_uri = agency_uri
+
+        # The author_uri of the creator.
+        self.author_uri = author_uri
+
+        # The time of creation of this event.
+        if creation_time is None:
+            self.creation_time = utcdatetime.UTCDateTime();
+        else:
+            self.creation_time = utcdatetime.UTCDateTime(creation_time);
+
+        # The events of the catalog.
+        self.events = events
