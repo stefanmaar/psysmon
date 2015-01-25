@@ -34,8 +34,7 @@ def databaseFactory(base):
     from sqlalchemy import String
     from sqlalchemy import Text
     from sqlalchemy import Float
-    from sqlalchemy.dialects.mysql import DOUBLE
-    from sqlalchemy import DateTime
+    #from sqlalchemy.dialects.mysql import DOUBLE
     from sqlalchemy import ForeignKey
     from sqlalchemy import UniqueConstraint
     from sqlalchemy.orm import relationship
@@ -59,6 +58,9 @@ def databaseFactory(base):
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
+        events = relationship('EventDb', 
+                               cascade = 'all',
+                               backref = 'parent')
 
         def __init__(self, public_id, description, agency_uri,
                      author_uri, creation_time):
