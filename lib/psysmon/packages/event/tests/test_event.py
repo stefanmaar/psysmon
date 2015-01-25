@@ -9,7 +9,6 @@ import logging
 import os
 
 from obspy.core.utcdatetime import UTCDateTime
-from obspy.core.event import CreationInfo
 
 import psysmon
 
@@ -80,23 +79,15 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(event.event_type, 'landslide')
 
 
-        # Test the creation info of the event.
-        creation_info = CreationInfo(agency_id = 'Mertl Research',
-                                     agency_uri = 'mr',
-                                     author = 'Stefan Mertl',
-                                     author_uri = 'smertl',
-                                     creation_time = UTCDateTime(),
-                                     version = '0.0.1')
-        event.creation_info = creation_info
-
-
     def test_write_event_to_database(self):
-        ''' The the writing of an event to the database.
+        ''' Test the writing of an event to the database.
         '''
         start_time = '2000-01-01T00:00:00'
         end_time = '2000-01-01T01:00:00'
-        event = Event(start_time = start_time, end_time = end_time)
-        event.creation_info = CreationInfo(creation_time = UTCDateTime())
+        creation_time = UTCDateTime()
+        event = Event(start_time = start_time,
+                      end_time = end_time,
+                      creation_time = creation_time)
         self.project.dbEngine.echo = True
         event.write_to_database(self.project)
 
@@ -108,7 +99,40 @@ class EventTestCase(unittest.TestCase):
         tmp = result[0]
         self.assertEqual(tmp.start_time, event.start_time.timestamp)
         self.assertEqual(tmp.end_time, event.end_time.timestamp)
-        self.assertEqual(tmp.creation_time, event.creation_info.creation_time.timestamp)
+        self.assertEqual(tmp.creation_time, event.creation_time.timestamp)
+
+
+    def test_update_event_in_database(self):
+        ''' Test the update of an event to the database.
+        '''
+        start_time = '2000-01-01T00:00:00'
+        end_time = '2000-01-01T01:00:00'
+        creation_time = UTCDateTime()
+        event = Event(start_time = start_time,
+                      end_time = end_time,
+                      creation_time = creation_time)
+        self.project.dbEngine.echo = True
+        event.write_to_database(self.project)
+        db_id = event.db_id
+
+
+        start_time = UTCDateTime('2000-01-02T00:00:00')
+        end_time = UTCDateTime('2000-01-02T01:00:00')
+        event.start_time = start_time
+        event.end_time = end_time
+        event.write_to_database(self.project)
+
+        db_event_orm = self.project.dbTables['event']
+        db_session = self.project.getDbSession()
+        result = db_session.query(db_event_orm).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+        tmp = result[0]
+        self.assertEqual(tmp.id, db_id)
+        self.assertEqual(tmp.id, event.db_id)
+        self.assertEqual(tmp.start_time, event.start_time.timestamp)
+        self.assertEqual(tmp.end_time, event.end_time.timestamp)
+
 
 
 #def suite():
