@@ -25,7 +25,8 @@ class Event(object):
 
     def __init__(self, start_time, end_time, db_id = None, public_id = None, event_type = None,
             event_type_certainty = None, description = None, comment = None,
-            tags = [], agency_uri = None, author_uri = None, creation_time = None):
+            tags = [], agency_uri = None, author_uri = None, creation_time = None,
+            parent = None):
         ''' Instance initialization
 
         '''
@@ -40,6 +41,9 @@ class Event(object):
         elif end_time == start_time:
             raise ValueError("The end_time %s is equal to the start_time %s.", end_time, start_time)
 
+        # The parent object holding this event. Most likely this is a event
+        # Catalog instance.
+        self.parent = parent
 
         # The unique database id.
         self.db_id = db_id
@@ -88,9 +92,15 @@ class Event(object):
             else:
                 creation_time = None
 
+            if self.parent is not None:
+                catalog_id = self.parent.db_id
+            else:
+                catalog_id = None
+
             db_session = project.getDbSession()
             db_event_orm = project.dbTables['event']
-            db_event = db_event_orm(start_time = self.start_time.timestamp,
+            db_event = db_event_orm(ev_catalog_id = catalog_id,
+                                    start_time = self.start_time.timestamp,
                                     end_time = self.end_time.timestamp,
                                     public_id = self.public_id,
                                     pref_origin_id = None,
@@ -114,6 +124,10 @@ class Event(object):
             query = db_session.query(db_event_orm).filter(db_event_orm.id == self.db_id)
             if db_session.query(query.exists()):
                 db_event = query.scalar()
+                if self.parent is not None:
+                    db_event.ev_catalog_id = self.parent.db_id
+                else:
+                    db_event.ev_catalog_id = None
                 db_event.start_time = self.start_time.timestamp
                 db_event.end_time = self.end_time.timestamp
                 db_event.public_id = self.public_id
