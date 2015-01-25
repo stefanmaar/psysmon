@@ -99,7 +99,7 @@ class EventTestCase(unittest.TestCase):
         tmp = result[0]
         self.assertEqual(tmp.start_time, event.start_time.timestamp)
         self.assertEqual(tmp.end_time, event.end_time.timestamp)
-        self.assertEqual(tmp.creation_time, event.creation_time.timestamp)
+        self.assertEqual(tmp.creation_time, event.creation_time.isoformat())
 
 
     def test_update_event_in_database(self):
@@ -132,6 +132,7 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(tmp.id, event.db_id)
         self.assertEqual(tmp.start_time, event.start_time.timestamp)
         self.assertEqual(tmp.end_time, event.end_time.timestamp)
+        self.assertEqual(tmp.creation_time, event.creation_time.isoformat())
 
 
 
