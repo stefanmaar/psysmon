@@ -41,8 +41,18 @@ class BulletinTestCase(unittest.TestCase):
         '''
         # Create an event with valid time limits.
         bulletin_file = os.path.join(self.data_path, 'bulletin_ims1.0_1.txt')
+        #bulletin_file = os.path.join(self.data_path, 'bulletin_zamg_ims1.0_1.txt')
         parser = bulletin.ImsParser()
-        catalogs = parser.parse(bulletin_file)
+        parser.parse(bulletin_file)
+        catalog = parser.get_catalog()
+
+        cur_events = catalog.events
+        self.assertEqual(len(cur_events), 1)
+        self.assertEqual(cur_events[0].public_id, '112460')
+        self.assertEqual(cur_events[0].description, 'Southeast of Honshu, Japan')
+
+
+
 
 
 

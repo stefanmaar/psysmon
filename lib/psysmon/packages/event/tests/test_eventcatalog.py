@@ -18,8 +18,8 @@ from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 
-from psysmon.packages.event.core import Event
-from psysmon.packages.event.core import Catalog
+import psysmon.packages.event.core as ev_core
+import psysmon.packages.event.bulletin as ev_bulletin
 
 
 
@@ -33,6 +33,10 @@ class EventCatalogTestCase(unittest.TestCase):
         logger = logging.getLogger('psysmon')
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler())
+
+        # Set the data path.
+        cls.data_path = os.path.dirname(os.path.abspath(__file__))
+        cls.data_path = os.path.join(cls.data_path, 'data')
 
         # Create an empty project.
         cls.psybase = create_psybase()
@@ -59,8 +63,9 @@ class EventCatalogTestCase(unittest.TestCase):
         ''' Test the pSysmon Event class.
         '''
         # Create an event with valid time limits.
-        catalog = Catalog()
-        self.assertIsInstance(catalog, Catalog)
+        catalog = ev_core.Catalog(name = 'test_name')
+        self.assertIsInstance(catalog, ev_core.Catalog)
+        self.assertEqual(catalog.name, 'test_name')
         self.assertIsNone(catalog.db_id)
         self.assertIsNone(catalog.description)
         self.assertIsNone(catalog.agency_uri)
@@ -72,13 +77,13 @@ class EventCatalogTestCase(unittest.TestCase):
     def test_add_events(self):
         ''' Test the add_events method.
         '''
-        catalog = Catalog()
+        catalog = ev_core.Catalog(name = 'test')
 
         # Create an event.
         start_time = '2000-01-01T00:00:00'
         end_time = '2000-01-01T01:00:00'
         creation_time = UTCDateTime()
-        event = Event(start_time = start_time,
+        event = ev_core.Event(start_time = start_time,
                       end_time = end_time,
                       creation_time = creation_time)
 
@@ -86,6 +91,124 @@ class EventCatalogTestCase(unittest.TestCase):
 
         self.assertEqual(len(catalog.events), 1)
         self.assertEqual(catalog.events[0], event)
+        self.assertEqual(event.parent, catalog)
+
+
+    def test_write_to_database(self):
+        ''' Test the write_to_database method.
+        '''
+        creation_time = UTCDateTime()
+        catalog = ev_core.Catalog(name = 'test',
+                          description = 'A test description.',
+                          agency_uri = 'uot',
+                          author_uri = 'tester',
+                          creation_time = creation_time)
+        catalog.write_to_database(self.project)
+
+        db_catalog_orm = self.project.dbTables['event_catalog']
+        db_session = self.project.getDbSession()
+        result = db_session.query(db_catalog_orm).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+        tmp = result[0]
+        self.assertEqual(tmp.name, 'test')
+        self.assertEqual(tmp.description, 'A test description.')
+        self.assertEqual(tmp.agency_uri, 'uot')
+        self.assertEqual(tmp.author_uri, 'tester')
+        self.assertEqual(tmp.creation_time, creation_time.isoformat())
+
+
+    def test_write_to_database_with_events(self):
+        ''' Test the writing to the database of a catalog with events.
+        '''
+        creation_time = UTCDateTime()
+        catalog = ev_core.Catalog(name = 'test',
+                          description = 'A test description.',
+                          agency_uri = 'uot',
+                          author_uri = 'tester',
+                          creation_time = creation_time)
+
+        # Create an event.
+        start_time = '2000-01-01T00:00:00'
+        end_time = '2000-01-01T01:00:00'
+        creation_time = UTCDateTime()
+        event = ev_core.Event(start_time = start_time,
+                      end_time = end_time,
+                      creation_time = creation_time)
+
+        catalog.add_events([event,])
+
+        catalog.write_to_database(self.project)
+
+        db_catalog_orm = self.project.dbTables['event_catalog']
+        db_session = self.project.getDbSession()
+        result = db_session.query(db_catalog_orm).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+        tmp = result[0]
+        self.assertEqual(len(tmp.events), 1)
+        self.assertEqual(tmp.events[0].ev_catalog_id, catalog.db_id)
+
+        # Add a second event.
+        start_time = '2000-01-02T00:00:00'
+        end_time = '2000-01-02T01:00:00'
+        creation_time = UTCDateTime()
+        event = ev_core.Event(start_time = start_time,
+                      end_time = end_time,
+                      creation_time = creation_time)
+
+        catalog.add_events([event,])
+        catalog.write_to_database(self.project)
+
+        db_session = self.project.getDbSession()
+        result = db_session.query(db_catalog_orm).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+        tmp = result[0]
+        self.assertEqual(len(tmp.events), 2)
+        self.assertEqual(tmp.events[0].ev_catalog_id, catalog.db_id)
+        self.assertEqual(tmp.events[1].ev_catalog_id, catalog.db_id)
+
+
+
+    def test_write_bulletin_to_database(self):
+        ''' Test the import of a bulletin into the database.
+        '''
+        bulletin_file = os.path.join(self.data_path, 'bulletin_ims1.0_1.txt')
+        parser = ev_bulletin.ImsParser()
+        parser.parse(bulletin_file)
+        catalog = parser.get_catalog(name = 'REB', agency_uri = 'REB')
+
+        catalog.write_to_database(self.project)
+
+        db_catalog_orm = self.project.dbTables['event_catalog']
+        db_session = self.project.getDbSession()
+        result = db_session.query(db_catalog_orm).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+        tmp = result[0]
+        self.assertEqual(tmp.name, 'REB')
+        self.assertEqual(len(tmp.events), 1)
+        cur_event = tmp.events[0]
+        self.assertEqual(cur_event.public_id, '112460')
+        self.assertEqual(cur_event.description, 'Southeast of Honshu, Japan')
+
+        # Clear the database tables.
+        clear_project_database_tables(self.project)
+
+        bulletin_file = os.path.join(self.data_path, 'bulletin_zamg_ims1.0_1.txt')
+        parser = ev_bulletin.ImsParser()
+        parser.parse(bulletin_file)
+        catalog = parser.get_catalog(name = 'ZAMG_AUTODRM', agency_uri = 'ZAMG')
+
+        catalog.write_to_database(self.project)
+
+        db_catalog_orm = self.project.dbTables['event_catalog']
+        db_session = self.project.getDbSession()
+        result = db_session.query(db_catalog_orm).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+
 
 
 
