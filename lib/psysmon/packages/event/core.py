@@ -79,6 +79,8 @@ class Event(object):
         self.author_uri = author_uri
 
         # The time of creation of this event.
+        if creation_time is None:
+            creation_time = utcdatetime.UTCDateTime()
         self.creation_time = utcdatetime.UTCDateTime(creation_time)
 
 
@@ -108,6 +110,7 @@ class Event(object):
                                     pref_focmec_id = None,
                                     ev_type = self.event_type,
                                     ev_type_certainty = self.event_type_certainty,
+                                    description = self.description,
                                     agency_uri = self.agency_uri,
                                     author_uri = self.author_uri,
                                     creation_time = creation_time
@@ -152,13 +155,15 @@ class Event(object):
 
 class Catalog(object):
 
-    def __init__(self, db_id = None, description = None, agency_uri = None,
-            author_uri = None, creation_time = None, events = []):
+    def __init__(self, name, db_id = None, description = None, agency_uri = None,
+            author_uri = None, creation_time = None, events = None):
         ''' Instance initialization.
         '''
-
         # The unique database ID.
         self.db_id = db_id
+
+        # The name of the catalog.
+        self.name = name
 
         # The description of the catalog.
         self.description = description
@@ -176,7 +181,10 @@ class Catalog(object):
             self.creation_time = utcdatetime.UTCDateTime(creation_time);
 
         # The events of the catalog.
-        self.events = events
+        if events is None:
+            self.events = []
+        else:
+            self.events = events
 
 
     def add_events(self, events):
@@ -190,4 +198,57 @@ class Catalog(object):
         for cur_event in events:
             cur_event.parent = self
         self.events.extend(events)
+
+
+    def write_to_database(self, project):
+        ''' Write the catalog to the database.
+
+        '''
+        if self.db_id is None:
+            # If the db_id is None, insert a new catalog.
+            if self.creation_time is not None:
+                creation_time = self.creation_time.isoformat()
+            else:
+                creation_time = None
+
+            db_session = project.getDbSession()
+            db_catalog_orm = project.dbTables['event_catalog']
+            db_catalog = db_catalog_orm(name = self.name,
+                                    description = self.description,
+                                    agency_uri = self.agency_uri,
+                                    author_uri = self.author_uri,
+                                    creation_time = creation_time
+                                   )
+            db_session.add(db_catalog)
+            db_session.commit()
+            self.db_id = db_catalog.id
+            db_session.close()
+
+        else:
+            # If the db_id is not None, update the existing event.
+            db_session = project.getDbSession()
+            db_catalog_orm = project.dbTables['event_catalog']
+            query = db_session.query(db_catalog_orm).filter(db_catalog_orm.id == self.db_id)
+            if db_session.query(query.exists()):
+                db_catalog = query.scalar()
+
+                db_catalog.name = self.name
+                db_catalog.description = self.description
+                db_catalog.agency_uri = self.agency_uri
+                db_catalog.author_uri = self.author_uri
+                if self.creation_time is not None:
+                    db_catalog.creation_time = self.creation_time.isoformat()
+                else:
+                    db_catalog.creation_time = None
+
+                db_session.commit()
+                db_session.close()
+            else:
+                raise RuntimeError("The event catalog with ID=%d was not found in the database.", self.db_id)
+
+
+        # Write or update all events of the catalog to the database.
+        for cur_event in self.events:
+            cur_event.write_to_database(project)
+
 
