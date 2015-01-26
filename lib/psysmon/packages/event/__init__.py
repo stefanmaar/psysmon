@@ -47,24 +47,25 @@ def databaseFactory(base):
     class EventCatalogDb(base):
         __tablename__  = 'event_catalog'
         __table_args__ = (
-                          UniqueConstraint('public_id'),
+                          UniqueConstraint('name'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
         id = Column(Integer, primary_key = True, autoincrement = True)
-        public_id = Column(String(255), nullable = True)
+        name = Column(String(255), nullable = False)
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
-        events = relationship('EventDb', 
+        events = relationship('EventDb',
                                cascade = 'all',
-                               backref = 'parent')
+                               backref = 'parent',
+                               lazy = 'subquery')
 
-        def __init__(self, public_id, description, agency_uri,
+        def __init__(self, name, description, agency_uri,
                      author_uri, creation_time):
-            self.public_id = public_id
+            self.name = name
             self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
@@ -80,7 +81,7 @@ def databaseFactory(base):
     class EventDb(base):
         __tablename__  = 'event'
         __table_args__ = (
-                          UniqueConstraint('public_id'),
+                          UniqueConstraint('ev_catalog_id', 'public_id'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
@@ -108,8 +109,8 @@ def databaseFactory(base):
 
         def __init__(self, ev_catalog_id, start_time, end_time, public_id,
                      pref_origin_id, pref_magnitude_id, pref_focmec_id, ev_type,
-                     ev_type_certainty, agency_uri, author_uri, creation_time):
-            ev_catalog_id = ev_catalog_id
+                     ev_type_certainty, description, agency_uri, author_uri, creation_time):
+            self.ev_catalog_id = ev_catalog_id
             self.start_time = start_time
             self.end_time = end_time
             self.public_id = public_id
@@ -118,6 +119,7 @@ def databaseFactory(base):
             self.pref_focmec_id = pref_focmec_id
             self.ev_type = ev_type
             self.ev_type_certainty = ev_type_certainty
+            self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
