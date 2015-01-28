@@ -953,7 +953,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
 
     def onCollectionExecutionMessage(self, msg):
-        self.logger.debug('Received pubsub message: %s', msg)
+        #self.logger.debug('Received pubsub message: %s', msg)
 
         if 'started' in msg['state']:
             self.addThread(msg)
@@ -980,10 +980,10 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.processMap[data['procName']] = index
 
     def updateThread(self, data):
-        self.logger.debug('updating process: %s', data['procName'])
+        #self.logger.debug('updating process: %s', data['procName'])
         if data['procName'] in self.processMap.keys():
             curIndex = self.processMap[data['procName']]
-            self.logger.debug('process has index: %d', curIndex)
+            #self.logger.debug('process has index: %d', curIndex)
             wx.CallAfter(self.processes.SetStringItem, curIndex, 3, data['state'])
             duration = data['curTime'] - data['startTime']
             wx.CallAfter(self.processes.SetStringItem, curIndex, 4, str(duration))
