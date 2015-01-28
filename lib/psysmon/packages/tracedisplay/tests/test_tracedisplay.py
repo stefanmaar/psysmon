@@ -58,6 +58,7 @@ class TracedisplayTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
         print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
         print "removing temporary file structure....\n"
