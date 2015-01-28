@@ -392,6 +392,12 @@ class Project:
             self.logger = logging.getLogger(loggerName)
 
 
+    def export_data(self, uri, data):
+        ''' Register data to be exported by the project server.
+        '''
+        self.psybase.project_server.register_data(uri, data)
+
+
     def get_rid(self):
         ''' Get the resource id of the current project-user.
 
@@ -1256,15 +1262,15 @@ class User:
             self.logger.debug("Checking process...")
             lastResponse = 0
             while procRunning:
-                self.logger.debug("Waiting for message...")
+                #self.logger.debug("Waiting for message...")
 
                 procStatus = proc.poll()
 
-                self.logger.debug('procStatus: %s', procStatus)
+                #self.logger.debug('procStatus: %s', procStatus)
 
                 if procStatus != None:
                     procRunning = False
-                    self.logger.debug('Process %d has stopped with return code %s.', proc.pid, procStatus)
+                    #self.logger.debug('Process %d has stopped with return code %s.', proc.pid, procStatus)
                     msgTopic = 'state.collection.execution'
                     msg['state'] = 'stopped'
                     msg['pid'] = proc.pid
@@ -1273,7 +1279,7 @@ class User:
                     CallAfter(pub.sendMessage, msgTopic, msg = msg)
 
                 else:
-                    self.logger.debug('Process %d is still running.', proc.pid)
+                    #self.logger.debug('Process %d is still running.', proc.pid)
                     msgTopic = 'state.collection.execution'
                     msg['state'] = 'running'
                     msg['pid'] = proc.pid
@@ -1309,7 +1315,7 @@ class User:
                     #procRunning = False
                    # isZombie = True
 
-            self.logger.debug("End checking process %d.", proc.pid)
+            #self.logger.debug("End checking process %d.", proc.pid)
 
 
         if self.activeCollection:
@@ -1350,6 +1356,7 @@ class User:
             db['packages'] = project.psybase.packageMgr.packages
             db['package_directories'] = project.psybase.packageMgr.packageDirectories
             db['waveclient'] = [(x.name, x.mode, x.options) for x in project.waveclient.itervalues()]
+            db['project_server'] = project.psybase.project_server
             db.close()
 
 

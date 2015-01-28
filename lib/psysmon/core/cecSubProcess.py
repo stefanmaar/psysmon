@@ -59,6 +59,7 @@ if __name__ == "__main__":
     collection = db['collection']
     packages = db['packages']
     waveclients = db['waveclient']
+    project_server = db['project_server']
     db.close()
 
     #logfileName = os.path.join(tempfile.gettempdir(), procName + '.log')
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
-    psyBase = psybase.Base(psyBaseDir)
+    psyBase = psybase.Base(psyBaseDir, project_server = project_server)
     psyBase.project = project
 
     # Reinitialize the project.
