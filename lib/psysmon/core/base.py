@@ -34,15 +34,18 @@ This module contains the basic classes needed to run the pSysmon program.
 import os
 import logging
 import shelve
+import threading
 from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
 import psysmon.core.util
+import psysmon.core.project_server
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+import Pyro4 as pyro
 
 
 class Base:
@@ -81,7 +84,7 @@ class Base:
 
     '''
 
-    def __init__(self, baseDir, package_directory = None):
+    def __init__(self, baseDir, package_directory = None, project_server = None):
         '''The constructor.
 
         Create an instance of the Base class.
@@ -131,6 +134,47 @@ class Base:
         # Load the psysmon packages.
         self.packageMgr.scan4Package()
 
+        # The pyro nameserver name of the project server.
+        self.pyro_project_server_name = 'psysmon.project_server'
+
+        # The pyro project data server.
+        if project_server is None:
+            self.project_server = psysmon.core.project_server.ProjectServer()
+
+            # Start the pyro project server.
+            self.ps_thread = threading.Thread(target = self.start_project_server)
+            self.ps_thread.start()
+        else:
+            self.project_server = project_server
+
+
+    def start_project_server(self):
+        ''' Start the pyro project server.
+        '''
+        self.pyro_daemon = pyro.Daemon()
+        self.pyro_nameserver = pyro.locateNS()
+        self.pyro_project_server_uri = self.pyro_daemon.register(self.project_server)
+        # Check if the name is available at the nameserver.
+        ns_list = self.pyro_nameserver.list(prefix = 'psysmon.project_server')
+        if len(ns_list) > 0:
+            ps_id = sorted(ns_list.keys())[-1].split('_')[-1]
+            if ps_id.isdigit() is False:
+                ps_id = 1
+            else:
+                ps_id = int(ps_id) + 1
+            self.pyro_project_server_name = self.pyro_project_server_name + '_' + str(ps_id)
+        self.pyro_nameserver.register(self.pyro_project_server_name, self.pyro_project_server_uri)
+        self.logger.info('Registered the project_server as %s with pyro uri: %s', 
+                          self.pyro_project_server_name, 
+                          self.pyro_project_server_uri)
+        self.pyro_daemon.requestLoop()
+
+
+    def stop_project_server(self):
+        ''' Stop the pyro project server.
+        '''
+        self.pyro_nameserver.remove(self.pyro_project_server_name)
+        self.pyro_daemon.shutdown()
 
 
     def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):
