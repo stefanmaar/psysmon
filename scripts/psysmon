@@ -76,12 +76,12 @@ def run():
     '''
     logger = logging.getLogger('psysmon')
     logger.setLevel(psysmon.logConfig['level'])
-    #logger.addHandler(psysmon.getLoggerHandler())
+    logger.addHandler(psysmon.getLoggerHandler())
 
 
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
-    print "psyBaseDir: %s" % psyBaseDir
+    logger.debug("psyBaseDir: %s", psyBaseDir)
 
     # Initialize the pSysmon base object.
     psyBase = psybase.Base(psyBaseDir)
@@ -98,6 +98,9 @@ def run():
     psysmonMain.Show()
 
     app.MainLoop()
+
+    # Stop the project server.
+    psyBase.stop_project_server()
 
 
 if __name__ == '__main__':
