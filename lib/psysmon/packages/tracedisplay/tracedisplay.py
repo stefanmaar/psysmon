@@ -365,6 +365,8 @@ class TraceDisplayDlg(wx.Frame):
         # Show the frame. 
         self.Show(True)
 
+        self.project.export_data('my.uri', 'Test String')
+
 
     def init_user_selection(self):
         if self.collectionNode.property['start_time']:
