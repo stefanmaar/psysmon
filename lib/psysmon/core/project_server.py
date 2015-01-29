@@ -76,3 +76,19 @@ class ProjectServer(object):
             raise ValueError('The given uri %s already exists in the data dictionary.', uri)
 
 
+    @pyro.expose
+    def unregister_data(self, uri, recursive = False):
+        ''' Remove selected data from the the server.
+        '''
+        if recursive is True:
+            data_to_remove = [x for x in self.data.keys() if x.startswith(uri)]
+        else:
+            data_to_remove = [uri,]
+
+        for cur_key in data_to_remove:
+            if cur_key in self.data.keys():
+                self.data.pop(cur_key)
+
+
+
+
