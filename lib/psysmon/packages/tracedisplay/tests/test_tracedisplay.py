@@ -81,6 +81,7 @@ class TracedisplayTestCase(unittest.TestCase):
 
 
     def tearDown(self):
+        self.psybase.project_server.unregister_data()
         print "\n\nEs war sehr schoen - auf Wiederseh'n.\n"
 
     def testDlg(self):
