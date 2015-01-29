@@ -46,7 +46,7 @@ from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from obspy.core import UTCDateTime
+import obspy.core.utcdatetime as utcdatetime
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.util
 
@@ -265,7 +265,7 @@ class Project:
 
         # The time when the project has been created.
         if createTime is None:
-            self.createTime = UTCDateTime()
+            self.createTime = utcdatetime.UTCDateTime()
         else:
             self.createTime = createTime
 
@@ -350,6 +350,20 @@ class Project:
     def projectDir(self):
         return os.path.join(self.base_dir, self.slug)
 
+    @property
+    def rid(self):
+        ''' The resource id of the current project-user.
+
+        Returns
+        -------
+        rid : String
+            The resource id of the current project user:
+            smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
+        '''
+        project_uri = self.slug
+        return 'smi:' + self.activeUser.get_rid() + '/psysmon/' + project_uri
+
+
     ## The __getstate__ method.
     #
     # Remove the project instance before pickling the instance.
@@ -398,20 +412,6 @@ class Project:
         self.psybase.project_server.register_data(uri, data)
 
 
-    def get_rid(self):
-        ''' Get the resource id of the current project-user.
-
-        Returns
-        -------
-        rid : String
-            The resource id of the current project user:
-            smi:AGENCY_URI.AUTHOR_URI/psysmon/PROJECT_NAME
-        '''
-        project_uri = self.slug
-        return 'smi:' + self.activeUser.get_rid() + '/psysmon/' + project_uri
-
-    # Define an attribute usint the property function.
-    rid = property(get_rid)
 
 
     def getPlugins(self, name):
@@ -470,7 +470,7 @@ class Project:
         '''
         for curUser in self.user:
             for curCollection in curUser.collection.itervalues():
-                curCollection.setNodeProject(self)
+                curCollection.set_project(self)
 
 
     def addWaveClient(self, waveclient):
@@ -1090,7 +1090,7 @@ class User:
         if not isinstance(self.collection, dict):
             self.collection = {}
 
-        self.collection[name] = psysmon.core.base.Collection(name, tmpDir = project.tmpDir)
+        self.collection[name] = psysmon.core.base.Collection(name, tmpDir = project.tmpDir, project = project)
         self.setActiveCollection(name)
 
 
@@ -1324,7 +1324,7 @@ class User:
 
             col2Proc = copy.deepcopy(self.activeCollection)
             curTime = datetime.now()
-            timeStampString = datetime.strftime(curTime, '%Y%m%d%H%M%S%f')
+            timeStampString = datetime.strftime(curTime,'%Y%m%d_%H%M%S_%f')
             processName = col2Proc.name + "_" + timeStampString
             col2Proc.procName = col2Proc.name + "_" + timeStampString
 
