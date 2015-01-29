@@ -134,6 +134,12 @@ class Base:
         # Load the psysmon packages.
         self.packageMgr.scan4Package()
 
+        # Metadata of the process in which the base instance is running. This
+        # is used when creating new processes with cecSubprocess.
+        self.process_meta = {}
+        self.process_meta['name'] = 'main'
+        self.process_meta['pid'] = None
+
         # The pyro nameserver name of the project server.
         self.pyro_project_server_name = 'psysmon.project_server'
 
@@ -152,29 +158,37 @@ class Base:
         ''' Start the pyro project server.
         '''
         self.pyro_daemon = pyro.Daemon()
-        self.pyro_nameserver = pyro.locateNS()
         self.pyro_project_server_uri = self.pyro_daemon.register(self.project_server)
-        # Check if the name is available at the nameserver.
-        ns_list = self.pyro_nameserver.list(prefix = 'psysmon.project_server')
-        if len(ns_list) > 0:
-            ps_id = sorted(ns_list.keys())[-1].split('_')[-1]
-            if ps_id.isdigit() is False:
-                ps_id = 1
-            else:
-                ps_id = int(ps_id) + 1
-            self.pyro_project_server_name = self.pyro_project_server_name + '_' + str(ps_id)
-        self.pyro_nameserver.register(self.pyro_project_server_name, self.pyro_project_server_uri)
-        self.logger.info('Registered the project_server as %s with pyro uri: %s', 
-                          self.pyro_project_server_name, 
-                          self.pyro_project_server_uri)
+        try:
+            self.pyro_nameserver = pyro.locateNS()
+            # Check if the name is available at the nameserver.
+            ns_list = self.pyro_nameserver.list(prefix = 'psysmon.project_server')
+            if len(ns_list) > 0:
+                ps_id = sorted(ns_list.keys())[-1].split('_')[-1]
+                if ps_id.isdigit() is False:
+                    ps_id = 1
+                else:
+                    ps_id = int(ps_id) + 1
+                self.pyro_project_server_name = self.pyro_project_server_name + '_' + str(ps_id)
+            self.pyro_nameserver.register(self.pyro_project_server_name, self.pyro_project_server_uri)
+            self.logger.info('Registered the project_server as %s with pyro uri: %s', 
+                              self.pyro_project_server_name, 
+                              self.pyro_project_server_uri)
+        except:
+            self.pyro_nameserver = None
+            self.logger.warning('No pyro4 nameserver found.')
+            self.logger.info('Registered the project server with pyro uri: %s.', self.pyro_project_server_uri)
         self.pyro_daemon.requestLoop()
 
 
     def stop_project_server(self):
         ''' Stop the pyro project server.
         '''
-        self.pyro_nameserver.remove(self.pyro_project_server_name)
-        self.pyro_daemon.shutdown()
+        try:
+            if self.pyro_nameserver is not None:
+                self.pyro_nameserver.remove(self.pyro_project_server_name)
+        finally:
+            self.pyro_daemon.shutdown()
 
 
     def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):
@@ -487,7 +501,7 @@ class Collection:
         Collection log files are saved there.
     '''
 
-    def __init__(self, name, tmpDir = '.', nodes = []):
+    def __init__(self, name, tmpDir = '.', nodes = None, project = None):
         ''' The constructor.
 
         Parameters
@@ -498,12 +512,19 @@ class Collection:
         tmpDir : String
             The project's temporary directory.
         '''
+        # The parent instance holding the collection.
+        self.project = project
 
         ## The name of the collection.
         self.name = name
 
         ## A list CollectionNode objects contained in the collection.
+        if nodes is None:
+            nodes = []
         self.nodes = nodes
+
+        for cur_node in self.nodes:
+            cur_node.parentCollection = self
 
         ## The project's temporary directory.
         #
@@ -528,6 +549,46 @@ class Collection:
             The node at position index.
         '''
         return self.nodes[index]
+
+
+    @property
+    def rid(self):
+        ''' The resource ID of the collection node.
+        '''
+        if self.project is not None:
+            rid = self.project.rid + '/' + self.p_name
+        else:
+            rid = self.name
+
+        return rid
+
+
+    @property
+    def p_name(self):
+        ''' The process name running the current collection node.
+        '''
+        if self.project is not None and self.project.psybase is not None:
+            p_name = self.project.psybase.process_meta['name']
+        else:
+            p_name = ''
+
+        return p_name
+
+
+    def __getstate__(self):
+        ''' Remove the project instance before pickling the instance.
+        '''
+        result = self.__dict__.copy()
+        del result['project']
+        return result
+
+
+    def __setstate__(self, d):
+        ''' Fill the attributes after unpickling.
+        '''
+        self.__dict__.update(d) # I *think* this is a safe way to do it
+        self.project = None
+
 
 
     def setDataShelfFile(self, filename):
@@ -674,16 +735,20 @@ class Collection:
             sleep(heartbeatInterval)
 
 
-    def setNodeProject(self, project):
-        ''' Set the the project attribute of all nodes in the collection.
+    def set_project(self, project):
+        ''' Set the project of the collection.
+
+        Update the project of the collection nodes as well.
 
         Parameters
         ----------
         project : :class:`~psysmon.core.project.Project`
             The working psysmon project.
         '''
+        self.project = project
+
         for curNode in self.nodes:
-            curNode.project = project
+            curNode.project = self.project
 
 
     def createNodeLoggers(self):
