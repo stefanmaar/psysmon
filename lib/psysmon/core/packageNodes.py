@@ -158,6 +158,17 @@ class CollectionNode:
         # assigned.
         self.procName = None
 
+    @property
+    def rid(self):
+        ''' The resource ID of the collection node.
+        '''
+        if self.parentCollection is not None:
+            rid = self.parentCollection.rid + '/' + self.name
+        else:
+            rid = self.name
+
+        return rid
+
 
     ## The __getstate__ method.
     #
@@ -180,6 +191,7 @@ class CollectionNode:
 
         #if not "options" in dir(self):
         #    self.options = self.property
+
 
 
     ## Set the name of the collection node package.
