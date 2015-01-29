@@ -30,7 +30,8 @@ plugin_modules = ['plugins_componentselectors',
                   'plugins_processingstack',
                   'plugins_sonification',
                   'plugins_views',
-                  'plugins_zoom']
+                  'plugins_zoom',
+                  'plugins_export']
 
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = ['tracedisplay', ]
