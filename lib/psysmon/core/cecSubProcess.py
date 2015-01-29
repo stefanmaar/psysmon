@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     # The process name and the temp. file are passes as arguments. 
     filename = sys.argv[1]
-    procName = sys.argv[2]
+    proc_name = sys.argv[2]
 
     # Get the execution parameters from the ced file.
     db = shelve.open(filename)
@@ -62,15 +62,15 @@ if __name__ == "__main__":
     project_server = db['project_server']
     db.close()
 
-    #logfileName = os.path.join(tempfile.gettempdir(), procName + '.log')
-    logfileName = os.path.join(project.tmpDir, procName + '.log')
+    #logfileName = os.path.join(tempfile.gettempdir(), proc_name + '.log')
+    logfileName = os.path.join(project.tmpDir, proc_name + '.log')
 
     logger = logging.getLogger('psysmon')
     logger.setLevel(psysmon.logConfig['level'])
     logger.addHandler(psysmon.getLoggerFileHandler(logfileName))
     logger.addHandler(psysmon.getLoggerHandler())
 
-    logger.info('Starting process %s', procName)
+    logger.info('Starting process %s', proc_name)
     logger.info('Loading data from file %s', filename)
 
     logger.info('Project: %s', project)
@@ -82,6 +82,9 @@ if __name__ == "__main__":
     psyBaseDir = os.path.dirname(psyBaseDir)
     psyBase = psybase.Base(psyBaseDir, project_server = project_server)
     psyBase.project = project
+    psyBase.process_meta['name'] = proc_name
+    psyBase.process_meta['pid'] = os.getpid()
+
 
     # Reinitialize the project.
     project.connect2Db()
@@ -98,7 +101,7 @@ if __name__ == "__main__":
         if waveclient != None:
             project.addWaveClient(waveclient)
 
-    collection.setNodeProject(project) 
+    collection.set_project(project)
     collection.createNodeLoggers()
 
     project.psybase = psyBase
@@ -108,6 +111,8 @@ if __name__ == "__main__":
     collection.execute()
 
     logger.info('Finished the execution. Cleaning up....')
+    logger.info('Unregistering the exported data from the project server.')
+    psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
     logger.info('Deleting data file %s.', filename)
     os.remove(filename)
 
