@@ -32,9 +32,11 @@ This module contains the classes to run the psysmon project server system
 '''
 
 import logging
+import re
 
 import Pyro4 as pyro
 pyro.config.REQUIRE_EXPOSE = True
+pyro.config.SERIALIZERS_ACCEPTED = set(('pickle', ))
 
 class ProjectServer(object):
     ''' Provide remote access to project data.
@@ -53,11 +55,18 @@ class ProjectServer(object):
 
 
     @pyro.expose
-    def get_data(self, uri):
+    def get_data(self, uri = None, exact = True):
         ''' Get the dataserver of a current project.
         '''
-        if uri in self.data.keys():
+        if uri is None:
+            return self.data
+        elif exact is True and uri in self.data.keys():
             return self.data[uri]
+        elif exact is False:
+            keys_to_return = [x for x in self.data.keys() if re.search(uri, x) is not None]
+            return [self.data[x] for x in keys_to_return]
+        else:
+            return None
 
     @pyro.expose
     def list_data(self):
@@ -77,10 +86,12 @@ class ProjectServer(object):
 
 
     @pyro.expose
-    def unregister_data(self, uri, recursive = False):
+    def unregister_data(self, uri = None, recursive = False):
         ''' Remove selected data from the the server.
         '''
-        if recursive is True:
+        if uri is None:
+            data_to_remove = self.data.keys()
+        elif recursive is True:
             data_to_remove = [x for x in self.data.keys() if x.startswith(uri)]
         else:
             data_to_remove = [uri,]
