@@ -372,6 +372,12 @@ class TraceDisplayDlg(wx.Frame):
         return self.dataManager.get_proc_stream(scnl = self.displayManager.getSCNL(source = 'show'))
 
 
+    @property
+    def original_data(self):
+        ''' The current original data.
+        '''
+        return self.dataManager.get_orig_stream(scnl = self.displayManager.getSCNL(source = 'show'))
+
 
     def init_user_selection(self):
         if self.collectionNode.property['start_time']:
@@ -1766,7 +1772,7 @@ class DataManager():
         cur_stream = Stream()
 
         for curStat, curChan, curNet, curLoc in scnl:
-            cur_stream += self.origStream.select(station = curStat,
+            cur_stream += self.procStream.select(station = curStat,
                                                  network = curNet,
                                                  location = curLoc,
                                                  channel = curChan)
@@ -1774,6 +1780,18 @@ class DataManager():
         return cur_stream
 
 
+    def get_orig_stream(self, scnl):
+        ''' Get the original stream matching the scnl codes.
+        '''
+        cur_stream = Stream()
+
+        for curStat, curChan, curNet, curLoc in scnl:
+            cur_stream += self.origStream.select(station = curStat,
+                                                 network = curNet,
+                                                 location = curLoc,
+                                                 channel = curChan)
+
+        return cur_stream
 
 
 
