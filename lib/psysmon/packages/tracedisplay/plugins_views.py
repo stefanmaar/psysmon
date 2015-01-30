@@ -23,12 +23,8 @@ import wx
 import numpy as np
 from matplotlib.patches import Rectangle
 from psysmon.core.plugins import AddonPlugin
-from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
-from obspy.core import UTCDateTime
-import wx.lib.mixins.listctrl as listmix
-from psysmon.core.gui import psyContextMenu
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 
@@ -56,6 +52,13 @@ class SeismogramPlotter(AddonPlugin):
 
         # Define the plugin icons.
         self.icons['active'] = icons.waveform_icon_16
+
+        # Add the plugin preferences.
+        item = preferences_manager.CheckBoxPrefItem(name = 'show envelope',
+                                                value = False
+                                               )
+        self.pref_manager.add_item(item = item)
+
 
 
     def plot(self, displayManager, dataManager):
@@ -97,7 +100,8 @@ class SeismogramPlotter(AddonPlugin):
 
             if curStream:
                 lineColor = [x/255.0 for x in curChannel.container.color]
-                curView.plot(curStream, lineColor)
+                curView.plot(curStream, lineColor,
+                             show_envelope = self.pref_manager.get_value('show envelope'))
 
             curView.setXLimits(left = displayManager.startTime.timestamp,
                                right = displayManager.endTime.timestamp)
@@ -135,9 +139,11 @@ class SeismogramView(View):
 
         self.line = None
 
+        self.envelope_line = None
 
 
-    def plot(self, stream, color):
+
+    def plot(self, stream, color, show_envelope = False):
 
 
         # Plotten der MinMax Daten aus pytswd.
@@ -151,22 +157,26 @@ class SeismogramView(View):
         #display_size = wx.GetDisplaySize()
         axes_width = self.dataAxes.get_window_extent().width
         data_plot_limit = axes_width * 0.75
-        print 'data_plot_limit: %f' % data_plot_limit
+        self.logger.debug('data_plot_limit: %f', data_plot_limit)
         #data_plot_limit = 1e20
         for trace in stream:
             if trace.stats.npts > data_plot_limit and (len(trace) / trace.stats.sampling_rate) > 20:
                 # Plot minmax values
-                print 'Plotting in minmax mode.'
+                self.logger.info('Plotting in minmax mode.')
                 sample_step = np.ceil(len(trace.data) / data_plot_limit)
-                print "len(trace.data): %f" % len(trace.data)
-                print 'sample_step: %f' % sample_step
+                self.logger.debug("len(trace.data): %f", len(trace.data))
+                self.logger.debug('sample_step: %f', sample_step)
                 trace_data = self.compute_minmax_data(trace.data, sample_step)
                 time_step = sample_step / trace.stats.sampling_rate
                 minmax_time = np.array([trace.stats.starttime.timestamp + x * time_step for x in range(int(np.floor(len(trace.data) / sample_step)))])
                 minmax_time = minmax_time.repeat(2)
                 timeArray = minmax_time
+
+                if show_envelope is True:
+                    trace_envelope = np.abs(trace_data)
+
             else:
-                print 'Plotting in FULL mode.'
+                self.logger.info('Plotting in FULL mode.')
                 timeArray = np.arange(0, trace.stats.npts)
                 timeArray = timeArray / trace.stats.sampling_rate
                 timeArray = timeArray + trace.stats.starttime.timestamp
@@ -177,15 +187,29 @@ class SeismogramView(View):
 
                 trace_data = trace.data
 
+                if show_envelope is True:
+                    trace_envelope = np.abs(trace_data)
+
             self.t0 = trace.stats.starttime
 
-            print 'len(trace_data): %d' % len(trace_data)
+            self.logger.debug('len(trace_data): %d', len(trace_data))
 
-            if not self.line:
+            if self.line is None:
                 self.line, = self.dataAxes.plot(timeArray, trace_data, color = color)
             else:
                 self.line.set_xdata(timeArray)
                 self.line.set_ydata(trace_data)
+
+            if show_envelope is True:
+                if self.envelope_line is None:
+                    self.envelope_line, = self.dataAxes.plot(timeArray, trace_envelope, color = 'r')
+                else:
+                    self.envelope_line.set_xdata(timeArray)
+                    self.envelope_line.set_ydata(trace_envelope)
+            else:
+                # TODO: Remove the envelope line.
+                pass
+
 
             self.dataAxes.set_frame_on(False)
             self.dataAxes.get_xaxis().set_visible(False)
