@@ -79,10 +79,8 @@ class ProjectServer(object):
     def register_data(self, uri, data):
         ''' Register data to be exported by the server.
         '''
-        if uri not in self.data.keys():
-            self.data[uri] = data
-        else:
-            raise ValueError('The given uri %s already exists in the data dictionary.', uri)
+        # TODO: Add some checks for the data which is registered.
+        self.data[uri] = data
 
 
     @pyro.expose
