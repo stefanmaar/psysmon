@@ -52,4 +52,4 @@ class ExportVisible(plugins.CommandPlugin):
         ''' Export the visible data to the project server.
         '''
         self.parent.project.export_data(uri = self.parent.collection_node.rid + '/proc_stream',
-                                        data = self.parent.dataManager.procStream)
+                                        data = self.parent.visible_data)
