@@ -137,13 +137,9 @@ class Field(wx.Panel):
     def setPrefValue(self):
         self.pref_item.value = self.controlElement.GetValue()
 
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.      
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.controlElement.SetValue(value)
+
+    def setControlElementValue(self):
+        self.controlElement.SetValue(self.pref_item.value)
 
 
 
@@ -308,9 +304,6 @@ class StaticBoxContainer(wx.Panel):
         field.Reparent(self)
         #field.options = self.options
 
-        #if field.optionsKey in self.options.keys():
-        #    field.setDefaultValue(self.options[field.optionsKey])
-
         #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
         self.sizer.Add(field, pos = (len(self.fieldList)+1, 0), flag=wx.EXPAND)
 
@@ -375,12 +368,12 @@ class TextEditField(Field):
         # Create the field text control.
         self.controlElement = wx.TextCtrl(self, wx.ID_ANY)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the events.
         self.Bind(wx.EVT_TEXT, self.onValueChange, self.controlElement)
@@ -423,12 +416,12 @@ class IntegerCtrlField(Field):
         # Create the field spincontrol.
         self.controlElement = intctrl.IntCtrl(self, wx.ID_ANY)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-        
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the events.
         self.Bind(intctrl.EVT_INT, self.onValueChange, self.controlElement)
@@ -471,12 +464,12 @@ class IntegerRangeField(Field):
         self.controlElement = wx.SpinCtrl(self, wx.ID_ANY)
         self.controlElement.SetRange(pref_item.limit[0], pref_item.limit[1])
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the event.
         self.Bind(wx.EVT_SPINCTRL, self.onValueChange, self.controlElement)
@@ -515,12 +508,12 @@ class CheckBoxField(Field):
                                           label = '',
                                           id=wx.ID_ANY)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-
         # Add the elements to the field sizer.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the events.
         self.Bind(wx.EVT_CHECKBOX, self.onValueChange, self.controlElement)
@@ -569,12 +562,12 @@ class FloatSpinField(Field):
                                       digits = pref_item.digits,
                                       agwStyle=FS.FS_LEFT)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-
         # Add the elements to the field sizer.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the events.
         self.Bind(FS.EVT_FLOATSPIN, self.onValueChange, self.controlElement)
@@ -621,8 +614,8 @@ class SingleChoiceField(Field):
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the events.
         self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
@@ -637,15 +630,9 @@ class SingleChoiceField(Field):
         self.pref_item.value = self.controlElement.GetStringSelection()
 
 
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.  
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        pos = self.controlElement.FindString(value)
+    def setControlElementValue(self):
+        pos = self.controlElement.FindString(self.pref_item.value)
         self.controlElement.SetSelection(pos)
-
 
 
 ## The MultiChoiceField class.
@@ -691,10 +678,10 @@ class MultiChoiceField(Field):
 
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
-        
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-        
+
+        # Set the value of the control element.
+        self.setControlElementValue()
+
         # Bind the events.
         self.Bind(wx.EVT_LISTBOX, self.onValueChange, self.controlElement)
         #self.Bind(wx.EVT_CHOICE, self.onValueChange, self.controlElement)
@@ -713,21 +700,15 @@ class MultiChoiceField(Field):
         self.pref_item.value = selectedStrings
 
 
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.  
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        for curValue in value:
-            self.controlElement.SetStringSelection(curValue) 
-
+    def setControlElementValue(self):
+        for curValue in self.pref_item.value:
+            self.controlElement.SetStringSelection(curValue)
 
 
 
 class FileBrowseField(Field):
     ''' The fileBrowseField class.
-    
+
     A field to select a single file using a file select dialog.
     '''
 
@@ -768,9 +749,8 @@ class FileBrowseField(Field):
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
 
-
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
+        # Set the value of the control element.
+        self.setControlElementValue()
 
 
     def setPrefValue(self):
@@ -779,16 +759,6 @@ class FileBrowseField(Field):
         self.pref_item.value = self.controlElement.GetValue()
 
 
-    def setDefaultValue(self, value):
-        ''' Set the value of the field control element.
-
-        Parameters
-        ----------
-        value : String
-            The new value of the filebrowse control element.
-        '''
-        self.defaultValue = value
-        self.controlElement.SetValue(value)
 
 
 class DirBrowseField(Field):
@@ -834,8 +804,8 @@ class DirBrowseField(Field):
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
+        # Set the value of the control element.
+        self.setControlElementValue()
 
 
     def setPrefValue(self):
@@ -844,18 +814,6 @@ class DirBrowseField(Field):
         self.pref_item.value = self.controlElement.GetValue()
         self.pref_item.start_directory = self.pref_item.value
 
-
-    def setDefaultValue(self, value):
-        ''' Set the value of the field control element.
-
-        Parameters
-        ----------
-        value : String
-            The new value of the filebrowse control element.
-        '''
-        self.defaultValue = value
-        self.controlElement.SetValue(value)
-        #self.controlElement.startDirectory = value
 
 
 class DateTimeEditField(Field):
@@ -892,12 +850,12 @@ class DateTimeEditField(Field):
         # Create the field text control.
         self.controlElement = wx.TextCtrl(self, wx.ID_ANY)
 
-        # Set the default value of the field.
-        self.setDefaultValue(pref_item.default)
-
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+        # Set the value of the control element.
+        self.setControlElementValue()
 
         # Bind the events.
         self.Bind(wx.EVT_TEXT, self.onValueChange, self.controlElement)
@@ -910,13 +868,9 @@ class DateTimeEditField(Field):
         self.pref_item.value = udt.UTCDateTime(self.controlElement.GetValue())
 
 
-    ## Set the default value of the field element.  
-    #
-    # @param self The object pointer.
-    # @param value The value to be set.  
-    def setDefaultValue(self, value):
-        self.defaultValue = value
-        self.controlElement.SetValue(value.isoformat())
+    def setControlElementValue(self):
+        self.controlElement.SetValue(self.pref_item.value.isoformat())
+
 
 
 # Define the assignment of the field type and the GUI representation.
