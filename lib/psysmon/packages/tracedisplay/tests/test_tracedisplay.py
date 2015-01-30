@@ -28,6 +28,7 @@ from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 from psysmon.core.test_util import clear_database_tables
 import psysmon.core.gui as psygui
+import obspy.core.utcdatetime as utcdatetime
 
 
 class TracedisplayTestCase(unittest.TestCase):
@@ -74,6 +75,9 @@ class TracedisplayTestCase(unittest.TestCase):
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('tracedisplay')
         self.node = nodeTemplate()
         self.node.project = self.project
+
+        self.node.pref_manager.set_value('start_time', utcdatetime.UTCDateTime('2010-08-31T08:00:00'))
+        self.node.pref_manager.set_value('duration', 60)
 
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__
