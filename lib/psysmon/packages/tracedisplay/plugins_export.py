@@ -25,13 +25,13 @@ import psysmon.artwork.icons as icons
 
 
 class ExportVisible(plugins.CommandPlugin):
-    '''
+    ''' Export the visible (processed) data to the project server.
 
     '''
     nodeClass = 'TraceDisplay'
 
 
-    def __init__(self): 
+    def __init__(self):
         ''' Initialize the instance.
 
         '''
@@ -53,3 +53,34 @@ class ExportVisible(plugins.CommandPlugin):
         '''
         self.parent.project.export_data(uri = self.parent.collection_node.rid + '/proc_stream',
                                         data = self.parent.visible_data)
+
+
+class ExportOriginal(plugins.CommandPlugin):
+    ''' Export the original (unprocessed) data to the project server.
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+
+    def __init__(self):
+        ''' Initialize the instance.
+
+        '''
+        plugins.CommandPlugin.__init__(self,
+                                       name = 'export original',
+                                       category = 'export',
+                                       tags = ['export', 'orignial']
+                                       )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.iconsBlack16.pin_map_icon_16
+
+
+    def run(self):
+        ''' Export the unprocessed data to the project server.
+        '''
+        self.parent.project.export_data(uri = self.parent.collection_node.rid + '/orig_stream',
+                                        data = self.parent.original_data)
