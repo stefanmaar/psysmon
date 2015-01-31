@@ -60,6 +60,14 @@ class PreferencesManager:
 
         return out
 
+    def __len__(self):
+        ''' The number of preference items.
+        '''
+        n_items = 0
+        for cur_page in self.pages.itervalues():
+            n_items += len(cur_page)
+        return n_items
+
 
     def add_page(self, name):
         ''' Add a new page to the manager.
