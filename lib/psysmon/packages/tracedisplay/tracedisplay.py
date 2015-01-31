@@ -485,31 +485,47 @@ class TraceDisplayDlg(wx.Frame):
 
 
         # Fill the ribbon bar with the plugin buttons.
-        for k,curPlugin in enumerate(self.plugins):
-            if curPlugin.mode == 'option':
+        option_plugins = [x for x in self.plugins if x.mode == 'option']
+        command_plugins = [x for x in self.plugins if x.mode == 'command']
+        interactive_plugins = [x for x in self.plugins if x.mode == 'interactive']
+        addon_plugins = [x for x in self.plugins if x.mode == 'addon']
+        id_counter = 0
+
+        for curPlugin in sorted(option_plugins, key = attrgetter('position_pref', 'name')):
                 # Create a tool.
-                curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = k, 
+                curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter, 
                                                                           bitmap = curPlugin.icons['active'].GetBitmap(), 
                                                                           help_string = curPlugin.name,
                                                                           kind = ribbon.RIBBON_BUTTON_TOGGLE)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
                                                              lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
-            elif curPlugin.mode == 'command':
-                # Create a HybridTool. The dropdown menu allows to open
+                id_counter += 1
+
+        for curPlugin in sorted(command_plugins, key = attrgetter('position_pref', 'name')):
+                # Create a HybridTool or a normal tool if no preference items
+                # are available. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = k,
-                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                                help_string = curPlugin.name)
+                if len(curPlugin.pref_manager) == 0:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
+                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                              help_string = curPlugin.name)
+                else:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
+                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                    help_string = curPlugin.name)
+                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                                 lambda evt, curPlugin=curPlugin: self.onCommandToolDropdownClicked(evt, curPlugin),
+                                                                 id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onCommandToolClicked(evt, curPlugin),
                                                              id=curTool.id)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin: self.onCommandToolDropdownClicked(evt, curPlugin),
-                                                             id=curTool.id)
-            elif curPlugin.mode == 'interactive':
+                id_counter += 1
+
+
+        for curPlugin in sorted(interactive_plugins, key = attrgetter('position_pref', 'name')):
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = k,
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
                                                                                 bitmap = curPlugin.icons['active'].GetBitmap(),
                                                                                 help_string = curPlugin.name)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
@@ -518,36 +534,34 @@ class TraceDisplayDlg(wx.Frame):
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
                                                              lambda evt, curPlugin=curPlugin: self.onInteractiveToolDropdownClicked(evt, curPlugin),
                                                              id=curTool.id)
-            elif curPlugin.mode == 'addon':
-                # Create a HybridTool. The dropdown menu allows to open
+                id_counter += 1
+
+        for curPlugin in sorted(addon_plugins, key = attrgetter('position_pref', 'name')):
+                # Create a HybridTool or a normal tool if no preference items
+                # are available. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = k,
-                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                                help_string = curPlugin.name)
-                #self.ribbonToolbars[curPlugin.category].SetToolClientData(curTool, 'test')
+                if len(curPlugin.pref_manager) == 0:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
+                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                              help_string = curPlugin.name)
+
+                else:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
+                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                    help_string = curPlugin.name)
+                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                                 lambda evt, curPlugin=curPlugin: self.onAddonToolDropdownClicked(evt, curPlugin),
+                                                                 id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin),
                                                              id=curTool.id)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin: self.onAddonToolDropdownClicked(evt, curPlugin),
-                                                             id=curTool.id)
+                id_counter += 1
 
-
-            # Get all option plugins and build the foldpanels.
-            #if curPlugin.mode == 'option':
-            #    curPlugin.buildFoldPanel(self.toolPanels)
-
-            # Get all interactive plugins and add them to the toolbar.
-            #if curPlugin.mode == 'interactive':
-            #    button = curPlugin.buildToolbarButton()
-            #    if button:
-            #        self.logger.debug(button)
 
         self.ribbon.Realize()
 
-
         # Tell the manager to commit all the changes.
-        self.mgr.Update() 
+        self.mgr.Update()
 
         self.SetBackgroundColour('white')
         self.viewPort.SetFocus()
