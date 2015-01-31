@@ -54,7 +54,7 @@ class TracedisplayTestCase(unittest.TestCase):
         cls.psybase = create_psybase()
         create_full_project(cls.psybase)
         cls.project = cls.psybase.project
-        cls.project.dbEngine.echo = True
+        cls.project.dbEngine.echo = False
 
 
     @classmethod
