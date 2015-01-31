@@ -21,6 +21,8 @@
 import logging
 import wx
 import numpy as np
+import scipy
+import scipy.signal
 from matplotlib.patches import Rectangle
 import psysmon
 from psysmon.core.plugins import AddonPlugin
@@ -203,7 +205,8 @@ class SeismogramView(View):
                 timeArray = minmax_time
 
                 if show_envelope is True:
-                    trace_envelope = np.abs(trace_data)
+                    comp_trace = scipy.signal.hilbert(trace_data)
+                    trace_envelope = np.sqrt(np.real(comp_trace)**2 + np.imag(comp_trace)**2)
 
             else:
                 self.logger.info('Plotting in FULL mode.')
@@ -218,7 +221,9 @@ class SeismogramView(View):
                 trace_data = trace.data
 
                 if show_envelope is True:
-                    trace_envelope = np.abs(trace_data)
+                    comp_trace = scipy.signal.hilbert(trace_data)
+                    trace_envelope = np.sqrt(np.real(comp_trace)**2 + np.imag(comp_trace)**2)
+
 
             self.t0 = trace.stats.starttime
 
