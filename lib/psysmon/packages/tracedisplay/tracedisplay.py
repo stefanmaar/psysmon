@@ -216,6 +216,8 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                     group = 'time range')
         self.pref_manager.add_item(item = pref_item)
 
+        # TODO: Set the limit of the multichoice preference based on the
+        # available channels.
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
                                                      label = 'channels',
                                                      limit = ('HHZ', 'HHN', 'HHE'),
@@ -223,6 +225,8 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                                      group = 'component selection')
         self.pref_manager.add_item(item = pref_item)
 
+        # TODO: Set the limit of the multichoice preference based on the
+        # available stations.
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_stations',
                                                      label = 'stations',
                                                      limit = ('ALBA', 'BISA', 'SITA'),
