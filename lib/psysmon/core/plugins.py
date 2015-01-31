@@ -57,7 +57,7 @@ class PluginNode:
     # argument.
     nodeClass = 'common'
 
-    def __init__(self, name, mode, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None, *kwargs):
+    def __init__(self, name, mode, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None, position_pref = 0, *kwargs):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -87,6 +87,8 @@ class PluginNode:
             The parent collectionNode which has loaded the plugin.
         docEntryPoint : String
             The path to where the documentation's index.html file can be found.
+        position_pref : Integer
+            The preferred position of the tool in the category section of the ribbon bar.
         '''
         # The name of the plugin.
         self.name = name
@@ -123,6 +125,9 @@ class PluginNode:
         # interactive tools. For other tool modes, the active state is
         # always False.
         self.active = False
+
+        # The preferred position within a category.
+        self.position_pref = position_pref
 
 
     def __getattr__(self, attrname):
@@ -186,7 +191,7 @@ class OptionPlugin(PluginNode):
 
     An option plugin organizes one or more options.
     '''
-    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None, position_pref = 0):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -219,7 +224,8 @@ class OptionPlugin(PluginNode):
                             tags = tags,
                             icons = icons,
                             parent = parent,
-                            docEntryPoint = docEntryPoint)
+                            docEntryPoint = docEntryPoint,
+                            position_pref = position_pref)
 
 
 
@@ -230,7 +236,7 @@ class CommandPlugin(PluginNode):
     A command plugin can be used to execute standalone programs which process the currently
     displayed data and maybe present the results in a new window (e.g. frequency spectrum, audification, ...).
     '''
-    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None, position_pref = 0):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -263,7 +269,8 @@ class CommandPlugin(PluginNode):
                             tags = tags,
                             icons = icons,
                             parent = parent,
-                            docEntryPoint = docEntryPoint)
+                            docEntryPoint = docEntryPoint,
+                            position_pref = position_pref)
 
 
     def run(self):
@@ -279,7 +286,7 @@ class InteractivePlugin(PluginNode):
     The interactive plugin allows the user to interact with the parent window using 
     mouse clicks.
     '''
-    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent = None, docEntryPoint = None, position_pref = 0):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -315,7 +322,8 @@ class InteractivePlugin(PluginNode):
                             tags = tags,
                             icons = icons,
                             parent = parent,
-                            docEntryPoint = docEntryPoint)
+                            docEntryPoint = docEntryPoint,
+                            position_pref = position_pref)
 
         self.cursor = None
 
@@ -339,7 +347,7 @@ class AddonPlugin(PluginNode):
     which are used in the tracedisplay.
     '''
 
-    def __init__(self, name, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None):
+    def __init__(self, name, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None, position_pref = 0):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -372,7 +380,8 @@ class AddonPlugin(PluginNode):
                             tags = tags,
                             icons = icons,
                             parent = parent,
-                            docEntryPoint = docEntryPoint)
+                            docEntryPoint = docEntryPoint,
+                            position_pref = position_pref)
 
 
         def getViewClass(self):
