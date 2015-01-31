@@ -22,11 +22,45 @@ import logging
 import wx
 import numpy as np
 from matplotlib.patches import Rectangle
+import psysmon
 from psysmon.core.plugins import AddonPlugin
+from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
+
+
+
+class Refresh(CommandPlugin):
+    ''' Refresh all views.
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+
+    def __init__(self):
+        ''' Initialize the instance.
+
+        '''
+        CommandPlugin.__init__(self,
+                               name = 'refresh views',
+                               category = 'visualize',
+                               tags = ['view', 'refresh'],
+                               position_pref = 1
+                               )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.refresh_icon_16
+
+
+    def run(self):
+        ''' Export the visible data to the project server.
+        '''
+        self.parent.updateDisplay()
 
 
 
@@ -47,7 +81,8 @@ class SeismogramPlotter(AddonPlugin):
                             )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         # Define the plugin icons.
@@ -126,10 +161,13 @@ class SeismogramView(View):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
+        ''' Initialize the instance.
+        '''
         View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
@@ -144,16 +182,8 @@ class SeismogramView(View):
 
 
     def plot(self, stream, color, show_envelope = False):
-
-
-        # Plotten der MinMax Daten aus pytswd.
-        #minmax_data = compute_minmax_data(tr.data, sample_step)
-        #time_step = sample_step / tr.stats.sampling_rate
-        #minmax_time = np.array([tr.stats.starttime.timestamp + x * time_step for x in range(len(tr.data) / sample_step)])
-        #minmax_time = minmax_time.repeat(2)
-        #ax1.plot(minmax_time - cur_starttime.timestamp, minmax_data, color = 'black')
-
-
+        ''' Plot the seismogram.
+        '''
         #display_size = wx.GetDisplaySize()
         axes_width = self.dataAxes.get_window_extent().width
         data_plot_limit = axes_width * 0.75
@@ -206,9 +236,9 @@ class SeismogramView(View):
                 else:
                     self.envelope_line.set_xdata(timeArray)
                     self.envelope_line.set_ydata(trace_envelope)
-            else:
-                # TODO: Remove the envelope line.
-                pass
+            elif self.envelope_line is not None:
+                self.dataAxes.lines.remove(self.envelope_line)
+                self.envelope_line = None
 
 
             self.dataAxes.set_frame_on(False)
@@ -262,15 +292,15 @@ class SeismogramView(View):
 
         '''
         n_step = np.floor(len(data) / sample_step)
-        data = data[:n_step * sample_step]
-        data = data.reshape(n_step, sample_step)
+        data = data[:int(n_step * sample_step)]
+        data = data.reshape(int(n_step), int(sample_step))
 
         # Calculate extreme_values and put them into new array.
         min_data = data.min(axis=1)
         max_data = data.max(axis=1)
         min_data = np.ma.resize(min_data, (len(min_data), 1))
         max_data = np.ma.resize(max_data, (len(max_data), 1))
-        minmax_data = np.ma.zeros((n_step*2, 1), dtype=np.float)
+        minmax_data = np.ma.zeros((int(n_step) * 2, 1), dtype=np.float)
         minmax_data[0:len(minmax_data):2] = min_data
         minmax_data[1:len(minmax_data):2] = max_data
 
