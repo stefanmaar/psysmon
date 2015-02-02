@@ -358,6 +358,10 @@ class ChannelContainer(wx.Panel):
         self.SetSizer(self.sizer)
 
 
+    @property
+    def scnl(self):
+        parent = self.GetParent()
+        return (parent.name, self.name, parent.network, parent.location)
 
     def addView(self, view):
         view.Reparent(self)
@@ -470,6 +474,10 @@ class StationContainer(wx.Panel):
         self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
+    @property
+    def snl(self):
+        return (self.name, self.network, self.location)
+
 
     def addChannel(self, channel):
         channel.Reparent(self)
@@ -514,20 +522,20 @@ class StationContainer(wx.Panel):
 
 
     def rearrangeChannels(self):
-        
+
         if not self.channels:
-            return        
+            return
 
         for curChannel in self.channels.values():
             self.channelSizer.Hide(curChannel)
             self.channelSizer.Detach(curChannel)
-        
+
         stationSize = self.channels.itervalues().next().GetMinSize()
-        stationSize[1] = stationSize[1] * len(self.channels) 
+        stationSize[1] = stationSize[1] * len(self.channels)
         self.SetMinSize(stationSize)
 
         for curChannel in self.channels.values():
-	    self.channelSizer.Add(curChannel, 1, flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
+            self.channelSizer.Add(curChannel, 1, flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
             curChannel.Show()
 
 
@@ -538,6 +546,7 @@ class StationContainer(wx.Panel):
             return None
 
         return curChannel.hasView(viewName)
+
 
 
 
