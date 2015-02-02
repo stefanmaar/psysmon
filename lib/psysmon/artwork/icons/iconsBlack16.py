@@ -4958,3 +4958,12 @@ getfolder_minus_icon_16Image = folder_minus_icon_16.GetImage
 getfolder_minus_icon_16Bitmap = folder_minus_icon_16.GetBitmap
 getfolder_minus_icon_16Icon = folder_minus_icon_16.GetIcon
 
+#----------------------------------------------------------------------
+measure_icon_16 = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
+    "AABuSURBVDiN7dIxCgJRDITh76nt4h7BU9l5EU+92uvYZMXm4cLrxEAIU8xPmKQlMVK7Ifdv"
+    "AFSIExacccelZk8vmJI4FGePI04FazV7evW8N5iRj75+0cGcpAvY0nOS8RDXDB642X6VZ3m0"
+    "/yuPA16wkDw2k/p1NAAAAABJRU5ErkJggg==")
+
+
