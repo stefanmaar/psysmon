@@ -244,14 +244,14 @@ class SeismogramView(View):
             self.logger.debug('len(trace_data): %d', len(trace_data))
 
             if self.line is None:
-                self.line, = self.dataAxes.plot(timeArray, trace_data, color = color)
+                self.line, = self.dataAxes.plot(timeArray, trace_data, color = color, label = 'seismogram')
             else:
                 self.line.set_xdata(timeArray)
                 self.line.set_ydata(trace_data)
 
             if show_envelope is True:
                 if self.envelope_line is None:
-                    self.envelope_line, = self.dataAxes.plot(timeArray, trace_envelope, color = 'r')
+                    self.envelope_line, = self.dataAxes.plot(timeArray, trace_envelope, color = 'r', label = 'seismogram_envelope')
                 else:
                     self.envelope_line.set_xdata(timeArray)
                     self.envelope_line.set_ydata(trace_envelope)
