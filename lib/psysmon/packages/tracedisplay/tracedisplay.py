@@ -1409,13 +1409,13 @@ class DisplayManager(object):
         '''
         # Check if the container already exists in the station.
         chanContainer = stationContainer.hasChannel(channel.name)
-        
+
         if not chanContainer:
             if self.channelColors.has_key(channel.name):
                 curColor = self.channelColors[channel.name]
             else:
                 curColor = (0, 0, 0)
-                
+
             chanContainer = container.ChannelContainer(stationContainer,
                                                        id = wx.ID_ANY,
                                                        name = channel.name,
