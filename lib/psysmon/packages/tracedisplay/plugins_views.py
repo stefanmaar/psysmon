@@ -138,7 +138,10 @@ class SeismogramPlotter(AddonPlugin):
             if curStream:
                 lineColor = [x/255.0 for x in curChannel.container.color]
                 curView.plot(curStream, lineColor,
-                             show_envelope = self.pref_manager.get_value('show envelope'))
+                             end_time = displayManager.endTime,
+                             duration = displayManager.endTime - displayManager.startTime,
+                             show_envelope = self.pref_manager.get_value('show envelope')
+                             )
 
             curView.setXLimits(left = displayManager.startTime.timestamp,
                                right = displayManager.endTime.timestamp)
@@ -183,7 +186,7 @@ class SeismogramView(View):
 
 
 
-    def plot(self, stream, color, show_envelope = False):
+    def plot(self, stream, color, duration, end_time, show_envelope = False):
         ''' Plot the seismogram.
         '''
         #display_size = wx.GetDisplaySize()
@@ -256,20 +259,36 @@ class SeismogramView(View):
             self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
             self.logger.debug('yLim: %s', yLim)
 
-        # Add the time scale bar.
-        scaleLength = 10
-        unitsPerPixel = (2*yLim) / self.dataAxes.get_window_extent().height
-        scaleHeight = 3 * unitsPerPixel
+        self.add_time_scalebar(duration = duration, end_time = end_time)
+
+
+    def add_time_scalebar(self, duration, end_time):
+        ''' Add a time scalebar to the axes.
+        '''
+        y_lim = self.dataAxes.get_ylim()
+        y_lim = np.abs(y_lim[0])
+
+        if duration > 1:
+            order = len(str(int(np.floor(duration)))) - 1
+            scale_length = 1 * 10**(order-1)
+        elif duration == 1:
+            scale_length = 0.1
+        else:
+            order = len(str(int(np.floor(1/duration)))) - 1
+            scale_length = 1 * (10.** ((order+1) * -1))
+
+        units_per_pixel = (2*y_lim) / self.dataAxes.get_window_extent().height
+        scale_height = 5 * units_per_pixel
         if self.scaleBar:
             self.scaleBar.remove()
-        self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
-                                  -yLim+scaleHeight/2.0),
-                                  width=scaleLength,
-                                  height=scaleHeight,
+        self.scaleBar = Rectangle((end_time.timestamp - scale_length,
+                                  -y_lim+scale_height/2.0),
+                                  width=scale_length,
+                                  height=scale_height,
                                   edgecolor = 'none',
                                   facecolor = '0.75')
         self.dataAxes.add_patch(self.scaleBar)
-        #self.dataAxes.axvspan(timeArray[0], timeArray[0] + 10, facecolor='0.5', alpha=0.5)
+
 
 
     def setYLimits(self, bottom, top):
