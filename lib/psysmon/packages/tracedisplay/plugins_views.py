@@ -250,6 +250,9 @@ class SeismogramView(View):
             self.dataAxes.get_xaxis().set_visible(False)
             self.dataAxes.get_yaxis().set_visible(False)
             yLim = np.max(np.abs(trace.data))
+            if show_envelope is True:
+                env_max = np.max(trace_envelope)
+                yLim = np.max([yLim, env_max])
             self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
             self.logger.debug('yLim: %s', yLim)
 
