@@ -102,6 +102,8 @@ class PlotPanel(wx.Panel):
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus2)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.canvas.Bind(wx.EVT_KEY_UP, self.onKeyUp)
+        self.Bind(wx.EVT_KEY_UP, self.onKeyUp)
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
         self.canvas.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
@@ -125,6 +127,11 @@ class PlotPanel(wx.Panel):
 
     def onKeyDown(self, event):
         print "Propagating keyDown in plotPanel"
+        event.ResumePropagation(1)
+        event.Skip()
+
+    def onKeyUp(self, event):
+        print "Propagating keyUp in plotPanel"
         event.ResumePropagation(1)
         event.Skip()
 
@@ -176,10 +183,15 @@ class View(wx.Panel):
         self.dataAxes = self.plotCanvas.figure.add_axes([0,0,1,1])
 
 
+        # A list of matplotlib event connection ids.
+        self.cids = []
+
+
         self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.onLeaveWindow)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.Bind(wx.EVT_KEY_UP, self.onKeyUp)
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
         #self.Bind(wx.EVT_SIZE, self._onSize)
@@ -210,6 +222,10 @@ class View(wx.Panel):
         event.ResumePropagation(1)
         event.Skip()
 
+    def onKeyUp(self, event):
+        event.ResumePropagation(1)
+        event.Skip()
+
     def _onSize(self, event):
         event.Skip()
         #print "view resize"
@@ -233,7 +249,13 @@ class View(wx.Panel):
     def setEventCallbacks(self, hooks, dataManager, displayManager):
 
         for curKey, curCallback in hooks.iteritems():
-            self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager, callback=curCallback: callback(evt, dataManager, displayManager))
+            cur_cid = self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager, callback=curCallback: callback(evt, dataManager, displayManager))
+            self.cids.append(cur_cid)
+
+
+    def clearEventCallbacks(self):
+        for cur_cid in self.cids:
+            self.plotCanvas.canvas.mpl_disconnect(cur_cid)
 
 
 
@@ -1021,8 +1043,17 @@ class TdViewPort(scrolled.ScrolledPanel):
             for curChannel in curStation.channels.values():
                 for curView in curChannel.views.values():
                     curView.setEventCallbacks(hooks, dataManager, displayManager)
-         
-        
+
+
+    def clearEventCallbacks(self):
+        ''' Clear the callbacks of the views.
+        '''
+        for curStation in self.stations:
+            for curChannel in curStation.channels.values():
+                for curView in curChannel.views.values():
+                    curView.clearEventCallbacks()
+
+
 
 
 

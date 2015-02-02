@@ -354,6 +354,9 @@ class TraceDisplayDlg(wx.Frame):
         # Create the dataManager.
         self.dataManager = DataManager(self)
 
+        # A temporary plugin register to swap two plugins.
+        self.plugin_to_restore = None
+
         # Register the plugin shortcuts. This has to be done after the various
         # manager instances were created.
         for curPlugin in self.plugins:
@@ -577,11 +580,14 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.logger.debug('Binding key events.')
         self.viewPort.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.viewPort.Bind(wx.EVT_KEY_UP, self.onKeyUp)
 
         self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
         self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
         self.shortcutManager.addAction(('"-"',), self.growTimePeriod)
         self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
+        self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.swap_tool)
+        self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.restore_tool, kind = 'up')
 
 
     def advanceTime(self, time_step = None):
@@ -616,6 +622,55 @@ class TraceDisplayDlg(wx.Frame):
         self.updateDisplay()
 
 
+    def swap_tool(self):
+        ''' Swap the tool with one defined in the preferences.
+        '''
+        if self.plugin_to_restore is not None:
+            return
+
+        swap_tool_name = 'zoom'
+
+        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
+        if len(active_plugin) == 0:
+            return
+        elif len(active_plugin) > 1:
+            raise RuntimeError('Only one interactive tool can be active.')
+        active_plugin = active_plugin[0]
+
+        if active_plugin.name == swap_tool_name:
+            return
+
+        swap_plugin = [x for x in self.plugins if x.name == swap_tool_name]
+        if len(swap_plugin) != 1:
+            raise RuntimeError("Can't find the swap plugin.")
+        swap_plugin = swap_plugin[0]
+
+        self.plugin_to_restore = active_plugin
+        self.viewPort.clearEventCallbacks()
+        self.plugin_to_restore.active = False
+        self.viewPort.registerEventCallbacks(swap_plugin.getHooks(),
+                                             self.dataManager,
+                                             self.displayManager)
+        swap_plugin.active = True
+
+
+    def restore_tool(self):
+        ''' Restore a tool which was previousely swapped.
+        '''
+        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
+        if len(active_plugin) == 0:
+            return
+        elif len(active_plugin) > 1:
+            raise RuntimeError('Only one interactive tool can be active.')
+
+        active_plugin = active_plugin[0]
+        self.viewPort.clearEventCallbacks()
+        active_plugin.active = False
+        self.viewPort.registerEventCallbacks(self.plugin_to_restore.getHooks(),
+                                             self.dataManager,
+                                             self.displayManager)
+        self.plugin_to_restore.active = True
+        self.plugin_to_restore = None
 
 
 
@@ -715,7 +770,9 @@ class TraceDisplayDlg(wx.Frame):
         hooks = plugin.getHooks()
 
         # Set the callbacks of the views.
+        self.viewPort.clearEventCallbacks()
         self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
+        plugin.active = True
 
 
 
@@ -842,6 +899,47 @@ class TraceDisplayDlg(wx.Frame):
             action()
 
 
+    def onKeyUp(self, event):
+        ''' Handle a key release event.
+        '''
+        self.logger.debug('Releasing key.')
+        keyCode = event.GetKeyCode()
+        keyName = keyMap.get(keyCode, None)
+
+        self.logger.debug('Keycode: %d', keyCode)
+
+        if keyName is None:
+            if keyCode < 256:
+                if keyCode == 0:
+                    keyName = "NUL"
+                elif keyCode < 27:
+                    keyName = "Ctrl-%s" % chr(ord('A') + keyCode-1)
+                else:
+                    keyName = "\"%s\"" % chr(keyCode)
+            else:
+                keyName = "(%s)" % keyCode
+
+
+        # Process the modifiers.
+        pressedKey = []
+        modString = ""
+        for mod, ch in [(event.ControlDown(), 'CTRL'),
+                        (event.AltDown(),     'ALT'),
+                        (event.ShiftDown(),   'SHIFT'),
+                        (event.MetaDown(),    'META')]:
+            if mod:
+                pressedKey.append(ch)
+                modString += ch + " + "
+
+        pressedKey.append(keyName)
+        pressedKeyString = modString + keyName
+        self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
+        action = self.shortcutManager.getAction(tuple(pressedKey), kind = 'up')
+
+        if action is not None:
+            action()
+
+
     def onSetFocus(self, event):
         ''' Handle a key down event.
 
@@ -909,7 +1007,7 @@ class ShortcutManager:
         self.actions = {}
 
 
-    def addAction(self, keyCombination, action):
+    def addAction(self, keyCombination, action, kind = 'down'):
         ''' Add an action to the shortcut options.
 
         Parameters
@@ -921,11 +1019,14 @@ class ShortcutManager:
         action : Method
             The method which should be executed when the key is pressed.
 
+        kind : String
+            The kind of mouse event (up, down).
+
         '''
-        self.actions[keyCombination] = action
+        self.actions[(kind, keyCombination)] = action
 
 
-    def getAction(self, keyCombination):
+    def getAction(self, keyCombination, kind = 'down'):
         ''' Get the action bound to the keyCombination.
 
         Paramters
@@ -933,6 +1034,9 @@ class ShortcutManager:
         keyCombination : tuple of Strings
             The key combination to which the action is bound to.
             E.g.: ('WXK_LEFT'), ('CTRL', 'P'), ('CTRL', 'ALT', 'P')
+
+        kind : String
+            The kind of mouse event (up, down).
 
         Returns
         -------
@@ -942,7 +1046,7 @@ class ShortcutManager:
         '''
         self.logger.debug("Searching for: %s", keyCombination)
         self.logger.debug("Available actions: %s", self.actions)
-        return self.actions.get(keyCombination, None)
+        return self.actions.get((kind, keyCombination), None)
 
 
 
@@ -1398,6 +1502,7 @@ class DisplayManager(object):
                                                 color = 'white')
             viewport.addStation(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
 
         return statContainer
 
@@ -1445,6 +1550,7 @@ class DisplayManager(object):
 
             channelContainer.addView(viewContainer)
             channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            channelContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
 
         return viewContainer
 
