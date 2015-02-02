@@ -335,6 +335,8 @@ class InteractivePlugin(PluginNode):
     def getHooks(self):
         ''' Register the mouse event hooks for interactive plugins.
 
+        The hooks are Matplotlib events (e.g. button_press_event, 
+        button_release_event, motions_notify_event.
         '''
         return None
 
