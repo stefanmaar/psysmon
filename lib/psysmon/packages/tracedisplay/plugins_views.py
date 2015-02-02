@@ -91,9 +91,19 @@ class SeismogramPlotter(AddonPlugin):
         self.icons['active'] = icons.waveform_icon_16
 
         # Add the plugin preferences.
-        item = preferences_manager.CheckBoxPrefItem(name = 'show envelope',
-                                                value = False
-                                               )
+        item = preferences_manager.CheckBoxPrefItem(name = 'show_envelope',
+                                                    label = 'show envelope',
+                                                    value = False
+                                                   )
+        self.pref_manager.add_item(item = item)
+
+        item = preferences_manager.FloatSpinPrefItem(name = 'minmax_limit',
+                                                     label = 'min-max limit [s]',
+                                                     value = 20.,
+                                                     limit = (0, None),
+                                                     digits = 1,
+                                                     increment = 1
+                                                    )
         self.pref_manager.add_item(item = item)
 
 
@@ -140,7 +150,8 @@ class SeismogramPlotter(AddonPlugin):
                 curView.plot(curStream, lineColor,
                              end_time = displayManager.endTime,
                              duration = displayManager.endTime - displayManager.startTime,
-                             show_envelope = self.pref_manager.get_value('show envelope')
+                             show_envelope = self.pref_manager.get_value('show_envelope'),
+                             minmax_limit = self.pref_manager.get_value('minmax_limit')
                              )
 
             curView.setXLimits(left = displayManager.startTime.timestamp,
@@ -186,7 +197,7 @@ class SeismogramView(View):
 
 
 
-    def plot(self, stream, color, duration, end_time, show_envelope = False):
+    def plot(self, stream, color, duration, end_time, show_envelope = False, minmax_limit = 20):
         ''' Plot the seismogram.
         '''
         #display_size = wx.GetDisplaySize()
@@ -195,7 +206,7 @@ class SeismogramView(View):
         self.logger.debug('data_plot_limit: %f', data_plot_limit)
         #data_plot_limit = 1e20
         for trace in stream:
-            if trace.stats.npts > data_plot_limit and (len(trace) / trace.stats.sampling_rate) > 20:
+            if trace.stats.npts > data_plot_limit and (len(trace) / trace.stats.sampling_rate) > minmax_limit:
                 # Plot minmax values
                 self.logger.info('Plotting in minmax mode.')
                 sample_step = np.ceil(len(trace.data) / data_plot_limit)
