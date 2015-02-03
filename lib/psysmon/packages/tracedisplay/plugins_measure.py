@@ -55,7 +55,7 @@ class MeasurePoint(InteractivePlugin):
         self.end_time = None
         self.view = None
         self.crosshair = {}
-        self.cid = []
+        self.cid = None
 
 
     def deactivate(self):
@@ -115,7 +115,8 @@ class MeasurePoint(InteractivePlugin):
         ''' Handle the mouse button release event.
         '''
         # Clear the motion notify callbacks.
-        self.view.clearEventCallbacks(cid_list = [self.cid,])
+        if self.cid is not None:
+            self.view.clearEventCallbacks(cid_list = [self.cid,])
 
         self.desaturate_crosshair()
 
