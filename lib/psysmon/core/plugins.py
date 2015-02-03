@@ -156,14 +156,14 @@ class PluginNode:
         return None
 
 
-    def setActive(self):
-        ''' Set the active state of the plugin to True.
+    def activate(self):
+        ''' Activate the plugin.
         '''
         self.active = True
 
 
-    def setInactive(self):
-        ''' Set the active state of the plugin to False.
+    def deactivate(self):
+        ''' Deactivate the plugin.
         '''
         self.active = False
 
