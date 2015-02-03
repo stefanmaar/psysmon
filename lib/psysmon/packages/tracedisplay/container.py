@@ -54,23 +54,29 @@ class TdViewAnnotationPanel(wx.Panel):
     some statistic values (e.g. min, max), the axes limits or some 
     other custom info.
     '''
-    def __init__(self, parent, size=(50,-1), color=None):
+    def __init__(self, parent, size=(200,-1), color=None):
         wx.Panel.__init__(self, parent, size=size)
         self.SetBackgroundColour(color)
-        self.SetMinSize((100, -1))
+        self.SetMinSize((200, -1))
 
 
 	# Create a test label.
-        label = StaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
-        font = wx.Font(6, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
-        label.SetFont(font)
+        self.label = StaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
+        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
+        self.label.SetFont(font)
 
 	# Add the label to the sizer.
 	sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(label, 1, wx.EXPAND|wx.ALL, border=0)
+        sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
 	self.SetSizer(sizer)
 
         #print label.GetAlignment()
+
+    def setLabel(self, text):
+        ''' Set the text of the annotation label.
+        '''
+        self.label.SetLabelText(text)
+        self.label.Refresh()
 
 
 class PlotPanel(wx.Panel):
@@ -252,9 +258,18 @@ class View(wx.Panel):
             self.cids.append(cur_cid)
 
 
-    def clearEventCallbacks(self):
-        for cur_cid in self.cids:
+    def clearEventCallbacks(self, cid_list = None):
+        if cid_list is None:
+            cid_list = self.cids
+
+        for cur_cid in cid_list:
             self.plotCanvas.canvas.mpl_disconnect(cur_cid)
+
+
+    def setAnnotation(self, text):
+        ''' Set the text in the annotation area of the view.
+        '''
+        self.annotationArea.setLabel(text)
 
 
 

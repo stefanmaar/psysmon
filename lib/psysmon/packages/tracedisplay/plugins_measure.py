@@ -23,9 +23,10 @@ import logging
 import wx
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
+import obspy.core.utcdatetime as utcdatetime
 import numpy as np
 
-class Measure(InteractivePlugin):
+class MeasurePoint(InteractivePlugin):
     '''
 
     '''
@@ -36,7 +37,7 @@ class Measure(InteractivePlugin):
 
         '''
         InteractivePlugin.__init__(self,
-                                   name = 'measure',
+                                   name = 'measure point',
                                    category = 'view',
                                    tags = None
                                   )
@@ -52,9 +53,9 @@ class Measure(InteractivePlugin):
 
         self.start_time = None
         self.end_time = None
-        self.axes = None
-        self.ml_x = None
-        self.ml_y = None
+        self.view = None
+        self.crosshair = {}
+        self.cid = []
 
 
     def deactivate(self):
@@ -67,16 +68,12 @@ class Measure(InteractivePlugin):
     def cleanup(self):
         ''' Remove all elements added to the views.
         '''
-        if self.ml_x is not None:
-            self.axes.lines.remove(self.ml_x)
-            self.ml_x = None
+        for cur_crosshair in self.crosshair.itervalues():
+            cur_crosshair[0].axes.lines.remove(cur_crosshair[0])
+            cur_crosshair[1].axes.lines.remove(cur_crosshair[1])
+            cur_crosshair[0].axes.figure.canvas.draw()
 
-        if self.ml_y is not None:
-            self.axes.lines.remove(self.ml_y)
-            self.ml_y = None
-
-        if self.axes is not None:
-            self.axes.figure.canvas.draw()
+        self.crosshair = {}
 
         self.start_time = None
         self.end_time = None
@@ -85,35 +82,42 @@ class Measure(InteractivePlugin):
     def getHooks(self):
         hooks = {}
 
-        hooks['motion_notify_event'] = self.on_mouse_motion
-        #hooks['button_press_event'] = self.on_button_press
-        #hooks['button_release_event'] = self.onButtonRelease
+        #hooks['motion_notify_event'] = self.on_mouse_motion
+        hooks['button_press_event'] = self.on_button_press
+        hooks['button_release_event'] = self.on_button_release
 
         return hooks
 
 
-    def on_button_press(self, event, dataManger=None, displayManager=None):
+    def on_button_press(self, event, dataManager=None, displayManager=None):
         if event.inaxes is None:
             return
 
-        if self.ml_x is None:
-            self.ml_x = event.inaxes.axvline(x = event.xdata,
-                                            color = 'k')
-            event.canvas.draw()
-        else:
-            self.ml_x.set_xdata(event.xdata)
-            event.canvas.draw()
-            #event.inaxes.draw_artist(self.ml_x)
-
-
-    def on_mouse_motion(self, event, data_manager=None, display_manager=None):
-        ''' Handle the mouse motion.
-        '''
         cur_view = event.canvas.GetGrandParent()
-        if cur_view.name == 'plot seismogram':
-            self.measure_seismogram(event, data_manager, display_manager)
+        self.view = cur_view
+
+        if event.button == 2:
+            # Skip the middle mouse button.
+            return
+        elif event.button == 3:
+            # Skipt the right mouse button.
+            return
         else:
-            self.logger.debug('Measuring a %s view is not supported.', cur_view.name)
+            if cur_view.name == 'plot seismogram':
+                self.measure_seismogram(event, dataManager, displayManager)
+                cid = cur_view.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.measure_seismogram : callback(evt, dataManager, displayManager))
+                self.cid = cid
+            else:
+                self.logger.debug('Measuring a %s view is not supported.', cur_view.name)
+
+
+    def on_button_release(self, event, dataManager=None, displayManager=None):
+        ''' Handle the mouse button release event.
+        '''
+        # Clear the motion notify callbacks.
+        self.view.clearEventCallbacks(cid_list = [self.cid,])
+
+        self.desaturate_crosshair()
 
 
     def measure_seismogram(self, event, data_manager, display_manager):
@@ -121,13 +125,10 @@ class Measure(InteractivePlugin):
         '''
         if event.inaxes is None:
             return
-        elif self.axes != event.inaxes:
-            # The cursor is in another axes.
-            self.cleanup()
 
-        self.axes = event.inaxes
+        cur_axes = self.view.dataAxes
 
-        seismo_line = [x for x in self.axes.lines if x.get_label() == 'seismogram']
+        seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
         if len(seismo_line) > 0:
             seismo_line = seismo_line[0]
         else:
@@ -138,18 +139,44 @@ class Measure(InteractivePlugin):
         snap_x = xdata[ind_x]
         snap_y = ydata[ind_x]
 
-        if self.ml_x is None:
-            self.ml_x = self.axes.axvline(x = snap_x,
-                                          color = 'k')
-        else:
-            self.ml_x.set_xdata(snap_x)
+        if self.view not in self.crosshair.keys():
+            ml_x = cur_axes.axvline(x = snap_x,
+                                     color = 'k')
+            ml_y = cur_axes.axhline(y = snap_y,
+                                     color = 'k')
+            self.crosshair[self.view] = (ml_x, ml_y)
 
-        if self.ml_y is None:
-            self.ml_y = self.axes.axhline(y = snap_y,
-                                          color = 'k')
-        else:
-            self.ml_y.set_ydata(snap_y)
+        cur_crosshair = self.crosshair[self.view]
 
-        event.canvas.draw()
+        for cur_line in cur_crosshair:
+            cur_line.set_color('k')
+
+        cur_crosshair[0].set_xdata(snap_x)
+        cur_crosshair[1].set_ydata(snap_y)
+
+        date_string = utcdatetime.UTCDateTime(snap_x)
+        measure_string = 'time: {0:s}\nampl.: {1:g}\n'.format(date_string.isoformat(),
+                                                              snap_y)
+        self.view.setAnnotation(measure_string)
+
+        self.view.draw()
+
+
+    def desaturate_crosshair(self, view = None):
+        ''' Desaturate the current crosshair.
+        '''
+        if view is None:
+            view = self.view
+
+        if view not in self.crosshair.keys():
+            return
+
+        for cur_line in self.crosshair[view]:
+            cur_line.set_color('0.75')
+
+        view.draw()
+
+
+
 
 
