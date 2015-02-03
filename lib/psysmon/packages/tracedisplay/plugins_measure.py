@@ -22,8 +22,7 @@ import logging
 import wx
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
-from obspy.core import UTCDateTime
-import psysmon.core.preferences_manager as preferences_manager
+import numpy as np
 
 class Measure(InteractivePlugin):
     '''
@@ -116,17 +115,28 @@ class Measure(InteractivePlugin):
 
         self.axes = event.inaxes
 
-        if self.ml_x is None:
-            self.ml_x = self.axes.axvline(x = event.xdata,
-                                             color = 'k')
+        seismo_line = [x for x in self.axes.lines if x.get_label() == 'seismogram']
+        if len(seismo_line) > 0:
+            seismo_line = seismo_line[0]
         else:
-            self.ml_x.set_xdata(event.xdata)
+            raise RuntimeError('No seismogram line found.')
+        xdata = seismo_line.get_xdata()
+        ydata = seismo_line.get_ydata()
+        ind_x = np.searchsorted(xdata, [event.xdata])[0]
+        snap_x = xdata[ind_x]
+        snap_y = ydata[ind_x]
+
+        if self.ml_x is None:
+            self.ml_x = self.axes.axvline(x = snap_x,
+                                          color = 'k')
+        else:
+            self.ml_x.set_xdata(snap_x)
 
         if self.ml_y is None:
-            self.ml_y = self.axes.axhline(y = event.ydata,
-                                             color = 'k')
+            self.ml_y = self.axes.axhline(y = snap_y,
+                                          color = 'k')
         else:
-            self.ml_y.set_ydata(event.ydata)
+            self.ml_y.set_ydata(snap_y)
 
         event.canvas.draw()
 
