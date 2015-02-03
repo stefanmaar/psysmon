@@ -186,7 +186,6 @@ class View(wx.Panel):
         # A list of matplotlib event connection ids.
         self.cids = []
 
-
         self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.onLeaveWindow)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
