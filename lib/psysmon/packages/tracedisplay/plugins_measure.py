@@ -51,8 +51,35 @@ class Measure(InteractivePlugin):
 
         self.start_time = None
         self.end_time = None
+        self.axes = None
         self.ml_x = None
         self.ml_y = None
+
+
+    def deactivate(self):
+        ''' Deactivate the plugin.
+        '''
+        self.active = False
+        self.cleanup()
+
+
+    def cleanup(self):
+        ''' Remove all elements added to the views.
+        '''
+        redraw = False
+        if self.ml_x is not None:
+            self.axes.lines.remove(self.ml_x)
+            self.ml_x = None
+
+        if self.ml_y is not None:
+            self.axes.lines.remove(self.ml_y)
+            self.ml_y = None
+
+        if self.axes is not None:
+            self.axes.figure.canvas.draw()
+
+        self.start_time = None
+        self.end_time = None
 
 
     def getHooks(self):
@@ -80,17 +107,23 @@ class Measure(InteractivePlugin):
 
 
     def on_mouse_motion(self, event, dataManger=None, displayManager=None):
+
         if event.inaxes is None:
             return
+        elif self.axes != event.inaxes:
+            # The cursor is in another axes.
+            self.cleanup()
+
+        self.axes = event.inaxes
 
         if self.ml_x is None:
-            self.ml_x = event.inaxes.axvline(x = event.xdata,
+            self.ml_x = self.axes.axvline(x = event.xdata,
                                              color = 'k')
         else:
             self.ml_x.set_xdata(event.xdata)
 
         if self.ml_y is None:
-            self.ml_y = event.inaxes.axhline(y = event.ydata,
+            self.ml_y = self.axes.axhline(y = event.ydata,
                                              color = 'k')
         else:
             self.ml_y.set_ydata(event.ydata)

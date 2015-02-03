@@ -73,6 +73,37 @@ class Zoom(InteractivePlugin):
         return hooks
 
 
+    def deactivate(self):
+        ''' Deactivate the plugin.
+        '''
+        self.cleanup()
+        self.active = False
+
+
+
+    def cleanup(self):
+        ''' Remove all elements added to the views.
+        '''
+        # Clear the zoom lines.
+        for curView in self.beginLine.keys():
+            if curView in self.beginLine.keys():
+                curView.dataAxes.lines.remove(self.beginLine[curView])
+            if curView in self.endLine.keys():
+                curView.dataAxes.lines.remove(self.endLine[curView])
+
+        self.beginLine = {}
+        self.endLine = {}
+
+
+        # Clear the motion notify callbacks.
+        for canvas, cid in self.motionNotifyCid:
+            canvas.mpl_disconnect(cid)
+
+        self.motionNotifyCid = []
+        self.bg = {}
+
+
+
 
     def onButtonPress(self, event, dataManager=None, displayManager=None):
         self.logger.debug('onButtonPress - button: %s', str(event.button))
@@ -159,23 +190,8 @@ class Zoom(InteractivePlugin):
 
     def onButtonRelease(self, event, dataManager=None, displayManager=None):
         self.logger.debug('onButtonRelease')
-        for canvas, cid in self.motionNotifyCid:
-            canvas.mpl_disconnect(cid)
 
-        self.motionNotifyCid = []
-        self.bg = {}
-
-
-        # Delete all begin- and end lines from the axes.
-        for curView in self.beginLine.keys():
-            if curView in self.beginLine.keys():
-                curView.dataAxes.lines.remove(self.beginLine[curView])
-            if curView in self.endLine.keys():
-                curView.dataAxes.lines.remove(self.endLine[curView])
-
-        self.beginLine = {}
-        self.endLine = {}
-
+        self.cleanup()
 
 
         # Call the setTimeLimits of the displayManager.

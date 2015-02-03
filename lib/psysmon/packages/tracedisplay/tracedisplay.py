@@ -646,12 +646,9 @@ class TraceDisplayDlg(wx.Frame):
         swap_plugin = swap_plugin[0]
 
         self.plugin_to_restore = active_plugin
-        self.viewPort.clearEventCallbacks()
-        self.plugin_to_restore.active = False
-        self.viewPort.registerEventCallbacks(swap_plugin.getHooks(),
-                                             self.dataManager,
-                                             self.displayManager)
-        swap_plugin.active = True
+
+        self.deactivate_interactive_plugin(active_plugin)
+        self.activate_interactive_plugin(swap_plugin)
 
 
     def restore_tool(self):
@@ -664,12 +661,8 @@ class TraceDisplayDlg(wx.Frame):
             raise RuntimeError('Only one interactive tool can be active.')
 
         active_plugin = active_plugin[0]
-        self.viewPort.clearEventCallbacks()
-        active_plugin.active = False
-        self.viewPort.registerEventCallbacks(self.plugin_to_restore.getHooks(),
-                                             self.dataManager,
-                                             self.displayManager)
-        self.plugin_to_restore.active = True
+        self.deactivate_interactive_plugin(active_plugin)
+        self.activate_interactive_plugin(self.plugin_to_restore)
         self.plugin_to_restore = None
 
 
@@ -687,6 +680,45 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.displayManager.setStartTime(startTime)
         self.updateDisplay()
+
+
+
+    def deactivate_interactive_plugin(self, plugin):
+        ''' Deactivate an interactive plugin.
+        '''
+        if plugin.mode != 'interactive':
+            return
+        self.viewPort.clearEventCallbacks()
+        self.viewPort.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        plugin.deactivate()
+
+
+    def activate_interactive_plugin(self, plugin):
+        ''' Activate an interactive plugin.
+        '''
+        if plugin.cursor is not None:
+            if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
+                image = plugin.cursor.GetImage()
+                # since this image didn't come from a .cur file, tell it where the hotspot is
+                img_size = image.GetSize()
+                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
+                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
+
+                # make the image into a cursor
+                self.viewPort.SetCursor(wx.CursorFromImage(image))
+            else:
+                try:
+                    self.viewPort.SetCursor(wx.StockCursor(plugin.cursor))
+                except:
+                    pass
+
+        self.logger.debug('Clicked the interactive tool: %s', plugin.name)
+        hooks = plugin.getHooks()
+
+        # Set the callbacks of the views.
+        self.viewPort.clearEventCallbacks()
+        self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
+        plugin.activate()
 
 
 
@@ -750,29 +782,13 @@ class TraceDisplayDlg(wx.Frame):
 
         Activate the tool.
         '''
-        if plugin.cursor is not None:
-            if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
-                image = plugin.cursor.GetImage()
-                # since this image didn't come from a .cur file, tell it where the hotspot is
-                img_size = image.GetSize()
-                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
-                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
-
-                # make the image into a cursor
-                self.viewPort.SetCursor(wx.CursorFromImage(image))
-            else:
-                try:
-                    self.viewPort.SetCursor(wx.StockCursor(plugin.cursor))
-                except:
-                    pass
-
-        self.logger.debug('Clicked the interactive tool: %s', plugin.name)
-        hooks = plugin.getHooks()
-
-        # Set the callbacks of the views.
-        self.viewPort.clearEventCallbacks()
-        self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
-        plugin.active = True
+        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
+        if len(active_plugin) > 1:
+            raise RuntimeError('Only one interactive tool can be active.')
+        elif len(active_plugin) == 1:
+            active_plugin = active_plugin[0]
+            self.deactivate_interactive_plugin(active_plugin)
+        self.activate_interactive_plugin(plugin)
 
 
 
@@ -784,10 +800,10 @@ class TraceDisplayDlg(wx.Frame):
         self.logger.debug('Clicked the addon tool: %s', plugin.name)
 
         if plugin.active == True:
-            plugin.setInactive()
+            plugin.deactivate()
             self.displayManager.removeAddonTool(plugin)
         else:
-            plugin.setActive()
+            plugin.activate()
             self.displayManager.registerAddonTool(plugin)
 
         self.updateDisplay()
@@ -1253,6 +1269,7 @@ class DisplayManager(object):
         '''
 
         addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
+        interactive_plugins = [x for x in self.parent.plugins if x.mode == 'interactive' and x.active]
 
         # Get the selected station and set all currently active
         # channels.
@@ -1297,6 +1314,15 @@ class DisplayManager(object):
             curPlugin.plotStation(displayManager = self.parent.displayManager,
                            dataManager = self.parent.dataManager,
                            station = [station2Show,])
+
+
+        # If an interactive plugin is active, register the hooks for the added
+        # station.
+        if len(interactive_plugins) == 1:
+            cur_plugin = interactive_plugins[0]
+            self.parent.viewPort.registerEventCallbacks(cur_plugin.getHooks(),
+                                                        self.parent.dataManager,
+                                                        self.parent.displayManager)
 
 
 
