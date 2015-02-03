@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import psysmon
 import logging
 import wx
 from psysmon.core.plugins import InteractivePlugin
@@ -40,7 +41,8 @@ class Measure(InteractivePlugin):
                                    tags = None
                                   )
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.measure_icon_16
@@ -65,7 +67,6 @@ class Measure(InteractivePlugin):
     def cleanup(self):
         ''' Remove all elements added to the views.
         '''
-        redraw = False
         if self.ml_x is not None:
             self.axes.lines.remove(self.ml_x)
             self.ml_x = None
@@ -105,8 +106,19 @@ class Measure(InteractivePlugin):
             #event.inaxes.draw_artist(self.ml_x)
 
 
-    def on_mouse_motion(self, event, dataManger=None, displayManager=None):
+    def on_mouse_motion(self, event, data_manager=None, display_manager=None):
+        ''' Handle the mouse motion.
+        '''
+        cur_view = event.canvas.GetGrandParent()
+        if cur_view.name == 'plot seismogram':
+            self.measure_seismogram(event, data_manager, display_manager)
+        else:
+            self.logger.debug('Measuring a %s view is not supported.', cur_view.name)
 
+
+    def measure_seismogram(self, event, data_manager, display_manager):
+        ''' Measure the seismogram line in the seismogram view.
+        '''
         if event.inaxes is None:
             return
         elif self.axes != event.inaxes:
