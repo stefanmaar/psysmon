@@ -1,7 +1,33 @@
+# -*- coding: utf-8 -*-
+# LICENSE
+#
+# This file is part of pSysmon.
+#
+# If you use pSysmon in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (stefan@mertl-research.at).
+#
+# pSysmon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Created on May 17, 2011
+Test the event catalog.
 
-@author: Stefan Mertl
+:copyright:
+    Stefan Mertl
+
+:license:
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
+
 '''
 
 import unittest
@@ -45,6 +71,7 @@ class EventCatalogTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
         print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
         print "removing temporary file structure....\n"
@@ -57,6 +84,7 @@ class EventCatalogTestCase(unittest.TestCase):
         pass
 
     def tearDown(self):
+        self.psybase.project_server.unregister_data()
         clear_project_database_tables(self.project)
 
     def test_catalog_creation(self):
