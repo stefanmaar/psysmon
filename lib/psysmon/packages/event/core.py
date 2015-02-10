@@ -26,7 +26,7 @@ class Event(object):
     def __init__(self, start_time, end_time, db_id = None, public_id = None, event_type = None,
             event_type_certainty = None, description = None, comment = None,
             tags = [], agency_uri = None, author_uri = None, creation_time = None,
-            parent = None):
+            parent = None, changed = True):
         ''' Instance initialization
 
         '''
@@ -82,6 +82,9 @@ class Event(object):
         if creation_time is None:
             creation_time = utcdatetime.UTCDateTime()
         self.creation_time = utcdatetime.UTCDateTime(creation_time)
+
+        # Flag to indicate a change of the event attributes.
+        self.changed = changed
 
 
     def write_to_database(self, project):
@@ -169,7 +172,8 @@ class Event(object):
                     tags = db_event.tags,
                     agency_uri = db_event.agency_uri,
                     author_uri = db_event.author_uri,
-                    creation_time = db_event.creation_time
+                    creation_time = db_event.creation_time,
+                    changed = False
                     )
         return event
 
