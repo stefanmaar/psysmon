@@ -30,16 +30,17 @@ class EventTestCase(unittest.TestCase):
     def setUpClass(cls):
         # Configure the logger.
         logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
+        logger.setLevel('INFO')
         logger.addHandler(psysmon.getLoggerHandler())
 
         # Create an empty project.
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
-        cls.project.dbEngine.echo = True
+        cls.project.dbEngine.echo = False
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
         print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
         print "removing temporary file structure....\n"
@@ -73,6 +74,7 @@ class EventTestCase(unittest.TestCase):
         self.assertIsInstance(event, Event)
         self.assertEqual(event.start_time, UTCDateTime(start_time))
         self.assertEqual(event.end_time, UTCDateTime(end_time))
+        self.assertTrue(event.changed)
 
         # Test the access to obspy event parameters.
         event.event_type = 'landslide'
