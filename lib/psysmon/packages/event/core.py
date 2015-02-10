@@ -227,7 +227,7 @@ class Catalog(object):
         self.events.extend(events)
 
 
-    def write_to_database(self, project):
+    def write_to_database(self, project, only_changed_events = True):
         ''' Write the catalog to the database.
 
         '''
@@ -275,7 +275,7 @@ class Catalog(object):
 
 
         # Write or update all events of the catalog to the database.
-        for cur_event in self.events:
+        for cur_event in [x for x in self.events if x.changed is True]:
             cur_event.write_to_database(project)
 
 
