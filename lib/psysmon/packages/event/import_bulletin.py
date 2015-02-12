@@ -54,8 +54,8 @@ class ImportBulletin(CollectionNode):
         CollectionNode.__init__(self, **args)
         pref_item = psy_pm.SingleChoicePrefItem(name = 'bulletin_format',
                                                 label = 'bulletin format',
-                                                limit = ['ISM1.0', 'QuakeML'],
-                                                value = 'ISM1.0')
+                                                limit = ['IMS1.0', 'QuakeML'],
+                                                value = 'IMS1.0')
         self.pref_manager.add_item(item = pref_item)
         pref_item = CustomPrefItem(name = 'input_files', value = [])
         self.pref_manager.add_item(item = pref_item)
@@ -72,8 +72,19 @@ class ImportBulletin(CollectionNode):
         ''' Import the selected bulletin files into the database.
         '''
 
-        for cur_file in self.pref_manager.get_value('input_files'):
-            self.logger.info('Importing file %s', cur_file[0])
+        for cur_format, cur_file, cur_size in self.pref_manager.get_value('input_files'):
+            self.logger.info('Importing file %s with format %s.', cur_file, cur_format)
+
+            if cur_format == 'IMS1.0':
+                parser = bulletin.ImsParser()
+            else:
+                parser = None
+
+            if parser is not None:
+                parser.parse(cur_file)
+                catalog = parser.get_catalog()
+                catalog.write_to_database(self.project)
+
 
 
 
@@ -172,8 +183,6 @@ class ImportBulletinEditDlg(wx.Frame):
         self.Bind(wx.EVT_CHOICE, self.on_bulletin_format_change, self.bulletin_format_choice)
         self.Bind(wx.EVT_SIZE, self.on_resize)
 
-        #self.file_grid.do_resize()
-
 
 
     def on_ok(self, event):
@@ -252,8 +261,8 @@ class ImportBulletinEditDlg(wx.Frame):
                         self.logger.info('Adding file %s', os.path.join(root, filename))
                         fsize = os.path.getsize(os.path.join(root, filename));
                         fsize = fsize/(1024.0 * 1024.0)
-
-                        matches.append((os.path.join(root, filename), '%.2f' % fsize))
+                        bulletin_format = self.collectionNode.pref_manager.get_value('bulletin_format')
+                        matches.append(bulletin_format, (os.path.join(root, filename), '%.2f' % fsize))
                         k += 1
 
 
