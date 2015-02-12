@@ -872,6 +872,18 @@ class DateTimeEditField(Field):
         self.controlElement.SetValue(self.pref_item.value.isoformat())
 
 
+def assign_gui_element(pref_item, parent):
+    ''' Assign a GUI field to the preferences item.
+
+    '''
+    guiclass = gui_elements[pref_item.mode]
+    gui_element = guiclass(name = pref_item.label,
+                           pref_item = pref_item,
+                           size = (100, -1),
+                           parent = parent
+                          )
+    pref_item.set_gui_element(gui_element)
+
 
 # Define the assignment of the field type and the GUI representation.
 gui_elements = {}
