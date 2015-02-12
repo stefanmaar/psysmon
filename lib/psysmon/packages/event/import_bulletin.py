@@ -31,12 +31,15 @@
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
+import psysmon.core.preferences_manager as psy_pm
+import psysmon.core.guiBricks as psy_guibricks
 
 import os
 import wx
 import operator
 import logging
 import fnmatch
+import bulletin
 
 class ImportBulletin(CollectionNode):
     ''' Import earthquake bulletin files into the database.
@@ -49,6 +52,11 @@ class ImportBulletin(CollectionNode):
 
     def __init__(self, **args):
         CollectionNode.__init__(self, **args)
+        pref_item = psy_pm.SingleChoicePrefItem(name = 'bulletin_format',
+                                                label = 'bulletin format',
+                                                limit = ['ISM1.0', 'QuakeML'],
+                                                value = 'ISM1.0')
+        self.pref_manager.add_item(item = pref_item)
         pref_item = CustomPrefItem(name = 'input_files', value = [])
         self.pref_manager.add_item(item = pref_item)
         pref_item = CustomPrefItem(name = 'last_dir', value = [])
@@ -61,7 +69,12 @@ class ImportBulletin(CollectionNode):
         dlg.Show()
 
     def execute(self, prevModuleOutput={}):
-        pass
+        ''' Import the selected bulletin files into the database.
+        '''
+
+        for cur_file in self.pref_manager.get_value('input_files'):
+            self.logger.info('Importing file %s', cur_file[0])
+
 
 
 
@@ -100,6 +113,8 @@ class ImportBulletinEditDlg(wx.Frame):
             self.file_grid.GetTable().data = self.collectionNode.pref_manager.get_value('input_files')
             self.file_grid.GetTable().ResetView()
 
+        self.bulletin_format_choice.SetStringSelection(self.collectionNode.pref_manager.get_value('bulletin_format'))
+
 
     def initUI(self):
         # Use standard button IDs.
@@ -121,6 +136,10 @@ class ImportBulletinEditDlg(wx.Frame):
         clear_button = wx.Button(self, wx.ID_ANY, 'clear list')
 
         # Fill the grid button sizer.
+        self.bulletin_format_choice = wx.Choice(self,
+                                           wx.ID_ANY,
+                                           choices = self.collectionNode.pref_manager.get_limit('bulletin_format'))
+        grid_button_sizer.Add(self.bulletin_format_choice, 0, wx.EXPAND|wx.ALL)
         grid_button_sizer.Add(add_files_button, 0, wx.EXPAND|wx.ALL)
         grid_button_sizer.Add(add_dir_button, 0, wx.EXPAND|wx.ALL)
         grid_button_sizer.Add(self.filter_pattern_text, 0, wx.EXPAND|wx.ALL)
@@ -130,7 +149,6 @@ class ImportBulletinEditDlg(wx.Frame):
 
         self.file_grid = FileGrid(self, data = [])
         sizer.Add(self.file_grid, pos =(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
-
         sizer.Add(grid_button_sizer, pos=(0,1), flag = wx.EXPAND|wx.ALL, border = 5)
 
         btn_sizer = wx.StdDialogButtonSizer()
@@ -151,6 +169,7 @@ class ImportBulletinEditDlg(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_clear_list, clear_button)
         #self.Bind(wx.EVT_CHECKBOX, self.onFileFormatCheck, file_format_checkbox)
         self.Bind(wx.EVT_TEXT, self.on_filter_pattern_text, self.filter_pattern_text)
+        self.Bind(wx.EVT_CHOICE, self.on_bulletin_format_change, self.bulletin_format_choice)
         self.Bind(wx.EVT_SIZE, self.on_resize)
 
         #self.file_grid.do_resize()
@@ -199,7 +218,8 @@ class ImportBulletinEditDlg(wx.Frame):
                 self.logger.info('Adding file %s', filename)
                 fsize = os.path.getsize(filename);
                 fsize = fsize/(1024.0*1024.0)           # Convert to MB
-                matches.append((filename, '%.2f' % fsize))
+                bulletin_format = self.collectionNode.pref_manager.get_value('bulletin_format')
+                matches.append((bulletin_format, filename, '%.2f' % fsize))
 
             matches = [x for x in matches if x not in self.file_grid.GetTable().data]
             self.file_grid.GetTable().data.extend(matches)
@@ -262,6 +282,10 @@ class ImportBulletinEditDlg(wx.Frame):
         self.collectionNode.pref_manager.set_value('filter_pattern', text.split(','))
 
 
+    def on_bulletin_format_change(self, event):
+        self.collectionNode.pref_manager.set_value(name = 'bulletin_format',
+                                                    value = self.bulletin_format_choice.GetStringSelection())
+
     def on_resize(self, event):
         self.file_grid.do_resize()
 
@@ -277,7 +301,7 @@ class GridDataTable(wx.grid.PyGridTableBase):
     def __init__(self, data):
         wx.grid.PyGridTableBase.__init__(self)
         self.data = data
-        self.col_labels = ['filename', 'size']
+        self.col_labels = ['format', 'filename', 'size']
 
         self.currentRows = self.GetNumberRows()
         self.currentColumns = self.GetNumberCols()
@@ -415,11 +439,11 @@ class FileGrid(wx.grid.Grid):
 
     def do_resize(self, event=None):
             self.GetParent().Freeze()
-            self.AutoSize()
+            self.AutoSizeColumns(setAsMin = True)
             self.GetParent().Layout()
 
             #the column which will be expanded
-            expandCol = 0
+            expandCol = 1
 
             #calculate the total width of the other columns
             otherWidths = 0
