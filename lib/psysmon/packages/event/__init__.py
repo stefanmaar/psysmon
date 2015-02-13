@@ -26,7 +26,7 @@ description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['collection_nodes', ]
+collection_node_modules = ['import_bulletin', ]
 
 def databaseFactory(base):
     from sqlalchemy import Column
@@ -34,7 +34,6 @@ def databaseFactory(base):
     from sqlalchemy import String
     from sqlalchemy import Text
     from sqlalchemy import Float
-    #from sqlalchemy.dialects.mysql import DOUBLE
     from sqlalchemy import ForeignKey
     from sqlalchemy import UniqueConstraint
     from sqlalchemy.orm import relationship

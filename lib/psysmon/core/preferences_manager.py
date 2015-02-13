@@ -139,6 +139,24 @@ class PreferencesManager:
         return values
 
 
+    def get_limit(self, name, pagename = None):
+        ''' Get item limits with specified name [and pagename] from the preferences.
+
+        name : String
+            The name of the preferences item to find.
+
+        pagename : String
+            The name of the page to which the search should be limited.
+
+        '''
+        found_items = self.get_item(name = name, pagename = pagename)
+        limits = [x.limit for x in found_items]
+        if len(limits) == 1:
+            limits = limits[0]
+
+        return limits
+
+
     def set_value(self, name, value, pagename = None):
         ''' Set the value of the specified item.
 
