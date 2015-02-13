@@ -124,6 +124,14 @@ class PSysmonGui(wx.Frame):
         if platform.system() == 'Linux':
             config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
             config_file = os.path.join(config_dir, 'psysmon.cfg')
+        elif platform.system() == 'Windows':
+            if 'APPDATA' in os.environ:
+                config_dir = os.path.join(os.environ['APPDATA'], 'psysmon')
+                config_file = os.path.join(config_dir, 'psysmon.cfg')
+            else:
+                raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+        else:
+            raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
 
         if os.path.exists(config_file):
             fp = open(config_file, 'r')
