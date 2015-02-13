@@ -85,18 +85,6 @@ if sys.platform == 'win32':
 printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
 
-# Checking for numpy
-if not checkForPackage('numpy', '1.6.1'):
-    sys.exit(1)
-
-# Checking for scipy
-if not checkForPackage('scipy', '0.9.0'):
-    sys.exit(1)
-
-# Checking for matplotlib
-if not checkForPackage('matplotlib', '1.1.0'):
-    sys.exit(1)
-
 # Checking for basemap
 if not checkForPackage('mpl_toolkits.basemap', '1.0.7'):
     sys.exit(1)
@@ -105,12 +93,16 @@ if not checkForPackage('mpl_toolkits.basemap', '1.0.7'):
 if not checkForPackage('lxml', '2.3.2'):
     sys.exit(1)
 
-# Checking for mysql-python
-if not checkForPackage('MySQLdb', '1.2.2'):
+# Checking for matplotlib
+if not checkForPackage('matplotlib', '1.4.0'):
     sys.exit(1)
 
-# Checking for sqlAlchemy
-if not checkForPackage('sqlalchemy', '0.9.8'):
+# Checking for numpy
+if not checkForPackage('numpy', '1.9.1'):
+    sys.exit(1)
+
+# Checking for mysql-python
+if not checkForPackage('MySQLdb', '1.2.5'):
     sys.exit(1)
 
 # Checking for obspy.core
@@ -122,16 +114,25 @@ if not checkForPackage('pillow', '2.7.0'):
     sys.exit(1)
 
 # Checking for py2cairo
-if not checkForPackage('cairo', '1.8.8'):
+if not checkForPackage('cairo', '1.10.1'):
+    sys.exit(1)
+
+# Checking for Pyro4
+if not checkForPackage('Pyro4', '4.32'):
+    sys.exit(1)
+
+# Checking for scipy
+if not checkForPackage('scipy', '0.15.1'):
+    sys.exit(1)
+
+# Checking for sqlAlchemy
+if not checkForPackage('sqlalchemy', '0.9.8'):
     sys.exit(1)
 
 # Checking for wx
 if not checkForPackage('wx', '3.0.0'):
     sys.exit(1)
 
-# Checking for wx
-if not checkForPackage('Pyro4', '4.32'):
-    sys.exit(1)
 
 
 printRaw("")
