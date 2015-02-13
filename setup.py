@@ -98,7 +98,7 @@ if not checkForPackage('matplotlib', '1.1.0'):
     sys.exit(1)
 
 # Checking for basemap
-if not checkForPackage('mpl_toolkits.basemap', '1.0.2'):
+if not checkForPackage('mpl_toolkits.basemap', '1.0.7'):
     sys.exit(1)
 
 # Checking for lxml
@@ -110,15 +110,15 @@ if not checkForPackage('MySQLdb', '1.2.2'):
     sys.exit(1)
 
 # Checking for sqlAlchemy
-if not checkForPackage('sqlalchemy', '0.7.4'):
+if not checkForPackage('sqlalchemy', '0.9.8'):
     sys.exit(1)
 
 # Checking for obspy.core
-if not checkForPackage('obspy', '0.8.3'):
+if not checkForPackage('obspy', '0.9.2'):
     sys.exit(1)
 
 # Checking for PIL
-if not checkForPackage('PIL', '1.1.7'):
+if not checkForPackage('pillow', '2.7.0'):
     sys.exit(1)
 
 # Checking for py2cairo
@@ -126,7 +126,11 @@ if not checkForPackage('cairo', '1.8.8'):
     sys.exit(1)
 
 # Checking for wx
-if not checkForPackage('wx', '2.8.11'):
+if not checkForPackage('wx', '3.0.0'):
+    sys.exit(1)
+
+# Checking for wx
+if not checkForPackage('Pyro4', '4.32'):
     sys.exit(1)
 
 

@@ -89,9 +89,9 @@ def checkForPackage(name, requiredVersion):
         rV[k] = int(x)
 
     try:
-        if name == 'PIL':
-            mod = __import__('Image', globals(), locals(), ['VERSION'], -1)
-            __version__ = mod.VERSION
+        if name == 'pillow':
+            mod = __import__('PIL', globals(), locals(), ['VERSION'], -1)
+            __version__ = mod.PILLOW_VERSION
         elif name == 'cairo':
             mod = __import__('cairo', globals(), locals(), ['version'], -1)
             __version__ = mod.version
@@ -125,14 +125,27 @@ def checkForPackage(name, requiredVersion):
                 nn[k] = 0
 
     checkPassed = False
-    if nn[0] > rV[0]:
-        checkPassed = True
-    elif nn[0] == rV[0] and nn[1] > rV[1]:
-        checkPassed = True
-    elif nn[1] == rV[1] and nn[2] > rV[2]:
-        checkPassed = True
-    elif nn[2] == rV[2]:
-        checkPassed = True
+    for k, cur_n in enumerate(rV):
+        if cur_n > rV[k]:
+            checkPassed = True
+            break
+        elif cur_n == rV[k] and k < len(nn)-1:
+            checkPassed = True
+        elif cur_n == rV[k] and k == len(nn)-1:
+            checkPassed = True
+            break
+        else:
+            checkPassed = False
+            break
+
+    #if nn[0] > rV[0]:
+    #    checkPassed = True
+    #elif nn[0] == rV[0] and nn[1] > rV[1]:
+    #    checkPassed = True
+    #elif nn[1] == rV[1] and nn[2] > rV[2]:
+    #    checkPassed = True
+    #elif nn[2] == rV[2]:
+    #    checkPassed = True
 
     if not checkPassed:
         printMessage(
