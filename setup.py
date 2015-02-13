@@ -73,6 +73,20 @@ packageData = {'psysmon.artwork': ['splash/psysmon.png']}
 # Define additinal files to be copied.
 #dataFiles = ('artwork', ['lib/psysmon/artwork/splash/splash.png'])
 
+# Define the package requirements.
+requirements =[('mpl_toolkits.basemap', '1.0.7'),
+               ('lxml', '2.3.2'),
+               ('matplotlib', '1.4.0'),
+               ('numpy', '1.9.1'),
+               ('MySQLdb', '1.2.5'),
+               ('obspy', '0.9.2'),
+               ('pillow', '2.7.0'),
+               ('cairo', '1.10.1'),
+               ('Pyro4', '4.32'),
+               ('scipy', '0.15.1'),
+               ('sqlalchemy', '0.9.8'),
+               ('wx', '3.0.0')]
+
 # Let the user know what's going on.
 printLine()
 printRaw("BUILDING PSYSMON")
@@ -85,54 +99,14 @@ if sys.platform == 'win32':
 printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
 
-# Checking for basemap
-if not checkForPackage('mpl_toolkits.basemap', '1.0.7'):
-    sys.exit(1)
 
-# Checking for lxml
-if not checkForPackage('lxml', '2.3.2'):
-    sys.exit(1)
+requirements_fullfilled = True
+for cur_name, cur_version in requirements:
+    if not checkForPackage(cur_name, cur_version):
+        requirements_fullfilled = False
 
-# Checking for matplotlib
-if not checkForPackage('matplotlib', '1.4.0'):
+if not requirements_fullfilled:
     sys.exit(1)
-
-# Checking for numpy
-if not checkForPackage('numpy', '1.9.1'):
-    sys.exit(1)
-
-# Checking for mysql-python
-if not checkForPackage('MySQLdb', '1.2.5'):
-    sys.exit(1)
-
-# Checking for obspy.core
-if not checkForPackage('obspy', '0.9.2'):
-    sys.exit(1)
-
-# Checking for PIL
-if not checkForPackage('pillow', '2.7.0'):
-    sys.exit(1)
-
-# Checking for py2cairo
-if not checkForPackage('cairo', '1.10.1'):
-    sys.exit(1)
-
-# Checking for Pyro4
-if not checkForPackage('Pyro4', '4.32'):
-    sys.exit(1)
-
-# Checking for scipy
-if not checkForPackage('scipy', '0.15.1'):
-    sys.exit(1)
-
-# Checking for sqlAlchemy
-if not checkForPackage('sqlalchemy', '0.9.8'):
-    sys.exit(1)
-
-# Checking for wx
-if not checkForPackage('wx', '3.0.0'):
-    sys.exit(1)
-
 
 
 printRaw("")
@@ -157,7 +131,5 @@ setup(name = 'psysmon',
       scripts = scripts,
       package_dir = packageDir,
       package_data = packageData
-      #data_files = dataFiles
-      #requires = ['matplotlib (>=1.1.0)']
      )
 
