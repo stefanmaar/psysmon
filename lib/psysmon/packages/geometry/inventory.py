@@ -919,7 +919,6 @@ class Recorder:
             cur_stream.parent_recorder = self
             cur_stream.set_parent_inventory(self.parent_inventory)
 
-
     def pop_stream(self, cur_stream):
         ''' Remove a stream from the recorder.
 
@@ -976,6 +975,7 @@ class RecorderStream:
     '''
 
     def __init__(self, name, label,
+                 gain = None, bitweight = None, bitweight_units = None,
                  id = None, agency_uri = None, author_uri = None,
                  creation_time = None, parent_recorder = None):
         ''' Initialization of the instance.
@@ -993,6 +993,15 @@ class RecorderStream:
 
         # The label of the stream.
         self.label = label
+
+        # The gain of the stream.
+        self.gain = gain
+
+        # The bitweight of the stream.
+        self.bitweight = bitweight
+
+        # The bitweight units of the stream.
+        self.bitweight_units = bitweight_units
 
         # The author.
         self.author_uri = author_uri
@@ -1035,7 +1044,8 @@ class RecorderStream:
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['id', 'name', 'label', 'sensors', 'has_changed']
+            compare_attributes = ['id', 'name', 'label', 'gain',
+                    'bitweight', 'bitweight_units', 'sensors', 'has_changed']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     return False
@@ -1239,10 +1249,9 @@ class Sensor:
     ## The constructor.
     #
     #
-    def __init__(self, serial, type, 
-                 rec_channel_name, channel_name, label, id=None,
+    def __init__(self, serial, type, label, id=None,
                  author_uri = None, agency_uri = None, creation_time = None,
-                 parent_recorder=None):
+                 parent_stream = None):
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
@@ -1259,43 +1268,22 @@ class Sensor:
         ## The type of the sensor.
         self.type = type
 
-        ## The recorder channel name.
-        # 
-        # The name of the channel as defined by the recording system. For example 
-        # Reftek 130 recorders name the individual channels as 101, 102, ... with 
-        # the first digit being the number of the stream, the last the number of 
-        # the channel. Other recording systems have different, custom channel 
-        # naming schemes. 
-        # The rec_channel_name is used to map the raw data files to a common channel 
-        # name named by the channel_name attribute.
-        self.rec_channel_name = rec_channel_name
-
-        ## The channel name.
-        # 
-        # The channel name is the actual name used by pSysmon to work with the 
-        # data of the sensor.
-        self.channel_name = channel_name
-
-
         ## The sensor parameters.
         # The sensor paramters are stored in a list with the start and end time 
         # during which these paramters have been valid.
         self.parameters = []
 
-
         # The parent recorder.
-        self.parent_recorder = parent_recorder
-
+        self.parent_stream = parent_stream
 
         # The inventory containing this sensor.
-        if self.parent_recorder is not None:
-            self.parent_inventory = parent_recorder.parent_inventory
+        if self.parent_stream is not None:
+            self.parent_inventory = parent_stream.parent_inventory
         else:
             self.parent_inventory = None
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
-
 
         # The author.
         self.author_uri = author_uri
@@ -1461,8 +1449,8 @@ class SensorParameter:
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, gain, bitweight, bitweight_units, sensitivity,
-                 sensitivity_units, start_time, end_time, tf_type=None,
+    def __init__(self, sensitivity, sensitivity_units,
+                 start_time, end_time, tf_type=None,
                  tf_units=None, tf_normalization_factor=None,
                  tf_normalization_frequency=None, tf_poles = None, tf_zeros = None,
                  id=None, parent_sensor = None,
@@ -1471,15 +1459,6 @@ class SensorParameter:
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
-
-        ## The sensor gain.
-        self.gain = gain
-
-        ## The sensor bitweight.
-        self.bitweight = bitweight
-
-        ## The units of the bitweight.
-        self.bitweight_units = bitweight_units
 
         ## The sensor sensitivity.
         self.sensitivity = sensitivity
@@ -1503,7 +1482,7 @@ class SensorParameter:
         self.tf_normalization_frequency = tf_normalization_frequency
 
         ## The id of the sensor paramteer instance.
-        self.id = id 
+        self.id = id
 
         ## The transfer function as PAZ.
         if tf_poles is None:
@@ -1560,7 +1539,7 @@ class SensorParameter:
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['gain', 'bitweight', 'bitweight_units', 'sensitivity', 'tf_type',
+            compare_attributes = ['sensitivity', 'tf_type',
                                   'tf_units', 'tf_normalization_factor', 'tf_normalization_frequency',
                                   'id', 'tf_poles', 'tf_zeros', 'start_time', 'end_time',
                                   'has_changed']
@@ -1705,7 +1684,7 @@ class Station:
     def __eq__(self, other):
         if type(self) is type(other):
             compare_attributes = ['id', 'name', 'location', 'description', 'x', 'y', 'z',
-                                  'coord_system', 'streams', 'has_changed']
+                                  'coord_system', 'channels', 'has_changed']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     self.logger.error('Attribute %s not matching %s != %s.', cur_attribute, str(getattr(self, cur_attribute)), str(getattr(other, cur_attribute)))
@@ -1770,7 +1749,21 @@ class Station:
         return (lon, lat)
 
 
-    def add_channel(self, cur_channel, start_time, end_time):
+    def add_channel(self, cur_channel):
+        ''' Add a channel to the station
+
+        Parameters
+        ----------
+        cur_channel : :class:`Channel`
+            The channel to add to the station.
+        '''
+        self.channels.append(cur_channel)
+        self.has_changed = True
+
+
+    # TODO: This old method is not needed for the Channel class.
+    # I kept it as a template when for adding the streams to the channel. 
+    def add_channel_old(self, cur_channel, start_time, end_time):
         ''' Add a channel to the station.
 
         Parameters
@@ -1835,7 +1828,9 @@ class Station:
 class Channel:
     ''' A channel of a station.
     '''
-    def __init__(self, name, streams = None):
+    def __init__(self, name, description = None, id = None,
+            agency_uri = None, author_uri = None, creation_time = None,
+            parent_station = None):
         ''' Initialize the instance
 
         Parameters
@@ -1847,12 +1842,57 @@ class Channel:
             The streams assigned to the channel.
 
         '''
+        # The database id of the channel.
+        self.id = id
+
+        # The name of the channel.
         self.name = name
 
-        if streams is not None:
-            self.streams = streams
+        # The description of the channel.
+        self.description = description
+
+        # The streams assigned to the channel.
+        self.streams = []
+
+        # The station holding the channel.
+        self.parent_station = parent_station
+
+        # The inventory containing this channel.
+        if self.parent_station is not None:
+            self.parent_inventory = self.parent_station.parent_inventory
         else:
-            self.streams = []
+            self.parent_inventory = None
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+
+    def set_parent_inventory(self, parent_inventory):
+        ''' Set the parent_inventory attribute.
+
+        Also update the parent inventory of all children.
+
+        Parameters
+        ----------
+        parent_inventory : :class:`Inventory`
+            The new parent inventory of the station.
+        '''
+        self.parent_inventory = parent_inventory
+        for cur_stream, cur_start_time, cur_end_time in self.streams:
+            cur_stream.set_parent_inventory(parent_inventory)
+
 
 
     def add_stream(self, cur_stream, start_time, end_time):
