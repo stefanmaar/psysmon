@@ -73,8 +73,8 @@ def databaseFactory(base):
 
 
 
-    class GeomRecorderChannel(base):
-        __tablename__ = 'geom_rec_channel'
+    class GeomRecorderStream(base):
+        __tablename__ = 'geom_rec_stream'
         __table_args__ = (
                           UniqueConstraint('recorder_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
@@ -87,23 +87,46 @@ def databaseFactory(base):
                                         ondelete='set null'),
                              nullable=True)
         name = Column(String(20), nullable = False)
+        label = Column(String(20), nullable = False)
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        def __init__(self, recorder_id, name, agency_uri, author_uri, creation_time):
+        def __init__(self, recorder_id, name, label, agency_uri, author_uri, creation_time):
             self.recorder_id = recorder_id
             self.name = name
+            self.label = label
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
 
         def __repr__(self):
-            return "GeomRecorderChannel\id: %d\nrecorder_id: %d\nname: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
-                        self.recorder_id, self.name, self.agency_uri, self.author_uri, self.creation_time)
+            return "GeomRecorderChannel\id: %d\nrecorder_id: %d\nname: %s\nlabel: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
+                        self.recorder_id, self.name, self.label, self.agency_uri, self.author_uri, self.creation_time)
 
-    tables.append(GeomRecorderChannel)
+    tables.append(GeomRecorderStream)
+
+
+    class GeomSensorToStream(base):
+        __tablename__ = 'geom_sensor_to_stream'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        stream_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
+        start_time = Column(Float(53), nullable=False)
+        end_time = Column(Float(53))
+
+        sensor = relationship('GeomSensor')
+
+        def __init__(self, stream_id, sensor_id, start_time, end_time):
+            self.stream_id = stream_id
+            self.sensor_id = sensor_id
+            self.start_time = start_time
+            self.end_time = end_time
+
+
+    tables.append(GeomSensorToStream)
 
 
 
@@ -308,18 +331,16 @@ def databaseFactory(base):
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         stat_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
-        sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
-        rec_channel_id = Column(Integer, ForeignKey('geom_rec_channel.id', onupdate='cascade'), primary_key=True, nullable=False)
+        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
         name = Column(String(20), nullable = False)
         start_time = Column(Float(53), nullable=False)
         end_time = Column(Float(53))
 
-        #child = relationship('GeomSensor')
+        stream = relationship('GeomRecorderStream')
 
-        def __init__(self, stat_id, sensor_id, rec_channel_id, name, start_time, end_time):
+        def __init__(self, stat_id, stream_id, name, start_time, end_time):
             self.stat_id = stat_id
-            self.sensor_id = sensor_id
-            self.rec_channel_id = rec_channel_id
+            self.stream_id = stream_id
             self.name = name
             self.start_time = start_time
             self.end_time = end_time
@@ -327,17 +348,15 @@ def databaseFactory(base):
 
         def __repr__(self):
             if not self.end_time:
-                return "ID: %d\nName: %s\nStation ID: %d\nSensor ID: %d\nRecorder channel ID: %d\nstart time: %f\nend time: None\n" % (self.id,
+                return "ID: %d\nName: %s\nStation ID: %d\nStream ID: %d\nstart time: %f\nend time: None\n" % (self.id,
                                                                                                                 self.name,
                                                                                                                 self.stat_id,
-                                                                                                                self.sensor_id,
-                                                                                                                self.rec_channel_id,
+                                                                                                                self.stream_id,
                                                                                                                 self.start_time)
             else:
-                return "ID: %d\nName: %s\nStation ID: %d\nSensor ID: %d\nstart time: %f\nend time: %f\n" % (self.id,
+                return "ID: %d\nName: %s\nStation ID: %d\nStream ID: %d\nstart time: %f\nend time: %f\n" % (self.id,
                                                                                                             self.stat_id,
-                                                                                                            self.sensor_id,
-                                                                                                            self.rec_channel_id,
+                                                                                                            self.stream_id,
                                                                                                             self.start_time,
                                                                                                             self.end_time)
 
