@@ -53,7 +53,7 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        channels = relationship('GeomRecorderChannel',
+        streams = relationship('GeomRecorderStream',
                                cascade = 'all',
                                backref = 'parent')
 
@@ -92,6 +92,9 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
+        sensors = relationship('GeomSensorToStream',
+                               backref = 'parent')
+
         def __init__(self, recorder_id, name, label, agency_uri, author_uri, creation_time):
             self.recorder_id = recorder_id
             self.name = name
@@ -102,7 +105,7 @@ def databaseFactory(base):
 
 
         def __repr__(self):
-            return "GeomRecorderChannel\id: %d\nrecorder_id: %d\nname: %s\nlabel: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
+            return "GeomRecorderStream\id: %d\nrecorder_id: %d\nname: %s\nlabel: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
                         self.recorder_id, self.name, self.label, self.agency_uri, self.author_uri, self.creation_time)
 
     tables.append(GeomRecorderStream)
@@ -112,7 +115,7 @@ def databaseFactory(base):
         __tablename__ = 'geom_sensor_to_stream'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        stream_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
         sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
         start_time = Column(Float(53), nullable=False)
         end_time = Column(Float(53))
@@ -299,9 +302,6 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        #sensors = relationship('GeomSensorTime', 
-        #                       backref = 'parent')
-
 
         def __init__(self, network, name, location, x, y, z, coord_system,
                      description, agency_uri, author_uri, creation_time):
@@ -336,7 +336,7 @@ def databaseFactory(base):
         start_time = Column(Float(53), nullable=False)
         end_time = Column(Float(53))
 
-        stream = relationship('GeomRecorderStream')
+        #stream = relationship('GeomRecorderStream')
 
         def __init__(self, stat_id, stream_id, name, start_time, end_time):
             self.stat_id = stat_id
