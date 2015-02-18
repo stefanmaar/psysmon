@@ -69,30 +69,59 @@ def databaseFactory(base):
         def __repr__(self):
             return "Recorder\nid: %d\nserial: %s\ntype: %s\n" % (self.id, self.serial, self.type)
 
-
-
     tables.append(GeomRecorder)
+
+
+
+    class GeomRecorderChannel(base):
+        __tablename__ = 'geom_rec_channel'
+        __table_args__ = (
+                          UniqueConstraint('recorder_id', 'name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        recorder_id = Column(Integer,
+                             ForeignKey('geom_recorder.id',
+                                        onupdate='cascade',
+                                        ondelete='set null'),
+                             nullable=True)
+        name = Column(String(20), nullable = False)
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        def __init__(self, recorder_id, name, agency_uri, author_uri, creation_time):
+            self.recorder_id = recorder_id
+            self.name = name
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+
+        def __repr__(self):
+            return "GeomRecorderChannel\id: %d\nrecorder_id: %d\nname: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
+                        self.recorder_id, self.name, self.agency_uri, self.author_uri, self.creation_time)
+
+    tables.append(GeomRecorderChannel)
+
+
+
+
 
 
     # Create the geom_sensor table mapper class.
     class GeomSensor(base):
         __tablename__ = 'geom_sensor'
         __table_args__ = (
-                          UniqueConstraint('recorder_id', 'serial', 'type', 'rec_channel_name', 'channel_name'),
+                          UniqueConstraint('serial', 'type'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        recorder_id = Column(Integer, 
-                             ForeignKey('geom_recorder.id', 
-                                        onupdate='cascade',
-                                        ondelete='set null'), 
-                             nullable=True)
         label = Column(String(255), nullable=False)
         serial = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
-        rec_channel_name = Column(String(10), nullable=False)
-        channel_name = Column(String(10), nullable=False)
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -102,26 +131,21 @@ def databaseFactory(base):
                                   backref = 'parent')
 
 
-        def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name,
+        def __init__(self, label, serial, type,
                 agency_uri, author_uri, creation_time):
-            self.recorder_id = recorder_id
             self.label = label
             self.serial = serial
             self.type = type
-            self.rec_channel_name = rec_channel_name
-            self.channel_name = channel_name
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
         def __repr__(self):
-            return "id: %s\nrecorder_id: %s\nlabel: %s\nserial: %s\ntype: %s\nrec_channel_name: %s\nchannel_name: %s" % (str(self.id), 
-                                                                                                                         str(self.recorder_id),
-                                                                                                                         self.label,
-                                                                                                                         self.serial,
-                                                                                                                         self.type,
-                                                                                                                         self.rec_channel_name,
-                                                                                                                         self.channel_name) 
+            return "id: %s\nlabel: %s\nserial: %s\ntype: %s\n" % (str(self.id),
+                                                                  self.label,
+                                                                  self.serial,
+                                                                  self.type
+                                                                  )
 
 
     tables.append(GeomSensor)
@@ -277,33 +301,48 @@ def databaseFactory(base):
     tables.append(GeomStation)
 
 
-    # Create the geom_sensor_time table mapper class.
-    class GeomSensorTime(base):
-        __tablename__ = 'geom_sensor_time'
+    # Create the geom_channel table mapper class.
+    class GeomChannel(base):
+        __tablename__ = 'geom_channel'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
+        id = Column(Integer, primary_key=True, autoincrement=True)
         stat_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
         sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
-        start_time = Column(Float(53), primary_key=True, nullable=False)
+        rec_channel_id = Column(Integer, ForeignKey('geom_rec_channel.id', onupdate='cascade'), primary_key=True, nullable=False)
+        name = Column(String(20), nullable = False)
+        start_time = Column(Float(53), nullable=False)
         end_time = Column(Float(53))
 
-        child = relationship('GeomSensor')
+        #child = relationship('GeomSensor')
 
-        def __init__(self, stat_id, sensor_id, start_time, end_time):
+        def __init__(self, stat_id, sensor_id, rec_channel_id, name, start_time, end_time):
             self.stat_id = stat_id
             self.sensor_id = sensor_id
+            self.rec_channel_id = rec_channel_id
+            self.name = name
             self.start_time = start_time
             self.end_time = end_time
 
 
         def __repr__(self):
             if not self.end_time:
-                return "Station ID: %d\nSensor ID: %d\nstart time: %f\nend time: None\n" % (self.stat_id, self.sensor_id, self.start_time)
+                return "ID: %d\nName: %s\nStation ID: %d\nSensor ID: %d\nRecorder channel ID: %d\nstart time: %f\nend time: None\n" % (self.id,
+                                                                                                                self.name,
+                                                                                                                self.stat_id,
+                                                                                                                self.sensor_id,
+                                                                                                                self.rec_channel_id,
+                                                                                                                self.start_time)
             else:
-                return "Station ID: %d\nSensor ID: %d\nstart time: %f\nend time: %f\n" % (self.stat_id, self.sensor_id, self.start_time, self.end_time)
+                return "ID: %d\nName: %s\nStation ID: %d\nSensor ID: %d\nstart time: %f\nend time: %f\n" % (self.id,
+                                                                                                            self.stat_id,
+                                                                                                            self.sensor_id,
+                                                                                                            self.rec_channel_id,
+                                                                                                            self.start_time,
+                                                                                                            self.end_time)
 
 
-    tables.append(GeomSensorTime)
+    tables.append(GeomChannel)
 
 
     return tables
