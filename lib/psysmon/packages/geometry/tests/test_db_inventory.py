@@ -37,12 +37,14 @@ from psysmon.core.test_util import remove_project_filestructure
 from psysmon.packages.geometry.db_inventory import DbInventory
 from psysmon.packages.geometry.db_inventory import DbNetwork
 from psysmon.packages.geometry.db_inventory import DbStation
+from psysmon.packages.geometry.db_inventory import DbRecorder
 from psysmon.packages.geometry.db_inventory import DbSensor
 from psysmon.packages.geometry.db_inventory import DbSensorParameter
 
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Recorder
+from psysmon.packages.geometry.inventory import RecorderStream
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
 from psysmon.packages.geometry.inventory import InventoryXmlParser
@@ -314,8 +316,88 @@ class DbInventoryTestCase(unittest.TestCase):
         removed_station = added_network_2.remove_station(name = 'AAA', location = '00')
         added_network_1.add_station(removed_station)
 
-        db_inventory.commit()
-        db_inventory.close()
+        try:
+            db_inventory.commit()
+        finally:
+            db_inventory.close()
+
+
+    def test_add_empty_recorder(self):
+        db_inventory = DbInventory('test', self.project)
+
+        rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder')
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+
+        self.assertIsInstance(added_recorder, DbRecorder)
+        self.assertEqual(len(db_inventory.recorders), 1)
+        self.assertEqual(db_inventory.recorders[0], added_recorder)
+
+        try:
+            db_inventory.commit()
+        finally:
+            db_inventory.close()
+
+
+    def test_add_stream_to_recorder(self):
+        db_inventory = DbInventory('test', self.project)
+
+        rec_2_add = Recorder(serial = 'recorder_serial',
+                             type = 'recorder_type')
+
+
+        stream_2_add = RecorderStream(name = 'stream_name',
+                                      label = 'stream_label')
+
+        rec_2_add.add_stream(stream_2_add)
+
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+
+        self.assertIsInstance(added_recorder, DbRecorder)
+        self.assertEqual(len(rec_2_add.streams), 1)
+
+        try:
+            db_inventory.commit()
+        finally:
+            db_inventory.close()
+
+
+    def test_add_sensor_to_stream(self):
+        db_inventory = DbInventory('test', self.project)
+
+        rec_2_add = Recorder(serial = 'recorder_serial',
+                             type = 'recorder_type')
+
+
+        stream_2_add = RecorderStream(name = 'stream_name',
+                                      label = 'stream_label')
+
+
+        sensor_2_add = Sensor(serial = 'sensor_serial',
+                              type = 'sensor_type',
+                              rec_channel_name = '001',
+                              channel_name = 'HHZ',
+                              label = 'sensor_label')
+        cur_start_time = UTCDateTime('1976-06-20')
+        cur_end_time = UTCDateTime('2014-06-20')
+
+        stream_2_add.add_sensor(sensor_2_add,
+                                cur_start_time,
+                                cur_end_time)
+
+        rec_2_add.add_stream(stream_2_add)
+
+
+        added_recorder = db_inventory.add_recorder(rec_2_add)
+
+        self.assertIsInstance(added_recorder, DbRecorder)
+        self.assertEqual(len(rec_2_add.streams), 1)
+        self.assertEqual(len(rec_2_add.streams[0].sensors), 1)
+
+        try:
+            db_inventory.commit()
+        finally:
+            db_inventory.close()
+
 
 
     def test_add_recorder(self):
