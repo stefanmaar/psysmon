@@ -53,7 +53,7 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        sensors = relationship('GeomSensor', 
+        channels = relationship('GeomRecorderChannel',
                                cascade = 'all',
                                backref = 'parent')
 
@@ -276,8 +276,8 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        sensors = relationship('GeomSensorTime', 
-                               backref = 'parent')
+        #sensors = relationship('GeomSensorTime', 
+        #                       backref = 'parent')
 
 
         def __init__(self, network, name, location, x, y, z, coord_system,
@@ -285,7 +285,7 @@ def databaseFactory(base):
             self.network = network
             self.name = name
             self.location = location
-            self.x = x 
+            self.x = x
             self.y = y
             self.z = z
             self.coord_system = coord_system
