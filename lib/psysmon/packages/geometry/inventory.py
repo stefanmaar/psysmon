@@ -845,8 +845,8 @@ class Recorder:
         # Indicates if the attributes have been changed.
         self.has_changed = False
 
-        # A list of Sensor instances related to the recorder.
-        self.sensors = [];
+        # A list of Stream instances related to the recorder.
+        self.streams = [];
 
         ## The parent inventory.
         self.parent_inventory = parent_inventory
@@ -879,7 +879,7 @@ class Recorder:
     def __eq__(self, other):
         if type(self) is type(other):
             compare_attributes = ['id', 'serial', 'type', 'description', 'has_changed',
-                                  'sensors']
+                                  'streams']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     return False
@@ -905,36 +905,203 @@ class Recorder:
         for cur_sensor in self.sensors:
             cur_sensor.set_parent_inventory(parent_inventory)
 
-    ## Add a sensor to the recorder.
-    def add_sensor(self, sensor):
-        if sensor not in self.sensors:
-            self.sensors.append(sensor)
-            sensor.parent_recorder = self
-            sensor.set_parent_inventory(self.parent_inventory)
 
-
-    def pop_sensor(self, sensor):
-        ''' Remove a sensor from the recorder.
+    def add_stream(self, cur_stream):
+        ''' Add a stream to the recorder.
 
         Parameters
         ----------
-        sensor : :class:`Sensor`
-            The sensor to be removed from the recorder.
+        stream : :class:`Stream`
+            The stream to add to the recorder.
+        '''
+        if cur_stream not in self.streams:
+            self.streams.append(cur_stream)
+            cur_stream.parent_recorder = self
+            cur_stream.set_parent_inventory(self.parent_inventory)
+
+
+    def pop_stream(self, cur_stream):
+        ''' Remove a stream from the recorder.
+
+        Parameters
+        ----------
+        cur_stream : :class:`Stream`
+            The stream to be removed from the recorder.
 
         Returns
         -------
-        sensor : :class:`Sensor`
-            The removed sensor instance.
+        cur_stream : :class:`Stream`
+            The removed stream.
         '''
-        if sensor in self.sensors:
-            sensor.parent_recorder = None
-            return self.sensors.pop(self.sensors.index(sensor))
+        if cur_stream in self.streams:
+            cur_stream.parent_recorder = None
+            return self.streams.pop(self.streams.index(cur_stream))
         else:
             return None
 
 
-    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None, label = None):
-        ''' Get a sensor from the recorder.
+    def get_stream(self, **kwargs):
+        ''' Get a stream from the recorder.
+
+        Parameters
+        ----------
+        name : String
+            The name of the stream.
+
+        label : String
+            The label of the stream.
+
+        agency_uri : String
+            The agency_uri of the stream.
+
+        author_uri : string
+            The author_uri of the stream.
+        '''
+        ret_stream = self.streams
+
+        valid_keys = ['name', 'label', 'agency_uri', 'author_uri']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_stream = [x for x in ret_stream if getattr(self, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_stream
+
+
+
+class RecorderStream:
+    ''' A digital stream of a data recorder.
+    '''
+
+    def __init__(self, name, label,
+                 id = None, agency_uri = None, author_uri = None,
+                 creation_time = None, parent_recorder = None):
+        ''' Initialization of the instance.
+        '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The database id of the stream.
+        self.id = id
+
+        # The name of the stream.
+        self.name = name
+
+        # The label of the stream.
+        self.label = label
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+        # The parent recorder holding the stream.
+        self.parent_recorder = parent_recorder
+
+        # The inventory containing this stream.
+        if self.parent_recorder is not None:
+            self.parent_inventory = parent_recorder.parent_inventory
+        else:
+            self.parent_inventory = None
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+        # A list of tuples of sensors recorded by the stream.
+        # The tuple is: (sensor, start_time, end_time).
+        self.sensors = []
+
+
+    def __setitem__(self, name, value):
+        self.__dict__[name] = value
+        self.has_changed = True
+
+        # Send an inventory update event.
+        msgTopic = 'inventory.update.stream'
+        msg = (self, name, value)
+        pub.sendMessage(msgTopic, msg)
+
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['id', 'name', 'label', 'sensors', 'has_changed']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
+
+    def set_parent_inventory(self, parent_inventory):
+        ''' Set the parent_inventory attribute.
+
+        Parameters
+        ----------
+        parent_inventory : :class:`Inventory`
+            The new parent inventory of the station.
+        '''
+        self.parent_inventory = parent_inventory
+
+
+
+    def add_sensor(self, sensor, start_time, end_time):
+        ''' Add a sensor to the stream.
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The :class:`Sensor` instance to be added to the station.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the sensor has been operating at the station.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the sensor has been operating at the station. "None" if the station is still running.
+
+        '''
+        if not isinstance(start_time, UTCDateTime):
+            if start_time is not None:
+                start_time = UTCDateTime(start_time)
+            else:
+                start_time = None
+
+        if not isinstance(end_time, UTCDateTime):
+            if end_time is not None:
+                end_time = UTCDateTime(end_time)
+            else:
+                end_time = None
+
+        self.sensors.append((sensor, start_time, end_time))
+        self.has_changed = True
+
+
+    def remove_sensor(self, sensor):
+        ''' Remove a sensor from the stream.
+
+        Parameters
+        ----------
+        sensor : tuple (:class:`Sensor`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
+            The sensor to be removed from the stream.
+        '''
+        # TODO: Implement this method.
+        pass
+
+
+    def get_sensor(self, **kwargs):
+        ''' Get a sensor from the stream.
 
         Parameters
         ----------
@@ -950,50 +1117,117 @@ class Recorder:
         channel_name : String
             The assigned channel name of the sensor.
 
+        id : Integer
+            The database id.
+
         label : String
             The label of the sensor.
+
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The start time.
+
+        end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The end time.
+
         '''
-        sensor = self.sensors
+        ret_sensor = self.sensors
 
-        if serial is not None:
-            sensor = [x for x in sensor if x.serial == serial]
+        valid_keys = ['serial', 'type', 'rec_channel_name', 'channel_name', 'id',
+                      'label', 'start_time', 'end_time']
 
-        if type is not None:
-            sensor = [x for x in sensor if x.type == type]
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_sensor = [x for x in ret_sensor if getattr(self, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-        if rec_channel_name is not None:
-            sensor = [x for x in sensor if x.rec_channel_name == rec_channel_name]
-
-        if channel_name is not None:
-            sensor = [x for x in sensor if x.channel_name == channel_name]
-
-        if id is not None:
-            sensor = [x for x in sensor if x.id == id]
-
-        if label is not None:
-            sensor = [x for x in sensor if x.label == label]
-
-        return sensor
+        return ret_sensor
 
 
 
-    ## Refresh the sensor list.
-    #
-    # Check the association of the stations to the network. 
-    # Remove stations that are no longer linked to the network.
-    def refreshSensors(self, sensors=None):
-        # Remove invalid stations from the network.
-        for cur_sensor in self.sensors:
-            if cur_sensor.recorder_serial != self.serial or cur_sensor.recorder_type != self.type:
-                self.sensors.remove(cur_sensor)
-                self.parent_inventory.add_sensor(cur_sensor)
+    def change_sensor_start_time(self, sensor, start_time):
+        ''' Change the sensor deployment start time
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The sensor which should be changed.
+
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime or String
+            A :class:`~obspy.core.utcdatetime.UTCDateTime` instance or a data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
+        '''
+        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+
+        if sensor_2_change:
+            sensor_2_change = sensor_2_change[0]
+            position = sensor_2_change[3]
+        else:
+            msg = 'The sensor can''t be found in the station.'
+            return (None, msg)
+
+        msg = ''
 
 
-        #for cur_station in stations:
-        #    if cur_station.network == self.name:
-        #        self.parent_inventory.add_station(cur_station)
-        #        stations.remove(cur_station)
+        if not isinstance(start_time, UTCDateTime):
+            try:
+                start_time = UTCDateTime(start_time)
+            except:
+                start_time = sensor_2_change[2]
+                msg = "The entered value is not a valid time."
 
+
+        if not sensor_2_change[2] or (sensor_2_change[2] and start_time < sensor_2_change[2]):
+            self.sensors[position] = (sensor_2_change[0], start_time, sensor_2_change[2])
+            # Send an inventory update event.
+
+        else:
+            start_time = sensor_2_change[1]
+            msg = "The end-time has to be larger than the begin time."
+
+        return (start_time, msg)
+
+
+    def change_sensor_end_time(self, sensor, end_time):
+        ''' Change the sensor deployment end time
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The sensor which should be changed.
+
+        end_time : String
+            A data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
+        '''
+        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+
+        if sensor_2_change:
+            sensor_2_change = sensor_2_change[0]
+            position = sensor_2_change[3]
+        else:
+            msg = 'The sensor can''t be found in the station.'
+            return (None, msg)
+
+        msg = ''
+
+        if end_time == 'running':
+            self.sensors[position] = (sensor_2_change[0], sensor_2_change[1], None)
+            return(end_time, msg)
+
+        if not isinstance(end_time, UTCDateTime):
+            try:
+                end_time = UTCDateTime(end_time)
+            except:
+                end_time = sensor_2_change[2]
+                msg = "The entered value is not a valid time."
+
+
+        if not sensor_2_change[1] or end_time > sensor_2_change[1]:
+            self.sensors[position] = (sensor_2_change[0], sensor_2_change[1], end_time)
+        else:
+            end_time = sensor_2_change[2]
+            msg = "The end-time has to be larger than the begin time."
+
+        return (end_time, msg)
 
 
 
@@ -1433,13 +1667,8 @@ class Station:
         #
         self.network = network
 
-        ## A list of sensors assigned to the station.
-        # 
-        # Each sensor knows during which time it has been operating at the sensor.
-        # 1. column: sensor object
-        # 2. column: start time
-        # 3. column: end time
-        self.sensors = []
+        # A list of tuples of channels assigned to the station.
+        self.channels = []
 
         # The network containing this station.
         self.parent_network = parent_network
@@ -1476,7 +1705,7 @@ class Station:
     def __eq__(self, other):
         if type(self) is type(other):
             compare_attributes = ['id', 'name', 'location', 'description', 'x', 'y', 'z',
-                                  'coord_system', 'sensors', 'has_changed']
+                                  'coord_system', 'streams', 'has_changed']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     self.logger.error('Attribute %s not matching %s != %s.', cur_attribute, str(getattr(self, cur_attribute)), str(getattr(other, cur_attribute)))
@@ -1541,13 +1770,13 @@ class Station:
         return (lon, lat)
 
 
-    def add_sensor(self, sensor, start_time, end_time):
-        ''' Add a sensor to the station.
+    def add_channel(self, cur_channel, start_time, end_time):
+        ''' Add a channel to the station.
 
         Parameters
         ----------
-        sensor : :class:`Sensor`
-            The :class:`Sensor` instance to be added to the station.
+        cur_channel : :class:`Channel`
+            The channel instance to be added to the station.
 
         start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time from which on the sensor has been operating at the station.
@@ -1567,175 +1796,225 @@ class Station:
             else:
                 end_time = None
 
-        self.sensors.append((sensor, start_time, end_time))
+        self.channels.append((cur_channel, start_time, end_time))
         self.has_changed = True
-        #sensor.set_parent_inventory(self.parent_inventory)
 
 
-    def remove_sensor(self, sensor):
-        ''' Remove a sensor from the station.
+    def get_channel(self, **kwargs):
+        ''' Get a channel from the stream.
 
         Parameters
         ----------
-        sensor : tuple (:class:`Sensor`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
-            The sensor to be removed from the station.
+        name : String
+            The name of the channel.
         '''
-        self.logger.debug("Removing sensor ")
-        self.logger.debug("%s", sensor)
+        ret_channel = self.channels
+
+        valid_keys = ['name']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_channel = [x for x in ret_channel if getattr(self, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_channel
+
+
+    def get_unique_channel_names(self):
+        channel_names = []
+
+        for cur_channel, start, end in self.channels:
+            if cur_channel.name not in channel_names:
+                channel_names.append(cur_channel.name)
+
+        return channel_names
+
+
+
+class Channel:
+    ''' A channel of a station.
+    '''
+    def __init__(self, name, streams = None):
+        ''' Initialize the instance
+
+        Parameters
+        ----------
+        name : String
+            The name of the channel.
+
+        streams : List of tuples.
+            The streams assigned to the channel.
+
+        '''
+        self.name = name
+
+        if streams is not None:
+            self.streams = streams
+        else:
+            self.streams = []
+
+
+    def add_stream(self, cur_stream, start_time, end_time):
+        ''' Add a stream to the channel.
+
+        Parameters
+        ----------
+        cur_stream : :class:`Stream`
+            The stream to add to the channel.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the stream has been operating at the channel.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the stream has been operating at the channel. "None" if the channel is still running.
+        '''
+        if not isinstance(start_time, UTCDateTime):
+            if start_time is not None:
+                start_time = UTCDateTime(start_time)
+            else:
+                start_time = None
+
+        if not isinstance(end_time, UTCDateTime):
+            if end_time is not None:
+                end_time = UTCDateTime(end_time)
+            else:
+                end_time = None
+
+        self.streams.append((cur_stream, start_time, end_time))
+        self.has_changed = True
+
+
+    def remove_stream(self, cur_stream):
+        ''' Remove a stream from the channel.
+
+        Parameters
+        ----------
+        cur_stream : tuple (:class:`Stream`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
+            The stream to be removed from the channel.
+        '''
+        self.logger.debug("Removing stream ")
+        self.logger.debug("%s", cur_stream)
+
+        #TODO: Implement this method.
 
         #if sensor not in self.sensors:
-        
-        # Remove the sensor from the sensors list.
-        #self.sensors.pop(self.sensors.index(sensor))
+
+        # Remove the stream from the stream list.
+        #self.streams.pop(self.stream.index(cur_stream))
 
 
-    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None, label = None, start_time = None, end_time = None):
+    def get_stream(self, **kwargs):
         ''' Get a sensor from the recorder.
 
         Parameters
         ----------
-        serial : String
-            The serial number of the sensor.
+        id : Integer
+            The database id.
 
-        type : String
-            The type of the sensor.
-
-        rec_channel_name : String
-            The recorder channel name of the sensor.
-
-        channel_name : String
-            The assigned channel name of the sensor.
+        name : String
+            The name of the stream.
 
         label : String
-            The label of the sensor.
+            The label of the stream.
         '''
-        sensor = self.sensors
+        ret_stream = self.streams
 
-        if serial is not None:
-            sensor = [x for x in sensor if x[0].serial == serial]
+        valid_keys = ['id', 'name', 'label']
 
-        if type is not None:
-            sensor = [x for x in sensor if x[0].type == type]
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_stream = [x for x in ret_stream if getattr(self, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-        if rec_channel_name is not None:
-            sensor = [x for x in sensor if x[0].rec_channel_name == rec_channel_name]
-
-        if channel_name is not None:
-            sensor = [x for x in sensor if x[0].channel_name == channel_name]
-
-        if id is not None:
-            sensor = [x for x in sensor if x[0].id == id]
-
-        if label is not None:
-            sensor = [x for x in sensor if x[0].label == label]
-
-        if start_time is not None:
-            start_time = UTCDateTime(start_time)
-            sensor = [x for x in sensor if x[2] is None or x[2] > start_time]
-
-        if end_time is not None:
-            end_time = UTCDateTime(end_time)
-            sensor = [x for x in sensor if x[1] is None or x[1] < end_time]
-
-        return sensor
+        return ret_stream
 
 
-
-    def change_sensor_start_time(self, sensor, start_time):
-        ''' Change the sensor deployment start time
+    def change_stream_start_time(self, cur_stream, start_time):
+        ''' Change the stream deployment start time
 
         Parameters
         ----------
-        sensor : :class:`Sensor`
-            The sensor which should be changed.
+        cur_stream : :class:`RecorderStream`
+            The stream which should be changed.
 
         start_time : :class:`~obspy.core.utcdatetime.UTCDateTime or String
             A :class:`~obspy.core.utcdatetime.UTCDateTime` instance or a data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
         '''
-        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+        stream_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.streams) if s == cur_stream]
 
-        if sensor_2_change:
-            sensor_2_change = sensor_2_change[0]
-            position = sensor_2_change[3]
+        if len(stream_2_change) == 1:
+            stream_2_change = stream_2_change[0]
+            position = stream_2_change[3]
         else:
-            msg = 'The sensor can''t be found in the station.'
+            msg = 'The stream can''t be found in the channel or multiple streams where found.'
             return (None, msg)
 
-        msg = ''    
+        msg = ''
 
 
         if not isinstance(start_time, UTCDateTime):
             try:
                 start_time = UTCDateTime(start_time)
             except:
-                start_time = sensor_2_change[2]
+                start_time = stream_2_change[2]
                 msg = "The entered value is not a valid time."
 
 
-        if not sensor_2_change[2] or (sensor_2_change[2] and start_time < sensor_2_change[2]):
-            self.sensors[position] = (sensor_2_change[0], start_time, sensor_2_change[2])
+        if not stream_2_change[2] or (stream_2_change[2] and start_time < stream_2_change[2]):
+            self.streams[position] = (stream_2_change[0], start_time, stream_2_change[2])
             # Send an inventory update event.
 
         else:
-            start_time = sensor_2_change[1]
+            start_time = stream_2_change[1]
             msg = "The end-time has to be larger than the begin time."
 
         return (start_time, msg)
 
 
 
-    def change_sensor_end_time(self, sensor, end_time):
-        ''' Change the sensor deployment end time
+    def change_stream_end_time(self, cur_stream, end_time):
+        ''' Change the stream deployment end time
 
         Parameters
         ----------
-        sensor : :class:`Sensor`
-            The sensor which should be changed.
+        cur_stream : :class:`Stream`
+            The stream which should be changed.
 
         end_time : String
             A data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
         '''
-        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
+        stream_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.streams) if s == cur_stream]
 
-        if sensor_2_change:
-            sensor_2_change = sensor_2_change[0]
-            position = sensor_2_change[3]
+        if stream_2_change:
+            stream_2_change = stream_2_change[0]
+            position = stream_2_change[3]
         else:
-            msg = 'The sensor can''t be found in the station.'
+            msg = 'The sensor can''t be found in the channel.'
             return (None, msg)
 
-        msg = ''    
+        msg = ''
 
         if end_time == 'running':
-            self.sensors[position] = (sensor_2_change[0], sensor_2_change[1], None)
+            self.streams[position] = (stream_2_change[0], stream_2_change[1], None)
             return(end_time, msg)
 
         if not isinstance(end_time, UTCDateTime):
             try:
                 end_time = UTCDateTime(end_time)
             except:
-                end_time = sensor_2_change[2]
+                end_time = stream_2_change[2]
                 msg = "The entered value is not a valid time."
 
 
-        if not sensor_2_change[1] or end_time > sensor_2_change[1]:
-            self.sensors[position] = (sensor_2_change[0], sensor_2_change[1], end_time)
+        if not stream_2_change[1] or end_time > stream_2_change[1]:
+            self.streams[position] = (stream_2_change[0], stream_2_change[1], end_time)
         else:
-            end_time = sensor_2_change[2]
+            end_time = stream_2_change[2]
             msg = "The end-time has to be larger than the begin time."
 
         return (end_time, msg)
-
-
-    def get_unique_channel_names(self):
-        channel_names = []
-
-        for cur_sensor, start, end in self.sensors:
-            if cur_sensor.channel_name not in channel_names:
-                channel_names.append(cur_sensor.channel_name)
-
-        return channel_names
-
 
 
 
