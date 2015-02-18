@@ -88,6 +88,9 @@ def databaseFactory(base):
                              nullable=True)
         name = Column(String(20), nullable = False)
         label = Column(String(20), nullable = False)
+        gain = Column(Float)
+        bitweight = Column(Float(53))
+        bitweight_units = Column(String(15))
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -95,10 +98,15 @@ def databaseFactory(base):
         sensors = relationship('GeomSensorToStream',
                                backref = 'parent')
 
-        def __init__(self, recorder_id, name, label, agency_uri, author_uri, creation_time):
+        def __init__(self, recorder_id, name, label,
+                gain, bitweight, bitweight_units,
+                agency_uri, author_uri, creation_time):
             self.recorder_id = recorder_id
             self.name = name
             self.label = label
+            self.gain = gain
+            self.bitweight = bitweight
+            self.bitweight_units = bitweight_units
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
@@ -193,11 +201,8 @@ def databaseFactory(base):
         tf_normalization_frequency = Column(Float)
         tf_type = Column(String(150))
         tf_units = Column(String(20))
-        gain = Column(Float)
         sensitivity = Column(Float(53))
         sensitivity_units = Column(String(30))
-        bitweight = Column(Float(53))
-        bitweight_units = Column(String(15))
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -206,9 +211,8 @@ def databaseFactory(base):
 
 
         def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor,
-                     tf_normalization_frequency, tf_type, tf_units, gain, sensitivity,
-                     agency_uri, author_uri, creation_time,
-                     sensitivity_units, bitweight, bitweight_units):
+                     tf_normalization_frequency, tf_type, tf_units, sensitivity,
+                     sensitivity_units, agency_uri, author_uri, creation_time):
             self.sensor_id = sensor_id
             self.start_time = start_time
             self.end_time = end_time
@@ -216,11 +220,8 @@ def databaseFactory(base):
             self.tf_normalization_frequency = tf_normalization_frequency
             self.tf_type = tf_type
             self.tf_units = tf_units
-            self.gain = gain
             self.sensitivity = sensitivity
             self.sensitivity_units = sensitivity_units
-            self.bitweight = bitweight
-            self.bitweight_units = bitweight_units
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
@@ -302,6 +303,8 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
+        channels = relationship('GeomChannel')
+
 
         def __init__(self, network, name, location, x, y, z, coord_system,
                      description, agency_uri, author_uri, creation_time):
@@ -324,44 +327,57 @@ def databaseFactory(base):
     tables.append(GeomStation)
 
 
-    # Create the geom_channel table mapper class.
     class GeomChannel(base):
         __tablename__ = 'geom_channel'
+        __table_args__ = (
+                          UniqueConstraint('name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        station_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        name = Column(String(20))
+        description = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        streams = relationship('GeomStreamToChannel')
+
+
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+    tables.append(GeomChannel)
+
+
+
+
+    class GeomStreamToChannel(base):
+        __tablename__ = 'geom_stream_to_channel'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        stat_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        channel_id = Column(Integer, ForeignKey('geom_channel.id', onupdate='cascade'), primary_key=True, nullable=False)
         stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
-        name = Column(String(20), nullable = False)
         start_time = Column(Float(53), nullable=False)
         end_time = Column(Float(53))
 
-        #stream = relationship('GeomRecorderStream')
+        stream = relationship('GeomRecorderStream')
 
-        def __init__(self, stat_id, stream_id, name, start_time, end_time):
-            self.stat_id = stat_id
+        def __init__(self, channel_id, stream_id, start_time, end_time):
+            self.channel_id = channel_id
             self.stream_id = stream_id
-            self.name = name
             self.start_time = start_time
             self.end_time = end_time
 
 
-        def __repr__(self):
-            if not self.end_time:
-                return "ID: %d\nName: %s\nStation ID: %d\nStream ID: %d\nstart time: %f\nend time: None\n" % (self.id,
-                                                                                                                self.name,
-                                                                                                                self.stat_id,
-                                                                                                                self.stream_id,
-                                                                                                                self.start_time)
-            else:
-                return "ID: %d\nName: %s\nStation ID: %d\nStream ID: %d\nstart time: %f\nend time: %f\n" % (self.id,
-                                                                                                            self.stat_id,
-                                                                                                            self.stream_id,
-                                                                                                            self.start_time,
-                                                                                                            self.end_time)
-
-
-    tables.append(GeomChannel)
+    tables.append(GeomStreamToChannel)
 
 
     return tables
