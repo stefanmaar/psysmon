@@ -45,6 +45,8 @@ from obspy.core.utcdatetime import UTCDateTime
 class DbInventory(Inventory):
 
     def __init__(self, name, project):
+        ''' Initialize the instance.
+        '''
         Inventory.__init__(self, name = name, type = 'db')
 
         # The pSysmon project containing the inventory.
@@ -707,7 +709,7 @@ class DbRecorderStream(RecorderStream):
         return added_sensor
 
 
-    def change_sensor_start_time(self, sensor, start_time, end_time, new_start_time):
+    def change_sensor_start_time_OLD(self, sensor, start_time, end_time, new_start_time):
         ''' Change the sensor deployment start time
 
         Parameters
@@ -759,7 +761,7 @@ class DbRecorderStream(RecorderStream):
         return (new_start_time, msg)
 
 
-    def change_sensor_end_time(self, sensor, end_time):
+    def change_sensor_end_time_OLD(self, sensor, end_time):
         ''' Change the sensor deployment end time
 
         Parameters
@@ -831,18 +833,18 @@ class DbRecorderStream(RecorderStream):
 class DbSensor(Sensor):
 
     def __init__(self, parent_inventory, serial, type,
-                 label, author_uri, agency_uri, creation_time,
+                 component, author_uri, agency_uri, creation_time,
                  id = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
-                        label = label, author_uri = author_uri,
+                        component = component, author_uri = author_uri,
                         agency_uri = agency_uri, creation_time = creation_time,
                         parent_inventory = parent_inventory)
 
         if geom_sensor is None:
             geom_sensor_orm = self.parent_inventory.project.dbTables['geom_sensor']
-            self.geom_sensor = geom_sensor_orm(self.label,
-                                               self.serial,
-                                               self.type,
+            self.geom_sensor = geom_sensor_orm(serial = self.serial,
+                                               type = self.type,
+                                               component = self.component,
                                                agency_uri = self.agency_uri,
                                                author_uri = self.author_uri,
                                                creation_time = self.creation_time)
@@ -855,7 +857,7 @@ class DbSensor(Sensor):
         cur_sensor =  cls(parent_inventory = parent_inventory,
                           serial = geom_sensor.serial,
                           type = geom_sensor.type,
-                          label = geom_sensor.label,
+                          component = geom_sensor.component,
                           id = geom_sensor.id,
                           author_uri = geom_sensor.author_uri,
                           agency_uri = geom_sensor.agency_uri,
@@ -875,7 +877,7 @@ class DbSensor(Sensor):
         cur_sensor =  cls(parent_inventory = parent_inventory,
                           serial = sensor.serial,
                           type = sensor.type,
-                          label = sensor.label,
+                          component = sensor.component,
                           author_uri = sensor.author_uri,
                           agency_uri = sensor.agency_uri,
                           creation_time = sensor.creation_time)
@@ -891,11 +893,9 @@ class DbSensor(Sensor):
         ''' Control the attribute assignements.
         '''
         attr_map = {};
-        attr_map['label'] = 'label'
         attr_map['serial'] = 'serial'
         attr_map['type'] = 'type'
-        attr_map['rec_channel_name'] = 'rec_channel_name'
-        attr_map['channel_name'] = 'channel_name'
+        attr_map['component'] = 'component'
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
@@ -1134,10 +1134,10 @@ class DbChannel(Channel):
                            agency_uri = channel.agency_uri,
                            creation_time = channel.creation_time)
 
-        for cur_stream, cur_start_time, cur_end_time in channel.streams:
-            cur_channel.add_stream(DbRecorderStream.from_inventory_stream(cur_channel, cur_stream),
-                                   cur_start_time,
-                                   cur_end_time)
+        for cur_timebox in channel.streams:
+            cur_channel.add_stream(DbRecorderStream.from_inventory_stream(cur_channel, cur_timebox.item),
+                                   cur_timebox.start_time,
+                                   cur_timebox.end_time)
 
         return cur_channel
 
