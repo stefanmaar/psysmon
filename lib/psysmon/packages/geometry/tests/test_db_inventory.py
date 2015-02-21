@@ -50,7 +50,6 @@ from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import RecorderStream
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
-from psysmon.packages.geometry.inventory import InventoryXmlParser
 
 class DbInventoryTestCase(unittest.TestCase):
     """
@@ -205,12 +204,12 @@ class DbInventoryTestCase(unittest.TestCase):
         try:
             sensor1 = Sensor(serial = 'sensor1_serial',
                              type = 'sensor1_type',
-                             label = 'sensor1_label')
+                             component = 'sensor1_component')
             added_sensor1 = db_inventory.add_sensor(sensor1)
 
             sensor2 = Sensor(serial = 'sensor2_serial',
                              type = 'sensor2_type',
-                             label = 'sensor2_label')
+                             component = 'sensor2_component')
             added_sensor2 = db_inventory.add_sensor(sensor2)
 
             self.assertEqual(len(db_inventory.sensors), 2)
@@ -443,7 +442,7 @@ class DbInventoryTestCase(unittest.TestCase):
                                  coord_system = 'epsg:4316')
 
             rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
-            
+
             # TODO: Add a stream to the recorder.
 
             added_station = db_inventory.add_station(stat_2_add)
@@ -589,7 +588,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
             sensor1 = Sensor(serial = 'sensor1_serial',
                              type = 'sensor1_type',
-                             label = 'sensor1_label')
+                             component = 'sensor1_component')
             cur_start_time = UTCDateTime('2014-01-01')
             cur_end_time = UTCDateTime('2014-02-01')
 
@@ -602,6 +601,7 @@ class DbInventoryTestCase(unittest.TestCase):
             db_stream1 = db_recorder1.streams[0]
             db_stream1.add_sensor(sensor_serial = 'sensor1_serial',
                                   sensor_type = 'sensor1_type',
+                                  component = 'sensor1_component',
                                   start_time = cur_start_time,
                                   end_time = cur_end_time)
 
@@ -629,9 +629,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         sensor_2_add = Sensor(serial = 'sensor_serial',
                               type = 'sensor_type',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'sensor_label')
+                              component = 'sensor_component')
 
         cur_start_time = UTCDateTime('1976-06-20')
         cur_end_time = UTCDateTime('2014-06-20')
@@ -679,9 +677,7 @@ class DbInventoryTestCase(unittest.TestCase):
         rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
         sensor_2_add = Sensor(serial = 'AAAA',
                               type = 'test sensor',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'AAAA-001-HHZ') 
+                              component = 'AAAA-001-HHZ') 
 
         parameter_2_add = SensorParameter(gain = 1,
                                           bitweight = 2,
@@ -713,9 +709,7 @@ class DbInventoryTestCase(unittest.TestCase):
         added_recorder = db_inventory.add_recorder(rec_2_add)
         sensor_2_add = Sensor(serial = 'AAAA',
                               type = 'test sensor',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'AAAA-001-HHZ')
+                              component = 'AAAA-001-HHZ')
         added_sensor = added_recorder.add_sensor(sensor_2_add)
 
         # Test a sensor with an open enddate.

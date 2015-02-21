@@ -33,6 +33,7 @@ from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import RecorderStream
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
+from psysmon.packages.geometry.inventory import TimeBox
 
 class InventoryTestCase(unittest.TestCase):
     """
@@ -108,13 +109,12 @@ class InventoryTestCase(unittest.TestCase):
         inventory.add_station(station2)
         inventory.add_station(station3)
 
-        self.assertEqual(station1.parent_inventory, inventory)
-        self.assertEqual(station2.parent_inventory, inventory)
-        self.assertEqual(station3.parent_inventory, inventory)
+        self.assertIs(station1.parent_inventory, inventory)
+        self.assertIs(station2.parent_inventory, inventory)
+        self.assertIsNone(station3.parent_inventory)
 
-        self.assertEqual(len(inventory.stations), 3)
-        self.assertEqual(station1.parent_network, network1)
-        self.assertEqual(station2.parent_network, network2)
+        self.assertIs(station1.parent_network, network1)
+        self.assertIs(station2.parent_network, network2)
         self.assertIsNone(station3.parent_network)
 
 
@@ -147,7 +147,6 @@ class InventoryTestCase(unittest.TestCase):
         self.assertEqual(len(inventory.networks), 2)
         self.assertTrue(network1 in inventory.networks)
         self.assertTrue(network2 in inventory.networks)
-        self.assertTrue(len(inventory.stations), 2)
         self.assertEqual(station2.network, 'YY')
 
         # Add a new station to the network which already was added to a
@@ -195,15 +194,15 @@ class InventoryTestCase(unittest.TestCase):
 
         sensor1 = Sensor(serial = 'sensor1_name',
                          type = 'sensor1_type',
-                         label = 'sensor1_label')
+                         component = 'sensor1_component')
 
         sensor2 = Sensor(serial = 'sensor2_name',
                          type = 'sensor2_type',
-                         label = 'sensor2_label')
+                         component = 'sensor2_component')
 
         sensor3 = Sensor(serial = 'sensor3_name',
                          type = 'sensor3_type',
-                         label = 'sensor3_label')
+                         component = 'sensor3_component')
 
         inventory.add_sensor(sensor1)
         inventory.add_sensor(sensor2)
@@ -300,14 +299,10 @@ class InventoryTestCase(unittest.TestCase):
 
         channel_2_add = Channel(name = 'channel_name')
 
-        cur_starttime = UTCDateTime('1976-06-20')
-        cur_endtime = UTCDateTime('2014-06-20')
-        station.add_channel(channel_2_add,
-                            start_time = cur_starttime,
-                            end_time = cur_endtime)
+        station.add_channel(channel_2_add)
 
         self.assertEqual(len(station.channels), 1)
-        self.assertEqual(station.channels[0], (channel_2_add, cur_starttime, cur_endtime))
+        self.assertEqual(station.channels[0], channel_2_add)
 
 
 
@@ -376,28 +371,28 @@ class InventoryTestCase(unittest.TestCase):
 
         sensor1 = Sensor(serial = 'sensor1_serial',
                          type = 'sensor1_type',
-                         label = 'sensor1_label')
+                         component = 'sensor1_component')
 
         sensor2 = Sensor(serial = 'sensor2_serial',
                          type = 'sensor2_type',
-                         label = 'sensor2_label')
+                         component = 'sensor2_component')
 
         start_time1 = UTCDateTime('2014-01-01')
         end_time1 = UTCDateTime('2014-02-01')
-        stream.sensors.append((sensor1, start_time1, end_time1))
+        stream.sensors.append(TimeBox(sensor1, start_time1, end_time1))
 
         start_time2 = UTCDateTime('2014-03-01')
         end_time2 = UTCDateTime('2014-04-01')
-        stream.sensors.append((sensor2, start_time2, end_time2))
+        stream.sensors.append(TimeBox(sensor2, start_time2, end_time2))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-01'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], (sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-02-01'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], (sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor2, start_time2, end_time2))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-04-01'))
         self.assertEqual(len(cur_sensor), 0)
@@ -405,12 +400,12 @@ class InventoryTestCase(unittest.TestCase):
 
         cur_sensor = stream.get_sensor(end_time = UTCDateTime('2014-03-15'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], (sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
 
         cur_sensor = stream.get_sensor(end_time = UTCDateTime('2014-02-15'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
 
         cur_sensor = stream.get_sensor(end_time = UTCDateTime('2014-01-01'))
         self.assertEqual(len(cur_sensor), 0)
@@ -419,51 +414,57 @@ class InventoryTestCase(unittest.TestCase):
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2013-12-01'),
                                        end_time = UTCDateTime('2014-05-01'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], (sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2013-12-01'),
                                        end_time = UTCDateTime('2014-02-15'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-05'),
                                        end_time = UTCDateTime('2014-01-06'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-05'),
                                        end_time = UTCDateTime('2014-03-06'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], (sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], (sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
 
         cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-05'),
                                        end_time = UTCDateTime('2014-03-06'),
                                        serial = 'sensor2_serial',
                                        type = 'sensor2_type')
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], (sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(sensor2, start_time2, end_time2))
 
 
     def test_add_sensor_to_stream(self):
-        stream= RecorderStream(name = 'stream1_name',
-                               label = 'stream1_label')
+        inventory = Inventory('inventory_name')
+        recorder1 = Recorder(serial = 'rec1_serial',
+                             type = 'rec1_type')
 
-        sensor_2_add = Sensor(serial = 'sensor1_name',
-                              type = 'sensor1_type',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'sensor1_label')
+        stream1 = RecorderStream(name = 'stream1_name',
+                               label = 'stream1_label')
+        recorder1.add_stream(stream1)
+        inventory.add_recorder(recorder1)
+
+        sensor1 = Sensor(serial = 'sensor1_serial',
+                         type = 'sensor1_type',
+                         component = 'sensor1_component')
+        inventory.add_sensor(sensor1)
 
         cur_starttime = UTCDateTime('1976-06-20')
         cur_endtime = UTCDateTime('2014-06-20')
-        stream.add_sensor(sensor_2_add,
-                          start_time = cur_starttime,
-                          end_time = cur_endtime)
+        stream1.add_sensor(sensor_serial = 'sensor1_serial',
+                           sensor_component = 'sensor1_component',
+                           start_time = cur_starttime,
+                           end_time = cur_endtime)
 
-        self.assertEqual(len(stream.sensors), 1)
-        self.assertEqual(stream.sensors[0], (sensor_2_add, cur_starttime, cur_endtime))
+        self.assertEqual(len(stream1.sensors), 1)
+        self.assertEqual(stream1.sensors[0], TimeBox(sensor1, cur_starttime, cur_endtime))
 
 
 
