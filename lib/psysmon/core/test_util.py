@@ -29,7 +29,7 @@ import psysmon
 import psysmon.core.base
 import psysmon.core.gui as psygui
 from psysmon.core.project import User
-from psysmon.packages.geometry.inventory import InventoryXmlParser
+from psysmon.packages.geometry.inventory_parser import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
 
 
