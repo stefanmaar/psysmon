@@ -292,7 +292,7 @@ def databaseFactory(base):
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         network = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=True)
-        name = Column(String(10), nullable=False)
+        name = Column(String(20), nullable=False)
         location = Column(String(3), nullable=False)
         x = Column(Float(53), nullable=False)
         y = Column(Float(53), nullable=False)
