@@ -31,7 +31,6 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
-import logging
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
@@ -46,49 +45,14 @@ from obspy.core.utcdatetime import UTCDateTime
 class DbInventory(Inventory):
 
     def __init__(self, name, project):
-        # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        Inventory.__init__(self, name = name, type = 'db')
 
-        self.name = name
-
-        self.type = 'db'
-
+        # The pSysmon project containing the inventory.
         self.project = project;
 
+        # The pSysmon database session.
         self.db_session = self.project.getDbSession()
 
-        self.networks = []
-
-        self.recorders = []
-
-        # The unassigned stations.
-        # This shouldn't be used in the db inventory. I have added them to 
-        # be compatible with the normal inventory.
-        self.stations = []
-
-        # The unassigned sensors. 
-        # This shouldn't be used in the db inventory. I have added them to 
-        # be compatible with the normal inventory.
-        self.sensors = []
-
-
-
-    def __str__(self):
-        ''' Print the string representation of the inventory.
-        '''
-        out = "Inventory %s of type %s\n" % (self.name, self.type) 
-
-        # Print the networks.
-        out =  out + str(len(self.networks)) + " network(s) in the inventory:\n"
-        out = out + "\n".join([net.__str__() for net in self.networks])
-
-        # Print the recorders.
-        out = out + '\n\n'
-        out =  out + str(len(self.recorders)) + " recorder(s) in the inventory:\n"
-        out = out + "\n".join([rec.__str__() for rec in self.recorders])
-
-        return out
 
 
     def __del__(self):
@@ -98,28 +62,6 @@ class DbInventory(Inventory):
         self.db_session.close()
 
 
-    def has_changed(self):
-        ''' Check if any element in the inventory has been changed.
-        '''
-        for cur_recorder in self.recorders:
-            if cur_recorder.has_changed:
-                self.logger.debug('Recorder changed')
-                return True
-
-            for cur_sensor in cur_recorder.sensors:
-                if cur_sensor.has_changed:
-                    self.logger.debug('Sensor changed')
-                    return True
-
-        for cur_network in self.networks:
-            if cur_network.has_changed:
-                self.logger.debug('Network changed.')
-                return True
-
-        return False
-
-
-
     def close(self):
         ''' Close the inventory database connection.
         '''
@@ -127,25 +69,73 @@ class DbInventory(Inventory):
         self.db_session.close()
 
 
-    def get_network(self, code = None):
-        ''' Get a network from the inventory.
+    def add_recorder(self, recorder):
+        ''' Add a recorder to the inventory.
 
         Parameters
         ----------
-        coder : String
-            The code of the network.
+        recorder : :class:`~psysmon.packages.geometery.inventory.Recorder`
+            The recorder to add to the inventory.
         '''
-        if code is None:
-            return self.networks
+        if recorder.__class__ is Recorder:
+            recorder = DbRecorder.from_inventory_recorder(self, recorder)
 
-        cur_network = [x for x in self.networks if x.name == code]
-        if len(cur_network) == 1:
-            return cur_network[0]
-        elif len(cur_network) > 1:
-            self.logger.error('Found more than one network with the same code %s in the inventory.', code)
-            return cur_network
-        else:
-            return None
+        added_recorder = Inventory.add_recorder(self, recorder)
+        if added_recorder is not None:
+            self.db_session.add(added_recorder.geom_recorder)
+
+        return added_recorder
+
+
+    def add_sensor(self, sensor):
+        ''' Add a sensor to the inventory.
+
+        Parameters
+        ----------
+        sensor : :class:`Sensor`
+            The sensor to add to the inventory.
+        '''
+        if sensor.__class__ is Sensor:
+            sensor = DbSensor.from_inventory_sensor(self, sensor)
+
+        added_sensor = Inventory.add_sensor(self, sensor)
+        if added_sensor is not None:
+            self.db_session.add(added_sensor.geom_sensor)
+
+        return added_sensor
+
+
+    def add_network(self, network):
+        ''' Add a new network to the database inventory.
+
+        Parameters
+        ----------
+        network : :class:`psysmon.packages.geometry.inventory.Network`
+            The network to add to the database inventory.
+        '''
+        if network.__class__ is Network:
+            network = DbNetwork.from_inventory_network(self, network)
+
+        added_network =  Inventory.add_network(self, network)
+        if added_network is not None:
+            self.db_session.add(added_network.geom_network)
+
+        return added_network
+
+
+    def remove_network(self, name):
+        ''' Remove a network from the database inventory.
+
+        Parameters
+        ----------
+        name : String
+            The name of the network to remove.
+        '''
+        removed_network = Inventory.remove_network(name)
+        if removed_network is not None:
+            self.db_session.expunge(removed_network.geom_network)
+
+        return removed_network
 
 
     def load_networks(self):
@@ -157,6 +147,7 @@ class DbInventory(Inventory):
 
             for cur_geom_station in cur_geom_network.stations:
                 db_station = DbStation.from_sqlalchemy_orm(db_network, cur_geom_station)
+
                 for cur_geom_sensor in cur_geom_station.sensors:
                     db_sensor = self.get_sensor(id = cur_geom_sensor.sensor_id)
                     if len(db_sensor) == 1:
@@ -191,227 +182,6 @@ class DbInventory(Inventory):
         '''
         self.load_recorders()
         self.load_networks()
-
-
-    def add_network(self, network):
-        ''' Add a new network to the database inventory.
-
-        Parameters
-        ----------
-        network : :class:`psysmon.packages.geometry.inventory.Network`
-            The network to add to the database inventory.
-        '''
-        available_networks = [x.name for x in self.networks]
-        if network.name not in available_networks:
-            db_network = DbNetwork.from_inventory_network(self, network)
-            self.networks.append(db_network)
-
-            for cur_station in network.stations:
-                self.add_station(cur_station)
-
-            self.db_session.add(db_network.geom_network)
-            return db_network
-        else:
-            self.logger.warning('The network %s already exists in the inventory.', network.name)
-            for cur_station in network.stations:
-                self.add_station(cur_station)
-            return None
-
-
-    def remove_network(self, name):
-        ''' Remove a network from the database inventory.
-
-        Parameters
-        ----------
-        name : String
-            The name of the network to remove.
-        '''
-        net_2_remove = [x for x in self.networks if x.name == name]
-
-        if len(net_2_remove) == 0:
-            return None
-        elif len(net_2_remove) == 1:
-            self.networks.remove(net_2_remove[0])
-            self.db_session.expunge(net_2_remove[0].geom_network)
-            return net_2_remove[0]
-        else:
-            # This shouldn't happen.
-            self.logger.error('Found more than one network with the name %s.', name)
-            return None
-
-
-    def add_station(self, station):
-        ''' Add a station to the database inventory.
-        The station is added only, if a corresponding network is found.
-
-        Parameters
-        ----------
-        station : :class:`~psysmon.packages.geometery.inventory.Station` or :class:`DbStation`
-            The station to add to the inventory.
-        '''
-        cur_net = self.get_network(station.network)
-
-        if station.__class__ is Station:
-            db_station = DbStation.from_inventory_station(cur_net, station)
-            cur_net.add_station(db_station)
-
-            #for cur_channel in station.channels:
-                #db_channel = self.get_channel(rec_serial = cur_sensor.parent_recorder.serial, 
-                 #                           sen_serial = cur_sensor.serial,
-                 #                           sen_type = cur_sensor.type,
-                 #                           rec_channel_name = cur_sensor.rec_channel_name)
-
-                #if len(db_sensor) == 0:
-                #    self.logger.error("The sensor %s is not available in the current inventory.", cur_sensor)
-                #elif len(db_sensor) == 1:
-                #    # Add the sensor to the station.
-                #    db_station.add_sensor(db_sensor[0], start_time = cur_start_time, end_time = cur_end_time)
-                #else:
-                #    # Solve the problem if more than one sensor is
-                #    # returned.
-                #    pass
-        else:
-            db_station = station
-
-
-        if cur_net is not None:
-            cur_net.add_station(db_station)
-        else:
-            self.logger.error('The network %s of the station is not found in the inventory.', station.network)
-            self.stations.append(db_station)
-
-        return db_station
-
-
-    def move_station(self, station):
-        ''' Add a station to the database inventory.
-        The station is added only, if a corresponding network is found.
-
-        Parameters
-        ----------
-        station : :class:`~psysmon.packages.geometery.inventory.Station` or :class:`DbStation`
-            The station to add to the inventory.
-        '''
-        cur_net = self.get_network(station.network)
-
-        if cur_net is not None:
-            cur_net.add_station(station)
-            # Check if the station has been a member of the unassigned
-            # stations.
-            if station in self.stations:
-                self.stations.remove(station)
-        else:
-            self.logger.error('The network %s of the station is not found in the inventory.', station.network)
-            self.stations.append(station)
-
-
-    def remove_station(self, snl):
-        ''' Remove a station from the inventory.
-
-        Parameters
-        ----------
-        scnl : tuple (String, String, String)
-            The SNL code of the station to remove from the inventory.
-        '''
-        cur_net = self.get_network(snl[1])
-
-        if cur_net is not None:
-            removed_station = cur_net.remove_station(name = snl[0], location = snl[2])
-            return removed_station
-        else:
-            return None
-
-
-    def add_recorder(self, recorder):
-        ''' Add a recorder to the inventory.
-
-        Parameters
-        ----------
-        recorder : :class:`~psysmon.packages.geometery.inventory.Recorder`
-            The recorder to add to the inventory.
-        '''
-        available_recorders = [(x.serial, x.type) for x in self.recorders]
-
-        if (recorder.serial, recorder.type) not in available_recorders:
-            db_recorder = DbRecorder.from_inventory_recorder(self, recorder)
-            self.recorders.append(db_recorder)
-            self.db_session.add(db_recorder.geom_recorder)
-            return db_recorder
-        else:
-            self.logger.error('The recorder %s-%s already exists in the inventory.', recorder.serial, recorder.type)
-            return None
-
-
-
-    def get_recorder(self, serial = None, type = None, id = None):
-        ''' Get a recorder from the inventory.
-
-        Parameters
-        ----------
-        serial : String
-            The serial number of the recorder.
-
-        type : String
-            The recorder type.
-
-        id : Integer
-            The database id of the recorder.
-
-        Returns
-        -------
-        recorder : List of :class:'~DbRecorder'
-            The recorder(s) in the inventory matching the search criteria.
-        '''
-        recorder = self.recorders
-
-        if serial is not None:
-            recorder = [x for x in recorder if x.serial == serial]
-
-        if type is not None:
-            recorder = [x for x in recorder if x.type == type]
-
-        if id is not None:
-            recorder = [x for x in recorder if x.id == id]
-
-        return recorder
-
-
-
-    def get_sensor(self, rec_serial = None, sen_serial = None, sen_type = None,
-                   rec_channel_name = None, channel_name = None, id = None):
-        ''' Get a sensor from the inventory.
-
-        Parameters
-        ----------
-        rec_serial : String
-            The serial number of the recorder.
-
-        sen_serial : String
-            The serial number of the sensor.
-
-        sen_type : String
-            The type of the sensor.
-
-        rec_channel_name : String
-            The recorder channel name of the sensor.
-
-        channel_name : String
-            The assigned channel name of the sensor.
-
-        id : Integer
-            The database id of the sensor
-        '''
-        if rec_serial is not None:
-            recorder_2_process = [x for x in self.recorders if x.serial == rec_serial]
-        else:
-            recorder_2_process = self.recorders
-
-        sensor = []
-        if len(recorder_2_process) > 0:
-            for cur_recorder in recorder_2_process:
-                sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = id))
-
-        return sensor
 
 
     def commit(self):
@@ -496,7 +266,7 @@ class DbNetwork(Network):
 
     @classmethod
     def from_inventory_network(cls, parent_inventory, network):
-        return cls(parent_inventory = parent_inventory,
+        cur_network =  cls(parent_inventory = parent_inventory,
                    name = network.name,
                    description = network.description,
                    type = network.type,
@@ -504,11 +274,17 @@ class DbNetwork(Network):
                    agency_uri = network.agency_uri,
                    creation_time = network.creation_time)
 
+        for cur_station in network.stations:
+            cur_network.add_station(cur_network)
+
+        return cur_network
+
 
 
     def __setattr__(self, attr, value):
         ''' Control the attribute assignements.
         '''
+        Network.__setattr__(self, attr, value)
         attr_map = {};
         attr_map['name'] = 'name'
         attr_map['description'] = 'description'
@@ -517,19 +293,10 @@ class DbNetwork(Network):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        self.__dict__[attr] = value
-
         if attr in attr_map.keys():
             if 'geom_network' in self.__dict__:
                 setattr(self.geom_network, attr_map[attr], value)
 
-        if attr == 'name' and 'stations' in self.__dict__:
-            for cur_station in self.stations:
-                # Set the station network value using the key to trigger the
-                # change notification of the station.
-                cur_station.network = value
-
-        self.__dict__['has_changed'] = True
 
 
     def add_station(self, station):
@@ -540,15 +307,15 @@ class DbNetwork(Network):
         station : :class:`DbStation`
             The station instance to add to the network.
         '''
-        available_sl = [(x.name, x.location) for x in self.stations]
-        if((station.name, station.location) not in available_sl):
-            station.set_parent_network(self)
-            self.stations.append(station)
+        if station.__class__ is Station:
+            station = DbStation.from_inventory_station(self, station)
+
+        added_station = Network.add_station(self, station)
+        if added_station is not None:
             self.geom_network.stations.append(station.geom_station)
-            return station
-        else:
-            self.logger.error("The station with SL code %s is already in the network.", x.name + ':' + x.location)
-            return None
+
+        return added_station
+
 
 
     def remove_station(self, name, location):
@@ -562,35 +329,18 @@ class DbNetwork(Network):
         location : String
             The location of the station to remove.
         '''
-        station_2_remove = [x for x in self.stations if x.name == name and x.location == location]
+        removed_station = Station.remove_station(name = name, location = location)
 
-        if len(station_2_remove) == 0:
-            return None
-        elif len(station_2_remove) == 1:
-            station_2_remove = station_2_remove[0]
-            self.stations.remove(station_2_remove)
-            self.geom_network.stations.remove(station_2_remove.geom_station)
-            station_2_remove.network = None
-            station_2_remove.parent_network = None
-            return station_2_remove
-        else:
-            # This shouldn't happen.
-            self.logger.error('Found more than one network with the name %s.', name)
-            return None
+        if removed_station is not None:
+            self.geom_network.stations.remove(removed_station.geom_station)
 
 
 
 
 class DbStation(Station):
 
-    def __init__(self, parent_network, network, name, location,
-            x, y, z, coord_system, description,
-            author_uri, agency_uri, creation_time,
-            id = None, geom_station = None):
-        Station.__init__(self, network = network, name = name, location = location,
-                         x = x, y = y, z = z, coord_system = coord_system,
-                         author_uri = author_uri, agency_uri = agency_uri, creation_time = creation_time,
-                         description = description, id = id, parent_network = parent_network)
+    def __init__(self, id = None, geom_station = None, **kwargs):
+        Station.__init__(self, id = id, **kwargs)
 
         if geom_station is None:
             # Create a new database station instance.
@@ -613,7 +363,8 @@ class DbStation(Station):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_network, geom_station):
-        station = cls(parent_network = parent_network,
+        station = cls(parent_inventory = parent_network,
+                      id = geom_station.id,
                       network = geom_station.network,
                       name = geom_station.name,
                       location = geom_station.location,
@@ -622,11 +373,14 @@ class DbStation(Station):
                       z = geom_station.z,
                       coord_system = geom_station.coord_system,
                       description = geom_station.description,
-                      id = geom_station.id,
                       author_uri = geom_station.author_uri,
                       agency_uri = geom_station.agency_uri,
                       creation_time = geom_station.creation_time,
                       geom_station = geom_station)
+
+        for cur_channel in geom_station.channels:
+            db_channel = DbChannel.from_sqlalchemy_orm(station, cur_channel)
+            station.channels.append(db_channel)
 
         return station
 
@@ -648,7 +402,7 @@ class DbStation(Station):
                            creation_time = station.creation_time)
 
         for cur_channel in station.channels:
-            cur_station.add_channel(DbChannel.from_inventory_channel(cur_station, cur_channel))
+            cur_station.add_channel(cur_channel)
 
         return cur_station
 
@@ -678,12 +432,6 @@ class DbStation(Station):
         self.__dict__['has_changed'] = True
 
 
-    def set_parent_network(self, network):
-        self.network = network.name
-        self.parent_network = network
-        self.parent_inventory = network.parent_inventory
-
-
     def add_channel(self, cur_channel):
         ''' Add a channel to the station.
 
@@ -692,17 +440,14 @@ class DbStation(Station):
         cur_channel : :class:`DbChannel`
             The channel to add to the station.
         '''
-        if cur_channel.__class__ is DbChannel:
-            cur_channel.parent_station = self
-            cur_channel.set_parent_inventory(self.parent_inventory)
-            self.channels.append(cur_channel)
-            self.geom_station.channels.append(cur_channel.geom_channel)
-        elif cur_channel.__class__ is Channel:
-            cur_channel = self.add_channel(DbChannel.from_inventory_channel(self, cur_channel))
-        else:
-            cur_channel = None
+        if cur_channel.__class__ is Channel:
+            cur_channel = DbChannel.from_inventory_channel(self, cur_channel)
 
-        return cur_channel
+        added_channel = Station.add_channel(self, cur_channel)
+        if added_channel is not None:
+            self.geom_station.channels.append(cur_channel.geom_channel)
+
+        return added_channel
 
 
     def update_id(self):
@@ -766,7 +511,7 @@ class DbRecorder(Recorder):
                            description = recorder.description)
 
         for cur_stream in recorder.streams:
-            cur_recorder.add_stream(DbRecorderStream.from_inventory_stream(cur_recorder, cur_stream))
+            cur_recorder.add_stream(cur_stream)
 
         return cur_recorder
 
@@ -798,16 +543,15 @@ class DbRecorder(Recorder):
         cur_stream : :class:`DbRecorderStream`
             The stream to add to the recorder.
         '''
-        if cur_stream.__class__ is DbRecorderStream:
-            cur_stream.parentRecorder = self
-            cur_stream.set_parent_inventory(self.parent_inventory)
-            self.streams.append(cur_stream)
+        if cur_stream.__class__ is RecorderStream:
+            cur_stream = DbRecorderStream.from_inventory_stream(self, cur_stream)
+
+        added_stream = Recorder.add_stream(self, cur_stream)
+        if added_stream is not None:
             self.geom_recorder.streams.append(cur_stream.geom_rec_stream)
-        elif cur_stream.__class__ is RecorderStream:
-            cur_stream = self.add_stream(DbRecorderStream.from_inventory_stream(self, cur_stream))
-        else:
-            cur_stream = None
-        return cur_stream
+
+        return added_stream
+
 
 
     def update_id(self):
@@ -887,9 +631,9 @@ class DbRecorderStream(RecorderStream):
                           creation_time = stream.creation_time)
 
         for cur_sensor, cur_start_time, cur_end_time in stream.sensors:
-            cur_stream.add_sensor(DbSensor.from_inventory_sensor(cur_stream, cur_sensor),
-                                  cur_start_time,
-                                  cur_end_time)
+            cur_stream.add_sensor(sensor = cur_sensor,
+                                  start_time = cur_start_time,
+                                  end_time = cur_end_time)
         return cur_stream
 
 
@@ -914,13 +658,20 @@ class DbRecorderStream(RecorderStream):
             self.__dict__[attr] = value
 
 
-    def add_sensor(self, sensor, start_time, end_time):
+    def add_sensor(self, sensor_serial, sensor_type, start_time, end_time):
         ''' Add a sensor to the stream.
+
+        The sensor with specified sensor_serial and sensor_type is searched
+        in the parent inventory and if available, the sensor is added to
+        the stream for the specified time-span.
 
         Parameters
         ----------
-        sensor : :class:`DbSensor`
-            The :class:`DbSensor` instance to be added to the station.
+        sensor_serial : String
+            The serial number of the sensor.
+
+        sensor_type : String
+            The type of the sensor.
 
         start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time from which on the sensor has been operating at the station.
@@ -928,31 +679,32 @@ class DbRecorderStream(RecorderStream):
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the sensor has been operating at the station. "None" if the station is still running.
         '''
-        if((sensor, start_time) in [(x[0], x[1]) for x in self.sensors]):
-            # The sensor is already assigned to the station for this timespan.
-            return None
+        added_sensor = RecorderStream.add_sensor(self,
+                                                 sensor_serial = sensor_serial,
+                                                 sensor_type = sensor_type,
+                                                 start_time = start_time,
+                                                 end_time = end_time)
+        if added_sensor is not None:
+            # Add the sensor to the database orm.
+            if start_time is not None:
+                start_time_timestamp = start_time.timestamp
+            else:
+                start_time_timestamp = None
 
-        self.sensors.append((sensor, start_time, end_time))
-        self.has_changed = True
-        sensor.set_parent_inventory(self.parent_inventory)
+            if end_time is not None:
+                end_time_timestamp = end_time.timestamp
+            else:
+                end_time_timestamp = None
 
-        # Add the sensor to the database orm.
-        if start_time is not None:
-            start_time_timestamp = start_time.timestamp
-        else:
-            start_time_timestamp = None
+            geom_sensor_to_stream_orm = self.parent_inventory.project.dbTables['geom_sensor_to_stream']
+            geom_sensor_to_stream = geom_sensor_to_stream_orm(self.id,
+                                                              added_sensor.id,
+                                                              start_time_timestamp,
+                                                              end_time_timestamp)
+            geom_sensor_to_stream.sensor = added_sensor.geom_sensor
+            self.geom_rec_stream.sensors.append(geom_sensor_to_stream)
 
-        if end_time is not None:
-            end_time_timestamp = end_time.timestamp
-        else:
-            end_time_timestamp = None
-
-        geom_sensor_to_stream_orm = self.parent_inventory.project.dbTables['geom_sensor_to_stream']
-        geom_sensor_to_stream = geom_sensor_to_stream_orm(self.id, sensor.id, start_time_timestamp, end_time_timestamp)
-        geom_sensor_to_stream.sensor = sensor.geom_sensor
-        self.geom_rec_stream.sensors.append(geom_sensor_to_stream)
-
-        return sensor
+        return added_sensor
 
 
     def change_sensor_start_time(self, sensor, start_time, end_time, new_start_time):
@@ -1078,13 +830,13 @@ class DbRecorderStream(RecorderStream):
 
 class DbSensor(Sensor):
 
-    def __init__(self, parent_stream, serial, type,
+    def __init__(self, parent_inventory, serial, type,
                  label, author_uri, agency_uri, creation_time,
                  id = None, geom_sensor = None):
         Sensor.__init__(self, id = id, serial = serial, type = type,
                         label = label, author_uri = author_uri,
                         agency_uri = agency_uri, creation_time = creation_time,
-                        parent_stream = parent_stream)
+                        parent_inventory = parent_inventory)
 
         if geom_sensor is None:
             geom_sensor_orm = self.parent_inventory.project.dbTables['geom_sensor']
@@ -1099,8 +851,8 @@ class DbSensor(Sensor):
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_stream, geom_sensor):
-        cur_sensor =  cls(parent_stream = parent_stream,
+    def from_sqlalchemy_orm(cls, parent_inventory, geom_sensor):
+        cur_sensor =  cls(parent_inventory = parent_inventory,
                           serial = geom_sensor.serial,
                           type = geom_sensor.type,
                           label = geom_sensor.label,
@@ -1119,8 +871,8 @@ class DbSensor(Sensor):
 
 
     @classmethod
-    def from_inventory_sensor(cls, parent_stream, sensor):
-        cur_sensor =  cls(parent_stream = parent_stream,
+    def from_inventory_sensor(cls, parent_inventory, sensor):
+        cur_sensor =  cls(parent_inventory = parent_inventory,
                           serial = sensor.serial,
                           type = sensor.type,
                           label = sensor.label,
@@ -1353,14 +1105,24 @@ class DbChannel(Channel):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_station, geom_channel):
-        return cls(parent_station = parent_station,
-                   id = geom_channel.id,
-                   name = geom_channel.name,
-                   description = geom_channel.description,
-                   author_uri = geom_channel.author_uri,
-                   agency_uri = geom_channel.agency_uri,
-                   creation_time = geom_channel.creation_time,
-                   geom_channel = geom_channel)
+        channel =  cls(parent_station = parent_station,
+                       id = geom_channel.id,
+                       name = geom_channel.name,
+                       description = geom_channel.description,
+                       author_uri = geom_channel.author_uri,
+                       agency_uri = geom_channel.agency_uri,
+                       creation_time = geom_channel.creation_time,
+                       geom_channel = geom_channel)
+
+        for cur_stream_to_channel in geom_channel.streams:
+            db_stream = DbRecorderStream.from_sqlalchemy_orm(channel, cur_stream_to_channel.stream)
+            cur_start_time = UTCDateTime(cur_stream_to_channel.start_time)
+            cur_end_time = UTCDateTime(cur_stream_to_channel.end_time)
+            channel.streams.append((db_stream, cur_start_time, cur_end_time))
+            db_stream.set_parent_inventory(channel.parent_inventory)
+
+        return channel
+
 
 
     @classmethod
