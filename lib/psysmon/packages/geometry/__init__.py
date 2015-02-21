@@ -153,8 +153,8 @@ def databaseFactory(base):
                          )
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        label = Column(String(255), nullable=False)
         serial = Column(String(45), nullable=False)
+        component = Column(String(45), nullable=False)
         type = Column(String(255), nullable=False)
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
@@ -165,20 +165,20 @@ def databaseFactory(base):
                                   backref = 'parent')
 
 
-        def __init__(self, label, serial, type,
+        def __init__(self, serial, type, component,
                 agency_uri, author_uri, creation_time):
-            self.label = label
             self.serial = serial
             self.type = type
+            self.component = component
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
         def __repr__(self):
-            return "id: %s\nlabel: %s\nserial: %s\ntype: %s\n" % (str(self.id),
-                                                                  self.label,
+            return "id: %s\nserial: %s\ntype: %s\ncomponent: %s\n" % (str(self.id),
                                                                   self.serial,
-                                                                  self.type
+                                                                  self.type,
+                                                                  self.component
                                                                   )
 
 
