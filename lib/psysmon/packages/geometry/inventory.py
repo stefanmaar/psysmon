@@ -690,7 +690,7 @@ class RecorderStream(object):
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['id', 'name', 'label', 'gain',
+            compare_attributes = ['name', 'label', 'gain',
                     'bitweight', 'bitweight_units', 'components', 'has_changed']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
