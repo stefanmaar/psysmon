@@ -32,7 +32,8 @@ from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import RecorderStream
 from psysmon.packages.geometry.inventory import Sensor
-from psysmon.packages.geometry.inventory import SensorParameter
+from psysmon.packages.geometry.inventory import SensorComponent
+from psysmon.packages.geometry.inventory import SensorComponentParameter
 from psysmon.packages.geometry.inventory import TimeBox
 
 class InventoryTestCase(unittest.TestCase):
@@ -193,16 +194,16 @@ class InventoryTestCase(unittest.TestCase):
         inventory = Inventory('inventory_name')
 
         sensor1 = Sensor(serial = 'sensor1_name',
-                         type = 'sensor1_type',
-                         component = 'sensor1_component')
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
 
         sensor2 = Sensor(serial = 'sensor2_name',
-                         type = 'sensor2_type',
-                         component = 'sensor2_component')
+                         model = 'sensor2_model',
+                         producer = 'sensor2_producer')
 
         sensor3 = Sensor(serial = 'sensor3_name',
-                         type = 'sensor3_type',
-                         component = 'sensor3_component')
+                         model = 'sensor3_model',
+                         producer = 'sensor3_producer')
 
         inventory.add_sensor(sensor1)
         inventory.add_sensor(sensor2)
@@ -217,6 +218,60 @@ class InventoryTestCase(unittest.TestCase):
         self.assertTrue(sensor2 in inventory.sensors)
         self.assertTrue(sensor3 in inventory.sensors)
 
+
+    def test_add_component_to_sensor(self):
+        sensor1 = Sensor(serial = 'sensor1_name',
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
+
+        component1 = SensorComponent(name = 'comp1_name')
+        component2 = SensorComponent(name = 'comp2_name')
+        component3 = SensorComponent(name = 'comp3_name')
+
+        sensor1.add_component(component1)
+        sensor1.add_component(component2)
+        sensor1.add_component(component3)
+
+        self.assertEqual(len(sensor1.components), 3)
+        self.assertTrue(component1 in sensor1.components)
+        self.assertTrue(component2 in sensor1.components)
+        self.assertTrue(component3 in sensor1.components)
+        self.assertIs(component1.parent_sensor, sensor1)
+        self.assertIs(component2.parent_sensor, sensor1)
+        self.assertIs(component3.parent_sensor, sensor1)
+
+
+    def test_add_parameter_to_component(self):
+        sensor1 = Sensor(serial = 'sensor1_name',
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
+
+        component1 = SensorComponent(name = 'comp1_name')
+        component2 = SensorComponent(name = 'comp2_name')
+        component3 = SensorComponent(name = 'comp3_name')
+
+        cur_start_time = UTCDateTime('2014-01-01')
+        cur_end_time = UTCDateTime('2014-02-01')
+        parameter1 = SensorComponentParameter(sensitivity = 1,
+                                              sensitivity_units = 'param1_units',
+                                              start_time = cur_start_time,
+                                              end_time = cur_end_time)
+
+        component1.add_parameter(parameter1)
+
+        sensor1.add_component(component1)
+        sensor1.add_component(component2)
+        sensor1.add_component(component3)
+
+        self.assertEqual(len(sensor1.components), 3)
+        self.assertTrue(component1 in sensor1.components)
+        self.assertTrue(component2 in sensor1.components)
+        self.assertTrue(component3 in sensor1.components)
+        self.assertIs(component1.parent_sensor, sensor1)
+        self.assertIs(component2.parent_sensor, sensor1)
+        self.assertIs(component3.parent_sensor, sensor1)
+        self.assertEqual(len(component1.parameters), 1)
+        self.assertIs(component1.parameters[0], parameter1)
 
 
     def test_inventory_get_methods(self):
@@ -365,83 +420,89 @@ class InventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_stream[0].label, 'stream1_label')
 
 
-    def test_get_sensor_from_stream(self):
+    def test_get_component_from_stream(self):
         stream = RecorderStream(name = 'stream1_name',
                                 label = 'stream1_label')
 
         sensor1 = Sensor(serial = 'sensor1_serial',
-                         type = 'sensor1_type',
-                         component = 'sensor1_component')
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
 
         sensor2 = Sensor(serial = 'sensor2_serial',
-                         type = 'sensor2_type',
-                         component = 'sensor2_component')
+                         model = 'sensor2_model',
+                         producer = 'sensor2_producer')
+
+        component1 = SensorComponent(name = 'comp1_name')
+        component2 = SensorComponent(name = 'comp2_name')
+
+        sensor1.add_component(component1)
+        sensor2.add_component(component2)
 
         start_time1 = UTCDateTime('2014-01-01')
         end_time1 = UTCDateTime('2014-02-01')
-        stream.sensors.append(TimeBox(sensor1, start_time1, end_time1))
+        stream.components.append(TimeBox(component1, start_time1, end_time1))
 
         start_time2 = UTCDateTime('2014-03-01')
         end_time2 = UTCDateTime('2014-04-01')
-        stream.sensors.append(TimeBox(sensor2, start_time2, end_time2))
+        stream.components.append(TimeBox(component2, start_time2, end_time2))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-01'))
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2014-01-01'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(component2, start_time2, end_time2))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-02-01'))
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2014-02-01'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(component2, start_time2, end_time2))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-04-01'))
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2014-04-01'))
         self.assertEqual(len(cur_sensor), 0)
 
 
-        cur_sensor = stream.get_sensor(end_time = UTCDateTime('2014-03-15'))
+        cur_sensor = stream.get_component(end_time = UTCDateTime('2014-03-15'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(component2, start_time2, end_time2))
 
-        cur_sensor = stream.get_sensor(end_time = UTCDateTime('2014-02-15'))
+        cur_sensor = stream.get_component(end_time = UTCDateTime('2014-02-15'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
 
-        cur_sensor = stream.get_sensor(end_time = UTCDateTime('2014-01-01'))
+        cur_sensor = stream.get_component(end_time = UTCDateTime('2014-01-01'))
         self.assertEqual(len(cur_sensor), 0)
 
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2013-12-01'),
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2013-12-01'),
                                        end_time = UTCDateTime('2014-05-01'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(component2, start_time2, end_time2))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2013-12-01'),
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2013-12-01'),
                                        end_time = UTCDateTime('2014-02-15'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-05'),
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2014-01-05'),
                                        end_time = UTCDateTime('2014-01-06'))
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-05'),
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2014-01-05'),
                                        end_time = UTCDateTime('2014-03-06'))
         self.assertEqual(len(cur_sensor), 2)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor1, start_time1, end_time1))
-        self.assertEqual(cur_sensor[1], TimeBox(sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(component1, start_time1, end_time1))
+        self.assertEqual(cur_sensor[1], TimeBox(component2, start_time2, end_time2))
 
-        cur_sensor = stream.get_sensor(start_time = UTCDateTime('2014-01-05'),
+        cur_sensor = stream.get_component(start_time = UTCDateTime('2014-01-05'),
                                        end_time = UTCDateTime('2014-03-06'),
                                        serial = 'sensor2_serial',
-                                       type = 'sensor2_type')
+                                       name = 'comp2_name')
         self.assertEqual(len(cur_sensor), 1)
-        self.assertEqual(cur_sensor[0], TimeBox(sensor2, start_time2, end_time2))
+        self.assertEqual(cur_sensor[0], TimeBox(component2, start_time2, end_time2))
 
 
-    def test_add_sensor_to_stream(self):
+    def test_add_component_to_stream(self):
         inventory = Inventory('inventory_name')
         recorder1 = Recorder(serial = 'rec1_serial',
                              type = 'rec1_type')
@@ -452,19 +513,21 @@ class InventoryTestCase(unittest.TestCase):
         inventory.add_recorder(recorder1)
 
         sensor1 = Sensor(serial = 'sensor1_serial',
-                         type = 'sensor1_type',
-                         component = 'sensor1_component')
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
+        component1 = SensorComponent(name = 'comp1_name')
+        sensor1.add_component(component1)
         inventory.add_sensor(sensor1)
 
-        cur_starttime = UTCDateTime('1976-06-20')
-        cur_endtime = UTCDateTime('2014-06-20')
-        stream1.add_sensor(sensor_serial = 'sensor1_serial',
-                           sensor_component = 'sensor1_component',
-                           start_time = cur_starttime,
-                           end_time = cur_endtime)
+        cur_starttime = UTCDateTime('2014-01-01')
+        cur_endtime = UTCDateTime('2014-02-01')
+        stream1.add_component(serial = 'sensor1_serial',
+                              name = 'comp1_name',
+                              start_time = cur_starttime,
+                              end_time = cur_endtime)
 
-        self.assertEqual(len(stream1.sensors), 1)
-        self.assertEqual(stream1.sensors[0], TimeBox(sensor1, cur_starttime, cur_endtime))
+        self.assertEqual(len(stream1.components), 1)
+        self.assertEqual(stream1.components[0], TimeBox(component1, cur_starttime, cur_endtime))
 
 
 

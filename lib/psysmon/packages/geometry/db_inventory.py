@@ -37,8 +37,10 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Sensor
-from psysmon.packages.geometry.inventory import SensorParameter
+from psysmon.packages.geometry.inventory import SensorComponent
+from psysmon.packages.geometry.inventory import SensorComponentParameter
 from psysmon.packages.geometry.inventory import RecorderStream
+from psysmon.packages.geometry.inventory import RecorderStreamParameter
 from obspy.core.utcdatetime import UTCDateTime
 
 
@@ -80,11 +82,11 @@ class DbInventory(Inventory):
             The recorder to add to the inventory.
         '''
         if recorder.__class__ is Recorder:
-            recorder = DbRecorder.from_inventory_recorder(self, recorder)
+            recorder = DbRecorder.from_inventory_instance(self, recorder)
 
         added_recorder = Inventory.add_recorder(self, recorder)
         if added_recorder is not None:
-            self.db_session.add(added_recorder.geom_recorder)
+            self.db_session.add(added_recorder.orm)
 
         return added_recorder
 
@@ -98,11 +100,11 @@ class DbInventory(Inventory):
             The sensor to add to the inventory.
         '''
         if sensor.__class__ is Sensor:
-            sensor = DbSensor.from_inventory_sensor(self, sensor)
+            sensor = DbSensor.from_inventory_instance(self, sensor)
 
         added_sensor = Inventory.add_sensor(self, sensor)
         if added_sensor is not None:
-            self.db_session.add(added_sensor.geom_sensor)
+            self.db_session.add(added_sensor.orm)
 
         return added_sensor
 
@@ -116,11 +118,11 @@ class DbInventory(Inventory):
             The network to add to the database inventory.
         '''
         if network.__class__ is Network:
-            network = DbNetwork.from_inventory_network(self, network)
+            network = DbNetwork.from_inventory_instance(self, network)
 
         added_network =  Inventory.add_network(self, network)
         if added_network is not None:
-            self.db_session.add(added_network.geom_network)
+            self.db_session.add(added_network.orm)
 
         return added_network
 
@@ -133,9 +135,9 @@ class DbInventory(Inventory):
         name : String
             The name of the network to remove.
         '''
-        removed_network = Inventory.remove_network(name)
+        removed_network = Inventory.remove_network(self, name)
         if removed_network is not None:
-            self.db_session.expunge(removed_network.geom_network)
+            self.db_session.expunge(removed_network.orm)
 
         return removed_network
 
@@ -190,21 +192,6 @@ class DbInventory(Inventory):
         ''' Commit the database changes.
         '''
         self.db_session.commit()
-        #self.db_session.flush()
-
-        # update the ids of the inventory elements.
-        for cur_network in self.networks:
-            for cur_station in cur_network.stations:
-                cur_station.update_id()
-
-        for cur_recorder in self.recorders:
-            cur_recorder.update_id()
-            for cur_stream in cur_recorder.streams:
-                cur_stream.update_id()
-                for cur_sensor, cur_start_time, cur_end_time in cur_stream.sensors:
-                    cur_sensor.update_id()
-                    for cur_param in cur_sensor.parameters:
-                        cur_param.update_id()
 
 
     @classmethod
@@ -235,49 +222,55 @@ class DbInventory(Inventory):
 
 class DbNetwork(Network):
 
-    def __init__(self, parent_inventory, name, description, type,
-            author_uri, agency_uri, creation_time, geom_network = None):
-        Network.__init__(self, name = name, description = description, type = type,
-                author_uri = author_uri, agency_uri = agency_uri,
-                creation_time = creation_time, parent_inventory = parent_inventory)
+    def __init__(self, orm = None, **kwargs):
+        Network.__init__(self, **kwargs)
 
-        if geom_network is None:
+        if orm is None:
             # Create a new database network instance.
-            geom_network_orm = self.parent_inventory.project.dbTables['geom_network']
-            self.geom_network = geom_network_orm(name = self.name,
-                                    description = self.description,
-                                    type = self.type,
-                                    agency_uri = self.agency_uri,
-                                    author_uri = self.author_uri,
-                                    creation_time = self.creation_time)
+            orm_class = self.parent_inventory.project.dbTables['geom_network']
+            self.orm = orm_class(name = self.name,
+                                 description = self.description,
+                                 type = self.type,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            self.geom_network = geom_network
+            self.orm = orm
+
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_inventory, geom_network):
+    def from_sqlalchemy_orm(cls, parent_inventory, orm):
         return cls(parent_inventory = parent_inventory,
-                   name = geom_network.name,
-                   description = geom_network.description,
-                   type = geom_network.type,
-                   author_uri = geom_network.author_uri,
-                   agency_uri = geom_network.agency_uri,
-                   creation_time = geom_network.creation_time,
-                   geom_network = geom_network)
+                   name = orm.name,
+                   description = orm.description,
+                   type = orm.type,
+                   author_uri = orm.author_uri,
+                   agency_uri = orm.agency_uri,
+                   creation_time = orm.creation_time,
+                   orm = orm)
 
 
     @classmethod
-    def from_inventory_network(cls, parent_inventory, network):
+    def from_inventory_instance(cls, parent_inventory, instance):
         cur_network =  cls(parent_inventory = parent_inventory,
-                   name = network.name,
-                   description = network.description,
-                   type = network.type,
-                   author_uri = network.author_uri,
-                   agency_uri = network.agency_uri,
-                   creation_time = network.creation_time)
+                           name = instance.name,
+                           description = instance.description,
+                           type = instance.type,
+                           author_uri = instance.author_uri,
+                           agency_uri = instance.agency_uri,
+                           creation_time = instance.creation_time)
 
-        for cur_station in network.stations:
-            cur_network.add_station(cur_network)
+        for cur_station in instance.stations:
+            cur_network.add_station(cur_station)
 
         return cur_network
 
@@ -296,8 +289,8 @@ class DbNetwork(Network):
         attr_map['creation_time'] = 'creation_time'
 
         if attr in attr_map.keys():
-            if 'geom_network' in self.__dict__:
-                setattr(self.geom_network, attr_map[attr], value)
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
 
 
 
@@ -310,11 +303,11 @@ class DbNetwork(Network):
             The station instance to add to the network.
         '''
         if station.__class__ is Station:
-            station = DbStation.from_inventory_station(self, station)
+            station = DbStation.from_inventory_instance(self, station)
 
         added_station = Network.add_station(self, station)
         if added_station is not None:
-            self.geom_network.stations.append(station.geom_station)
+            self.orm.stations.append(station.orm)
 
         return added_station
 
@@ -331,56 +324,65 @@ class DbNetwork(Network):
         location : String
             The location of the station to remove.
         '''
-        removed_station = Station.remove_station(name = name, location = location)
+        removed_station = Network.remove_station(self, name = name, location = location)
 
         if removed_station is not None:
-            self.geom_network.stations.remove(removed_station.geom_station)
+            self.orm.stations.remove(removed_station.orm)
+            self.parent_inventory.db_session.expunge(removed_station.orm)
+
+        return removed_station
 
 
 
 
 class DbStation(Station):
 
-    def __init__(self, id = None, geom_station = None, **kwargs):
-        Station.__init__(self, id = id, **kwargs)
+    def __init__(self, orm = None, **kwargs):
+        Station.__init__(self, **kwargs)
 
-        if geom_station is None:
+        if orm is None:
             # Create a new database station instance.
-            geom_station_orm = self.parent_inventory.project.dbTables['geom_station']
-            self.geom_station = geom_station_orm(network = self.network,
-                                                name = self.name,
-                                                location = self.location,
-                                                x = self.x,
-                                                y = self.y,
-                                                z = self.z,
-                                                coord_system = self.coord_system,
-                                                description = self.description,
-                                                agency_uri = self.agency_uri,
-                                                author_uri = self.author_uri,
-                                                creation_time = self.creation_time)
+            orm_class = self.parent_inventory.project.dbTables['geom_station']
+            self.orm = orm_class(name = self.name,
+                                 location = self.location,
+                                 x = self.x,
+                                 y = self.y,
+                                 z = self.z,
+                                 coord_system = self.coord_system,
+                                 description = self.description,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            self.geom_station = geom_station
+            self.orm = orm
 
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_network, geom_station):
+    def from_sqlalchemy_orm(cls, parent_network, orm):
         station = cls(parent_inventory = parent_network,
-                      id = geom_station.id,
-                      network = geom_station.network,
-                      name = geom_station.name,
-                      location = geom_station.location,
-                      x = geom_station.x,
-                      y = geom_station.y,
-                      z = geom_station.z,
-                      coord_system = geom_station.coord_system,
-                      description = geom_station.description,
-                      author_uri = geom_station.author_uri,
-                      agency_uri = geom_station.agency_uri,
-                      creation_time = geom_station.creation_time,
-                      geom_station = geom_station)
+                      network = orm.network,
+                      name = orm.name,
+                      location = orm.location,
+                      x = orm.x,
+                      y = orm.y,
+                      z = orm.z,
+                      coord_system = orm.coord_system,
+                      description = orm.description,
+                      author_uri = orm.author_uri,
+                      agency_uri = orm.agency_uri,
+                      creation_time = orm.creation_time,
+                      orm = orm)
 
-        for cur_channel in geom_station.channels:
+        for cur_channel in orm.channels:
             db_channel = DbChannel.from_sqlalchemy_orm(station, cur_channel)
             station.channels.append(db_channel)
 
@@ -389,24 +391,23 @@ class DbStation(Station):
 
 
     @classmethod
-    def from_inventory_station(cls, parent_network, station):
-        cur_station =  cls(parent_network = parent_network,
-                           network = station.network,
-                           name = station.name,
-                           location = station.location,
-                           x = station.x,
-                           y = station.y,
-                           z = station.z,
-                           coord_system = station.coord_system,
-                           description = station.description,
-                           author_uri = station.author_uri,
-                           agency_uri = station.agency_uri,
-                           creation_time = station.creation_time)
+    def from_inventory_instance(cls, parent_network, instance):
+        station =  cls(parent_network = parent_network,
+                       name = instance.name,
+                       location = instance.location,
+                       x = instance.x,
+                       y = instance.y,
+                       z = instance.z,
+                       coord_system = instance.coord_system,
+                       description = instance.description,
+                       author_uri = instance.author_uri,
+                       agency_uri = instance.agency_uri,
+                       creation_time = instance.creation_time)
 
-        for cur_channel in station.channels:
-            cur_station.add_channel(cur_channel)
+        for cur_channel in instance.channels:
+            station.add_channel(cur_channel)
 
-        return cur_station
+        return station
 
 
     def __setattr__(self, attr, value):
@@ -428,8 +429,8 @@ class DbStation(Station):
         self.__dict__[attr] = value
 
         if attr in attr_map.keys():
-            if 'geom_station' in self.__dict__:
-                setattr(self.geom_station, attr_map[attr], value)
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
 
         self.__dict__['has_changed'] = True
 
@@ -443,79 +444,75 @@ class DbStation(Station):
             The channel to add to the station.
         '''
         if cur_channel.__class__ is Channel:
-            cur_channel = DbChannel.from_inventory_channel(self, cur_channel)
+            cur_channel = DbChannel.from_inventory_instance(self, cur_channel)
 
         added_channel = Station.add_channel(self, cur_channel)
         if added_channel is not None:
-            self.geom_station.channels.append(cur_channel.geom_channel)
+            self.orm.channels.append(cur_channel.orm)
 
         return added_channel
-
-
-    def update_id(self):
-        ''' Update the database if from the geom_station instance.
-        '''
-        if self.geom_station is not None:
-            self.id = self.geom_station.id
-
 
 
 
 
 class DbRecorder(Recorder):
 
-    def __init__(self, parent_inventory, serial, type, description,
-            author_uri, agency_uri, creation_time,
-            id = None, geom_recorder = None):
-        Recorder.__init__(self, id = id, serial = serial, type = type,
-                         author_uri = author_uri, agency_uri = agency_uri, creation_time = creation_time,
-                        parent_inventory = parent_inventory)
+    def __init__(self, orm = None, **kwargs):
+        Recorder.__init__(self, **kwargs)
 
-        if geom_recorder is None:
+        if orm is None:
             # Create a new database recorder instance.
-            geom_recorder_orm = self.parent_inventory.project.dbTables['geom_recorder']
-            self.geom_recorder = geom_recorder_orm(serial = self.serial,
-                                                   type = self.type,
-                                                   agency_uri = self.agency_uri,
-                                                   author_uri = self.author_uri,
-                                                   creation_time = self.creation_time)
+            orm_class = self.parent_inventory.project.dbTables['geom_recorder']
+            self.orm = orm_class(serial = self.serial,
+                                 type = self.type,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            self.geom_recorder = geom_recorder
+            self.orm = orm
+
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_inventory, recorder_orm):
-        cur_recorder = cls(parent_inventory = parent_inventory,
-                   id = recorder_orm.id,
-                   serial = recorder_orm.serial,
-                   type = recorder_orm.type,
-                   description = recorder_orm.description,
-                   author_uri = recorder_orm.author_uri,
-                   agency_uri = recorder_orm.agency_uri,
-                   creation_time = recorder_orm.creation_time,
-                   geom_recorder = recorder_orm)
+    def from_sqlalchemy_orm(cls, parent_inventory, orm):
+        recorder = cls(parent_inventory = parent_inventory,
+                       serial = orm.serial,
+                       type = orm.type,
+                       description = orm.description,
+                       author_uri = orm.author_uri,
+                       agency_uri = orm.agency_uri,
+                       creation_time = orm.creation_time,
+                       orm = orm)
 
-        for cur_stream in recorder_orm.streams:
-            db_stream = DbRecorderStream.from_sqlalchemy_orm(cur_recorder, cur_stream)
-            cur_recorder.streams.append(db_stream)
+        for cur_stream in orm.streams:
+            db_stream = DbRecorderStream.from_sqlalchemy_orm(recorder, cur_stream)
+            recorder.streams.append(db_stream)
 
-        return cur_recorder
+        return recorder
 
 
     @classmethod
-    def from_inventory_recorder(cls, parent_inventory, recorder):
-        cur_recorder = cls(parent_inventory = parent_inventory,
-                           serial = recorder.serial,
-                           type = recorder.type,
-                           author_uri = recorder.author_uri,
-                           agency_uri = recorder.agency_uri,
-                           creation_time = recorder.creation_time,
-                           description = recorder.description)
+    def from_inventory_instance(cls, parent_inventory, instance):
+        recorder = cls(parent_inventory = parent_inventory,
+                       serial = instance.serial,
+                       type = instance.type,
+                       author_uri = instance.author_uri,
+                       agency_uri = instance.agency_uri,
+                       creation_time = instance.creation_time,
+                       description = instance.description)
 
-        for cur_stream in recorder.streams:
-            cur_recorder.add_stream(cur_stream)
+        for cur_stream in instance.streams:
+            recorder.add_stream(cur_stream)
 
-        return cur_recorder
+        return recorder
 
 
     def __setattr__(self, attr, value):
@@ -531,8 +528,8 @@ class DbRecorder(Recorder):
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
-            if 'geom_recorder' in self.__dict__:
-                setattr(self.geom_recorder, attr_map[attr], value)
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
         else:
             self.__dict__[attr] = value
 
@@ -546,96 +543,81 @@ class DbRecorder(Recorder):
             The stream to add to the recorder.
         '''
         if cur_stream.__class__ is RecorderStream:
-            cur_stream = DbRecorderStream.from_inventory_stream(self, cur_stream)
+            cur_stream = DbRecorderStream.from_inventory_instance(self, cur_stream)
 
         added_stream = Recorder.add_stream(self, cur_stream)
         if added_stream is not None:
-            self.geom_recorder.streams.append(cur_stream.geom_rec_stream)
+            self.orm.streams.append(cur_stream.orm)
 
         return added_stream
 
 
-
-    def update_id(self):
-        ''' Update the database if from the geom_recorder instance.
-        '''
-        if self.geom_recorder is not None:
-            self.id = self.geom_recorder.id
-
-
-
 class DbRecorderStream(RecorderStream):
 
-    def __init__(self, parent_recorder, name, label,
-                 gain, bitweight, bitweight_units, agency_uri, author_uri,
-                 creation_time, id = None, geom_rec_stream = None):
-        RecorderStream.__init__(self,
-                                id = id,
-                                name = name,
-                                label = label,
-                                gain = gain,
-                                bitweight = bitweight,
-                                bitweight_units = bitweight_units,
-                                agency_uri = agency_uri,
-                                author_uri = author_uri,
-                                creation_time = creation_time,
-                                parent_recorder = parent_recorder)
+    def __init__(self, orm = None, **kwargs):
+        RecorderStream.__init__(self, **kwargs)
 
-        if geom_rec_stream is None:
-            geom_rec_stream_orm = self.parent_inventory.project.dbTables['geom_rec_stream']
-            self.geom_rec_stream = geom_rec_stream_orm(recorder_id = self.id,
-                                            name = self.name,
-                                            label = self.label,
-                                            gain = self.gain,
-                                            bitweight = self.bitweight,
-                                            bitweight_units = self.bitweight_units,
-                                            agency_uri = self.agency_uri,
-                                            author_uri = self.author_uri,
-                                            creation_time = self.creation_time)
+        if orm is None:
+            orm_class = self.parent_inventory.project.dbTables['geom_rec_stream']
+            self.orm = orm_class(name = self.name,
+                                 label = self.label,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            self.geom_rec_stream = geom_rec_stream
+            self.orm = orm
+
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_recorder, geom_rec_stream):
+    def from_sqlalchemy_orm(cls, parent_recorder, orm):
         cur_stream =  cls(parent_recorder = parent_recorder,
-                          name = geom_rec_stream.name,
-                          label = geom_rec_stream.label,
-                          gain = geom_rec_stream.gain,
-                          bitweight = geom_rec_stream.bitweight,
-                          bitweight_units = geom_rec_stream.bitweight_units,
-                          id = geom_rec_stream.id,
-                          author_uri = geom_rec_stream.author_uri,
-                          agency_uri = geom_rec_stream.agency_uri,
-                          creation_time = geom_rec_stream.creation_time,
-                          geom_rec_stream = geom_rec_stream)
+                          name = orm.name,
+                          label = orm.label,
+                          author_uri = orm.author_uri,
+                          agency_uri = orm.agency_uri,
+                          creation_time = orm.creation_time,
+                          orm = orm)
 
-        for cur_sensor_to_stream in geom_rec_stream.sensors:
-            db_sensor = DbSensor.from_sqlalchemy_orm(cur_stream, cur_sensor_to_stream.sensor)
-            cur_start_time = UTCDateTime(cur_sensor_to_stream.start_time)
-            cur_end_time = UTCDateTime(cur_sensor_to_stream.end_time)
-            cur_stream.sensors.append((db_sensor, cur_start_time, cur_end_time))
-            db_sensor.set_parent_inventory(cur_stream.parent_inventory)
+        for cur_component_to_stream in orm.sensors:
+            #db_sensor = DbSensor.from_sqlalchemy_orm(cur_stream, cur_sensor_to_stream.sensor)
+            cur_component = cur_component_to_stream.component
+            cur_start_time = UTCDateTime(cur_component_to_stream.start_time)
+            cur_end_time = UTCDateTime(cur_component_to_stream.end_time)
+            cur_stream.add_sensor(sensor_serial = cur_component.serial,
+                                  start_time = cur_start_time,
+                                  end_time = cur_end_time)
+            #cur_stream.sensors.append((db_sensor, cur_start_time, cur_end_time))
+            #db_sensor.set_parent_inventory(cur_stream.parent_inventory)
 
         return cur_stream
 
 
     @classmethod
-    def from_inventory_stream(cls, parent_recorder, stream):
+    def from_inventory_instance(cls, parent_recorder, instance):
         cur_stream =  cls(parent_recorder = parent_recorder,
-                          name = stream.name,
-                          label = stream.label,
-                          gain = stream.gain,
-                          bitweight = stream.bitweight,
-                          bitweight_units = stream.bitweight_units,
-                          author_uri = stream.author_uri,
-                          agency_uri = stream.agency_uri,
-                          creation_time = stream.creation_time)
+                          name = instance.name,
+                          label = instance.label,
+                          author_uri = instance.author_uri,
+                          agency_uri = instance.agency_uri,
+                          creation_time = instance.creation_time)
 
-        for cur_sensor, cur_start_time, cur_end_time in stream.sensors:
-            cur_stream.add_sensor(sensor = cur_sensor,
-                                  start_time = cur_start_time,
-                                  end_time = cur_end_time)
+        for cur_sensor, cur_start_time, cur_end_time in instance.components:
+            cur_stream.add_component(sensor = cur_sensor,
+                                     start_time = cur_start_time,
+                                     end_time = cur_end_time)
+
+        for cur_parameter in instance.parameters:
+            cur_stream.add_parameter(cur_parameter)
+
         return cur_stream
 
 
@@ -654,26 +636,26 @@ class DbRecorderStream(RecorderStream):
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
-            if 'geom_rec_stream' in self.__dict__:
-                setattr(self.geom_rec_stream, attr_map[attr], value)
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
         else:
             self.__dict__[attr] = value
 
 
-    def add_sensor(self, sensor_serial, sensor_type, start_time, end_time):
-        ''' Add a sensor to the stream.
+    def add_component(self, serial, name, start_time, end_time):
+        ''' Add a sensor component to the stream.
 
-        The sensor with specified sensor_serial and sensor_type is searched
+        The component with specified serial and name is searched
         in the parent inventory and if available, the sensor is added to
         the stream for the specified time-span.
 
         Parameters
         ----------
-        sensor_serial : String
-            The serial number of the sensor.
+        serial : String
+            The serial number of the sensor which holds the component.
 
-        sensor_type : String
-            The type of the sensor.
+        name : String
+            The name of the component.
 
         start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time from which on the sensor has been operating at the station.
@@ -681,12 +663,12 @@ class DbRecorderStream(RecorderStream):
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the sensor has been operating at the station. "None" if the station is still running.
         '''
-        added_sensor = RecorderStream.add_sensor(self,
-                                                 sensor_serial = sensor_serial,
-                                                 sensor_type = sensor_type,
-                                                 start_time = start_time,
-                                                 end_time = end_time)
-        if added_sensor is not None:
+        added_component = RecorderStream.add_component(self,
+                                                       serial = serial,
+                                                       name = name,
+                                                       start_time = start_time,
+                                                       end_time = end_time)
+        if added_component is not None:
             # Add the sensor to the database orm.
             if start_time is not None:
                 start_time_timestamp = start_time.timestamp
@@ -698,15 +680,30 @@ class DbRecorderStream(RecorderStream):
             else:
                 end_time_timestamp = None
 
-            geom_sensor_to_stream_orm = self.parent_inventory.project.dbTables['geom_sensor_to_stream']
+            geom_sensor_to_stream_orm = self.parent_inventory.project.dbTables['geom_component_to_stream']
             geom_sensor_to_stream = geom_sensor_to_stream_orm(self.id,
-                                                              added_sensor.id,
+                                                              added_component.id,
                                                               start_time_timestamp,
                                                               end_time_timestamp)
-            geom_sensor_to_stream.sensor = added_sensor.geom_sensor
-            self.geom_rec_stream.sensors.append(geom_sensor_to_stream)
+            geom_sensor_to_stream.component = added_component.orm
+            self.orm.sensors.append(geom_sensor_to_stream)
 
-        return added_sensor
+        return added_component
+
+
+    def add_parameter(self, cur_parameter):
+        ''' Add a parameter to the recorder_stream.
+        '''
+        if cur_parameter.__class__ is RecorderStreamParameter:
+            cur_parameter = DbRecorderStreamParameter.from_inventory_instance(self, cur_parameter)
+
+        added_parameter = RecorderStream.add_parameter(self, cur_parameter)
+
+        if added_parameter is not None:
+            self.orm.parameters.append(cur_parameter.orm)
+
+        return added_parameter
+
 
 
     def change_sensor_start_time_OLD(self, sensor, start_time, end_time, new_start_time):
@@ -819,71 +816,239 @@ class DbRecorderStream(RecorderStream):
         return (end_time, msg)
 
 
-    def update_id(self):
-        ''' Update the database if from the geom_sensor instance.
+
+class DbRecorderStreamParameter(RecorderStreamParameter):
+    def __init__(self, orm = None, **kwargs):
+        RecorderStreamParameter.__init__(self, **kwargs)
+
+        if orm is None:
+            orm_class = self.parent_inventory.project.dbTables['geom_rec_stream_param']
+            self.orm = orm_class(gain = self.gain,
+                                 bitweight = self.bitweight,
+                                 start_time = self.start_time.timestamp,
+                                 end_time = None if self.end_time is None else self.end_time.timestamp,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
+        else:
+            self.orm = orm
+
+    @property
+    def id(self):
+        ''' The database id.
         '''
-        if self.geom_rec_stream is not None:
-            self.id = self.geom_rec_stream.id
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
+
+    @classmethod
+    def from_inventory_instance(cls, parent_recorder_stream, instance):
+        return cls(parent_recorder_stream = parent_recorder_stream,
+                   gain = instance.gain,
+                   bitweight = instance.bitweight,
+                   start_time = instance.start_time,
+                   end_time = instance.end_time,
+                   author_uri = instance.author_uri,
+                   agency_uri = instance.agency_uri,
+                   creation_time = instance.creation_time)
+
+    @classmethod
+    def from_sqlalchemy_orm(cls, parent_recorder_stream, orm):
+        parameter = cls(parent_recorder_stream = parent_recorder_stream,
+                        gain = orm.gain,
+                        bitweight = orm.bitweight,
+                        start_time = UTCDateTime(orm.start_time) if orm.start_time is not None else None,
+                        end_time = UTCDateTime(orm.end_time) if orm.end_time is not None else None,
+                        author_uri = orm.author_uri,
+                        agency_uri = orm.agency_uri,
+                        creation_time = orm.creation_time,
+                        orm = orm)
+
+        return parameter
 
 
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['start_time'] = 'start_time'
+        attr_map['end_time'] = 'end_time'
+        attr_map['gain'] = 'gain'
+        attr_map['bitweight'] = 'bitweight'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
+
+        if attr in attr_map.keys():
+            self.__dict__[attr] = value
+            if 'orm' in self.__dict__:
+                if (attr == 'start_time') or (attr == 'end_time'):
+                    setattr(self.orm, attr_map[attr], value.timestamp)
+                else:
+                    setattr(self.orm, attr_map[attr], value)
+        else:
+            self.__dict__[attr] = value
 
 
 
 
 class DbSensor(Sensor):
+    def __init__(self, orm = None, **kwargs):
+        Sensor.__init__(self, **kwargs)
 
-    def __init__(self, parent_inventory, serial, type,
-                 component, author_uri, agency_uri, creation_time,
-                 id = None, geom_sensor = None):
-        Sensor.__init__(self, id = id, serial = serial, type = type,
-                        component = component, author_uri = author_uri,
-                        agency_uri = agency_uri, creation_time = creation_time,
-                        parent_inventory = parent_inventory)
-
-        if geom_sensor is None:
-            geom_sensor_orm = self.parent_inventory.project.dbTables['geom_sensor']
-            self.geom_sensor = geom_sensor_orm(serial = self.serial,
-                                               type = self.type,
-                                               component = self.component,
-                                               agency_uri = self.agency_uri,
-                                               author_uri = self.author_uri,
-                                               creation_time = self.creation_time)
+        if orm is None:
+            orm_class = self.parent_inventory.project.dbTables['geom_sensor']
+            self.orm = orm_class(serial = self.serial,
+                                 model = self.model,
+                                 producer = self.producer,
+                                 description = self.description,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            self.geom_sensor = geom_sensor
+            self.orm = orm
+
+
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_inventory, geom_sensor):
-        cur_sensor =  cls(parent_inventory = parent_inventory,
-                          serial = geom_sensor.serial,
-                          type = geom_sensor.type,
-                          component = geom_sensor.component,
-                          id = geom_sensor.id,
-                          author_uri = geom_sensor.author_uri,
-                          agency_uri = geom_sensor.agency_uri,
-                          creation_time = geom_sensor.creation_time,
-                          geom_sensor = geom_sensor)
+    def from_sqlalchemy_orm(cls, parent_inventory, orm):
+        sensor =  cls(parent_inventory = parent_inventory,
+                          serial = orm.serial,
+                          model = orm.model,
+                          producer = orm.producer,
+                          description = orm.description,
+                          author_uri = orm.author_uri,
+                          agency_uri = orm.agency_uri,
+                          creation_time = orm.creation_time,
+                          orm = orm)
 
-        for cur_param in geom_sensor.parameters:
-            db_param = DbSensorParameter.from_sqlalchemy_orm(cur_sensor, cur_param)
-            cur_sensor.parameters.append(db_param)
+        for cur_component in orm.components:
+            db_component = DbSensorComponent.from_sqlalchemy_orm(sensor, cur_component)
+            sensor.add_component(db_component)
 
-        return cur_sensor
+        return sensor
 
 
 
     @classmethod
-    def from_inventory_sensor(cls, parent_inventory, sensor):
-        cur_sensor =  cls(parent_inventory = parent_inventory,
-                          serial = sensor.serial,
-                          type = sensor.type,
-                          component = sensor.component,
-                          author_uri = sensor.author_uri,
-                          agency_uri = sensor.agency_uri,
-                          creation_time = sensor.creation_time)
+    def from_inventory_instance(cls, parent_inventory, instance):
+        sensor =  cls(parent_inventory = parent_inventory,
+                      serial = instance.serial,
+                      model = instance.model,
+                      producer = instance.producer,
+                      description = instance.description,
+                      author_uri = instance.author_uri,
+                      agency_uri = instance.agency_uri,
+                      creation_time = instance.creation_time)
 
-        for cur_parameter in sensor.parameters:
-            cur_sensor.add_parameter(DbSensorParameter.from_inventory_sensor_parameter(cur_sensor, cur_parameter))
+        for cur_component in instance.components:
+            sensor.add_component(DbSensorComponent.from_inventory_instance(sensor, cur_component))
+        return sensor
+
+
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        attr_map = {};
+        attr_map['serial'] = 'serial'
+        attr_map['model'] = 'model'
+        attr_map['producer'] = 'producer'
+        attr_map['description'] = 'description'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
+
+        if attr in attr_map.keys():
+            self.__dict__[attr] = value
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
+        else:
+            self.__dict__[attr] = value
+
+
+    def add_component(self, cur_component):
+        ''' Add a component to the sensor.
+
+        Parameters
+        ----------
+        cur_component : :class:`DbSensorComponent`
+            The stream to add to the recorder.
+        '''
+        if cur_component.__class__ is SensorComponent:
+            cur_component = DbSensorComponent.from_inventory_instance(self, cur_component)
+
+        added_component = Sensor.add_component(self, cur_component)
+        if added_component is not None:
+            self.orm.components.append(cur_component.orm)
+
+        return added_component
+
+
+class DbSensorComponent(SensorComponent):
+
+    def __init__(self, orm = None, **kwargs):
+        SensorComponent.__init__(self, **kwargs)
+
+        if orm is None:
+            orm_class = self.parent_inventory.project.dbTables['geom_sensor_component']
+            self.orm = orm_class(name = self.name,
+                                 description = self.description,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
+        else:
+            self.orm = orm
+
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
+
+
+    @classmethod
+    def from_sqlalchemy_orm(cls, parent_sensor, orm):
+        component =  cls(parent_sensor = parent_sensor,
+                         name = orm.name,
+                         description = orm.description,
+                         author_uri = orm.author_uri,
+                         agency_uri = orm.agency_uri,
+                         creation_time = orm.creation_time,
+                         orm = orm)
+
+        for cur_param in orm.parameters:
+            db_param = DbSensorComponentParameter.from_sqlalchemy_orm(component, cur_param)
+            component.add_parameter(component, db_param)
+            #component.parameters.append(db_param)
+
+        return component
+
+
+
+    @classmethod
+    def from_inventory_instance(cls, parent_sensor, instance):
+        cur_sensor =  cls(parent_sensor = parent_sensor,
+                          name = instance.name,
+                          description = instance.description,
+                          author_uri = instance.author_uri,
+                          agency_uri = instance.agency_uri,
+                          creation_time = instance.creation_time)
+
+        for cur_parameter in instance.parameters:
+            cur_sensor.add_parameter(DbSensorComponentParameter.from_inventory_instance(cur_sensor, cur_parameter))
         return cur_sensor
 
 
@@ -893,154 +1058,135 @@ class DbSensor(Sensor):
         ''' Control the attribute assignements.
         '''
         attr_map = {};
-        attr_map['serial'] = 'serial'
-        attr_map['type'] = 'type'
-        attr_map['component'] = 'component'
+        attr_map['name'] = 'name'
+        attr_map['description'] = 'description'
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
-            if 'geom_sensor' in self.__dict__:
-                setattr(self.geom_sensor, attr_map[attr], value)
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
         else:
             self.__dict__[attr] = value
 
 
-    def add_parameter(self, parameter):
+    def add_parameter(self, cur_parameter):
         ''' Add a parameter to the sensor
 
         Parameters
         ----------
-        parameter : :class:`DbSensorParameter`
+        parameter : :class:`DbSensorComponentParameter`
             The parameter to add to the sensor.
         '''
-        if parameter.__class__ is DbSensorParameter:
-            self.parameters.append(parameter)
-            self.geom_sensor.parameters.append(parameter.geom_sensor_parameter)
+        if cur_parameter.__class__ is SensorComponentParameter:
+            cur_parameter = DbSensorComponentParameter.from_inventory_instance(self, cur_parameter)
+
+        added_parameter = SensorComponent.add_parameter(self, cur_parameter)
+
+        if added_parameter is not None:
+            self.orm.parameters.append(cur_parameter.orm)
 
             # Add the tf poles and zeros to the database orm.
-            geom_tfpz_orm = self.parent_inventory.project.dbTables['geom_tf_pz']
-            for cur_pole in parameter.tf_poles:
-                parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 1, cur_pole.real, cur_pole.imag))
-            for cur_zero in parameter.tf_zeros:
-                parameter.geom_sensor_parameter.tf_pz.append(geom_tfpz_orm(parameter.id, 0, cur_zero.real, cur_zero.imag))
-        elif parameter.__class__ is SensorParameter:
-            parameter = self.add_parameter(DbSensorParameter.from_inventory_sensor_parameter(self, parameter))
+            geom_tfpz_orm_class = self.parent_inventory.project.dbTables['geom_tf_pz']
+            for cur_pole in cur_parameter.tf_poles:
+                cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(cur_parameter.id, 1, cur_pole.real, cur_pole.imag))
+            for cur_zero in cur_parameter.tf_zeros:
+                cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(cur_parameter.id, 0, cur_zero.real, cur_zero.imag))
+
+        return added_parameter
+
+
+
+
+class DbSensorComponentParameter(SensorComponentParameter):
+
+    def __init__(self, orm = None, **kwargs):
+
+        SensorComponentParameter.__init__(self, **kwargs)
+
+        if orm is None:
+            orm_class = self.parent_inventory.project.dbTables['geom_component_param']
+            self.orm = orm_class(component_id = self.parent_component.id,
+                                 start_time = self.start_time.timestamp,
+                                 end_time = None if self.end_time is None else self.end_time.timestamp,
+                                 tf_normalization_factor = self.tf_normalization_factor,
+                                 tf_normalization_frequency = self.tf_normalization_frequency,
+                                 tf_type = self.tf_type,
+                                 tf_units = self.tf_units,
+                                 sensitivity = self.sensitivity,
+                                 sensitivity_units = self.sensitivity_units,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            parameter = None
-
-        return parameter
+            self.orm = orm
 
 
-
-    def update_id(self):
-        ''' Update the database if from the geom_sensor instance.
+    @property
+    def id(self):
+        ''' The database id.
         '''
-        if self.geom_sensor is not None:
-            self.id = self.geom_sensor.id
-
-
-
-class DbSensorParameter(SensorParameter):
-
-    def __init__(self, parent_sensor, sensitivity, sensitivity_units, tf_type,
-                 tf_units, tf_normalization_factor, tf_normalization_frequency,
-                 id, start_time, end_time, author_uri, agency_uri, creation_time,
-                 tf_poles = [], tf_zeros = [],
-                 geom_sensor_parameter = None):
-
-        SensorParameter.__init__(self,
-                                 parent_sensor = parent_sensor,
-                                 sensitivity = sensitivity,
-                                 sensitivity_units = sensitivity_units,
-                                 start_time = start_time,
-                                 end_time = end_time,
-                                 tf_type = tf_type,
-                                 tf_units = tf_units,
-                                 tf_normalization_factor = tf_normalization_factor,
-                                 tf_normalization_frequency = tf_normalization_frequency,
-                                 author_uri = author_uri,
-                                 agency_uri = agency_uri,
-                                 creation_time = creation_time,
-                                 tf_poles = tf_poles,
-                                 tf_zeros = tf_zeros,
-                                 id = id)
-
-        if geom_sensor_parameter is None:
-            geom_sensor_param_orm = self.parent_inventory.project.dbTables['geom_sensor_param']
-            self.geom_sensor_parameter = geom_sensor_param_orm(sensor_id = parent_sensor.id,
-                                                     start_time = self.start_time.timestamp,
-                                                     end_time = None if self.end_time is None else self.end_time.timestamp,
-                                                     tf_normalization_factor = self.tf_normalization_factor,
-                                                     tf_normalization_frequency = self.tf_normalization_frequency,
-                                                     tf_type = self.tf_type,
-                                                     tf_units = self.tf_units,
-                                                     sensitivity = self.sensitivity,
-                                                     sensitivity_units = self.sensitivity_units,
-                                                     agency_uri = self.agency_uri,
-                                                     author_uri = self.author_uri,
-                                                     creation_time = self.creation_time)
+        if self.orm is not None:
+            return self.orm.id
         else:
-            self.geom_sensor_parameter = geom_sensor_parameter
+            return None
 
 
     @classmethod
-    def from_inventory_sensor_parameter(cls, parent_sensor, sensor_parameter):
-        return cls(parent_sensor = parent_sensor,
-                   start_time = sensor_parameter.start_time,
-                   end_time = sensor_parameter.end_time,
-                   tf_normalization_factor = sensor_parameter.tf_normalization_factor,
-                   tf_normalization_frequency = sensor_parameter.tf_normalization_frequency,
-                   tf_type = sensor_parameter.tf_type,
-                   tf_units = sensor_parameter.tf_units,
-                   tf_poles = sensor_parameter.tf_poles,
-                   tf_zeros = sensor_parameter.tf_zeros,
-                   sensitivity = sensor_parameter.sensitivity,
-                   sensitivity_units = sensor_parameter.sensitivity_units,
-                   author_uri = sensor_parameter.author_uri,
-                   agency_uri = sensor_parameter.agency_uri,
-                   creation_time = sensor_parameter.creation_time,
-                   id = sensor_parameter.id)
+    def from_inventory_instance(cls, parent_component, instance):
+        return cls(parent_component = parent_component,
+                   start_time = instance.start_time,
+                   end_time = instance.end_time,
+                   tf_normalization_factor = instance.tf_normalization_factor,
+                   tf_normalization_frequency = instance.tf_normalization_frequency,
+                   tf_type = instance.tf_type,
+                   tf_units = instance.tf_units,
+                   tf_poles = instance.tf_poles,
+                   tf_zeros = instance.tf_zeros,
+                   sensitivity = instance.sensitivity,
+                   sensitivity_units = instance.sensitivity_units,
+                   author_uri = instance.author_uri,
+                   agency_uri = instance.agency_uri,
+                   creation_time = instance.creation_time)
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_sensor, geom_sensor_parameter):
+    def from_sqlalchemy_orm(cls, parent_component, orm):
 
-        if geom_sensor_parameter.start_time is not None:
-            start_time = UTCDateTime(geom_sensor_parameter.start_time)
+        if orm.start_time is not None:
+            start_time = UTCDateTime(orm.start_time)
         else:
             start_time = None
 
-        if geom_sensor_parameter.end_time is not None:
-            end_time = UTCDateTime(geom_sensor_parameter.end_time)
+        if orm.end_time is not None:
+            end_time = UTCDateTime(orm.end_time)
         else:
             end_time = None
 
-        sensor = cls(parent_sensor = parent_sensor,
-                   start_time = start_time,
-                   end_time = end_time,
-                   tf_normalization_factor = geom_sensor_parameter.tf_normalization_factor,
-                   tf_normalization_frequency = geom_sensor_parameter.tf_normalization_frequency,
-                   tf_type = geom_sensor_parameter.tf_type,
-                   tf_units = geom_sensor_parameter.tf_units,
-                   sensitivity = geom_sensor_parameter.sensitivity,
-                   sensitivity_units = geom_sensor_parameter.sensitivity_units,
-                   id = geom_sensor_parameter.id,
-                   author_uri = geom_sensor_parameter.author_uri,
-                   agency_uri = geom_sensor_parameter.agency_uri,
-                   creation_time = geom_sensor_parameter.creation_time,
-                   geom_sensor_parameter = geom_sensor_parameter)
+        parameter = cls(parent_component = parent_component,
+                        start_time = start_time,
+                        end_time = end_time,
+                        tf_normalization_factor = orm.tf_normalization_factor,
+                        tf_normalization_frequency = orm.tf_normalization_frequency,
+                        tf_type = orm.tf_type,
+                        tf_units = orm.tf_units,
+                        sensitivity = orm.sensitivity,
+                        sensitivity_units = orm.sensitivity_units,
+                        author_uri = orm.author_uri,
+                        agency_uri = orm.agency_uri,
+                        creation_time = orm.creation_time,
+                        orm = orm)
 
         # Collect the poles and zeros of the transfer function.
-        for cur_pz in geom_sensor_parameter.tf_pz:
+        for cur_pz in orm.tf_pz:
             if cur_pz.type == 0:
-                sensor.tf_zeros.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
+                parameter.tf_zeros.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
             elif cur_pz.type == 1:
-                sensor.tf_poles.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
+                parameter.tf_poles.append(complex(cur_pz.complex_real, cur_pz.complex_imag))
 
-        return sensor
+        return parameter
 
 
     def __setattr__(self, attr, value):
@@ -1061,60 +1207,54 @@ class DbSensorParameter(SensorParameter):
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
-            if 'geom_sensor_parameter' in self.__dict__:
+            if 'orm' in self.__dict__:
                 if (attr == 'start_time') or (attr == 'end_time'):
-                    setattr(self.geom_sensor_parameter, attr_map[attr], value.timestamp)
+                    setattr(self.orm, attr_map[attr], value.timestamp)
                 else:
-                    setattr(self.geom_sensor_parameter, attr_map[attr], value)
+                    setattr(self.orm, attr_map[attr], value)
         else:
             self.__dict__[attr] = value
-
-
-    def update_id(self):
-        ''' Update the database if from the geom_sensor instance.
-        '''
-        if self.geom_sensor_parameter is not None:
-            self.id = self.geom_sensor_parameter.id
 
 
 
 
 class DbChannel(Channel):
 
-    def __init__(self, parent_station, name, description, agency_uri,
-                 author_uri, creation_time,
-                 id = None, geom_channel = None):
-        Channel.__init__(self,
-                         id = id,
-                         name = name,
-                         description = description,
-                         agency_uri = agency_uri,
-                         author_uri = author_uri,
-                         parent_station = parent_station)
+    def __init__(self, orm = None, **kwargs):
+        Channel.__init__(self, **kwargs)
 
-        if geom_channel is None:
-            geom_channel_orm = self.parent_inventory.project.dbTables['geom_channel']
-            self.geom_channel = geom_channel_orm(name = self.name,
-                                                description = self.description,
-                                                agency_uri = self.agency_uri,
-                                                author_uri = self.author_uri,
-                                                creation_time = self.creation_time)
+        if orm is None:
+            orm_class = self.parent_inventory.project.dbTables['geom_channel']
+            self.orm = orm_class(name = self.name,
+                                 description = self.description,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
         else:
-            self.geom_channel = geom_channel
+            self.orm = orm
+
+
+    @property
+    def id(self):
+        ''' The database id.
+        '''
+        if self.orm is not None:
+            return self.orm.id
+        else:
+            return None
 
 
     @classmethod
-    def from_sqlalchemy_orm(cls, parent_station, geom_channel):
+    def from_sqlalchemy_orm(cls, parent_station, orm):
         channel =  cls(parent_station = parent_station,
-                       id = geom_channel.id,
-                       name = geom_channel.name,
-                       description = geom_channel.description,
-                       author_uri = geom_channel.author_uri,
-                       agency_uri = geom_channel.agency_uri,
-                       creation_time = geom_channel.creation_time,
-                       geom_channel = geom_channel)
+                       name = orm.name,
+                       description = orm.description,
+                       author_uri = orm.author_uri,
+                       agency_uri = orm.agency_uri,
+                       creation_time = orm.creation_time,
+                       orm = orm)
 
-        for cur_stream_to_channel in geom_channel.streams:
+        for cur_stream_to_channel in orm.streams:
             db_stream = DbRecorderStream.from_sqlalchemy_orm(channel, cur_stream_to_channel.stream)
             cur_start_time = UTCDateTime(cur_stream_to_channel.start_time)
             cur_end_time = UTCDateTime(cur_stream_to_channel.end_time)
@@ -1126,20 +1266,20 @@ class DbChannel(Channel):
 
 
     @classmethod
-    def from_inventory_channel(cls, parent_station, channel):
-        cur_channel =  cls(parent_station = parent_station,
-                           name = channel.name,
-                           description = channel.description,
-                           author_uri = channel.author_uri,
-                           agency_uri = channel.agency_uri,
-                           creation_time = channel.creation_time)
+    def from_inventory_instance(cls, parent_station, instance):
+        channel =  cls(parent_station = parent_station,
+                           name = instance.name,
+                           description = instance.description,
+                           author_uri = instance.author_uri,
+                           agency_uri = instance.agency_uri,
+                           creation_time = instance.creation_time)
 
-        for cur_timebox in channel.streams:
-            cur_channel.add_stream(DbRecorderStream.from_inventory_stream(cur_channel, cur_timebox.item),
+        for cur_timebox in instance.streams:
+            channel.add_stream(DbRecorderStream.from_inventory_instance(channel, cur_timebox.item),
                                    cur_timebox.start_time,
                                    cur_timebox.end_time)
 
-        return cur_channel
+        return channel
 
 
     def __setattr__(self, attr, value):
@@ -1154,48 +1294,54 @@ class DbChannel(Channel):
 
         if attr in attr_map.keys():
             self.__dict__[attr] = value
-            if 'geom_channel' in self.__dict__:
-                setattr(self.geom_channel, attr_map[attr], value)
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
         else:
             self.__dict__[attr] = value
 
 
-    def add_stream(self, cur_stream, start_time, end_time):
+    def add_stream(self, serial, name, start_time, end_time):
         ''' Add a stream to the channel.
 
+        Parameters
+        ----------
+        serial : String
+            The serial number of the recorder containing the stream.
+
+        name : String
+            The name of the stream.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the stream has been operating at the channel.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the stream has been operating at the channel. "None" if the channel is still running.
         '''
-        if((cur_stream, start_time) in [(x[0], x[1]) for x in self.streams]):
-            # The sensor is already assigned to the station for this timespan.
-            return None
+        added_stream = Channel.add_stream(self,
+                                          serial = serial,
+                                          name = name,
+                                          start_time = start_time,
+                                          end_time = end_time)
 
-        self.streams.append((cur_stream, start_time, end_time))
-        self.has_changed = True
+        if added_stream is not None:
+            # Add the streastream the the database orm.
+            if start_time is not None:
+                start_time_timestamp = start_time.timestamp
+            else:
+                start_time_timestamp = None
 
-        # Add the sensor the the database orm.
-        if start_time is not None:
-            start_time_timestamp = start_time.timestamp
-        else:
-            start_time_timestamp = None
+            if end_time is not None:
+                end_time_timestamp = end_time.timestamp
+            else:
+                end_time_timestamp = None
 
-        if end_time is not None:
-            end_time_timestamp = end_time.timestamp
-        else:
-            end_time_timestamp = None
+            orm_class = self.parent_inventory.project.dbTables['geom_stream_to_channel']
+            stream_to_channel_orm = orm_class(channel_id = self.id,
+                                              stream_id = added_stream.id,
+                                              start_time = start_time_timestamp,
+                                              end_time = end_time_timestamp)
+            stream_to_channel_orm.stream = added_stream.orm
+            self.orm.streams.append(stream_to_channel_orm)
 
-        geom_stream_to_channel_orm = self.parent_inventory.project.dbTables['geom_stream_to_channel']
-        geom_stream_to_channel = geom_stream_to_channel_orm(channel_id = self.id,
-                                        stream_id = cur_stream.id,
-                                        start_time = start_time_timestamp,
-                                        end_time = end_time_timestamp)
-        geom_stream_to_channel.stream = cur_stream.geom_rec_stream
-        self.geom_channel.streams.append(geom_stream_to_channel)
+        return added_stream
 
-        return cur_stream
-
-
-
-    def update_id(self):
-        ''' Update the database if from the geom_sensor instance.
-        '''
-        if self.geom_channel is not None:
-            self.id = self.geom_channel.id
