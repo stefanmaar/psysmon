@@ -38,7 +38,7 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Sensor
-from psysmon.packages.geometry.inventory import SensorParameter
+from psysmon.packages.geometry.inventory import SensorComponentParameter
 from psysmon.packages.geometry.inventory import RecorderStream
 from obspy.core.utcdatetime import UTCDateTime
 
