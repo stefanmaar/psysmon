@@ -24,7 +24,7 @@ __authorEmail__ = "stefan@mertl-research.at"
 __description__ = "A seismological data processing and prototyping software."
 __longDescription__ = """pSysmon acts as a framework for developing and testing 
     of algorithms for seismological data processing. It can also be used for routine 
-    data processing. test
+    data processing.
     """
 __website__ = "http://psysmon.mertl-research.at"
 __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
