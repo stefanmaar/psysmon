@@ -171,6 +171,16 @@ class DbInventory(Inventory):
             self.networks.append(db_network)
 
 
+    def load_sensors(self):
+        ''' Load the sensors from the database.
+
+        '''
+        sensor_table = self.project.dbTables['geom_sensor']
+        for cur_sensor_orm in self.db_session.query(sensor_table).order_by(sensor_table.serial):
+            sensor = DbSensor.from_sqlalchemy_orm(self, cur_sensor_orm)
+            self.sensors.append(sensor)
+
+
     def load_recorders(self):
         ''' Load the recorders from the database.
         '''
@@ -494,7 +504,7 @@ class DbRecorder(Recorder):
 
         for cur_stream in orm.streams:
             db_stream = DbRecorderStream.from_sqlalchemy_orm(recorder, cur_stream)
-            recorder.streams.append(db_stream)
+            recorder.add_stream(db_stream)
 
         return recorder
 
@@ -547,7 +557,8 @@ class DbRecorder(Recorder):
 
         added_stream = Recorder.add_stream(self, cur_stream)
         if added_stream is not None:
-            self.orm.streams.append(cur_stream.orm)
+            if cur_stream.orm not in self.orm.streams:
+                self.orm.streams.append(cur_stream.orm)
 
         return added_stream
 
@@ -579,26 +590,28 @@ class DbRecorderStream(RecorderStream):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_recorder, orm):
-        cur_stream =  cls(parent_recorder = parent_recorder,
-                          name = orm.name,
-                          label = orm.label,
-                          author_uri = orm.author_uri,
-                          agency_uri = orm.agency_uri,
-                          creation_time = orm.creation_time,
-                          orm = orm)
+        stream =  cls(parent_recorder = parent_recorder,
+                      name = orm.name,
+                      label = orm.label,
+                      author_uri = orm.author_uri,
+                      agency_uri = orm.agency_uri,
+                      creation_time = orm.creation_time,
+                      orm = orm)
 
         for cur_component_to_stream in orm.sensors:
-            #db_sensor = DbSensor.from_sqlalchemy_orm(cur_stream, cur_sensor_to_stream.sensor)
             cur_component = cur_component_to_stream.component
             cur_start_time = UTCDateTime(cur_component_to_stream.start_time)
             cur_end_time = UTCDateTime(cur_component_to_stream.end_time)
-            cur_stream.add_sensor(sensor_serial = cur_component.serial,
+            # TODO: die add_sensor Methode muss durch die add_component methode
+            # ersetzt werden.
+            stream.add_sensor(sensor_serial = cur_component.serial,
                                   start_time = cur_start_time,
                                   end_time = cur_end_time)
-            #cur_stream.sensors.append((db_sensor, cur_start_time, cur_end_time))
-            #db_sensor.set_parent_inventory(cur_stream.parent_inventory)
 
-        return cur_stream
+        for cur_parameter in orm.parameters:
+            stream.add_parameter(DbRecorderStreamParameter.from_sqlalchemy_orm(stream, cur_parameter))
+
+        return stream
 
 
     @classmethod
@@ -700,7 +713,8 @@ class DbRecorderStream(RecorderStream):
         added_parameter = RecorderStream.add_parameter(self, cur_parameter)
 
         if added_parameter is not None:
-            self.orm.parameters.append(cur_parameter.orm)
+            if cur_parameter.orm not in self.orm.parameters:
+                self.orm.parameters.append(cur_parameter.orm)
 
         return added_parameter
 
@@ -989,7 +1003,8 @@ class DbSensor(Sensor):
 
         added_component = Sensor.add_component(self, cur_component)
         if added_component is not None:
-            self.orm.components.append(cur_component.orm)
+            if cur_component.orm not in self.orm.components:
+                self.orm.components.append(cur_component.orm)
 
         return added_component
 
@@ -1031,8 +1046,7 @@ class DbSensorComponent(SensorComponent):
 
         for cur_param in orm.parameters:
             db_param = DbSensorComponentParameter.from_sqlalchemy_orm(component, cur_param)
-            component.add_parameter(component, db_param)
-            #component.parameters.append(db_param)
+            component.add_parameter(db_param)
 
         return component
 
@@ -1086,14 +1100,15 @@ class DbSensorComponent(SensorComponent):
         added_parameter = SensorComponent.add_parameter(self, cur_parameter)
 
         if added_parameter is not None:
-            self.orm.parameters.append(cur_parameter.orm)
+            if cur_parameter.orm not in self.orm.parameters:
+                self.orm.parameters.append(cur_parameter.orm)
 
-            # Add the tf poles and zeros to the database orm.
-            geom_tfpz_orm_class = self.parent_inventory.project.dbTables['geom_tf_pz']
-            for cur_pole in cur_parameter.tf_poles:
-                cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(cur_parameter.id, 1, cur_pole.real, cur_pole.imag))
-            for cur_zero in cur_parameter.tf_zeros:
-                cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(cur_parameter.id, 0, cur_zero.real, cur_zero.imag))
+                # Add the tf poles and zeros to the database orm.
+                geom_tfpz_orm_class = self.parent_inventory.project.dbTables['geom_tf_pz']
+                for cur_pole in cur_parameter.tf_poles:
+                    cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(1, cur_pole.real, cur_pole.imag))
+                for cur_zero in cur_parameter.tf_zeros:
+                    cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(0, cur_zero.real, cur_zero.imag))
 
         return added_parameter
 
