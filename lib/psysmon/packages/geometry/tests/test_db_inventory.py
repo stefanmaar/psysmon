@@ -53,6 +53,7 @@ from psysmon.packages.geometry.inventory import RecorderStreamParameter
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
+from psysmon.packages.geometry.inventory import TimeBox
 
 class DbInventoryTestCase(unittest.TestCase):
     """
@@ -832,7 +833,10 @@ class DbInventoryTestCase(unittest.TestCase):
         cur_stream = cur_rec.streams[0]
         self.assertIsInstance(cur_stream, DbRecorderStream)
         self.assertEqual(len(cur_stream.components), 1)
-        #cur_sensor_tuple = cur_stream.sensors[0]
+        self.assertIsInstance(cur_stream.components[0], TimeBox)
+        cur_component = cur_stream.components[0].item
+        self.assertEqual(cur_component.serial, 'sensor1_serial')
+        self.assertEqual(cur_component.name, 'comp1_name')
         #self.assertEqual(cur_sensor_tuple[0].serial, 'sensor3_serial')
         #self.assertEqual(cur_sensor_tuple[1].isoformat, cur_start_time.isoformat)
         #self.assertEqual(cur_sensor_tuple[2].isoformat, cur_end_time.isoformat)
