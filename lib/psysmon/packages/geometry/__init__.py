@@ -92,8 +92,8 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        sensors = relationship('GeomComponentToStream',
-                               backref = 'parent')
+        components = relationship('GeomComponentToStream',
+                                   backref = 'parent')
         parameters = relationship('GeomRecorderStreamParameter',
                                   backref = 'parent')
 
