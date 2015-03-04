@@ -837,6 +837,8 @@ class DbInventoryTestCase(unittest.TestCase):
         cur_component = cur_stream.components[0].item
         self.assertEqual(cur_component.serial, 'sensor1_serial')
         self.assertEqual(cur_component.name, 'comp1_name')
+        self.assertEqual(cur_stream.components[0].start_time.isoformat, cur_start_time.isoformat)
+        self.assertEqual(cur_stream.components[0].end_time.isoformat, cur_end_time.isoformat)
         #self.assertEqual(cur_sensor_tuple[0].serial, 'sensor3_serial')
         #self.assertEqual(cur_sensor_tuple[1].isoformat, cur_start_time.isoformat)
         #self.assertEqual(cur_sensor_tuple[2].isoformat, cur_end_time.isoformat)
