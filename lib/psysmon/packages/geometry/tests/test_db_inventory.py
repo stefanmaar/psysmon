@@ -839,15 +839,6 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_component.name, 'comp1_name')
         self.assertEqual(cur_stream.components[0].start_time.isoformat, cur_start_time.isoformat)
         self.assertEqual(cur_stream.components[0].end_time.isoformat, cur_end_time.isoformat)
-        #self.assertEqual(cur_sensor_tuple[0].serial, 'sensor3_serial')
-        #self.assertEqual(cur_sensor_tuple[1].isoformat, cur_start_time.isoformat)
-        #self.assertEqual(cur_sensor_tuple[2].isoformat, cur_end_time.isoformat)
-        #self.assertEqual(len(cur_sensor_tuple[0].parameters), 1)
-        #cur_parameter = cur_sensor_tuple[0].parameters[0]
-        #self.assertEqual(cur_parameter.sensitivity, 3)
-        #self.assertEqual(cur_parameter.sensitivity_units, 'sensitivity_units')
-        #self.assertEqual(cur_parameter.start_time.isoformat, cur_start_time.isoformat)
-        #self.assertEqual(cur_parameter.end_time.isoformat, cur_end_time.isoformat)
 
 
     def test_load_network(self):
