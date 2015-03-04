@@ -700,8 +700,8 @@ class DbInventoryTestCase(unittest.TestCase):
 
             stream1.add_parameter(parameter1)
             recorder1.add_stream(stream1)
-            added_recorder1 = db_inventory.add_recorder(recorder1)
-            added_recorder2 = db_inventory.add_recorder(recorder2)
+            db_inventory.add_recorder(recorder1)
+            db_inventory.add_recorder(recorder2)
 
             # Commit the changes to the database.
             db_inventory.commit()
@@ -743,40 +743,70 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
 
-    def test_load_recorder_with_component(self):
+    def test_load_recorder_with_components(self):
         db_inventory = DbInventory('write', self.project)
 
         try:
-            # Add recorder 1.
-            rec_2_add = Recorder(serial = 'recorder1_serial', type = 'recorder1_type')
-            db_inventory.add_recorder(rec_2_add)
+            sensor1 = Sensor(serial = 'sensor1_serial',
+                             model = 'sensor1_model',
+                             producer = 'sensor1_producer')
 
-            # Add recorder 2.
-            rec_2_add = Recorder(serial = 'recorder2_serial', type = 'recorder2_type')
-            db_inventory.add_recorder(rec_2_add)
+            sensor2 = Sensor(serial = 'sensor2_serial',
+                             model = 'sensor2_model',
+                             producer = 'sensor2_producer')
 
-            # Add recorder 3.
-            # Recorder 3 has a stream with a sensor.
-            rec_2_add = Recorder(serial = 'recorder3_serial', type = 'recorder3_type')
-            stream_2_add = RecorderStream(name = 'stream3_name',
-                                          label = 'stream3_label')
-            sensor_2_add = Sensor(serial = 'sensor3_serial',
-                                  label = 'sensor3_label',
-                                  type = 'sensor3_type')
-            cur_start_time = UTCDateTime('1976-06-20')
-            cur_end_time = UTCDateTime('2014-06-20')
-            parameter_2_add = SensorComponentParameter(sensitivity = 3,
-                                              sensitivity_units = 'sensitivity_units',
+            component1 = SensorComponent(name = 'comp1_name')
+            component2 = SensorComponent(name = 'comp2_name')
+
+            cur_start_time = UTCDateTime('2014-01-01')
+            cur_end_time = UTCDateTime('2014-02-01')
+            parameter1 = SensorComponentParameter(sensitivity = 1,
+                                              sensitivity_units = 'param1_units',
                                               start_time = cur_start_time,
-                                              end_time = cur_end_time)
-            sensor_2_add.add_parameter(parameter_2_add)
+                                              end_time = cur_end_time,
+                                              tf_poles = [complex('1+1j'), complex('1+2j')],
+                                              tf_zeros = [complex('0+1j'), complex('0+2j')])
 
-            stream_2_add.add_sensor(sensor_2_add,
-                                    cur_start_time,
-                                    cur_end_time)
+            component1.add_parameter(parameter1)
 
-            rec_2_add.add_stream(stream_2_add)
-            db_inventory.add_recorder(rec_2_add)
+            sensor1.add_component(component1)
+            sensor2.add_component(component2)
+
+            db_inventory.add_sensor(sensor1)
+            db_inventory.add_sensor(sensor2)
+
+            # Add recorders to the database.
+            recorder1 = Recorder(serial = 'recorder1_serial',
+                                 type = 'recorder1_type')
+
+            recorder2 = Recorder(serial = 'recorder2_serial',
+                                 type = 'recorder2_type')
+
+            stream1 = RecorderStream(name = 'stream1_name',
+                                     label = 'stream1_label')
+
+
+            cur_start_time = UTCDateTime('2014-01-01')
+            cur_end_time = UTCDateTime('2014-02-01')
+            parameter1 = RecorderStreamParameter(gain = 1,
+                                                 bitweight = 0.1,
+                                                 start_time = cur_start_time,
+                                                 end_time = cur_end_time)
+
+            stream1.add_parameter(parameter1)
+            recorder1.add_stream(stream1)
+
+            db_inventory.add_recorder(recorder1)
+            db_inventory.add_recorder(recorder2)
+
+            cur_recorder = db_inventory.get_recorder(serial = 'recorder1_serial')
+            cur_recorder = cur_recorder[0]
+            cur_stream = cur_recorder.get_stream(name = 'stream1_name')
+            cur_stream = cur_stream[0]
+            cur_stream.add_component(serial = 'sensor1_serial',
+                                     name = 'comp1_name',
+                                     start_time = cur_start_time,
+                                     end_time = cur_end_time)
 
             # Commit the changes to the database.
             db_inventory.commit()
@@ -786,30 +816,32 @@ class DbInventoryTestCase(unittest.TestCase):
         try:
             # Load the networks from the database.
             db_inventory_load = DbInventory('load', self.project)
+            # Load the sensors first, they are needed to add components to the
+            # recorders.
+            db_inventory_load.load_sensors()
             db_inventory_load.load_recorders()
         finally:
             db_inventory_load.close()
 
-        self.assertEqual(len(db_inventory_load.recorders), 3)
+        self.assertEqual(len(db_inventory_load.recorders), 2)
         self.assertEqual(db_inventory_load.recorders[0].serial, 'recorder1_serial')
         self.assertEqual(db_inventory_load.recorders[1].serial, 'recorder2_serial')
-        self.assertEqual(db_inventory_load.recorders[2].serial, 'recorder3_serial')
-        cur_rec = db_inventory_load.recorders[2]
+        cur_rec = db_inventory_load.recorders[0]
         self.assertIsInstance(cur_rec, DbRecorder)
         self.assertEqual(len(cur_rec.streams), 1)
         cur_stream = cur_rec.streams[0]
         self.assertIsInstance(cur_stream, DbRecorderStream)
-        self.assertEqual(len(cur_stream.sensors), 1)
-        cur_sensor_tuple = cur_stream.sensors[0]
-        self.assertEqual(cur_sensor_tuple[0].serial, 'sensor3_serial')
-        self.assertEqual(cur_sensor_tuple[1].isoformat, cur_start_time.isoformat)
-        self.assertEqual(cur_sensor_tuple[2].isoformat, cur_end_time.isoformat)
-        self.assertEqual(len(cur_sensor_tuple[0].parameters), 1)
-        cur_parameter = cur_sensor_tuple[0].parameters[0]
-        self.assertEqual(cur_parameter.sensitivity, 3)
-        self.assertEqual(cur_parameter.sensitivity_units, 'sensitivity_units')
-        self.assertEqual(cur_parameter.start_time.isoformat, cur_start_time.isoformat)
-        self.assertEqual(cur_parameter.end_time.isoformat, cur_end_time.isoformat)
+        self.assertEqual(len(cur_stream.components), 1)
+        #cur_sensor_tuple = cur_stream.sensors[0]
+        #self.assertEqual(cur_sensor_tuple[0].serial, 'sensor3_serial')
+        #self.assertEqual(cur_sensor_tuple[1].isoformat, cur_start_time.isoformat)
+        #self.assertEqual(cur_sensor_tuple[2].isoformat, cur_end_time.isoformat)
+        #self.assertEqual(len(cur_sensor_tuple[0].parameters), 1)
+        #cur_parameter = cur_sensor_tuple[0].parameters[0]
+        #self.assertEqual(cur_parameter.sensitivity, 3)
+        #self.assertEqual(cur_parameter.sensitivity_units, 'sensitivity_units')
+        #self.assertEqual(cur_parameter.start_time.isoformat, cur_start_time.isoformat)
+        #self.assertEqual(cur_parameter.end_time.isoformat, cur_end_time.isoformat)
 
 
     def test_load_network(self):
