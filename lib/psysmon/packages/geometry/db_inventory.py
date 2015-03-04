@@ -598,15 +598,15 @@ class DbRecorderStream(RecorderStream):
                       creation_time = orm.creation_time,
                       orm = orm)
 
-        for cur_component_to_stream in orm.sensors:
+        for cur_component_to_stream in orm.components:
             cur_component = cur_component_to_stream.component
             cur_start_time = UTCDateTime(cur_component_to_stream.start_time)
             cur_end_time = UTCDateTime(cur_component_to_stream.end_time)
-            # TODO: die add_sensor Methode muss durch die add_component methode
-            # ersetzt werden.
-            stream.add_sensor(sensor_serial = cur_component.serial,
-                                  start_time = cur_start_time,
-                                  end_time = cur_end_time)
+            tmp = stream.add_component(serial = cur_component.parent.serial,
+                                 name = cur_component.name,
+                                 start_time = cur_start_time,
+                                 end_time = cur_end_time,
+                                 ignore_orm = True)
 
         for cur_parameter in orm.parameters:
             stream.add_parameter(DbRecorderStreamParameter.from_sqlalchemy_orm(stream, cur_parameter))
@@ -623,8 +623,9 @@ class DbRecorderStream(RecorderStream):
                           agency_uri = instance.agency_uri,
                           creation_time = instance.creation_time)
 
-        for cur_sensor, cur_start_time, cur_end_time in instance.components:
-            cur_stream.add_component(sensor = cur_sensor,
+        for cur_component, cur_start_time, cur_end_time in instance.components:
+            cur_stream.add_component(serial = cur_component.serial,
+                                     name = cur_component.name,
                                      start_time = cur_start_time,
                                      end_time = cur_end_time)
 
@@ -646,7 +647,6 @@ class DbRecorderStream(RecorderStream):
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
-
         if attr in attr_map.keys():
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
@@ -655,7 +655,7 @@ class DbRecorderStream(RecorderStream):
             self.__dict__[attr] = value
 
 
-    def add_component(self, serial, name, start_time, end_time):
+    def add_component(self, serial, name, start_time, end_time, ignore_orm = False):
         ''' Add a sensor component to the stream.
 
         The component with specified serial and name is searched
@@ -675,31 +675,37 @@ class DbRecorderStream(RecorderStream):
 
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the sensor has been operating at the station. "None" if the station is still running.
+
+        ignore_orm : Boolean
+            Control if the component assignment is added to the orm or not. This is usefull
+            when creating an instance from a orm mapper using the from_sqlalchemy_orm
+            class method.
         '''
         added_component = RecorderStream.add_component(self,
                                                        serial = serial,
                                                        name = name,
                                                        start_time = start_time,
                                                        end_time = end_time)
-        if added_component is not None:
-            # Add the sensor to the database orm.
-            if start_time is not None:
-                start_time_timestamp = start_time.timestamp
-            else:
-                start_time_timestamp = None
+        if ignore_orm is False:
+            if added_component is not None:
+                # Add the sensor to the database orm.
+                if start_time is not None:
+                    start_time_timestamp = start_time.timestamp
+                else:
+                    start_time_timestamp = None
 
-            if end_time is not None:
-                end_time_timestamp = end_time.timestamp
-            else:
-                end_time_timestamp = None
+                if end_time is not None:
+                    end_time_timestamp = end_time.timestamp
+                else:
+                    end_time_timestamp = None
 
-            geom_sensor_to_stream_orm = self.parent_inventory.project.dbTables['geom_component_to_stream']
-            geom_sensor_to_stream = geom_sensor_to_stream_orm(self.id,
-                                                              added_component.id,
-                                                              start_time_timestamp,
-                                                              end_time_timestamp)
-            geom_sensor_to_stream.component = added_component.orm
-            self.orm.sensors.append(geom_sensor_to_stream)
+                geom_comp_to_stream_orm = self.parent_inventory.project.dbTables['geom_component_to_stream']
+                geom_comp_to_stream = geom_comp_to_stream_orm(self.id,
+                                                                  added_component.id,
+                                                                  start_time_timestamp,
+                                                                  end_time_timestamp)
+                geom_comp_to_stream.component = added_component.orm
+                self.orm.components.append(geom_comp_to_stream)
 
         return added_component
 
