@@ -71,7 +71,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
-        cls.project.dbEngine.echo = True
+        cls.project.dbEngine.echo = False
         #cls.full_project = create_full_project(cls.psybase)
         print "In setUpClass...\n"
 
@@ -156,7 +156,6 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Add stations to the XX network.
             station1 = Station(name = 'station1_name',
-                               network = 'XX',
                                location = '00',
                                x = 11,
                                y = 12,
@@ -164,7 +163,6 @@ class DbInventoryTestCase(unittest.TestCase):
                                coord_system = 'station1_coord_system')
 
             station2 = Station(name = 'station2_name',
-                               network = 'YY',
                                location = '00',
                                x = 21,
                                y = 22,
@@ -216,7 +214,6 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Add stations to the XX network.
             station1 = Station(name = 'station1_name',
-                               network = 'XX',
                                location = '00',
                                x = 11,
                                y = 12,
@@ -224,7 +221,6 @@ class DbInventoryTestCase(unittest.TestCase):
                                coord_system = 'station1_coord_system')
 
             station2 = Station(name = 'station2_name',
-                               network = 'YY',
                                location = '00',
                                x = 21,
                                y = 22,
@@ -232,7 +228,6 @@ class DbInventoryTestCase(unittest.TestCase):
                                coord_system = 'station2_coord_system')
 
             station3 = Station(name = 'station3_name',
-                               network = 'ZZ',
                                location = '00',
                                x = 31,
                                y = 32,
@@ -251,9 +246,9 @@ class DbInventoryTestCase(unittest.TestCase):
             station2.add_channel(channel2)
             station3.add_channel(channel3)
 
-            added_station1 = db_inventory.add_station(station1)
-            added_station2 = db_inventory.add_station(station2)
-            added_station3 = db_inventory.add_station(station3)
+            added_station1 = db_inventory.add_station('XX', station1)
+            added_station2 = db_inventory.add_station('YY', station2)
+            added_station3 = db_inventory.add_station('ZZ', station3)
 
             self.assertEqual(len(db_inventory.networks), 2)
             self.assertTrue(added_network1 in db_inventory.networks)
@@ -841,15 +836,47 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_stream.components[0].end_time.isoformat, cur_end_time.isoformat)
 
 
+
     def test_load_network(self):
         db_inventory = DbInventory('test', self.project)
 
         try:
-            # Add a network to the db_inventory.
-            net_2_add = Network(name = 'XX', description = 'A test network.')
-            added_network = db_inventory.add_network(net_2_add)
-            self.assertIsInstance(added_network, DbNetwork)
-            self.assertEqual(len(db_inventory.networks), 1)
+            # Add networks to the db_inventory.
+            network1 = Network(name = 'XX', description = 'network1_description')
+
+            network2 = Network(name = 'YY', description = 'network2_description')
+
+            # Add stations to the XX network.
+            station1 = Station(name = 'station1_name',
+                               location = '00',
+                               x = 11,
+                               y = 12,
+                               z = 13,
+                               coord_system = 'station1_coord_system')
+
+            station2 = Station(name = 'station2_name',
+                               location = '00',
+                               x = 21,
+                               y = 22,
+                               z = 23,
+                               coord_system = 'station2_coord_system')
+
+            channel1 = Channel(name = 'channel1_name',
+                               description = 'channel1_description')
+            channel2 = Channel(name = 'channel2_name',
+                               description = 'channel2_description')
+            channel3 = Channel(name = 'channel3_name',
+                               description = 'channel3_description')
+
+            station1.add_channel(channel1)
+            station1.add_channel(channel2)
+            station2.add_channel(channel3)
+
+            network1.add_station(station1)
+            network2.add_station(station2)
+
+            db_inventory.add_network(network1)
+            db_inventory.add_network(network2)
 
             # Commit the changes to the database.
             db_inventory.commit()
@@ -863,153 +890,129 @@ class DbInventoryTestCase(unittest.TestCase):
         finally:
             db_inventory_load.close()
 
-        self.assertEqual(len(db_inventory_load.networks), 1)
+        self.assertEqual(len(db_inventory_load.networks), 2)
+
         self.assertEqual(db_inventory_load.networks[0].name, 'XX')
-        self.assertEqual(db_inventory_load.networks[0].description, 'A test network.')
+        self.assertEqual(db_inventory_load.networks[0].description, 'network1_description')
         self.assertEqual(db_inventory_load.networks[0].parent_inventory, db_inventory_load)
 
+        self.assertEqual(db_inventory_load.networks[1].name, 'YY')
+        self.assertEqual(db_inventory_load.networks[1].description, 'network2_description')
+        self.assertEqual(db_inventory_load.networks[1].parent_inventory, db_inventory_load)
 
-    def test_load_network_with_stations(self):
+        cur_network = db_inventory_load.networks[0]
+        self.assertEqual(len(cur_network.stations), 1)
+        self.assertEqual(len(cur_network.orm.stations), 1)
+        cur_station = cur_network.stations[0]
+        self.assertEqual(cur_station.name, 'station1_name')
+        self.assertEqual(cur_station.network, 'XX')
+        self.assertEqual(cur_station.parent_network, cur_network)
+        self.assertEqual(len(cur_station.channels), 2)
+        self.assertEqual(len(cur_station.orm.channels), 2)
+        cur_channel = cur_station.channels[0]
+        self.assertEqual(cur_channel.name, 'channel1_name')
+        cur_channel = cur_station.channels[1]
+        self.assertEqual(cur_channel.name, 'channel2_name')
+
+        cur_network = db_inventory_load.networks[1]
+        self.assertEqual(len(cur_network.stations), 1)
+        self.assertEqual(len(cur_network.orm.stations), 1)
+        cur_station = cur_network.stations[0]
+        self.assertEqual(cur_station.name, 'station2_name')
+        self.assertEqual(cur_station.network, 'YY')
+        self.assertEqual(cur_station.parent_network, cur_network)
+        self.assertEqual(len(cur_station.channels), 1)
+        self.assertEqual(len(cur_station.orm.channels), 1)
+        cur_channel = cur_station.channels[0]
+        self.assertEqual(cur_channel.name, 'channel3_name')
+
+
+
+    def test_load_network_with_streams(self):
         db_inventory = DbInventory('write', self.project)
 
         try:
-            # Add a network to the db_inventory.
-            net_2_add = Network(name = 'XX', description = 'A test network.')
-            added_network = db_inventory.add_network(net_2_add)
+            # Add networks to the db_inventory.
+            network1 = Network(name = 'XX', description = 'network1_description')
 
-            # Add a station to the XX network.
-            stat_2_add = Station(name = 'station_name',
-                                 network = 'XX',
-                                 location = '00',
-                                 x = 0,
-                                 y = 0,
-                                 z = 0,
-                                 coord_system = 'epsg:4316')
-            added_station = db_inventory.add_station(stat_2_add)
+            network2 = Network(name = 'YY', description = 'network2_description')
+
+            # Create a recorder and a stream.
+            recorder1 = Recorder(serial = 'recorder1_serial',
+                                 type = 'recorder1_type')
+
+            stream1 = RecorderStream(name = 'stream1_name',
+                                     label = 'stream1_label')
+
+            recorder1.add_stream(stream1)
+
+            # Add stations to the XX network.
+            station1 = Station(name = 'station1_name',
+                               location = '00',
+                               x = 11,
+                               y = 12,
+                               z = 13,
+                               coord_system = 'station1_coord_system')
+
+            station2 = Station(name = 'station2_name',
+                               location = '00',
+                               x = 21,
+                               y = 22,
+                               z = 23,
+                               coord_system = 'station2_coord_system')
+
+            channel1 = Channel(name = 'channel1_name',
+                               description = 'channel1_description')
+            channel2 = Channel(name = 'channel2_name',
+                               description = 'channel2_description')
+            channel3 = Channel(name = 'channel3_name',
+                               description = 'channel3_description')
+
+            station1.add_channel(channel1)
+            station1.add_channel(channel2)
+            station2.add_channel(channel3)
+
+            network1.add_station(station1)
+            network2.add_station(station2)
+
+            # Add the elements to the inventory.
+            db_inventory.add_network(network1)
+            db_inventory.add_network(network2)
+            db_inventory.add_recorder(recorder1)
+
+            # Add the stream to a channel.
+            cur_start_time = UTCDateTime('2014-01-01')
+            cur_end_time = UTCDateTime('2014-02-01')
+            cur_channel = db_inventory.get_channel(name = 'channel1_name')
+            cur_channel = cur_channel[0]
+            cur_channel.add_stream(serial = 'recorder1_serial',
+                                   name = 'stream1_name',
+                                   start_time = cur_start_time,
+                                   end_time = cur_end_time)
 
             # Commit the changes to the database.
             db_inventory.commit()
         finally:
             db_inventory.close()
 
+
+        # Load the networks from the database.
         try:
-            # Load the networks from the database.
-            db_inventory_load = DbInventory('load', self.project)
+            db_inventory_load = DbInventory('test', self.project)
+            db_inventory_load.load_recorders()
             db_inventory_load.load_networks()
         finally:
             db_inventory_load.close()
 
-        self.assertEqual(len(db_inventory_load.networks), 1)
-        cur_network = db_inventory_load.networks[0]
-        self.assertEqual(len(cur_network.stations), 1)
-        self.assertEqual(len(cur_network.geom_station.stations), 1)
-        self.assertEqual(cur_network.name, 'XX')
-        self.assertEqual(cur_network.description, 'A test network')
-        cur_station = cur_network.stations[0]
-        self.assertEqual(cur_station.name, 'station_name')
-        self.assertEqual(cur_station.network, 'XX')
-        self.assertEqual(cur_station.parent_network, cur_network)
 
+        self.assertEqual(len(db_inventory_load.networks), 2)
+        self.assertEqual(db_inventory_load.networks[0].name, 'XX')
+        self.assertEqual(db_inventory_load.networks[1].name, 'YY')
 
-    def test_load_complete_network(self):
-        print "test_load_complete_network\n"
-        db_inventory = DbInventory('test', self.project)
-
-        # Add a network to the db_inventory.
-        net_2_add = Network(name = 'XX', description = 'A test network.')
-        added_network_1 = db_inventory.add_network(net_2_add)
-        self.assertIsInstance(added_network_1, DbNetwork)
-        self.assertEqual(len(db_inventory.networks), 1)
-
-        net_2_add = Network(name = 'YY', description = 'A second test network.')
-        added_network_2 = db_inventory.add_network(net_2_add)
-        self.assertIsInstance(added_network_2, DbNetwork)
-        self.assertEqual(len(db_inventory.networks), 2)
-
-        # Add a station to the XX network.
-        stat_2_add = Station(name = 'AAA',
-                             network = 'XX',
-                             location = '00',
-                             x = 0,
-                             y = 0,
-                             z = 0,
-                             coord_system = 'epsg:4316')
-        added_station = db_inventory.add_station(stat_2_add)
-        self.assertIsInstance(added_station, DbStation)
-        self.assertEqual(len(added_network_1.stations), 1)
-
-
-        # Add a station to the YY network.
-        stat_2_add = Station(name = 'AAA',
-                             network = 'YY',
-                             location = '00',
-                             x = 0,
-                             y = 0,
-                             z = 0,
-                             coord_system = 'epsg:4316')
-        added_station = db_inventory.add_station(stat_2_add)
-        self.assertIsInstance(added_station, DbStation)
-        self.assertEqual(len(added_network_2.stations), 1)
-
-        # Add a station with a sensor to the YY network.
-        stat_2_add = Station(name = 'BBB',
-                             network = 'YY',
-                             location = '00',
-                             x = 0,
-                             y = 0,
-                             z = 0,
-                             coord_system = 'epsg:4316')
-
-        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
-        stream_2_add = RecorderStream(name = 'stream_name',
-                                      label = 'stream_label')
-
-        sensor_2_add = Sensor(serial = 'sensor_serial',
-                              type = 'sensor_type',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'sensor_label')
-        cur_start_time = UTCDateTime('1976-06-20')
-        cur_end_time = UTCDateTime('2014-06-20')
-
-        stream_2_add.add_sensor(sensor_2_add,
-                                cur_start_time,
-                                cur_end_time)
-
-        rec_2_add.add_stream(stream_2_add)
-
-        added_recorder = db_inventory.add_recorder(rec_2_add)
-
-        added_station = db_inventory.add_station(stat_2_add)
-        self.assertIsInstance(added_station, DbStation)
-        self.assertEqual(len(added_network_2.stations), 2)
-
-
-        # Commit the changes to the database.
-        db_inventory.commit()
-        db_inventory.close()
-
-
-        # Load the networks from the database.
-        db_inventory_load = DbInventory('test', self.project)
-        db_inventory_load.load_recorders()
-        db_inventory_load.load_networks()
-        db_inventory_load.close()
-
-        self.assertEqual(len(db_inventory_load.networks), len(db_inventory.networks))
-        self.assertEqual(len(db_inventory_load.networks[1].stations), len(db_inventory.networks[1].stations))
-        cur_station = db_inventory_load.networks[0].stations[0]
-        self.assertIsInstance(cur_station.id, long)
-        cur_station = db_inventory_load.networks[1].stations[0]
-        self.assertIsInstance(cur_station.id, long)
-        cur_recorder = db_inventory_load.recorders[0]
-        self.assertIsInstance(cur_recorder.id, long)
-        cur_sensor = cur_recorder.sensors[0]
-        self.assertIsInstance(cur_sensor.id, long)
-
-
-
-
+        cur_channel = db_inventory_load.get_channel(name = 'channel1_name')
+        self.assertEqual(len(cur_channel), 1)
+        cur_channel = cur_channel[0]
+        self.assertEqual(len(cur_channel.streams), 1)
 
 
 
