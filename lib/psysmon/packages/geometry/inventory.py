@@ -138,25 +138,28 @@ class Inventory(object):
 
 
 
-    def add_station(self, station_to_add):
+    def add_station(self, network_name, station_to_add):
         ''' Add a station to the inventory.
 
         Parameters
         ----------
+        network_name : String
+            The name of the network to which to add the station.
+
         station_to_add : :class:`Station`
             The station to add to the inventory.
         '''
         added_station = None
 
         # If the network is found in the inventory, add it to the network.
-        cur_net = self.get_network(name = station_to_add.network)
+        cur_net = self.get_network(name = network_name)
         if len(cur_net) == 1:
             cur_net = cur_net[0]
             added_station = cur_net.add_station(station_to_add)
         elif len(cur_net) > 1:
             self.logger.error("Multiple networks found with the same name. Don't know how to proceed.")
         else:
-            self.logger.error("The network %s of station %s doesn't exist in the inventory.\n", station_to_add.network, station_to_add.name)
+            self.logger.error("The network %s of station %s doesn't exist in the inventory.\n", network_name, station_to_add.name)
 
         return added_station
 
@@ -436,6 +439,55 @@ class Inventory(object):
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_station
+
+
+    def get_channel(self, **kwargs):
+        ''' Get a chennel from the inventory.
+
+        Paramters
+        ---------
+        network_name : String
+            The name of the network.
+
+        station_name : String
+            The name (code) of the station.
+
+        station_location : String
+            The location identifier.
+
+        name : String
+            The name of the channel.
+        '''
+
+        search_dict = {}
+        if 'network_name' in kwargs.keys():
+            search_dict['network'] = kwargs['network_name']
+            kwargs.pop('network_name')
+
+        if 'station_name' in kwargs.keys():
+            search_dict['name'] = kwargs['station_name']
+            kwargs.pop('station_name')
+
+        if 'station_location' in kwargs.keys():
+            search_dict['location'] = kwargs['station_location']
+            kwargs.pop('station_location')
+
+        stations = self.get_station(**search_dict)
+
+        ret_channel = list(itertools.chain.from_iterable([x.channels for x in stations]))
+
+        valid_keys = ['name',]
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+        return ret_channel
+
+
+
+
 
 
 
@@ -1344,7 +1396,7 @@ class Station(object):
     #
     # @param self The object pointer.
     def __init__(self, name, location, x, y, z,
-            parent_network=None, coord_system=None, description=None, network=None, id=None,
+            parent_network=None, coord_system=None, description=None, id=None,
             author_uri = None, agency_uri = None, creation_time = None):
 
         # The logger instance.
@@ -1398,9 +1450,6 @@ class Station(object):
         # See http://www.epsg-registry.org/ to find your EPSG code.
         self.coord_system = coord_system
 
-        ## The station's network name.
-        self.network = network
-
         # A list of tuples of channels assigned to the station.
         self.channels = []
 
@@ -1422,6 +1471,12 @@ class Station(object):
         else:
             self.creation_time = UTCDateTime(creation_time);
 
+    @property
+    def network(self):
+        if self.parent_network is not None:
+            return self.parent_network.name
+        else:
+            return None
 
     @property
     def snl(self):
@@ -1557,6 +1612,10 @@ class Channel(object):
             The streams assigned to the channel.
 
         '''
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+
         # The database id of the channel.
         self.id = id
 
@@ -1765,12 +1824,6 @@ class Network(object):
         '''
         self.__dict__[attr] = value
 
-        if attr == 'name' and 'stations' in self.__dict__:
-            for cur_station in self.stations:
-                # Set the station network value using the key to trigger the
-                # change notification of the station.
-                cur_station.network = value
-
         self.__dict__['has_changed'] = True
 
 
@@ -1796,7 +1849,6 @@ class Network(object):
         '''
         available_sl = [(x.name, x.location) for x in self.stations]
         if((station.name, station.location) not in available_sl):
-            station.network = self.name
             station.parent_network = self
             self.stations.append(station)
             return station
