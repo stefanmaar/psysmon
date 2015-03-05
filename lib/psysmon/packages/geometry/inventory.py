@@ -533,7 +533,7 @@ class Recorder(object):
         self.id = id
 
         ## The recorder serial number.
-        self.serial = serial
+        self.serial = str(serial)
 
         ## The recorder type.
         self.type = type
@@ -787,17 +787,15 @@ class RecorderStream(object):
         elif len(cur_component) == 1:
             cur_component = cur_component[0]
 
-            if not isinstance(start_time, UTCDateTime):
-                if start_time is not None:
-                    start_time = UTCDateTime(start_time)
-                else:
-                    start_time = None
+            try:
+                start_time = UTCDateTime(start_time)
+            except:
+                start_time = None
 
-            if not isinstance(end_time, UTCDateTime):
-                if end_time is not None:
-                    end_time = UTCDateTime(end_time)
-                else:
-                    end_time = None
+            try:
+                end_time = UTCDateTime(end_time)
+            except:
+                end_time = None
 
             if self.get_component(start_time = start_time,
                                   end_time = end_time,
@@ -918,16 +916,28 @@ class RecorderStreamParameter(object):
         self.logger = logging.getLogger(logger_name)
 
         # The gain of the stream.
-        self.gain = gain
+        try:
+            self.gain = float(gain)
+        except:
+            self.gain = None
 
         # The bitweight of the stream.
-        self.bitweight = bitweight
+        try:
+            self.bitweight = float(bitweight)
+        except:
+            self.bitweight = None
 
         # The start time from which on the parameters were valid.
-        self.start_time = start_time
+        try:
+            self.start_time = UTCDateTime(start_time)
+        except:
+            self.start_time = None
 
         # The end time until which the parameters were valid.
-        self.end_time = end_time
+        try:
+            self.end_time = UTCDateTime(end_time)
+        except:
+            self.end_time = None
 
         # The recorder stream for which the parameters were set.
         self.parent_recorder_stream = parent_recorder_stream
@@ -974,7 +984,7 @@ class Sensor(object):
         self.logger = logging.getLogger(logger_name)
 
         # The serial number of the sensor.
-        self.serial = serial
+        self.serial = str(serial)
 
         # The model name or number.
         self.model = model
@@ -1283,7 +1293,10 @@ class SensorComponentParameter(object):
         self.logger = logging.getLogger(logger_name)
 
         ## The sensor sensitivity.
-        self.sensitivity = sensitivity
+        try:
+            self.sensitivity = float(sensitivity)
+        except:
+            self.sensitivity = None
 
         ## The units of the sensitivity.
         self.sensitivity_units = sensitivity_units
@@ -1298,10 +1311,16 @@ class SensorComponentParameter(object):
         self.tf_units = tf_units
 
         ## The transfer function normalization factor.
-        self.tf_normalization_factor = tf_normalization_factor
+        try:
+            self.tf_normalization_factor = float(tf_normalization_factor)
+        except:
+            self.tf_normalization_factor = None
 
         ## The transfer function normalization factor frequency.
-        self.tf_normalization_frequency = tf_normalization_frequency
+        try:
+            self.tf_normalization_frequency = float(tf_normalization_frequency)
+        except:
+            self.tf_normalization_frequency = None
 
         ## The transfer function as PAZ.
         if tf_poles is None:
@@ -1314,10 +1333,16 @@ class SensorComponentParameter(object):
         self.tf_zeros = tf_zeros
 
         # The start_time from which the parameters are valid.
-        self.start_time = start_time
+        try:
+            self.start_time = UTCDateTime(start_time)
+        except:
+            self.start_time = None
 
         # The end time up to which the parameters are valid.
-        self.end_time = end_time
+        try:
+            self.end_time = UTCDateTime(end_time)
+        except:
+            self.end_time = None
 
         # The parent sensor holding the parameter.
         self.parent_component = parent_component
@@ -1410,7 +1435,7 @@ class Station(object):
         self.name = name
 
         ## The station location.
-        self.location = location
+        self.location = str(location)
 
         ## The station description.
         #
@@ -1685,17 +1710,15 @@ class Channel(object):
         elif len(cur_stream) == 1:
             cur_stream = cur_stream[0]
 
-            if not isinstance(start_time, UTCDateTime):
-                if start_time is not None:
-                    start_time = UTCDateTime(start_time)
-                else:
-                    start_time = None
+            try:
+                start_time = UTCDateTime(start_time)
+            except:
+                start_time = None
 
-            if not isinstance(end_time, UTCDateTime):
-                if end_time is not None:
-                    end_time = UTCDateTime(end_time)
-                else:
-                    end_time = None
+            try:
+                end_time = UTCDateTime(end_time)
+            except:
+                end_time = None
 
             if self.get_stream(serial = serial,
                                name = name,
