@@ -38,6 +38,7 @@ from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Sensor
+from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
 from psysmon.packages.geometry.inventory import RecorderStream
 from obspy.core.utcdatetime import UTCDateTime
@@ -54,38 +55,47 @@ class InventoryXmlParser:
 
         # The required attributes which have to be present in the tags.
         self.required_attributes = {}
-        self.required_attributes['inventory'] = ('name',)
-        self.required_attributes['recorder'] = ('serial', 'type')
-        self.required_attributes['sensor'] = ('serial', 'type')
+        self.required_attributes['inventory'] = ('name', )
+        self.required_attributes['sensor'] = ('serial', )
+        self.required_attributes['component'] = ('name', )
+        self.required_attributes['recorder'] = ('serial', )
+        self.required_attributes['stream'] = ('name', )
+        self.required_attributes['network'] = ('name', )
         self.required_attributes['station'] = ('name', )
         self.required_attributes['channel'] = ('name', )
-        self.required_attributes['network'] = ('name',)
 
         # The required tags which have to be present in the inventory.
         self.required_tags = {}
+        self.required_tags['sensor'] = ('model', 'producer')
+        self.required_tags['component'] = ('description', 'component_parameter', )
+        self.required_tags['component_parameter'] = ('start_time', 'end_time',
+                                                     'sensitivity', 'sensitivity_units')
+        self.required_tags['response_paz'] = ('type', 'units', 'A0_normalization_factor',
+                                              'normalization_frequency')
+        #self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
+        #self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
+
         self.required_tags['recorder'] = ('type', 'description')
-        self.required_tags['sensor_unit'] = ('rec_channel_name', 'channel_name', 
-                                        'sensor_serial', 'sensor_type')
-        self.required_tags['channel_parameters'] = ('start_time', 'end_time', 
-                                        'gain', 'bitweight', 'bitweight_units', 
-                                        'sensitivity', 'sensitivity_units')
-        self.required_tags['response_paz'] = ('type', 'units', 'A0_normalization_factor', 
-                                             'normalization_frequency')
-        self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
-        self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
-        self.required_tags['station'] = ('location', 'xcoord', 'ycoord', 'elevation', 
-                                        'coord_system', 'description')
-        self.required_tags['assigned_sensor_unit'] = ('sensor_unit_label', 'start_time', 'end_time')
+        self.required_tags['stream'] = ('label', )
+        self.required_tags['stream_parameter'] = ('start_time', 'end_time', 'gain',
+                                        'bitweight', 'bitweight_units')
+
         self.required_tags['network'] = ('description', 'type')
+        self.required_tags['station'] = ('location', 'xcoord', 'ycoord', 'elevation',
+                                        'coord_system', 'description')
+        self.required_tags['channel'] = ('description', )
+        self.required_tags['assigned_component'] = ('recorder_serial', 'recorder_stream',
+                                                    'sensor_serial', 'sensor_component',
+                                                    'start_time', 'end_time')
 
 
 
-    def parse(self, filename):
+    def parse(self, filename, inventory_name = 'new xml inventory'):
         from lxml.etree import parse
 
         self.logger.debug("parsing file...\n")
 
-        inventory = Inventory('new xml inventory', type = 'xml')
+        inventory = Inventory(inventory_name, type = 'xml')
 
         # Parse the xml file passed as argument.
         tree = parse(filename)
@@ -101,15 +111,18 @@ class InventoryXmlParser:
         inventory.name = inventory_root.attrib['name']
 
         # Get the recorders and stations of the inventory.
+        sensors = tree.findall('sensor')
         recorders = tree.findall('recorder')
         networks = tree.findall('network')
 
-        # First process the recorders.
-        # For each recorder create a Recorder object, add the channels to it and 
-        # finally add it to the inventory.
-        self.process_recorders(inventory, recorders)
+        # Process the sensors first.
+        self.process_sensors(inventory, sensors)
 
-        self.process_networks(inventory, networks)  
+        # Next process the recorders. These might depend on sensors.
+        #self.process_recorders(inventory, recorders)
+
+        # And last process the networks which might depend on recorders.
+        #self.process_networks(inventory, networks)
 
         self.logger.debug("Success reading the XML file.")
 
@@ -225,6 +238,41 @@ class InventoryXmlParser:
         #fid.write(etree.tostring(root, pretty_print = True))
         #fid.close()
 
+
+
+
+    def process_sensors(self, inventory, sensors):
+        ''' Process the extracted sensor tags.
+
+        '''
+        self.logger.debug("Processing the sensors.")
+        for cur_sensor in sensors:
+            sensor_content = self.parse_node(cur_sensor)
+
+            if self.check_completeness(cur_sensor, sensor_content, 'sensor') is False:
+                continue
+
+            sensor_content.pop('component')
+            sensor_to_add = Sensor(serial = cur_sensor.attrib['serial'], **sensor_content)
+            inventory.add_sensor(sensor_to_add)
+
+            components = cur_sensor.findall('component')
+            self.process_components(sensor_to_add, components)
+
+
+    def process_components(self, sensor, components):
+        ''' Process the component nodes of a sensor.
+        '''
+        for cur_component in components:
+            component_content = self.parse_node(cur_component)
+
+            if self.check_completeness(cur_component, component_content, 'component') is False:
+                continue
+
+            component_content.pop('component_parameter')
+            component_to_add = SensorComponent(name = cur_component.attrib['name'],
+                                               **component_content)
+            sensor.add_component(component_to_add)
 
 
     ## Process the recorder element.
@@ -386,7 +434,7 @@ class InventoryXmlParser:
                 self.logger.debug("%s", missing_attrib)
 
 
-    def process_sensors(self, inventory, station_node, station):
+    def process_sensors_OLD(self, inventory, station_node, station):
         sensors = station_node.findall('assigned_sensor_unit')
         for cur_sensor in sensors:
             sensor_content = self.parse_node(cur_sensor)
@@ -477,3 +525,18 @@ class InventoryXmlParser:
                 missing_keys.append(cur_key)
 
         return missing_keys
+
+
+    def check_completeness(self, node, content, node_type):
+            missing_attrib = self.keys_complete(node.attrib, self.required_attributes[node_type])
+            missing_keys = self.keys_complete(content, self.required_tags[node_type]);
+            if not missing_keys and not missing_attrib:
+                self.logger.debug(node_type + " xml content:")
+                self.logger.debug("%s", content)
+                return True
+            else:
+                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
+                self.logger.debug("%s", missing_keys)
+                self.logger.debug("%s", missing_attrib)
+                return False
+
