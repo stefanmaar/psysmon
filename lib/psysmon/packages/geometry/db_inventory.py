@@ -145,30 +145,25 @@ class DbInventory(Inventory):
     def load_networks(self):
         ''' Load the networks from the database.
         '''
-        geom_network_orm = self.project.dbTables['geom_network']
-        for cur_geom_network in self.db_session.query(geom_network_orm).order_by(geom_network_orm.name):
-            db_network = DbNetwork.from_sqlalchemy_orm(self, cur_geom_network)
+        network_table = self.project.dbTables['geom_network']
+        for cur_network_orm in self.db_session.query(network_table).order_by(network_table.name):
+            network = DbNetwork.from_sqlalchemy_orm(self, cur_network_orm)
 
-            for cur_geom_station in cur_geom_network.stations:
-                db_station = DbStation.from_sqlalchemy_orm(db_network, cur_geom_station)
+            #    for cur_geom_sensor in cur_geom_station.sensors:
+            #        db_sensor = self.get_sensor(id = cur_geom_sensor.sensor_id)
+            #        if len(db_sensor) == 1:
+            #            if cur_geom_sensor.start_time is not None:
+            #                start_time = UTCDateTime(cur_geom_sensor.start_time)
+            #            else:
+            #                start_time = None
 
-                for cur_geom_sensor in cur_geom_station.sensors:
-                    db_sensor = self.get_sensor(id = cur_geom_sensor.sensor_id)
-                    if len(db_sensor) == 1:
-                        if cur_geom_sensor.start_time is not None:
-                            start_time = UTCDateTime(cur_geom_sensor.start_time)
-                        else:
-                            start_time = None
+            #            if cur_geom_sensor.end_time is not None:
+            #                end_time = UTCDateTime(cur_geom_sensor.end_time)
+            #            else:
+            #                end_time = None
+            #            db_station.sensors.append((db_sensor[0], start_time, end_time))
 
-                        if cur_geom_sensor.end_time is not None:
-                            end_time = UTCDateTime(cur_geom_sensor.end_time)
-                        else:
-                            end_time = None
-                        db_station.sensors.append((db_sensor[0], start_time, end_time))
-
-                db_network.stations.append(db_station)
-
-            self.networks.append(db_network)
+            self.networks.append(network)
 
 
     def load_sensors(self):
@@ -259,15 +254,19 @@ class DbNetwork(Network):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_inventory, orm):
-        return cls(parent_inventory = parent_inventory,
-                   name = orm.name,
-                   description = orm.description,
-                   type = orm.type,
-                   author_uri = orm.author_uri,
-                   agency_uri = orm.agency_uri,
-                   creation_time = orm.creation_time,
-                   orm = orm)
+        network = cls(parent_inventory = parent_inventory,
+                      name = orm.name,
+                      description = orm.description,
+                      type = orm.type,
+                      author_uri = orm.author_uri,
+                      agency_uri = orm.agency_uri,
+                      creation_time = orm.creation_time,
+                      orm = orm)
 
+        for cur_station in orm.stations:
+            network.add_station(DbStation.from_sqlalchemy_orm(network, cur_station))
+
+        return network
 
     @classmethod
     def from_inventory_instance(cls, parent_inventory, instance):
@@ -317,7 +316,8 @@ class DbNetwork(Network):
 
         added_station = Network.add_station(self, station)
         if added_station is not None:
-            self.orm.stations.append(station.orm)
+            if station.orm not in self.orm.stations:
+                self.orm.stations.append(station.orm)
 
         return added_station
 
@@ -378,8 +378,7 @@ class DbStation(Station):
 
     @classmethod
     def from_sqlalchemy_orm(cls, parent_network, orm):
-        station = cls(parent_inventory = parent_network,
-                      network = orm.network,
+        station = cls(parent_network = parent_network,
                       name = orm.name,
                       location = orm.location,
                       x = orm.x,
@@ -393,8 +392,7 @@ class DbStation(Station):
                       orm = orm)
 
         for cur_channel in orm.channels:
-            db_channel = DbChannel.from_sqlalchemy_orm(station, cur_channel)
-            station.channels.append(db_channel)
+            station.add_channel(DbChannel.from_sqlalchemy_orm(station, cur_channel))
 
         return station
 
@@ -425,7 +423,6 @@ class DbStation(Station):
         '''
         attr_map = {};
         attr_map['name'] = 'name'
-        attr_map['network'] = 'network'
         attr_map['location'] = 'location'
         attr_map['x'] = 'x'
         attr_map['y'] = 'y'
@@ -458,7 +455,8 @@ class DbStation(Station):
 
         added_channel = Station.add_channel(self, cur_channel)
         if added_channel is not None:
-            self.orm.channels.append(cur_channel.orm)
+            if cur_channel.orm not in self.orm.channels:
+                self.orm.channels.append(cur_channel.orm)
 
         return added_channel
 
@@ -1276,11 +1274,19 @@ class DbChannel(Channel):
                        orm = orm)
 
         for cur_stream_to_channel in orm.streams:
-            db_stream = DbRecorderStream.from_sqlalchemy_orm(channel, cur_stream_to_channel.stream)
+            cur_stream = cur_stream_to_channel.stream
             cur_start_time = UTCDateTime(cur_stream_to_channel.start_time)
-            cur_end_time = UTCDateTime(cur_stream_to_channel.end_time)
-            channel.streams.append((db_stream, cur_start_time, cur_end_time))
-            db_stream.set_parent_inventory(channel.parent_inventory)
+            try:
+                cur_end_time = UTCDateTime(cur_stream_to_channel.end_time)
+            except:
+                cur_end_time = None
+
+            channel.add_stream(serial = cur_stream.parent.serial,
+                               name = cur_stream.name,
+                               start_time = cur_start_time,
+                               end_time = cur_end_time,
+                               ignore_orm = True)
+
 
         return channel
 
@@ -1296,7 +1302,9 @@ class DbChannel(Channel):
                            creation_time = instance.creation_time)
 
         for cur_timebox in instance.streams:
-            channel.add_stream(DbRecorderStream.from_inventory_instance(channel, cur_timebox.item),
+            # TODO: Fix this call of the add_stream method.
+            #       Check if this function is called anywhere.
+            channel.add_stream_WRONG(DbRecorderStream.from_inventory_instance(channel, cur_timebox.item),
                                    cur_timebox.start_time,
                                    cur_timebox.end_time)
 
@@ -1321,7 +1329,7 @@ class DbChannel(Channel):
             self.__dict__[attr] = value
 
 
-    def add_stream(self, serial, name, start_time, end_time):
+    def add_stream(self, serial, name, start_time, end_time, ignore_orm = False):
         ''' Add a stream to the channel.
 
         Parameters
@@ -1337,6 +1345,11 @@ class DbChannel(Channel):
 
         end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
             The time up to which the stream has been operating at the channel. "None" if the channel is still running.
+
+        ignore_orm : Boolean
+            Control if the component assignment is added to the orm or not. This is usefull
+            when creating an instance from a orm mapper using the from_sqlalchemy_orm
+            class method.
         '''
         added_stream = Channel.add_stream(self,
                                           serial = serial,
@@ -1344,25 +1357,26 @@ class DbChannel(Channel):
                                           start_time = start_time,
                                           end_time = end_time)
 
-        if added_stream is not None:
-            # Add the streastream the the database orm.
-            if start_time is not None:
-                start_time_timestamp = start_time.timestamp
-            else:
-                start_time_timestamp = None
+        if ignore_orm is False:
+            if added_stream is not None:
+                # Add the streastream the the database orm.
+                if start_time is not None:
+                    start_time_timestamp = start_time.timestamp
+                else:
+                    start_time_timestamp = None
 
-            if end_time is not None:
-                end_time_timestamp = end_time.timestamp
-            else:
-                end_time_timestamp = None
+                if end_time is not None:
+                    end_time_timestamp = end_time.timestamp
+                else:
+                    end_time_timestamp = None
 
-            orm_class = self.parent_inventory.project.dbTables['geom_stream_to_channel']
-            stream_to_channel_orm = orm_class(channel_id = self.id,
-                                              stream_id = added_stream.id,
-                                              start_time = start_time_timestamp,
-                                              end_time = end_time_timestamp)
-            stream_to_channel_orm.stream = added_stream.orm
-            self.orm.streams.append(stream_to_channel_orm)
+                orm_class = self.parent_inventory.project.dbTables['geom_stream_to_channel']
+                stream_to_channel_orm = orm_class(channel_id = self.id,
+                                                  stream_id = added_stream.id,
+                                                  start_time = start_time_timestamp,
+                                                  end_time = end_time_timestamp)
+                stream_to_channel_orm.stream = added_stream.orm
+                self.orm.streams.append(stream_to_channel_orm)
 
         return added_stream
 
