@@ -23,7 +23,7 @@ import logging
 import tempfile
 import os
 import psysmon
-from psysmon.packages.geometry.inventory import InventoryXmlParser
+from psysmon.packages.geometry.inventory_parser import InventoryXmlParser
 from psysmon.packages.geometry.inventory import Inventory
 
 class InventoryXmlParserTestCase(unittest.TestCase):
@@ -56,19 +56,28 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         inventory = xml_parser.parse(xml_file)
 
         self.assertIsInstance(inventory, Inventory)
-        self.assertEqual(len(inventory.networks), 1)
-        self.assertEqual(len(inventory.recorders), 1)
+        self.assertEqual(inventory.name, 'ALPAACT')
+        self.assertEqual(len(inventory.sensors), 1)
+        cur_sensor = inventory.sensors[0]
+        self.assertEqual(cur_sensor.serial, '1417')
+        self.assertEqual(cur_sensor.model, 'Seismonitor 1Hz')
+        self.assertEqual(cur_sensor.producer, 'Geospace')
+        self.assertEqual(cur_sensor.description, 'Sensor description.')
 
-        cur_recorder = inventory.recorders[0]
-        self.assertEqual(len(cur_recorder.sensors), 3)
-        for cur_sensor in cur_recorder.sensors:
-            self.assertEqual(len(cur_sensor.parameters), 1)
 
-        cur_network = inventory.networks[0]
-        self.assertEqual(len(cur_network.stations), 1)
+        #self.assertEqual(len(inventory.networks), 1)
+        #self.assertEqual(len(inventory.recorders), 1)
 
-        cur_station = cur_network.stations[0]
-        self.assertEqual(len(cur_station.sensors), 3)
+        #cur_recorder = inventory.recorders[0]
+        #self.assertEqual(len(cur_recorder.sensors), 3)
+        #for cur_sensor in cur_recorder.sensors:
+        #    self.assertEqual(len(cur_sensor.parameters), 1)
+
+        #cur_network = inventory.networks[0]
+        #self.assertEqual(len(cur_network.stations), 1)
+
+        #cur_station = cur_network.stations[0]
+        #self.assertEqual(len(cur_station.sensors), 3)
 
     def test_export_xmlfile(self):
         xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
