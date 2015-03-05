@@ -58,6 +58,8 @@ class InventoryXmlParser:
         self.required_attributes['inventory'] = ('name', )
         self.required_attributes['sensor'] = ('serial', )
         self.required_attributes['component'] = ('name', )
+        self.required_attributes['component_parameter'] = ()
+        self.required_attributes['response_paz'] = ()
         self.required_attributes['recorder'] = ('serial', )
         self.required_attributes['stream'] = ('name', )
         self.required_attributes['network'] = ('name', )
@@ -244,6 +246,14 @@ class InventoryXmlParser:
     def process_sensors(self, inventory, sensors):
         ''' Process the extracted sensor tags.
 
+        Parameters
+        ----------
+        inventory : :class:`~psysmon.packages.geometry.inventory.Inventory`
+            The inventory to which to add the parsed sensors.
+
+        sensors : xml sensor nodes
+            The xml sensor nodes parsed using the findall method.
+
         '''
         self.logger.debug("Processing the sensors.")
         for cur_sensor in sensors:
@@ -262,6 +272,14 @@ class InventoryXmlParser:
 
     def process_components(self, sensor, components):
         ''' Process the component nodes of a sensor.
+
+        Parameters
+        ----------
+        sensor : :class:`~psysmon.packages.geometry.inventory.Sensor`
+            The sensor to which to add the components.
+
+        components : xml component nodes
+            The xml component nodes parsed using the findall method.
         '''
         for cur_component in components:
             component_content = self.parse_node(cur_component)
@@ -273,6 +291,67 @@ class InventoryXmlParser:
             component_to_add = SensorComponent(name = cur_component.attrib['name'],
                                                **component_content)
             sensor.add_component(component_to_add)
+
+            parameters = cur_component.findall('component_parameter')
+            self.process_component_parameters(component_to_add, parameters)
+
+
+
+    def process_component_parameters(self, component, parameters):
+        ''' Process the component_parameter nodes of a component.
+        '''
+        for cur_parameter in parameters:
+            content = self.parse_node(cur_parameter)
+
+            if self.check_completeness(cur_parameter, content, 'component_parameter') is False:
+                continue
+
+            content.pop('response_paz')
+            parameter_to_add = SensorComponentParameter(**content)
+            component.add_parameter(parameter_to_add)
+
+            response_paz = cur_parameter.findall('response_paz')
+            self.process_response_paz(parameter_to_add, response_paz)
+
+
+
+    def process_response_paz(self, parameter, response_paz):
+        ''' Process the response_paz nodes of a component_paramter.
+
+        '''
+        for cur_paz in response_paz:
+            content = self.parse_node(cur_paz)
+            if self.check_completeness(cur_paz, content, 'response_paz') is False:
+                continue
+
+            self.logger.debug("Adding the tf to the parameter %s", parameter)
+            parameter.set_transfer_function(tf_type = content['type'],
+                                            tf_units = content['units'],
+                                            tf_normalization_factor = float(content['A0_normalization_factor']),
+                                            tf_normalization_frequency = float(content['normalization_frequency']))
+
+            zeros = cur_paz.findall('complex_zero')
+            self.process_complex_zero(parameter, zeros)
+            poles = cur_paz.findall('complex_pole')
+            self.process_complex_pole(parameter, poles)
+
+
+    def process_complex_zero(self, parameter, zeros):
+        ''' Process the complex_zero nodes in a response_paz.
+        '''
+        for cur_zero in zeros:
+            self.logger.debug('Adding zero to the parameter %s', parameter)
+            zero = cur_zero.text.replace(' ', '')
+            parameter.tf_add_complex_zero(complex(zero))
+
+
+    def process_complex_pole(self, parameter, poles):
+        ''' Process the complex_poles nodes in a response_paz.
+        '''
+        for cur_pole in poles:
+            pole = cur_pole.text.replace(' ', '')
+            parameter.tf_add_complex_pole(complex(pole))
+
 
 
     ## Process the recorder element.
@@ -370,37 +449,7 @@ class InventoryXmlParser:
 
 
 
-    ## Process the response_paz elements.
-    def process_response_paz(self, parameter_node, parameter):
-        tf = parameter_node.findall('response_paz')
-        for cur_tf in tf:
-            content = self.parse_node(cur_tf)
-            missing_keys = self.keys_complete(content, self.required_tags['response_paz'])
-            if not missing_keys:
-                self.logger.debug("Adding the tf to the parameter %s", parameter)
-                parameter.set_transfer_function(content['type'], 
-                                              content['units'],
-                                              float(content['A0_normalization_factor']), 
-                                              float(content['normalization_frequency']))
 
-                self.process_complex_zero(cur_tf, parameter)
-                self.process_complex_pole(cur_tf, parameter)
-
-    ## Process the complex_zero elements.
-    def process_complex_zero(self, tf_node, parameter):
-        cz = tf_node.findall('complex_zero')
-        for curCz in cz:
-            self.logger.debug('Adding zero to the parameter %s', parameter)
-            zero = curCz.text.replace(' ', '')
-            parameter.tf_add_complex_zero(complex(zero))
-
-
-    ## Process the complex_pole elements.
-    def process_complex_pole(self, tf_node, parameter):
-        cp = tf_node.findall('complex_pole')
-        for cur_cp in cp:
-            pole = cur_cp.text.replace(' ', '')
-            parameter.tf_add_complex_pole(complex(pole))
 
 
 
@@ -512,7 +561,10 @@ class InventoryXmlParser:
     def parse_node(self, xml_element):
         node_content = {}
         for cur_node in list(xml_element):
-            node_content[cur_node.tag] = cur_node.text
+            if cur_node.text is not None:
+                node_content[cur_node.tag] = cur_node.text.strip()
+            else:
+                node_content[cur_node.tag] = cur_node.text
 
         return node_content
 
