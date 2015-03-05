@@ -25,6 +25,7 @@ import os
 import psysmon
 from psysmon.packages.geometry.inventory_parser import InventoryXmlParser
 from psysmon.packages.geometry.inventory import Inventory
+from obspy.core.utcdatetime import UTCDateTime
 
 class InventoryXmlParserTestCase(unittest.TestCase):
     """
@@ -63,6 +64,68 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(cur_sensor.model, 'Seismonitor 1Hz')
         self.assertEqual(cur_sensor.producer, 'Geospace')
         self.assertEqual(cur_sensor.description, 'Sensor description.')
+
+        self.assertEqual(len(cur_sensor.components), 3)
+        cur_component = cur_sensor.get_component(name = 'Z')
+        self.assertEqual(len(cur_component), 1)
+        cur_component = cur_component[0]
+        self.assertEqual(cur_component.name, 'Z')
+        self.assertEqual(cur_component.description, 'Sensor component Z description.')
+        self.assertEqual(len(cur_component.parameters), 1)
+        cur_parameter = cur_component.parameters[0]
+        self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertEqual(cur_parameter.end_time, UTCDateTime('2009-02-01T00:00:00.000000Z'))
+        self.assertEqual(cur_parameter.sensitivity, 340.55)
+        self.assertEqual(cur_parameter.sensitivity_units, 'V/m/s')
+        self.assertEqual(cur_parameter.tf_normalization_factor, 0.4)
+        self.assertEqual(cur_parameter.tf_normalization_frequency, 1.0)
+        self.assertEqual(len(cur_parameter.tf_poles), 3)
+        self.assertTrue(complex('-4.44+4.44j') in cur_parameter.tf_poles)
+        self.assertTrue(complex('-4.44-4.44j') in cur_parameter.tf_poles)
+        self.assertTrue(complex('-1.083+0j') in cur_parameter.tf_poles)
+        self.assertEqual(len(cur_parameter.tf_zeros), 3)
+        self.assertEqual(cur_parameter.tf_zeros, [complex(0), complex(0), complex(0)])
+
+
+        cur_component = cur_sensor.get_component(name = 'N')
+        self.assertEqual(len(cur_component), 1)
+        cur_component = cur_component[0]
+        self.assertEqual(cur_component.name, 'N')
+        self.assertEqual(cur_component.description, 'Sensor component N description.')
+        self.assertEqual(len(cur_component.parameters), 1)
+        cur_parameter = cur_component.parameters[0]
+        self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertEqual(cur_parameter.end_time, UTCDateTime('2009-03-01T00:00:00.000000Z'))
+        self.assertEqual(cur_parameter.sensitivity, 340.55)
+        self.assertEqual(cur_parameter.sensitivity_units, 'V/m/s')
+        self.assertEqual(cur_parameter.tf_normalization_factor, 0.4)
+        self.assertEqual(cur_parameter.tf_normalization_frequency, 1.0)
+        self.assertEqual(len(cur_parameter.tf_poles), 3)
+        self.assertTrue(complex('-4.44+4.44j') in cur_parameter.tf_poles)
+        self.assertTrue(complex('-4.44-4.44j') in cur_parameter.tf_poles)
+        self.assertTrue(complex('-1.083+0j') in cur_parameter.tf_poles)
+        self.assertEqual(len(cur_parameter.tf_zeros), 3)
+        self.assertEqual(cur_parameter.tf_zeros, [complex(0), complex(0), complex(0)])
+
+        cur_component = cur_sensor.get_component(name = 'E')
+        self.assertEqual(len(cur_component), 1)
+        cur_component = cur_component[0]
+        self.assertEqual(cur_component.name, 'E')
+        self.assertEqual(cur_component.description, 'Sensor component E description.')
+        self.assertEqual(len(cur_component.parameters), 1)
+        cur_parameter = cur_component.parameters[0]
+        self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertIsNone(cur_parameter.end_time)
+        self.assertEqual(cur_parameter.sensitivity, 340.55)
+        self.assertEqual(cur_parameter.sensitivity_units, 'V/m/s')
+        self.assertEqual(cur_parameter.tf_normalization_factor, 0.4)
+        self.assertEqual(cur_parameter.tf_normalization_frequency, 1.0)
+        self.assertEqual(len(cur_parameter.tf_poles), 3)
+        self.assertTrue(complex('-4.44+4.44j') in cur_parameter.tf_poles)
+        self.assertTrue(complex('-4.44-4.44j') in cur_parameter.tf_poles)
+        self.assertTrue(complex('-1.083+0j') in cur_parameter.tf_poles)
+        self.assertEqual(len(cur_parameter.tf_zeros), 3)
+        self.assertEqual(cur_parameter.tf_zeros, [complex(0), complex(0), complex(0)])
 
 
         #self.assertEqual(len(inventory.networks), 1)

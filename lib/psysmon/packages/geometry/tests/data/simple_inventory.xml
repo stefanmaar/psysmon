@@ -6,10 +6,10 @@
         <description>Sensor description.</description>
 
         <component name="Z">
-            <description>Sensor component description.</description>
+            <description>Sensor component Z description.</description>
             <component_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
+                <end_time>2009-02-01T00:00:00.000000Z</end_time>
                 <sensitivity>340.55</sensitivity>
                 <sensitivity_units>V/m/s</sensitivity_units>
                 <response_paz>
@@ -28,17 +28,17 @@
         </component>
 
         <component name="N">
-            <description>Sensor component description.</description>
+            <description>Sensor component N description.</description>
             <component_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
+                <end_time>2009-03-01T00:00:00.000000Z</end_time>
                 <sensitivity>340.55</sensitivity>
                 <sensitivity_units>V/m/s</sensitivity_units>
                 <response_paz>
                     <type/>
                     <units/>
                     <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
+                    <normalization_frequency>1.0</normalization_frequency>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
@@ -50,7 +50,7 @@
         </component>
 
         <component name="E">
-            <description>Sensor component description.</description>
+            <description>Sensor component E description.</description>
             <component_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
@@ -60,13 +60,13 @@
                     <type/>
                     <units/>
                     <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
+                    <normalization_frequency>1</normalization_frequency>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
+                    <complex_pole> -4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j </complex_pole>
+                    <complex_pole> -1.083+0.0j </complex_pole>
                 </response_paz>
             </component_parameter>
         </component>
