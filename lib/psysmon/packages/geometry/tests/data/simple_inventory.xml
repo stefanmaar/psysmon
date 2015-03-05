@@ -1,5 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <inventory name="ALPAACT">
+    <sensor serial="1417">
+        <model>Seismonitor 1Hz</model>
+        <producer>Geospace</producer>
+        <description>Sensor description.</description>
+
+        <component name="Z">
+            <description>Sensor component description.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>340.55</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+                <response_paz>
+                    <type/>
+                    <units/>
+                    <A0_normalization_factor>0.4</A0_normalization_factor>
+                    <normalization_frequency>+1.00000E+00</normalization_frequency>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_pole>-4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j</complex_pole>
+                    <complex_pole>-1.083+0.0j</complex_pole>
+                </response_paz>
+            </component_parameter>
+        </component>
+
+        <component name="N">
+            <description>Sensor component description.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>340.55</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+                <response_paz>
+                    <type/>
+                    <units/>
+                    <A0_normalization_factor>0.4</A0_normalization_factor>
+                    <normalization_frequency>+1.00000E+00</normalization_frequency>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_pole>-4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j</complex_pole>
+                    <complex_pole>-1.083+0.0j</complex_pole>
+                </response_paz>
+            </component_parameter>
+        </component>
+
+        <component name="E">
+            <description>Sensor component description.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>340.55</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+                <response_paz>
+                    <type/>
+                    <units/>
+                    <A0_normalization_factor>0.4</A0_normalization_factor>
+                    <normalization_frequency>+1.00000E+00</normalization_frequency>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_pole>-4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j</complex_pole>
+                    <complex_pole>-1.083+0.0j</complex_pole>
+                </response_paz>
+            </component_parameter>
+        </component>
+    </sensor>
+
+
     <recorder serial="9D6C">
         <type>Reftek 130-01</type>
         <description>A test recorder.</description>
@@ -38,77 +111,6 @@
         </stream>
     </recorder>
 
-    <sensor serial="1417">
-        <model>Seismonitor 1Hz</model>
-        <producer>Geospace</producer>
-        <description>Sensor description.</description>
-
-        <component name="Z">
-            <description>Sensor component description.</description>
-            <sensor_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-                <response_paz>
-                    <type/>
-                    <units/>
-                    <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
-                </response_paz>
-            </sensor_parameter>
-        </component>
-
-        <component name="N">
-            <description>Sensor component description.</description>
-            <sensor_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-                <response_paz>
-                    <type/>
-                    <units/>
-                    <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
-                </response_paz>
-            </sensor_parameter>
-        </component>
-
-        <component name="E">
-            <description>Sensor component description.</description>
-            <sensor_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-                <response_paz>
-                    <type/>
-                    <units/>
-                    <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
-                </response_paz>
-            </sensor_parameter>
-        </component>
-    </sensor>
 
 
     <network name="XX">
@@ -132,7 +134,7 @@
                     <sensor_component>Z</sensor_component>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
                     <end_time/>
-                <assigned_component>
+                </assigned_component>
             </channel>
 
             <channel name="HHN">
@@ -144,7 +146,7 @@
                     <sensor_component>N</sensor_component>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
                     <end_time/>
-                <assigend_component>
+                </assigend_component>
             </channel>
 
             <channel name="HHE">
@@ -156,7 +158,7 @@
                     <sensor_component>E</sensor_component>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
                     <end_time/>
-                <assigend_component>
+                </assigend_component>
             </channel>
 
         </station>
