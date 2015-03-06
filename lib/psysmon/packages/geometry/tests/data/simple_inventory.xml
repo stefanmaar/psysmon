@@ -75,17 +75,22 @@
 
     <recorder serial="9D6C">
         <type>Reftek 130-01</type>
-        <description>A test recorder.</description>
+        <description>Recorder description.</description>
 
         <stream name="101">
             <label>Stream-101</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
+                <end_time>2009-02-01T00:00:00.000000Z</end_time>
                 <gain>32</gain>
                 <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
             </stream_parameter>
+            <assigned_component>
+                <sensor_serial>1417</sensor_serial>
+                <component_name>Z</component_name>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time>2009-02-01T00:00:00.000000Z</end_time>
+            </assigned_component>
         </stream>
 
         <stream name="102">
@@ -95,8 +100,13 @@
                 <end_time/>
                 <gain>32</gain>
                 <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
             </stream_parameter>
+            <assigned_component>
+                <sensor_serial>1417</sensor_serial>
+                <component_name>N</component_name>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+            </assigned_component>
         </stream>
 
         <stream name="103">
@@ -106,8 +116,13 @@
                 <end_time/>
                 <gain>32</gain>
                 <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
             </stream_parameter>
+            <assigned_component>
+                <sensor_serial>1417</sensor_serial>
+                <component_name>E</component_name>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+            </assigned_component>
         </stream>
     </recorder>
 
@@ -127,38 +142,32 @@
 
             <channel name="HHZ">
                 <description>Description for channel HHZ.</description>
-                <assigned_component>
+                <assigned_stream>
                     <recorder_serial>9D6C</recorder_serial>
-                    <recorder_stream>101</recorder_stream>
-                    <sensor_serial>1417</sensor_serial>
-                    <sensor_component>Z</sensor_component>
+                    <stream_name>101</stream_name>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
                     <end_time/>
-                </assigned_component>
+                </assigned_stream>
             </channel>
 
             <channel name="HHN">
                 <description>Description for channel HHN.</description>
-                <assigend_component>
+                <assigned_stream>
                     <recorder_serial>9D6C</recorder_serial>
-                    <recorder_stream>102</recorder_stream>
-                    <sensor_serial>1417</sensor_serial>
-                    <sensor_component>N</sensor_component>
+                    <stream_name>102</stream_name>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
                     <end_time/>
-                </assigend_component>
+                </assigned_stream>
             </channel>
 
             <channel name="HHE">
                 <description>Description for channel HHE.</description>
-                <assigend_component>
+                <assigned_stream>
                     <recorder_serial>9D6C</recorder_serial>
-                    <recorder_stream>103</recorder_stream>
-                    <sensor_serial>1417</sensor_serial>
-                    <sensor_component>E</sensor_component>
+                    <stream_name>103</stream_name>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
                     <end_time/>
-                </assigend_component>
+                </assigned_stream>
             </channel>
 
         </station>
