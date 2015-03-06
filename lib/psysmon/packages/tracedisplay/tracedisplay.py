@@ -1104,7 +1104,7 @@ class DisplayManager(object):
         # Fill the available- and current station lists.
         for curNetwork in self.inventory.networks:
             for curStation in curNetwork.stations:
-                channels = set([x[0].channel_name for x in curStation.sensors])
+                channels = set([x[0].channel_name for x in curStation.channels])
                 self.availableStations.append(DisplayStation(curStation))
 
                 for curChannel in channels:
