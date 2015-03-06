@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+import nose.plugins.attrib as nose_attrib
 import psysmon
 import logging
 import os
@@ -31,6 +32,7 @@ import psysmon.core.gui as psygui
 import obspy.core.utcdatetime as utcdatetime
 
 
+@nose_attrib.attr('interactive')
 class TracedisplayTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
