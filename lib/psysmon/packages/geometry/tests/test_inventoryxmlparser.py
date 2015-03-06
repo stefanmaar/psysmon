@@ -25,6 +25,7 @@ import os
 import psysmon
 from psysmon.packages.geometry.inventory_parser import InventoryXmlParser
 from psysmon.packages.geometry.inventory import Inventory
+from psysmon.packages.geometry.inventory import TimeBox
 from obspy.core.utcdatetime import UTCDateTime
 
 class InventoryXmlParserTestCase(unittest.TestCase):
@@ -58,6 +59,8 @@ class InventoryXmlParserTestCase(unittest.TestCase):
 
         self.assertIsInstance(inventory, Inventory)
         self.assertEqual(inventory.name, 'ALPAACT')
+
+        # Test the sensor.
         self.assertEqual(len(inventory.sensors), 1)
         cur_sensor = inventory.sensors[0]
         self.assertEqual(cur_sensor.serial, '1417')
@@ -65,6 +68,7 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(cur_sensor.producer, 'Geospace')
         self.assertEqual(cur_sensor.description, 'Sensor description.')
 
+        # Test the sensor components.
         self.assertEqual(len(cur_sensor.components), 3)
         cur_component = cur_sensor.get_component(name = 'Z')
         self.assertEqual(len(cur_component), 1)
@@ -127,6 +131,78 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(len(cur_parameter.tf_zeros), 3)
         self.assertEqual(cur_parameter.tf_zeros, [complex(0), complex(0), complex(0)])
 
+
+
+        # Test the recorders.
+        self.assertEqual(len(inventory.recorders), 1)
+        cur_recorder = inventory.recorders[0]
+        self.assertEqual(cur_recorder.serial, '9D6C')
+        self.assertEqual(cur_recorder.type, 'Reftek 130-01')
+        self.assertEqual(cur_recorder.description, 'Recorder description.')
+        self.assertEqual(len(cur_recorder.streams), 3)
+
+        # Test the first stream.
+        cur_stream = cur_recorder.streams[0]
+        self.assertEqual(cur_stream.name, '101')
+        self.assertEqual(cur_stream.label, 'Stream-101')
+        self.assertEqual(len(cur_stream.parameters), 1)
+        self.assertEqual(len(cur_stream.components), 1)
+
+        cur_param = cur_stream.parameters[0]
+        self.assertEqual(cur_param.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertEqual(cur_param.end_time, UTCDateTime('2009-02-01T00:00:00.000000Z'))
+        self.assertEqual(cur_param.gain, 32.)
+        self.assertEqual(cur_param.bitweight, 1.5895e-6)
+
+        cur_timebox = cur_stream.components[0]
+        self.assertIsInstance(cur_timebox, TimeBox)
+        self.assertEqual(cur_timebox.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertEqual(cur_timebox.end_time, UTCDateTime('2009-02-01T00:00:00.000000Z'))
+        cur_component = cur_timebox.item
+        self.assertEqual(cur_component.serial, '1417')
+        self.assertEqual(cur_component.name, 'Z')
+
+        # Test the second stream.
+        cur_stream = cur_recorder.streams[1]
+        self.assertEqual(cur_stream.name, '102')
+        self.assertEqual(cur_stream.label, 'Stream-102')
+        self.assertEqual(len(cur_stream.parameters), 1)
+        self.assertEqual(len(cur_stream.components), 1)
+
+        cur_param = cur_stream.parameters[0]
+        self.assertEqual(cur_param.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertIsNone(cur_param.end_time)
+        self.assertEqual(cur_param.gain, 32.)
+        self.assertEqual(cur_param.bitweight, 1.5895e-6)
+
+        cur_timebox = cur_stream.components[0]
+        self.assertIsInstance(cur_timebox, TimeBox)
+        self.assertEqual(cur_timebox.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertIsNone(cur_timebox.end_time)
+        cur_component = cur_timebox.item
+        self.assertEqual(cur_component.serial, '1417')
+        self.assertEqual(cur_component.name, 'N')
+
+        # Test the third stream.
+        cur_stream = cur_recorder.streams[2]
+        self.assertEqual(cur_stream.name, '103')
+        self.assertEqual(cur_stream.label, 'Stream-103')
+        self.assertEqual(len(cur_stream.parameters), 1)
+        self.assertEqual(len(cur_stream.components), 1)
+
+        cur_param = cur_stream.parameters[0]
+        self.assertEqual(cur_param.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertIsNone(cur_param.end_time)
+        self.assertEqual(cur_param.gain, 32.)
+        self.assertEqual(cur_param.bitweight, 1.5895e-6)
+
+        cur_timebox = cur_stream.components[0]
+        self.assertIsInstance(cur_timebox, TimeBox)
+        self.assertEqual(cur_timebox.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
+        self.assertIsNone(cur_timebox.end_time)
+        cur_component = cur_timebox.item
+        self.assertEqual(cur_component.serial, '1417')
+        self.assertEqual(cur_component.name, 'E')
 
         #self.assertEqual(len(inventory.networks), 1)
         #self.assertEqual(len(inventory.recorders), 1)
