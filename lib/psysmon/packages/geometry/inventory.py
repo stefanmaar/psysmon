@@ -259,18 +259,18 @@ class Inventory(object):
     def has_changed(self):
         ''' Check if any element in the inventory has been changed.
         '''
+        for cur_sensor in self.sensors:
+            if cur_sensor.has_changed is True:
+                self.logger.debug('Sensor changed')
+                return True
+
         for cur_recorder in self.recorders:
-            if cur_recorder.has_changed:
+            if cur_recorder.has_changed is True:
                 self.logger.debug('Recorder changed')
                 return True
 
-            for cur_sensor in cur_recorder.sensors:
-                if cur_sensor.has_changed:
-                    self.logger.debug('Sensor changed')
-                    return True
-
         for cur_network in self.networks:
-            if cur_network.has_changed:
+            if cur_network.has_changed is True:
                 self.logger.debug('Network changed.')
                 return True
 
@@ -733,6 +733,8 @@ class RecorderStream(object):
     def __setitem__(self, name, value):
         self.__dict__[name] = value
         self.has_changed = True
+        if self.parent_recorder is not None:
+            self.parent_recorder.has_changed =  True
 
         # Send an inventory update event.
         msgTopic = 'inventory.update.stream'
@@ -1370,6 +1372,47 @@ class SensorComponentParameter(object):
             return None
 
 
+    @property
+    def start_time_string(self):
+        if self.start_time is None:
+            return 'bing bang'
+        else:
+            return self.start_time.isoformat()
+
+
+    @property
+    def end_time_string(self):
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
+
+
+    @property
+    def zeros_string(self):
+        zero_str = ''
+        if self.tf_zeros:
+            for cur_zero in self.tf_zeros:
+                if zero_str == '':
+                    zero_str = cur_zero.__str__()
+                else:
+                    zero_str = zero_str + ',' + cur_zero.__str__()
+
+        return zero_str
+
+    @property
+    def poles_string(self):
+        pole_str = ''
+        if self.tf_poles:
+            for cur_pole in self.tf_poles:
+                if pole_str == '':
+                    pole_str = cur_pole.__str__()
+                else:
+                    pole_str = pole_str + ',' + cur_pole.__str__()
+
+        return pole_str
+
+
     def __eq__(self, other):
         if type(self) is type(other):
             compare_attributes = ['sensitivity', 'tf_type',
@@ -1978,4 +2021,19 @@ class TimeBox(object):
             pass
 
         return is_equal
+
+
+    @property
+    def start_time_string(self):
+        if self.start_time is None:
+            return 'bing bang'
+        else:
+            return self.start_time.isoformat()
+
+    @property
+    def end_time_string(self):
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
 
