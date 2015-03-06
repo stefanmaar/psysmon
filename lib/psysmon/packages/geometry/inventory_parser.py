@@ -68,6 +68,7 @@ class InventoryXmlParser:
         self.required_attributes['network'] = ('name', )
         self.required_attributes['station'] = ('name', )
         self.required_attributes['channel'] = ('name', )
+        self.required_attributes['assigned_stream'] = ()
 
         # The required tags which have to be present in the inventory.
         self.required_tags = {}
@@ -88,7 +89,7 @@ class InventoryXmlParser:
                                                     'start_time', 'end_time')
 
         self.required_tags['network'] = ('description', 'type')
-        self.required_tags['station'] = ('location', 'xcoord', 'ycoord', 'elevation',
+        self.required_tags['station'] = ('location', 'x', 'y', 'z',
                                         'coord_system', 'description')
         self.required_tags['channel'] = ('description', 'assigned_stream')
         self.required_tags['assigned_stream'] = ('recorder_serial', 'stream_name',
@@ -128,7 +129,7 @@ class InventoryXmlParser:
         self.process_recorders(inventory, recorders)
 
         # And last process the networks which might depend on recorders.
-        #self.process_networks(inventory, networks)
+        self.process_networks(inventory, networks)
 
         self.logger.debug("Success reading the XML file.")
 
@@ -456,132 +457,118 @@ class InventoryXmlParser:
                                  end_time = content['end_time'])
 
 
-
-    ## Process the channel elements.      
-    def process_channels(self, recorder_node, recorder):
-        channels = recorder_node.findall('sensor_unit')
-        for cur_channel in channels:
-            channel_content = self.parse_node(cur_channel)
-
-            missing_attrib = self.keys_complete(cur_channel.attrib, self.required_attributes['sensor_unit'])
-            missing_keys = self.keys_complete(channel_content, self.required_tags['sensor_unit']);
-            if not missing_keys and not missing_attrib:
-                self.logger.debug("Adding sensor to recorder.")
-                sensor2Add = Sensor(serial=channel_content['sensor_serial'],
-                                    type=channel_content['sensor_type'],
-                                    rec_channel_name=channel_content['rec_channel_name'],
-                                    channel_name=channel_content['channel_name'],
-                                    label=cur_channel.attrib['label']) 
-                self.logger.debug("%s", sensor2Add.label)
-
-                recorder.add_sensor(sensor2Add)
-
-                # Process the channel parameters.
-                self.process_channel_parameters(cur_channel, sensor2Add)
-
-
-            else:
-                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-
-
-    ## Process the channel_parameter elements.
-    def process_channel_parameters(self, channel_node, sensor):
-        channel_parameters = channel_node.findall('channel_parameters')
-        for cur_parameter in channel_parameters:
-            content = self.parse_node(cur_parameter)
-            missing_keys = self.keys_complete(content, self.required_tags['channel_parameters'])
-            if not missing_keys:
-                self.logger.debug("Adding the channel parameters to the sensor")
-                # Convert the time strings to UTC times.
-                if content['start_time']:
-                    start_time = UTCDateTime(content['start_time'])
-                else:
-                    start_time = None
-
-
-                if content['end_time']:
-                    end_time = UTCDateTime(content['end_time'])
-                else:
-                    end_time = None
-
-                parameter2Add = SensorParameter(gain = float(content['gain']),
-                                                bitweight = float(content['bitweight']),
-                                                bitweight_units = content['bitweight_units'],
-                                                sensitivity = float(content['sensitivity']),
-                                                sensitivity_units = content['sensitivity_units'],
-                                                start_time = start_time,
-                                                end_time = end_time
-                                                 )
-                self.logger.debug('Processing PAZ of parameter %s.', parameter2Add)
-                self.process_response_paz(cur_parameter, parameter2Add)
-
-
-                sensor.add_parameter(parameter2Add)
-
-
-
-
-
-
-
-    ## Process the station elements.
-    def process_stations(self, inventory, network_node, network):
-        stations = network_node.findall('station')
-        for cur_station in stations:
-            station_content = self.parse_node(cur_station)
-            missing_attrib = self.keys_complete(cur_station.attrib, self.required_attributes['station'])
-            missing_keys = self.keys_complete(station_content, self.required_tags['station'])
-
-            if not missing_keys and not missing_attrib:
-                station2Add = Station(name=cur_station.attrib['code'],
-                                      location=station_content['location'],
-                                      x=float(station_content['xcoord']),
-                                      y=float(station_content['ycoord']),
-                                      z=float(station_content['elevation']),
-                                      coord_system=station_content['coord_system'],
-                                      description=station_content['description'],
-                                      network=network.name 
-                                      )
-
-                inventory.add_station(station2Add)
-
-                self.process_sensors(inventory, cur_station, station2Add)
-
-
-            else:
-                self.logger.error("Not all required tags or attributes present.")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-
-
-
-     ## Process the network element.
     def process_networks(self, inventory, networks):
+        ''' Process the extraced network nodes.
+
+        Parameters
+        ----------
+        inventory : :class:`~psysmon.packages.geometry.inventory.Inventory`
+            The inventory to which to add the parsed sensors.
+
+        networks : xml network nodes
+            The xml network nodes parsed using the findall method.
+        '''
+        self.logger.debug("Processing the networks.")
         for cur_network in networks:
             content = self.parse_node(cur_network)
 
-            # Test the recorder tags for completeness.
-            missing_attrib = self.keys_complete(cur_network.attrib, self.required_attributes['network'])
-            missing_keys = self.keys_complete(content, self.required_tags['network']);
-            if not missing_keys and not missing_attrib:
-                self.logger.debug("%s", content)
-            else:
-                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
+            if self.check_completeness(cur_network, content, 'network') is False:
                 continue
 
+            if 'station' in content.keys():
+                content.pop('station')
+
             # Create the Recorder instance.
-            net2Add = Network(name=cur_network.attrib['code'],
-                              description=content['description'],
-                              type=content['type'])
+            net_to_add = Network(name=cur_network.attrib['name'], **content)
 
             # Add the network to the inventory.
-            inventory.add_network(net2Add)
+            inventory.add_network(net_to_add)
 
-            self.process_stations(inventory, cur_network, net2Add)
+            stations = cur_network.findall('station')
+            self.process_stations(net_to_add, stations)
+
+
+
+    def process_stations(self, network, stations):
+        ''' Process the station nodes of a network.
+
+        Parameters
+        ----------
+        network : :class:`~psysmon.packages.geometry.inventory.Network`
+            The network to which to add the stations.
+
+        stations : xml station nodes
+            The xml station nodes parsed using the findall method.
+        '''
+        for cur_station in stations:
+            content = self.parse_node(cur_station)
+
+            if self.check_completeness(cur_station, content, 'station') is False:
+                continue
+
+            if 'channel' in content.keys():
+                content.pop('channel')
+
+            station_to_add = Station(name = cur_station.attrib['name'], **content)
+
+            network.add_station(station_to_add)
+
+            channels = cur_station.findall('channel')
+            self.process_channels(station_to_add, channels)
+
+
+    def process_channels(self, station, channels):
+        ''' Process the channel nodes of a station.
+
+        Parameters
+        ----------
+        station : :class:`~psysmon.packages.geometry.inventory.Station`
+            The station to which to add the channels.
+
+        channels : xml channel nodes
+            The xml channel nodes parsed using the findall method.
+        '''
+        for cur_channel in channels:
+            content = self.parse_node(cur_channel)
+
+            if self.check_completeness(cur_channel, content, 'channel') is False:
+                continue
+
+            if 'assigned_stream' in content.keys():
+                content.pop('assigned_stream')
+
+            channel_to_add = Channel(name = cur_channel.attrib['name'], **content)
+
+            station.add_channel(channel_to_add)
+
+            assigned_streams = cur_channel.findall('assigned_stream')
+            self.process_assigned_streams(channel_to_add, assigned_streams)
+
+
+
+    def process_assigned_streams(self, channel, streams):
+        ''' Process the assigned streams of a channel.
+
+        Parameters
+        ----------
+        channel : :class:`~psysmon.packages.geometry.inventory.Channel`
+            The channel to which to add the streams.
+
+        streams : xml stream nodes
+            The xml stream nodes parsed using the findall method.
+        '''
+        for cur_stream in streams:
+            content = self.parse_node(cur_stream)
+
+            if self.check_completeness(cur_stream, content, 'assigned_stream') is False:
+                continue
+
+            channel.add_stream(serial = content['recorder_serial'],
+                               name = content['stream_name'],
+                               start_time = content['start_time'],
+                               end_time = content['end_time'])
+
+
 
 
     def get_node_text(self, xml_element, tag):
