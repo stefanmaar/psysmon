@@ -16,7 +16,7 @@
                     <type/>
                     <units/>
                     <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
+                    <normalization_frequency>1.0</normalization_frequency>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
@@ -38,7 +38,7 @@
                     <type/>
                     <units/>
                     <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>1.0</normalization_frequency>
+                    <normalization_frequency>2.0</normalization_frequency>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
@@ -60,7 +60,7 @@
                     <type/>
                     <units/>
                     <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>1</normalization_frequency>
+                    <normalization_frequency>3</normalization_frequency>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
                     <complex_zero>0+0j</complex_zero>
