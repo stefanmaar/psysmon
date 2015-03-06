@@ -129,14 +129,14 @@
 
 
     <network name="XX">
-        <description>A simple test network</description>
-        <type>test network</type>
+        <description>Network description.</description>
+        <type>network type</type>
 
         <station name="GILA">
             <location>00</location>
-            <xcoord>15.887788</xcoord>
-            <ycoord>47.695770</ycoord>
-            <elevation>643</elevation>
+            <x>15.887788</x>
+            <y>47.695770</y>
+            <z>643</z>
             <coord_system>epsg:4326</coord_system>
             <description>Grillenberg</description>
 
