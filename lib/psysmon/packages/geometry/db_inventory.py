@@ -189,6 +189,7 @@ class DbInventory(Inventory):
     def load(self):
         ''' Load the inventory from the database.
         '''
+        self.load_sensors()
         self.load_recorders()
         self.load_networks()
 
@@ -200,8 +201,11 @@ class DbInventory(Inventory):
 
 
     @classmethod
-    def from_inventory(cls, name, project, inventory):
+    def from_inventory_instance(cls, name, project, inventory):
         db_inventory = cls(name = name, project = project)
+        for cur_sensor in inventory.sensors:
+            db_inventory.add_sensor(cur_sensor)
+
         for cur_recorder in inventory.recorders:
             db_inventory.add_recorder(cur_recorder)
 
@@ -214,6 +218,7 @@ class DbInventory(Inventory):
     @classmethod
     def load_inventory(cls, project):
         db_inventory = cls(name = 'db_inventory', project = project)
+        db_inventory.load_sensors()
         db_inventory.load_recorders()
         db_inventory.load_networks()
         db_inventory.close()
@@ -621,11 +626,11 @@ class DbRecorderStream(RecorderStream):
                           agency_uri = instance.agency_uri,
                           creation_time = instance.creation_time)
 
-        for cur_component, cur_start_time, cur_end_time in instance.components:
-            cur_stream.add_component(serial = cur_component.serial,
-                                     name = cur_component.name,
-                                     start_time = cur_start_time,
-                                     end_time = cur_end_time)
+        for cur_timebox in instance.components:
+            cur_stream.add_component(serial = cur_timebox.item.serial,
+                                     name = cur_timebox.item.name,
+                                     start_time = cur_timebox.start_time,
+                                     end_time = cur_timebox.end_time)
 
         for cur_parameter in instance.parameters:
             cur_stream.add_parameter(cur_parameter)
@@ -1302,11 +1307,10 @@ class DbChannel(Channel):
                            creation_time = instance.creation_time)
 
         for cur_timebox in instance.streams:
-            # TODO: Fix this call of the add_stream method.
-            #       Check if this function is called anywhere.
-            channel.add_stream_WRONG(DbRecorderStream.from_inventory_instance(channel, cur_timebox.item),
-                                   cur_timebox.start_time,
-                                   cur_timebox.end_time)
+            channel.add_stream(serial = cur_timebox.item.serial,
+                               name = cur_timebox.item.name,
+                               start_time = cur_timebox.start_time,
+                               end_time = cur_timebox.end_time)
 
         return channel
 
