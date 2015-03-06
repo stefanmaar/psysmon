@@ -204,19 +204,69 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(cur_component.serial, '1417')
         self.assertEqual(cur_component.name, 'E')
 
-        #self.assertEqual(len(inventory.networks), 1)
-        #self.assertEqual(len(inventory.recorders), 1)
 
-        #cur_recorder = inventory.recorders[0]
-        #self.assertEqual(len(cur_recorder.sensors), 3)
-        #for cur_sensor in cur_recorder.sensors:
-        #    self.assertEqual(len(cur_sensor.parameters), 1)
+        # Test the network.
+        self.assertEqual(len(inventory.networks), 1)
+        cur_network = inventory.networks[0]
+        self.assertEqual(cur_network.name, 'XX')
+        self.assertEqual(cur_network.type, 'network type')
+        self.assertEqual(cur_network.description, 'Network description.')
+        self.assertEqual(len(cur_network.stations), 1)
 
-        #cur_network = inventory.networks[0]
-        #self.assertEqual(len(cur_network.stations), 1)
+        # Test the station.
+        cur_station = cur_network.stations[0]
+        self.assertEqual(cur_station.name, 'GILA')
+        self.assertEqual(cur_station.location, '00')
+        self.assertEqual(cur_station.x, 15.887788)
+        self.assertEqual(cur_station.y, 47.69577)
+        self.assertEqual(cur_station.z, 643.0)
+        self.assertEqual(cur_station.coord_system, 'epsg:4326')
+        self.assertEqual(cur_station.description, 'Grillenberg')
+        self.assertEqual(len(cur_station.channels), 3)
 
-        #cur_station = cur_network.stations[0]
-        #self.assertEqual(len(cur_station.sensors), 3)
+        # Test the first channel.
+        cur_channel = cur_station.channels[0]
+        self.assertEqual(cur_channel.name, 'HHZ')
+        self.assertEqual(cur_channel.description, 'Description for channel HHZ.')
+        self.assertEqual(len(cur_channel.streams), 1)
+        cur_timebox = cur_channel.streams[0]
+        self.assertIsInstance(cur_timebox, TimeBox)
+        self.assertEqual(cur_timebox.start_time, UTCDateTime('2010-02-04T00:00:00.000000Z'))
+        self.assertIsNone(cur_timebox.end_time)
+        cur_stream = cur_timebox.item
+        self.assertEqual(cur_stream.serial, '9D6C')
+        self.assertEqual(cur_stream.name, '101')
+        self.assertEqual(cur_stream.label, 'Stream-101')
+
+        # Test the second channel.
+        cur_channel = cur_station.channels[1]
+        self.assertEqual(cur_channel.name, 'HHN')
+        self.assertEqual(cur_channel.description, 'Description for channel HHN.')
+        self.assertEqual(len(cur_channel.streams), 1)
+        cur_timebox = cur_channel.streams[0]
+        self.assertIsInstance(cur_timebox, TimeBox)
+        self.assertEqual(cur_timebox.start_time, UTCDateTime('2010-02-04T00:00:00.000000Z'))
+        self.assertIsNone(cur_timebox.end_time)
+        cur_stream = cur_timebox.item
+        self.assertEqual(cur_stream.serial, '9D6C')
+        self.assertEqual(cur_stream.name, '102')
+        self.assertEqual(cur_stream.label, 'Stream-102')
+
+
+        # Test the third channel.
+        cur_channel = cur_station.channels[2]
+        self.assertEqual(cur_channel.name, 'HHE')
+        self.assertEqual(cur_channel.description, 'Description for channel HHE.')
+        self.assertEqual(len(cur_channel.streams), 1)
+        cur_timebox = cur_channel.streams[0]
+        self.assertIsInstance(cur_timebox, TimeBox)
+        self.assertEqual(cur_timebox.start_time, UTCDateTime('2010-02-04T00:00:00.000000Z'))
+        self.assertIsNone(cur_timebox.end_time)
+        cur_stream = cur_timebox.item
+        self.assertEqual(cur_stream.serial, '9D6C')
+        self.assertEqual(cur_stream.name, '103')
+        self.assertEqual(cur_stream.label, 'Stream-103')
+
 
     def test_export_xmlfile(self):
         xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
