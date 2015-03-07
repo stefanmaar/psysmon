@@ -1027,6 +1027,9 @@ class DbSensorComponent(SensorComponent):
             orm_class = self.parent_inventory.project.dbTables['geom_sensor_component']
             self.orm = orm_class(name = self.name,
                                  description = self.description,
+                                 input_unit = self.input_unit,
+                                 output_unit = self.output_unit,
+                                 prop_unit = self.prop_unit,
                                  agency_uri = self.agency_uri,
                                  author_uri = self.author_uri,
                                  creation_time = self.creation_time)
@@ -1048,6 +1051,9 @@ class DbSensorComponent(SensorComponent):
         component =  cls(parent_sensor = parent_sensor,
                          name = orm.name,
                          description = orm.description,
+                         input_unit = orm.input_unit,
+                         output_unit = orm.output_unit,
+                         prop_unit = orm.prop_unit,
                          author_uri = orm.author_uri,
                          agency_uri = orm.agency_uri,
                          creation_time = orm.creation_time,
@@ -1066,6 +1072,9 @@ class DbSensorComponent(SensorComponent):
         cur_sensor =  cls(parent_sensor = parent_sensor,
                           name = instance.name,
                           description = instance.description,
+                          input_unit = instance.input_unit,
+                          output_unit = instance.output_unit,
+                          prop_unit = instance.prop_unit,
                           author_uri = instance.author_uri,
                           agency_uri = instance.agency_uri,
                           creation_time = instance.creation_time)
@@ -1083,6 +1092,9 @@ class DbSensorComponent(SensorComponent):
         attr_map = {};
         attr_map['name'] = 'name'
         attr_map['description'] = 'description'
+        attr_map['input_unit'] = 'input_unit'
+        attr_map['outpu_unit'] = 'output_unit'
+        attr_map['prop_unit'] = 'prop_unit'
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'

@@ -291,9 +291,18 @@ class DbInventoryTestCase(unittest.TestCase):
                              model = 'sensor3_model',
                              producer = 'sensor3_producer')
 
-            component1 = SensorComponent(name = 'comp1_name')
-            component2 = SensorComponent(name = 'comp2_name')
-            component3 = SensorComponent(name = 'comp3_name')
+            component1 = SensorComponent(name = 'comp1_name',
+                                     input_unit = 'm',
+                                     output_unit = 'm/s',
+                                     prop_unit = 'V')
+            component2 = SensorComponent(name = 'comp2_name',
+                                     input_unit = 'm',
+                                     output_unit = 'm/s',
+                                     prop_unit = 'V')
+            component3 = SensorComponent(name = 'comp3_name',
+                                     input_unit = 'm',
+                                     output_unit = 'm/s',
+                                     prop_unit = 'V')
 
             cur_start_time = UTCDateTime('2014-01-01')
             cur_end_time = UTCDateTime('2014-02-01')

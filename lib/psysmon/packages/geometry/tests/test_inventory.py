@@ -207,9 +207,18 @@ class InventoryTestCase(unittest.TestCase):
                          model = 'sensor1_model',
                          producer = 'sensor1_producer')
 
-        component1 = SensorComponent(name = 'comp1_name')
-        component2 = SensorComponent(name = 'comp2_name')
-        component3 = SensorComponent(name = 'comp3_name')
+        component1 = SensorComponent(name = 'comp1_name',
+                                     input_unit = 'm',
+                                     output_unit = 'm/s',
+                                     prop_unit = 'V')
+        component2 = SensorComponent(name = 'comp2_name',
+                                     input_unit = 'm',
+                                     output_unit = 'm/s',
+                                     prop_unit = 'V')
+        component3 = SensorComponent(name = 'comp3_name',
+                                     input_unit = 'm',
+                                     output_unit = 'm/s',
+                                     prop_unit = 'V')
 
         sensor1.add_component(component1)
         sensor1.add_component(component2)

@@ -75,6 +75,9 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         cur_component = cur_component[0]
         self.assertEqual(cur_component.name, 'Z')
         self.assertEqual(cur_component.description, 'Sensor component Z description.')
+        self.assertEqual(cur_component.input_unit, 'm')
+        self.assertEqual(cur_component.output_unit, 'm/s')
+        self.assertEqual(cur_component.prop_unit, 'V')
         self.assertEqual(len(cur_component.parameters), 1)
         cur_parameter = cur_component.parameters[0]
         self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
@@ -95,6 +98,9 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         cur_component = cur_component[0]
         self.assertEqual(cur_component.name, 'N')
         self.assertEqual(cur_component.description, 'Sensor component N description.')
+        self.assertEqual(cur_component.input_unit, 'm')
+        self.assertEqual(cur_component.output_unit, 'm/s')
+        self.assertEqual(cur_component.prop_unit, 'V')
         self.assertEqual(len(cur_component.parameters), 1)
         cur_parameter = cur_component.parameters[0]
         self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
@@ -114,6 +120,9 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         cur_component = cur_component[0]
         self.assertEqual(cur_component.name, 'E')
         self.assertEqual(cur_component.description, 'Sensor component E description.')
+        self.assertEqual(cur_component.input_unit, 'm')
+        self.assertEqual(cur_component.output_unit, 'm/s')
+        self.assertEqual(cur_component.prop_unit, 'V')
         self.assertEqual(len(cur_component.parameters), 1)
         cur_parameter = cur_component.parameters[0]
         self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))

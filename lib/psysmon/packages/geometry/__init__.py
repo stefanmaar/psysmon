@@ -214,6 +214,9 @@ def databaseFactory(base):
         sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=True, default=-1)
         name = Column(String(45), nullable=False)
         description = Column(String(255))
+        input_unit = Column(String(10))
+        output_unit = Column(String(10))
+        prop_unit = Column(String(10))
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -224,9 +227,13 @@ def databaseFactory(base):
 
 
         def __init__(self, name, description,
+                input_unit, output_unit, prop_unit,
                 agency_uri, author_uri, creation_time):
             self.name = name
             self.description = description
+            self.input_unit = input_unit,
+            self.output_unit = output_unit,
+            self.prop_unit = prop_unit,
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time

@@ -1103,6 +1103,7 @@ class SensorComponent(object):
     '''
 
     def __init__(self, name, description = None,
+                 input_unit = None, output_unit = None, prop_unit = None,
                  author_uri = None, agency_uri = None, creation_time = None,
                  parent_sensor = None):
         ''' Initialize the instance.
@@ -1117,6 +1118,17 @@ class SensorComponent(object):
 
         # The description.
         self.description = description
+
+        # The unit of the parameter measured by the sensor (e.g. m).
+        self.input_unit = input_unit
+
+        # The unit to which the input unit is transformed by the sensor (e.g.
+        # m/s).
+        self.output_unit = output_unit
+
+        # The unit of the measureable signal which is proportional to the
+        # output unit (e.g. V).
+        self.prop_unit = prop_unit
 
         ## The component parameters.
         self.parameters = []
