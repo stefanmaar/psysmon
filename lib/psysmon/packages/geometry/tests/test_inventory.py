@@ -84,21 +84,18 @@ class InventoryTestCase(unittest.TestCase):
         network2 = Network(name = 'YY')
 
         station1 = Station(name = 'station1_name',
-                           network = 'XX',
                            location = 'station1_location',
                            x = 10,
                            y = 20,
                            z = 30)
 
         station2 = Station(name = 'station2_name',
-                           network = 'YY',
                            location = 'station2_location',
                            x = 10,
                            y = 20,
                            z = 30)
 
         station3 = Station(name = 'station3_name',
-                           network = 'ZZ',
                            location = 'station3_location',
                            x = 10,
                            y = 20,
@@ -106,9 +103,9 @@ class InventoryTestCase(unittest.TestCase):
 
         inventory.add_network(network1)
         inventory.add_network(network2)
-        inventory.add_station(station1)
-        inventory.add_station(station2)
-        inventory.add_station(station3)
+        inventory.add_station('XX', station1)
+        inventory.add_station('YY', station2)
+        inventory.add_station('ZZ', station3)
 
         self.assertIs(station1.parent_inventory, inventory)
         self.assertIs(station2.parent_inventory, inventory)
@@ -134,7 +131,6 @@ class InventoryTestCase(unittest.TestCase):
 
         # The network name should be overwritten when added to the network.
         station2 = Station(name = 'station2_name',
-                           network = 'AA',
                            location = 'station2_location',
                            x = 10,
                            y = 20,
@@ -149,19 +145,6 @@ class InventoryTestCase(unittest.TestCase):
         self.assertTrue(network1 in inventory.networks)
         self.assertTrue(network2 in inventory.networks)
         self.assertEqual(station2.network, 'YY')
-
-        # Add a new station to the network which already was added to a
-        # network.
-        # This should add the new station only to the inventory station list.
-        station3 = Station(name = 'station3_name',
-                           network = 'YY',
-                           location = 'station3_location',
-                           x = 10,
-                           y = 20,
-                           z = 30)
-
-        network2.add_station(station3)
-
 
 
 
@@ -253,7 +236,6 @@ class InventoryTestCase(unittest.TestCase):
         cur_start_time = UTCDateTime('2014-01-01')
         cur_end_time = UTCDateTime('2014-02-01')
         parameter1 = SensorComponentParameter(sensitivity = 1,
-                                              sensitivity_units = 'param1_units',
                                               start_time = cur_start_time,
                                               end_time = cur_end_time)
 

@@ -1140,7 +1140,6 @@ class DbSensorComponentParameter(SensorComponentParameter):
                                  tf_type = self.tf_type,
                                  tf_units = self.tf_units,
                                  sensitivity = self.sensitivity,
-                                 sensitivity_units = self.sensitivity_units,
                                  agency_uri = self.agency_uri,
                                  author_uri = self.author_uri,
                                  creation_time = self.creation_time)
@@ -1170,7 +1169,6 @@ class DbSensorComponentParameter(SensorComponentParameter):
                    tf_poles = instance.tf_poles,
                    tf_zeros = instance.tf_zeros,
                    sensitivity = instance.sensitivity,
-                   sensitivity_units = instance.sensitivity_units,
                    author_uri = instance.author_uri,
                    agency_uri = instance.agency_uri,
                    creation_time = instance.creation_time)
@@ -1197,7 +1195,6 @@ class DbSensorComponentParameter(SensorComponentParameter):
                         tf_type = orm.tf_type,
                         tf_units = orm.tf_units,
                         sensitivity = orm.sensitivity,
-                        sensitivity_units = orm.sensitivity_units,
                         author_uri = orm.author_uri,
                         agency_uri = orm.agency_uri,
                         creation_time = orm.creation_time,
@@ -1224,7 +1221,6 @@ class DbSensorComponentParameter(SensorComponentParameter):
         attr_map['tf_type'] = 'tf_type'
         attr_map['tf_units'] = 'tf_units'
         attr_map['sensitivity'] = 'sensitivity'
-        attr_map['sensitivity_units'] = 'sensitivity_units'
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'

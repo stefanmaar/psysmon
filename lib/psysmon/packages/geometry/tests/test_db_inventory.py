@@ -116,13 +116,12 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Add stations to the XX network.
             station1 = Station(name = 'station1_name',
-                               network = 'YY',
                                location = '00',
                                x = 11,
                                y = 12,
                                z = 13,
                                coord_system = 'station1_coord_system')
-            added_station1 = db_inventory.add_station(station1)
+            added_station1 = db_inventory.add_station('YY', station1)
             self.assertTrue(added_station1 in added_network1.stations)
 
             added_network1.name = 'ZZ'
@@ -299,7 +298,6 @@ class DbInventoryTestCase(unittest.TestCase):
             cur_start_time = UTCDateTime('2014-01-01')
             cur_end_time = UTCDateTime('2014-02-01')
             parameter1 = SensorComponentParameter(sensitivity = 1,
-                                              sensitivity_units = 'param1_units',
                                               start_time = cur_start_time,
                                               end_time = cur_end_time,
                                               tf_poles = [complex('1+1j'), complex('1+2j')],
@@ -385,7 +383,6 @@ class DbInventoryTestCase(unittest.TestCase):
             network1 = Network(name = 'XX', description = 'A test network.')
 
             station1 = Station(name = 'station1_name',
-                               network = 'XX',
                                location = '00',
                                x = 11,
                                y = 12,
@@ -393,7 +390,6 @@ class DbInventoryTestCase(unittest.TestCase):
                                coord_system = 'station1_coord_system')
 
             station2 = Station(name = 'station2_name',
-                               network = 'XX',
                                location = '00',
                                x = 21,
                                y = 22,
@@ -623,7 +619,6 @@ class DbInventoryTestCase(unittest.TestCase):
             cur_start_time = UTCDateTime('2014-01-01')
             cur_end_time = UTCDateTime('2014-02-01')
             parameter1 = SensorComponentParameter(sensitivity = 1,
-                                              sensitivity_units = 'param1_units',
                                               start_time = cur_start_time,
                                               end_time = cur_end_time,
                                               tf_poles = [complex('1+1j'), complex('1+2j')],
@@ -666,9 +661,8 @@ class DbInventoryTestCase(unittest.TestCase):
         cur_parameter = cur_component.parameters[0]
         self.assertEqual(len(cur_parameter.orm.tf_pz), 4)
         self.assertEqual(cur_parameter.sensitivity, 1)
-        self.assertEqual(cur_parameter.sensitivity_units, 'param1_units')
-        self.assertEqual(cur_parameter.start_time.isoformat, cur_start_time.isoformat)
-        self.assertEqual(cur_parameter.end_time.isoformat, cur_end_time.isoformat)
+        self.assertEqual(cur_parameter.start_time.isoformat(), cur_start_time.isoformat())
+        self.assertEqual(cur_parameter.end_time.isoformat(), cur_end_time.isoformat())
         self.assertEqual(cur_parameter.tf_poles, [complex('1+1j'), complex('1+2j')])
         self.assertEqual(cur_parameter.tf_zeros, [complex('0+1j'), complex('0+2j')])
 
@@ -718,7 +712,7 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(cur_recorder.orm.streams), 1)
         self.assertEqual(cur_recorder.serial, 'recorder1_serial')
         self.assertEqual(cur_recorder.type, 'recorder1_type')
-        self.assertEqual(cur_recorder.id, 1)
+        self.assertIsNotNone(cur_recorder.id)
 
         cur_stream = cur_recorder.streams[0]
         self.assertEqual(cur_stream.name, 'stream1_name')
@@ -759,7 +753,6 @@ class DbInventoryTestCase(unittest.TestCase):
             cur_start_time = UTCDateTime('2014-01-01')
             cur_end_time = UTCDateTime('2014-02-01')
             parameter1 = SensorComponentParameter(sensitivity = 1,
-                                              sensitivity_units = 'param1_units',
                                               start_time = cur_start_time,
                                               end_time = cur_end_time,
                                               tf_poles = [complex('1+1j'), complex('1+2j')],
@@ -1129,7 +1122,6 @@ class DbInventoryTestCase(unittest.TestCase):
                                           bitweight = 2,
                                           bitweight_units = 'bw_units',
                                           sensitivity = 3,
-                                          sensitivity_units = 'sens_units',
                                           start_time = UTCDateTime('1976-06-20'),
                                           end_time = UTCDateTime('2012-06-20'),
                                           tf_poles = [complex('1+1j'), complex('1+2j')],
@@ -1182,7 +1174,6 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
         self.assertEqual(cur_parameter.end_time, UTCDateTime('2009-02-01T00:00:00.000000Z'))
         self.assertEqual(cur_parameter.sensitivity, 340.55)
-        self.assertEqual(cur_parameter.sensitivity_units, 'V/m/s')
         self.assertEqual(cur_parameter.tf_normalization_factor, 0.4)
         self.assertEqual(cur_parameter.tf_normalization_frequency, 1.0)
         self.assertEqual(len(cur_parameter.tf_poles), 3)
@@ -1203,9 +1194,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
         self.assertEqual(cur_parameter.end_time, UTCDateTime('2009-03-01T00:00:00.000000Z'))
         self.assertEqual(cur_parameter.sensitivity, 340.55)
-        self.assertEqual(cur_parameter.sensitivity_units, 'V/m/s')
         self.assertEqual(cur_parameter.tf_normalization_factor, 0.4)
-        self.assertEqual(cur_parameter.tf_normalization_frequency, 1.0)
+        self.assertEqual(cur_parameter.tf_normalization_frequency, 2.0)
         self.assertEqual(len(cur_parameter.tf_poles), 3)
         self.assertTrue(complex('-4.44+4.44j') in cur_parameter.tf_poles)
         self.assertTrue(complex('-4.44-4.44j') in cur_parameter.tf_poles)
@@ -1223,9 +1213,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_parameter.start_time, UTCDateTime('2009-01-01T00:00:00.000000Z'))
         self.assertIsNone(cur_parameter.end_time)
         self.assertEqual(cur_parameter.sensitivity, 340.55)
-        self.assertEqual(cur_parameter.sensitivity_units, 'V/m/s')
         self.assertEqual(cur_parameter.tf_normalization_factor, 0.4)
-        self.assertEqual(cur_parameter.tf_normalization_frequency, 1.0)
+        self.assertEqual(cur_parameter.tf_normalization_frequency, 3.0)
         self.assertEqual(len(cur_parameter.tf_poles), 3)
         self.assertTrue(complex('-4.44+4.44j') in cur_parameter.tf_poles)
         self.assertTrue(complex('-4.44-4.44j') in cur_parameter.tf_poles)

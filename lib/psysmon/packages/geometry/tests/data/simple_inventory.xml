@@ -11,7 +11,6 @@
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time>2009-02-01T00:00:00.000000Z</end_time>
                 <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
                 <response_paz>
                     <type/>
                     <units/>
@@ -33,7 +32,6 @@
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time>2009-03-01T00:00:00.000000Z</end_time>
                 <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
                 <response_paz>
                     <type/>
                     <units/>
@@ -55,7 +53,6 @@
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
                 <response_paz>
                     <type/>
                     <units/>

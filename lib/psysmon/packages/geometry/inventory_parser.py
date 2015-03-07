@@ -75,7 +75,7 @@ class InventoryXmlParser:
         self.required_tags['sensor'] = ('model', 'producer')
         self.required_tags['component'] = ('description', 'component_parameter', )
         self.required_tags['component_parameter'] = ('start_time', 'end_time',
-                                                     'sensitivity', 'sensitivity_units')
+                                                     'sensitivity')
         self.required_tags['response_paz'] = ('type', 'units', 'A0_normalization_factor',
                                               'normalization_frequency')
         #self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
@@ -181,8 +181,6 @@ class InventoryXmlParser:
                     bitweight_units.text = cur_parameter.bitweight_units
                     sensitivity = etree.SubElement(par_element, 'sensitivity')
                     sensitivity.text = str(cur_parameter.sensitivity)
-                    sensitivity_units = etree.SubElement(par_element, 'sensitivity_units')
-                    sensitivity_units.text = cur_parameter.sensitivity_units
 
                     paz_element = etree.SubElement(par_element, 'response_paz')
                     type = etree.SubElement(paz_element, 'type')

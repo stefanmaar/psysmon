@@ -251,7 +251,6 @@ def databaseFactory(base):
         tf_type = Column(String(150))
         tf_units = Column(String(20))
         sensitivity = Column(Float(53))
-        sensitivity_units = Column(String(30))
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -261,7 +260,7 @@ def databaseFactory(base):
 
         def __init__(self, component_id, start_time, end_time, tf_normalization_factor,
                      tf_normalization_frequency, tf_type, tf_units, sensitivity,
-                     sensitivity_units, agency_uri, author_uri, creation_time):
+                     agency_uri, author_uri, creation_time):
             self.component_id = component_id
             self.start_time = start_time
             self.end_time = end_time
@@ -270,7 +269,6 @@ def databaseFactory(base):
             self.tf_type = tf_type
             self.tf_units = tf_units
             self.sensitivity = sensitivity
-            self.sensitivity_units = sensitivity_units
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time

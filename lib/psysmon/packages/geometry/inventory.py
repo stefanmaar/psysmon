@@ -201,8 +201,8 @@ class Inventory(object):
             sensor_to_add.parent_inventory = self
             added_sensor = sensor_to_add
         else:
-            self.logger.warning('The sensor with serial %s and component %s already exists in the inventory.',
-                    sensor_to_add.serial, sensor_to_add.component)
+            self.logger.warning('The sensor with serial %s already exists in the inventory.',
+                    sensor_to_add.serial)
 
         return added_sensor
 
@@ -1283,7 +1283,7 @@ class SensorComponentParameter(object):
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, sensitivity, sensitivity_units,
+    def __init__(self, sensitivity,
                  start_time, end_time, tf_type=None,
                  tf_units=None, tf_normalization_factor=None,
                  tf_normalization_frequency=None, tf_poles = None, tf_zeros = None,
@@ -1299,9 +1299,6 @@ class SensorComponentParameter(object):
             self.sensitivity = float(sensitivity)
         except:
             self.sensitivity = None
-
-        ## The units of the sensitivity.
-        self.sensitivity_units = sensitivity_units
 
         ## The transfer function type.
         # - displacement
