@@ -269,6 +269,7 @@ class InventoryXmlParser:
 
             if 'component' in sensor_content.keys():
                 sensor_content.pop('component')
+
             sensor_to_add = Sensor(serial = cur_sensor.attrib['serial'], **sensor_content)
             inventory.add_sensor(sensor_to_add)
 
@@ -293,7 +294,8 @@ class InventoryXmlParser:
             if self.check_completeness(cur_component, component_content, 'component') is False:
                 continue
 
-            component_content.pop('component_parameter')
+            if 'component_parameter' in component_content:
+                component_content.pop('component_parameter')
             component_to_add = SensorComponent(name = cur_component.attrib['name'],
                                                **component_content)
             sensor.add_component(component_to_add)
@@ -312,7 +314,8 @@ class InventoryXmlParser:
             if self.check_completeness(cur_parameter, content, 'component_parameter') is False:
                 continue
 
-            content.pop('response_paz')
+            if 'response_paz' in content:
+                content.pop('response_paz')
             parameter_to_add = SensorComponentParameter(**content)
             component.add_parameter(parameter_to_add)
 
