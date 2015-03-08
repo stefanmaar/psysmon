@@ -27,7 +27,7 @@ from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
-from psysmon.core.test_util import clear_database_tables
+from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
 import obspy.core.utcdatetime as utcdatetime
 
@@ -44,7 +44,7 @@ class TracedisplayTestCase(unittest.TestCase):
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler())
 
-        clear_database_tables(db_dialect = 'mysql',
+        drop_database_tables(db_dialect = 'mysql',
                               db_driver = None,
                               db_host = 'localhost',
                               db_name = 'psysmon_unit_test',
