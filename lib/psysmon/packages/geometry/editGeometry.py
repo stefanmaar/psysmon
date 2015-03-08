@@ -139,7 +139,7 @@ class EditGeometryDlg(wx.Frame):
         self.inventories = {}
 
         # The inventory controlling the database.
-        self.db_inventory = DbInventory('db_inventory', self.psyProject)
+        self.db_inventory = DbInventory(project = self.psyProject)
 
         # The inventory currently selected by the user.
         self.selected_inventory = None
@@ -452,13 +452,8 @@ class EditGeometryDlg(wx.Frame):
             self.logger.debug("Updating the existing project inventory database.")
             self.db_inventory.commit()
 
-            # TODO: Check if it's needed to reload the database to get the
-            # autoincrement ids.
-            #cur_inventory = self.dbController.reloadDb()
-            #self.inventories[cur_inventory.name] = cur_inventory
-            #self.inventoryTree.updateInventoryData()
-            #self.selected_inventory = cur_inventory
-
+        # Load the updated inventory into the project inventory.
+        self.psyProject.load_geometry_inventory()
 
         self.inventoryTree.updateInventoryData()
 
