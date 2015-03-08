@@ -49,6 +49,7 @@ from sqlalchemy.orm import sessionmaker
 import obspy.core.utcdatetime as utcdatetime
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.util
+from psysmon.packages.geometry.db_inventory import DbInventory
 
 
 class Project:
@@ -345,6 +346,9 @@ class Project:
         # The project preferences.
         self.pref_manager = PreferencesManager()
 
+        # The geometry inventory.
+        self.geometry_inventory = None
+
 
     @property
     def projectDir(self):
@@ -372,12 +376,9 @@ class Project:
 
         # The following attributes can't be pickled and therefore have
         # to be removed.
+        # These values have to be reset when loading the project.
         del result['logger']
         result['psybase'] = None
-        #del result['dbEngine']
-        #del result['dbSessionClass']
-        #del result['dbBase']
-        #del result['dbMetaData']
         result['dbEngine'] = None
         result['dbSessionClass'] = None
         result['dbBase'] = None
@@ -385,16 +386,13 @@ class Project:
         result['dbTables'] = {}
         result['waveclient'] = {}
         result['threadMutex'] = None
+        result['inventory'] = None
 
         return result
 
 
     def __setstate__(self, d):
-        ''' Fill missing attributes afer unpickling.
-
-        Parameters
-        ----------
-        d : 
+        ''' Fill missing attributes after unpickling.
 
         '''
         self.__dict__.update(d) # I *think* this is a safe way to do it
@@ -411,6 +409,16 @@ class Project:
         '''
         self.psybase.project_server.register_data(uri, data)
 
+
+    def load_geometry_inventory(self):
+        ''' Load the geometry inventory from the database.
+
+        The waveclient doesn't track changes of the geometry database
+        after the inventory was loaded. If changes where made to the
+        geometry database, the inventory of the waveclient has to be
+        reloaded.
+        '''
+        self.inventory = DbInventory.load_inventory(self)
 
 
 

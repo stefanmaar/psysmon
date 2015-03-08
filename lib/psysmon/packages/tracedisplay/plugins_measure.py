@@ -156,6 +156,8 @@ class MeasurePoint(InteractivePlugin):
         cur_crosshair[1].set_ydata(snap_y)
 
         date_string = utcdatetime.UTCDateTime(snap_x)
+        if isinstance(snap_y, np.ma.MaskedArray):
+            snap_y = snap_y[0]
         measure_string = 'time: {0:s}\nampl.: {1:g}\n'.format(date_string.isoformat(),
                                                               snap_y)
         self.view.setAnnotation(measure_string)

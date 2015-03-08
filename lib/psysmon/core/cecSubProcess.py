@@ -89,6 +89,7 @@ if __name__ == "__main__":
     # Reinitialize the project.
     project.connect2Db()
     project.loadDatabaseStructure(packages)
+    project.load_geometry_inventory()
 
     for curName, curMode, curOptions in waveclients:
         if curMode == 'PsysmonDbWaveClient':

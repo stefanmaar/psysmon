@@ -1104,12 +1104,11 @@ class DisplayManager(object):
         # Fill the available- and current station lists.
         for curNetwork in self.inventory.networks:
             for curStation in curNetwork.stations:
-                channels = set([x[0].channel_name for x in curStation.sensors])
                 self.availableStations.append(DisplayStation(curStation))
 
-                for curChannel in channels:
-                    if curChannel not in self.availableChannels:
-                        self.availableChannels.append(curChannel)
+                for curChannel in curStation.channels:
+                    if curChannel.name not in self.availableChannels:
+                        self.availableChannels.append(curChannel.name)
 
 
         # The channels currently shown.
@@ -1336,7 +1335,7 @@ class DisplayManager(object):
         '''
         if channel not in self.showChannels:
             self.showChannels.append(channel)
-        
+
         addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
 
         for curStation in self.showStations:
@@ -1812,8 +1811,8 @@ class DataManager():
                                                 self.parent.displayManager.inventory)
         detrend_node = [x for x in self.parent.processingNodes if x.name == 'detrend'][0]
         self.processingStack.addNode(detrend_node)
-        convert_to_sensor_units_node = [x for x in self.parent.processingNodes if x.name == 'convert to sensor units'][0]
-        self.processingStack.addNode(convert_to_sensor_units_node)
+        #convert_to_sensor_units_node = [x for x in self.parent.processingNodes if x.name == 'convert to sensor units'][0]
+        #self.processingStack.addNode(convert_to_sensor_units_node)
 
 
     def requestStream(self, startTime, endTime, scnl):

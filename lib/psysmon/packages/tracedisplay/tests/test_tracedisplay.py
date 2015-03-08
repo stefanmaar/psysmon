@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+import nose.plugins.attrib as nose_attrib
 import psysmon
 import logging
 import os
@@ -26,11 +27,12 @@ from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
-from psysmon.core.test_util import clear_database_tables
+from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
 import obspy.core.utcdatetime as utcdatetime
 
 
+@nose_attrib.attr('interactive')
 class TracedisplayTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
@@ -42,7 +44,7 @@ class TracedisplayTestCase(unittest.TestCase):
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler())
 
-        clear_database_tables(db_dialect = 'mysql',
+        drop_database_tables(db_dialect = 'mysql',
                               db_driver = None,
                               db_host = 'localhost',
                               db_name = 'psysmon_unit_test',

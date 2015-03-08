@@ -31,6 +31,7 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
+import itertools
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
@@ -40,15 +41,19 @@ import logging
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 
-## The Inventory class.
-#
-class Inventory:
+class Inventory(object):
 
-    ## The constructor.
-    #
-    # @param self The object pointer.
-    # @param name The inventory name.
     def __init__(self, name, type = None):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        name : String
+            The name of the inventory.
+
+        type : String
+            The type of the inventory.
+        '''
 
         # The logger.
         logger_name = __name__ + "." + self.__class__.__name__
@@ -68,11 +73,8 @@ class Inventory:
         ## The recorders contained in the inventory.
         self.recorders = []
 
-        ## The sensors contained in the inventory and not assigned to a recorder.
+        ## The sensors contained in the inventory.
         self.sensors = []
-
-        ## The stations contained in the inventory and not assigned to a network.
-        self.stations = []
 
         ## The networks contained in the inventory.
         self.networks = []
@@ -108,56 +110,107 @@ class Inventory:
             return False
 
 
-    ## Add a recorder to the inventory.
     def add_recorder(self, recorder):
         ''' Add a recorder to the inventory.
 
         Parameters
         ----------
-        recorder : :class:`~psysmon.packages.geometery.inventory.Recorder`
+        recorder : :class:`Recorder`
             The recorder to add to the inventory.
         '''
-        available_recorders = [(x.serial, x.type) for x in self.recorders]
+        added_recorder = None
 
-        if (recorder.serial, recorder.type) not in available_recorders:
+        if not self.get_recorder(serial = recorder.serial):
             self.recorders.append(recorder)
-            recorder.set_parent_inventory(self)
+            recorder.parent_inventory = self
+            added_recorder = recorder
+        else:
+            self.logger.warning('The recorder with serial %s already exists in the inventory.',
+                    recorder.serial)
+
+        return added_recorder
 
 
-    ## Remove a recorder from the inventory.
-    def remove_recorder(self, position):
+    def remove_recorder(self):
+        ''' Remove a recorder from the inventory.
+        '''
         pass
 
-    ## Add a station to the inventory.
-    def add_station(self, station):
+
+
+    def add_station(self, network_name, station_to_add):
+        ''' Add a station to the inventory.
+
+        Parameters
+        ----------
+        network_name : String
+            The name of the network to which to add the station.
+
+        station_to_add : :class:`Station`
+            The station to add to the inventory.
+        '''
+        added_station = None
 
         # If the network is found in the inventory, add it to the network.
-        cur_net = self.get_network(station.network)
-        if cur_net:
-            cur_net.add_station(station)
-            station.set_parent_inventory(self)
+        cur_net = self.get_network(name = network_name)
+        if len(cur_net) == 1:
+            cur_net = cur_net[0]
+            added_station = cur_net.add_station(station_to_add)
+        elif len(cur_net) > 1:
+            self.logger.error("Multiple networks found with the same name. Don't know how to proceed.")
         else:
-            self.logger.error("The network %s of station %s doesn't exist in the inventory.\nAdding it to the unassigned stations.", station.network, station.name)
-            # Append the station to the unassigned stations list.
-            self.stations.append(station)
+            self.logger.error("The network %s of station %s doesn't exist in the inventory.\n", network_name, station_to_add.name)
+
+        return added_station
 
 
 
-    ## Add a sensor to the inventory.
-    def add_sensor(self, sensor):
+    def remove_station(self, snl):
+        ''' Remove a station from the inventory.
 
-        for cur_recorder in self.recorders:
-            if cur_recorder.serial == sensor.recorder_serial and cur_recorder.type == sensor.recorder_type:
-                cur_recorder.add_sensor(sensor)
-                if sensor in self.sensors:
-                    self.sensors.remove(sensor)
-                return
+        Parameters
+        ----------
+        scnl : tuple (String, String, String)
+            The SNL code of the station to remove from the inventory.
+        '''
+        removed_station = None
 
-        # If no suitable recorder has been found, add it to the unassigned sensors list.
-        self.sensors.append(sensor)
-        self.sensors = list(set(self.sensors))
-        sensor.recorder_Id = None
-        sensor.set_parent_inventory(self)
+        cur_net = self.get_network(name = snl[1])
+
+        if cur_net:
+            if len(cur_net) == 1:
+                cur_net = cur_net[0]
+                removed_station = cur_net.remove_station(name = snl[0], location = snl[2])
+            else:
+                self.logger.error('More than one networks with name %s where found in the inventory.', snl[1])
+        return removed_station
+
+
+
+    def add_sensor(self, sensor_to_add):
+        ''' Add a sensor to the inventory.
+
+        Parameters
+        ----------
+        sensor_to_add : :class:`Sensor`
+            The sensor to add to the inventory.
+        '''
+        added_sensor = None
+        if not self.get_sensor(serial = sensor_to_add.serial):
+            self.sensors.append(sensor_to_add)
+            sensor_to_add.parent_inventory = self
+            added_sensor = sensor_to_add
+        else:
+            self.logger.warning('The sensor with serial %s already exists in the inventory.',
+                    sensor_to_add.serial)
+
+        return added_sensor
+
+
+    def remove_sensor(self):
+        ''' Remove a sensor from the inventory.
+        '''
+        pass
 
 
     def add_network(self, network):
@@ -165,46 +218,70 @@ class Inventory:
 
         Parameters
         ----------
-        network : :class:`psysmon.packages.geometry.inventory.Network`
+        network : :class:`Network`
             The network to add to the database inventory.
         '''
-        available_networks = [x.name for x in self.networks]
-        if network.name not in available_networks:
+        added_network = None
+
+        if not self.get_network(name = network.name):
             self.networks.append(network)
-            network.set_parent_inventory(self)
+            network.parent_inventory = self
+            added_network = network
         else:
-            self.logger.error('The network %s already exists in the inventory.', network.name)
+            self.logger.warning('The network %s already exists in the inventory.', network.name)
+
+        return added_network
 
 
-    ## Remove a station from the inventory.
-    def remove_station(self, position):
-        pass
 
-    ## Check the inventory for changed objects.
+    def remove_network(self, name):
+        ''' Remove a network from the inventory.
+
+        Parameters
+        ----------
+        name : String
+            The name of the network to remove.
+        '''
+        removed_network = None
+
+        net_2_remove = [x for x in self.networks if x.name == name]
+
+        if len(net_2_remove) == 1:
+            self.networks.remove(net_2_remove[0])
+            removed_network = net_2_remove[0]
+        else:
+            # This shouldn't happen.
+            self.logger.error('Found more than one network with the name %s.', name)
+
+        return removed_network
+
+
     def has_changed(self):
+        ''' Check if any element in the inventory has been changed.
+        '''
+        for cur_sensor in self.sensors:
+            if cur_sensor.has_changed is True:
+                self.logger.debug('Sensor changed')
+                return True
+
         for cur_recorder in self.recorders:
-            if cur_recorder.has_changed:
+            if cur_recorder.has_changed is True:
                 self.logger.debug('Recorder changed')
                 return True
 
-            for cur_sensor in cur_recorder.sensors:
-                if cur_sensor.has_changed:
-                    self.logger.debug('Sensor changed')
-                    return True
-
-        for cur_station in self.stations:
-            if cur_station.has_changed:
-                self.logger.debug('Station changed')
+        for cur_network in self.networks:
+            if cur_network.has_changed is True:
+                self.logger.debug('Network changed.')
                 return True
 
         return False
-
 
 
     ## Refresh the inventory networks.
     def refresh_networks(self):
         for cur_network in self.networks:
             cur_network.refresh_stations(self.stations)
+
 
     ## Refresh the inventory recorders.
     def refresh_recorders(self):
@@ -223,10 +300,10 @@ class Inventory:
         except PsysmonError as e:
             raise e
 
-        self.type = 'xml'   
+        self.type = 'xml'
 
 
-    def get_recorder(self, serial = None, type = None, id = None):
+    def get_recorder(self, **kwargs):
         ''' Get a recorder from the inventory.
 
         Parameters
@@ -237,72 +314,107 @@ class Inventory:
         type : String
             The recorder type.
 
-        id : Integer
-            The database id of the recorder.
-
         Returns
         -------
         recorder : List of :class:'~Recorder'
             The recorder(s) in the inventory matching the search criteria.
         '''
-        recorder = self.recorders
+        ret_recorder = self.recorders
 
-        if serial is not None:
-            recorder = [x for x in recorder if x.serial == serial]
+        valid_keys = ['serial', 'type']
 
-        if type is not None:
-            recorder = [x for x in recorder if x.type == type]
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_recorder = [x for x in ret_recorder if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-        if id is not None:
-            recorder = [x for x in recorder if x.id == id]
-
-        return recorder
-
+        return ret_recorder
 
 
-    ## Get a sensor from the inventory.
-    def get_sensor(self, rec_serial = None, sen_serial = None, sen_type = None,
-                   rec_channel_name = None, channel_name = None, id = None,
-                   label = None):
+    def get_stream(self, **kwargs):
+        ''' Get a stream of a recorder from the inventory.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the recorder containing the component.
+
+        name : String
+            The name of the component.
+        '''
+        ret_stream = list(itertools.chain.from_iterable([x.streams for x in self.recorders]))
+
+        valid_keys = ['name', 'serial']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_stream = [x for x in ret_stream if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_stream
+
+
+    def get_sensor(self, **kwargs):
         ''' Get a sensor from the inventory.
 
         Parameters
         ----------
-        rec_serial : String
-            The serial number of the recorder.
-
-        sen_serial : String
+        serial : String
             The serial number of the sensor.
 
-        sen_type : String
-            The type of the sensor.
+        model : String
+            The model of the sensor.
 
-        rec_channel_name : String
-            The recorder channel name of the sensor.
-
-        channel_name : String
-            The assigned channel name of the sensor.
-
-        id : Integer
-            The database id of the sensor.
+        producer : String
+            The producer of the sensor.
 
         label : String
-            The label of the sensor.
+            The label of the sensor
         '''
-        if rec_serial is not None:
-            recorder_2_process = [x for x in self.recorders if x.serial == rec_serial]
-        else:
-            recorder_2_process = self.recorders
+        ret_sensor = self.sensors
 
-        sensor = []
-        for cur_recorder in recorder_2_process:
-            sensor.extend(cur_recorder.get_sensor(serial = sen_serial, type = sen_type, rec_channel_name = rec_channel_name, channel_name = channel_name, id = id, label = label))
-        return sensor
+        valid_keys = ['serial', 'model', 'producer']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_sensor = [x for x in ret_sensor if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_sensor
 
 
-    ## Get a station from the inventory.
-    def get_station(self, name = None, network = None, location = None,
-                    id = None):
+
+    def get_component(self, **kwargs):
+        ''' Get a component of a sensor from the inventory.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the sensor containing the component.
+
+        name : String
+            The name of the component.
+        '''
+        ret_component = list(itertools.chain.from_iterable([x.components for x in self.sensors]))
+
+
+        valid_keys = ['name', 'serial']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_component = [x for x in ret_component if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_component
+
+
+
+
+    def get_station(self, **kwargs):
         ''' Get a station from the inventory.
 
         Parameters
@@ -315,59 +427,91 @@ class Inventory:
 
         location : String
             The location code of the station.
-
-        id : Integer
-            The database id of the station.
         '''
-        if network is not None:
-            network_2_process = [x for x in self.networks if x.name == network]
-        else:
-            network_2_process = self.networks
+        ret_station = list(itertools.chain.from_iterable([x.stations for x in self.networks]))
 
-        station = []
-        for cur_network in network_2_process:
-            station.extend(cur_network.get_station(name = name, 
-                                                   location = location,
-                                                   id = id))
-        return station
+        valid_keys = ['name', 'network', 'location']
 
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-
-    ## Get a sensor from the inventory by id.
-    def get_sensor_by_id(self, id):
-
-        for cur_recorder in self.recorders:
-            sensor_found = filter((lambda cur_sensor: cur_sensor.id==id), cur_recorder.sensors)
-
-            if sensor_found:
-                return sensor_found[0]
-
-        return None
-
-    ## Get a sensor from the inventory by label.
-    def get_sensor_by_label(self, label):
-        for cur_recorder in self.recorders:
-            sensor_found = filter((lambda cur_sensor: cur_sensor.label==label), cur_recorder.sensors)
-
-            if sensor_found:
-                return sensor_found[0]
-
-        return None
+        return ret_station
 
 
-    ## Get a network form the inventory.
-    def get_network(self, code = None):
-        if code is None:
-            return self.networks
+    def get_channel(self, **kwargs):
+        ''' Get a chennel from the inventory.
 
-        cur_network = [x for x in self.networks if x.name == code]
-        if len(cur_network) == 1:
-            return cur_network[0]
-        elif len(cur_network) > 1:
-            self.logger.error('Found more than one network with the same code %s in the inventory.', code)
-            return cur_network
-        else:
-            return None
+        Paramters
+        ---------
+        network : String
+            The name of the network.
+
+        station : String
+            The name (code) of the station.
+
+        station : String
+            The location identifier.
+
+        name : String
+            The name of the channel.
+        '''
+
+        search_dict = {}
+        if 'network' in kwargs.keys():
+            search_dict['network'] = kwargs['network']
+            kwargs.pop('network')
+
+        if 'station' in kwargs.keys():
+            search_dict['name'] = kwargs['station']
+            kwargs.pop('station')
+
+        if 'location' in kwargs.keys():
+            search_dict['location'] = kwargs['location']
+            kwargs.pop('location')
+
+        stations = self.get_station(**search_dict)
+
+        ret_channel = list(itertools.chain.from_iterable([x.channels for x in stations]))
+
+        valid_keys = ['name',]
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+        return ret_channel
+
+
+
+
+
+
+
+    def get_network(self, **kwargs):
+        ''' Get a network from the inventory.
+
+        Parameters
+        ----------
+        name : String
+            The name of the network.
+
+        type : String
+            The type of the network.
+        '''
+        ret_network = self.networks
+
+        valid_keys = ['name', 'type']
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_network = [x for x in ret_network if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_network
 
 
     @classmethod
@@ -376,465 +520,20 @@ class Inventory:
 
 
 
-class InventoryXmlParser:
+class Recorder(object):
+    ''' A seismic data recorder.
     '''
-    Parse a pSysmon inventory XML file.
-    '''
-    def __init__(self):
 
-        # the logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
-
-        # The required attributes which have to be present in the tags.
-        self.required_attributes = {}
-        self.required_attributes['inventory'] = ('name',)
-        self.required_attributes['recorder'] = ('serial',)
-        self.required_attributes['sensor_unit'] = ('label',)
-        self.required_attributes['station'] = ('code',)
-        self.required_attributes['network'] = ('code',)
-
-        # The required tags which have to be present in the inventory.
-        self.required_tags = {}
-        self.required_tags['recorder'] = ('type', 'description')
-        self.required_tags['sensor_unit'] = ('rec_channel_name', 'channel_name', 
-                                        'sensor_serial', 'sensor_type')
-        self.required_tags['channel_parameters'] = ('start_time', 'end_time', 
-                                        'gain', 'bitweight', 'bitweight_units', 
-                                        'sensitivity', 'sensitivity_units')
-        self.required_tags['response_paz'] = ('type', 'units', 'A0_normalization_factor', 
-                                             'normalization_frequency')
-        self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
-        self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
-        self.required_tags['station'] = ('location', 'xcoord', 'ycoord', 'elevation', 
-                                        'coord_system', 'description')
-        self.required_tags['assigned_sensor_unit'] = ('sensor_unit_label', 'start_time', 'end_time')
-        self.required_tags['network'] = ('description', 'type')
-
-
-
-    def parse(self, filename):
-        from lxml.etree import parse
-
-        self.logger.debug("parsing file...\n")
-
-        inventory = Inventory('new xml inventory', type = 'xml')
-
-        # Parse the xml file passed as argument.
-        tree = parse(filename)
-        inventory_root = tree.getroot()
-
-        # Check if the root element is of type inventory.
-        if inventory_root.tag != 'inventory':
-            return
-        else:
-            self.logger.debug("found inventory root tag\n")
-
-        # Set the name of the inventory.
-        inventory.name = inventory_root.attrib['name']
-
-        # Get the recorders and stations of the inventory.
-        recorders = tree.findall('recorder')
-        networks = tree.findall('network')
-
-        # First process the recorders.
-        # For each recorder create a Recorder object, add the channels to it and 
-        # finally add it to the inventory.
-        self.process_recorders(inventory, recorders)
-
-        self.process_networks(inventory, networks)  
-
-        self.logger.debug("Success reading the XML file.")
-
-        return inventory
-
-
-    def export_xml(self, inventory, filename):
-        ''' Export an inventory to xml file.
-        '''
-        from lxml import etree
-
-        root = etree.Element('inventory', name = inventory.name)
-
-        for cur_recorder in inventory.recorders:
-            rec_element = etree.SubElement(root, 'recorder', serial = cur_recorder.serial)
-            type = etree.SubElement(rec_element, 'type')
-            type.text = cur_recorder.type
-            description = etree.SubElement(rec_element, 'description')
-            description.text = cur_recorder.description
-
-            for cur_sensor in cur_recorder.sensors:
-                sen_element = etree.SubElement(rec_element, 'sensor_unit', label = cur_sensor.label)
-                rec_channel_name = etree.SubElement(sen_element, 'rec_channel_name')
-                rec_channel_name.text = cur_sensor.rec_channel_name
-                channel_name = etree.SubElement(sen_element, 'channel_name')
-                channel_name.text = cur_sensor.channel_name
-                sensor_serial = etree.SubElement(sen_element, 'sensor_serial')
-                sensor_serial.text = cur_sensor.serial
-                sensor_type = etree.SubElement(sen_element, 'sensor_type')
-                sensor_type.text = cur_sensor.type
-
-                for cur_parameter in cur_sensor.parameters:
-                    par_element = etree.SubElement(sen_element, 'channel_parameters')
-                    start_time = etree.SubElement(par_element, 'start_time')
-                    if cur_parameter.start_time is not None:
-                        start_time.text = cur_parameter.start_time.isoformat()
-                    else:
-                        start_time.text = ''
-                    end_time = etree.SubElement(par_element, 'end_time')
-                    if cur_parameter.end_time is not None:
-                        end_time.text = cur_parameter.end_time.isoformat()
-                    else:
-                        end_time.text = ''
-                    gain = etree.SubElement(par_element, 'gain')
-                    gain.text = str(cur_parameter.gain)
-                    bitweight = etree.SubElement(par_element, 'bitweight')
-                    bitweight.text = str(cur_parameter.bitweight)
-                    bitweight_units = etree.SubElement(par_element, 'bitweight_units')
-                    bitweight_units.text = cur_parameter.bitweight_units
-                    sensitivity = etree.SubElement(par_element, 'sensitivity')
-                    sensitivity.text = str(cur_parameter.sensitivity)
-                    sensitivity_units = etree.SubElement(par_element, 'sensitivity_units')
-                    sensitivity_units.text = cur_parameter.sensitivity_units
-
-                    paz_element = etree.SubElement(par_element, 'response_paz')
-                    type = etree.SubElement(paz_element, 'type')
-                    type.text = cur_parameter.tf_type
-                    units = etree.SubElement(paz_element, 'units')
-                    units.text = cur_parameter.tf_units
-                    normalization_factor = etree.SubElement(paz_element, 'A0_normalization_factor')
-                    normalization_factor.text = str(cur_parameter.tf_normalization_factor)
-                    normalization_frequency = etree.SubElement(paz_element, 'normalization_frequency')
-                    normalization_frequency.text = str(cur_parameter.tf_normalization_frequency)
-                    for cur_zero in cur_parameter.tf_zeros:
-                        zero = etree.SubElement(paz_element, 'complex_zero')
-                        zero.text = str(cur_zero).replace('(', '').replace(')','')
-                    for cur_pole in cur_parameter.tf_poles:
-                        pole = etree.SubElement(paz_element, 'complex_pole')
-                        pole.text = str(cur_pole).replace('(', '').replace(')', '')
-
-        for cur_network in inventory.networks:
-            net_element = etree.SubElement(root, 'network', code = cur_network.name)
-            description = etree.SubElement(net_element, 'description')
-            description.text = cur_network.description
-            type = etree.SubElement(net_element, 'type')
-            type.text = cur_network.type
-
-            for cur_station in cur_network.stations:
-                stat_element = etree.SubElement(net_element, 'station', code = cur_station.name)
-                location = etree.SubElement(stat_element, 'location')
-                location.text = cur_station.location
-                xcoord = etree.SubElement(stat_element, 'xcoord')
-                xcoord.text = str(cur_station.x)
-                ycoord = etree.SubElement(stat_element, 'ycoord')
-                ycoord.text = str(cur_station.y)
-                elevation = etree.SubElement(stat_element, 'elevation')
-                elevation.text = str(cur_station.z)
-                coord_system = etree.SubElement(stat_element, 'coord_system')
-                coord_system.text = cur_station.coord_system
-                description = etree.SubElement(stat_element, 'description')
-                description.text = cur_station.description
-
-                for cur_sensor, cur_start_time, cur_end_time in cur_station.sensors:
-                    sensor_element = etree.SubElement(stat_element, 'assigned_sensor_unit', )
-                    sensor_unit_label = etree.SubElement(sensor_element, 'sensor_unit_label')
-                    sensor_unit_label.text = cur_sensor.label
-                    start_time = etree.SubElement(sensor_element, 'start_time')
-                    if cur_start_time is not None:
-                        start_time.text = cur_start_time.isoformat()
-                    else:
-                        start_time.text = ''
-
-                    end_time = etree.SubElement(sensor_element, 'end_time')
-                    if cur_end_time is not None:
-                        end_time.text = cur_end_time.isoformat()
-                    else:
-                        end_time.text = ''
-
-        # Write the xml string to a file.
-        et = etree.ElementTree(root)
-        et.write(filename, pretty_print = True, xml_declaration = True, encoding = 'UTF-8')
-        #fid = open(filename, 'w')
-        #fid.write(etree.tostring(root, pretty_print = True))
-        #fid.close()
-
-
-
-    ## Process the recorder element.
-    def process_recorders(self, inventory, recorders):
-        for cur_recorder in recorders:
-            recorder_content = self.parse_node(cur_recorder)
-
-            # Test the recorder tags for completeness.
-            missing_attrib = self.keys_complete(cur_recorder.attrib, self.required_attributes['recorder'])
-            missing_keys = self.keys_complete(recorder_content, self.required_tags['recorder']);
-            if not missing_keys and not missing_attrib:
-                self.logger.debug("recorder xml content:")
-                self.logger.debug("%s", recorder_content)
-            else:
-                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-                continue
-
-            # Create the Recorder instance.
-            rec_2_add = Recorder(serial=cur_recorder.attrib['serial'], 
-                               type = recorder_content['type'],
-                               description = recorder_content['description']) 
-
-            # Add the recorder to the inventory.
-            inventory.add_recorder(rec_2_add)
-
-            # Process the channels of the recorder.
-            self.process_channels(cur_recorder, rec_2_add)
-
-
-
-    ## Process the channel elements.      
-    def process_channels(self, recorder_node, recorder):
-        channels = recorder_node.findall('sensor_unit')
-        for cur_channel in channels:
-            channel_content = self.parse_node(cur_channel)
-
-            missing_attrib = self.keys_complete(cur_channel.attrib, self.required_attributes['sensor_unit'])
-            missing_keys = self.keys_complete(channel_content, self.required_tags['sensor_unit']);
-            if not missing_keys and not missing_attrib:
-                self.logger.debug("Adding sensor to recorder.")
-                sensor2Add = Sensor(serial=channel_content['sensor_serial'],
-                                    type=channel_content['sensor_type'],
-                                    rec_channel_name=channel_content['rec_channel_name'],
-                                    channel_name=channel_content['channel_name'],
-                                    label=cur_channel.attrib['label']) 
-                self.logger.debug("%s", sensor2Add.label)
-
-                recorder.add_sensor(sensor2Add)
-
-                # Process the channel parameters.
-                self.process_channel_parameters(cur_channel, sensor2Add)
-
-
-            else:
-                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-
-
-    ## Process the channel_parameter elements.
-    def process_channel_parameters(self, channel_node, sensor):
-        channel_parameters = channel_node.findall('channel_parameters')
-        for cur_parameter in channel_parameters:
-            content = self.parse_node(cur_parameter)
-            missing_keys = self.keys_complete(content, self.required_tags['channel_parameters'])
-            if not missing_keys:
-                self.logger.debug("Adding the channel parameters to the sensor")
-                # Convert the time strings to UTC times.
-                if content['start_time']:
-                    start_time = UTCDateTime(content['start_time'])
-                else:
-                    start_time = None
-
-
-                if content['end_time']:
-                    end_time = UTCDateTime(content['end_time'])
-                else:
-                    end_time = None
-
-                parameter2Add = SensorParameter(gain = float(content['gain']),
-                                                bitweight = float(content['bitweight']),
-                                                bitweight_units = content['bitweight_units'],
-                                                sensitivity = float(content['sensitivity']),
-                                                sensitivity_units = content['sensitivity_units'],
-                                                start_time = start_time,
-                                                end_time = end_time
-                                                 )
-                self.logger.debug('Processing PAZ of parameter %s.', parameter2Add)
-                self.process_response_paz(cur_parameter, parameter2Add)
-
-
-                sensor.add_parameter(parameter2Add)
-
-
-
-    ## Process the response_paz elements.
-    def process_response_paz(self, parameter_node, parameter):
-        tf = parameter_node.findall('response_paz')
-        for cur_tf in tf:
-            content = self.parse_node(cur_tf)
-            missing_keys = self.keys_complete(content, self.required_tags['response_paz'])
-            if not missing_keys:
-                self.logger.debug("Adding the tf to the parameter %s", parameter)
-                parameter.set_transfer_function(content['type'], 
-                                              content['units'],
-                                              float(content['A0_normalization_factor']), 
-                                              float(content['normalization_frequency']))
-
-                self.process_complex_zero(cur_tf, parameter)
-                self.process_complex_pole(cur_tf, parameter)
-
-    ## Process the complex_zero elements.
-    def process_complex_zero(self, tf_node, parameter):
-        cz = tf_node.findall('complex_zero')
-        for curCz in cz:
-            self.logger.debug('Adding zero to the parameter %s', parameter)
-            zero = curCz.text.replace(' ', '')
-            parameter.tf_add_complex_zero(complex(zero))
-
-
-    ## Process the complex_pole elements.
-    def process_complex_pole(self, tf_node, parameter):
-        cp = tf_node.findall('complex_pole')
-        for cur_cp in cp:
-            pole = cur_cp.text.replace(' ', '')
-            parameter.tf_add_complex_pole(complex(pole))
-
-
-
-    ## Process the station elements.
-    def process_stations(self, inventory, network_node, network):
-        stations = network_node.findall('station')
-        for cur_station in stations:
-            station_content = self.parse_node(cur_station)
-            missing_attrib = self.keys_complete(cur_station.attrib, self.required_attributes['station'])
-            missing_keys = self.keys_complete(station_content, self.required_tags['station'])
-
-            if not missing_keys and not missing_attrib:
-                station2Add = Station(name=cur_station.attrib['code'],
-                                      location=station_content['location'],
-                                      x=float(station_content['xcoord']),
-                                      y=float(station_content['ycoord']),
-                                      z=float(station_content['elevation']),
-                                      coord_system=station_content['coord_system'],
-                                      description=station_content['description'],
-                                      network=network.name 
-                                      )
-
-                inventory.add_station(station2Add)
-
-                self.process_sensors(inventory, cur_station, station2Add)
-
-
-            else:
-                self.logger.error("Not all required tags or attributes present.")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-
-
-    def process_sensors(self, inventory, station_node, station):
-        sensors = station_node.findall('assigned_sensor_unit')
-        for cur_sensor in sensors:
-            sensor_content = self.parse_node(cur_sensor)
-
-            missing_keys = self.keys_complete(sensor_content, self.required_tags['assigned_sensor_unit'])
-
-            if not missing_keys: 
-                # Find the sensor in the inventory.
-                #sensor2Add = self.parent_inventory.getSensor(recSerial = sensor_content['recorder_serial'],
-                #                                            senSerial = sensor_content['sensor_serial'],
-                #                                            rec_channel_name = sensor_content['rec_channel_name'])
-                self.logger.debug(sensor_content['sensor_unit_label'])
-                sensor_2_add = inventory.get_sensor(label=sensor_content['sensor_unit_label'])
-                self.logger.debug("%s", sensor_2_add)
-                if sensor_2_add:
-                    # Convert the time strings to UTC times.
-                    if sensor_content['start_time']:
-                        begin_time = UTCDateTime(sensor_content['start_time'])
-                    else:
-                        begin_time = None
-
-
-                    if sensor_content['end_time']:
-                        end_time = UTCDateTime(sensor_content['end_time'])
-                    else:
-                        end_time = None
-
-                    for cur_sensor in sensor_2_add:
-                        station.add_sensor(cur_sensor, 
-                                           begin_time,
-                                           end_time)
-                else:
-                    msg =  "Sensor to add with label '%s' not found in inventory.\nSkipping this sensor." % sensor_content['sensor_unit_label'], 
-                    warnings.warn(msg)
-            else:
-                msg = "Not all required fields presents!\nMissing keys:\n"
-                self.logger.debug("%s", msg)
-                self.logger.debug("%s", missing_keys)
-
-
-     ## Process the network element.
-    def process_networks(self, inventory, networks):
-        for cur_network in networks:
-            content = self.parse_node(cur_network)
-
-            # Test the recorder tags for completeness.
-            missing_attrib = self.keys_complete(cur_network.attrib, self.required_attributes['network'])
-            missing_keys = self.keys_complete(content, self.required_tags['network']);
-            if not missing_keys and not missing_attrib:
-                self.logger.debug("%s", content)
-            else:
-                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-                continue
-
-            # Create the Recorder instance.
-            net2Add = Network(name=cur_network.attrib['code'],
-                              description=content['description'],
-                              type=content['type'])
-
-            # Add the network to the inventory.
-            inventory.add_network(net2Add)
-
-            self.process_stations(inventory, cur_network, net2Add)
-
-
-    def get_node_text(self, xml_element, tag):
-        node = xml_element.find(tag)
-        if node is not None:
-            return node.text
-        else:
-            return None
-
-    def parse_node(self, xml_element):
-        node_content = {}
-        for cur_node in list(xml_element):
-            node_content[cur_node.tag] = cur_node.text
-
-        return node_content
-
-    def keys_complete(self, node_content, required_keys):
-        missing_keys = []
-        for cur_key in required_keys:
-            if node_content.has_key(cur_key):
-                continue
-            else:
-                missing_keys.append(cur_key)
-
-        return missing_keys
-
-
-
-
-
-## The pSysmon recorder class.
-# 
-# A recorder is more or less the representation of a digitizer.@n
-#     
-class Recorder:
-
-    ## The constructor.
-    #
-    # @param self The object pointer.
-    # @param serial The recorder serial number.
-    # @param type The recorder type.
-    # @param id The recorder database id.
     def __init__(self, serial, type, description = None, id=None, parent_inventory=None,
             author_uri = None, agency_uri = None, creation_time = None):
+        ''' Initialize the instance.
+
+        '''
         ## The recorder database id.
-        # -1 if the recorder is not yet present in the database.
         self.id = id
 
         ## The recorder serial number.
-        self.serial = serial
+        self.serial = str(serial)
 
         ## The recorder type.
         self.type = type
@@ -845,8 +544,8 @@ class Recorder:
         # Indicates if the attributes have been changed.
         self.has_changed = False
 
-        # A list of Sensor instances related to the recorder.
-        self.sensors = [];
+        # A list of Stream instances related to the recorder.
+        self.streams = [];
 
         ## The parent inventory.
         self.parent_inventory = parent_inventory
@@ -879,7 +578,7 @@ class Recorder:
     def __eq__(self, other):
         if type(self) is type(other):
             compare_attributes = ['id', 'serial', 'type', 'description', 'has_changed',
-                                  'sensors']
+                                  'streams']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     return False
@@ -890,178 +589,105 @@ class Recorder:
 
 
 
-
-    def set_parent_inventory(self, parent_inventory):
-        ''' Set the parent_inventory attribute.
-
-        Also update the parent inventory of all children.
+    def add_stream(self, cur_stream):
+        ''' Add a stream to the recorder.
 
         Parameters
         ----------
-        parent_inventory : :class:`Inventory`
-            The new parent inventory of the station.
+        stream : :class:`Stream`
+            The stream to add to the recorder.
         '''
-        self.parent_inventory = parent_inventory
-        for cur_sensor in self.sensors:
-            cur_sensor.set_parent_inventory(parent_inventory)
+        added_stream = None
+        if cur_stream not in self.streams:
+            self.streams.append(cur_stream)
+            cur_stream.parent_recorder = self
+            added_stream = cur_stream
 
-    ## Add a sensor to the recorder.
-    def add_sensor(self, sensor):
-        if sensor not in self.sensors:
-            self.sensors.append(sensor)
-            sensor.parent_recorder = self
-            sensor.set_parent_inventory(self.parent_inventory)
+        return added_stream
 
 
-    def pop_sensor(self, sensor):
-        ''' Remove a sensor from the recorder.
+    def pop_stream(self, **kwargs):
+        ''' Remove a stream from the recorder.
 
         Parameters
         ----------
-        sensor : :class:`Sensor`
-            The sensor to be removed from the recorder.
+        name : String
+            The name of the stream.
+
+        label : String
+            The label of the stream.
+
+        agency_uri : String
+            The agency_uri of the stream.
+
+        author_uri : string
+            The author_uri of the stream.
 
         Returns
         -------
-        sensor : :class:`Sensor`
-            The removed sensor instance.
+        streams_popped : List of :class:`Stream`
+            The removed streams.
         '''
-        if sensor in self.sensors:
-            sensor.parent_recorder = None
-            return self.sensors.pop(self.sensors.index(sensor))
-        else:
-            return None
+        streams_popped = []
+        streams_to_pop = self.get_stream(**kwargs)
+
+        for cur_stream in streams_to_pop:
+            cur_stream.parent_recorder = None
+            streams_popped.append(self.streams.pop(self.streams.index(cur_stream)))
+
+        return streams_popped
 
 
-    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None, label = None):
-        ''' Get a sensor from the recorder.
+    def get_stream(self, **kwargs):
+        ''' Get a stream from the recorder.
 
         Parameters
         ----------
-        serial : String
-            The serial number of the sensor.
-
-        type : String
-            The type of the sensor.
-
-        rec_channel_name : String
-            The recorder channel name of the sensor.
-
-        channel_name : String
-            The assigned channel name of the sensor.
+        name : String
+            The name of the stream.
 
         label : String
-            The label of the sensor.
+            The label of the stream.
+
+        agency_uri : String
+            The agency_uri of the stream.
+
+        author_uri : string
+            The author_uri of the stream.
         '''
-        sensor = self.sensors
+        ret_stream = self.streams
 
-        if serial is not None:
-            sensor = [x for x in sensor if x.serial == serial]
+        valid_keys = ['name', 'label', 'agency_uri', 'author_uri']
 
-        if type is not None:
-            sensor = [x for x in sensor if x.type == type]
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_stream = [x for x in ret_stream if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-        if rec_channel_name is not None:
-            sensor = [x for x in sensor if x.rec_channel_name == rec_channel_name]
-
-        if channel_name is not None:
-            sensor = [x for x in sensor if x.channel_name == channel_name]
-
-        if id is not None:
-            sensor = [x for x in sensor if x.id == id]
-
-        if label is not None:
-            sensor = [x for x in sensor if x.label == label]
-
-        return sensor
+        return ret_stream
 
 
 
-    ## Refresh the sensor list.
-    #
-    # Check the association of the stations to the network. 
-    # Remove stations that are no longer linked to the network.
-    def refreshSensors(self, sensors=None):
-        # Remove invalid stations from the network.
-        for cur_sensor in self.sensors:
-            if cur_sensor.recorder_serial != self.serial or cur_sensor.recorder_type != self.type:
-                self.sensors.remove(cur_sensor)
-                self.parent_inventory.add_sensor(cur_sensor)
+class RecorderStream(object):
+    ''' A digital stream of a data recorder.
+    '''
 
+    def __init__(self, name, label,
+                 agency_uri = None, author_uri = None,
+                 creation_time = None, parent_recorder = None):
+        ''' Initialization of the instance.
+        '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
-        #for cur_station in stations:
-        #    if cur_station.network == self.name:
-        #        self.parent_inventory.add_station(cur_station)
-        #        stations.remove(cur_station)
+        # The name of the stream.
+        self.name = name
 
-
-
-
-## The sensor class.
-#
-# 
-class Sensor:
-
-    ## The constructor.
-    #
-    #
-    def __init__(self, serial, type, 
-                 rec_channel_name, channel_name, label, id=None,
-                 author_uri = None, agency_uri = None, creation_time = None,
-                 parent_recorder=None):
-        # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
-
-        ## The database id of the sensor.
-        self.id = id
-
-        ## The sensor label specified by the user.
+        # The label of the stream.
         self.label = label
-
-        ## The serial number of the sensor.
-        self.serial = serial
-
-        ## The type of the sensor.
-        self.type = type
-
-        ## The recorder channel name.
-        # 
-        # The name of the channel as defined by the recording system. For example 
-        # Reftek 130 recorders name the individual channels as 101, 102, ... with 
-        # the first digit being the number of the stream, the last the number of 
-        # the channel. Other recording systems have different, custom channel 
-        # naming schemes. 
-        # The rec_channel_name is used to map the raw data files to a common channel 
-        # name named by the channel_name attribute.
-        self.rec_channel_name = rec_channel_name
-
-        ## The channel name.
-        # 
-        # The channel name is the actual name used by pSysmon to work with the 
-        # data of the sensor.
-        self.channel_name = channel_name
-
-
-        ## The sensor parameters.
-        # The sensor paramters are stored in a list with the start and end time 
-        # during which these paramters have been valid.
-        self.parameters = []
-
-
-        # The parent recorder.
-        self.parent_recorder = parent_recorder
-
-
-        # The inventory containing this sensor.
-        if self.parent_recorder is not None:
-            self.parent_inventory = parent_recorder.parent_inventory
-        else:
-            self.parent_inventory = None
-
-        # Indicates if the attributes have been changed.
-        self.has_changed = False
-
 
         # The author.
         self.author_uri = author_uri
@@ -1075,18 +701,469 @@ class Sensor:
         else:
             self.creation_time = UTCDateTime(creation_time);
 
+        # The parent recorder holding the stream.
+        self.parent_recorder = parent_recorder
 
-    def __getattr__(self, attrname):
-        ''' Handle call of attributes which are derived from the parent recorder.
-        '''
-        if attrname == 'recorder_id':
-            return self.parent_recorder.id
-        elif attrname == 'recorder_serial':
-            return self.parent_recorder.serial
-        elif attrname == 'recorder_type':
-            return self.parent_recorder.type
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+        # A list of :class: `TimeBox` instances holding the assigned
+        # components.
+        self.components = []
+
+        # A list of :class: `RecorderStreamParameter` instances.
+        self.parameters = []
+
+
+    @property
+    def parent_inventory(self):
+        if self.parent_recorder is not None:
+            return self.parent_recorder.parent_inventory
         else:
-            raise AttributeError(attrname)
+            return None
+
+    @property
+    def serial(self):
+        if self.parent_recorder is not None:
+            return self.parent_recorder.serial
+        else:
+            return None
+
+
+    def __setitem__(self, name, value):
+        self.__dict__[name] = value
+        self.has_changed = True
+        if self.parent_recorder is not None:
+            self.parent_recorder.has_changed =  True
+
+        # Send an inventory update event.
+        msgTopic = 'inventory.update.stream'
+        msg = (self, name, value)
+        pub.sendMessage(msgTopic, msg)
+
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['name', 'label', 'gain',
+                    'bitweight', 'bitweight_units', 'components', 'has_changed']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
+
+    def add_component(self, serial, name, start_time, end_time):
+        ''' Add a sensor component to the stream.
+
+        The component with specified serial and name is searched
+        in the parent inventory and if available, the sensor is added to
+        the stream for the specified time-span.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the sensor which holds the component.
+
+        name : String
+            The name of the component.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the sensor has been operating at the station.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the sensor has been operating at the station. "None" if the station is still running.
+        '''
+        if self.parent_inventory is None:
+            raise RuntimeError('The stream needs to be part of an inventory before a sensor can be added.')
+
+        added_component = None
+        cur_component = self.parent_inventory.get_component(serial = serial,
+                                                            name = name)
+        if not cur_component:
+            self.logger.error('The specified component (serial = %s, name = %s) was not found in the inventory.',
+                              serial,
+                              name)
+        elif len(cur_component) == 1:
+            cur_component = cur_component[0]
+
+            try:
+                start_time = UTCDateTime(start_time)
+            except:
+                start_time = None
+
+            try:
+                end_time = UTCDateTime(end_time)
+            except:
+                end_time = None
+
+            if self.get_component(start_time = start_time,
+                                  end_time = end_time,
+                                  serial = serial,
+                                  name = name):
+                # The sensor is already assigned to the station for this timespan.
+                if end_time is not None:
+                    end_string = end_time.isoformat
+                else:
+                    end_string = 'running'
+
+                self.logger.error('The component (serial: %s,  name: %s) is already deployed during the specified timespan from %s to %s.', serial, name, start_time.isoformat, end_string)
+            else:
+                self.components.append(TimeBox(item = cur_component,
+                                               start_time = start_time,
+                                               end_time = end_time))
+                self.has_changed = True
+                added_component = cur_component
+        else:
+            self.logger.error("Got more than one component with serial=%s and name = %s. Only one component with a serial-component combination should be in the inventory. Don't know how to proceed.", 
+                               serial, name)
+
+        return added_component
+
+
+    def remove_component(self, component):
+        ''' Remove a component from the stream.
+
+        '''
+        # TODO: Implement this method.
+        pass
+
+
+    def get_component(self, start_time = None, end_time = None, **kwargs):
+        ''' Get a sensor from the stream.
+
+        Parameters
+        ----------
+        name : String
+            The name of the component.
+
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The start time of the timespan to return.
+
+        end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The end time of the timespan to return.
+
+        '''
+        ret_component = self.components
+
+        valid_keys = ['serial', 'name']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_component = [x for x in ret_component if getattr(x.item, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        if start_time is not None:
+            ret_component = [x for x in ret_component if (x.end_time is None) or (x.end_time > start_time)]
+
+        if end_time is not None:
+            ret_component = [x for x in ret_component if x.start_time < end_time]
+
+        return ret_component
+
+
+    def add_parameter(self, parameter_to_add):
+        ''' Add a paramter to the recorder stream.
+
+        Parameters
+        ----------
+        parameter_to_add : :class:`RecorderStreamParameter`
+            The recorder stream parameter to add to the stream.
+        '''
+        added_parameter = None
+        if not self.get_parameter(start_time = parameter_to_add.start_time,
+                                  end_time = parameter_to_add.end_time):
+            self.parameters.append(parameter_to_add)
+            parameter_to_add.parent_recorder_stream = self
+            added_parameter = parameter_to_add
+        else:
+            self.logger.error('A parameter already exists for the given timespan.')
+
+        return added_parameter
+
+
+    def get_parameter(self, start_time = None, end_time = None):
+        ''' Get parameter for a given timespan.
+
+        '''
+        ret_parameter = self.parameters
+
+        if start_time is not None:
+            start_time = UTCDateTime(start_time)
+            ret_parameter = [x for x in ret_parameter if x.end_time is None or x.end_time > start_time]
+
+        if end_time is not None:
+            end_time = UTCDateTime(end_time)
+            ret_parameter = [x for x in ret_parameter if x.start_time is None or x.start_time < end_time]
+
+        return ret_parameter
+
+
+
+class RecorderStreamParameter(object):
+    ''' Parameters of a recorder stream.
+    '''
+
+    def __init__(self, start_time, end_time = None,
+                 gain = None, bitweight = None,
+                 agency_uri = None, author_uri = None, creation_time = None,
+                 parent_recorder_stream = None):
+        ''' Initialize the instance.
+        '''
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+
+        # The gain of the stream.
+        try:
+            self.gain = float(gain)
+        except:
+            self.gain = None
+
+        # The bitweight of the stream.
+        try:
+            self.bitweight = float(bitweight)
+        except:
+            self.bitweight = None
+
+        # The start time from which on the parameters were valid.
+        try:
+            self.start_time = UTCDateTime(start_time)
+        except:
+            self.start_time = None
+
+        # The end time until which the parameters were valid.
+        try:
+            self.end_time = UTCDateTime(end_time)
+        except:
+            self.end_time = None
+
+        # The recorder stream for which the parameters were set.
+        self.parent_recorder_stream = parent_recorder_stream
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+
+    @property
+    def parent_inventory(self):
+        if self.parent_recorder_stream is not None:
+            return self.parent_recorder_stream.parent_inventory
+        else:
+            return None
+
+
+
+
+class Sensor(object):
+    ''' A seismic sensor.
+
+    '''
+
+    def __init__(self, serial, model = None, producer = None, description = None,
+                 author_uri = None, agency_uri = None,
+                 creation_time = None, parent_inventory = None):
+        ''' Initialize the instance
+
+        '''
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+
+        # The serial number of the sensor.
+        self.serial = str(serial)
+
+        # The model name or number.
+        self.model = model
+
+        # The producer of the sensor.
+        self.producer = producer
+
+        # A description of the sensor.
+        self.description = description
+
+        # The components of the sensor.
+        self.components = []
+
+        # The inventory containing this sensor.
+        self.parent_inventory = parent_inventory
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+
+    def __setitem__(self, name, value):
+        self.__dict__[name] = value
+        self.has_changed = True
+
+
+    def add_component(self, component_to_add):
+        ''' Add a component to the sensor.
+
+        Parameters
+        ----------
+        component_to_add : :class:`SensorComponent`
+            The component to add to the sensor.
+        '''
+        added_component = None
+        if component_to_add not in self.components:
+            self.components.append(component_to_add)
+            component_to_add.parent_sensor = self
+            added_component = component_to_add
+
+        return added_component
+
+
+    def get_component(self, **kwargs):
+        ''' Get a component from the sensor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the component.
+
+        agency_uri : String
+            The agency_uri of the component.
+
+        author_uri : string
+            The author_uri of the component.
+        '''
+        ret_component = self.components
+
+        valid_keys = ['name', 'agency_uri', 'author_uri']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_component = [x for x in ret_component if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_component
+
+
+    def pop_component(self, **kwargs):
+        ''' Remove a component from the sensor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the component.
+
+        agency_uri : String
+            The agency_uri of the component.
+
+        author_uri : string
+            The author_uri of the component.
+
+        Returns
+        -------
+        components_popped : List of :class:`SensorComponent`
+            The removed components.
+        '''
+        components_popped = []
+        components_to_pop = self.get_component(**kwargs)
+
+        for cur_component in components_to_pop:
+            cur_component.parent_recorder = None
+            components_popped.append(self.components.pop(self.components.index(cur_component)))
+
+        return components_popped
+
+
+
+class SensorComponent(object):
+    ''' A component of a seismic sensor.
+    '''
+
+    def __init__(self, name, description = None,
+                 input_unit = None, output_unit = None, prop_unit = None,
+                 author_uri = None, agency_uri = None, creation_time = None,
+                 parent_sensor = None):
+        ''' Initialize the instance.
+
+        '''
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+
+        # The name of the component.
+        self.name = name
+
+        # The description.
+        self.description = description
+
+        # The unit of the parameter measured by the sensor (e.g. m).
+        self.input_unit = input_unit
+
+        # The unit to which the input unit is transformed by the sensor (e.g.
+        # m/s).
+        self.output_unit = output_unit
+
+        # The unit of the measureable signal which is proportional to the
+        # output unit (e.g. V).
+        self.prop_unit = prop_unit
+
+        ## The component parameters.
+        self.parameters = []
+
+        # The inventory containing this sensor.
+        self.parent_sensor = parent_sensor
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+    @property
+    def parent_inventory(self):
+        if self.parent_sensor is not None:
+            return self.parent_sensor.parent_inventory
+        else:
+            return None
+
+    @property
+    def serial(self):
+        if self.parent_sensor is not None:
+            return self.parent_sensor.serial
+        else:
+            return None
 
 
     def __setitem__(self, name, value):
@@ -1102,8 +1179,8 @@ class Sensor:
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['id', 'label', 'serial', 'type', 'rec_channel_name',
-                                  'channel_name', 'has_changed', 'parameters']
+            compare_attributes = ['name', 'description',
+                                  'has_changed', 'parameters']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     return False
@@ -1113,28 +1190,25 @@ class Sensor:
             return False
 
 
-    def set_parent_inventory(self, parent_inventory):
-        ''' Set the parent_inventory attribute.
-
-        Parameters
-        ----------
-        parent_inventory : :class:`Inventory`
-            The new parent inventory of the station.
-        '''
-        self.parent_inventory = parent_inventory
-
-
-    def add_parameter(self, parameter):
+    def add_parameter(self, parameter_to_add):
         ''' Add a sensor paramter instance to the sensor.
 
         Parameters
         ----------
-        parameter : :class:`SensorParameter`
+        parameter_to_add : :class:`SensorParameter`
             The sensor parameter instance to be added.
         '''
-        self.logger.debug('Adding parameter.')
-        if parameter not in self.parameters:
-            self.parameters.append(parameter)
+        added_parameter = None
+        if not self.get_parameter(start_time = parameter_to_add.start_time,
+                                  end_time = parameter_to_add.end_time):
+            self.parameters.append(parameter_to_add)
+            parameter_to_add.parent_component = self
+            added_parameter = parameter_to_add
+        else:
+            self.logger.error('A parameter already exists for the given timespan.')
+
+        return added_parameter
+
 
 
     def get_parameter(self, start_time = None, end_time = None):
@@ -1158,9 +1232,6 @@ class Sensor:
 
 
 
-    ## Change the sensor deployment start time.
-    #
-    # 
     def change_parameter_start_time(self, position, start_time):
         msg = ''    
         cur_row = self.parameters[position]
@@ -1183,9 +1254,6 @@ class Sensor:
         return (start_time, msg)
 
 
-    ## Change the sensor deployment start time.
-    #
-    # 
     def change_parameter_end_time(self, position, end_time):
         msg = ''    
         cur_row = self.parameters[position]
@@ -1223,35 +1291,26 @@ class Sensor:
 
 ## The sensor parameter class.
 #
-class SensorParameter:
+class SensorComponentParameter(object):
     ## The constructor.
     #
     # @param self The object pointer.
-    def __init__(self, gain, bitweight, bitweight_units, sensitivity,
-                 sensitivity_units, start_time, end_time, tf_type=None,
+    def __init__(self, sensitivity,
+                 start_time, end_time, tf_type=None,
                  tf_units=None, tf_normalization_factor=None,
                  tf_normalization_frequency=None, tf_poles = None, tf_zeros = None,
-                 id=None, parent_sensor = None,
-                 author_uri = None, agency_uri = None, creation_time = None):
+                 parent_component = None, author_uri = None,
+                 agency_uri = None, creation_time = None):
 
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
 
-        ## The sensor gain.
-        self.gain = gain
-
-        ## The sensor bitweight.
-        self.bitweight = bitweight
-
-        ## The units of the bitweight.
-        self.bitweight_units = bitweight_units
-
         ## The sensor sensitivity.
-        self.sensitivity = sensitivity
-
-        ## The units of the sensitivity.
-        self.sensitivity_units = sensitivity_units
+        try:
+            self.sensitivity = float(sensitivity)
+        except:
+            self.sensitivity = None
 
         ## The transfer function type.
         # - displacement
@@ -1263,13 +1322,16 @@ class SensorParameter:
         self.tf_units = tf_units
 
         ## The transfer function normalization factor.
-        self.tf_normalization_factor = tf_normalization_factor
+        try:
+            self.tf_normalization_factor = float(tf_normalization_factor)
+        except:
+            self.tf_normalization_factor = None
 
         ## The transfer function normalization factor frequency.
-        self.tf_normalization_frequency = tf_normalization_frequency
-
-        ## The id of the sensor paramteer instance.
-        self.id = id 
+        try:
+            self.tf_normalization_frequency = float(tf_normalization_frequency)
+        except:
+            self.tf_normalization_frequency = None
 
         ## The transfer function as PAZ.
         if tf_poles is None:
@@ -1282,19 +1344,19 @@ class SensorParameter:
         self.tf_zeros = tf_zeros
 
         # The start_time from which the parameters are valid.
-        self.start_time = start_time
+        try:
+            self.start_time = UTCDateTime(start_time)
+        except:
+            self.start_time = None
 
         # The end time up to which the parameters are valid.
-        self.end_time = end_time
+        try:
+            self.end_time = UTCDateTime(end_time)
+        except:
+            self.end_time = None
 
         # The parent sensor holding the parameter.
-        self.parent_sensor = parent_sensor
-
-        # The inventory in which the parameter is contained.
-        if self.parent_sensor is not None:
-            self.parent_inventory = self.parent_sensor.parent_inventory
-        else:
-            self.parent_inventory = None
+        self.parent_component = parent_component
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
@@ -1311,22 +1373,58 @@ class SensorParameter:
         else:
             self.creation_time = UTCDateTime(creation_time);
 
-
-    def __getattr__(self, attrname):
-        ''' Handle call of attributes which are derived from the parent recorder.
-        '''
-        if attrname == 'sensor_id':
-            if self.parent_sensor is not None:
-                return self.parent_sensor.id
-            else:
-                return None
+    @property
+    def parent_inventory(self):
+        if self.parent_component is not None:
+            return self.parent_component.parent_inventory
         else:
-            raise AttributeError(attrname)
+            return None
+
+
+    @property
+    def start_time_string(self):
+        if self.start_time is None:
+            return 'bing bang'
+        else:
+            return self.start_time.isoformat()
+
+
+    @property
+    def end_time_string(self):
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
+
+
+    @property
+    def zeros_string(self):
+        zero_str = ''
+        if self.tf_zeros:
+            for cur_zero in self.tf_zeros:
+                if zero_str == '':
+                    zero_str = cur_zero.__str__()
+                else:
+                    zero_str = zero_str + ',' + cur_zero.__str__()
+
+        return zero_str
+
+    @property
+    def poles_string(self):
+        pole_str = ''
+        if self.tf_poles:
+            for cur_pole in self.tf_poles:
+                if pole_str == '':
+                    pole_str = cur_pole.__str__()
+                else:
+                    pole_str = pole_str + ',' + cur_pole.__str__()
+
+        return pole_str
 
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['gain', 'bitweight', 'bitweight_units', 'sensitivity', 'tf_type',
+            compare_attributes = ['sensitivity', 'tf_type',
                                   'tf_units', 'tf_normalization_factor', 'tf_normalization_frequency',
                                   'id', 'tf_poles', 'tf_zeros', 'start_time', 'end_time',
                                   'has_changed']
@@ -1369,13 +1467,13 @@ class SensorParameter:
 
 ## The station class.
 #
-class Station:
+class Station(object):
 
     ## The constructor.
     #
     # @param self The object pointer.
     def __init__(self, name, location, x, y, z,
-            parent_network=None, coord_system=None, description=None, network=None, id=None,
+            parent_network=None, coord_system=None, description=None, id=None,
             author_uri = None, agency_uri = None, creation_time = None):
 
         # The logger instance.
@@ -1389,7 +1487,7 @@ class Station:
         self.name = name
 
         ## The station location.
-        self.location = location
+        self.location = str(location)
 
         ## The station description.
         #
@@ -1429,26 +1527,11 @@ class Station:
         # See http://www.epsg-registry.org/ to find your EPSG code.
         self.coord_system = coord_system
 
-        ## The station's network.
-        #
-        self.network = network
-
-        ## A list of sensors assigned to the station.
-        # 
-        # Each sensor knows during which time it has been operating at the sensor.
-        # 1. column: sensor object
-        # 2. column: start time
-        # 3. column: end time
-        self.sensors = []
+        # A list of tuples of channels assigned to the station.
+        self.channels = []
 
         # The network containing this station.
         self.parent_network = parent_network
-
-        # The inventory containing this station.
-        self.parent_inventory = None
-
-        if self.parent_network is not None:
-            self.parent_inventory = self.parent_network.parent_inventory
 
         # Indicates if the attributes have been changed.
         self.has_changed = False
@@ -1465,6 +1548,27 @@ class Station:
         else:
             self.creation_time = UTCDateTime(creation_time);
 
+    @property
+    def network(self):
+        if self.parent_network is not None:
+            return self.parent_network.name
+        else:
+            return None
+
+    @property
+    def snl(self):
+        return (self.name, self.network, self.location)
+
+    @property
+    def snl_string(self):
+        return str.join(':', self.get_snl())
+
+    @property
+    def parent_inventory(self):
+        if self.parent_network is not None:
+            return self.parent_network.parent_inventory
+        else:
+            return None
 
 
     def __setitem__(self, name, value):
@@ -1476,7 +1580,7 @@ class Station:
     def __eq__(self, other):
         if type(self) is type(other):
             compare_attributes = ['id', 'name', 'location', 'description', 'x', 'y', 'z',
-                                  'coord_system', 'sensors', 'has_changed']
+                                  'coord_system', 'channels', 'has_changed']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     self.logger.error('Attribute %s not matching %s != %s.', cur_attribute, str(getattr(self, cur_attribute)), str(getattr(other, cur_attribute)))
@@ -1495,30 +1599,6 @@ class Station:
                 scnl.append(cur_scnl)
 
         return scnl
-
-
-    def get_snl(self):
-        return (self.name, self.network, self.location)
-
-
-    def get_snl_string(self):
-        return str.join(':', self.get_snl())
-
-
-
-    def set_parent_inventory(self, parent_inventory):
-        ''' Set the parent_inventory attribute.
-
-        Also update the parent inventory of all children.
-
-        Parameters
-        ----------
-        parent_inventory : :class:`Inventory`
-            The new parent inventory of the station.
-        '''
-        self.parent_inventory = parent_inventory
-        for cur_sensor, begin_time, end_time in self.sensors:
-            cur_sensor.set_parent_inventory(self.parent_inventory) 
 
 
     def get_lon_lat(self):
@@ -1541,209 +1621,244 @@ class Station:
         return (lon, lat)
 
 
-    def add_sensor(self, sensor, start_time, end_time):
-        ''' Add a sensor to the station.
+    def add_channel(self, cur_channel):
+        ''' Add a channel to the station
 
         Parameters
         ----------
-        sensor : :class:`Sensor`
-            The :class:`Sensor` instance to be added to the station.
-
-        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
-            The time from which on the sensor has been operating at the station.
-
-        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
-            The time up to which the sensor has been operating at the station. "None" if the station is still running.
+        cur_channel : :class:`Channel`
+            The channel to add to the station.
         '''
-        if not isinstance(start_time, UTCDateTime):
-            if start_time is not None:
-                start_time = UTCDateTime(start_time)
+        added_channel = None
+        if not self.get_channel(name = cur_channel.name):
+            cur_channel.parent_station = self
+            self.channels.append(cur_channel)
+            self.has_changed = True
+            added_channel = cur_channel
+
+        return added_channel
+
+
+
+    def get_channel(self, **kwargs):
+        ''' Get a channel from the stream.
+
+        Parameters
+        ----------
+        name : String
+            The name of the channel.
+        '''
+        ret_channel = self.channels
+
+        valid_keys = ['name']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
             else:
-                start_time = None
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-        if not isinstance(end_time, UTCDateTime):
-            if end_time is not None:
-                end_time = UTCDateTime(end_time)
-            else:
-                end_time = None
-
-        self.sensors.append((sensor, start_time, end_time))
-        self.has_changed = True
-        #sensor.set_parent_inventory(self.parent_inventory)
-
-
-    def remove_sensor(self, sensor):
-        ''' Remove a sensor from the station.
-
-        Parameters
-        ----------
-        sensor : tuple (:class:`Sensor`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
-            The sensor to be removed from the station.
-        '''
-        self.logger.debug("Removing sensor ")
-        self.logger.debug("%s", sensor)
-
-        #if sensor not in self.sensors:
-        
-        # Remove the sensor from the sensors list.
-        #self.sensors.pop(self.sensors.index(sensor))
-
-
-    def get_sensor(self, serial = None, type = None, rec_channel_name = None, channel_name = None, id = None, label = None, start_time = None, end_time = None):
-        ''' Get a sensor from the recorder.
-
-        Parameters
-        ----------
-        serial : String
-            The serial number of the sensor.
-
-        type : String
-            The type of the sensor.
-
-        rec_channel_name : String
-            The recorder channel name of the sensor.
-
-        channel_name : String
-            The assigned channel name of the sensor.
-
-        label : String
-            The label of the sensor.
-        '''
-        sensor = self.sensors
-
-        if serial is not None:
-            sensor = [x for x in sensor if x[0].serial == serial]
-
-        if type is not None:
-            sensor = [x for x in sensor if x[0].type == type]
-
-        if rec_channel_name is not None:
-            sensor = [x for x in sensor if x[0].rec_channel_name == rec_channel_name]
-
-        if channel_name is not None:
-            sensor = [x for x in sensor if x[0].channel_name == channel_name]
-
-        if id is not None:
-            sensor = [x for x in sensor if x[0].id == id]
-
-        if label is not None:
-            sensor = [x for x in sensor if x[0].label == label]
-
-        if start_time is not None:
-            start_time = UTCDateTime(start_time)
-            sensor = [x for x in sensor if x[2] is None or x[2] > start_time]
-
-        if end_time is not None:
-            end_time = UTCDateTime(end_time)
-            sensor = [x for x in sensor if x[1] is None or x[1] < end_time]
-
-        return sensor
-
-
-
-    def change_sensor_start_time(self, sensor, start_time):
-        ''' Change the sensor deployment start time
-
-        Parameters
-        ----------
-        sensor : :class:`Sensor`
-            The sensor which should be changed.
-
-        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime or String
-            A :class:`~obspy.core.utcdatetime.UTCDateTime` instance or a data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
-        '''
-        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
-
-        if sensor_2_change:
-            sensor_2_change = sensor_2_change[0]
-            position = sensor_2_change[3]
-        else:
-            msg = 'The sensor can''t be found in the station.'
-            return (None, msg)
-
-        msg = ''    
-
-
-        if not isinstance(start_time, UTCDateTime):
-            try:
-                start_time = UTCDateTime(start_time)
-            except:
-                start_time = sensor_2_change[2]
-                msg = "The entered value is not a valid time."
-
-
-        if not sensor_2_change[2] or (sensor_2_change[2] and start_time < sensor_2_change[2]):
-            self.sensors[position] = (sensor_2_change[0], start_time, sensor_2_change[2])
-            # Send an inventory update event.
-
-        else:
-            start_time = sensor_2_change[1]
-            msg = "The end-time has to be larger than the begin time."
-
-        return (start_time, msg)
-
-
-
-    def change_sensor_end_time(self, sensor, end_time):
-        ''' Change the sensor deployment end time
-
-        Parameters
-        ----------
-        sensor : :class:`Sensor`
-            The sensor which should be changed.
-
-        end_time : String
-            A data-time string which can be used by :class:`~obspy.core.utcdatetime.UTCDateTime`.
-        '''
-        sensor_2_change = [(s, b, e, k) for k, (s, b, e) in enumerate(self.sensors) if s == sensor]
-
-        if sensor_2_change:
-            sensor_2_change = sensor_2_change[0]
-            position = sensor_2_change[3]
-        else:
-            msg = 'The sensor can''t be found in the station.'
-            return (None, msg)
-
-        msg = ''    
-
-        if end_time == 'running':
-            self.sensors[position] = (sensor_2_change[0], sensor_2_change[1], None)
-            return(end_time, msg)
-
-        if not isinstance(end_time, UTCDateTime):
-            try:
-                end_time = UTCDateTime(end_time)
-            except:
-                end_time = sensor_2_change[2]
-                msg = "The entered value is not a valid time."
-
-
-        if not sensor_2_change[1] or end_time > sensor_2_change[1]:
-            self.sensors[position] = (sensor_2_change[0], sensor_2_change[1], end_time)
-        else:
-            end_time = sensor_2_change[2]
-            msg = "The end-time has to be larger than the begin time."
-
-        return (end_time, msg)
+        return ret_channel
 
 
     def get_unique_channel_names(self):
         channel_names = []
 
-        for cur_sensor, start, end in self.sensors:
-            if cur_sensor.channel_name not in channel_names:
-                channel_names.append(cur_sensor.channel_name)
+        for cur_channel, start, end in self.channels:
+            if cur_channel.name not in channel_names:
+                channel_names.append(cur_channel.name)
 
         return channel_names
 
 
 
+class Channel(object):
+    ''' A channel of a station.
+    '''
+    def __init__(self, name, description = None, id = None,
+            agency_uri = None, author_uri = None, creation_time = None,
+            parent_station = None):
+        ''' Initialize the instance
 
-## The network class.
-class Network:
+        Parameters
+        ----------
+        name : String
+            The name of the channel.
+
+        streams : List of tuples.
+            The streams assigned to the channel.
+
+        '''
+        # The logger instance.
+        logger_name = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+
+        # The database id of the channel.
+        self.id = id
+
+        # The name of the channel.
+        self.name = name
+
+        # The description of the channel.
+        self.description = description
+
+        # The streams assigned to the channel.
+        self.streams = []
+
+        # The station holding the channel.
+        self.parent_station = parent_station
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+    @property
+    def parent_inventory(self):
+        if self.parent_station is not None:
+            return self.parent_station.parent_inventory
+        else:
+            return None
+
+
+    def add_stream(self, serial, name, start_time, end_time):
+        ''' Add a stream to the channel.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the recorder containing the stream.
+
+        name : String
+            The name of the stream.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the stream has been operating at the channel.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the stream has been operating at the channel. "None" if the channel is still running.
+        '''
+        if self.parent_inventory is None:
+            raise RuntimeError('The stream needs to be part of an inventory before a sensor can be added.')
+
+        added_stream = None
+        cur_stream = self.parent_inventory.get_stream(serial = serial,
+                                                      name = name)
+
+        if not cur_stream:
+            self.logger.error('The specified stream (serial = %s, name = %s) was not found in the inventory.',
+                              serial,
+                              name)
+        elif len(cur_stream) == 1:
+            cur_stream = cur_stream[0]
+
+            try:
+                start_time = UTCDateTime(start_time)
+            except:
+                start_time = None
+
+            try:
+                end_time = UTCDateTime(end_time)
+            except:
+                end_time = None
+
+            if self.get_stream(serial = serial,
+                               name = name,
+                               start_time = start_time,
+                               end_time = end_time):
+                # The stream is already assigned to the station for this
+                # time-span.
+                if end_time is not None:
+                    end_string = end_time.isoformat
+                else:
+                    end_string = 'running'
+
+                self.logger.error('The stream (serial: %s,  name: %s) is already deployed during the specified timespan from %s to %s.', serial, name, start_time.isoformat, end_string)
+            else:
+                self.streams.append(TimeBox(item = cur_stream,
+                                            start_time = start_time,
+                                            end_time = end_time))
+                self.has_changed = True
+                added_stream = cur_stream
+
+        return added_stream
+
+
+    def remove_stream(self, cur_stream):
+        ''' Remove a stream from the channel.
+
+        Parameters
+        ----------
+        cur_stream : tuple (:class:`Stream`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
+            The stream to be removed from the channel.
+        '''
+        self.logger.debug("Removing stream ")
+        self.logger.debug("%s", cur_stream)
+
+        #TODO: Implement this method.
+
+        #if sensor not in self.sensors:
+
+        # Remove the stream from the stream list.
+        #self.streams.pop(self.stream.index(cur_stream))
+
+
+    def get_stream(self, start_time = None, end_time = None, **kwargs):
+        ''' Get a stream from the recorder.
+
+        Parameters
+        ----------
+        serial : String
+            The serial number of the parent recorder.
+
+        name : String
+            The name of the stream.
+
+        label : String
+            The label of the stream.
+        '''
+        ret_stream = self.streams
+
+        valid_keys = ['serial', 'name']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_stream = [x for x in ret_stream if getattr(x.item, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        if start_time is not None:
+            ret_stream = [x for x in ret_stream if (x.end_time is None) or (x.end_time > start_time)]
+
+        if end_time is not None:
+            ret_stream = [x for x in ret_stream if x.start_time < end_time]
+
+        return ret_stream
+
+
+    # TODO: Implement the methods to change the stream start- and end-time.
+    # This will be analog to the sensors in the streams. It would be great to
+    # have these methods in the TimeBox class.
+    # Keep in mind, that in the DbInventory, the ORM mapper values of the 
+    # time-spans have to be changed as well.
+
+
+class Network(object):
 
     def __init__(self, name, description=None, type=None, author_uri = None,
             agency_uri = None, creation_time = None, parent_inventory=None):
+        ''' Initialize the instance.
+        '''
         # The logger instance.
         logger_name = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(logger_name)
@@ -1784,12 +1899,6 @@ class Network:
         '''
         self.__dict__[attr] = value
 
-        if attr == 'name' and 'stations' in self.__dict__:
-            for cur_station in self.stations:
-                # Set the station network value using the key to trigger the
-                # change notification of the station.
-                cur_station.network = value
-
         self.__dict__['has_changed'] = True
 
 
@@ -1805,22 +1914,6 @@ class Network:
             return False
 
 
-    def set_parent_inventory(self, parent_inventory):
-        ''' Set the parent_inventory attribute.
-
-        Also update the parent inventory of all children.
-
-        Parameters
-        ----------
-        parent_inventory : :class:`Inventory`
-            The new parent inventory of the station.
-        '''
-        self.parent_inventory = parent_inventory
-
-        for cur_station in self.stations:
-            cur_station.set_parent_inventory(self.parent_inventory)
-
-
     def add_station(self, station):
         ''' Add a station to the network.
 
@@ -1831,16 +1924,45 @@ class Network:
         '''
         available_sl = [(x.name, x.location) for x in self.stations]
         if((station.name, station.location) not in available_sl):
-            station.network = self.name
+            station.parent_network = self
             self.stations.append(station)
-            station.set_parent_inventory(self.parent_inventory)
             return station
         else:
             self.logger.error("The station with SL code %s is already in the network.", x.name + ':' + x.location)
             return None
 
 
-    def get_station(self, name = None, location = None, id = None):
+    def remove_station(self, name, location):
+        ''' Remove a station from the network.
+
+        Parameters
+        ----------
+        name : String
+            The name of the station to remove.
+
+        location : String
+            The location of the station to remove.
+        '''
+        station_2_remove = [x for x in self.stations if x.name == name and x.location == location]
+
+        removed_station = None
+        if len(station_2_remove) == 0:
+            removed_station = None
+        elif len(station_2_remove) == 1:
+            station_2_remove = station_2_remove[0]
+            self.stations.remove(station_2_remove)
+            station_2_remove.network = None
+            station_2_remove.parent_network = None
+            removed_station = station_2_remove
+        else:
+            # This shouldn't happen.
+            self.logger.error('Found more than one network with the name %s.', name)
+            return None
+
+        return removed_station
+
+
+    def get_station(self, **kwargs):
         ''' Get a station from the network.
 
         Parameters
@@ -1853,18 +1975,74 @@ class Network:
 
         id : Integer
             The database id of the station.
+
+        snl : Tuple (station, network, location)
+            The SNL tuple of the station.
+
+        snl_string : String
+            The SNL string in the format 'station:network:location'.
         '''
-        station = self.stations
+        ret_station = self.stations
 
-        if name is not None:
-            station = [x for x in station if x.name == name]
+        valid_keys = ['name', 'network', 'location', 'id', 'snl', 'snl_string']
 
-        if location is not None:
-            station = [x for x in station if x.location == location]
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
-        if id is not None:
-            station = [x for x in station if x.id == id]
+        return ret_station
 
-        return station
 
+
+
+class TimeBox(object):
+    ''' A container to hold an instance with an assigned time-span.
+
+    '''
+
+    def __init__(self, item, start_time, end_time = None):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+
+        '''
+        # The item contained in the box.
+        self.item = item
+
+        # The start_time of the time-span.
+        self.start_time = start_time
+
+        # The end_time of the time-span.
+        self.end_time = end_time
+
+
+    def __eq__(self, other):
+        is_equal = False
+        try:
+            if self.item is other.item:
+                if self.start_time == other.start_time:
+                    if self.end_time == other.end_time:
+                        is_equal = True
+        except:
+            pass
+
+        return is_equal
+
+
+    @property
+    def start_time_string(self):
+        if self.start_time is None:
+            return 'bing bang'
+        else:
+            return self.start_time.isoformat()
+
+    @property
+    def end_time_string(self):
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
 

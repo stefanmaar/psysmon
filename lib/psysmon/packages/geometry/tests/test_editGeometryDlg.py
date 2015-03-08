@@ -27,6 +27,7 @@ from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_empty_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
+from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
 
 
@@ -42,13 +43,22 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         cls.logger.setLevel('DEBUG')
         cls.logger.addHandler(psysmon.getLoggerHandler())
 
+        drop_database_tables(db_dialect = 'mysql',
+                             db_driver = None,
+                             db_host = 'localhost',
+                             db_name = 'psysmon_unit_test',
+                             db_user = 'unit_test',
+                             db_pwd = 'test',
+                             project_name = 'unit_test')
+
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
-        print "In setUpClass...\n"
+        cls.project.dbEngine.echo = False
 
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
         print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
         print "removing temporary file structure....\n"
@@ -71,15 +81,13 @@ class EditGeometryDlgTestCase(unittest.TestCase):
 
 
     def tearDown(self):
+        self.psybase.project_server.unregister_data()
         print "\n\nEs war sehr schoen - auf Wiederseh'n.\n"
 
     def testDlg(self):
         self.node.execute()
         self.app.MainLoop()
 
-#def suite():
-#    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
-#    return suite
 
 def suite():
     # return unittest.TestSuite(map(EditGeometryDlgTestCase, tests))

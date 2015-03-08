@@ -26,8 +26,7 @@ description = "The geometry package."
 website = "http://www.stefanmertl.com"
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['applyGeometry',
-                           'editGeometry']
+collection_node_modules = ['editGeometry',]
 
 
 def databaseFactory(base):
@@ -53,7 +52,7 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        sensors = relationship('GeomSensor', 
+        streams = relationship('GeomRecorderStream',
                                cascade = 'all',
                                backref = 'parent')
 
@@ -69,85 +68,195 @@ def databaseFactory(base):
         def __repr__(self):
             return "Recorder\nid: %d\nserial: %s\ntype: %s\n" % (self.id, self.serial, self.type)
 
-
-
     tables.append(GeomRecorder)
 
 
-    # Create the geom_sensor table mapper class.
-    class GeomSensor(base):
-        __tablename__ = 'geom_sensor'
+
+    class GeomRecorderStream(base):
+        __tablename__ = 'geom_rec_stream'
         __table_args__ = (
-                          UniqueConstraint('recorder_id', 'serial', 'type', 'rec_channel_name', 'channel_name'),
+                          UniqueConstraint('recorder_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        recorder_id = Column(Integer, 
-                             ForeignKey('geom_recorder.id', 
+        recorder_id = Column(Integer,
+                             ForeignKey('geom_recorder.id',
                                         onupdate='cascade',
-                                        ondelete='set null'), 
+                                        ondelete='set null'),
                              nullable=True)
-        label = Column(String(255), nullable=False)
-        serial = Column(String(45), nullable=False)
-        type = Column(String(255), nullable=False)
-        rec_channel_name = Column(String(10), nullable=False)
-        channel_name = Column(String(10), nullable=False)
+        name = Column(String(20), nullable = False)
+        label = Column(String(20), nullable = False)
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        parameters = relationship('GeomSensorParam', 
-                                  cascade = 'all',
+        components = relationship('GeomComponentToStream',
+                                   backref = 'parent')
+        parameters = relationship('GeomRecorderStreamParameter',
                                   backref = 'parent')
 
-
-        def __init__(self, recorder_id, label, serial, type, rec_channel_name, channel_name,
+        def __init__(self, name, label,
                 agency_uri, author_uri, creation_time):
-            self.recorder_id = recorder_id
+            self.name = name
             self.label = label
-            self.serial = serial
-            self.type = type
-            self.rec_channel_name = rec_channel_name
-            self.channel_name = channel_name
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
-        def __repr__(self):
-            return "id: %s\nrecorder_id: %s\nlabel: %s\nserial: %s\ntype: %s\nrec_channel_name: %s\nchannel_name: %s" % (str(self.id), 
-                                                                                                                         str(self.recorder_id),
-                                                                                                                         self.label,
-                                                                                                                         self.serial,
-                                                                                                                         self.type,
-                                                                                                                         self.rec_channel_name,
-                                                                                                                         self.channel_name) 
 
+        def __repr__(self):
+            return "GeomRecorderStream\id: %d\nrecorder_id: %d\nname: %s\nlabel: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
+                        self.recorder_id, self.name, self.label, self.agency_uri, self.author_uri, self.creation_time)
+
+    tables.append(GeomRecorderStream)
+
+
+    class GeomRecorderStreamParameter(base):
+        __tablename__ = 'geom_rec_stream_param'
+        __table_args__ = (
+                          UniqueConstraint('rec_stream_id', 'start_time', 'end_time'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        rec_stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), nullable=True)
+        start_time = Column(Float(53), nullable = False)
+        end_time = Column(Float(53))
+        gain = Column(Float)
+        bitweight = Column(Float)
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+
+        def __init__(self, start_time, end_time, gain, bitweight,
+                     agency_uri, author_uri, creation_time):
+            self.start_time = start_time
+            self.end_time = end_time
+            self.gain = gain
+            self.bitweight = bitweight
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+
+    tables.append(GeomRecorderStreamParameter)
+
+
+
+
+    class GeomComponentToStream(base):
+        __tablename__ = 'geom_component_to_stream'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
+        component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
+        start_time = Column(Float(53), nullable=False)
+        end_time = Column(Float(53))
+
+        component = relationship('GeomSensorComponent')
+
+        def __init__(self, stream_id, component_id, start_time, end_time):
+            self.stream_id = stream_id
+            self.component_id = component_id
+            self.start_time = start_time
+            self.end_time = end_time
+
+
+    tables.append(GeomComponentToStream)
+
+
+    class GeomSensor(base):
+        __tablename__ = 'geom_sensor'
+        __table_args__ = (
+                          UniqueConstraint('serial',),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        serial = Column(String(45), nullable=False)
+        model = Column(String(100))
+        producer = Column(String(100))
+        description = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        components = relationship('GeomSensorComponent',
+                                  cascade = 'all',
+                                  backref = 'parent')
+
+
+        def __init__(self, serial, model, producer, description,
+                agency_uri, author_uri, creation_time):
+            self.serial = serial
+            self.model = model
+            self.producer = producer
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
 
     tables.append(GeomSensor)
 
 
-    # Create the geom_sensor_param table mapper.
-    class GeomSensorParam(base):
-        __tablename__ = 'geom_sensor_param'
+    # Create the geom_sensor_component table mapper class.
+    class GeomSensorComponent(base):
+        __tablename__ = 'geom_sensor_component'
         __table_args__ = (
-                          UniqueConstraint('sensor_id', 'start_time', 'end_time'),
+                          UniqueConstraint('sensor_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=True, default=-1)
+        name = Column(String(45), nullable=False)
+        description = Column(String(255))
+        input_unit = Column(String(10))
+        output_unit = Column(String(10))
+        prop_unit = Column(String(10))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        parameters = relationship('GeomComponentParam',
+                                  cascade = 'all',
+                                  backref = 'parent')
+
+
+        def __init__(self, name, description,
+                input_unit, output_unit, prop_unit,
+                agency_uri, author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.input_unit = input_unit,
+            self.output_unit = output_unit,
+            self.prop_unit = prop_unit,
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+    tables.append(GeomSensorComponent)
+
+
+    # Create the geom_sensor_param table mapper.
+    class GeomComponentParam(base):
+        __tablename__ = 'geom_component_param'
+        __table_args__ = (
+                          UniqueConstraint('component_id', 'start_time', 'end_time'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), nullable=True, default=-1)
         start_time = Column(Float(53))
         end_time = Column(Float(53))
         tf_normalization_factor = Column(Float)
         tf_normalization_frequency = Column(Float)
         tf_type = Column(String(150))
         tf_units = Column(String(20))
-        gain = Column(Float)
         sensitivity = Column(Float(53))
-        sensitivity_units = Column(String(30))
-        bitweight = Column(Float(53))
-        bitweight_units = Column(String(15))
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -155,28 +264,23 @@ def databaseFactory(base):
         tf_pz = relationship('GeomTfPz', cascade='all')
 
 
-        def __init__(self, sensor_id, start_time, end_time, tf_normalization_factor,
-                     tf_normalization_frequency, tf_type, tf_units, gain, sensitivity,
-                     agency_uri, author_uri, creation_time,
-                     sensitivity_units, bitweight, bitweight_units):
-            self.sensor_id = sensor_id
+        def __init__(self, component_id, start_time, end_time, tf_normalization_factor,
+                     tf_normalization_frequency, tf_type, tf_units, sensitivity,
+                     agency_uri, author_uri, creation_time):
+            self.component_id = component_id
             self.start_time = start_time
             self.end_time = end_time
             self.tf_normalization_factor = tf_normalization_factor
             self.tf_normalization_frequency = tf_normalization_frequency
             self.tf_type = tf_type
             self.tf_units = tf_units
-            self.gain = gain
             self.sensitivity = sensitivity
-            self.sensitivity_units = sensitivity_units
-            self.bitweight = bitweight
-            self.bitweight_units = bitweight_units
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
 
-    tables.append(GeomSensorParam)
+    tables.append(GeomComponentParam)
 
 
     # Create the geom_tf_pz table mapper.
@@ -185,14 +289,13 @@ def databaseFactory(base):
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        param_id = Column(Integer, ForeignKey('geom_sensor_param.id', onupdate='cascade'), nullable=False)
+        param_id = Column(Integer, ForeignKey('geom_component_param.id', onupdate='cascade'), nullable=False)
         type = Column(Integer, nullable=False, default=1)
         complex_real = Column(Float, nullable=False)
         complex_imag = Column(Float, nullable=False)
 
 
-        def __init__(self, param_id, type, complex_real, complex_imag):
-            self.param_id = param_id
+        def __init__(self, type, complex_real, complex_imag):
             self.type = type
             self.complex_real = complex_real
             self.complex_imag = complex_imag
@@ -241,7 +344,7 @@ def databaseFactory(base):
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         network = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=True)
-        name = Column(String(10), nullable=False)
+        name = Column(String(20), nullable=False)
         location = Column(String(3), nullable=False)
         x = Column(Float(53), nullable=False)
         y = Column(Float(53), nullable=False)
@@ -252,16 +355,14 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
-        sensors = relationship('GeomSensorTime', 
-                               backref = 'parent')
+        channels = relationship('GeomChannel')
 
 
-        def __init__(self, network, name, location, x, y, z, coord_system,
+        def __init__(self, name, location, x, y, z, coord_system,
                      description, agency_uri, author_uri, creation_time):
-            self.network = network
             self.name = name
             self.location = location
-            self.x = x 
+            self.x = x
             self.y = y
             self.z = z
             self.coord_system = coord_system
@@ -277,33 +378,57 @@ def databaseFactory(base):
     tables.append(GeomStation)
 
 
-    # Create the geom_sensor_time table mapper class.
-    class GeomSensorTime(base):
-        __tablename__ = 'geom_sensor_time'
+    class GeomChannel(base):
+        __tablename__ = 'geom_channel'
+        __table_args__ = (
+                          UniqueConstraint('station_id', 'name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        station_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
+        name = Column(String(20))
+        description = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        streams = relationship('GeomStreamToChannel')
+
+
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+    tables.append(GeomChannel)
+
+
+
+
+    class GeomStreamToChannel(base):
+        __tablename__ = 'geom_stream_to_channel'
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
-        stat_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
-        sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), primary_key=True, nullable=False)
-        start_time = Column(Float(53), primary_key=True, nullable=False)
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        channel_id = Column(Integer, ForeignKey('geom_channel.id', onupdate='cascade'), primary_key=True, nullable=False)
+        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
+        start_time = Column(Float(53), nullable=False)
         end_time = Column(Float(53))
 
-        child = relationship('GeomSensor')
+        stream = relationship('GeomRecorderStream')
 
-        def __init__(self, stat_id, sensor_id, start_time, end_time):
-            self.stat_id = stat_id
-            self.sensor_id = sensor_id
+        def __init__(self, channel_id, stream_id, start_time, end_time):
+            self.channel_id = channel_id
+            self.stream_id = stream_id
             self.start_time = start_time
             self.end_time = end_time
 
 
-        def __repr__(self):
-            if not self.end_time:
-                return "Station ID: %d\nSensor ID: %d\nstart time: %f\nend time: None\n" % (self.stat_id, self.sensor_id, self.start_time)
-            else:
-                return "Station ID: %d\nSensor ID: %d\nstart time: %f\nend time: %f\n" % (self.stat_id, self.sensor_id, self.start_time, self.end_time)
-
-
-    tables.append(GeomSensorTime)
+    tables.append(GeomStreamToChannel)
 
 
     return tables

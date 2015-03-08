@@ -1,116 +1,181 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <inventory name="ALPAACT">
+    <sensor serial="1417">
+        <model>Seismonitor 1Hz</model>
+        <producer>Geospace</producer>
+        <description>Sensor description.</description>
+
+        <component name="Z">
+            <description>Sensor component Z description.</description>
+            <input_unit>m</input_unit>
+            <output_unit>m/s</output_unit>
+            <prop_unit>V</prop_unit>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time>2009-02-01T00:00:00.000000Z</end_time>
+                <sensitivity>340.55</sensitivity>
+                <response_paz>
+                    <type/>
+                    <units/>
+                    <A0_normalization_factor>0.4</A0_normalization_factor>
+                    <normalization_frequency>1.0</normalization_frequency>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_pole>-4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j</complex_pole>
+                    <complex_pole>-1.083+0.0j</complex_pole>
+                </response_paz>
+            </component_parameter>
+        </component>
+
+        <component name="N">
+            <description>Sensor component N description.</description>
+            <input_unit>m</input_unit>
+            <output_unit>m/s</output_unit>
+            <prop_unit>V</prop_unit>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time>2009-03-01T00:00:00.000000Z</end_time>
+                <sensitivity>340.55</sensitivity>
+                <response_paz>
+                    <type/>
+                    <units/>
+                    <A0_normalization_factor>0.4</A0_normalization_factor>
+                    <normalization_frequency>2.0</normalization_frequency>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_pole>-4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j</complex_pole>
+                    <complex_pole>-1.083+0.0j</complex_pole>
+                </response_paz>
+            </component_parameter>
+        </component>
+
+        <component name="E">
+            <description>Sensor component E description.</description>
+            <input_unit>m</input_unit>
+            <output_unit>m/s</output_unit>
+            <prop_unit>V</prop_unit>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>340.55</sensitivity>
+                <response_paz>
+                    <type/>
+                    <units/>
+                    <A0_normalization_factor>0.4</A0_normalization_factor>
+                    <normalization_frequency>3</normalization_frequency>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_zero>0+0j</complex_zero>
+                    <complex_pole> -4.440 + 4.440j</complex_pole>
+                    <complex_pole>-4.440 - 4.440j </complex_pole>
+                    <complex_pole> -1.083+0.0j </complex_pole>
+                </response_paz>
+            </component_parameter>
+        </component>
+    </sensor>
+
+
     <recorder serial="9D6C">
         <type>Reftek 130-01</type>
-        <description>A test recorder.</description>
-        <sensor_unit label="GILA-HHZ-9D6C">
-            <rec_channel_name>101</rec_channel_name>
-            <channel_name>HHZ</channel_name>
-            <sensor_serial>1417</sensor_serial>
-            <sensor_type>Geospace Seismonitor 1Hz</sensor_type>
-            <channel_parameters>
+        <description>Recorder description.</description>
+
+        <stream name="101">
+            <label>Stream-101</label>
+            <stream_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time>2009-02-01T00:00:00.000000Z</end_time>
+                <gain>32</gain>
+                <bitweight>1.5895E-6</bitweight>
+            </stream_parameter>
+            <assigned_component>
+                <sensor_serial>1417</sensor_serial>
+                <component_name>Z</component_name>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time>2009-02-01T00:00:00.000000Z</end_time>
+            </assigned_component>
+        </stream>
+
+        <stream name="102">
+            <label>Stream-102</label>
+            <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <gain>32</gain>
                 <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-                <response_paz>
-                    <type/>
-                    <units/>
-                    <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
-                </response_paz>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="GILA-HHN-9D6C">
-            <rec_channel_name>102</rec_channel_name>
-            <channel_name>HHN</channel_name>
-            <sensor_serial>1417</sensor_serial>
-            <sensor_type>Geospace Seismonitor 1Hz</sensor_type>
-            <channel_parameters>
+            </stream_parameter>
+            <assigned_component>
+                <sensor_serial>1417</sensor_serial>
+                <component_name>N</component_name>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+            </assigned_component>
+        </stream>
+
+        <stream name="103">
+            <label>Stream-103</label>
+            <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <gain>32</gain>
                 <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-                <response_paz>
-                    <type/>
-                    <units/>
-                    <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
-                </response_paz>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="GILA-HHE-9D6C">
-            <rec_channel_name>103</rec_channel_name>
-            <channel_name>HHE</channel_name>
-            <sensor_serial>1417</sensor_serial>
-            <sensor_type>Geospace Seismonitor 1Hz</sensor_type>
-            <channel_parameters>
+            </stream_parameter>
+            <assigned_component>
+                <sensor_serial>1417</sensor_serial>
+                <component_name>E</component_name>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>32</gain>
-                <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-                <response_paz>
-                    <type/>
-                    <units/>
-                    <A0_normalization_factor>0.4</A0_normalization_factor>
-                    <normalization_frequency>+1.00000E+00</normalization_frequency>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_zero>0+0j</complex_zero>
-                    <complex_pole>-4.440 + 4.440j</complex_pole>
-                    <complex_pole>-4.440 - 4.440j</complex_pole>
-                    <complex_pole>-1.083+0.0j</complex_pole>
-                </response_paz>
-            </channel_parameters>
-        </sensor_unit>
+            </assigned_component>
+        </stream>
     </recorder>
-    <network code="XX">
-        <code>XX</code>
-        <description>A simple test network</description>
-        <type>test network</type>
-        <station code="GILA">
+
+
+
+    <network name="XX">
+        <description>Network description.</description>
+        <type>network type</type>
+
+        <station name="GILA">
             <location>00</location>
-            <xcoord>15.887788</xcoord>
-            <ycoord>47.695770</ycoord>
-            <elevation>643</elevation>
+            <x>15.887788</x>
+            <y>47.695770</y>
+            <z>643</z>
             <coord_system>epsg:4326</coord_system>
             <description>Grillenberg</description>
-            <assigned_sensor_unit>
-                <sensor_unit_label>GILA-HHZ-9D6C</sensor_unit_label>
-                <start_time>2010-02-04T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_sensor_unit>
-            <assigned_sensor_unit>
-                <sensor_unit_label>GILA-HHN-9D6C</sensor_unit_label>
-                <start_time>2010-02-04T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_sensor_unit>
-            <assigned_sensor_unit>
-                <sensor_unit_label>GILA-HHE-9D6C</sensor_unit_label>
-                <start_time>2010-02-04T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_sensor_unit>
+
+            <channel name="HHZ">
+                <description>Description for channel HHZ.</description>
+                <assigned_stream>
+                    <recorder_serial>9D6C</recorder_serial>
+                    <stream_name>101</stream_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHN">
+                <description>Description for channel HHN.</description>
+                <assigned_stream>
+                    <recorder_serial>9D6C</recorder_serial>
+                    <stream_name>102</stream_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHE">
+                <description>Description for channel HHE.</description>
+                <assigned_stream>
+                    <recorder_serial>9D6C</recorder_serial>
+                    <stream_name>103</stream_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
         </station>
     </network>
 </inventory>
