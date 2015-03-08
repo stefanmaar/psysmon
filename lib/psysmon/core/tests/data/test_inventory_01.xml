@@ -1,437 +1,5 @@
 ﻿<?xml version='1.0' encoding='UTF-8'?>
 <inventory name="ALPAACT">
-    <sensor serial="G09191VS">
-        <model>Reftek Observer</model>
-        <producer>Reftek</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>1980.45</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2011.54</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2008.88</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-    
-    <sensor serial="6257">
-        <model>Guralp 6TD</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2400</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2400</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2400</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-    
-    <sensor serial="T34355">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-    
-    <sensor serial="T34342">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-    
-    <sensor serial="T34353">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-    
-    <sensor serial="T34340">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T34341">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T34350">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T34339">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T34355">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T34343">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T34213">
-        <model>3ESP-Compact</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>2000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
     <sensor serial="1417">
         <model>Seismonitor 1Hz</model>
         <producer>Geospace</producer>
@@ -446,7 +14,7 @@
                 <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
-        
+
         <component name="N">
             <description>The North component of the sensor.</description>
             <component_parameter>
@@ -456,85 +24,13 @@
                 <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
-        
+
         <component name="E">
             <description>The East component of the sensor.</description>
             <component_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T3M87">
-        <model>3ESPD 30s</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>5958</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>6004</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>5974</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-    </sensor>  
-
-    <sensor serial="T3M83">
-        <model>3ESPD 30s</model>
-        <producer>Guralp</producer>
-        <description>Broadband seismometer.</description>
-
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>6000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-03-27T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>6000</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </component_parameter>            
-        </component>
-        
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <component_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>6000</sensitivity>
                 <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
@@ -554,7 +50,7 @@
                 <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
-        
+
         <component name="N">
             <description>The North component of the sensor.</description>
             <component_parameter>
@@ -564,7 +60,7 @@
                 <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
-        
+
         <component name="E">
             <description>The East component of the sensor.</description>
             <component_parameter>
@@ -576,8 +72,80 @@
         </component>
     </sensor> 
 
+    <sensor serial="T3M87">
+        <model>3ESPD 30s</model>
+        <producer>Guralp</producer>
+        <description>Broadband seismometer.</description>
 
-    <recorder serial="AB38">
+        <component name="Z">
+            <description>The vertical component of the sensor.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>5958</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+            </component_parameter>            
+        </component>
+
+        <component name="N">
+            <description>The North component of the sensor.</description>
+            <component_parameter>
+                <start_time>2009-03-27T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>6004</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+            </component_parameter>            
+        </component>
+
+        <component name="E">
+            <description>The East component of the sensor.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>5974</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+            </component_parameter>            
+        </component>
+    </sensor>  
+
+    <sensor serial="T34340">
+        <model>3ESP-Compact</model>
+        <producer>Guralp</producer>
+        <description>Broadband seismometer.</description>
+
+        <component name="Z">
+            <description>The vertical component of the sensor.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>2000</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+            </component_parameter>            
+        </component>
+
+        <component name="N">
+            <description>The North component of the sensor.</description>
+            <component_parameter>
+                <start_time>2009-03-27T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>2000</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+            </component_parameter>            
+        </component>
+
+        <component name="E">
+            <description>The East component of the sensor.</description>
+            <component_parameter>
+                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+                <sensitivity>2000</sensitivity>
+                <sensitivity_units>V/m/s</sensitivity_units>
+            </component_parameter>            
+        </component>
+    </sensor>  
+
+
+    <recorder serial="9D6C">
         <type>Reftek 130-01</type>
         <description>Recorder description.</description>
 
@@ -590,9 +158,9 @@
                 <bitweight>1.5895E-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>G09191VS</sensor_serial>
+                <sensor_serial>1417</sensor_serial>
                 <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2010-02-04T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
@@ -606,9 +174,9 @@
                 <bitweight>1.5895E-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>G09191VS</sensor_serial>
+                <sensor_serial>1417</sensor_serial>
                 <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2010-02-04T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
@@ -622,221 +190,9 @@
                 <bitweight>1.5895E-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>G09191VS</sensor_serial>
+                <sensor_serial>1417</sensor_serial>
                 <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-    </recorder>
-
-    <recorder serial="6257">
-        <type>Guralp 6TD</type>
-        <description>Recorder description.</description>
-
-        <stream name="HHZ">
-            <label>HZZ</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>1</gain>
-                <bitweight>1</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>6257</sensor_serial>
-                <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="HHZ">
-            <label>HHN</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>1</gain>
-                <bitweight>1</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>6257</sensor_serial>
-                <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="HHZ">
-            <label>HHE</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>1</gain>
-                <bitweight>1</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>6257</sensor_serial>
-                <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-    </recorder>
-
-    <recorder serial="e3356">
-        <type>Earthdata PR 6-24 Portable</type>
-        <description>Recorder description.</description>
-
-        <stream name="p0">
-            <label>Z</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34355</sensor_serial>
-                <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="p1">
-            <label>N</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34355</sensor_serial>
-                <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="p2">
-            <label>E</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34355</sensor_serial>
-                <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-    </recorder>
-
-    <recorder serial="e3361">
-        <type>Earthdata PR 6-24 Portable</type>
-        <description>Recorder description.</description>
-
-        <stream name="p0">
-            <label>Z</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34342</sensor_serial>
-                <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="p1">
-            <label>N</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34342</sensor_serial>
-                <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="p2">
-            <label>E</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34342</sensor_serial>
-                <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-    </recorder>
-
-    <recorder serial="e3362">
-        <type>Earthdata PR 6-24 Portable</type>
-        <description>Recorder description.</description>
-
-        <stream name="p0">
-            <label>Z</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34353</sensor_serial>
-                <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="p1">
-            <label>N</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34353</sensor_serial>
-                <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-
-        <stream name="p2">
-            <label>E</label>
-            <stream_parameter>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>T34353</sensor_serial>
-                <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2010-02-04T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
@@ -857,7 +213,7 @@
             <assigned_component>
                 <sensor_serial>T34340</sensor_serial>
                 <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2010-05-11T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
@@ -873,7 +229,7 @@
             <assigned_component>
                 <sensor_serial>T34340</sensor_serial>
                 <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2010-05-11T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
@@ -889,121 +245,282 @@
             <assigned_component>
                 <sensor_serial>T34340</sensor_serial>
                 <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2010-05-11T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
     </recorder>
 
-    <recorder serial="e3363">
-        <type>Earthdata PR 6-24 Portable</type>
+    <recorder serial="T3L30">
+        <type>Guralp 3ESPD</type>
         <description>Recorder description.</description>
 
-        <stream name="p0">
+        <stream name="HHZ">
             <label>Z</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
+                <gain>1</gain>
+                <bitweight>1.276e-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>T34341</sensor_serial>
+                <sensor_serial>T3L30</sensor_serial>
                 <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2009-06-09T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
 
-        <stream name="p1">
+        <stream name="HHN">
             <label>N</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
+                <gain>1</gain>
+                <bitweight>1.276e-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>T34341</sensor_serial>
+                <sensor_serial>T3L30</sensor_serial>
                 <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2009-06-09T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
 
-        <stream name="p2">
+        <stream name="HHE">
             <label>E</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
+                <gain>1</gain>
+                <bitweight>1.276e-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>T34341</sensor_serial>
+                <sensor_serial>T3L30</sensor_serial>
                 <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <start_time>2009-06-09T00:00:00.000000Z</start_time>
                 <end_time/>
             </assigned_component>
         </stream>
     </recorder>
 
-    <recorder serial="e3360">
-        <type>Earthdata PR 6-24 Portable</type>
+    <recorder serial="T3M87">
+        <type>Guralp 3ESPD</type>
         <description>Recorder description.</description>
 
-        <stream name="p0">
+        <stream name="HHZ">
             <label>Z</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
+                <gain>1</gain>
+                <bitweight>1.276e-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>T34350</sensor_serial>
+                <sensor_serial>T3M87</sensor_serial>
                 <component_name>Z</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time>2010-07-22T10:00:00</end_time>
-            </assigned_component>
-            <assigned_component>
-                <sensor_serial>T34343</sensor_serial>
-                <component_name>Z</component_name>
-                <start_time>2010-0</start_time>
-                <end_time>2010-07-22T10:00:00</end_time>
+                <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                <end_time/>
             </assigned_component>
         </stream>
 
-        <stream name="p1">
+        <stream name="HHN">
             <label>N</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
+                <gain>1</gain>
+                <bitweight>1.276e-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>T34350</sensor_serial>
+                <sensor_serial>T3M87</sensor_serial>
                 <component_name>N</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time>2010-07-22T10:00:00</end_time>
+                <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                <end_time/>
             </assigned_component>
         </stream>
 
-        <stream name="p2">
+        <stream name="HHE">
             <label>E</label>
             <stream_parameter>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1e-6</bitweight>
+                <gain>1</gain>
+                <bitweight>1.276e-6</bitweight>
             </stream_parameter>
             <assigned_component>
-                <sensor_serial>T34350</sensor_serial>
+                <sensor_serial>T3M87</sensor_serial>
                 <component_name>E</component_name>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time>2010-07-22T10:00:00</end_time>
+                <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                <end_time/>
             </assigned_component>
         </stream>
     </recorder>
+
+    <network name="ALPAACT">
+        <description>Network description.</description>
+        <type>network type</type>
+
+        <station name="GILA">
+            <location>00</location>
+            <x>15.887788</x>
+            <y>47.695770</y>
+            <z>643</z>
+            <coord_system>epsg:4326</coord_system>
+            <description>Grillenberg</description>
+
+            <channel name="HHZ">
+                <description>Description for channel HHZ.</description>
+                <assigned_stream>
+                    <recorder_serial>9D6C</recorder_serial>
+                    <stream_name>101</stream_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHN">
+                <description>Description for channel HHN.</description>
+                <assigned_stream>
+                    <recorder_serial>9D6C</recorder_serial>
+                    <stream_name>102</stream_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHE">
+                <description>Description for channel HHE.</description>
+                <assigned_stream>
+                    <recorder_serial>9D6C</recorder_serial>
+                    <stream_name>103</stream_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+        </station>
+
+        <station name="G_NAWA">
+            <location>00</location>
+            <x>15.706528</x>
+            <y>47.767139</y>
+            <z>614</z>
+            <coord_system>epsg:4326</coord_system>
+            <description>Nasswald</description>
+
+            <channel name="HHZ">
+                <description>Description for channel HHZ.</description>
+                <assigned_stream>
+                    <recorder_serial>e3358</recorder_serial>
+                    <stream_name>p0</stream_name>
+                    <start_time>2010-05-11T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHN">
+                <description>Description for channel HHN.</description>
+                <assigned_stream>
+                    <recorder_serial>e3358</recorder_serial>
+                    <stream_name>p1</stream_name>
+                    <start_time>2010-05-11T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHE">
+                <description>Description for channel HHE.</description>
+                <assigned_stream>
+                    <recorder_serial>e3358</recorder_serial>
+                    <stream_name>p2</stream_name>
+                    <start_time>2010-05-11T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+        </station>
+
+        <station name="GUWA">
+            <location>00</location>
+            <x>15.346444</x>
+            <y>47.696306</y>
+            <z>880</z>
+            <coord_system>epsg:4326</coord_system>
+            <description>Gusswerk</description>
+
+            <channel name="HHZ">
+                <description>Description for channel HHZ.</description>
+                <assigned_stream>
+                    <recorder_serial>T3M87</recorder_serial>
+                    <stream_name>HHZ</stream_name>
+                    <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHN">
+                <description>Description for channel HHN.</description>
+                <assigned_stream>
+                    <recorder_serial>T3M87</recorder_serial>
+                    <stream_name>HHN</stream_name>
+                    <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHE">
+                <description>Description for channel HHE.</description>
+                <assigned_stream>
+                    <recorder_serial>T3M87</recorder_serial>
+                    <stream_name>HHE</stream_name>
+                    <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+        </station>
+
+        <station name="SITA">
+            <location>00</location>
+            <x>15.622917</x>
+            <y>48.514472</y>
+            <z>380</z>
+            <coord_system>epsg:4326</coord_system>
+            <description>Schiltern</description>
+
+            <channel name="HHZ">
+                <description>Description for channel HHZ.</description>
+                <assigned_stream>
+                    <recorder_serial>T3L30</recorder_serial>
+                    <stream_name>HHZ</stream_name>
+                    <start_time>2009-06-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHN">
+                <description>Description for channel HHN.</description>
+                <assigned_stream>
+                    <recorder_serial>T3L30</recorder_serial>
+                    <stream_name>HHN</stream_name>
+                    <start_time>2009-06-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="HHE">
+                <description>Description for channel HHE.</description>
+                <assigned_stream>
+                    <recorder_serial>T3L30</recorder_serial>
+                    <stream_name>HHE</stream_name>
+                    <start_time>2009-06-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+        </station>
+
+    </network>
+
 </inventory>
+
