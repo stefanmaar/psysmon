@@ -382,7 +382,7 @@ def databaseFactory(base):
     class GeomChannel(base):
         __tablename__ = 'geom_channel'
         __table_args__ = (
-                          UniqueConstraint('name'),
+                          UniqueConstraint('station_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
