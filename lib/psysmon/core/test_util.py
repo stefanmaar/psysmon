@@ -122,21 +122,29 @@ def create_full_project(psybase):
     inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
     xmlparser = InventoryXmlParser()
     inventory = xmlparser.parse(inventory_file)
-    db_inventory = DbInventory.from_inventory(name = 'test', project = project, inventory = inventory)
-    db_inventory.commit()
-    db_inventory.close()
+    try:
+        db_inventory = DbInventory.from_inventory_instance(name = 'test', project = project, inventory = inventory)
+        db_inventory.commit()
+    finally:
+        db_inventory.close()
+
+    # Load the geometry inventory from the database.
+    project.load_geometry_inventory()
 
     # Add the waveform directory to the project.
     wf_dir = project.dbTables['waveform_dir']
     wf_diralias = project.dbTables['waveform_dir_alias']
     db_session = project.getDbSession()
-    new_wfdir = wf_dir(data_path, '')
-    new_alias = wf_diralias(project.activeUser.name,
-                            data_path)
-    new_wfdir.aliases.append(new_alias)
-    db_session.add(new_wfdir)
-    db_session.commit()
-    db_session.close()
+    try:
+        new_wfdir = wf_dir(data_path, '')
+        new_alias = wf_diralias(project.activeUser.name,
+                                data_path)
+        new_wfdir.aliases.append(new_alias)
+        db_session.add(new_wfdir)
+        db_session.commit()
+    finally:
+        db_session.close()
+
     project.waveclient['db client'].loadWaveformDirList()
 
     # Import the data files.
@@ -147,6 +155,7 @@ def create_full_project(psybase):
     node.logger = logging.getLogger(loggerName)
     node.project = project
 
+    # Import the waveform files into the database.
     filenames = glob.glob(os.path.join(data_path, 'ZAMG-seis_event00017*.msd'))
     filelist = []
     for cur_file in filenames:
@@ -154,16 +163,6 @@ def create_full_project(psybase):
         fsize = fsize/(1024.0*1024.0)           # Convert to MB
         filelist.append(('mseed', cur_file, '%.2f' % fsize))
     node.pref_manager.set_value('input_files', filelist)
-    node.execute()
-
-
-    # Apply the geometry.
-    node_template = psybase.packageMgr.getCollectionNodeTemplate('apply geometry')
-    node = node_template()
-    # Create a logger for the node.
-    loggerName = __name__+ "." + node.__class__.__name__
-    node.logger = logging.getLogger(loggerName)
-    node.project = project
     node.execute()
 
     return project
