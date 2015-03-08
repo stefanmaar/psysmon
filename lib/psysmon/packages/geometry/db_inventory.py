@@ -46,7 +46,7 @@ from obspy.core.utcdatetime import UTCDateTime
 
 class DbInventory(Inventory):
 
-    def __init__(self, name, project):
+    def __init__(self, project, name = 'db_inventory'):
         ''' Initialize the instance.
         '''
         Inventory.__init__(self, name = name, type = 'db')
