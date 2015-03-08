@@ -33,6 +33,7 @@ import os
 import threading
 from obspy.core import read, Stream
 from obspy.earthworm import Client
+from psysmon.packages.geometry.db_inventory import DbInventory
 
 class WaveClient:
     '''The WaveClient class.
@@ -274,10 +275,18 @@ class PsysmonDbWaveClient(WaveClient):
             return None
 
     @property
-    def geomSensor(self):
-        # The senors database table.
+    def geomChannel(self):
+        # The channels database table.
         if self.project is not None:
-            return self.project.dbTables['geom_sensor']
+            return self.project.dbTables['geom_channel']
+        else:
+            return None
+
+    @property
+    def geomRecorderStream(self):
+        # The recorder stream database table.
+        if self.project is not None:
+            return self.project.dbTables['geom_recorder_stream']
         else:
             return None
 
@@ -408,62 +417,72 @@ class PsysmonDbWaveClient(WaveClient):
         stream : :class:`~obspy.core.Stream`
             The data of the specified SCNL and time period loaded from the files.
         '''
-        stream = Stream()
+        data_stream = Stream()
 
-        # Create the standard query.
-        dbSession = self.project.getDbSession()
-        query = dbSession.query(self.traceheader.file_type,
-                                     self.traceheader.filename,
-                                     self.waveformDirAlias.alias,
-                                     self.geomStation.network,
-                                     self.geomStation.name,
-                                     self.geomStation.location,
-                                     self.geomSensor.channel_name).\
-                               filter(self.traceheader.wf_id ==self.waveformDir.id).\
-                               filter(self.waveformDir.id == self.waveformDirAlias.wf_id).\
-                               filter(self.waveformDirAlias.user == self.project.activeUser.name)
+        # Get the channel from the inventory. It's expected, that only one
+        # channel is returned. If more than one channels are returned, then
+        # there is an error in the geometry inventory.
+        cur_channel = self.project.inventory.get_channel(network = network,
+                                                         station = station,
+                                                         location = location,
+                                                         name = channel)
 
-        # Add the startTime filter option.
-        if start_time:
-            query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.timestamp)
+        if cur_channel:
+            if len(cur_channel) > 1:
+                raise RuntimeError('More than 1 channel returned for SCNL: %s:%s:%s:%s. Checkk the geometry inventory for duplicate entries.' % (station, channel, network, location))
 
-        # Add the endTime filter option.
-        if end_time:
-            query = query.filter(self.traceheader.begin_time < end_time.timestamp)
+            cur_channel = cur_channel[0]
 
-        # Add the linkage between geometry ids.
-        query = query.filter(self.traceheader.station_id == self.geomStation.id).\
-                      filter(self.traceheader.sensor_id == self.geomSensor.id)
-        curQuery = query.filter(self.geomStation.name == station).\
-                         filter(self.geomSensor.channel_name == channel).\
-                         filter(self.geomStation.network == network).\
-                         filter(self.geomStation.location == location)
+            dbSession = self.project.getDbSession()
 
-        # The sql query is issued in the for loop.
-        for curHeader in curQuery:
-            filename = os.path.join(curHeader.alias, curHeader.filename)
-            self.logger.debug("Loading file: %s", filename)
-            curStream = read(pathname_or_url = filename,
-                             format = curHeader.file_type,
-                             starttime = start_time,
-                             endtime = end_time)
+            # Select the file type, filename and waveform directory.
+            query = dbSession.query(self.traceheader.file_type,
+                                    self.traceheader.filename,
+                                    self.waveformDirAlias.alias).\
+                                    filter(self.traceheader.wf_id ==self.waveformDir.id).\
+                                    filter(self.waveformDir.id == self.waveformDirAlias.wf_id).\
+                                    filter(self.waveformDirAlias.user == self.project.activeUser.name)
 
-            if not curStream:
-                continue
+            # Add the startTime filter option.
+            if start_time:
+                query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.timestamp)
 
-            # Change the header values to the one loaded from the database.
-            for curTrace in curStream:
-                curTrace.stats.network = curHeader.network
-                curTrace.stats.station = curHeader.name
-                curTrace.stats.location = curHeader.location
-                curTrace.stats.channel = curHeader.channel_name
+            # Add the endTime filter option.
+            if end_time:
+                query = query.filter(self.traceheader.begin_time < end_time.timestamp)
 
-            stream += curStream
+            for cur_timebox in cur_channel.streams:
+                cur_rec_stream = cur_timebox.item
 
-        dbSession.close()
-        return stream
+                # Create a new query with filters for the serial and stream
+                # name.
+                cur_query = query.filter(self.traceheader.recorder_serial == cur_rec_stream.serial).\
+                                  filter(self.traceheader.stream == cur_rec_stream.name)
 
+                # Process the results of the query.
+                for curHeader in cur_query:
+                    filename = os.path.join(curHeader.alias, curHeader.filename)
+                    self.logger.debug("Loading file: %s", filename)
+                    cur_data_stream = read(pathname_or_url = filename,
+                                           format = curHeader.file_type,
+                                           starttime = start_time,
+                                           endtime = end_time)
 
+                    if not cur_data_stream:
+                        continue
+
+                    # Change the header values to the ones stored in the geometry inventory.
+                    for curTrace in cur_data_stream:
+                        curTrace.stats.network = network
+                        curTrace.stats.station = station
+                        curTrace.stats.location = location
+                        curTrace.stats.channel = channel
+
+                    data_stream += cur_data_stream
+
+            dbSession.close()
+
+        return data_stream
 
     def loadWaveformDirList(self):
         '''Load the waveform directories from the database table.
