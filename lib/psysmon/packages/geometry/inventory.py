@@ -446,13 +446,13 @@ class Inventory(object):
 
         Paramters
         ---------
-        network_name : String
+        network : String
             The name of the network.
 
-        station_name : String
+        station : String
             The name (code) of the station.
 
-        station_location : String
+        station : String
             The location identifier.
 
         name : String
@@ -460,17 +460,17 @@ class Inventory(object):
         '''
 
         search_dict = {}
-        if 'network_name' in kwargs.keys():
-            search_dict['network'] = kwargs['network_name']
-            kwargs.pop('network_name')
+        if 'network' in kwargs.keys():
+            search_dict['network'] = kwargs['network']
+            kwargs.pop('network')
 
-        if 'station_name' in kwargs.keys():
-            search_dict['name'] = kwargs['station_name']
-            kwargs.pop('station_name')
+        if 'station' in kwargs.keys():
+            search_dict['name'] = kwargs['station']
+            kwargs.pop('station')
 
-        if 'station_location' in kwargs.keys():
-            search_dict['location'] = kwargs['station_location']
-            kwargs.pop('station_location')
+        if 'location' in kwargs.keys():
+            search_dict['location'] = kwargs['location']
+            kwargs.pop('location')
 
         stations = self.get_station(**search_dict)
 
