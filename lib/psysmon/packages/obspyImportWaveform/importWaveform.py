@@ -116,9 +116,8 @@ class ImportWaveform(CollectionNode):
             relativeFilename = filename.replace(curWfDir.alias, '')
             relativeFilename = relativeFilename[1:]
             labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path',
-                      'network', 'recorder_serial', 'channel', 'location',
+                      'network', 'recorder_serial', 'stream', 'location',
                       'sps', 'numsamp', 'begin_date', 'begin_time',
-                      'station_id', 'recorder_id', 'sensor_id',
                       'agency_uri', 'author_uri', 'creation_time']
             header2Insert = dict(zip(labels, (None, format, wfDirId,
                             relativeFilename, os.path.dirname(filename),
@@ -127,7 +126,6 @@ class ImportWaveform(CollectionNode):
                             Trace.stats.sampling_rate, Trace.stats.npts,
                             Trace.stats.starttime.isoformat(' '),
                             Trace.stats.starttime.timestamp,
-                            None, None, None,
                             self.project.activeUser.author_uri,
                             self.project.activeUser.agency_uri,
                             op_utcdatetime.UTCDateTime().isoformat())))

@@ -40,18 +40,6 @@ def databaseFactory(base):
     class Traceheader(base):
         __tablename__ = 'traceheader'
         __table_args__ = (
-                          ForeignKeyConstraint(['station_id'], 
-                                               ['geom_station.id'],
-                                               onupdate='cascade',
-                                               ondelete='set null'),
-                          ForeignKeyConstraint(['recorder_id'], 
-                                               ['geom_recorder.id'],
-                                               onupdate='cascade',
-                                               ondelete='set null'),
-                          ForeignKeyConstraint(['sensor_id'], 
-                                               ['geom_sensor.id'],
-                                               onupdate='cascade',
-                                               ondelete='set null'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
@@ -62,15 +50,12 @@ def databaseFactory(base):
         orig_path = Column(Text, nullable=False)
         network = Column(String(10), nullable=False, default='')
         recorder_serial = Column(String(45), nullable=False)
-        channel = Column(String(45), nullable=False)
+        stream = Column(String(45), nullable=False)
         location = Column(String(3), nullable=False)
         sps = Column(Integer, nullable=False)
         numsamp = Column(Integer, nullable=False)
         begin_date = Column(String(26), nullable=False)
         begin_time = Column(Float(53), nullable=False)
-        station_id = Column(Integer, default=None)
-        recorder_id = Column(Integer, default=None)
-        sensor_id = Column(Integer, default=None)
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
@@ -111,7 +96,6 @@ def databaseFactory(base):
         user = Column(String(45), nullable=False, primary_key=True)
         alias = Column(String(255), nullable=False)
 
-        
 
         def __init__(self, user, alias):
             self.user = user
