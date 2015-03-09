@@ -1501,6 +1501,8 @@ class Station(object):
         # z pointing upwards.@n 
         # Depending on the coordinate system used x and y can also represent 
         # longitude and latitude.
+        if x is None:
+            raise ValueError("The x coordinate can't be None.")
         self.x = float(x)
 
         ## The y coordinate of the station location.
@@ -1510,6 +1512,8 @@ class Station(object):
         # z pointing upwards.@n 
         # Depending on the coordinate system used x and y can also represent 
         # longitude and latitude.
+        if y is None:
+            raise ValueError("The y coordinate can't be None.")
         self.y = float(y)
 
         ## The z coordinate of the station location.
@@ -1519,6 +1523,8 @@ class Station(object):
         # z pointing upwards.@n 
         # Depending on the coordinate system used x and y can also represent 
         # longitude and latitude.
+        if z is None:
+            raise ValueError("The z coordinate can't be None.")
         self.z = float(z)
 
         ## The coordinate system in which the x/y coordinates are given.
