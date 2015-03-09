@@ -23,6 +23,7 @@ from psysmon.core.preferences_manager import SingleChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
 import numpy as np
+import scipy as sp
 
 
 class Detrend(ProcessingNode):
@@ -63,6 +64,43 @@ class Detrend(ProcessingNode):
         #self.logger.debug('Executing the processing node.')
         stream.detrend(type = self.pref_manager.get_value('detrend method'))
 
+
+
+class MedianFilter(ProcessingNode):
+    ''' Apply a median filter to a timeseries.
+
+    '''
+    nodeClass = 'common'
+
+    def __init__(self):
+        ''' The constructor
+
+        '''
+        ProcessingNode.__init__(self,
+                                name = 'median filter',
+                                mode = 'editable',
+                                category = 'time domain filter',
+                                tags = ['filter', 'median', 'time domain', 'de-spike', 'spike']
+                               )
+
+        # Add an float_spin field.
+        item = IntegerSpinPrefItem(name = 'samples', 
+                              value = 3,
+                              limit = (3, 100)
+                             )
+        self.pref_manager.add_item(item = item)
+
+
+    def execute(self, stream):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        for tr in stream.traces:
+            tr.data = sp.signal.medfilt(tr.data, self.pref_manager.get_value('samples'))
 
 
 
