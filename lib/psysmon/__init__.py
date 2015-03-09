@@ -35,7 +35,7 @@ import logging
 import wx
 
 logConfig = {}
-logConfig['level'] = 'DEBUG'
+logConfig['level'] = 'INFO'
 logConfig['package_prefix'] = 'psysmon.package'
 
 
