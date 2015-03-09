@@ -603,12 +603,10 @@ class DbRecorderStream(RecorderStream):
 
         for cur_component_to_stream in orm.components:
             cur_component = cur_component_to_stream.component
-            cur_start_time = UTCDateTime(cur_component_to_stream.start_time)
-            cur_end_time = UTCDateTime(cur_component_to_stream.end_time)
             tmp = stream.add_component(serial = cur_component.parent.serial,
                                  name = cur_component.name,
-                                 start_time = cur_start_time,
-                                 end_time = cur_end_time,
+                                 start_time = cur_component_to_stream.start_time,
+                                 end_time = cur_component_to_stream.end_time,
                                  ignore_orm = True)
 
         for cur_parameter in orm.parameters:
