@@ -22,6 +22,7 @@
 '''
 
 import unittest
+import nose.plugins.attrib as nose_attrib
 import psysmon
 import logging
 import os
@@ -101,7 +102,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_network_setattr(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add a network to the db_inventory.
@@ -133,7 +134,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_empty_network_to_inventory(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add a network to the db_inventory.
@@ -149,7 +150,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_network_to_inventory(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add networks to the db_inventory.
@@ -203,7 +204,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_station_to_inventory(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add networks to the db_inventory.
@@ -276,7 +277,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_sensor_to_inventory(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             sensor1 = Sensor(serial = 'sensor1_name',
@@ -294,15 +295,15 @@ class DbInventoryTestCase(unittest.TestCase):
             component1 = SensorComponent(name = 'comp1_name',
                                      input_unit = 'm',
                                      output_unit = 'm/s',
-                                     prop_unit = 'V')
+                                     deliver_unit = 'V')
             component2 = SensorComponent(name = 'comp2_name',
                                      input_unit = 'm',
                                      output_unit = 'm/s',
-                                     prop_unit = 'V')
+                                     deliver_unit = 'V')
             component3 = SensorComponent(name = 'comp3_name',
                                      input_unit = 'm',
                                      output_unit = 'm/s',
-                                     prop_unit = 'V')
+                                     deliver_unit = 'V')
 
             cur_start_time = UTCDateTime('2014-01-01')
             cur_end_time = UTCDateTime('2014-02-01')
@@ -338,7 +339,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_recorder_to_inventory(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             recorder1 = Recorder(serial = 'recorder1_serial',
@@ -376,7 +377,7 @@ class DbInventoryTestCase(unittest.TestCase):
     def test_add_stream_to_channel(self):
         ''' Test assigning a stream to a channel.
         '''
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Create a recorder and a stream.
@@ -443,7 +444,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_add_component_to_stream(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             recorder1 = Recorder(serial = 'recorder1_serial',
@@ -489,7 +490,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
     def test_remove_network(self):
         print "test_remove_network\n"
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add a network to the db_inventory.
@@ -522,7 +523,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_remove_station(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
         try:
             # Add a network to the db_inventory.
             net_2_add = Network(name = 'XX', description = 'A test network.')
@@ -566,7 +567,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_move_station(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
         try:
             # Add a network to the db_inventory.
             net_2_add = Network(name = 'XX', description = 'A test network.')
@@ -606,7 +607,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_sensor(self):
-        db_inventory = DbInventory('write', self.project)
+        db_inventory = DbInventory(self.project, name = 'write')
 
         try:
             sensor1 = Sensor(serial = 'sensor1_serial',
@@ -649,7 +650,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         try:
             # Load the networks from the database.
-            db_inventory_load = DbInventory('load', self.project)
+            db_inventory_load = DbInventory(self.project, name = 'load')
             db_inventory_load.load_sensors()
         finally:
             db_inventory_load.close()
@@ -678,7 +679,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_recorder(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add recorders to the database.
@@ -710,7 +711,7 @@ class DbInventoryTestCase(unittest.TestCase):
             db_inventory.close()
 
         # Load the recorders from the database.
-        db_inventory_load = DbInventory('test_load', self.project)
+        db_inventory_load = DbInventory(self.project)
         try:
             db_inventory_load.load_recorders()
         finally:
@@ -745,7 +746,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_recorder_with_components(self):
-        db_inventory = DbInventory('write', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             sensor1 = Sensor(serial = 'sensor1_serial',
@@ -815,7 +816,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         try:
             # Load the networks from the database.
-            db_inventory_load = DbInventory('load', self.project)
+            db_inventory_load = DbInventory(self.project)
             # Load the sensors first, they are needed to add components to the
             # recorders.
             db_inventory_load.load_sensors()
@@ -842,7 +843,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_network(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add networks to the db_inventory.
@@ -889,7 +890,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         # Load the networks from the database.
         try:
-            db_inventory_load = DbInventory('test', self.project)
+            db_inventory_load = DbInventory(self.project)
             db_inventory_load.load_networks()
         finally:
             db_inventory_load.close()
@@ -933,7 +934,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_load_network_with_streams(self):
-        db_inventory = DbInventory('write', self.project)
+        db_inventory = DbInventory(self.project)
 
         try:
             # Add networks to the db_inventory.
@@ -1002,7 +1003,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
         # Load the networks from the database.
         try:
-            db_inventory_load = DbInventory('test', self.project)
+            db_inventory_load = DbInventory(self.project)
             db_inventory_load.load_recorders()
             db_inventory_load.load_networks()
         finally:
@@ -1019,9 +1020,9 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(cur_channel.streams), 1)
 
 
-
+    @nose_attrib.attr('need_for_update')
     def test_change_network(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         # Add a network to the db_inventory.
         net_2_add = Network(name = 'XX', description = 'A test network.')
@@ -1041,8 +1042,9 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory.close()
 
 
+    @nose_attrib.attr('need_for_update')
     def test_change_station(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         # Add a network to the db_inventory.
         net_2_add = Network(name = 'XX', description = 'A test network.')
@@ -1070,8 +1072,9 @@ class DbInventoryTestCase(unittest.TestCase):
 
         db_inventory.close()
 
+    @nose_attrib.attr('need_for_update')
     def test_change_recorder(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder', description = 'test description')
         added_recorder = db_inventory.add_recorder(rec_2_add)
@@ -1090,8 +1093,9 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory.close()
 
 
+    @nose_attrib.attr('need_for_update')
     def test_change_sensor(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         added_recorder = []
 
@@ -1114,8 +1118,9 @@ class DbInventoryTestCase(unittest.TestCase):
         db_inventory.close()
 
 
+    @nose_attrib.attr('need_for_update')
     def test_change_sensor_parameter(self):
-        db_inventory = DbInventory('test', self.project)
+        db_inventory = DbInventory(self.project)
 
         added_recorder = []
 
