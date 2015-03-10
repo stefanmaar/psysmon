@@ -2225,7 +2225,9 @@ class SensorsPanel(wx.Panel):
         tableField.append((None, 'start', 'editable', UTCDateTime))
         tableField.append((None, 'end', 'editable', UTCDateTime))
         tableField.append(('sensitivity', 'sensitivity', 'editable', float))
-        tableField.append(('sensitivity_units', 'sensitivity units', 'editable', str))
+        tableField.append(('input_units', 'input units', 'editable', str))
+	tableField.append(('output_units', 'output units', 'editable', str))
+	tableField.append(('deliver_units', 'input units', 'editable', str))
         tableField.append(('tf_normalization_factor', 'normalization factor', 'editable', float))
         tableField.append(('tf_normalization_frequency', 'normalization frequ.', 'editable', float))
         tableField.append((None, 'poles', 'readonly', str))      # Poles is a list. Handle them seperately
