@@ -1027,7 +1027,7 @@ class DbSensorComponent(SensorComponent):
                                  description = self.description,
                                  input_unit = self.input_unit,
                                  output_unit = self.output_unit,
-                                 prop_unit = self.prop_unit,
+                                 deliver_unit = self.deliver_unit,
                                  agency_uri = self.agency_uri,
                                  author_uri = self.author_uri,
                                  creation_time = self.creation_time)
@@ -1051,7 +1051,7 @@ class DbSensorComponent(SensorComponent):
                          description = orm.description,
                          input_unit = orm.input_unit,
                          output_unit = orm.output_unit,
-                         prop_unit = orm.prop_unit,
+                         deliver_unit = orm.deliver_unit,
                          author_uri = orm.author_uri,
                          agency_uri = orm.agency_uri,
                          creation_time = orm.creation_time,
@@ -1072,7 +1072,7 @@ class DbSensorComponent(SensorComponent):
                           description = instance.description,
                           input_unit = instance.input_unit,
                           output_unit = instance.output_unit,
-                          prop_unit = instance.prop_unit,
+                          deliver_unit = instance.deliver_unit,
                           author_uri = instance.author_uri,
                           agency_uri = instance.agency_uri,
                           creation_time = instance.creation_time)
@@ -1092,7 +1092,7 @@ class DbSensorComponent(SensorComponent):
         attr_map['description'] = 'description'
         attr_map['input_unit'] = 'input_unit'
         attr_map['outpu_unit'] = 'output_unit'
-        attr_map['prop_unit'] = 'prop_unit'
+        attr_map['deliver_unit'] = 'deliver_unit'
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'

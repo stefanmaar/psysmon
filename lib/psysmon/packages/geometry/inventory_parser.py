@@ -74,7 +74,7 @@ class InventoryXmlParser:
         self.required_tags = {}
         self.required_tags['sensor'] = ('model', 'producer')
         self.required_tags['component'] = ('description', 'input_unit', 'output_unit',
-                                           'prop_unit', 'component_parameter', )
+                                           'deliver_unit', 'component_parameter', )
         self.required_tags['component_parameter'] = ('start_time', 'end_time',
                                                      'sensitivity')
         self.required_tags['response_paz'] = ('type', 'units', 'A0_normalization_factor',
