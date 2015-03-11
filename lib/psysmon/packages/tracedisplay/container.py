@@ -617,7 +617,7 @@ class TdDatetimeInfo(wx.Panel):
         self.startTimePicker = MaskedTextCtrl( self, wx.ID_ANY, '',
                                                 mask         = '##:##:##.######',
                                                 excludeChars = '',
-                                                formatcodes  = 'DF!',
+                                                formatcodes  = 'F!',
                                                 includeChars = '')
 
 
