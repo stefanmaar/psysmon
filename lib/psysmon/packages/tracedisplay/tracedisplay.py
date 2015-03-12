@@ -243,6 +243,12 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
 
 
     def edit(self):
+        stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
+        self.pref_manager.set_limit('show_stations', stations)
+
+        channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
+        self.pref_manager.set_limit('show_channels', channels)
+
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
