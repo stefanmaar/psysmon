@@ -1839,8 +1839,8 @@ class DataManager():
             self.logger.debug("curName: %s", curName)
             curWaveclient = self.project.waveclient[curName]
             curStream =  curWaveclient.getWaveform(startTime = startTime,
-                                                           endTime = endTime,
-                                                           scnl = scnl)
+                                                   endTime = endTime,
+                                                   scnl = scnl)
             self.origStream += curStream
 
 
