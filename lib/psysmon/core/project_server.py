@@ -37,6 +37,7 @@ import re
 import Pyro4 as pyro
 pyro.config.REQUIRE_EXPOSE = True
 pyro.config.SERIALIZERS_ACCEPTED = set(('pickle', ))
+pyro.config.SERIALIZER = 'pickle'
 
 class ProjectServer(object):
     ''' Provide remote access to project data.

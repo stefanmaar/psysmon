@@ -157,6 +157,7 @@ class Base:
     def start_project_server(self):
         ''' Start the pyro project server.
         '''
+        pyro.config.SERIALIZER = 'pickle'
         self.pyro_daemon = pyro.Daemon()
         self.pyro_project_server_uri = self.pyro_daemon.register(self.project_server)
         try:
