@@ -222,8 +222,11 @@ class PreferenceItem(object):
 
     '''
 
-    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, gui_element = None):
-        ''' The constructor.
+    def __init__(self, name, value, mode, label = None,
+                 group = None, limit = None, parent_page = None,
+                 default = None, gui_element = None,
+                 tool_tip = None):
+        ''' Initialization of the instance.
 
         '''
         # The name of the item.
@@ -236,6 +239,9 @@ class PreferenceItem(object):
         self.label = label
         if self.label is None:
             self.label = self.name
+
+        # The tooltip string of the control element.
+        self.tool_tip = tool_tip
 
         # The default value of this item.
         if default is None:

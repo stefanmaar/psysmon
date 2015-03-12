@@ -79,7 +79,6 @@ class Field(wx.Panel):
         self.pref_item = pref_item
 
         ## The size of the field.
-        #
         self.size = size
 
         ## The label of the field.
@@ -122,6 +121,8 @@ class Field(wx.Panel):
 
     def addControl(self, controlElement):
         self.controlElement = controlElement
+        if self.pref_item.tool_tip is not None:
+            self.controlElement.SetToolTipString(self.pref_item.tool_tip)
         self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
         self.sizer.AddGrowableCol(1)
 
@@ -738,12 +739,16 @@ class FileBrowseField(Field):
                                   style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.controlElement = filebrowse.FileBrowseButton(self, 
-                                                     wx.ID_ANY, 
+        if pref_item.tool_tip is None:
+            pref_item.tool_tip = 'Type filename or click browse to choose file.'
+
+        self.controlElement = filebrowse.FileBrowseButton(self,
+                                                     wx.ID_ANY,
                                                      labelWidth=0,
                                                      labelText='',
                                                      fileMask = pref_item.filemask,
-                                                     changeCallback = self.onValueChange)
+                                                     changeCallback = self.onValueChange,
+                                                     toolTip = pref_item.tool_tip)
 
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
@@ -787,17 +792,21 @@ class DirBrowseField(Field):
         Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                       ID=wx.ID_ANY, 
+        self.labelElement = StaticText(parent=self,
+                                       ID=wx.ID_ANY,
                                        label=self.label,
                                        style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.controlElement = filebrowse.DirBrowseButton(self, 
-                                                    wx.ID_ANY, 
+        if pref_item.tool_tip is None:
+            pref_item.tool_tip = 'Type filename or click browse to choose file.'
+
+        self.controlElement = filebrowse.DirBrowseButton(self,
+                                                    wx.ID_ANY,
                                                     labelText='',
                                                     changeCallback=self.onValueChange,
-                                                    startDirectory = pref_item.start_directory
+                                                    startDirectory = pref_item.start_directory,
+                                                    toolTip = pref_item.tool_tip
                                                    )
 
         # Add the gui elements to the field.
