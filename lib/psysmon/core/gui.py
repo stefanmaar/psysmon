@@ -660,10 +660,8 @@ class CollectionListBox(wx.SimpleHtmlListBox):
         except PsysmonError as e:
             pass
 
+        self.PopupMenu(self.contextMenu)
 
-        pos = event.GetPosition()
-        pos = self.ScreenToClient(pos)
-        self.PopupMenu(self.contextMenu, pos)
 
     def onItemRightClicked(self, event):
         self.logger.debug("Item right clicked.")
@@ -703,9 +701,7 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
 
-        pos = event.GetPosition()
-        pos = self.ScreenToClient(pos)
-        self.PopupMenu(self.contextMenu, pos)
+        self.PopupMenu(self.contextMenu)
 
 
 
@@ -898,9 +894,7 @@ class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
 
     def onShowContextMenu(self, event):
-        pos = event.GetPosition()
-        pos = self.ScreenToClient(pos)
-        self.PopupMenu(self.contextMenu, pos)
+        self.PopupMenu(self.contextMenu)
 
 
 
@@ -997,9 +991,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
             wx.CallAfter(self.processes.SetStringItem, curIndex, 4, str(duration))
 
     def onShowContextMenu(self, event):
-        pos = event.GetPosition()
-        pos = self.ScreenToClient(pos)
-        self.PopupMenu(self.contextMenu, pos)
+        self.PopupMenu(self.contextMenu)
 
     def onViewLogFile(self, event):
         selectedRow = self.processes.GetFirstSelected()
