@@ -26,7 +26,7 @@ description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['import_bulletin', ]
+collection_node_modules = ['import_bulletin', 'detect_sta_lta']
 
 def databaseFactory(base):
     from sqlalchemy import Column
