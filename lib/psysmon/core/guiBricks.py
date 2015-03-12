@@ -191,7 +191,10 @@ class PrefPagePanel(wx.Panel):
                     self.logger.warning('Item %s of mode %s has no guiclass.', 
                             cur_item.name, cur_item.mode)
 
-            sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, border = 10)
+            if k == 0:
+                sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.TOP | wx.EXPAND, border = 10)
+            else:
+                sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, border = 10)
 
         sizer.AddGrowableCol(0)
         self.SetSizer(sizer)
@@ -284,14 +287,14 @@ class StaticBoxContainer(wx.Panel):
         self.fieldList = []
 
         # Create the static box and it's sizer.
-        box = wx.StaticBox(self, id=wx.ID_ANY, label=label, name=label)
+        box = wx.StaticBox(self, id=wx.ID_ANY, label=label.upper(), name=label)
         self.b_sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
 
         # Create the sizer holding the fields.
         self.sizer = wx.GridBagSizer(5)
         self.sizer.AddGrowableCol(0)
 
-        self.b_sizer.Add(self.sizer, 1, flag = wx.EXPAND)
+        self.b_sizer.Add(self.sizer, 0, flag = wx.EXPAND)
 
         # Create the sizer holding the static box.        
         self.SetSizer(self.b_sizer)
@@ -306,7 +309,7 @@ class StaticBoxContainer(wx.Panel):
         #field.options = self.options
 
         #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
-        self.sizer.Add(field, pos = (len(self.fieldList)+1, 0), flag=wx.EXPAND)
+        self.sizer.Add(field, pos = (len(self.fieldList), 0), flag=wx.EXPAND)
 
         self.fieldList.append(field)
 
