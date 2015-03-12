@@ -377,6 +377,9 @@ class Base:
             # Check if the database tables have to be updated.
             self.project.checkDbVersions(self.packageMgr.packages)
 
+            # Load the geometry inventory.
+            self.project.load_geometry_inventory()
+
             # Check if the default wave client exists.
             if self.project.defaultWaveclient not in self.project.waveclient.keys():
                 self.project.defaultWaveclient = None

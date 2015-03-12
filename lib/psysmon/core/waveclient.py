@@ -422,10 +422,10 @@ class PsysmonDbWaveClient(WaveClient):
         # Get the channel from the inventory. It's expected, that only one
         # channel is returned. If more than one channels are returned, then
         # there is an error in the geometry inventory.
-        cur_channel = self.project.inventory.get_channel(network = network,
-                                                         station = station,
-                                                         location = location,
-                                                         name = channel)
+        cur_channel = self.project.geometry_inventory.get_channel(network = network,
+                                                                  station = station,
+                                                                  location = location,
+                                                                  name = channel)
 
         if cur_channel:
             if len(cur_channel) > 1:
