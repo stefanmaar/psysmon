@@ -36,7 +36,6 @@ import psysmon
 from psysmon.core.packageNodes import CollectionNode
 import psysmon.core.preferences_manager as psy_pm
 from obspy.core.utcdatetime import UTCDateTime
-import obspy.core
 
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 
@@ -137,6 +136,27 @@ class StaLtaDetection(CollectionNode):
         self.pref_manager.add_item(pagename = 'STA/LTA',
                                    item = item)
 
+        item = psy_pm.FloatSpinPrefItem(name = 'pre_et',
+                                        label = 'pre-event time [s]',
+                                        group = 'detection',
+                                        value = 1,
+                                        limit = (0, 1000),
+                                        digits = 1,
+                                        tool_tip = 'The time window to add before the detected event start [s].')
+        self.pref_manager.add_item(pagename = 'STA/LTA',
+                                   item = item)
+
+        item = psy_pm.FloatSpinPrefItem(name = 'post_et',
+                                        label = 'post-event time [s]',
+                                        group = 'detection',
+                                        value = 1,
+                                        limit = (0, 1000),
+                                        digits = 1,
+                                        tool_tip = 'The time window to add after the detected event end [s].')
+        self.pref_manager.add_item(pagename = 'STA/LTA',
+                                   item = item)
+
+
 
 
     def edit(self):
@@ -220,6 +240,9 @@ class StaLtaDetector(object):
         n_intervals = (end_time - start_time) / interval
         interval_list = [start_time + x*interval for x in range(0, int(n_intervals))]
 
+        if not interval_list:
+            interval_list.append(start_time)
+
         scnl = []
         for cur_station_name in stations:
             for cur_channel_name in channels:
@@ -239,8 +262,18 @@ class StaLtaDetector(object):
                               cur_end_time.isoformat())
 
             for cur_scnl in scnl:
+                try:
+                    cur_channel = self.project.geometry_inventory.get_channel(station = cur_scnl[0], name = cur_scnl[1], network = cur_scnl[2])[0]
+                    cur_timebox = cur_channel.get_stream(start_time = cur_start_time, end_time = cur_end_time)[0]
+                    cur_stream_id = cur_timebox.item.id
+                except:
+                    cur_stream_id = None
+
                 cur_waveclient = self.project.waveclient[data_sources[cur_scnl]]
-                cur_stream = cur_waveclient.getWaveform(startTime = cur_start_time,
+                # Request data with a preceding window of length lta_len to
+                # eliminate the lta buildup effects at the start of the time
+                # window.
+                cur_stream = cur_waveclient.getWaveform(startTime = cur_start_time - self.lta_len,
                                                         endTime = cur_end_time,
                                                         scnl = [cur_scnl, ])
                 cur_stream = cur_stream.copy()
@@ -248,11 +281,34 @@ class StaLtaDetector(object):
                 if cur_stream:
                     self.logger.info("Processing stream %s.", cur_stream)
                     cur_stream.detrend(type = 'constant')
+                    cur_stream.filter('bandpass', freqmin = 1.0, freqmax = 100.0)
+                    db_data = []
                     for cur_trace in cur_stream.traces:
                         cf = self.compute_cf(cur_trace.data)
-                        thrf, sta, lta = self.compute_thrf(cf, cur_trace.stats.sampling_rate)
-                        event_marker = self.compute_event_limits(cur_trace.data,
+                        cur_sps = cur_trace.stats.sampling_rate
+                        thrf, sta, lta = self.compute_thrf(cf, cur_sps)
+                        n_lta = int(self.lta_len * cur_sps)
+                        event_marker = self.compute_event_limits(cur_trace.data[n_lta:],
                                                                  thrf, sta, lta)
+                        detection_table = self.project.dbTables['detection']
+                        for det_start_ind, det_end_ind in event_marker:
+                            det_start_time = cur_trace.stats.starttime + (n_lta + det_start_ind) / cur_sps
+                            det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_sps
+                            cur_orm = detection_table(catalog_id = None,
+                                                      rec_stream_id = cur_stream_id,
+                                                      start_time = det_start_time.timestamp,
+                                                      end_time = det_end_time.timestamp,
+                                                      method = 'STA/LTA',
+                                                      agency_uri = self.project.activeUser.agency_uri,
+                                                      author_uri = self.project.activeUser.author_uri,
+                                                      creation_time = UTCDateTime().isoformat())
+                            db_data.append(cur_orm)
+
+                if db_data:
+                    db_session = self.project.getDbSession()
+                    db_session.add_all(db_data)
+                    db_session.commit()
+                    db_session.close()
 
 
 
@@ -290,7 +346,7 @@ class StaLtaDetector(object):
             return data
 
 
-    def compute_thrf(self, cf, sps):
+    def compute_thrf(self, cf, sps, mode = 'valid'):
         ''' Compute the THRF, STA and LTA function.
 
         Parameters
@@ -300,6 +356,11 @@ class StaLtaDetector(object):
 
         sps : float
             The samples per second of the characteristic function.
+
+        mode : String (valid, full)
+            How to return the computed time series.
+                valid: Return only the valid values without the LTA buildup effect.
+                full: Return the full length of the computed time series.
         '''
         n_sta = int(self.sta_len * sps)
         n_lta = int(self.lta_len * sps)
@@ -312,15 +373,20 @@ class StaLtaDetector(object):
         lta = np.concatenate([np.zeros(n_lta - 1), lta])
 
         sta[0:n_lta] = 0
-        lta[0:n_lta] = 0
+        lta[0:n_lta] = 1
         thrf = sta / lta
 
-        thrf[0:n_lta] = 0
+        if mode == 'valid':
+            thrf = thrf[n_lta:]
+            sta = sta[n_lta:]
+            lta = lta[n_lta:]
+        else:
+            lta[0:n_lta] = 0
 
         return (thrf, sta, lta)
 
 
-    def compute_event_limits(self, data, thrf, sta, lta):
+    def compute_event_limits(self, data, thrf, sta, lta, stop_delay = 10):
         ''' Compute the event start and end times based on the detection functions.
 
         '''
@@ -334,18 +400,23 @@ class StaLtaDetector(object):
 
         # Find the event ends.
         event_start_ind = np.flatnonzero(event_start == 1)
-        stop_values = sta[event_start == 1]
-        stop_cr = np.zeros(thrf.shape)
+        stop_values = sta[np.flatnonzero(event_start == 1) - stop_delay]
 
-        for k in range(len(event_start_ind)-1):
-            stop_cr[event_start_ind[k]:event_start_ind[k+1]] = stop_values[k]
+        for k, cur_event_start in enumerate(event_start_ind):
+            try:
+                next_end_ind = np.flatnonzero(sta[cur_event_start:] < stop_values[k])[0]
+                cur_event_end = cur_event_start + next_end_ind
+            except:
+                cur_event_end = len(thrf)-1
+            event_marker.append((cur_event_start, cur_event_end))
 
-        plt.plot(sta, 'r')
-        plt.plot(self.thr * lta, 'g')
-        plt.plot(event_start * np.max(sta), 'm')
-        plt.plot(stop_cr, 'y')
-        plt.plot(data, 'k')
-        plt.show()
+#        plt.plot(sta, 'r')
+#        plt.plot(self.thr * lta, 'g')
+#        plt.plot(data, 'k')
+#        for event_begin, event_end in event_marker:
+#            plt.axvline(event_begin)
+#            plt.axvline(event_end)
+#        plt.show()
 
 
         return event_marker
