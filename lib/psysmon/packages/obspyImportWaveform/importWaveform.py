@@ -89,7 +89,7 @@ class ImportWaveform(CollectionNode):
                 if cur_data is not None:
                     dbData.append(cur_data)
 
-        self.logger.debug('dbData: %s', dbData)   
+        self.logger.debug('dbData: %s', dbData)
 
         if len(dbData) > 0:
             dbSession = self.project.getDbSession()
