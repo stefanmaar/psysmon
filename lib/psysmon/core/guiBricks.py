@@ -29,6 +29,7 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as FS
 #import wx.lib.rcsizer  as rcs
+import psysmon.core.preferences_manager as psy_pm
 
 
 
@@ -176,20 +177,31 @@ class PrefPagePanel(wx.Panel):
             cur_container = StaticBoxContainer(parent = self, 
                                 label = container_label)
 
-            groupitems = [x for x in self.items if x.group == cur_group]
+            # First add the preference items.
+            groupitems = [x for x in self.items if x.group == cur_group and not isinstance(x, psy_pm.ActionItem)]
             for cur_item in groupitems:
                 if cur_item.mode in gui_elements.keys():
                     guiclass = gui_elements[cur_item.mode]
-                    gui_element = guiclass(name = cur_item.label,
-                                           pref_item = cur_item,
-                                           size = (100, -1),
-                                           parent = cur_container 
-                                          )
-                    cur_item.set_gui_element(gui_element)
-                    cur_container.addField(gui_element)
                 else:
-                    self.logger.warning('Item %s of mode %s has no guiclass.', 
-                            cur_item.name, cur_item.mode)
+                    guiclass = cur_item.gui_class
+
+                gui_element = guiclass(name = cur_item.label,
+                                       pref_item = cur_item,
+                                       size = (100, -1),
+                                       parent = cur_container 
+                                      )
+                cur_item.set_gui_element(gui_element)
+                cur_container.addField(gui_element)
+
+            # Add the action item buttons on bottom.
+            groupitems = [x for x in self.items if x.group == cur_group and isinstance(x, psy_pm.ActionItem)]
+            for cur_item in groupitems:
+                gui_element = wx.Button(parent = cur_container,
+                                        id = wx.ID_ANY,
+                                        label = cur_item.label)
+                gui_element.Bind(wx.EVT_BUTTON, cur_item.action)
+                cur_container.addActionField(gui_element)
+
 
             if k == 0:
                 sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.TOP | wx.EXPAND, border = 10)
@@ -286,6 +298,8 @@ class StaticBoxContainer(wx.Panel):
         ## The list of fields hold by the container.
         self.fieldList = []
 
+        self.actionFieldList = []
+
         # Create the static box and it's sizer.
         box = wx.StaticBox(self, id=wx.ID_ANY, label=label.upper(), name=label)
         self.b_sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
@@ -334,6 +348,16 @@ class StaticBoxContainer(wx.Panel):
         for curField in self.fieldList:
             curField.setOptionsValue(self.options)
 
+
+    def addActionField(self, field):
+        # Set the new field parent.
+        field.Reparent(self)
+        #field.options = self.options
+
+        #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
+        self.sizer.Add(field, pos = (len(self.fieldList), 0), flag=wx.EXPAND)
+
+        self.actionFieldList.append(field)
 
 
 
