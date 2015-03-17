@@ -437,7 +437,7 @@ class DateTimeEditPrefItem(PreferenceItem):
 class CustomPrefItem(PreferenceItem):
     '''
     '''
-    def __init__(self, name, value, gui_class, **kwargs):
+    def __init__(self, name, value, gui_class = None, **kwargs):
         PreferenceItem.__init__(self, name = name, value = value,
                                 mode = 'custom', **kwargs)
         self.gui_class = gui_class
