@@ -83,7 +83,6 @@ def databaseFactory(base):
     class EventDb(base):
         __tablename__  = 'event'
         __table_args__ = (
-                          UniqueConstraint('ev_catalog_id', 'public_id'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
@@ -96,38 +95,68 @@ def databaseFactory(base):
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
         public_id = Column(String(255), nullable = True)
-        pref_origin_id = Column(Integer, nullable = True)
-        pref_magnitude_id = Column(Integer, nullable = True)
-        pref_focmec_id = Column(Integer, nullable = True)
-        ev_type = Column(Integer, nullable = True)
-        ev_type_certainty = Column(String(50), nullable = True)
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
         tags = Column(String(255), nullable = True)
+        ev_type_id = Column(Integer, nullable = True)
+        ev_type_certainty = Column(String(50), nullable = True)
+        pref_origin_id = Column(Integer, nullable = True)
+        pref_magnitude_id = Column(Integer, nullable = True)
+        pref_focmec_id = Column(Integer, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
 
-        def __init__(self, ev_catalog_id, start_time, end_time, public_id,
-                     pref_origin_id, pref_magnitude_id, pref_focmec_id, ev_type,
-                     ev_type_certainty, description, agency_uri, author_uri, creation_time):
+        def __init__(self, ev_catalog_id, start_time, end_time,
+                     agency_uri, author_uri, creation_time,
+                     public_id = None, description = None, comment = None,
+                     tags = None, ev_type_id = None, ev_type_certainty = None,
+                     pref_origin_id = None, pref_magnitude_id = None, pref_focmec_id = None):
             self.ev_catalog_id = ev_catalog_id
             self.start_time = start_time
             self.end_time = end_time
             self.public_id = public_id
+            self.description = description
+            self.comment = comment
+            self.tags = tags
+            self.ev_type_id = ev_type_id
+            self.ev_type_certainty = ev_type_certainty
             self.pref_origin_id = pref_origin_id
             self.pref_magnitude_id = pref_magnitude_id
             self.pref_focmec_id = pref_focmec_id
-            self.ev_type = ev_type
-            self.ev_type_certainty = ev_type_certainty
-            self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
 
     tables.append(EventDb)
+
+
+    ###########################################################################
+    # DETECTION_TO_EVENT table mapper class
+    class DetectionToEventDb(base):
+        __tablename__  = 'detection_to_event'
+        __table_args__ = (
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        ev_id = Column(Integer,
+                       ForeignKey('event.id', onupdate = 'cascade'),
+                       primary_key = True,
+                       nullable = False)
+        det_id = Column(Integer,
+                        ForeignKey('detection.id', onupdate = 'cascade'),
+                        primary_key = True,
+                        nullable = False)
+
+        detection = relationship('DetectionDb')
+
+        def __init(self, ev_id, det_id):
+            self.ev_id = ev_id
+            self.det_id = det_id
+
+    tables.append(DetectionToEventDb)
 
 
     ###########################################################################
