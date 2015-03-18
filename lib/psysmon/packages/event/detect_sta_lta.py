@@ -36,6 +36,7 @@ import psysmon
 from psysmon.core.packageNodes import CollectionNode
 import psysmon.core.preferences_manager as psy_pm
 from obspy.core.utcdatetime import UTCDateTime
+import psysmon.core.lib_signal as lib_signal
 
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 
@@ -291,6 +292,7 @@ class StaLtaDetector(object):
                         event_marker = self.compute_event_limits(cur_trace.data[n_lta:],
                                                                  thrf, sta, lta)
                         detection_table = self.project.dbTables['detection']
+                        event_table = self.project.dbTables['event']
                         for det_start_ind, det_end_ind in event_marker:
                             det_start_time = cur_trace.stats.starttime + (n_lta + det_start_ind) / cur_sps
                             det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_sps
@@ -303,6 +305,23 @@ class StaLtaDetector(object):
                                                       author_uri = self.project.activeUser.author_uri,
                                                       creation_time = UTCDateTime().isoformat())
                             db_data.append(cur_orm)
+
+                            # TODO: Remove this export to the events database
+                            # when the event binding is working.
+                            # Add the events detected on station AP01 and
+                            # channel HHZ to the events database.
+                            # This is used as a workaround because of a missing
+                            # event binding.
+                            if cur_scnl == ('AP01', 'HHZ', 'APO', '00'):
+                                comment_string = 'Detected on SCNL %s.' % str(cur_scnl)
+                                cur_orm = event_table(ev_catalog_id = None,
+                                                      start_time = det_start_time.timestamp,
+                                                      end_time = det_end_time.timestamp,
+                                                      comment = comment_string,
+                                                      agency_uri = self.project.activeUser.agency_uri,
+                                                      author_uri = self.project.activeUser.author_uri,
+                                                      creation_time = UTCDateTime().isoformat())
+                                db_data.append(cur_orm)
 
                 if db_data:
                     db_session = self.project.getDbSession()
@@ -362,26 +381,37 @@ class StaLtaDetector(object):
                 valid: Return only the valid values without the LTA buildup effect.
                 full: Return the full length of the computed time series.
         '''
+        clib_signal = lib_signal.clib_signal
+
         n_sta = int(self.sta_len * sps)
         n_lta = int(self.lta_len * sps)
         sta_filt_op = np.ones(n_sta) / float(n_sta)
         lta_filt_op = np.ones(n_lta) / float(n_lta)
 
-        sta = np.correlate(cf, sta_filt_op, 'valid')
-        lta = np.correlate(cf, lta_filt_op, 'valid')
-        sta = np.concatenate([np.zeros(n_sta - 1), sta])
-        lta = np.concatenate([np.zeros(n_lta - 1), lta])
+        # The old version using np.correlate. This was way too slow. Switched
+        # to the implementation of the moving average in C. Keep this part of
+        # the code for future reference.
+        #sta_corr = np.correlate(cf, sta_filt_op, 'valid')
+        #lta_corr = np.correlate(cf, lta_filt_op, 'valid')
+        #sta_corr = np.concatenate([np.zeros(n_sta - 1), sta_corr])
+        #lta_corr = np.concatenate([np.zeros(n_lta - 1), lta_corr])
 
-        sta[0:n_lta] = 0
-        lta[0:n_lta] = 1
+        n_cf = len(cf)
+        cf = np.ascontiguousarray(cf, dtype = np.float64)
+        sta = np.empty(n_cf, dtype = np.float64)
+        ret_val = clib_signal.moving_average(n_cf, n_sta, cf, sta)
+        lta = np.empty(n_cf, dtype = np.float64)
+        ret_val = clib_signal.moving_average(n_cf, n_lta, cf, lta)
+
+
+        #sta[0:n_lta] = 0
+        #lta[0:n_lta] = 1
         thrf = sta / lta
 
         if mode == 'valid':
             thrf = thrf[n_lta:]
             sta = sta[n_lta:]
             lta = lta[n_lta:]
-        else:
-            lta[0:n_lta] = 0
 
         return (thrf, sta, lta)
 
