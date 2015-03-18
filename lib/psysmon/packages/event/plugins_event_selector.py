@@ -134,16 +134,16 @@ class SelectEvents(OptionPlugin):
         '''
         '''
         self.logger.debug('Loading events.')
-        det_table = self.parent.project.dbTables['detection']
+        event_table = self.parent.project.dbTables['event']
         db_session = self.parent.project.getDbSession()
         try:
             start_time = self.pref_manager.get_value('start_time')
             duration = self.pref_manager.get_value('window_length')
-            query = db_session.query(det_table.id,
-                                     det_table.start_time,
-                                     det_table.end_time).\
-                                     filter(det_table.start_time >= start_time.timestamp).\
-                                     filter(det_table.start_time <= (start_time + duration).timestamp)
+            query = db_session.query(event_table.id,
+                                     event_table.start_time,
+                                     event_table.end_time).\
+                                     filter(event_table.start_time >= start_time.timestamp).\
+                                     filter(event_table.start_time <= (start_time + duration).timestamp)
 
             events = query.all()
             pref_item = self.pref_manager.get_item('events')[0]
