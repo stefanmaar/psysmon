@@ -22,9 +22,21 @@
 
 #include <math.h>
 
-int moving_average(const long n_data, const long n_op, const double *data, double *avg)
+int moving_average(const long n_data, long n_op, const double *data, double *avg)
 {
     int i;
+
+    if (n_data == 0) {
+        return 0;
+    }
+
+    if (n_op == 0) {
+        return 0;
+    }
+
+    if (n_data < n_op) {
+        n_op = n_data;
+    }
 
     avg[0] = data[0] / n_op;
 
