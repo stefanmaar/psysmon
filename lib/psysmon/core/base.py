@@ -375,7 +375,7 @@ class Base:
             self.project.loadDatabaseStructure(self.packageMgr.packages)
 
             # Check if the database tables have to be updated.
-            self.project.checkDbVersions(self.packageMgr.packages)
+            #self.project.checkDbVersions(self.packageMgr.packages)
 
             # Check if the default wave client exists.
             if self.project.defaultWaveclient not in self.project.waveclient.keys():
