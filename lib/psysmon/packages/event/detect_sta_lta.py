@@ -281,8 +281,14 @@ class StaLtaDetector(object):
 
                 if cur_stream:
                     self.logger.info("Processing stream %s.", cur_stream)
-                    cur_stream.detrend(type = 'constant')
-                    cur_stream.filter('bandpass', freqmin = 1.0, freqmax = 100.0)
+                    try:
+                        cur_stream = cur_stream.split()
+                        cur_stream.detrend(type = 'constant')
+                        cur_stream.filter('bandpass', freqmin = 1.0, freqmax = 100.0)
+                    except Exception as e:
+                        self.logger.error('Error when processing the stream %s:\n%s', str(cur_stream), e)
+                        continue
+
                     db_data = []
                     for cur_trace in cur_stream.traces:
                         cf = self.compute_cf(cur_trace.data)
@@ -385,12 +391,12 @@ class StaLtaDetector(object):
 
         n_sta = int(self.sta_len * sps)
         n_lta = int(self.lta_len * sps)
-        sta_filt_op = np.ones(n_sta) / float(n_sta)
-        lta_filt_op = np.ones(n_lta) / float(n_lta)
 
         # The old version using np.correlate. This was way too slow. Switched
         # to the implementation of the moving average in C. Keep this part of
         # the code for future reference.
+        #sta_filt_op = np.ones(n_sta) / float(n_sta)
+        #lta_filt_op = np.ones(n_lta) / float(n_lta)
         #sta_corr = np.correlate(cf, sta_filt_op, 'valid')
         #lta_corr = np.correlate(cf, lta_filt_op, 'valid')
         #sta_corr = np.concatenate([np.zeros(n_sta - 1), sta_corr])
