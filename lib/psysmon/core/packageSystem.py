@@ -702,9 +702,6 @@ class Package:
         #The collection node templates of the package.
         self.collectionNodeTemplates = {}
 
-        # The package database table create queries.
-        self.dbTableCreateQueries = {}
-
         # The package database factory method.
         self.databaseFactory = None
 
