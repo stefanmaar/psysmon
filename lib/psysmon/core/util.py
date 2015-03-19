@@ -84,7 +84,14 @@ def _pydate2wxdate(date):
      assert isinstance(date, UTCDateTime)
      tt = date.timetuple()
      dmy = (tt[2], tt[1]-1, tt[0])
-     return DateTimeFromDMY(*dmy)     
+     return DateTimeFromDMY(*dmy)
+
+
+def version_tuple(version_string):
+    ''' Convert a version string (e.g. 0.1.2) into a compareable tuple.
+
+    '''
+    return tuple(map(int, version_string.split('.')))
 
 
 class AttribDict(dict, object):
