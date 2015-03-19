@@ -48,7 +48,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import obspy.core.utcdatetime as utcdatetime
 from psysmon.core.preferences_manager import PreferencesManager
-import psysmon.core.util
+import psysmon.core.util as psy_util
 from psysmon.packages.geometry.db_inventory import DbInventory
 
 
@@ -699,13 +699,58 @@ class Project:
                 continue
             else:
                 self.logger.info("%s: Retrieving the database tables.", curPkg.name)
-                self.db_version[curPkg.name] = curPkg.version
                 tables = curPkg.databaseFactory(self.dbBase)
+
                 for curTable in tables:
                     # Add the table prefix.
                     curName = curTable.__table__.name
                     curTable.__table__.name = self.slug + "_" + curTable.__table__.name
-                    self.dbTables[curName] = curTable
+                    table_migrated = self.db_table_migration(curTable)
+                    if table_migrated is True:
+                        self.dbTables[curName] = curTable
+
+    # TODO: Move the database migration methods to a separate module
+    # database_util.py. Pass the needed database objects (dbEngine, Metadata,
+    # ..) as arguments.
+    def db_table_migration(self, table):
+        ''' Check if a database table migration is needed and apply the changes.
+        '''
+        table_migrated = False
+        cur_metadata = MetaData(self.dbEngine)
+        cur_metadata.reflect(self.dbEngine)
+        if table.__table__.name in cur_metadata.tables.keys():
+            # Check for changes between the existing and the new table.
+            table_migrated = self.update_db_table(table = table, metadata = cur_metadata)
+        else:
+            # The table is missing in the schema, create it.
+            table.create()
+            table_migrated = True
+
+        return table_migrated
+
+
+    def update_db_table(self, table, metadata):
+        ''' Update the table structure to the new schema.
+        '''
+        # Check for added columns.
+        new_table = table.__table__
+        exist_table = metadata.tables[new_table.name]
+        columns_to_add = set(new_table.columns.keys()).difference(set(exist_table.columns.keys()))
+        if columns_to_add:
+            for cur_col in columns_to_add:
+                # Add the missing columns to the table.
+                pass
+        return True
+
+
+    def add_column(engine, table, column):
+        ''' Add a column to a database table.
+        '''
+        table_name = table.description
+        column_name = column.compile(dialect=engine.dialect)
+        column_type = column.type.compile(engine.dialect)
+        engine.execute('ALTER TABLE %s ADD COLUMN %s %s' % (table_name, column_name, column_type))
+
 
 
     def checkDbVersions(self, packages):
@@ -715,11 +760,9 @@ class Project:
             The packages to be checked for the database table to be updated.
         '''
         for curPkgKey, curPkg in packages.iteritems():
-            if not curPkg.dbTableCreateQueries:
-                continue
-            else:
+            if hasattr(curPkg, 'databaseFactory'):
                 if curPkg.name in self.pkg_version:
-                    if(curPkg.version > self.pkg_version[curPkg.name]):
+                    if(psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name])):
                         self.logger.info("An update of the package database is needed.")
                 else:
                     # The package database tables have not yet been created. Create it now.
@@ -757,7 +800,7 @@ class Project:
         '''
         import json
         fp = open(os.path.join(self.projectDir, self.projectFile), mode = 'w')
-        json.dump(self, fp = fp, cls = psysmon.core.util.ProjectFileEncoder)
+        json.dump(self, fp = fp, cls = psy_util.ProjectFileEncoder)
         fp.close()
 
 
