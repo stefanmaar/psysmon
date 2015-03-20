@@ -32,6 +32,7 @@ collection_node_modules = ['exampleNode', ]
 def databaseFactory(base):
     from sqlalchemy import Column
     from sqlalchemy import Integer, String
+    from sqlalchemy import ForeignKey
 
     tables = []
 
@@ -41,8 +42,13 @@ def databaseFactory(base):
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        value = Column(String(20))
+        value = Column(String(40))
         value_2 = Column(String(30))
+        #recorder_id = Column(Integer,
+                             #ForeignKey('geom_recorder.id',
+                             #           onupdate='cascade',
+                             #           ondelete='set null'),
+        #                     nullable=True)
 
 
     exampleTable = ExampleTable
