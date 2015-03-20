@@ -50,6 +50,7 @@ import obspy.core.utcdatetime as utcdatetime
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.util as psy_util
 from psysmon.packages.geometry.db_inventory import DbInventory
+import psysmon.core.database_util as db_util
 
 
 class Project:
@@ -693,63 +694,43 @@ class Project:
         if not self.dbBase:
             self.connect2Db()
 
+        pkg_version_changed = False
+        db_migration_error = False
         for _, curPkg in packages.iteritems():
             if not curPkg.databaseFactory:
-                self.logger.info("%s: No databaseFactory method found.", curPkg.name)
+                self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
             else:
-                self.logger.info("%s: Retrieving the database tables.", curPkg.name)
+                self.logger.info("%s: databaseFactory found. Retrieving the table definitions.", curPkg.name)
                 tables = curPkg.databaseFactory(self.dbBase)
 
                 for curTable in tables:
                     # Add the table prefix.
                     curName = curTable.__table__.name
                     curTable.__table__.name = self.slug + "_" + curTable.__table__.name
-                    table_migrated = self.db_table_migration(curTable)
-                    if table_migrated is True:
-                        self.dbTables[curName] = curTable
+                    try:
+                        if psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name]):
+                            pkg_version_changed = True
+                            # Check for changes in the database.
+                            self.logger.info('%s - The current package version %s is newer than the one used (%s) when the project was saved - an update is needed.',curPkg.name, curPkg.version, self.pkg_version[curPkg.name])
+                            db_util.db_table_migration(table = curTable,
+                                                       engine = self.dbEngine,
+                                                       prefix = self.slug + '_')
 
-    # TODO: Move the database migration methods to a separate module
-    # database_util.py. Pass the needed database objects (dbEngine, Metadata,
-    # ..) as arguments.
-    def db_table_migration(self, table):
-        ''' Check if a database table migration is needed and apply the changes.
-        '''
-        table_migrated = False
-        cur_metadata = MetaData(self.dbEngine)
-        cur_metadata.reflect(self.dbEngine)
-        if table.__table__.name in cur_metadata.tables.keys():
-            # Check for changes between the existing and the new table.
-            table_migrated = self.update_db_table(table = table, metadata = cur_metadata)
-        else:
-            # The table is missing in the schema, create it.
-            table.create()
-            table_migrated = True
+                            # Update the project package version to the current
+                            # one.
+                            self.pkg_version[curPkg.name] = curPkg.version
+                    except:
+                        db_migration_error = True
+                        self.logger.exception("Couldn't migrate the table %s.", curName)
+                        continue
 
-        return table_migrated
+                    self.dbTables[curName] = curTable
 
+        if pkg_version_changed is True and db_migration_error is not True:
+            # Save the project to update the package versions.
+            self.save_json()
 
-    def update_db_table(self, table, metadata):
-        ''' Update the table structure to the new schema.
-        '''
-        # Check for added columns.
-        new_table = table.__table__
-        exist_table = metadata.tables[new_table.name]
-        columns_to_add = set(new_table.columns.keys()).difference(set(exist_table.columns.keys()))
-        if columns_to_add:
-            for cur_col in columns_to_add:
-                # Add the missing columns to the table.
-                pass
-        return True
-
-
-    def add_column(engine, table, column):
-        ''' Add a column to a database table.
-        '''
-        table_name = table.description
-        column_name = column.compile(dialect=engine.dialect)
-        column_type = column.type.compile(engine.dialect)
-        engine.execute('ALTER TABLE %s ADD COLUMN %s %s' % (table_name, column_name, column_type))
 
 
 
