@@ -734,23 +734,6 @@ class Project:
 
 
 
-    def checkDbVersions(self, packages):
-        '''Check if the database has to be updated.
-
-        packages : Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
-            The packages to be checked for the database table to be updated.
-        '''
-        for curPkgKey, curPkg in packages.iteritems():
-            if hasattr(curPkg, 'databaseFactory'):
-                if curPkg.name in self.pkg_version:
-                    if(psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name])):
-                        self.logger.info("An update of the package database is needed.")
-                else:
-                    # The package database tables have not yet been created. Create it now.
-                    self.logger.info("Creating the database tables of package %s" % curPkg.name)
-                    self.createDatabaseStructure({curPkgKey: curPkg})
-
-
     def save(self):
         '''Save the project to a file.
 
