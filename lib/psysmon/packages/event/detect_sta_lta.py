@@ -161,11 +161,12 @@ class StaLtaDetection(CollectionNode):
 
 
     def edit(self):
-        stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
-        self.pref_manager.set_limit('stations', stations)
+        if self.project.geometry_inventory:
+            stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
+            self.pref_manager.set_limit('stations', stations)
 
-        channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
-        self.pref_manager.set_limit('channels', channels)
+            channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
+            self.pref_manager.set_limit('channels', channels)
 
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
