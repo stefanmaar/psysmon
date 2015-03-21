@@ -29,13 +29,12 @@ class ProcessingStack(OptionPlugin):
     '''
 
     '''
-    nodeClass = 'TraceDisplay'
+    nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, with_run_button = True):
         ''' The constructor
 
         '''
-
         OptionPlugin.__init__(self,
                               name = 'processing stack',
                               category = 'proc',
@@ -48,12 +47,14 @@ class ProcessingStack(OptionPlugin):
 
         self.icons['active'] = icons.layers_1_icon_16
 
+        self.with_run_button = with_run_button
+
 
 
     def buildFoldPanel(self, parent):
         foldPanel = wx.Panel(parent = parent, id = wx.ID_ANY)
 
-        self.processingStack = self.parent.dataManager.processingStack
+        self.processingStack = self.parent.processing_stack
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -61,18 +62,16 @@ class ProcessingStack(OptionPlugin):
 
         # Create the buttons to control the stack.
         addButton = wx.Button(foldPanel, wx.ID_ANY, "add")
-        #font = addButton.GetFont()
-        #font.SetPointSize(10)
-        #addButton.SetFont(font)
         removeButton = wx.Button(foldPanel, wx.ID_ANY, "remove")
-        #removeButton.SetFont(font)
-        runButton = wx.Button(foldPanel, wx.ID_ANY, "run")
-        #runButton.SetFont(font)
+
 
         # Fill the button sizer.
         buttonSizer.Add(addButton, 0, wx.ALL)
         buttonSizer.Add(removeButton, 0, wx.ALL)
-        buttonSizer.Add(runButton, 0, wx.ALL)
+
+        if self.with_run_button is True:
+            runButton = wx.Button(foldPanel, wx.ID_ANY, "run")
+            buttonSizer.Add(runButton, 0, wx.ALL)
 
         # Fill the nodes list with the nodes in the processing stack.
         nodeNames = [x.name for x in self.processingStack.nodes]
@@ -83,7 +82,7 @@ class ProcessingStack(OptionPlugin):
                                            choices = nodeNames,
                                            size = (100, -1))
         self.nodeListBox.SetChecked(isActive)
-        
+
         # By default select the first processing node.
         self.nodeListBox.SetSelection(0)
         self.nodeOptions = self.processingStack[0].getEditPanel(foldPanel)
@@ -98,13 +97,14 @@ class ProcessingStack(OptionPlugin):
         sizer.AddGrowableCol(0)
 
         # Bind the events.
-        foldPanel.Bind(wx.EVT_BUTTON, self.onRun, runButton)
         foldPanel.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
         foldPanel.Bind(wx.EVT_LISTBOX, self.onNodeSelected, self.nodeListBox)
         foldPanel.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
+        if self.with_run_button is True:
+            foldPanel.Bind(wx.EVT_BUTTON, self.onRun, runButton)
 
         foldPanel.SetSizer(sizer)
-       
+
         self.foldPanel = foldPanel
 
         return foldPanel

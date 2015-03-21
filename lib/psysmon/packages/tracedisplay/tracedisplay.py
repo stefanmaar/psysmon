@@ -255,7 +255,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         app = psygui.PSysmonApp()
 
         # Get the plugins for this class.
-        plugins = self.project.getPlugins(self.__class__.__name__)
+        plugins = self.project.getPlugins(('common', self.__class__.__name__))
 
         tdDlg = TraceDisplayDlg(self,
                                 project = self.project,
@@ -386,6 +386,13 @@ class TraceDisplayDlg(wx.Frame):
         return self.dataManager.get_orig_stream(scnl = self.displayManager.getSCNL(source = 'show'))
 
 
+    @property
+    def processing_stack(self):
+        ''' The processing stack.
+        '''
+        return self.dataManager.processingStack
+
+
     def init_user_selection(self):
         if self.collectionNode.property['start_time']:
             pass
@@ -471,7 +478,7 @@ class TraceDisplayDlg(wx.Frame):
         self.ribbonPanels = {}
         self.ribbonToolbars = {}
         self.foldPanels = {}
-        for curGroup, curCategory in [(x.group, x.category) for x in self.plugins]:
+        for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = itemgetter(0,1)):
             if curGroup not in self.ribbonPages.keys():
                 self.logger.debug('Creating page %s', curGroup)
                 self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
