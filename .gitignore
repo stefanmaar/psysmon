@@ -25,10 +25,18 @@ MANIFEST
 # Ignore the .swp file
 *.swp
 
+# Ignore build files.
+*.o
+*.so
+*.dll
+
 # Ignore some doc folders
 /doc/build/
 /doc/source/autogen/
 
 # Ignore miniseed data files
 .msd
+
+# Ignore the egg installation folder.
+psysmon.egg-info/
 

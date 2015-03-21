@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # LICENSE
 #
 # This file is part of pSysmon.

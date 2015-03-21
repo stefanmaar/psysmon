@@ -157,6 +157,27 @@ class PreferencesManager:
         return limits
 
 
+    def set_limit(self, name, limit, pagename = None):
+        ''' Set the value of the specified item.
+
+        name : String
+            The name of the preferences item to set.
+
+        value : String
+            The new value of the preferences item.
+
+        pagename : String
+            The name of the page to which the search should be limited.
+        '''
+        found_items = self.get_item(name = name, pagename = pagename)
+        for cur_item in found_items:
+            cur_item.limit = limit
+            #if len(cur_item.gui_element) > 0:
+            #    cur_item.update_gui_element()
+
+        return found_items
+
+
     def set_value(self, name, value, pagename = None):
         ''' Set the value of the specified item.
 
@@ -222,8 +243,11 @@ class PreferenceItem(object):
 
     '''
 
-    def __init__(self, name, value, mode, label = None, group = None, limit = None, parent_page = None, default = None, gui_element = None):
-        ''' The constructor.
+    def __init__(self, name, value, mode, label = None,
+                 group = None, limit = None, parent_page = None,
+                 default = None, gui_element = None,
+                 tool_tip = None):
+        ''' Initialization of the instance.
 
         '''
         # The name of the item.
@@ -236,6 +260,9 @@ class PreferenceItem(object):
         self.label = label
         if self.label is None:
             self.label = self.name
+
+        # The tooltip string of the control element.
+        self.tool_tip = tool_tip
 
         # The default value of this item.
         if default is None:
@@ -410,6 +437,25 @@ class DateTimeEditPrefItem(PreferenceItem):
 class CustomPrefItem(PreferenceItem):
     '''
     '''
-    def __init__(self, name, value, **kwargs):
+    def __init__(self, name, value, gui_class = None, **kwargs):
         PreferenceItem.__init__(self, name = name, value = value,
                                 mode = 'custom', **kwargs)
+        self.gui_class = gui_class
+
+
+
+class ActionItem(object):
+    '''
+    '''
+    def __init__(self, name, label, group, mode, action):
+
+        self.name = name
+
+        self.label = label
+
+        self.group = group
+
+        self.mode = mode
+
+        self.action = action
+

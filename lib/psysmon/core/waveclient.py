@@ -299,28 +299,14 @@ class PsysmonDbWaveClient(WaveClient):
 
         Parameters
         ----------
-        network : String
-            The network name.
-
-        station : String
-            The station name.
-
-        location : String
-            The location specifier.
-
-        channel : String
-            The channel name.
-
         startTime : UTCDateTime
             The begin datetime of the data to fetch.
 
         endTime : UTCDateTime
             The end datetime of the data to fetch.
 
-        waveformDirList : List of Strings
-            A list of waveform directories associated with the project.
-            Each entry in the list is a dictionary with the fields id, dir, dirAlias and description.
-
+        scnl : List of Tuples (STATION, CHANNEL, NETWORK, LOCATION)
+            The channels for which to get the waveform data.
 
         Returns
         -------
@@ -422,10 +408,10 @@ class PsysmonDbWaveClient(WaveClient):
         # Get the channel from the inventory. It's expected, that only one
         # channel is returned. If more than one channels are returned, then
         # there is an error in the geometry inventory.
-        cur_channel = self.project.inventory.get_channel(network = network,
-                                                         station = station,
-                                                         location = location,
-                                                         name = channel)
+        cur_channel = self.project.geometry_inventory.get_channel(network = network,
+                                                                  station = station,
+                                                                  location = location,
+                                                                  name = channel)
 
         if cur_channel:
             if len(cur_channel) > 1:

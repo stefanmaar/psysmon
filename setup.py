@@ -29,11 +29,16 @@ The pSysmon setup script.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
-
 import sys
-from distutils.core import setup
+import os
+import glob
+import inspect
+#import distutils
+from numpy.distutils.core import setup
+from numpy.distutils.misc_util import Configuration
 from setupExt import printStatus, printMessage, printLine, printRaw, \
     checkForPackage
+
 
 # Get the current pSysmon version, author and description.
 for line in open('lib/psysmon/__init__.py').readlines():
@@ -112,6 +117,34 @@ if not requirements_fullfilled:
 printRaw("")
 printRaw("")
 
+# Add the C source to be built.
+setup_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+root_dir = os.path.join(setup_dir, 'lib', 'psysmon')
+
+core_path = os.path.join(setup_dir, 'lib', 'psysmon', 'core')
+sys.path.insert(0, core_path)
+from clib_util import get_lib_name  # @UnresolvedImport
+sys.path.pop(0)
+
+def configuration(parent_package = '', top_path = None):
+    '''
+
+    '''
+    config = Configuration('', parent_package, top_path,
+                           package_dir = packageDir)
+
+
+    # LIBSIGNAL
+    path = os.path.join(root_dir, 'core', 'src')
+    files = [os.path.join(path, 'moving_average.c'), ]
+    printRaw(files)
+    config.add_extension(get_lib_name('signal'),
+                         sources = files)
+
+    return config
+
+#distutils.log.set_verbosity(1)
+
 setup(name = 'psysmon',
       version = __version__,
       description = __description__,
@@ -129,7 +162,8 @@ setup(name = 'psysmon',
       packages = packages,
       platforms = 'any',
       scripts = scripts,
-      package_dir = packageDir,
-      package_data = packageData
+      package_data = packageData,
+      ext_package = 'psysmon.lib',
+      configuration = configuration
      )
 

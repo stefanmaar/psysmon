@@ -89,7 +89,7 @@ class ImportWaveform(CollectionNode):
                 if cur_data is not None:
                     dbData.append(cur_data)
 
-        self.logger.debug('dbData: %s', dbData)   
+        self.logger.debug('dbData: %s', dbData)
 
         if len(dbData) > 0:
             dbSession = self.project.getDbSession()
@@ -557,11 +557,23 @@ class ImportWaveformEditDlg(wx.Frame):
     def onAddDirectory(self, event):
         from obspy.core.util.base import ENTRY_POINTS
         from pkg_resources import load_entry_point
+        import wx.lib.agw.multidirdialog as mdd
 
-        dlg = wx.DirDialog(self, "Choose a directory:",
-                           style=wx.DD_DEFAULT_STYLE
-                           | wx.DD_DIR_MUST_EXIST
-                           )
+#        dlg = wx.DirDialog(self, "Choose a directory:",
+#                           style=wx.DD_DEFAULT_STYLE
+#                           | wx.DD_DIR_MUST_EXIST
+#                           )
+
+        waveclient = self.psyProject.waveclient['db client']
+        if waveclient.waveformDirList:
+            start_path = waveclient.waveformDirList[0][2]
+        else:
+            start_path = os.getcwd()
+
+        dlg = mdd.MultiDirDialog(self,
+                                 title = 'Choose one or more directories',
+                                 defaultPath = start_path,
+                                 agwStyle = mdd.DD_MULTIPLE | mdd.DD_DIR_MUST_EXIST)
 
         # If the user selects OK, then we process the dialog's data.
         # This is done by getting the path data from the dialog - BEFORE
@@ -576,46 +588,53 @@ class ImportWaveformEditDlg(wx.Frame):
             #                    | wx.PD_ESTIMATED_TIME
             #                    | wx.PD_REMAINING_TIME
             #                    )
-            matches = []
-            #count = 0
-            k = 0
-            filter_pattern = self.collectionNode.pref_manager.get_value('filter_pattern')
-            for root, dirnames, filenames in os.walk(dlg.GetPath(), topdown = True):
-                dirnames.sort()
-                self.logger.info('Scanning directory: %s.', root)
-                for cur_pattern in filter_pattern:
-                    for filename in fnmatch.filter(filenames, cur_pattern):
-                        self.logger.info('Adding file %s', os.path.join(root, filename))
-                        fsize = os.path.getsize(os.path.join(root, filename));
-                        fsize = fsize/(1024.0 * 1024.0)
+            selected_paths = dlg.GetPaths()
+            for cur_path in selected_paths:
+                # Fix the wrongly added 'Home Directory' in the path returned
+                # by the multidir dialog.
+                if cur_path.startswith('Home directory'):
+                    cur_path = cur_path.replace('Home directory', os.getenv('HOME'))
 
-                        if self.check_file_format is True:
-                            # Check the file formats.
-                            EPS = ENTRY_POINTS['waveform']
-                            for format_ep in [x for (key, x) in EPS.items() if key == 'MSEED']:
-                                # search isFormat for given entry point
-                                isFormat = load_entry_point(format_ep.dist.key,
-                                    'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
-                                    'isFormat')
-                                # check format
-                                self.logger.debug('Checking format with %s.', isFormat)
-                                if isFormat(os.path.join(root,filename)):
-                                    file_format = format_ep.name
-                                    break;
+                matches = []
+                #count = 0
+                k = 0
+                filter_pattern = self.collectionNode.pref_manager.get_value('filter_pattern')
+                for root, dirnames, filenames in os.walk(cur_path, topdown = True):
+                    dirnames.sort()
+                    self.logger.info('Scanning directory: %s.', root)
+                    for cur_pattern in filter_pattern:
+                        for filename in fnmatch.filter(filenames, cur_pattern):
+                            self.logger.info('Adding file %s', os.path.join(root, filename))
+                            fsize = os.path.getsize(os.path.join(root, filename));
+                            fsize = fsize/(1024.0 * 1024.0)
+
+                            if self.check_file_format is True:
+                                # Check the file formats.
+                                EPS = ENTRY_POINTS['waveform']
+                                for format_ep in [x for (key, x) in EPS.items() if key == 'MSEED']:
+                                    # search isFormat for given entry point
+                                    isFormat = load_entry_point(format_ep.dist.key,
+                                        'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
+                                        'isFormat')
+                                    # check format
+                                    self.logger.debug('Checking format with %s.', isFormat)
+                                    if isFormat(os.path.join(root,filename)):
+                                        file_format = format_ep.name
+                                        break;
+                                else:
+                                    file_format = 'unknown'
                             else:
-                                file_format = 'unknown'
-                        else:
-                            file_format = 'not checked'
+                                file_format = 'not checked'
 
-                        self.logger.debug('adding to matches')
-                        matches.append((file_format, os.path.join(root, filename), '%.2f' % fsize))
-                        k += 1
+                            self.logger.debug('adding to matches')
+                            matches.append((file_format, os.path.join(root, filename), '%.2f' % fsize))
+                            k += 1
 
 
 
-            matches = [x for x in matches if x not in self.file_grid.GetTable().data]
-            self.file_grid.GetTable().data.extend(matches)
-            self.file_grid.GetTable().ResetView()
+                matches = [x for x in matches if x not in self.file_grid.GetTable().data]
+                self.file_grid.GetTable().data.extend(matches)
+                self.file_grid.GetTable().ResetView()
             #bar.Destroy()
 
         self.file_grid.doResize()

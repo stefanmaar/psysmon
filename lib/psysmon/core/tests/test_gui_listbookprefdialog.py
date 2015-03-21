@@ -52,69 +52,78 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
                               group = 'test group 1',
                               limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'),
                               value = 'ERROR',
+                              tool_tip = 'tooltip of the single choice control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add a multi_choice field.
         item = MultiChoicePrefItem(name = 'multi_choice',
                               group = 'test group 1',
                               limit = ('value 1', 'value 2', 'value 3', 'value 4', 'value 5'),
                               value = ['value 2', 'value 4'],
+                              tool_tip = 'tooltip of the multi choice control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add a textedit field.
-        item = TextEditPrefItem(name = 'textedit', 
+        item = TextEditPrefItem(name = 'textedit',
                               group = 'test group 1',
-                              value = 'this is a textedit field'
+                              value = 'this is a textedit field',
+                              tool_tip = 'tooltip of the textedit control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add a integer_control field.
-        item = IntegerControlPrefItem(name = 'integer_control', 
-                              group = 'test group 1',
-                              value = 10
-                             )
-        self.pref.add_item(pagename = 'Logging', item = item)   
-
-        # Add an integer_range field.
-        item = IntegerSpinPrefItem(name = 'integer_range', 
+        item = IntegerControlPrefItem(name = 'integer_control',
                               group = 'test group 1',
                               value = 10,
-                              limit = (0, 100)
+                              tool_tip = 'tooltip of the integer control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
+
+        # Add an integer_range field.
+        item = IntegerSpinPrefItem(name = 'integer_range',
+                              group = 'test group 1',
+                              value = 10,
+                              limit = (0, 100),
+                              tool_tip = 'tooltip of the integer spin control element'
+                             )
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add an float_spin field.
-        item = FloatSpinPrefItem(name = 'float_spin', 
+        item = FloatSpinPrefItem(name = 'float_spin',
                               group = 'test group 1',
                               value = 10.3,
-                              limit = (0, 100)
+                              limit = (0, 100),
+                              tool_tip = 'tooltip of the float spin control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add a datetime_edit field.
-        item = DateTimeEditPrefItem(name = 'datetime', 
+        item = DateTimeEditPrefItem(name = 'datetime',
                                     group = 'test group 1',
-                                    value = udt.UTCDateTime('2014-01-01T01:02:03.123456')
+                                    value = udt.UTCDateTime('2014-01-01T01:02:03.123456'),
+                                    tool_tip = 'tooltip of the datetime edit control element'
                                     )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add an filebrowse field.
-        item = FileBrowsePrefItem(name = 'filebrowse', 
+        item = FileBrowsePrefItem(name = 'filebrowse',
                               group = 'test group 2',
                               value = '',
                               filemask = 'comma separated version (*.csv)|*.csv|' \
-                                        'all files (*)|*'
+                                        'all files (*)|*',
+                              tool_tip = 'tooltip of the file browse control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
         # Add an dirbrowse field.
-        item = DirBrowsePrefItem(name = 'dirbrowse', 
+        item = DirBrowsePrefItem(name = 'dirbrowse',
                               group = 'test group 2',
-                              value = '' 
+                              value = '',
+                              tool_tip = 'tooltip of the dir browse control element'
                              )
-        self.pref.add_item(pagename = 'Logging', item = item)   
+        self.pref.add_item(pagename = 'Logging', item = item)
 
 
     def tearDown(self):

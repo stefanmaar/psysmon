@@ -387,7 +387,7 @@ class Project:
         result['dbTables'] = {}
         result['waveclient'] = {}
         result['threadMutex'] = None
-        result['inventory'] = None
+        result['geometry_inventory'] = None
 
         return result
 
@@ -419,7 +419,7 @@ class Project:
         geometry database, the inventory of the waveclient has to be
         reloaded.
         '''
-        self.inventory = DbInventory.load_inventory(self)
+        self.geometry_inventory = DbInventory.load_inventory(self)
 
 
 

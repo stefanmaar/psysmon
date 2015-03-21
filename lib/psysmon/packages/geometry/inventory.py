@@ -1736,6 +1736,20 @@ class Channel(object):
         else:
             return None
 
+    @property
+    def scnl(self):
+        if self.parent_station is not None:
+            return (self.parent_station.name,
+                    self.name,
+                    self.parent_station.network,
+                    self.parent_station.location)
+        else:
+            return None
+
+    @property
+    def scnl_string(self):
+        return str.join(':', self.scnl())
+
 
     def add_stream(self, serial, name, start_time, end_time):
         ''' Add a stream to the channel.

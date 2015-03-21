@@ -357,6 +357,8 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_collection_node(obj)
         elif obj_class == 'PreferencesManager':
             d = self.convert_preferencesmanager(obj)
+        elif obj_class == 'CustomPrefItem':
+            d = self.convert_custom_preferenceitem(obj)
         elif 'PreferenceItem' in base_class:
             d = self.convert_preferenceitem(obj)
         elif 'WaveClient' in base_class:
@@ -415,12 +417,30 @@ class ProjectFileEncoder(json.JSONEncoder):
         return d
 
 
+    def convert_custom_preferenceitem(self, obj):
+        import inspect
+
+        attr = ['name', 'value', 'label', 'default',
+                'group', 'limit', 'gui_class']
+        d = self.object_to_dict(obj, attr)
+
+        # Find any additional arguments.
+        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getargspec(obj.__init__)
+
+        for cur_arg in arg.args:
+            if cur_arg not in base_arg.args:
+                d[cur_arg] = getattr(obj, cur_arg)
+
+        return d
+
+
     def convert_preferenceitem(self, obj):
         import inspect
 
         #attr = ['name', 'value', 'label', 'default', 
         #        'group', 'limit', 'guiclass', 'gui_element']
-        attr = ['name', 'value', 'label', 'default', 
+        attr = ['name', 'value', 'label', 'default',
                 'group', 'limit']
         d = self.object_to_dict(obj, attr)
 
@@ -475,6 +495,8 @@ class ProjectFileDecoder(json.JSONDecoder):
                 inst = self.convert_collection(d)
             elif class_name == 'PreferencesManager':
                 inst = self.convert_pref_manager(d)
+            elif class_name == 'CustomPrefItem':
+                inst = self.convert_custom_preferenceitem(d, class_name, module_name)
             elif 'CollectionNode' in base_class:
                 inst = self.convert_collectionnode(d, class_name, module_name)
             elif 'PreferenceItem' in base_class:
@@ -552,11 +574,17 @@ class ProjectFileDecoder(json.JSONDecoder):
         return inst
 
 
+    def convert_custom_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
     def convert_preferenceitem(self, d, class_name, module_name):
         import importlib
-        # Remove the guiclass element from the dictionary.
-        if 'guiclass' in d.keys():
-            d.pop('guiclass')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         args = dict( (key.encode('ascii'), value) for key, value in d.items())

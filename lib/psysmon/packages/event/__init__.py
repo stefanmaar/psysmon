@@ -26,7 +26,10 @@ description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['import_bulletin', ]
+collection_node_modules = ['import_bulletin', 'detect_sta_lta']
+
+# Specify the module(s) where to search for plugin classes.
+plugin_modules = ['plugins_event_selector',]
 
 def databaseFactory(base):
     from sqlalchemy import Column
@@ -80,7 +83,6 @@ def databaseFactory(base):
     class EventDb(base):
         __tablename__  = 'event'
         __table_args__ = (
-                          UniqueConstraint('ev_catalog_id', 'public_id'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
@@ -93,32 +95,36 @@ def databaseFactory(base):
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
         public_id = Column(String(255), nullable = True)
-        pref_origin_id = Column(Integer, nullable = True)
-        pref_magnitude_id = Column(Integer, nullable = True)
-        pref_focmec_id = Column(Integer, nullable = True)
-        ev_type = Column(Integer, nullable = True)
-        ev_type_certainty = Column(String(50), nullable = True)
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
         tags = Column(String(255), nullable = True)
+        ev_type_id = Column(Integer, nullable = True)
+        ev_type_certainty = Column(String(50), nullable = True)
+        pref_origin_id = Column(Integer, nullable = True)
+        pref_magnitude_id = Column(Integer, nullable = True)
+        pref_focmec_id = Column(Integer, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
 
-        def __init__(self, ev_catalog_id, start_time, end_time, public_id,
-                     pref_origin_id, pref_magnitude_id, pref_focmec_id, ev_type,
-                     ev_type_certainty, description, agency_uri, author_uri, creation_time):
+        def __init__(self, ev_catalog_id, start_time, end_time,
+                     agency_uri, author_uri, creation_time,
+                     public_id = None, description = None, comment = None,
+                     tags = None, ev_type_id = None, ev_type_certainty = None,
+                     pref_origin_id = None, pref_magnitude_id = None, pref_focmec_id = None):
             self.ev_catalog_id = ev_catalog_id
             self.start_time = start_time
             self.end_time = end_time
             self.public_id = public_id
+            self.description = description
+            self.comment = comment
+            self.tags = tags
+            self.ev_type_id = ev_type_id
+            self.ev_type_certainty = ev_type_certainty
             self.pref_origin_id = pref_origin_id
             self.pref_magnitude_id = pref_magnitude_id
             self.pref_focmec_id = pref_focmec_id
-            self.ev_type = ev_type
-            self.ev_type_certainty = ev_type_certainty
-            self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
@@ -126,6 +132,64 @@ def databaseFactory(base):
 
     tables.append(EventDb)
 
+
+    ###########################################################################
+    # DETECTION_TO_EVENT table mapper class
+    class DetectionToEventDb(base):
+        __tablename__  = 'detection_to_event'
+        __table_args__ = (
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        ev_id = Column(Integer,
+                       ForeignKey('event.id', onupdate = 'cascade'),
+                       primary_key = True,
+                       nullable = False)
+        det_id = Column(Integer,
+                        ForeignKey('detection.id', onupdate = 'cascade'),
+                        primary_key = True,
+                        nullable = False)
+
+        detection = relationship('DetectionDb')
+
+        def __init(self, ev_id, det_id):
+            self.ev_id = ev_id
+            self.det_id = det_id
+
+    tables.append(DetectionToEventDb)
+
+
+    ###########################################################################
+    # DETECTION_CATALOG table mapper class
+    class DetectionCatalogDb(base):
+        __tablename__  = 'detection_catalog'
+        __table_args__ = (
+                          UniqueConstraint('name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key = True, autoincrement = True)
+        name = Column(String(255), nullable = False)
+        description = Column(Text, nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
+        creation_time = Column(String(30), nullable = True)
+
+        detections = relationship('DetectionDb',
+                                  cascade = 'all',
+                                  backref = 'parent',
+                                  lazy = 'subquery')
+
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+
+    tables.append(DetectionCatalogDb)
 
 
     ###########################################################################
@@ -135,18 +199,34 @@ def databaseFactory(base):
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer, primary_key = True, autoincrement = True)
-        public_id = Column(String(255), nullable = False)
-        sensor_id = Column(Integer, 
-                           ForeignKey('geom_sensor.id',
+        catalog_id = Column(Integer,
+                            ForeignKey('detection_catalog.id',
+                                        onupdate = 'cascade',
+                                        ondelete = 'set null'),
+                            nullable = True)
+        rec_stream_id = Column(Integer,
+                               ForeignKey('geom_rec_stream.id',
                                       onupdate = 'cascade',
                                       ondelete = 'set null'),
-                           nullable = True)
+                                      nullable = True)
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
+        method = Column(String(255), nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
-        UniqueConstraint('public_id')
+
+        def __init__(self, catalog_id, rec_stream_id,
+                     start_time, end_time, method,
+                     agency_uri, author_uri, creation_time):
+            self.catalog_id = catalog_id,
+            self.rec_stream_id = rec_stream_id,
+            self.start_time = start_time,
+            self.end_time = end_time,
+            self.method = method,
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
 
     tables.append(DetectionDb)
 
