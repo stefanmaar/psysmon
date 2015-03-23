@@ -114,6 +114,9 @@ class Field(wx.Panel):
 
         self.SetSizer(self.sizer)
 
+    def __del__(self):
+        self.pref_item.remove_gui_element(self)
+
 
     def addLabel(self, labelElement):
         self.labelElement = labelElement
@@ -188,7 +191,7 @@ class PrefPagePanel(wx.Panel):
                 gui_element = guiclass(name = cur_item.label,
                                        pref_item = cur_item,
                                        size = (100, -1),
-                                       parent = cur_container 
+                                       parent = cur_container
                                       )
                 cur_item.set_gui_element(gui_element)
                 cur_container.addField(gui_element)

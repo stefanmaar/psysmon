@@ -313,6 +313,11 @@ class PreferenceItem(object):
         if element not in self.gui_element:
             self.gui_element.append(element)
 
+    def remove_gui_element(self, element):
+        ''' Remove a gui element from the preference item.
+        '''
+        self.gui_element.remove(element)
+
 
     def update_gui_element(self):
         ''' Update the gui elements related to the item.
