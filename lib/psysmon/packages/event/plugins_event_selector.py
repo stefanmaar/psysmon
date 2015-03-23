@@ -220,6 +220,9 @@ class EventListField(wx.Panel):
 
         self.SetSizer(self.sizer)
 
+    def __del__(self):
+        self.pref_item.remove_gui_element(self)
+
 
     def set_events(self, events):
         '''
