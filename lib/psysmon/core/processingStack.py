@@ -45,7 +45,7 @@ class ProcessingStack:
     The processing stack takes care about passing the correct data to the processingNode
     and to pass the processed data to the next processing node.
     '''
-    def __init__(self, name, project, inventory):
+    def __init__(self, name, project, nodes = None):
         ''' The constructor
 
         '''
@@ -54,13 +54,20 @@ class ProcessingStack:
 
         # The list of the processing nodes contained in the processing
         # stack.
-        self.nodes = []
+        if nodes is None:
+            self.nodes = []
+        else:
+            self.nodes = nodes
 
         # The current project.
         self.project = project
 
-        # The currently used inventory.
-        self.inventory = inventory
+
+    @property
+    def geometry_inventory(self):
+        ''' The geometry inventory of the parent project.
+        '''
+        return self.project.geometry_inventory
 
 
     def __getitem__(self, index):
