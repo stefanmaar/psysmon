@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "example"                                # The package name.
-version = "0.1.2"                               # The package version.
+version = "0.0.1"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
 description = "The example packages"            # The package description.
