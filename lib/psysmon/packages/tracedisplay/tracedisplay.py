@@ -346,13 +346,8 @@ class TraceDisplayDlg(wx.Frame):
         self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
 
         # Create the display option.
-        inventory = DbInventory.load_inventory(self.project)
-        #db_inventory = DbInventory('test', self.project)
-        #db_inventory.load_recorders()
-        #db_inventory.load_networks()
-        #db_inventory.close()
         self.displayManager = DisplayManager(parent = self,
-                                             inventory = inventory)
+                                             inventory = project.geometry_inventory)
 
         # Create the shortcut options.
         self.shortcutManager = ShortcutManager()
@@ -1820,8 +1815,7 @@ class DataManager():
         self.procStream = Stream()
 
         self.processingStack = ProcessingStack('my stack',
-                                                self.project,
-                                                self.parent.displayManager.inventory)
+                                                self.project)
         detrend_node = [x for x in self.parent.processingNodes if x.name == 'detrend'][0]
         self.processingStack.addNode(detrend_node)
         #convert_to_sensor_units_node = [x for x in self.parent.processingNodes if x.name == 'convert to sensor units'][0]
