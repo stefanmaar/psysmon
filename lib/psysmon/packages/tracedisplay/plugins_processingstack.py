@@ -24,6 +24,9 @@ from psysmon.core.plugins import OptionPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import wx.lib.mixins.listctrl as listmix
 from psysmon.core.gui import psyContextMenu
+from wx.lib.stattext import GenStaticText as StaticText
+import copy
+
 
 class ProcessingStack(OptionPlugin):
     '''
@@ -160,6 +163,153 @@ class ProcessingStack(OptionPlugin):
 
         self.processingStack[index].toggleEnabled()
 
+
+
+class PStackEditField(wx.Panel):
+
+    def __init__(self, name, pref_item, size, parent = None):
+        ''' Initialize the instance.
+        '''
+        wx.Panel.__init__(self, parent = parent, size = size, id = wx.ID_ANY)
+
+        self.name = name
+
+        self.pref_item = pref_item
+
+        self.size = size
+
+        self.label = name + ":"
+
+        self.labelElement = None
+
+        self.controlElement = None
+
+        self.sizer = wx.GridBagSizer(5, 5)
+
+
+        # Create the field label.
+        self.labelElement = StaticText(parent=self,
+                                       ID=wx.ID_ANY,
+                                       label=self.label,
+                                       style=wx.ALIGN_LEFT)
+
+        self.sizer.Add(self.labelElement, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
+
+        self.controlElement = PStackEditPanel(parent = self,
+                                              size = (-1, 300))
+
+        self.sizer.Add(self.controlElement, pos = (1,0), flag = wx.EXPAND|wx.ALL, border = 0)
+        self.sizer.AddGrowableCol(0)
+        self.sizer.AddGrowableRow(1)
+
+        self.SetSizer(self.sizer)
+
+
+    def __del__(self):
+        self.pref_item.remove_gui_element(self)
+
+
+
+
+
+
+
+
+class PStackEditPanel(wx.Panel):
+    '''
+    '''
+    def __init__(self, parent, size, id = wx.ID_ANY):
+        wx.Panel.__init__(self, parent = parent, id = id, size = size)
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+        buttonSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Create the buttons to control the stack.
+        addButton = wx.Button(self, wx.ID_ANY, "add")
+        removeButton = wx.Button(self, wx.ID_ANY, "remove")
+
+        # Fill the button sizer.
+        buttonSizer.Add(addButton, 0, wx.ALL)
+        buttonSizer.Add(removeButton, 0, wx.ALL)
+
+        # Fill the nodes list with the nodes in the processing stack.
+        self.selected_nodes = self.GetParent().pref_item.value
+        node_names = [x.name for x in self.selected_nodes]
+        is_active = [m for m,x in enumerate(self.selected_nodes) if x.isEnabled() == True]
+
+        self.nodeListBox = wx.CheckListBox(parent = self,
+                                           id = wx.ID_ANY,
+                                           choices = node_names,
+                                           size = (100, -1))
+        self.nodeListBox.SetChecked(is_active)
+
+        # By default select the first processing node.
+        self.nodeListBox.SetSelection(0)
+        self.nodeOptions = self.selected_nodes[0].getEditPanel(self)
+
+
+        # Add the elements to the main sizer.
+        sizer.Add(self.nodeListBox, pos=(0,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(buttonSizer, pos=(0,1), flag=wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeOptions, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableRow(1)
+        sizer.AddGrowableCol(0)
+
+        self.SetSizer(sizer)
+
+        # Bind the events.
+        self.Bind(wx.EVT_BUTTON, self.on_add_button_clicked, addButton)
+        self.Bind(wx.EVT_LISTBOX, self.on_node_selected, self.nodeListBox)
+        self.Bind(wx.EVT_CHECKLISTBOX, self.on_node_checked, self.nodeListBox)
+
+
+
+    def on_add_button_clicked(self, event):
+        ''' Add a processing node to the stack.
+
+        Open a dialog field to select from the available processing nodes.
+        '''
+        dlg = PStackAddNodeDialog(parent = self,
+                                  availableNodes = self.GetParent().pref_item.limit)
+        val = dlg.ShowModal()
+
+        if val == wx.ID_OK:
+            node2Add = dlg.getSelection()
+            position = self.nodeListBox.GetSelection() + 1
+            node = copy.deepcopy(node2Add)
+            if position == -1:
+                self.selected_nodes.append(node)
+            else:
+                self.selected_nodes.insert(position, node)
+            self.update_node_list()
+
+        dlg.Destroy()
+
+
+    def on_node_selected(self, event):
+        index = event.GetSelection()
+        sizer = self.GetSizer()
+        sizer.Detach(self.nodeOptions)
+        self.nodeOptions.Destroy()
+        self.nodeOptions = self.selected_nodes[index].getEditPanel(self)
+        sizer.Add(self.nodeOptions, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Layout()
+
+
+    def update_node_list(self):
+        self.nodeListBox.Clear()
+        node_names = [x.name for x in self.selected_nodes]
+        is_active = [m for m,x in enumerate(self.selected_nodes) if x.isEnabled() == True]
+        self.nodeListBox.AppendItems(node_names)
+        self.nodeListBox.SetChecked(is_active)
+
+
+    def on_node_checked(self, event):
+        index = event.GetSelection()
+        self.selected_nodes[index].toggleEnabled()
 
 
 class PStackAddNodeDialog(wx.Dialog):
