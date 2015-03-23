@@ -29,6 +29,7 @@
 
 '''
 import logging
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -39,6 +40,8 @@ from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.lib_signal as lib_signal
 
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
+from psysmon.core.processingStack import ProcessingStack
 
 
 
@@ -58,6 +61,7 @@ class StaLtaDetection(CollectionNode):
         # Setup the pages of the preference manager.
         self.pref_manager.add_page('General')
         self.pref_manager.add_page('STA/LTA')
+        self.pref_manager.add_page('Processing')
 
         # The start_time.
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
@@ -157,7 +161,14 @@ class StaLtaDetection(CollectionNode):
         self.pref_manager.add_item(pagename = 'STA/LTA',
                                    item = item)
 
-
+        item = psy_pm.CustomPrefItem(name = 'processing_stack',
+                                     label = 'processing stack',
+                                     group = 'signal processing',
+                                     value = None,
+                                     gui_class = PStackEditField,
+                                     tool_tip = 'Edit the processing stack nodes.')
+        self.pref_manager.add_item(pagename = 'Processing',
+                                   item = item)
 
 
     def edit(self):
@@ -168,17 +179,29 @@ class StaLtaDetection(CollectionNode):
             channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
             self.pref_manager.set_limit('channels', channels)
 
+        processing_nodes = self.project.getProcessingNodes(('common', ))
+        if self.pref_manager.get_value('processing_stack') is None:
+                detrend_node_template = [x for x in processing_nodes if x.name == 'detrend'][0]
+                detrend_node = copy.deepcopy(detrend_node_template)
+                self.pref_manager.set_value('processing_stack', [detrend_node, ])
+
+        self.pref_manager.set_limit('processing_stack', processing_nodes)
+
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 
 
     def execute(self, prevNodeOutput = {}):
+        processing_stack = ProcessingStack(name = 'pstack',
+                                           project = self.project,
+                                           nodes = self.pref_manager.get_value('processing_stack'))
         detector = StaLtaDetector(cf_type = self.pref_manager.get_value('cf_type'),
                                   sta_len = self.pref_manager.get_value('sta_len'),
                                   lta_len = self.pref_manager.get_value('lta_len'),
                                   thr = self.pref_manager.get_value('thr'),
-                                  project = self.project)
+                                  project = self.project,
+                                  processing_stack = processing_stack)
 
         detector.detect(start_time = self.pref_manager.get_value('start_time'),
                         end_time = self.pref_manager.get_value('end_time'),
@@ -186,12 +209,13 @@ class StaLtaDetection(CollectionNode):
                         channels = self.pref_manager.get_value('channels'))
 
 
-
+ 
 
 class StaLtaDetector(object):
 
     def __init__(self, cf_type = 'square', sta_len = 2,
-                 lta_len = 10, thr = 3, project = None):
+                 lta_len = 10, thr = 3, project = None,
+                 processing_stack = None):
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -214,6 +238,10 @@ class StaLtaDetector(object):
 
         # The psysmon project.
         self.project = project
+
+        # The processing stack used for signal processing before running the
+        # detection.
+        self.processing_stack = processing_stack
 
 
     def detect(self, start_time, end_time, stations, channels, interval = 3600.):
@@ -284,8 +312,9 @@ class StaLtaDetector(object):
                     self.logger.info("Processing stream %s.", cur_stream)
                     try:
                         cur_stream = cur_stream.split()
-                        cur_stream.detrend(type = 'constant')
-                        cur_stream.filter('bandpass', freqmin = 1.0, freqmax = 100.0)
+                        self.processing_stack.execute(cur_stream)
+                        #cur_stream.detrend(type = 'constant')
+                        #cur_stream.filter('bandpass', freqmin = 1.0, freqmax = 100.0)
                     except Exception as e:
                         self.logger.error('Error when processing the stream %s:\n%s', str(cur_stream), e)
                         continue
@@ -321,6 +350,7 @@ class StaLtaDetector(object):
                             # event binding.
                             if cur_scnl == ('AP01', 'HHZ', 'APO', '00'):
                                 comment_string = 'Detected on SCNL %s.' % str(cur_scnl)
+                                #comment_string = 'delete me'
                                 cur_orm = event_table(ev_catalog_id = None,
                                                       start_time = det_start_time.timestamp,
                                                       end_time = det_end_time.timestamp,
@@ -451,8 +481,8 @@ class StaLtaDetector(object):
 #        plt.plot(self.thr * lta, 'g')
 #        plt.plot(data, 'k')
 #        for event_begin, event_end in event_marker:
-#            plt.axvline(event_begin)
-#            plt.axvline(event_end)
+#            plt.axvline(event_begin, color = 'm')
+#            plt.axvline(event_end, color = 'b')
 #        plt.show()
 
 
