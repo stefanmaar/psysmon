@@ -228,13 +228,15 @@ class PreferencesManager:
     def update(self, pref_manager):
         ''' Update the values of the preferences manager.
         '''
+        attr_to_update = ['value', 'limit']
         for cur_key in pref_manager.pages.keys():
             if cur_key in self.pages.keys():
                 for cur_item in pref_manager.pages[cur_key]:
                     update_item = self.get_item(cur_item.name, cur_key)
                     for cur_update_item in update_item:
-                        for cur_arg in cur_update_item.__dict__.keys():
-                            setattr(cur_update_item, cur_arg, getattr(cur_item, cur_arg))
+                        for cur_attr in attr_to_update:
+                            if cur_attr in cur_update_item.__dict__.keys():
+                                setattr(cur_update_item, cur_attr, getattr(cur_item, cur_attr))
 
 
 
