@@ -21,6 +21,7 @@
 import logging
 import obspy.core.utcdatetime as udt
 import wx
+import wx.grid
 from wx.lib.stattext import GenStaticText as StaticText
 import  wx.lib.filebrowsebutton as filebrowse
 import wx.lib.intctrl as intctrl
@@ -30,6 +31,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as FS
 #import wx.lib.rcsizer  as rcs
 import psysmon.core.preferences_manager as psy_pm
+from operator import itemgetter
 
 
 
@@ -911,6 +913,335 @@ class DateTimeEditField(Field):
         self.controlElement.SetValue(self.pref_item.value.isoformat())
 
 
+
+class ListCtrlEditField(Field):
+    ''' A field to edit a list using a wx.ListCtrl.
+    '''
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' Initialize the instance.
+
+        '''
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
+
+        # Create the icons for column sorting.
+        self.il = wx.ImageList(16, 16)
+        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
+        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
+
+        # Create the field label.
+        self.labelElement = StaticText(parent=self,
+                                       ID=wx.ID_ANY,
+                                       label=self.label,
+                                       style=wx.ALIGN_RIGHT)
+
+        # Create the field text control.
+        self.controlElement = wx.ListCtrl(parent = self,
+                                          id = wx.ID_ANY,
+                                          style=wx.LC_REPORT
+                                          | wx.BORDER_NONE
+                                          | wx.LC_SINGLE_SEL
+                                          | wx.LC_SORT_ASCENDING
+                                          )
+        self.controlElement.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+
+        for k, cur_label in enumerate(pref_item.column_labels):
+            self.controlElement.InsertColumn(k, cur_label)
+
+        self.fill_listctrl(data = pref_item.value)
+
+        # Add the gui elements to the field.
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+
+
+    def fill_listctrl(self, data):
+        index = 0
+        self.controlElement.DeleteAllItems()
+
+        for cur_row in data:
+            for k, cur_data in enumerate(cur_row):
+                if k == 0:
+                    self.controlElement.InsertStringItem(index, str(cur_data))
+                else:
+                    self.controlElement.SetStringItem(index, k, str(cur_data))
+
+            index += 1
+
+
+
+class ListGridEditField(Field):
+    ''' A field to edit a list using a wx.grid.Grid.
+
+    '''
+
+    def __init__(self, name, pref_item, size, parent=None):
+        ''' The constructor.
+
+        Parameters
+        ----------
+        name : String
+            The name of the field. It is used as the field label.
+
+        pref_item : :class:`~psysmon.core.preferences.PrefItem`
+            The key of the base option edited by this field.
+
+        size : tuple (width, height)
+            The size of the field.
+
+        parent :
+            The parent wxPyton window of this field.
+        '''
+        Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
+
+        # Create the field label.
+        self.labelElement = StaticText(parent=self,
+                                       ID=wx.ID_ANY,
+                                       label=self.label,
+                                       style=wx.ALIGN_RIGHT)
+
+        # Create the field text control.
+        self.controlElement = FileGrid(parent = self,
+                                       data = self.pref_item.value,
+                                       column_labels = self.pref_item.column_labels)
+
+        # Add the gui elements to the field.
+        self.addLabel(self.labelElement)
+        self.addControl(self.controlElement)
+
+
+
+class FileGrid(wx.grid.Grid):
+    def __init__(self, parent, data, column_labels):
+        wx.grid.Grid.__init__(self, parent, wx.ID_ANY)
+
+        table = GridDataTable(data = data,
+                              column_labels = column_labels)
+
+        self.SetTable(table, True)
+
+        self.AutoSizeColumns(setAsMin = True)
+        self.SetMinSize((100, 100))
+        #self.SetMaxSize((-1, 600))
+
+        self.last_selected_row = None
+
+        self.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.onLabelRightClicked)
+        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onCellLeftClicked)
+
+
+    def Reset(self):
+        """reset the view based on the data in the table.  Call
+        this when rows are added or destroyed"""
+        self.GetTable().ResetView()
+
+    def removeRows(self, rows):
+        ''' Remove the rows specified by the indexes in rows.
+        '''
+        for k in rows:
+            self.GetTable().data.pop(k)
+
+        self.Reset()
+
+
+    def clear(self):
+        ''' Clear the data from the table.
+        '''
+        self.GetTable().data = []
+        self.Reset()
+
+
+    def doResize(self, event=None):
+            self.GetParent().Freeze()
+            self.AutoSize()
+            self.GetParent().Layout()
+
+            #the column which will be expanded
+            expandCol = 1
+
+            #calculate the total width of the other columns
+            otherWidths = 0
+            for i in [i for i in range(self.GetNumberCols()) if i != expandCol]:
+                colWidth = self.GetColSize(i)
+                otherWidths += colWidth
+
+            #add the width of the row label column
+            otherWidths += self.RowLabelSize
+
+            descWidth = self.Size[0] - otherWidths
+
+            self.SetColSize(expandCol, descWidth)
+
+            self.GetParent().Layout()
+
+            if event:
+                event.Skip()
+            self.GetParent().Thaw()
+
+
+    def onLabelRightClicked(self, evt):
+        # Did we click on a row or a column?
+        row, col = evt.GetRow(), evt.GetCol()
+        if row == -1: self.colPopup(col, evt)
+        elif col == -1: self.rowPopup(row, evt)
+
+
+    def onCellLeftClicked(self, evt):
+        if evt.ShiftDown() == True:
+            if evt.ControlDown() == False:
+                self.ClearSelection()
+
+            selected_row = evt.GetRow()
+            if selected_row >= self.last_selected_row:
+                for k in range(self.last_selected_row, selected_row + 1):
+                    self.SelectRow(k, addToSelected = True)
+            else:
+                for k in range(selected_row, self.last_selected_row + 1):
+                    self.SelectRow(k, addToSelected = True)
+
+        else:
+            if evt.ControlDown() == True:
+                add_to_selection = True
+            else:
+                add_to_selection = False
+            self.SelectRow(evt.GetRow(), addToSelected = add_to_selection)
+            self.last_selected_row = evt.GetRow()
+
+
+    def colPopup(self, col, evt):
+        """(col, evt) -> display a popup menu when a column label is
+        right clicked"""
+        x = self.GetColSize(col)/2
+        menu = wx.Menu()
+
+        xo, yo = evt.GetPosition()
+        self.SelectCol(col)
+        cols = self.GetSelectedCols()
+        self.Refresh()
+        sort_asc_menu = menu.Append(wx.ID_ANY, "sort column asc.")
+        sort_desc_menu = menu.Append(wx.ID_ANY, "sort column desc.")
+
+        def sort(event, reverse, self=self, col=col):
+            self.GetTable().sortColumn(col, reverse = reverse)
+            self.Reset()
+
+        self.Bind(wx.EVT_MENU, lambda event: sort(event, reverse=False), sort_asc_menu)
+        self.Bind(wx.EVT_MENU, lambda event: sort(event, reverse=True), sort_desc_menu)
+
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+
+
+class GridDataTable(wx.grid.PyGridTableBase):
+    def __init__(self, data, column_labels):
+        wx.grid.PyGridTableBase.__init__(self)
+        self.data = data
+        self.col_labels = column_labels
+
+        self.currentRows = self.GetNumberRows()
+        self.currentColumns = self.GetNumberCols()
+
+        self.format_default = wx.grid.GridCellAttr()
+
+    def GetNumberRows(self):
+        """Return the number of rows in the grid"""
+        if len(self.data) == 0:
+            n_rows = 1
+        else:
+            n_rows = len(self.data)
+
+        return n_rows
+
+    def GetNumberCols(self):
+        """Return the number of columns in the grid"""
+        return len(self.col_labels)
+
+    def IsEmptyCell(self, row, col):
+        """Return True if the cell is empty"""
+        return False
+
+    def GetTypeName(self, row, col):
+        """Return the name of the data type of the value in the cell"""
+        return None
+
+    def GetValue(self, row, col):
+        """Return the value of a cell"""
+        if len(self.data) == 0:
+            return ''
+        elif len(self.data) < row:
+            return ''
+        else:
+            return str(self.data[row][col])
+
+    def SetValue(self, row, col, value):
+        """Set the value of a cell"""
+        pass
+
+    def GetColLabelValue(self, col):
+        ''' Get the column label.
+        '''
+        return self.col_labels[col]
+
+    def GetAttr(self, row, col, kind):
+        self.format_default.SetBackgroundColour(self.GetView().GetDefaultCellBackgroundColour())
+        attr = self.format_default
+
+        attr.SetReadOnly(True)
+        attr.IncRef()
+        return attr
+
+
+    def sortColumn(self, col, reverse = False):
+        """
+        col -> sort the data based on the column indexed by col
+        """
+        self.data = sorted(self.data, key = itemgetter(col), reverse = reverse)
+        self.UpdateValues()
+
+
+    def ResetView(self):
+        """Trim/extend the control's rows and update all values"""
+        self.GetView().BeginBatch()
+        for current, new, delmsg, addmsg in [
+                (self.currentRows, self.GetNumberRows(), wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED),
+                (self.currentColumns, self.GetNumberCols(), wx.grid.GRIDTABLE_NOTIFY_COLS_DELETED, wx.grid.GRIDTABLE_NOTIFY_COLS_APPENDED),
+        ]:
+                if new < current:
+                        msg = wx.grid.GridTableMessage(
+                                self,
+                                delmsg,
+                                new,    # position
+                                current-new,
+                        )
+                        self.GetView().ProcessTableMessage(msg)
+                elif new > current:
+                        msg = wx.grid.GridTableMessage(
+                                self,
+                                addmsg,
+                                new-current
+                        )
+                        self.GetView().ProcessTableMessage(msg)
+
+
+        self.UpdateValues()
+        self.currentRows = self.GetNumberRows()
+        self.currentColumns = self.GetNumberCols()
+        self.GetView().EndBatch()
+
+        # The scroll bars aren't resized (at least on windows)
+        # Jiggling the size of the window rescales the scrollbars
+        h,w = self.GetView().GetSize()
+        self.GetView().SetSize((h+1, w))
+        self.GetView().SetSize((h, w))
+        self.GetView().ForceRefresh()
+
+
+    def UpdateValues( self ):
+            """Update all displayed values"""
+            msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+            self.GetView().ProcessTableMessage(msg)
+
+
 def assign_gui_element(pref_item, parent):
     ''' Assign a GUI field to the preferences item.
 
@@ -936,3 +1267,5 @@ gui_elements['filebrowse'] = FileBrowseField
 gui_elements['dirbrowse'] = DirBrowseField
 gui_elements['datetime'] = DateTimeEditField
 gui_elements['checkbox'] = CheckBoxField
+gui_elements['list_ctrl'] = ListCtrlEditField
+gui_elements['list_grid'] = ListGridEditField

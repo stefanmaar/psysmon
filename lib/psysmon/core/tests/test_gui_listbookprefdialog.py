@@ -17,6 +17,8 @@ from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.preferences_manager import FileBrowsePrefItem
 from psysmon.core.preferences_manager import DirBrowsePrefItem
 from psysmon.core.preferences_manager import DateTimeEditPrefItem
+from psysmon.core.preferences_manager import ListCtrlEditPrefItem
+from psysmon.core.preferences_manager import ListGridEditPrefItem
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from psysmon.core.gui import PSysmonApp
 
@@ -46,6 +48,7 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
 
         # Add the logging page.
         self.pref.add_page('Logging')
+        self.pref.add_page('List editor')
 
         # Add a single_choice field.
         item = SingleChoicePrefItem(name = 'single_choice',
@@ -124,6 +127,24 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
                               tool_tip = 'tooltip of the dir browse control element'
                              )
         self.pref.add_item(pagename = 'Logging', item = item)
+
+        # Add a list grid edit field.
+        item = ListCtrlEditPrefItem(name = 'list ctrl',
+                                    group = 'list editor',
+                                    value = [[11, 12, 13, 14],[21, 22, 23,24]],
+                                    column_labels = ['eins', 'zwei', 'drei', 'vier'],
+                                    tool_tip = 'tooltip of the list ctrl edit control element'
+                                   )
+        self.pref.add_item(pagename = 'List editor', item = item)
+
+        # Add a list grid edit field.
+        item = ListGridEditPrefItem(name = 'list grid',
+                                    group = 'list editor',
+                                    value = [],
+                                    column_labels = ['eins', 'zwei', 'drei', 'vier'],
+                                    tool_tip = 'tooltip of the list grid edit control element'
+                                   )
+        self.pref.add_item(pagename = 'List editor', item = item)
 
 
     def tearDown(self):

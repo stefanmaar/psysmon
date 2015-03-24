@@ -439,6 +439,33 @@ class DateTimeEditPrefItem(PreferenceItem):
                 mode = 'datetime', **kwargs)
 
 
+class ListCtrlEditPrefItem(PreferenceItem):
+    '''
+    '''
+    def __init__(self, name, value, column_labels = None, **kwargs):
+        ''' Initialize the instance.
+        '''
+        PreferenceItem.__init__(self, name = name, value = value,
+                                mode = 'list_ctrl', **kwargs)
+
+        self.column_labels = column_labels
+
+
+
+class ListGridEditPrefItem(PreferenceItem):
+    '''
+    '''
+    def __init__(self, name, value, column_labels = None, **kwargs):
+        ''' Initialize the instance.
+        '''
+        PreferenceItem.__init__(self, name = name, value = value,
+                                mode = 'list_grid', **kwargs)
+
+        self.column_labels = column_labels
+
+
+
+
 class CustomPrefItem(PreferenceItem):
     '''
     '''
