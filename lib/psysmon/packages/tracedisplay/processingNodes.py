@@ -34,7 +34,7 @@ class Detrend(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -42,7 +42,8 @@ class Detrend(ProcessingNode):
                                 name = 'detrend',
                                 mode = 'editable',
                                 category = 'test',
-                                tags = ['remove', 'mean']
+                                tags = ['remove', 'mean'],
+                                **kwargs
                                )
 
         # Add a single_choice field.
@@ -72,7 +73,7 @@ class MedianFilter(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -80,7 +81,8 @@ class MedianFilter(ProcessingNode):
                                 name = 'median filter',
                                 mode = 'editable',
                                 category = 'time domain filter',
-                                tags = ['filter', 'median', 'time domain', 'de-spike', 'spike']
+                                tags = ['filter', 'median', 'time domain', 'de-spike', 'spike'],
+                                **kwargs
                                )
 
         # Add an float_spin field.
@@ -110,7 +112,7 @@ class FilterBandPass(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -119,7 +121,8 @@ class FilterBandPass(ProcessingNode):
                                 name = 'bandpass filter',
                                 mode = 'editable',
                                 category = 'frequency',
-                                tags = ['filter', 'bandpass']
+                                tags = ['filter', 'bandpass'],
+                                **kwargs
                                )
 
         # Add an float_spin field.
@@ -176,7 +179,7 @@ class FilterLowPass(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -186,6 +189,7 @@ class FilterLowPass(ProcessingNode):
                                 mode = 'editable',
                                 category = 'frequency',
                                 tags = ['filter', 'lowpass'],
+                                **kwargs
                                )
 
         # Add an float_spin field.
@@ -235,7 +239,7 @@ class FilterHighPass(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -244,7 +248,8 @@ class FilterHighPass(ProcessingNode):
                                 name = 'highpass filter',
                                 mode = 'editable',
                                 category = 'frequency',
-                                tags = ['filter', 'highpass']
+                                tags = ['filter', 'highpass'],
+                                **kwargs
                                )
 
         # Add an float_spin field.
@@ -290,7 +295,7 @@ class ConvertToSensorUnits(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -298,7 +303,8 @@ class ConvertToSensorUnits(ProcessingNode):
                                 name = 'convert to sensor units',
                                 mode = 'uneditable',
                                 category = 'test',
-                                tags = ['convert', 'unit', 'physical']
+                                tags = ['convert', 'unit', 'physical'],
+                                **kwargs
                                )
 
 
@@ -340,7 +346,7 @@ class ScaleLog10(ProcessingNode):
     '''
     nodeClass = 'common'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ''' The constructor
 
         '''
@@ -348,7 +354,8 @@ class ScaleLog10(ProcessingNode):
                                 name = 'scale log10',
                                 mode = 'uneditable',
                                 category = 'test',
-                                tags = ['convert', 'unit', 'physical']
+                                tags = ['convert', 'unit', 'physical'],
+                                **kwargs
                                )
 
 
