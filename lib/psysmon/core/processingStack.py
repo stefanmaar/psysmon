@@ -163,7 +163,7 @@ class ProcessingNode:
     # argument.
     nodeClass = 'common'
 
-    def __init__(self, name, mode, category, tags, options = {}, docEntryPoint=None, parentStack=None, *kwargs):
+    def __init__(self, name, mode, category, tags, enabled = True, docEntryPoint=None, parentStack=None):
         ''' The constructor
 
         '''
@@ -179,20 +179,17 @@ class ProcessingNode:
         # The tags assigned to the stack node.
         self.tags = tags
 
-        # The options of the stack node.
-        self.options = options
-
         # The preferences of the stack node.
         self.pref_manager = PreferencesManager()
 
         # The entry point of the documentation of the node.
-        self.docEnctryPoint = docEntryPoint
+        self.docEntryPoint = docEntryPoint
 
         # The parent stack holding the stack node.
         self.parentStack = parentStack
 
         # The enabled state of the node.
-        self.enabled = True
+        self.enabled = enabled
 
 
     def isEnabled(self):
@@ -231,4 +228,15 @@ class ProcessingNode:
             The data to process.
         '''
         assert False, 'execute must be defined'
+
+
+    def update_pref_manager(self, pref_manager):
+        ''' Update the existing preferences manager with the one passed as an argument.
+
+        This is used when loading a psysmon project. The preference items are created
+        during the instance initialization of the processing nodes.
+        The values saved in the project file are not updated. The update is done
+        using this method.
+        '''
+        self.pref_manager.update(pref_manager)
 
