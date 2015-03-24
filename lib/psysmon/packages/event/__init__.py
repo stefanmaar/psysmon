@@ -26,7 +26,8 @@ description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['import_bulletin', 'detect_sta_lta']
+collection_node_modules = ['import_bulletin', 'detect_sta_lta',
+                           'edit_event_catalogs']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugins_event_selector',]
