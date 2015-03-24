@@ -74,15 +74,25 @@ class SelectEvents(OptionPlugin):
         self.pref_manager.add_item(pagename = 'Select',
                                    item = item)
 
+        item = psy_pm.SingleChoicePrefItem(name = 'event_catalog',
+                                          label = 'event catalog',
+                                          group = 'event selection',
+                                          value = '',
+                                          limit = [],
+                                          tool_tip = 'Select an event catalog for which to load the events.')
+        self.pref_manager.add_item(pagename = 'Select',
+                                   item = item)
+
 
         item = psy_pm.CustomPrefItem(name = 'events',
                                      label = 'events',
-                                     group = 'AVAILABLE EVENTS',
+                                     group = 'event selection',
                                      value = [],
                                      gui_class = EventListField,
                                      tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
         self.pref_manager.add_item(pagename = 'Select',
                                    item = item)
+
 
         item = psy_pm.ActionItem(name = 'load_events',
                                  label = 'load events',
@@ -118,9 +128,18 @@ class SelectEvents(OptionPlugin):
     def buildFoldPanel(self, panelBar):
         ''' Create the foldpanel GUI.
         '''
+        # Set the limits of the event_catalog field.
+        self.load_catalogs()
+        catalog_names = [x.name for x in self.catalogs]
+        self.pref_manager.set_limit('event_catalog', catalog_names)
+        if catalog_names:
+            self.pref_manager.set_value('event_catalog', catalog_names[0])
+
         fold_panel = PrefEditPanel(pref = self.pref_manager,
                                   parent = panelBar)
 
+
+        # Customize the events field.
         pref_item = self.pref_manager.get_item('events')[0]
         field = pref_item.gui_element[0]
         fold_panel.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_event_selected, field.controlElement)
@@ -130,20 +149,43 @@ class SelectEvents(OptionPlugin):
         return fold_panel
 
 
+    def load_catalogs(self):
+        ''' Load the event catalogs from the database.
+
+        '''
+        db_session = self.parent.project.getDbSession()
+        try:
+            cat_table = self.parent.project.dbTables['event_catalog'];
+            query = db_session.query(cat_table.id,
+                                     cat_table.name,
+                                     cat_table.description,
+                                     cat_table.agency_uri,
+                                     cat_table.author_uri,
+                                     cat_table.creation_time)
+            self.catalogs = query.all()
+
+        finally:
+            db_session.close()
+
+
     def on_load_events(self, event):
         '''
         '''
         self.logger.debug('Loading events.')
         event_table = self.parent.project.dbTables['event']
+        cat_table = self.parent.project.dbTables['event_catalog']
         db_session = self.parent.project.getDbSession()
         try:
             start_time = self.pref_manager.get_value('start_time')
             duration = self.pref_manager.get_value('window_length')
+            catalog_name = self.pref_manager.get_value('event_catalog')
             query = db_session.query(event_table.id,
                                      event_table.start_time,
                                      event_table.end_time).\
                                      filter(event_table.start_time >= start_time.timestamp).\
-                                     filter(event_table.start_time <= (start_time + duration).timestamp)
+                                     filter(event_table.start_time <= (start_time + duration).timestamp).\
+                                     filter(event_table.ev_catalog_id == cat_table.id).\
+                                     filter(cat_table.name == catalog_name)
 
             events = query.all()
             pref_item = self.pref_manager.get_item('events')[0]
