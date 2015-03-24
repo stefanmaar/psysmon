@@ -111,7 +111,7 @@ class Event(object):
                                     pref_origin_id = None,
                                     pref_magnitude_id = None,
                                     pref_focmec_id = None,
-                                    ev_type = self.event_type,
+                                    ev_type_id = None,
                                     ev_type_certainty = self.event_type_certainty,
                                     description = self.description,
                                     agency_uri = self.agency_uri,
