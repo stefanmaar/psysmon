@@ -181,7 +181,13 @@ class SelectEvents(OptionPlugin):
             catalog_name = self.pref_manager.get_value('event_catalog')
             query = db_session.query(event_table.id,
                                      event_table.start_time,
-                                     event_table.end_time).\
+                                     event_table.end_time,
+                                     event_table.public_id,
+                                     event_table.description,
+                                     event_table.agency_uri,
+                                     event_table.author_uri,
+                                     event_table.comment,
+                                     event_table.tags).\
                                      filter(event_table.start_time >= start_time.timestamp).\
                                      filter(event_table.start_time <= (start_time + duration).timestamp).\
                                      filter(event_table.ev_catalog_id == cat_table.id).\
@@ -215,7 +221,7 @@ class SelectEvents(OptionPlugin):
 
 
 
-class EventListField(wx.Panel):
+class EventListField(wx.Panel, listmix.ColumnSorterMixin):
 
     def __init__(self, name, pref_item, size, parent = None):
         '''
@@ -244,21 +250,40 @@ class EventListField(wx.Panel):
 
         self.sizer.Add(self.labelElement, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
 
-        self.controlElement = NodeListCtrl(parent = self, size = (-1, 300),
-                                           style = wx.LC_REPORT
-                                           | wx.BORDER_NONE
-                                           | wx.LC_SINGLE_SEL
-                                           | wx.LC_SORT_ASCENDING)
+        self.controlElement = EventListCtrl(parent = self, size = (200, 300),
+                                            style = wx.LC_REPORT
+                                            | wx.BORDER_NONE
+                                            | wx.LC_SINGLE_SEL
+                                            | wx.LC_SORT_ASCENDING)
 
-        columns = {1: 'id', 2: 'start time', 3: 'length [s]'}
+        # The columns to show as a list to keep it in the correct order.
+        self.columns = ['id', 'start_time', 'length', 'public_id',
+                        'description', 'agency_uri', 'author_uri',
+                        'comment']
 
-        for colNum, name in columns.iteritems():
-            self.controlElement.InsertColumn(colNum, name)
+        # The labels of the columns.
+        self.column_labels = {'id': 'id',
+                       'start_time': 'start time',
+                       'length': 'length',
+                       'public_id': 'public id',
+                       'description': 'description',
+                       'agency_uri': 'agency',
+                       'author_uri': 'author',
+                       'comment': 'comment'}
+
+        # Methods for derived values.
+        self.get_method = {'length': self.get_length}
+
+        # Methods for values which should not be converted using the default
+        # str function.
+        self.convert_method = {'start_time': self.convert_to_isoformat}
+
+        for k, name in enumerate(self.columns):
+            self.controlElement.InsertColumn(k, self.column_labels[name])
 
         self.sizer.Add(self.controlElement, pos = (1,0), flag = wx.EXPAND|wx.ALL, border = 0)
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(1)
-
 
         self.SetSizer(self.sizer)
 
@@ -271,19 +296,44 @@ class EventListField(wx.Panel):
         '''
         self.controlElement.DeleteAllItems()
         for k, cur_event in enumerate(events):
-            self.controlElement.InsertStringItem(k, str(cur_event[0]))
-            self.controlElement.SetStringItem(k, 1, UTCDateTime(cur_event[1]).isoformat())
-            self.controlElement.SetStringItem(k, 2, str(cur_event[2] - cur_event[1]))
+            for n_col, cur_name in enumerate(self.columns):
+                if cur_name in self.get_method.keys():
+                    val = self.get_method[cur_name](cur_event)
+                elif cur_name in self.convert_method.keys():
+                    val = self.convert_method[cur_name](getattr(cur_event, cur_name))
+                else:
+                    val = str(getattr(cur_event, cur_name))
+
+                if n_col == 0:
+                    self.controlElement.InsertStringItem(k, val)
+                else:
+                    self.controlElement.SetStringItem(k, n_col, val)
+
+
+    def convert_to_isoformat(self, val):
+        return UTCDateTime(val).isoformat()
+
+    def get_length(self, event):
+        return str(event.end_time - event.start_time)
 
 
 
 
 
 
-
-class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+class EventListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+    '''
+    '''
     def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=0):
+        ''' Initialize the instance.
+        '''
         wx.ListCtrl.__init__(self, parent, id, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
+
+        # Create the icons for column sorting.
+        self.il = wx.ImageList(16, 16)
+        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
+        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
+        self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
