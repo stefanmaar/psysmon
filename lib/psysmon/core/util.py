@@ -359,12 +359,16 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_preferencesmanager(obj)
         elif obj_class == 'CustomPrefItem':
             d = self.convert_custom_preferenceitem(obj)
+        elif obj_class == 'type':
+            d = {}
         elif 'PreferenceItem' in base_class:
             d = self.convert_preferenceitem(obj)
         elif 'WaveClient' in base_class:
             d = self.convert_waveclient(obj)
+        elif 'ProcessingNode' in base_class:
+            d = self.convert_processing_node(obj)
         else:
-            d = {'ERROR': 'MISSING CONVERTER'}
+            d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
 
         # Add the class and module information to the dictionary.
         tmp = {'__baseclass__': base_class,
@@ -411,6 +415,12 @@ class ProjectFileEncoder(json.JSONEncoder):
         return d
 
 
+    def convert_processing_node(self, obj):
+        attr = ['pref_manager', 'enabled']
+        d = self.object_to_dict(obj, attr)
+        return d
+
+
     def convert_preferencesmanager(self, obj):
         attr = ['pages', ]
         d = self.object_to_dict(obj, attr)
@@ -421,7 +431,7 @@ class ProjectFileEncoder(json.JSONEncoder):
         import inspect
 
         attr = ['name', 'value', 'label', 'default',
-                'group', 'limit', 'gui_class']
+                'group', 'limit']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
@@ -429,7 +439,7 @@ class ProjectFileEncoder(json.JSONEncoder):
         arg = inspect.getargspec(obj.__init__)
 
         for cur_arg in arg.args:
-            if cur_arg not in base_arg.args:
+            if cur_arg not in base_arg.args and cur_arg in attr:
                 d[cur_arg] = getattr(obj, cur_arg)
 
         return d
@@ -497,12 +507,16 @@ class ProjectFileDecoder(json.JSONDecoder):
                 inst = self.convert_pref_manager(d)
             elif class_name == 'CustomPrefItem':
                 inst = self.convert_custom_preferenceitem(d, class_name, module_name)
+            elif class_name == 'type':
+                inst = self.convert_class_object(d, class_name, module_name)
             elif 'CollectionNode' in base_class:
                 inst = self.convert_collectionnode(d, class_name, module_name)
             elif 'PreferenceItem' in base_class:
                 inst = self.convert_preferenceitem(d, class_name, module_name)
             elif 'WaveClient' in base_class:
                 inst = self.convert_waveclient(d, class_name, module_name)
+            elif 'ProcessingNode' in base_class:
+                inst = self.convert_processing_node(d, class_name, module_name)
             else:
                 inst = {'ERROR': 'MISSING CONVERTER'}
 
@@ -563,7 +577,25 @@ class ProjectFileDecoder(json.JSONDecoder):
         return inst
 
 
+    def convert_class_object(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        return class_
+
+
     def convert_collectionnode(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_processing_node(self, d, class_name, module_name):
         import importlib
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
