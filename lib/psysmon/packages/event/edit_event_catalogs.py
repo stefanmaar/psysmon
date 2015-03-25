@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -166,6 +165,7 @@ class EditEventCatalogsDlg(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_close, close_button)
         self.Bind(wx.EVT_BUTTON, self.on_add_catalog, add_catalog_button)
         self.Bind(wx.EVT_BUTTON, self.on_edit_catalog, edit_catalog_button)
+        self.Bind(wx.EVT_BUTTON, self.on_delete_catalog, delete_catalog_button)
 
         #self.file_grid.doResize()
 
@@ -243,6 +243,25 @@ class EditEventCatalogsDlg(wx.Frame):
                 dlg.Destroy()
 
 
+    def on_delete_catalog(self, event):
+        ''' Handle the delete catalog button click.
+        '''
+        if self.list_ctrl.GetSelectedItemCount() > 0:
+            selected_row = self.list_ctrl.GetFirstSelected()
+            selected_id = int(self.list_ctrl.GetItem(selected_row,0).GetText())
+            selected_catalog = [x for x in self.catalogs if x.id == selected_id]
+            if selected_catalog:
+                selected_catalog = selected_catalog[0]
+                dlg = wx.MessageDialog(self,
+                                       "Do you really wan't to delete the catalog %s from the database?" % selected_catalog.name,
+                                        'Confirm delete',
+                                        wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+                val = dlg.ShowModal()
+                if val == wx.ID_YES:
+                    self.delete_catalog(selected_catalog)
+                    self.update_list_ctrl()
+                dlg.Destroy()
+
 
     def add_catalog(self, name, description):
         ''' Add a catalog to the database.
@@ -263,11 +282,20 @@ class EditEventCatalogsDlg(wx.Frame):
     def change_catalog(self, catalog, name, description):
         ''' Change the values of a catalog.
         '''
-        ipdb.set_trace() ############################## Breakpoint ##############################
         catalog.name = name
         catalog.description = description
         self.db_session.commit()
         self.update_list_ctrl()
+
+
+    def delete_catalog(self, catalog):
+        ''' Delete a catalog.
+        '''
+        self.db_session.delete(catalog)
+        self.db_session.commit()
+        self.catalogs.remove(catalog)
+
+
 
 
 class EditDlg(wx.Dialog):
