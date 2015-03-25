@@ -1,0 +1,220 @@
+BEGIN 
+MSG_TYPE DATA
+MSG_ID 2013-06-03-12:12:36.338 AUT_NDC
+REF_ID 2013/01/01 TUW
+
+DATA_TYPE LOG GSE2.1
+  -> Your request was processed successfully.
+  -> Following is a log of your request.
+% BEGIN GSE2.0
+% MSG_TYPE request
+% MSG_ID 2013/01/01 TUW
+% TIME 2013/01/01 00:00:00 TO 2013/01/02 00:00:00
+   -> Time range is Tue January 01, 2013 00:00:00
+   ->            to Wed January 02, 2013 00:00:00
+
+% EMAIL smertl@mail.tuwien.ac.at
+% BULLETIN
+  -> 34157 events in database
+% STOP
+
+DATA_TYPE BULLETIN IMS1.0:short
+Bulletin as of 16:06  June 03, 2013
+
+Event 52500460 SWITZERLAND
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 00:05:15.98   0.25  0.24  46.4967    9.8247   2.1   1.6  56   8.0   0.0    9    5 145   0.16   1.19 m i    ZAMG:seis  1103891
+Magnitude  Err Nsta Author      OrigID
+ML     0.9 0.0    1 ZAMG:seis  1103891
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+SQTA    1.19  52.1 Sg       00:05:55.767   0.1                           T__             0.9  0.48 m_q             1078855
+
+Event 52500098 AFGHANISTAN-TAJIKISTAN BORD REG.
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 04:08:34.00  -1.00  3.48  36.4506   71.1901  -1.0  -1.0  -1 113.0  -1.0    0    0 357  41.61  45.69 m i    QED        1103895
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA   41.61 303.9 P        04:16:14.428                                 ___             7.1  0.96 m__             1078828
+SOKA   42.30 302.1 P        04:16:20.109                                 ___             4.1  0.68 m__             1078831
+OBKA   42.66 302.0 P        04:16:23.164                                 ___             4.6  1.57 m__             1078830
+MOA    42.69 304.0 P        04:16:22.775                                 ___   6.3      10.3  1.95 m_i             1078440
+KBA    43.40 302.9 P        04:16:28.670                                 ___             2.5  0.75 m__             1078829
+WATA   44.55 303.6 P        04:16:37.317                                 ___             1.7  0.78 m__             1078833
+MOTA   44.87 303.6 P        04:16:39.705                                 ___             2.2  0.74 m__             1078832
+DAVA   45.69 303.8 P        04:16:46.794                                 ___   5.2      14.4  1.45 m_i             1078444
+
+Event 52500525 GERMANY
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 04:46:24.65   0.91 20.14  48.6490   11.7525   6.4   1.5 133  10.3  41.5   12    8 202   0.58   2.89 m i    ZAMG:seis  1104042
+Magnitude  Err Nsta Author      OrigID
+ML     1.5 0.2    5 ZAMG:seis  1104042
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+WATA    1.32 185.2 Pg       04:46:49.483  -0.6                           T__             0.3  0.24 m_q             1078839
+WATA    1.32 185.2 Sg       04:47:10.050   1.4                           T__             0.5  0.12 m_q             1078838
+RETA    1.34 210.0 Sg       04:47:08.951  -0.2                           T__             0.7  0.20 m_e             1078837
+MOTA    1.37 198.7 Sg       04:47:10.250  -0.3                           T__             0.8  0.10 m_e             1078603
+SQTA    1.47 194.5 Pg       04:46:52.985  -0.1                           T__             0.7  0.18 m_e             1079196
+SQTA    1.47 194.5 Sg       04:47:14.339   0.6                           T__             1.8  0.30 m_q             1079197
+MOA     1.85 114.6 Sg       04:47:25.979  -0.2                           T__             0.1  0.17 m_q             1079199
+CONA    2.83 103.2 Pg       04:46:58.570                                 ___             0.3  0.26 m_e             1078594
+CONA    2.83 103.2 Sg       04:47:02.172                                 ___             0.4  0.14 m_e             1078596
+ARSA    2.89 117.6 Pg       04:47:02.935                                 ___             0.2  0.10 m__             1078592
+ARSA    2.89 117.6 Sg       04:47:09.407                                 ___             0.4  0.20 m__             1078598
+
+Event 52500526 AUSTRIA
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 04:46:53.61   0.27  0.11  47.7000   15.7320   7.4   1.1  98   8.0   0.0    6    3 176   0.24   0.82 m i    ZAMG:seis  1104043
+Magnitude  Err Nsta Author      OrigID
+ML     0.3 0.2    2 ZAMG:seis  1104043
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA    0.24  20.9 Pg       04:46:58.570  -0.0                           T__             0.3  0.26 m_e             1078594
+CONA    0.24  20.9 Sg       04:47:02.172  -0.1                           T__             0.4  0.14 m_e             1078596
+ARSA    0.47 197.5 Pg       04:47:02.935   0.1                           T__             0.2  0.10 m__             1078592
+ARSA    0.47 197.5 Sg       04:47:09.407  -0.1                           T__             0.4  0.20 m__             1078598
+
+Event 52500100 KURIL ISLANDS
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 07:35:50.00  -1.00  3.34  46.9042  151.0225  -1.0  -1.0  -1  48.7  -1.0    0    0 354  75.29  80.74 m i    QED        1104046
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA   77.44 331.1 P        07:47:43.267                                 ___            10.5  0.82 m__             1078980
+MOA    78.03 332.0 P        07:47:46.018                                 ___             7.3  0.78 m__             1078982
+ARSA   78.14 330.9 P        07:47:46.875                                 ___             4.9  1.00 m__             1078981
+SOKA   78.81 330.9 P        07:47:50.364                                 ___            18.5  1.26 m__             1078984
+KBA    79.01 332.1 P        07:47:52.047                                 ___  14.8      27.5  1.00 m_i             1078451
+OBKA   79.12 331.1 P        07:47:51.877                                 ___             5.0  0.70 m__             1078983
+MYKA   79.31 331.8 P        07:47:53.235                                 ___             6.6  0.72 m__             1078985
+WATA   79.33 333.4 P        07:47:53.304                                 ___  14.6      12.7  0.64 m_i             1078452
+RETA   79.44 333.9 P        07:47:53.999                                 ___            13.1  0.82 m__             1078988
+MOTA   79.47 333.7 P        07:47:54.150                                 ___  12.6      20.1  0.90 m_i             1078453
+SQTA   79.55 333.5 P        07:47:54.851                                 ___   7.6      17.1  0.92 m_i             1078455
+ABTA   79.56 332.5 P        07:47:55.384                                 ___             8.0  1.42 m__             1078986
+FETA   79.87 333.7 P        07:47:57.807                                 ___            10.5  1.02 m__             1078987
+DAVA   79.88 334.4 P        07:47:56.411                                 ___             9.6  0.80 m__             1078989
+
+Event 52500102 RYUKYU ISLANDS, JAPAN
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 09:19:16.00  -1.00  2.25  26.9202  127.4700  -1.0  -1.0  -1  98.2  -1.0    0    0 357  83.34  87.71 m i    QED        1104060
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA   83.34 321.2 P        09:31:34.834                                 ___             6.9  1.12 m__             1078998
+MOA    84.27 321.7 P        09:31:39.890                                 ___             4.9  1.15 m__             1079000
+SOKA   84.50 320.4 P        09:31:39.834                                 ___             2.3  0.54 m__             1079003
+KBA    85.22 321.4 P        09:31:43.391                                 ___             3.8  0.53 m__             1079001
+MYKA   85.31 320.9 P        09:31:43.635                                 ___             3.7  0.86 m__             1079002
+ABTA   85.87 321.5 P        09:31:46.054                                 ___             7.1  0.86 m__             1079004
+WATA   86.04 322.3 P        09:31:46.948                                 ___   5.1       3.4  0.50 m_i             1078461
+MOTA   86.29 322.5 P        09:31:48.475                                 ___             5.2  1.04 m__             1079005
+SQTA   86.31 322.4 P        09:31:50.018                                 ___             5.0  0.98 m__             1079007
+RETA   86.39 322.8 P        09:31:50.678                                 ___   4.0       2.6  0.60 m_i             1078462
+DAVA   86.99 323.0 P        09:31:52.303                                 ___             5.5  0.62 m__             1079006
+
+Event 52500535 EAST OF SEVERNAYA ZEMLYA
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 13:13:58.50  -1.00  1.76  80.7962  122.1775  -1.0  -1.0  -1   0.0  -1.0   18    0 354  43.31  47.94 m i    ZAMG_s     1104403
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA   45.36 295.3 P        13:22:20.548                                 ___            11.6  1.52 m__             1079008
+MOA    45.67 296.8 P        13:22:19.898                                 ___            10.0  1.75 m__             1079010
+ARSA   46.07 295.4 P        13:22:26.334                                 ___             5.3  1.88 m__             1079009
+KBA    46.55 297.4 P        13:22:29.506                                 ___             7.5  0.75 m__             1078623
+OBKA   46.94 296.1 P        13:22:30.839                                 ___             9.3  1.23 m__             1079011
+
+Event 52500424 AUSTRIA
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 14:40:37.47   0.31  0.35  46.2345   13.3890   2.0   1.5  85  10.0   3.3   16    8 134   0.08   1.51 m i    ZAMG:seis  1104092
+Magnitude  Err Nsta Author      OrigID
+ML     1.2 0.6    5 ZAMG:seis  1104092
+mb     1.7 0.0    1 ZAMG:seis  1104092
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+MYKA    0.43  23.7 Pg       14:40:45.943  -0.1                           T__             0.5  0.06 m_e             1078626
+MYKA    0.43  23.7 Sg       14:40:52.731   0.5                           T__             1.6  0.24 m_e             1078633
+ABTA    0.79 310.7 Pg       14:40:53.233   0.4                           T__             0.8  0.14 m_q             1079013
+ABTA    0.79 310.7 Sg       14:41:04.106   0.0                           T__             0.6  0.22 m_e             1079014
+KBA     0.84 357.9 Pg       14:40:54.567   0.6                           T__             0.1  0.10 m_e             1078638
+KBA     0.84 357.9 Sg       14:41:05.636  -0.3                           T__             0.7  0.18 m__             1078639
+
+Event 52500541 POLAND
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 15:57:48.21   0.79  1.31  51.2864   16.1836   4.3   2.6   6   0.0   0.0   13    8 251   1.74   4.06 m i sr ZAMG:seis  1104099
+Magnitude  Err Nsta Author      OrigID
+ML     2.4 0.4    4 ZAMG:seis  1104099
+mb     2.3 0.0    1 ZAMG:seis  1104099
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA    3.36 183.7 Pn       15:58:44.726   2.6                           T__             0.1  0.16 m_e             1078642
+CONA    3.36 183.7 Sg       15:59:37.896  -1.9                           T__             3.3  0.40 m_q             1079019
+MOA     3.65 200.6 Sg       15:59:49.590   0.3                           T__             2.1  0.38 m_q             1079022
+ARSA    4.06 186.3 Sg       16:00:00.936  -1.7                           T__             0.9  0.38 m_q             1079023
+
+Event 52500544 NORTHERN ITALY
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 20:21:14.13   0.97  1.24  45.0993   11.3677   8.0   5.1  66   6.0   0.0   14    8 295   0.84   2.25 m i    ZAMG:seis  1104116
+Magnitude  Err Nsta Author      OrigID
+ML     2.0 0.4    6 ZAMG:seis  1104116
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+FETA    1.97 347.2 Sg       20:22:19.571  -0.1                           T__             0.8  0.38 m__             1079058
+SQTA    2.12 357.1 Pn       20:21:51.407   1.1                           T__             0.7  0.16 m_e             1079055
+SQTA    2.12 357.1 Sg       20:22:23.859  -0.8                           T__             4.7  0.30 m_q             1079056
+WATA    2.24   3.6 Pn       20:21:51.626  -0.4                           T__             0.7  0.16 m_q             1078647
+WATA    2.24   3.6 Sg       20:22:29.323   0.8                           T__             0.7  0.16 m_q             1079053
+MOTA    2.25 355.4 Pn       20:21:55.872                                 ___             0.8  0.32 m_e             1079057
+MOTA    2.25 355.4 Sg       20:22:29.293   0.3                           T__             1.9  0.42 m_q             1079054
+
+Event 52500428 AUSTRIA
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 22:03:38.54   0.53  0.22  47.3045   10.5392   3.2   2.0 102   6.0   0.0    7    4 244   0.24   0.46 m i    ZAMG:seis  1103823
+Magnitude  Err Nsta Author      OrigID
+ML     0.3 0.1    4 ZAMG:seis  1103823
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+RETA    0.24  39.5 Pg       22:03:43.502   0.2                           T__             0.1  0.06 m_e             1078650
+RETA    0.24  39.5 Sg       22:03:46.353  -0.4                           T__             0.5  0.06 m_e             1078651
+FETA    0.31 155.4 Pg       22:03:44.727  -0.0                           T__             0.1  0.08 m_e             1078654
+FETA    0.31 155.4 Sg       22:03:49.321  -0.0                           T__             0.3  0.10 m_e             1078655
+MOTA    0.38  83.8 Pg       22:03:46.226   0.1                           T__             0.1  0.10 m_e             1078695
+MOTA    0.38  83.8 Sg       22:03:51.961   0.2                           T__             0.5  0.22 m__             1078653
+SQTA    0.46 100.2 Sg       22:03:54.004  -0.2                           T__             0.6  0.18 m__             1078652
+
+Event 52500429 FIJI ISLANDS REGION
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 22:54:47.46  -1.00  1.73 -17.7458 -177.9474  -1.0  -1.0  -1 464.2  -1.0    7    0 354 147.78 149.74 m i    ZAMG_s     1104119
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+CONA  147.78 342.6 PKPbc    23:13:37.168                                 ___             4.4  1.34 m__             1079063
+KBA   149.23 344.9 PKPbc    23:13:40.984                                 ___             5.6  1.40 m_q             1078656
+WATA  149.39 347.3 PKPbc    23:13:40.943                                 ___             1.2  0.56 m__             1079069
+MOTA  149.48 347.9 PKPbc    23:13:42.175                                 ___             1.0  0.56 m__             1079068
+MYKA  149.57 344.2 PKPbc    23:13:41.029                                 ___             1.9  0.48 m__             1079065
+SQTA  149.58 347.7 PKPbc    23:13:41.881                                 ___             3.1  0.66 m__             1079067
+ABTA  149.74 345.7 PKPbc    23:13:41.430                                 ___             2.4  0.58 m__             1079066
+
+Event 52500430 NORTHWESTERN BALKAN REGION
+
+Date          Time        Err   RMS Latitude Longitude  Smaj  Smin  Az Depth   Err Ndef Nsta Gap  mdist  Mdist Qual   Author      OrigID
+2013/01/01 23:39:20.74   0.25  0.46  46.0826   14.7631   2.6   1.6 104   3.0   0.0   10    5 126   0.42   0.63 m i    ZAMG:seis  1103826
+Magnitude  Err Nsta Author      OrigID
+ML     1.1 0.0    1 ZAMG:seis  1103826
+
+Sta     Dist  EvAz Phase        Time      TRes  Azim AzRes   Slow   SRes Def   SNR       Amp   Per Qual Magnitude    ArrID
+OBKA    0.45 340.9 Pg       23:39:29.655   0.1                           T__             1.2  0.15 m_e             1078657
+OBKA    0.45 340.9 Sg       23:39:36.372   0.5                           T__             0.7  0.08 m_e             1078662
+
+STOP

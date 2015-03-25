@@ -120,6 +120,7 @@ def create_full_project(psybase):
 
     # Write the geometry from XML to Database.
     inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
+    bulletin_file = os.path.join(data_path, 'test_earthquake_bulletin.txt')
     xmlparser = InventoryXmlParser()
     inventory = xmlparser.parse(inventory_file)
     try:
@@ -154,8 +155,7 @@ def create_full_project(psybase):
     loggerName = __name__+ "." + node.__class__.__name__
     node.logger = logging.getLogger(loggerName)
     node.project = project
-
-    # Import the waveform files into the database.
+    # Set the node preferences and execute it.
     filenames = glob.glob(os.path.join(data_path, 'ZAMG-seis_event00017*.msd'))
     filelist = []
     for cur_file in filenames:
@@ -163,6 +163,18 @@ def create_full_project(psybase):
         fsize = fsize/(1024.0*1024.0)           # Convert to MB
         filelist.append(('mseed', cur_file, '%.2f' % fsize))
     node.pref_manager.set_value('input_files', filelist)
+    node.execute()
+
+    # Import the earthquake bulletin to fill the events database.
+    node_template = psybase.packageMgr.getCollectionNodeTemplate('import earthquake bulletin')
+    node = node_template()
+    # Create a logger for the node.
+    loggerName = __name__+ "." + node.__class__.__name__
+    node.logger = logging.getLogger(loggerName)
+    node.project = project
+    # Set the node preferences and execute it.
+    input_files = [('IMS1.0', bulletin_file, 1),]
+    node.pref_manager.set_value('input_files', input_files)
     node.execute()
 
     return project
