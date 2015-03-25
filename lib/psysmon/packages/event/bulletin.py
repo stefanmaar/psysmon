@@ -29,6 +29,7 @@ Handle earthquake bulletins.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
 '''
+import os
 import psysmon
 import logging
 import re
@@ -67,6 +68,9 @@ class ImsParser(object):
     def parse(self, filename):
         ''' Parse a text file in IMS format.
         '''
+        if not os.path.exists(filename):
+            self.logger.error("The filename %s doesn't exist.", filename)
+            return False
 
         bulletin_format = None
         try:
