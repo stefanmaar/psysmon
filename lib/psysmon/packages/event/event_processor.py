@@ -30,12 +30,13 @@ The importWaveform module.
 This module contains the classes of the importWaveform dialog window.
 '''
 
-import wx
+import copy
 from psysmon.core.packageNodes import CollectionNode
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from plugins_event_selector import EventListField
+from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 
 
 
@@ -55,14 +56,26 @@ class EventProcessor(CollectionNode):
         self.catalogs = []
 
         self.create_selector_preferences()
+        self.create_processing_chain_preferences()
 
     def edit(self):
+        # Initialize the available catalogs.
         self.load_catalogs()
         catalog_names = [x.name for x in self.catalogs]
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
             self.pref_manager.set_value('event_catalog', catalog_names[0])
 
+        # Initialize the available processing nodes.
+        processing_nodes = self.project.getProcessingNodes(('common', ))
+        if self.pref_manager.get_value('processing_stack') is None:
+                detrend_node_template = [x for x in processing_nodes if x.name == 'detrend'][0]
+                detrend_node = copy.deepcopy(detrend_node_template)
+                self.pref_manager.set_value('processing_stack', [detrend_node, ])
+        self.pref_manager.set_limit('processing_stack', processing_nodes)
+
+
+        # Create the edit dialog.
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
@@ -70,6 +83,7 @@ class EventProcessor(CollectionNode):
 
         dlg.ShowModal()
         dlg.Destroy()
+
 
     def execute(self, prevNodeOutput={}):
         pass
@@ -133,6 +147,22 @@ class EventProcessor(CollectionNode):
                                      tool_tip = 'The available events. Selected events will be used for processing.')
         self.pref_manager.add_item(pagename = 'event selector',
                                    item = item)
+
+
+    def create_processing_chain_preferences(self):
+        ''' Create the preference items of the processing chain section.
+        '''
+        self.pref_manager.add_page('processing stack')
+
+        item = psy_pm.CustomPrefItem(name = 'processing_stack',
+                                     label = 'processing stack',
+                                     group = 'event processing',
+                                     value = None,
+                                     gui_class = PStackEditField,
+                                     tool_tip = 'Edit the processing stack nodes.')
+        self.pref_manager.add_item(pagename = 'processing stack',
+                                   item = item)
+
 
 
     def load_catalogs(self):
