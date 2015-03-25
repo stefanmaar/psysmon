@@ -135,6 +135,8 @@ class Field(wx.Panel):
 
     def onValueChange(self, event):
         self.setPrefValue()
+        if 'on_value_change' in self.pref_item.hooks.keys():
+            self.pref_item.hooks['on_value_change']()
 
 
     ## Set the corresponding value in the options dictionary.
@@ -147,6 +149,10 @@ class Field(wx.Panel):
 
     def setControlElementValue(self):
         self.controlElement.SetValue(self.pref_item.value)
+
+
+    def disable(self):
+        self.controlElement.Disable()
 
 
 
@@ -179,7 +185,7 @@ class PrefPagePanel(wx.Panel):
                 container_label = ''
             else:
                 container_label = cur_group
-            cur_container = StaticBoxContainer(parent = self, 
+            cur_container = StaticBoxContainer(parent = self,
                                 label = container_label)
 
             # First add the preference items.
@@ -204,7 +210,10 @@ class PrefPagePanel(wx.Panel):
                 gui_element = wx.Button(parent = cur_container,
                                         id = wx.ID_ANY,
                                         label = cur_item.label)
+                if cur_item.tool_tip is not None:
+                    gui_element.SetToolTipString(cur_item.tool_tip)
                 gui_element.Bind(wx.EVT_BUTTON, cur_item.action)
+                cur_item.set_gui_element(gui_element)
                 cur_container.addActionField(gui_element)
 
 

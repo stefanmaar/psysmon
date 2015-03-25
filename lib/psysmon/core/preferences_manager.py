@@ -248,7 +248,7 @@ class PreferenceItem(object):
     def __init__(self, name, value, mode, label = None,
                  group = None, limit = None, parent_page = None,
                  default = None, gui_element = None,
-                 tool_tip = None):
+                 tool_tip = None, position = None, hooks = None):
         ''' Initialization of the instance.
 
         '''
@@ -287,6 +287,12 @@ class PreferenceItem(object):
         if gui_element is None:
             gui_element = []
         self.gui_element = gui_element
+
+        # The position of the preference item within a group.
+        self.position = position
+
+        # Function hooks to be called in methods of the gui elements.
+        self.hooks = hooks
 
 
     #@property
@@ -327,6 +333,20 @@ class PreferenceItem(object):
         '''
         for cur_element in self.gui_element:
             cur_element.controlElement.SetValue(self.value)
+
+    def enable_gui_element(self):
+        ''' Enable the gui element to make it active for user interaction.
+        '''
+        for cur_element in self.gui_element:
+            cur_element.labelElement.Enable()
+            cur_element.controlElement.Enable()
+
+    def disable_gui_element(self):
+        ''' Disable the gui element to make it inactive for user interaction.
+        '''
+        for cur_element in self.gui_element:
+            cur_element.labelElement.Disable()
+            cur_element.controlElement.Disable()
 
 
 class SingleChoicePrefItem(PreferenceItem):
@@ -481,7 +501,7 @@ class CustomPrefItem(PreferenceItem):
 class ActionItem(object):
     '''
     '''
-    def __init__(self, name, label, group, mode, action):
+    def __init__(self, name, label, group, mode, action, tool_tip = None):
 
         self.name = name
 
@@ -492,4 +512,30 @@ class ActionItem(object):
         self.mode = mode
 
         self.action = action
+
+        self.tool_tip = tool_tip
+
+        self.gui_element = []
+
+
+    def set_gui_element(self, element):
+        ''' Set the gui element displaying the preference item.
+
+        '''
+        if element not in self.gui_element:
+            self.gui_element.append(element)
+
+
+    def enable_gui_element(self):
+        ''' Enable the gui element to make it active for user interaction.
+        '''
+        for cur_element in self.gui_element:
+            cur_element.Enable()
+
+
+    def disable_gui_element(self):
+        ''' Disable the gui element to make it inactive for user interaction.
+        '''
+        for cur_element in self.gui_element:
+            cur_element.Disable()
 
