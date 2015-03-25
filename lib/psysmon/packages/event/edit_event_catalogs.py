@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -65,32 +66,6 @@ class EditEventCatalogs(CollectionNode):
         dlg = EditEventCatalogsDlg(collection_node = self,
                                    project = self.project)
         dlg.Show()
-#        dbData = []
-#        for curFile in self.pref_manager.get_value('input_files'):
-#            print("Processing file " + curFile[1])
-#            if curFile[0] == 'not checked':
-#                format = None
-#            else:
-#                format = curFile[0]
-#            stream = read(pathname_or_url=curFile[1],
-#                             format = format,
-#                             headonly=True)
-#
-#            print stream
-#
-#            for curTrace in stream.traces:
-#                print "Importing trace " + curTrace.getId()
-#                cur_data = self.getDbData(curFile[1], format, curTrace)
-#                if cur_data is not None:
-#                    dbData.append(cur_data)
-#
-#        self.logger.debug('dbData: %s', dbData)
-#
-#        if len(dbData) > 0:
-#            dbSession = self.project.getDbSession()
-#            dbSession.add_all(dbData)
-#            dbSession.commit()
-#            dbSession.close()
 
 
 
@@ -115,6 +90,8 @@ class EditEventCatalogsDlg(wx.Frame):
 
         self.project = project
 
+        self.db_session = self.project.getDbSession()
+
         self.dialog_fields = (("name:", "name", wx.TE_RIGHT),
                              ("description:", "description", wx.TE_RIGHT))
 
@@ -128,6 +105,10 @@ class EditEventCatalogsDlg(wx.Frame):
         self.update_list_ctrl()
 
 
+    def __del__(self):
+        self.db_session.close()
+
+
     def init_ui(self):
         # Use standard button IDs.
         close_button = wx.Button(self, wx.ID_CLOSE)
@@ -139,10 +120,12 @@ class EditEventCatalogsDlg(wx.Frame):
 
         # Create the grid editing buttons.
         add_catalog_button = wx.Button(self, wx.ID_ANY, 'add catalog')
+        edit_catalog_button = wx.Button(self, wx.ID_ANY, 'edit catalog')
         delete_catalog_button = wx.Button(self, wx.ID_ANY, 'delete catalog')
 
         # Fill the grid button sizer.
         grid_button_sizer.Add(add_catalog_button, 0, wx.EXPAND|wx.ALL)
+        grid_button_sizer.Add(edit_catalog_button, 0, wx.EXPAND|wx.ALL)
         grid_button_sizer.Add(delete_catalog_button, 0, wx.EXPAND|wx.ALL)
 
 
@@ -178,8 +161,11 @@ class EditEventCatalogsDlg(wx.Frame):
 
         self.SetSizer(sizer)
 
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_catalog_selected, self.list_ctrl)
+
         self.Bind(wx.EVT_BUTTON, self.on_close, close_button)
         self.Bind(wx.EVT_BUTTON, self.on_add_catalog, add_catalog_button)
+        self.Bind(wx.EVT_BUTTON, self.on_edit_catalog, edit_catalog_button)
 
         #self.file_grid.doResize()
 
@@ -206,22 +192,23 @@ class EditEventCatalogsDlg(wx.Frame):
         ''' Load the event catalogs from the database.
 
         '''
-        db_session = self.project.getDbSession()
-        try:
-            cat_table = self.project.dbTables['event_catalog'];
-            query = db_session.query(cat_table.id,
-                                     cat_table.name,
-                                     cat_table.description,
-                                     cat_table.agency_uri,
-                                     cat_table.author_uri,
-                                     cat_table.creation_time)
-            self.catalogs = query.all()
+        cat_table = self.project.dbTables['event_catalog'];
+        query = self.db_session.query(cat_table.id,
+                                 cat_table.name,
+                                 cat_table.description,
+                                 cat_table.agency_uri,
+                                 cat_table.author_uri,
+                                 cat_table.creation_time)
+        self.catalogs = query.all()
 
-        finally:
-            db_session.close()
+
+
+    def on_catalog_selected(self, event):
+        pass
 
 
     def on_close(self, event):
+        self.db_session.close()
         self.Destroy()
 
 
@@ -234,29 +221,58 @@ class EditEventCatalogsDlg(wx.Frame):
         dlg.Destroy()
 
 
+    def on_edit_catalog(self, event):
+        ''' Handle the edit catalog button click.
+        '''
+        if self.list_ctrl.GetSelectedItemCount() > 0:
+            selected_row = self.list_ctrl.GetFirstSelected()
+            selected_id = int(self.list_ctrl.GetItem(selected_row,0).GetText())
+            selected_catalog = [x for x in self.catalogs if x.id == selected_id]
+            if selected_catalog:
+                selected_catalog = selected_catalog[0]
+                data = {}
+                data['name'] = selected_catalog.name
+                data['description'] = selected_catalog.description
+                dlg = EditDlg(parent = self,
+                              dialog_fields = self.dialog_fields,
+                              data = data)
+                val = dlg.ShowModal()
+                if val == wx.ID_OK:
+                    self.change_catalog(catalog = selected_catalog, **dlg.data)
+
+                dlg.Destroy()
+
+
+
     def add_catalog(self, name, description):
         ''' Add a catalog to the database.
 
         '''
-        db_session = self.project.getDbSession()
-        try:
-            cat_table = self.project.dbTables['event_catalog'];
-            cat_orm = cat_table(name = name,
-                                description = description,
-                                agency_uri = self.project.activeUser.agency_uri,
-                                author_uri = self.project.activeUser.author_uri,
-                                creation_time = op_utcdatetime.UTCDateTime().isoformat())
-            db_session.add(cat_orm)
-            db_session.commit()
-            self.catalogs.append(cat_orm)
-            self.update_list_ctrl()
-        finally:
-            db_session.close()
+        cat_table = self.project.dbTables['event_catalog'];
+        cat_orm = cat_table(name = name,
+                            description = description,
+                            agency_uri = self.project.activeUser.agency_uri,
+                            author_uri = self.project.activeUser.author_uri,
+                            creation_time = op_utcdatetime.UTCDateTime().isoformat())
+        self.db_session.add(cat_orm)
+        self.db_session.commit()
+        self.catalogs.append(cat_orm)
+        self.update_list_ctrl()
+
+
+    def change_catalog(self, catalog, name, description):
+        ''' Change the values of a catalog.
+        '''
+        ipdb.set_trace() ############################## Breakpoint ##############################
+        catalog.name = name
+        catalog.description = description
+        self.db_session.commit()
+        self.update_list_ctrl()
 
 
 class EditDlg(wx.Dialog):
 
-    def __init__(self, dialog_fields, parent=None, size=(300, 200)):
+    def __init__(self, dialog_fields, data = None, parent=None, size=(300, 200)):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, "Create a new event catalog.", size=size)
 
 
@@ -265,10 +281,12 @@ class EditDlg(wx.Dialog):
         ok_button.SetDefault()
         cancel_button = wx.Button(self, wx.ID_CANCEL)
 
-
         self.dialog_fields = dialog_fields
 
-        self.data = {}
+        if data is None:
+            self.data = {}
+        else:
+            self.data = data
 
         # Layout using sizers.
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -309,8 +327,11 @@ class EditDlg(wx.Dialog):
 
         for curLabel, curKey, curStyle in self.dialog_fields:
             self.label[curKey] = wx.StaticText(self, wx.ID_ANY, curLabel)
-            self.edit[curKey] = wx.TextCtrl(self, size=(200, -1), 
+            self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
+
+            if curKey in self.data.keys():
+                self.edit[curKey].SetValue(str(self.data[curKey]))
 
             fgSizer.Add(self.label[curKey], 0, wx.ALIGN_RIGHT)
             fgSizer.Add(self.edit[curKey], 0, wx.EXPAND)
