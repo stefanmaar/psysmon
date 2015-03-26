@@ -45,7 +45,7 @@ from psysmon.core.processingStack import ProcessingStack
 
 
 
-class StaLtaDetection(CollectionNode):
+class StaLtaDetectionNode(CollectionNode):
     ''' Do a STA/LTA event detection.
 
     '''
