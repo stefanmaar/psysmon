@@ -32,6 +32,9 @@ collection_node_modules = ['import_bulletin', 'detect_sta_lta',
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugins_event_selector',]
 
+# Specify the module(s) where to search for processing node classes.
+processing_node_modules = ['pn_amplitude_features', ]
+
 def databaseFactory(base):
     from sqlalchemy import Column
     from sqlalchemy import Integer
