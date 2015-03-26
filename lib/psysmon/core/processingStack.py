@@ -140,8 +140,16 @@ class ProcessingStack:
             The data to process.
         '''
         for curNode in self.nodes:
+            curNode.clear_results()
             if curNode.isEnabled():
                 curNode.execute(stream)
+
+
+    def clear_results(self):
+        ''' Clear the results of all processing nodes.
+        '''
+        for cur_node in self.nodes:
+            cur_node.clear_results()
 
 
 
@@ -178,6 +186,9 @@ class ProcessingNode:
 
         # The tags assigned to the stack node.
         self.tags = tags
+
+        # The result of the processing node.
+        self.results = {}
 
         # The preferences of the stack node.
         self.pref_manager = PreferencesManager()
@@ -239,4 +250,158 @@ class ProcessingNode:
         using this method.
         '''
         self.pref_manager.update(pref_manager)
+
+
+
+    def add_result(self, name, scnl, value, res_type = 'value',
+                   custom_class = None):
+        ''' Add a result.
+
+        Parameters
+        ----------
+        result : object
+            The result to add to the processing node results.
+
+        res_type : String
+            The type of the result to add. ('value', 'custom')
+
+        custom_class : class inhereted from :class:`ProcessingResult`
+            The custom class of a result of kind 'custom'.
+        '''
+        if name not in self.results.keys():
+            if res_type == 'value':
+                self.results[name] = ValueResult(name = name,
+                                                 origin_name = self.name,
+                                                 origin_pos = self.parentStack.nodes.index(self),
+                                                 res_type = res_type)
+            else:
+                raise ValueError('The result of type %s is not supported.' % res_type)
+
+        if self.results[name].type != res_type:
+            raise ValueError("The type %s of the existing results doesn't match the type %s of the result to add." % (self.results[name].type, res_type))
+
+        self.results[name].add_value(scnl = scnl, value = value)
+
+
+    def clear_results(self):
+        ''' Remove the results.
+        '''
+        self.results = {}
+
+
+    def get_result_names(self):
+        ''' Get the available result names.
+
+        '''
+        return list(set([x.name for x in self.results]))
+
+
+
+
+class ResultBag(object):
+    ''' A container holding results.
+    '''
+
+    def __init(self):
+        ''' Initialize the instance.
+        '''
+        # A dictionary with the resource_ids as keys.
+        self.results = {}
+
+
+    def add_result(self, resource_id, result):
+        ''' Add a result computed for a certain resource.
+        '''
+        if resource_id not in self.results.keys():
+            self.results[resource_id] = {}
+
+        result_id = (result.origin_name, result.origin_pos, result.name)
+        self.results[resource_id][result_id] = result
+
+
+
+class Result(object):
+    ''' A result of a processing node.
+
+    Processing nodes can produce results which are than stored in the
+    processing stack for further use.
+    The origin is a unique identifier of the processing node which created
+    the result.
+    When executing a processing stack several times in a loop, e.g when
+    processing a list of events, the results of each loop can be
+    added to an existing result of the same origin.
+    '''
+
+    def __init__(self, name, origin_name, origin_pos, res_type = None):
+        ''' Initialize the instance.
+        '''
+        # The name of the result.
+        self.name = name
+
+        # The node which created the result.
+        self.origin_name = origin_name
+
+        # The position of the origin node in the stack.
+        self.origin_pos = origin_pos
+
+        # The result data.
+        self.values = {}
+
+        # The type of the result.
+        self.type = res_type
+
+
+    def add_value(self, scnl, value):
+        ''' Add a value to the result.
+        '''
+        self.values[scnl] = value
+
+
+    def get_as_list(self, scnl = None):
+        ''' Get the results as a list.
+
+        Parameters
+        ----------
+        scnl : List of tuples
+            The SCNL codes for which to get the results.
+            If scnl is None, all results are returned.
+
+        Returns
+        -------
+        A list of results in the order of the scnl list.
+        '''
+        assert False, 'get_as_list must be defined'
+
+
+
+
+
+class ValueResult(Result):
+    ''' A result representing a single value.
+
+    '''
+    def __init__(self, **kwargs):
+        ''' Initialize the instance.
+
+        '''
+        Result.__init__(self, **kwargs)
+
+
+    def get_as_list(self, scnl = None):
+        ''' Get the results as a list.
+
+        Parameters
+        ----------
+        scnl : List of tuples
+            The SCNL codes for which to get the results.
+            If scnl is None, all results are returned.
+
+        Returns
+        -------
+        A list of results in the order of the scnl list.
+        '''
+        if scnl is None:
+            scnl = self.values.keys()
+
+        return scnl, [self.values[key] for key in scnl]
 
