@@ -94,6 +94,21 @@ def version_tuple(version_string):
     return tuple(map(int, version_string.split('.')))
 
 
+
+def traceid_to_scnl(trace_id):
+    ''' Convert a obspy trace id to a SCNL tuple.
+
+    Parameters
+    ----------
+    trace_id : String
+        A string representing the obspy trace ID
+        (network.station.location.channel)
+    '''
+    network, station, location, channel = trace_id.split('.')
+    return((station, channel, network, location))
+
+
+
 class AttribDict(dict, object):
 
     readonly = []
