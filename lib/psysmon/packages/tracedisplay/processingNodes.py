@@ -64,7 +64,7 @@ class Detrend(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.detrend(type = self.pref_manager.get_value('detrend method'))
-
+        
 
 
 class MedianFilter(ProcessingNode):

@@ -1916,6 +1916,7 @@ class DataManager():
                 self.procStream += curStream
 
 
+
     def get_proc_stream(self, scnl):
         ''' Get the processed stream matching the scnl codes.
         '''
