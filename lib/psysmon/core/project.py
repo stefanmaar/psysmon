@@ -1078,7 +1078,7 @@ class User:
             loggerName = __name__ + "." + self.__class__.__name__
             self.logger = logging.getLogger(loggerName)
 
-
+    # TODO: Change this method to a property.
     def get_rid(self):
         ''' Get the resource id of the user.
 
@@ -1087,7 +1087,7 @@ class User:
         rid : String
             The resource id of the user (agency_uri.author_uri).
         '''
-        return self.agency_uri + '.' + self.author_uri
+        return self.agency_uri.replace(' ', '_') + '.' + self.author_uri.replace(' ', '_')
 
 
 
