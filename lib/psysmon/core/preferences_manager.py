@@ -316,6 +316,25 @@ class PreferenceItem(object):
         return 'PREF:\t%s, %s, %s, %s' % (self.name, self.value, self.mode, self.parent_page)
 
 
+    def __getstate__(self):
+        import types
+
+        result = self.__dict__.copy()
+
+        # The following attributes can't be pickled an therefore have to be
+        # removed.
+        # These values have to be reset when loading the project.
+        hooks = {}
+        for cur_key, cur_hook in self.hooks.iteritems():
+            if isinstance(cur_hook, types.MethodType):
+                hooks[cur_key] = cur_hook.__name__
+        result['hooks'] = hooks
+
+        return result
+
+
+    #TODO: Add a __setstate__ method which recreates the hooks callbacks.
+
 
     def set_gui_element(self, element):
         ''' Set the gui element displaying the preference item.
@@ -519,6 +538,24 @@ class ActionItem(object):
         self.tool_tip = tool_tip
 
         self.gui_element = []
+
+
+    def __getstate__(self):
+        import types
+
+        result = self.__dict__.copy()
+
+        # The following attributes can't be pickled an therefore have to be
+        # removed.
+        # These values have to be reset when loading the project.
+        if isinstance(self.action, types.MethodType):
+            result['action'] = self.action.__name__
+
+        return result
+
+
+    #TODO: Add a __setstate__ method which recreates the action callback.
+
 
 
     def set_gui_element(self, element):
