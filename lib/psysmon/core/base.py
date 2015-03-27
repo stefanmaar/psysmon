@@ -557,9 +557,9 @@ class Collection:
         ''' The resource ID of the collection node.
         '''
         if self.project is not None:
-            rid = self.project.rid + '/' + self.p_name
+            rid = self.project.rid + '/' + self.p_name.replace(' ', '_')
         else:
-            rid = self.name
+            rid = self.name.replace(' ', '_')
 
         return rid
 
