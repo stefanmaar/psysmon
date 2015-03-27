@@ -87,6 +87,13 @@ class Event(object):
         self.changed = changed
 
 
+    @property
+    def rid(self):
+        ''' The resource ID of the event.
+        '''
+        return '/event/' + str(self.db_id)
+
+
     def write_to_database(self, project):
         ''' Write the event to the pSysmon database.
         '''
@@ -277,6 +284,53 @@ class Catalog(object):
         # Write or update all events of the catalog to the database.
         for cur_event in [x for x in self.events if x.changed is True]:
             cur_event.write_to_database(project)
+
+
+    def load_events(self, project, start_time = None, end_time = None, event_id = None):
+        ''' Load events from the database.
+
+        The query can be limited using the allowed keyword arguments.
+
+        Parameters
+        ----------
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The begin of the time-span to load.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The end of the time-span to load.
+        '''
+        if project is None:
+            raise RuntimeError("The project is None. Can't query the database without a project.")
+
+        db_session = project.getDbSession()
+        try:
+            events_table = project.dbTables['event']
+            query = db_session.query(events_table).\
+                    filter(events_table.ev_catalog_id == self.db_id)
+
+            if start_time:
+                query = query.filter(events_table.start_time >= start_time.timestamp)
+
+            if end_time:
+                query = query.filter(events_table.start_time <= end_time.timestamp)
+
+            if event_id:
+                query = query.filter(events_table.id in event_id)
+
+            events_to_add = []
+            for cur_orm in query:
+                cur_event = Event.from_db_event(cur_orm)
+                events_to_add.append(cur_event)
+            self.add_events(events_to_add)
+
+        finally:
+            db_session.close()
+
+
+    def clear_events(self):
+        ''' Clear the events list.
+        '''
+        self.events = []
 
 
     @classmethod
