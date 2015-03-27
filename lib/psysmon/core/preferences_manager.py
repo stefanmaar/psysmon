@@ -292,7 +292,10 @@ class PreferenceItem(object):
         self.position = position
 
         # Function hooks to be called in methods of the gui elements.
-        self.hooks = hooks
+        if hooks is None:
+            self.hooks = {}
+        else:
+            self.hooks = hooks
 
 
     #@property
