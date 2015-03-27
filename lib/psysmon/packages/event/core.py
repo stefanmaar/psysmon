@@ -166,7 +166,7 @@ class Event(object):
                     end_time = db_event.end_time,
                     db_id = db_event.id,
                     public_id = db_event.public_id,
-                    event_type = db_event.ev_type,
+                    event_type = None,
                     event_type_certainty = db_event.ev_type_certainty,
                     description = db_event.description,
                     tags = db_event.tags,
@@ -280,13 +280,17 @@ class Catalog(object):
 
 
     @classmethod
-    def from_db_catalog(cls, db_catalog):
+    def from_db_catalog(cls, db_catalog, load_events = False):
         ''' Convert a database orm mapper catalog to a catalog.
 
         Parameters
         ----------
         db_catalog : SQLAlchemy ORM
             The ORM of the events catalog database table.
+
+        load_events : Boolean
+            If true all events contained in the catalog are loaded
+            from the database.
         '''
         catalog = cls(name = db_catalog.name,
                       db_id = db_catalog.id,
@@ -297,9 +301,10 @@ class Catalog(object):
                       )
 
         # Add the events to the catalog.
-        for cur_db_event in db_catalog.events:
-            cur_event = Event.from_db_event(cur_db_event)
-            catalog.add_events([cur_event,])
+        if load_events is True:
+            for cur_db_event in db_catalog.events:
+                cur_event = Event.from_db_event(cur_db_event)
+                catalog.add_events([cur_event,])
         return catalog
 
 
@@ -381,7 +386,7 @@ class Library(object):
         return catalog_names
 
 
-    def load_catalog_from_db(self, project, name):
+    def load_catalog_from_db(self, project, name, load_events = False):
         ''' Load catalogs from the database.
 
         Parameters
@@ -401,7 +406,7 @@ class Library(object):
             query = db_session.query(db_catalog_orm).filter(db_catalog_orm.name.in_(name))
             if db_session.query(query.exists()):
                 for cur_db_catalog in query:
-                    cur_catalog = Catalog.from_db_catalog(cur_db_catalog)
+                    cur_catalog = Catalog.from_db_catalog(cur_db_catalog, load_events)
                     self.add_catalog(cur_catalog)
         finally:
             db_session.close()
