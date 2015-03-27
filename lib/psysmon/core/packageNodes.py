@@ -116,7 +116,7 @@ class CollectionNode:
     # The entry point of the documentation of the collection node.
     docEntryPoint = None
 
-    def __init__(self, requires=None, provides=None, parent=None, 
+    def __init__(self, requires=None, provides=None, parent=None,
                  project=None, enabled = True, pref_manager = None):
         ## The package which contains the collection node.
         self.parentPackage = parent
@@ -162,10 +162,11 @@ class CollectionNode:
     def rid(self):
         ''' The resource ID of the collection node.
         '''
+        name_slug = self.name.replace(' ', '_')
         if self.parentCollection is not None:
-            rid = self.parentCollection.rid + '/' + self.name
+            rid = self.parentCollection.rid + '/' + name_slug
         else:
-            rid = self.name
+            rid = name_slug
 
         return rid
 
