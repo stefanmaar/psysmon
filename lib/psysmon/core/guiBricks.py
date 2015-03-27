@@ -135,6 +135,7 @@ class Field(wx.Panel):
 
     def onValueChange(self, event):
         self.setPrefValue()
+
         if 'on_value_change' in self.pref_item.hooks.keys():
             self.pref_item.hooks['on_value_change']()
 
