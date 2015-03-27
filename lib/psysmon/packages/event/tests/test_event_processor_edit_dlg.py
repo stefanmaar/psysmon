@@ -28,6 +28,7 @@ from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 import psysmon.core.gui as psygui
+from obspy.core.utcdatetime import UTCDateTime
 
 
 @nose_attrib.attr('interactive')
@@ -64,6 +65,12 @@ class EventProcessorEditDlgTestCase(unittest.TestCase):
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('event processor')
         self.node = nodeTemplate()
         self.node.project = self.project
+
+        self.node.pref_manager.set_value('start_time', UTCDateTime('2010-08-31T00:00:00'))
+        self.node.pref_manager.set_value('end_time', UTCDateTime('2010-09-01T00:00:00'))
+        self.node.pref_manager.set_value('event_catalog', 'test')
+        self.node.pref_manager.set_value('stations', ['GUWA', 'SITA'])
+        self.node.pref_manager.set_value('channels', ['HHE', 'HHN', 'HHZ'])
 
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__

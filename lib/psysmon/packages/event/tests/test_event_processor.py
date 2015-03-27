@@ -29,7 +29,7 @@ from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
-import obspy.core.utcdatetime as utcdatetime
+from obspy.core.utcdatetime import UTCDateTime
 
 
 class EventProcessorTestCase(unittest.TestCase):
@@ -55,7 +55,7 @@ class EventProcessorTestCase(unittest.TestCase):
         cls.psybase = create_psybase()
         create_full_project(cls.psybase)
         cls.project = cls.psybase.project
-        cls.project.dbEngine.echo = False
+        cls.project.dbEngine.echo = True
 
 
     @classmethod
@@ -84,7 +84,12 @@ class EventProcessorTestCase(unittest.TestCase):
         node = copy.deepcopy(node_template)
         self.node.pref_manager.set_value('processing_stack', [node, ])
 
-
+        # Initialize the preference items.
+        self.node.pref_manager.set_value('start_time', UTCDateTime('2010-08-31T00:00:00'))
+        self.node.pref_manager.set_value('end_time', UTCDateTime('2010-09-01T00:00:00'))
+        self.node.pref_manager.set_value('event_catalog', 'test')
+        self.node.pref_manager.set_value('stations', ['GUWA', 'SITA'])
+        self.node.pref_manager.set_value('channels', ['HHE', 'HHN', 'HHZ'])
 
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__
