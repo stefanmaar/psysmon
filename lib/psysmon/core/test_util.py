@@ -31,6 +31,7 @@ import psysmon.core.gui as psygui
 from psysmon.core.project import User
 from psysmon.packages.geometry.inventory_parser import InventoryXmlParser
 from psysmon.packages.geometry.db_inventory import DbInventory
+from obspy.core.utcdatetime import UTCDateTime
 
 
 def create_psybase(package_directory = None):
@@ -120,7 +121,6 @@ def create_full_project(psybase):
 
     # Write the geometry from XML to Database.
     inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
-    bulletin_file = os.path.join(data_path, 'test_earthquake_bulletin.txt')
     xmlparser = InventoryXmlParser()
     inventory = xmlparser.parse(inventory_file)
     try:
@@ -166,6 +166,7 @@ def create_full_project(psybase):
     node.execute()
 
     # Import the earthquake bulletin to fill the events database.
+    bulletin_file = os.path.join(data_path, 'test_earthquake_bulletin.txt')
     node_template = psybase.packageMgr.getCollectionNodeTemplate('import earthquake bulletin')
     node = node_template()
     # Create a logger for the node.
@@ -176,6 +177,31 @@ def create_full_project(psybase):
     input_files = [('IMS1.0', bulletin_file, 1),]
     node.pref_manager.set_value('input_files', input_files)
     node.execute()
+
+
+    # Add some events to the database.
+    db_session = project.getDbSession()
+    try:
+        cat_table = project.dbTables['event_catalog'];
+        cat_orm = cat_table(name = 'test',
+                            description = 'A test catalog.',
+                            agency_uri = project.activeUser.agency_uri,
+                            author_uri = project.activeUser.author_uri,
+                            creation_time = UTCDateTime().isoformat())
+
+        event_table = project.dbTables['event']
+        event_orm = event_table(ev_catalog_id = None,
+                                start_time = UTCDateTime('2010-08-31T08:00:01').timestamp,
+                                end_time = UTCDateTime('2010-08-31T08:00:16').timestamp,
+                                description = 'A test event.',
+                                agency_uri = project.activeUser.agency_uri,
+                                author_uri = project.activeUser.author_uri,
+                                creation_time = UTCDateTime().isoformat())
+        cat_orm.events.append(event_orm)
+        db_session.add(cat_orm)
+        db_session.commit()
+    finally:
+        db_session.close()
 
     return project
 
