@@ -67,7 +67,7 @@ def databaseFactory(base):
         events = relationship('EventDb',
                                cascade = 'all',
                                backref = 'parent',
-                               lazy = 'subquery')
+                               lazy = 'select')
 
         def __init__(self, name, description, agency_uri,
                      author_uri, creation_time):
