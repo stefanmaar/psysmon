@@ -33,7 +33,6 @@ import os
 import threading
 from obspy.core import read, Stream
 from obspy.earthworm import Client
-from psysmon.packages.geometry.db_inventory import DbInventory
 
 class WaveClient:
     '''The WaveClient class.
@@ -452,7 +451,8 @@ class PsysmonDbWaveClient(WaveClient):
                     cur_data_stream = read(pathname_or_url = filename,
                                            format = curHeader.file_type,
                                            starttime = start_time,
-                                           endtime = end_time)
+                                           endtime = end_time,
+                                           dtype = 'float64')
 
                     if not cur_data_stream:
                         continue
