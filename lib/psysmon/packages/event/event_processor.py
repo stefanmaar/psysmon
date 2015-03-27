@@ -40,6 +40,7 @@ from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from plugins_event_selector import EventListField
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.processingStack import ProcessingStack
+import core as ev_core
 
 
 
@@ -59,7 +60,10 @@ class EventProcessorNode(CollectionNode):
         self.catalogs = []
 
         self.create_selector_preferences()
-        self.create_processing_chain_preferences()
+        self.create_component_selector_preferences()
+        self.create_processing_stack_preferences()
+        self.create_output_preferences()
+
 
     def edit(self):
         # Initialize the available catalogs.
@@ -67,7 +71,8 @@ class EventProcessorNode(CollectionNode):
         catalog_names = [x.name for x in self.catalogs]
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
-            self.pref_manager.set_value('event_catalog', catalog_names[0])
+            if self.pref_manager.get_value('event_catalog') not in catalog_names:
+                self.pref_manager.set_value('event_catalog', catalog_names[0])
 
         # Initialize the available processing nodes.
         processing_nodes = self.project.getProcessingNodes(('common', ))
@@ -77,6 +82,13 @@ class EventProcessorNode(CollectionNode):
                 self.pref_manager.set_value('processing_stack', [detrend_node, ])
         self.pref_manager.set_limit('processing_stack', processing_nodes)
 
+        # Initialize the components.
+        if self.project.geometry_inventory:
+            stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
+            self.pref_manager.set_limit('stations', stations)
+
+            channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
+            self.pref_manager.set_limit('channels', channels)
 
         # Create the edit dialog.
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
@@ -95,11 +107,11 @@ class EventProcessorNode(CollectionNode):
 
         # Get the output directory from the pref_manager. If no directory is
         # specified create one based on the node resource id.
-        output_dir = ''
+        output_dir = self.pref_manager.get_value('output_dir')
 
         processor = EventProcessor(project = self.project,
-                                  processing_stack = processing_stack,
-                                  output_dir = output_dir)
+                                   processing_stack = processing_stack,
+                                   output_dir = output_dir)
 
         if self.pref_manager.get_value('select_individual') is True:
             events = self.pref_manager.get_value('events')
@@ -111,6 +123,7 @@ class EventProcessorNode(CollectionNode):
                           end_time = self.pref_manager.get_value('end_time'),
                           stations = self.pref_manager.get_value('stations'),
                           channels = self.pref_manager.get_value('channels'),
+                          event_catalog = self.pref_manager.get_value('event_catalog'),
                           event_ids = event_ids)
 
 
@@ -176,8 +189,36 @@ class EventProcessorNode(CollectionNode):
                                    item = item)
 
 
-    def create_processing_chain_preferences(self):
-        ''' Create the preference items of the processing chain section.
+
+    def create_component_selector_preferences(self):
+        ''' Create the preference items of the component selection section.
+
+        '''
+        self.pref_manager.add_page('components')
+
+        # The stations to process.
+        item = psy_pm.MultiChoicePrefItem(name = 'stations',
+                                          label = 'stations',
+                                          group = 'components to process',
+                                          limit = (),
+                                          value = [],
+                                          tool_tip = 'The stations which should be used for the processing.')
+        self.pref_manager.add_item(pagename = 'components',
+                                   item = item)
+
+        # The channels to process.
+        item = psy_pm.MultiChoicePrefItem(name = 'channels',
+                                          label = 'channels',
+                                          group = 'components to process',
+                                          limit = (),
+                                          value = [],
+                                          tool_tip = 'The channels which should be used for the processing.')
+        self.pref_manager.add_item(pagename = 'components',
+                                   item = item)
+
+
+    def create_processing_stack_preferences(self):
+        ''' Create the preference items of the processing stack section.
         '''
         self.pref_manager.add_page('processing stack')
 
@@ -188,6 +229,22 @@ class EventProcessorNode(CollectionNode):
                                      gui_class = PStackEditField,
                                      tool_tip = 'Edit the processing stack nodes.')
         self.pref_manager.add_item(pagename = 'processing stack',
+                                   item = item)
+
+
+    def create_output_preferences(self):
+        ''' Create the preference items of the output section.
+
+        '''
+        self.pref_manager.add_page('output')
+
+        item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
+                                        label = 'output directory',
+                                        group = 'output',
+                                        value = '',
+                                        tool_tip = 'Specify a directory where to save the processing results.'
+                                       )
+        self.pref_manager.add_item(pagename = 'output',
                                    item = item)
 
 
@@ -274,7 +331,7 @@ class EventProcessor(object):
         self.ouput_dir = output_dir
 
 
-    def process(self, start_time, end_time, stations, channels, event_ids = None):
+    def process(self, start_time, end_time, stations, channels, event_catalog, event_ids = None):
         ''' Start the detection.
 
         Parameters
@@ -291,10 +348,15 @@ class EventProcessor(object):
         channels : list of Strings
             The names of the channels to process.
 
-        interval : float
-            The interval into which the time span is split to run successive detections.
+        event_catalog : String
+            The name of the event catalog to process.
 
+        event_ids : List of Integer
+            If individual events are specified, this list contains the database IDs of the events
+            to process.
         '''
+        event_lib = ev_core.Library('events')
+        event_lib.load_catalog_from_db(self.project, name = event_catalog, load_events = True)
         events = []
         if event_ids is None:
             # Load the events for the given time span from the database.
