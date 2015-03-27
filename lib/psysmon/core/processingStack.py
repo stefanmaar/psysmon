@@ -30,7 +30,9 @@ The pSysmon processingStack module.
 This module contains the pSysmon processingStack system.
 '''
 
+import os
 import copy
+import itertools
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -58,6 +60,8 @@ class ProcessingStack:
             self.nodes = []
         else:
             self.nodes = nodes
+            for cur_node in self.nodes:
+                cur_node.parentStack = self
 
         # The current project.
         self.project = project
@@ -150,6 +154,12 @@ class ProcessingStack:
         '''
         for cur_node in self.nodes:
             cur_node.clear_results()
+
+
+    def get_results(self):
+        ''' Get all results of the processing nodes.
+        '''
+        return list(itertools.chain.from_iterable([x.results.values() for x in self.nodes]))
 
 
 
@@ -283,6 +293,8 @@ class ProcessingNode:
         self.results[name].add_value(scnl = scnl, value = value)
 
 
+
+
     def clear_results(self):
         ''' Remove the results.
         '''
@@ -302,21 +314,103 @@ class ResultBag(object):
     ''' A container holding results.
     '''
 
-    def __init(self):
+    def __init__(self):
         ''' Initialize the instance.
         '''
         # A dictionary with the resource_ids as keys.
         self.results = {}
 
 
-    def add_result(self, resource_id, result):
-        ''' Add a result computed for a certain resource.
+    def add(self, resource_id, results):
+        ''' Add results computed for a certain resource.
+
+        Parameters
+        ----------
+        resource_id : String
+            The id of the resource for which the results where computed.
+
+        results : List of :class:`Result`
+            The results to add to the bag.
         '''
         if resource_id not in self.results.keys():
             self.results[resource_id] = {}
 
-        result_id = (result.origin_name, result.origin_pos, result.name)
-        self.results[resource_id][result_id] = result
+        for cur_result in results:
+            cur_result.origin_resource = resource_id
+            self.results[resource_id][cur_result.rid] = cur_result
+
+
+    def save(self, output_dir, scnl, group_by = 'result', format = 'csv'):
+        ''' Save the results in the specified format.
+
+        '''
+        if format == 'csv':
+            self.save_csv(output_dir = output_dir,
+                          scnl = scnl,
+                          group_by = group_by)
+
+
+    def save_csv(self, output_dir, scnl, group_by):
+        ''' Save the results in CSV format.
+
+        '''
+        import csv
+
+        if group_by == 'result':
+            result_rids = list(set(list(itertools.chain.from_iterable(self.results.values()))))
+            for cur_result_rid in result_rids:
+                results_to_export = self.get_results(result_rid = cur_result_rid)
+                export_values = []
+                for cur_result in results_to_export:
+                    scnl, values = cur_result.get_as_list(scnl)
+                    values.reverse()
+                    values.append(cur_result.origin_resource)
+                    values.reverse()
+                    export_values.append(values)
+
+
+
+                # Save the export values to a csv file.
+                filename = cur_result_rid.replace('/', '-')
+                if filename.startswith('-'):
+                    filename = filename[1:]
+                if filename.endswith('-'):
+                    filename = filename[:-1]
+                filename = filename + '.csv'
+                filename = os.path.join(output_dir, filename)
+
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+
+                fid = open(filename, 'wt')
+                try:
+                    header = ['resource',]
+                    header.extend(['.'.join(x) for x in scnl])
+                    writer = csv.writer(fid, quoting = csv.QUOTE_NONNUMERIC)
+                    writer.writerow(header)
+                    writer.writerows(export_values)
+                finally:
+                    fid.close()
+
+
+
+
+    def get_results(self, resource_rid = None, result_rid = None):
+        ''' Get the results based on some search criteria.
+
+        '''
+        ret_val = list(itertools.chain.from_iterable([x.values() for x in self.results.values()]))
+
+        if result_rid:
+            ret_val = [x for x in ret_val if x.rid == result_rid]
+
+        if resource_rid:
+            ret_val = [x for x in ret_val if x.rid == result_rid]
+
+        return ret_val
+
+
+
 
 
 
@@ -332,7 +426,8 @@ class Result(object):
     added to an existing result of the same origin.
     '''
 
-    def __init__(self, name, origin_name, origin_pos, res_type = None):
+    def __init__(self, name, origin_name, origin_pos, res_type = None,
+                 origin_resource = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -349,6 +444,19 @@ class Result(object):
 
         # The type of the result.
         self.type = res_type
+
+        # The parent resource ID for which the result was computed.
+        self.origin_resource = origin_resource
+
+
+    @property
+    def rid(self):
+        ''' The resource ID of the result.
+        '''
+        name_slug = self.name.replace(' ', '_')
+        origin_name_slug = self.origin_name.replace(' ', '_')
+        return '/result/' + origin_name_slug + '/' + str(self.origin_pos) + '/' + name_slug
+
 
 
     def add_value(self, scnl, value):
@@ -403,5 +511,5 @@ class ValueResult(Result):
         if scnl is None:
             scnl = self.values.keys()
 
-        return scnl, [self.values[key] for key in scnl]
+        return scnl, [self.values.get(key, None) for key in scnl]
 
