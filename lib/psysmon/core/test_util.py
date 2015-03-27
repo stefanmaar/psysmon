@@ -190,10 +190,21 @@ def create_full_project(psybase):
                             creation_time = UTCDateTime().isoformat())
 
         event_table = project.dbTables['event']
+        # The first event is an earthquake.
         event_orm = event_table(ev_catalog_id = None,
                                 start_time = UTCDateTime('2010-08-31T08:00:01').timestamp,
                                 end_time = UTCDateTime('2010-08-31T08:00:16').timestamp,
                                 description = 'A test event.',
+                                agency_uri = project.activeUser.agency_uri,
+                                author_uri = project.activeUser.author_uri,
+                                creation_time = UTCDateTime().isoformat())
+        cat_orm.events.append(event_orm)
+
+        # The second event is just a dummy with some spikes on G_NAWA:HHZ.
+        event_orm = event_table(ev_catalog_id = None,
+                                start_time = UTCDateTime('2010-08-31T08:02:11').timestamp,
+                                end_time = UTCDateTime('2010-08-31T08:02:17').timestamp,
+                                description = 'Some spikes.',
                                 agency_uri = project.activeUser.agency_uri,
                                 author_uri = project.activeUser.author_uri,
                                 creation_time = UTCDateTime().isoformat())
