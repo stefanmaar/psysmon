@@ -30,16 +30,19 @@ The importWaveform module.
 This module contains the classes of the importWaveform dialog window.
 '''
 
+import os
 import copy
 import logging
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
+import obspy.core
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from plugins_event_selector import EventListField
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.processingStack import ProcessingStack
+from psysmon.core.processingStack import ResultBag
 import core as ev_core
 
 
@@ -108,10 +111,13 @@ class EventProcessorNode(CollectionNode):
         # Get the output directory from the pref_manager. If no directory is
         # specified create one based on the node resource id.
         output_dir = self.pref_manager.get_value('output_dir')
+        if not output_dir:
+            output_dir = self.project.dataDir
 
         processor = EventProcessor(project = self.project,
                                    processing_stack = processing_stack,
-                                   output_dir = output_dir)
+                                   output_dir = output_dir,
+                                   parent_rid = self.rid)
 
         if self.pref_manager.get_value('select_individual') is True:
             events = self.pref_manager.get_value('events')
@@ -121,8 +127,8 @@ class EventProcessorNode(CollectionNode):
 
         processor.process(start_time = self.pref_manager.get_value('start_time'),
                           end_time = self.pref_manager.get_value('end_time'),
-                          stations = self.pref_manager.get_value('stations'),
-                          channels = self.pref_manager.get_value('channels'),
+                          station_names = self.pref_manager.get_value('stations'),
+                          channel_names = self.pref_manager.get_value('channels'),
                           event_catalog = self.pref_manager.get_value('event_catalog'),
                           event_ids = event_ids)
 
@@ -315,7 +321,7 @@ class EventProcessorNode(CollectionNode):
 
 class EventProcessor(object):
 
-    def __init__(self, project, output_dir, processing_stack = None):
+    def __init__(self, project, output_dir, processing_stack = None, parent_rid = None):
         ''' Initialize the instance.
 
         '''
@@ -328,10 +334,22 @@ class EventProcessor(object):
 
         self.processing_stack = processing_stack
 
-        self.ouput_dir = output_dir
+        self.parent_rid = parent_rid
+
+        if self.parent_rid is not None:
+            rid_dir = self.parent_rid.replace('/', '-').replace(':', '-')
+            if rid_dir.startswith('-'):
+                rid_dir = rid_dir[1:]
+            if rid_dir.endswith('-'):
+                rid_dir = rid_dir[:-1]
+            self.output_dir = os.path.join(output_dir, rid_dir)
+        else:
+            self.output_dir = output_dir
+
+        self.result_bag = ResultBag()
 
 
-    def process(self, start_time, end_time, stations, channels, event_catalog, event_ids = None):
+    def process(self, start_time, end_time, station_names, channel_names, event_catalog, event_ids = None):
         ''' Start the detection.
 
         Parameters
@@ -342,10 +360,10 @@ class EventProcessor(object):
         end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
             The end time of the timespan for which to detect the events.
 
-        stations : list of Strings
+        station_names : list of Strings
             The names of the stations to process.
 
-        channels : list of Strings
+        channel_names : list of Strings
             The names of the channels to process.
 
         event_catalog : String
@@ -356,30 +374,78 @@ class EventProcessor(object):
             to process.
         '''
         event_lib = ev_core.Library('events')
-        event_lib.load_catalog_from_db(self.project, name = event_catalog, load_events = True)
-        events = []
+        event_lib.load_catalog_from_db(self.project, name = event_catalog)
+        catalog = event_lib.catalogs[event_catalog]
         if event_ids is None:
             # Load the events for the given time span from the database.
-            pass
+            catalog.load_events(project = self.project,
+                                start_time = start_time,
+                                end_time = end_time)
         else:
             # Load the events with the given ids from the database. Ignore the
             # time-span.
-            pass
+            catalog.load_events(event_id = event_ids)
 
 
+        # Get the channels to process.
+        channels = []
+        for cur_station in station_names:
+            for cur_channel in channel_names:
+                channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
+                                                                            name = cur_channel))
 
-        for cur_event in events:
+
+        scnl = [x.scnl for x in channels]
+
+        for cur_event in catalog.events:
             # Load the waveform data for the event and the given stations and
             # channels.
-            stream = self.load_event_waveform(scnl)
+            # TODO: Add a feature which allows adding a window before and after
+            # the event time limits.
+            cur_start_time = cur_event.start_time
+            cur_end_time = cur_event.end_time
+            stream = self.request_stream(start_time = cur_start_time,
+                                         end_time = cur_end_time,
+                                         scnl = scnl)
 
             # Execute the processing stack.
             self.processing_stack.execute(stream)
 
             # Put the results of the processing stack into the results bag.
             results = self.processing_stack.get_results()
-            self.result_bag.add(results)
+            resource_id = self.project.rid + cur_event.rid
+            self.result_bag.add(resource_id = resource_id,
+                                results = results)
 
 
         # Save the processing results to files.
-        self.result_bag.save(output_dir = self.output_dir)
+        self.result_bag.save(output_dir = self.output_dir, scnl = scnl)
+
+
+    def request_stream(self, start_time, end_time, scnl):
+        ''' Request a data stream from the waveclient.
+
+        '''
+        data_sources = {}
+        for cur_scnl in scnl:
+            if cur_scnl in self.project.scnlDataSources.keys():
+                if self.project.scnlDataSources[cur_scnl] not in data_sources.keys():
+                    data_sources[self.project.scnlDataSources[cur_scnl]] = [cur_scnl, ]
+                else:
+                    data_sources[self.project.scnlDataSources[cur_scnl]].append(cur_scnl)
+            else:
+                if self.project.defaultWaveclient not in data_sources.keys():
+                    data_sources[self.project.defaultWaveclient] = [cur_scnl, ]
+                else:
+                    data_sources[self.project.defaultWaveclient].append(cur_scnl)
+
+        stream = obspy.core.Stream()
+
+        for cur_name in data_sources.iterkeys():
+            curWaveclient = self.project.waveclient[cur_name]
+            curStream =  curWaveclient.getWaveform(startTime = start_time,
+                                                   endTime = end_time,
+                                                   scnl = scnl)
+            stream += curStream
+
+        return stream
