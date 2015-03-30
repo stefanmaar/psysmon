@@ -28,6 +28,7 @@ Module for handling object preferences.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+import wx
 
 class PreferencesManager:
     ''' The preferences of the project.
@@ -562,6 +563,11 @@ class ActionItem(object):
         ''' Set the gui element displaying the preference item.
 
         '''
+        # Check for deleted elements.
+        # TODO: Create GUI fields for the ActionItem similar to the PrefItems
+        # to handle the removal of the gui_element when the GUI field is
+        # deleted.
+        self.gui_element = [x for x in self.gui_element if not isinstance(x, wx._core._wxPyDeadObject)]
         if element not in self.gui_element:
             self.gui_element.append(element)
 
