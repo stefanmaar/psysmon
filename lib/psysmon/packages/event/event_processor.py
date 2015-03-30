@@ -30,6 +30,8 @@ The importWaveform module.
 This module contains the classes of the importWaveform dialog window.
 '''
 
+from profilehooks import profile
+
 import os
 import copy
 import logging
@@ -125,12 +127,59 @@ class EventProcessorNode(CollectionNode):
         else:
             event_ids = None
 
-        processor.process(start_time = self.pref_manager.get_value('start_time'),
-                          end_time = self.pref_manager.get_value('end_time'),
-                          station_names = self.pref_manager.get_value('stations'),
-                          channel_names = self.pref_manager.get_value('channels'),
-                          event_catalog = self.pref_manager.get_value('event_catalog'),
-                          event_ids = event_ids)
+
+        # Compute the processing intervals.
+        output_interval = self.pref_manager.get_value('output_interval')
+        start_time = self.pref_manager.get_value('start_time')
+        end_time = self.pref_manager.get_value('end_time')
+        seconds_per_day = 86400
+        interval_start = [start_time, ]
+        interval_end = []
+        if output_interval == 'daily':
+            interval = seconds_per_day
+            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + interval
+            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day)
+            n_intervals = (int_end - int_start) / interval
+            interval_start.extend([int_start + x * interval for x in range(0, int(n_intervals))])
+        elif output_interval == 'weekly':
+            interval = seconds_per_day*7
+            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + (6 - start_time.weekday) * seconds_per_day
+            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day) - end_time.weekday * seconds_per_day
+            n_intervals = (int_end - int_start) / interval
+            interval_start.extend([int_start + x * interval for x in range(0, int(n_intervals))])
+        elif output_interval == 'monthly':
+            start_year = start_time.year
+            start_month = start_time.month + 1
+            if start_month > 12:
+                start_year = start_year + 1
+                start_month = 1
+            end_year = end_time.year
+            end_month = end_time.month
+
+            month_dict = {}
+            year_list = range(start_year, end_year + 1)
+            for k, cur_year in enumerate(year_list):
+                if k == 0:
+                    month_dict[year_list[0]] = range(start_month, end_month)
+                elif k == len(year_list) - 1:
+                    month_dict[year_list[0]] = range(1, end_month)
+                else:
+                    month_dict[year_list[0]] = range(1, 12)
+
+            for cur_year, month_list in month_dict.iteritems():
+                for cur_month in month_list:
+                    interval_start.append(UTCDateTime(year = cur_year, month = cur_month))
+
+        interval_start.append(end_time)
+
+
+        for k, cur_start_time in enumerate(interval_start[:-1]):
+            processor.process(start_time = cur_start_time,
+                              end_time = interval_start[k+1],
+                              station_names = self.pref_manager.get_value('stations'),
+                              channel_names = self.pref_manager.get_value('channels'),
+                              event_catalog = self.pref_manager.get_value('event_catalog'),
+                              event_ids = event_ids)
 
 
 
@@ -253,6 +302,15 @@ class EventProcessorNode(CollectionNode):
         self.pref_manager.add_item(pagename = 'output',
                                    item = item)
 
+        item = psy_pm.SingleChoicePrefItem(name = 'output_interval',
+                                          label = 'output interval',
+                                          group = 'output',
+                                          limit = ('daily', 'weekly', 'monthly'),
+                                          value = 'monthly',
+                                          tool_tip = 'The interval for which to save the results.')
+        self.pref_manager.add_item(pagename = 'output',
+                                   item = item)
+
 
 
     def load_catalogs(self):
@@ -346,9 +404,9 @@ class EventProcessor(object):
         else:
             self.output_dir = output_dir
 
-        self.result_bag = ResultBag()
 
 
+    #@profile(immediate=True)
     def process(self, start_time, end_time, station_names, channel_names, event_catalog, event_ids = None):
         ''' Start the detection.
 
@@ -373,14 +431,19 @@ class EventProcessor(object):
             If individual events are specified, this list contains the database IDs of the events
             to process.
         '''
+        result_bag = ResultBag()
+
         event_lib = ev_core.Library('events')
         event_lib.load_catalog_from_db(self.project, name = event_catalog)
         catalog = event_lib.catalogs[event_catalog]
         if event_ids is None:
             # Load the events for the given time span from the database.
+            # TODO: Remove the hardcoded min_event_length value and create
+            # user-selectable filter fields.
             catalog.load_events(project = self.project,
                                 start_time = start_time,
-                                end_time = end_time)
+                                end_time = end_time,
+                                min_event_length = 1)
         else:
             # Load the events with the given ids from the database. Ignore the
             # time-span.
@@ -393,33 +456,82 @@ class EventProcessor(object):
             for cur_channel in channel_names:
                 channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
                                                                             name = cur_channel))
-
-
         scnl = [x.scnl for x in channels]
 
-        for cur_event in catalog.events:
-            # Load the waveform data for the event and the given stations and
-            # channels.
-            # TODO: Add a feature which allows adding a window before and after
-            # the event time limits.
-            cur_start_time = cur_event.start_time
-            cur_end_time = cur_event.end_time
-            stream = self.request_stream(start_time = cur_start_time,
-                                         end_time = cur_end_time,
-                                         scnl = scnl)
 
-            # Execute the processing stack.
-            self.processing_stack.execute(stream)
+        n_events = len(catalog.events)
+        active_timespan = ()
+        try:
+            for k, cur_event in enumerate(catalog.events):
+                self.logger.info("Processing event %d (%d/%d).", cur_event.db_id, k, n_events)
 
-            # Put the results of the processing stack into the results bag.
-            results = self.processing_stack.get_results()
-            resource_id = self.project.rid + cur_event.rid
-            self.result_bag.add(resource_id = resource_id,
-                                results = results)
+                # Load the waveform data for the event and the given stations and
+                # channels.
+                # TODO: Add a feature which allows adding a window before and after
+                # the event time limits.
+                pre_event_time = 20
+                post_event_time = 10
+
+                # TODO: Make the length of the waveform load interval user
+                # selectable.
+                waveform_load_interval = 3600
+
+                # When many short events with small gaps inbetween are processed,
+                # it is very ineffective to load the waveform for each event. Load
+                # a larger time-span and then request the waveform data from the
+                # waveclient stock.
+                timespan_begin = UTCDateTime(cur_event.start_time.year, cur_event.start_time.month, cur_event.start_time.day, cur_event.start_time.hour)
+                timespan_end = UTCDateTime(cur_event.end_time.year, cur_event.end_time.month, cur_event.end_time.day, cur_event.start_time.hour) + waveform_load_interval
+                if not active_timespan:
+                    self.logger.info("Initial stream request for hourly time-span: %s to %s.", timespan_begin.isoformat(),
+                                                                                          timespan_end.isoformat())
+                    stream = self.request_stream(start_time = timespan_begin,
+                                                 end_time = timespan_end,
+                                                 scnl = scnl)
+                    active_timespan = (timespan_begin, timespan_end)
 
 
-        # Save the processing results to files.
-        self.result_bag.save(output_dir = self.output_dir, scnl = scnl)
+                cur_start_time = cur_event.start_time - pre_event_time
+                cur_end_time = cur_event.end_time + post_event_time
+
+                if not (((cur_start_time >= active_timespan[0]) and (cur_start_time <= active_timespan[1])) and ((cur_end_time >= active_timespan[0]) and (cur_end_time <= active_timespan[1]))):
+                    self.logger.info("Requesting stream for hourly time-span: %s to %s.", timespan_begin.isoformat(),
+                                                                                          timespan_end.isoformat())
+                    stream = self.request_stream(start_time = timespan_begin,
+                                                 end_time = timespan_end,
+                                                 scnl = scnl)
+                    active_timespan = (timespan_begin, timespan_end)
+
+
+                stream = self.request_stream(start_time = cur_start_time,
+                                             end_time = cur_end_time,
+                                             scnl = scnl)
+
+                # Execute the processing stack.
+                # TODO: The 0.5 seconds where added because there's currently no
+                # access to the event detection of the individual channels. Make
+                # sure, that this hard-coded value is turned into a user-selectable
+                # one or removed completely.
+                process_limits = (cur_event.start_time - 0.5, cur_event.end_time)
+                self.processing_stack.execute(stream = stream,
+                                              process_limits = process_limits)
+
+                # Put the results of the processing stack into the results bag.
+                results = self.processing_stack.get_results()
+                resource_id = self.project.rid + cur_event.rid
+                result_bag.add(resource_id = resource_id,
+                                    results = results)
+
+        finally:
+            # Add the time-span directory to the output directory.
+            if k and k != len(catalog.events) - 1:
+                cur_end_time = cur_event.end_time
+            else:
+                cur_end_time = end_time
+            timespan_dir = start_time.strftime('%Y%m%dT%H%M%S') + '_to_' + cur_end_time.strftime('%Y%m%dT%H%M%S')
+            cur_output_dir = os.path.join(self.output_dir, timespan_dir)
+            # Save the processing results to files.
+            result_bag.save(output_dir = cur_output_dir, scnl = scnl)
 
 
     def request_stream(self, start_time, end_time, scnl):
