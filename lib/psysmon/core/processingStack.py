@@ -33,6 +33,7 @@ This module contains the pSysmon processingStack system.
 import os
 import copy
 import itertools
+from operator import attrgetter
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -134,7 +135,7 @@ class ProcessingStack:
 
 
 
-    def execute(self, stream):
+    def execute(self, stream, process_limits = None):
         ''' Execute the stack.
 
         Parameters
@@ -146,7 +147,7 @@ class ProcessingStack:
         for curNode in self.nodes:
             curNode.clear_results()
             if curNode.isEnabled():
-                curNode.execute(stream)
+                curNode.execute(stream, process_limits)
 
 
     def clear_results(self):
@@ -240,7 +241,7 @@ class ProcessingNode:
 
 
 
-    def execute(self, stream):
+    def execute(self, stream, process_limits = None):
         ''' Execute the stack node.
 
         Parameters
@@ -364,6 +365,13 @@ class ResultBag(object):
                 for cur_result in results_to_export:
                     scnl, values = cur_result.get_as_list(scnl)
                     values.reverse()
+                    try:
+                        id_only = cur_result.origin_resource.split('/')[-1]
+                        if id_only.isdigit():
+                            id_only = int(id_only)
+                    except:
+                        id_only = ''
+                    values.append(id_only)
                     values.append(cur_result.origin_resource)
                     values.reverse()
                     export_values.append(values)
@@ -384,7 +392,7 @@ class ResultBag(object):
 
                 fid = open(filename, 'wt')
                 try:
-                    header = ['resource',]
+                    header = ['resource', 'id']
                     header.extend(['.'.join(x) for x in scnl])
                     writer = csv.writer(fid, quoting = csv.QUOTE_NONNUMERIC)
                     writer.writerow(header)
@@ -399,7 +407,9 @@ class ResultBag(object):
         ''' Get the results based on some search criteria.
 
         '''
-        ret_val = list(itertools.chain.from_iterable([x.values() for x in self.results.values()]))
+        ret_val = sorted(list(itertools.chain.from_iterable([x.values() for x in self.results.values()])),
+                         key = attrgetter('rid', 'origin_resource'),
+                         reverse = False)
 
         if result_rid:
             ret_val = [x for x in ret_val if x.rid == result_rid]
