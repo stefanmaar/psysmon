@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import logging
+import psysmon
 import obspy.core.utcdatetime as utcdatetime
 
 class Event(object):
@@ -193,6 +194,11 @@ class Catalog(object):
             author_uri = None, creation_time = None, events = None):
         ''' Instance initialization.
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         # The unique database ID.
         self.db_id = db_id
 
@@ -286,7 +292,8 @@ class Catalog(object):
             cur_event.write_to_database(project)
 
 
-    def load_events(self, project, start_time = None, end_time = None, event_id = None):
+    def load_events(self, project, start_time = None, end_time = None, event_id = None,
+            min_event_length = None):
         ''' Load events from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -317,10 +324,16 @@ class Catalog(object):
             if event_id:
                 query = query.filter(events_table.id in event_id)
 
+            if min_event_length:
+                query = query.filter(events_table.end_time - events_table.start_time >= min_event_length)
+
             events_to_add = []
             for cur_orm in query:
-                cur_event = Event.from_db_event(cur_orm)
-                events_to_add.append(cur_event)
+                try:
+                    cur_event = Event.from_db_event(cur_orm)
+                    events_to_add.append(cur_event)
+                except:
+                    self.logger.exception("Error when creating an event object from database values for event %d. Skipping this event.", cur_orm.id)
             self.add_events(events_to_add)
 
         finally:
