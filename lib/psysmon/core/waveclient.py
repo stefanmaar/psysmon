@@ -342,6 +342,7 @@ class PsysmonDbWaveClient(WaveClient):
 
                     if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
                         self.logger.debug('Get missing data in front...')
+                        self.logger.debug('Loading data from %s to %s.', startTime, cur_start_time)
                         curStream = self.load_from_file(station = stat,
                                                         channel = chan,
                                                         network = net,
@@ -353,7 +354,7 @@ class PsysmonDbWaveClient(WaveClient):
 
                     if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
                         self.logger.debug('Get missing data in back...')
-                        print endTime - cur_end_time
+                        self.logger.debug('Loading data from %s to %s.', cur_end_time, endTime)
                         curStream = self.load_from_file(station = stat,
                                                         channel = chan,
                                                         network = net,
@@ -365,6 +366,7 @@ class PsysmonDbWaveClient(WaveClient):
 
                 else:
                     self.logger.debug('No stock data available...')
+                    self.logger.debug('Loading data from %s to %s.', startTime, endTime)
                     curStream = self.load_from_file(station = stat,
                                                     channel = chan,
                                                     network = net,
