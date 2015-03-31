@@ -431,6 +431,8 @@ class EventProcessor(object):
             If individual events are specified, this list contains the database IDs of the events
             to process.
         '''
+        self.logger.info("Processing timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
+
         result_bag = ResultBag()
 
         event_lib = ev_core.Library('events')
@@ -449,6 +451,13 @@ class EventProcessor(object):
             # time-span.
             catalog.load_events(event_id = event_ids)
 
+        # Abort the execution if no events are available for the time span.
+        if not catalog.events:
+            if event_ids is None:
+                self.logger.info('No events found for the timespan %s to %s.', start_time.isoformat(), end_time.isoformat())
+            else:
+                self.logger.info('No events found for the specified event IDs: %s.', event_ids)
+            return
 
         # Get the channels to process.
         channels = []
@@ -524,7 +533,7 @@ class EventProcessor(object):
 
         finally:
             # Add the time-span directory to the output directory.
-            if k and k != len(catalog.events) - 1:
+            if k != len(catalog.events) - 1:
                 cur_end_time = cur_event.end_time
             else:
                 cur_end_time = end_time
