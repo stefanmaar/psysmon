@@ -394,7 +394,7 @@ class ResultBag(object):
                 try:
                     header = ['resource', 'id']
                     header.extend(['.'.join(x) for x in scnl])
-                    writer = csv.writer(fid, quoting = csv.QUOTE_NONNUMERIC)
+                    writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
                     writer.writerow(header)
                     writer.writerows(export_values)
                 finally:
