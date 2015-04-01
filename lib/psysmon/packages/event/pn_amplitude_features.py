@@ -68,6 +68,9 @@ class ComputeAmplitudeFeatures(ProcessingNode):
             else:
                 proc_trace = tr
 
+            if len(proc_trace) == 0:
+                continue
+
             # Compute the absolute maximum value of the trace.
             max_abs = np.max(np.abs(proc_trace.data))
             cur_scnl = p_util.traceid_to_scnl(tr.id)
