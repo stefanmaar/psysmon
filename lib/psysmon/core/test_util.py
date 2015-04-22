@@ -123,8 +123,8 @@ def create_full_project(psybase):
     inventory_file = os.path.join(data_path, 'test_inventory_01.xml')
     xmlparser = InventoryXmlParser()
     inventory = xmlparser.parse(inventory_file)
+    db_inventory = DbInventory.from_inventory_instance(name = 'test', project = project, inventory = inventory)
     try:
-        db_inventory = DbInventory.from_inventory_instance(name = 'test', project = project, inventory = inventory)
         db_inventory.commit()
     finally:
         db_inventory.close()
