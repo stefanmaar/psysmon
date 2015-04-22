@@ -1834,7 +1834,7 @@ class Channel(object):
 
 
     def get_stream(self, start_time = None, end_time = None, **kwargs):
-        ''' Get a stream from the recorder.
+        ''' Get a stream from the channel.
 
         Parameters
         ----------
@@ -1843,9 +1843,6 @@ class Channel(object):
 
         name : String
             The name of the stream.
-
-        label : String
-            The label of the stream.
         '''
         ret_stream = self.streams
 
@@ -1858,10 +1855,10 @@ class Channel(object):
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         if start_time is not None:
-            ret_stream = [x for x in ret_stream if (x.end_time is None) or (x.end_time > start_time)]
+            ret_stream = [x for x in ret_stream if (x.end_time is None) or (x.end_time >= start_time)]
 
         if end_time is not None:
-            ret_stream = [x for x in ret_stream if x.start_time < end_time]
+            ret_stream = [x for x in ret_stream if x.start_time <= end_time]
 
         return ret_stream
 
