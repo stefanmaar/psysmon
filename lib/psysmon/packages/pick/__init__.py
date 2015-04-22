@@ -65,10 +65,10 @@ def databaseFactory(base):
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
-        events = relationship('PickOrm',
-                               cascade = 'all',
-                               backref = 'parent',
-                               lazy = 'select')
+        picks = relationship('PickOrm',
+                             cascade = 'all',
+                             backref = 'parent',
+                             lazy = 'select')
 
         def __init__(self, name, mode, description,
                      agency_uri, author_uri, creation_time):
@@ -94,11 +94,6 @@ def databaseFactory(base):
                                        onupdate = 'cascade',
                                        ondelete = 'set null'),
                             nullable = True)
-        channel_id = Column(Integer,
-                            ForeignKey('geom_channel.id',
-                                       onupdate = 'cascade',
-                                       ondelete = 'set null'),
-                            nullable = True)
         stream_id = Column(Integer,
                            ForeignKey('geom_rec_stream.id',
                                       onupdate = 'cascade',
@@ -115,12 +110,11 @@ def databaseFactory(base):
         creation_time = Column(String(30), nullable = True)
 
 
-        def __init__(self, catalog_id, channel_id, stream_id,
+        def __init__(self, catalog_id, stream_id,
                      label, time, amp1, amp2,
                      first_motion, error, agency_uri, author_uri,
                      creation_time):
             self.catalog_id = catalog_id
-            self.channel_id = channel_id
             self.stream_id = stream_id
             self.label = label
             self.time = time
