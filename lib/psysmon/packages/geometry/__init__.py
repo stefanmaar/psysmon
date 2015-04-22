@@ -91,6 +91,9 @@ def databaseFactory(base):
         author_uri = Column(String(20))
         creation_time = Column(String(30))
 
+        # The channels to which the stream is associated.
+        #channels = relationship('GeomStreamToChannel')
+
         components = relationship('GeomComponentToStream',
                                    backref = 'parent')
         parameters = relationship('GeomRecorderStreamParameter',
