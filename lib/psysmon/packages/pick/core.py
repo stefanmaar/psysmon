@@ -306,9 +306,6 @@ class Pick(object):
             else:
                 catalog_id = None
 
-
-
-
             db_session = project.getDbSession()
             pick_orm_class = project.dbTables['pick']
             pick_orm = pick_orm_class(catalog_id = catalog_id,
@@ -321,7 +318,7 @@ class Pick(object):
                                       error = self.error,
                                       agency_uri = self.agency_uri,
                                       author_uri = self.author_uri,
-                                      creation_time = self.creation_time.isoformat()
+                                      creation_time = creation_time
                                     )
             db_session.add(pick_orm)
             db_session.commit()
