@@ -20,6 +20,7 @@ from psysmon.core.test_util import remove_project_filestructure
 from psysmon.core.test_util import drop_database_tables
 
 from psysmon.packages.pick.core import Pick
+from psysmon.packages.geometry.db_inventory import DbChannel
 
 
 
@@ -142,6 +143,39 @@ class PickTestCase(unittest.TestCase):
         self.assertEqual(tmp.amp1, 20)
         self.assertEqual(tmp.time, UTCDateTime('2011-01-01T00:00:00').timestamp)
         self.assertEqual(tmp.creation_time, pick.creation_time.isoformat())
+
+
+    def test_create_pick_from_orm(self):
+        ''' Test the conversion of an ORM instance.
+        '''
+        from sqlalchemy.orm import subqueryload
+
+        pick_time = UTCDateTime('2010-01-01T00:00:00')
+        channel = self.project.geometry_inventory.get_channel(name = 'HHZ', station = 'SITA')
+        channel = channel[0]
+        pick = Pick(label = 'P',
+                    time = pick_time,
+                    amp1 = 10,
+                    channel = channel)
+        self.project.dbEngine.echo = True
+        pick.write_to_database(self.project)
+
+        pick_orm_class = self.project.dbTables['pick']
+        db_session = self.project.getDbSession()
+        result = db_session.query(pick_orm_class).options(subqueryload(pick_orm_class.stream)).options(subqueryload('stream.parent')).all()
+        db_session.close()
+        self.assertEqual(len(result), 1)
+        pick_orm = result[0]
+
+        pick = Pick.from_orm(pick_orm, inventory = self.project.geometry_inventory)
+
+        self.assertIsInstance(pick, Pick)
+        self.assertIsInstance(pick.channel, DbChannel)
+        self.assertEqual(pick.channel.name, 'HHZ')
+        self.assertEqual(pick.channel.parent_station.name, 'SITA')
+        self.assertEqual(pick.label, 'P')
+        self.assertEqual(pick.amp1, 10)
+        self.assertEqual(pick.time, pick_time)
 
 
 
