@@ -15,9 +15,7 @@ import psysmon
 from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
-from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
-from psysmon.core.test_util import drop_database_tables
 
 from psysmon.packages.pick.core import Pick
 from psysmon.packages.geometry.db_inventory import DbChannel
@@ -56,13 +54,18 @@ class PickTestCase(unittest.TestCase):
         pass
 
     def tearDown(self):
-        clear_project_database_tables(self.project)
+        # Clear the picks database tables.
+        tables_to_clear = ['pick', 'pick_catalog']
+        for cur_name in tables_to_clear:
+            cur_table = self.project.dbTables[cur_name]
+            self.project.dbEngine.execute(cur_table.__table__.delete())
+
 
     def test_pick_creation(self):
         ''' Test the pSysmon Pick class.
         '''
         # Create an event with valid time limits.
-        pick_time = UTCDateTime('2010-01-01T00:00:00')
+        pick_time = UTCDateTime('2011-01-01T00:00:00')
         channel = self.project.geometry_inventory.get_channel(name = 'HHZ', station = 'SITA')
         channel = channel[0]
         pick = Pick(label = 'P',
@@ -89,7 +92,7 @@ class PickTestCase(unittest.TestCase):
     def test_write_pick_to_database(self):
         ''' Test the writing of an event to the database.
         '''
-        pick_time = UTCDateTime('2010-01-01T00:00:00')
+        pick_time = UTCDateTime('2011-01-01T00:00:00')
         channel = self.project.geometry_inventory.get_channel(name = 'HHZ', station = 'SITA')
         channel = channel[0]
         pick = Pick(label = 'P',
@@ -109,14 +112,14 @@ class PickTestCase(unittest.TestCase):
         self.assertEqual(tmp.id, pick.db_id)
         self.assertEqual(tmp.label, 'P')
         self.assertEqual(tmp.amp1, 10)
-        self.assertEqual(tmp.time, UTCDateTime('2010-01-01T00:00:00').timestamp)
+        self.assertEqual(tmp.time, UTCDateTime('2011-01-01T00:00:00').timestamp)
         self.assertEqual(tmp.creation_time, pick.creation_time.isoformat())
 
 
     def test_update_pick_in_database(self):
         ''' Test the update of an event to the database.
         '''
-        pick_time = UTCDateTime('2010-01-01T00:00:00')
+        pick_time = UTCDateTime('2011-01-01T00:00:00')
         channel = self.project.geometry_inventory.get_channel(name = 'HHZ', station = 'SITA')
         channel = channel[0]
         pick = Pick(label = 'P',
@@ -150,7 +153,7 @@ class PickTestCase(unittest.TestCase):
         '''
         from sqlalchemy.orm import subqueryload
 
-        pick_time = UTCDateTime('2010-01-01T00:00:00')
+        pick_time = UTCDateTime('2011-01-01T00:00:00')
         channel = self.project.geometry_inventory.get_channel(name = 'HHZ', station = 'SITA')
         channel = channel[0]
         pick = Pick(label = 'P',
