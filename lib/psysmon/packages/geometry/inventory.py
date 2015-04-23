@@ -486,6 +486,17 @@ class Inventory(object):
         return ret_channel
 
 
+    def get_channel_from_stream(self, start_time = None, end_time = None, **kwargs):
+        ''' Get the channels to which a stream is assigned to.
+        '''
+        ret_channel = list(itertools.chain.from_iterable(x.channels for x in self.get_station()))
+
+        ret_channel = [x for x in ret_channel if x.get_stream(start_time = start_time,
+                                                              end_time = end_time,
+                                                              **kwargs)]
+        return ret_channel
+
+
 
 
 

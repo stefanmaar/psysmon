@@ -355,8 +355,8 @@ class Pick(object):
 
 
 
-
-    def from_orm(cls, pick_orm):
+    @classmethod
+    def from_orm(cls, pick_orm, inventory = None):
         ''' Convert a database orm mapper pick to a pick instance.
 
         Parameters
@@ -364,4 +364,33 @@ class Pick(object):
         pick_orm : SQLAlchemy ORM
             The ORM of the pick database table.
         '''
-        pass
+        if inventory is None:
+            channel = None
+        else:
+            channel = inventory.get_channel_from_stream(name = pick_orm.stream.name,
+                                                       serial = pick_orm.stream.parent.serial,
+                                                       start_time = utcdatetime.UTCDateTime(pick_orm.time),
+                                                       end_time = utcdatetime.UTCDateTime(pick_orm.time))
+            if channel:
+                if len(channel) == 1:
+                    channel = channel[0]
+                else:
+                    channel = None
+            else:
+                channel = None
+
+        pick = cls(db_id = pick_orm.id,
+                   channel = channel,
+                   label = pick_orm.label,
+                   time = pick_orm.time,
+                   amp1 = pick_orm.amp1,
+                   amp2 = pick_orm.amp2,
+                   first_motion = pick_orm.first_motion,
+                   error = pick_orm.error,
+                   agency_uri = pick_orm.agency_uri,
+                   author_uri = pick_orm.author_uri,
+                   creation_time = utcdatetime.UTCDateTime(pick_orm.creation_time)
+                  )
+
+
+        return pick
