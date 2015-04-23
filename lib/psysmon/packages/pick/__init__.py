@@ -109,6 +109,8 @@ def databaseFactory(base):
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
+        stream = relationship('GeomRecorderStream')
+
 
         def __init__(self, catalog_id, stream_id,
                      label, time, amp1, amp2,
