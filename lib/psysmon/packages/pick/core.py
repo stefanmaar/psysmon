@@ -23,6 +23,117 @@ import psysmon
 import obspy.core.utcdatetime as utcdatetime
 
 
+
+class Library(object):
+    ''' Manage a set of pick catalogs.
+    '''
+
+    def __init__(self, name):
+        ''' Initialize the instance.
+        '''
+
+        # The name of the library.
+        self.name = name
+
+        # The catalogs of the library.
+        self.catalogs = {}
+
+
+    def add_catalog(self, catalog):
+        ''' Add one or more catalogs to the library.
+
+        Parameters
+        ----------
+        catalog : :class:`Catalog` or list of :class:`Catalog`
+            The catalog(s) to add to the library.
+        '''
+
+        if isinstance(catalog, list):
+            for cur_catalog in catalog:
+                self.add_catalog(cur_catalog)
+        else:
+            self.catalogs[catalog.name] = catalog
+
+
+    def remove_catalog(self, name):
+        ''' Remove a catalog from the library.
+
+        Parameters
+        ----------
+        name : String
+            The name of the catalog to remove.
+
+        Returns
+        -------
+        removed_catalog : :class:`Catalog`
+            The removed catalog. None if no catalog was removed.
+        '''
+        if name in self.catalogs.keys():
+            return self.catalogs.pop(name)
+        else:
+            return None
+
+
+    def get_catalogs_in_db(self, project):
+        ''' Query the available catalogs in the database.
+
+        Parameters
+        ----------
+        project : :class:`psysmon.core.project.Project`
+            The project managing the database.
+
+        Returns
+        -------
+        catalog_names : List of Strings
+            The available catalog names in the database.
+        '''
+        catalog_names = []
+        db_session = project.getDbSession()
+        try:
+            catalog_orm_class = project.dbTables['pick_catalog']
+            query = db_session.query(catalog_orm_class)
+            if db_session.query(query.exists()):
+                catalog_names = [x.name for x in query.order_by(catalog_orm_class.name)]
+        finally:
+            db_session.close()
+
+        return catalog_names
+
+
+    def load_catalog_from_db(self, project, name, load_picks = False):
+        ''' Load catalogs from the database.
+
+        Parameters
+        ----------
+        project : :class:`psysmon.core.project.Project`
+            The project managing the database.
+
+        name : String or list of Strings
+            The name of the catalog to load from the database.
+        '''
+        if isinstance(name, basestring):
+            name = [name, ]
+
+        db_session = project.getDbSession()
+        try:
+            catalog_orm_class = project.dbTables['pick_catalog']
+            query = db_session.query(catalog_orm_class).filter(catalog_orm_class.name.in_(name))
+            if db_session.query(query.exists()):
+                for cur_orm in query:
+                    cur_catalog = Catalog.from_orm(cur_orm, load_picks)
+                    self.add_catalog(cur_catalog)
+        finally:
+            db_session.close()
+
+
+    def clear(self):
+        ''' Remove all catalogs.
+        '''
+        self.catalogs = {}
+
+
+
+
 class Catalog(object):
 
     def __init__(self, name, mode = 'time', description = None,
@@ -154,7 +265,7 @@ class Catalog(object):
         try:
             pick_table = project.dbTables['pick']
             query = db_session.query(pick_table).\
-                    filter(pick_table.ev_catalog_id == self.db_id)
+                    filter(pick_table.catalog_id == self.db_id)
 
             if start_time:
                 query = query.filter(pick_table.start_time >= start_time.timestamp)
@@ -168,11 +279,11 @@ class Catalog(object):
             picks_to_add = []
             for cur_orm in query:
                 try:
-                    cur_event = Pick.from_db_event(cur_orm)
-                    picks_to_add.append(cur_event)
+                    cur_pick = Pick.from_orm(cur_orm)
+                    picks_to_add.append(cur_pick)
                 except:
-                    self.logger.exception("Error when creating an event object from database values for event %d. Skipping this event.", cur_orm.id)
-            self.add_events(picks_to_add)
+                    self.logger.exception("Error when creating an pick object from database values for pick %d. Skipping this pick.", cur_orm.id)
+            self.add_picks(picks_to_add)
 
         finally:
             db_session.close()
