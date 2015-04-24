@@ -173,8 +173,8 @@ class PreferencesManager:
         found_items = self.get_item(name = name, pagename = pagename)
         for cur_item in found_items:
             cur_item.limit = limit
-            #if len(cur_item.gui_element) > 0:
-            #    cur_item.update_gui_element()
+            if len(cur_item.gui_element) > 0:
+                cur_item.update_limit()
 
         return found_items
 
@@ -356,6 +356,13 @@ class PreferenceItem(object):
         '''
         for cur_element in self.gui_element:
             cur_element.controlElement.SetValue(self.value)
+
+
+    def update_limit(self):
+        ''' Update the limits of the gui elements.
+        '''
+        for cur_element in self.gui_element:
+            cur_element.updateLimit();
 
     def enable_gui_element(self):
         ''' Enable the gui element to make it active for user interaction.

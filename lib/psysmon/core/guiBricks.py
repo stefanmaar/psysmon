@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -151,6 +152,9 @@ class Field(wx.Panel):
     def setControlElementValue(self):
         self.controlElement.SetValue(self.pref_item.value)
 
+
+    def updateLimit(self, limit):
+        pass
 
     def disable(self):
         self.controlElement.Disable()
@@ -676,6 +680,10 @@ class SingleChoiceField(Field):
     def setControlElementValue(self):
         pos = self.controlElement.FindString(self.pref_item.value)
         self.controlElement.SetSelection(pos)
+
+
+    def updateLimit(self):
+        self.controlElement.SetItems(self.pref_item.limit)
 
 
 ## The MultiChoiceField class.
