@@ -203,6 +203,39 @@ class PickCatalogTestCase(unittest.TestCase):
         db_session.close()
 
 
+    def test_load_picks_from_database(self):
+        ''' Test the loading of the picks from the database.
+        '''
+
+        catalog = pick_core.Catalog(name = 'test',
+                                    description = 'A test description.',
+                                    agency_uri = 'uot',
+                                    author_uri = 'tester')
+
+        # Create a pick.
+        pick_time = UTCDateTime('2011-01-01T00:00:00')
+        channel = self.project.geometry_inventory.get_channel(name = 'HHZ', station = 'SITA')
+        channel = channel[0]
+        pick1 = pick_core.Pick(label = 'P',
+                               time = pick_time,
+                               amp1 = 10,
+                               channel = channel)
+        pick2 = pick_core.Pick(label = 'S',
+                               time = pick_time + 10,
+                               amp1 = 20,
+                               channel = channel)
+        catalog.add_picks([pick1, pick2])
+
+        catalog.write_to_database(self.project)
+
+
+        load_catalog = pick_core.Catalog(name = 'load',
+                                         db_id = catalog.db_id)
+
+        load_catalog.load_picks(self.project)
+
+        self.assertEqual(len(load_catalog.picks), 2)
+
 
 
 def suite():
