@@ -38,7 +38,7 @@ class MeasurePoint(InteractivePlugin):
         '''
         InteractivePlugin.__init__(self,
                                    name = 'measure point',
-                                   category = 'view',
+                                   category = 'analyze',
                                    tags = None
                                   )
         # Create the logging logger instance.
