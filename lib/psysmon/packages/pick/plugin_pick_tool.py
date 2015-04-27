@@ -213,7 +213,7 @@ class MeasurePoint(InteractivePlugin):
                 cur_catalog.add_picks([cur_pick,])
                 cur_pick.write_to_database(self.parent.project)
 
-                # Create the pick line.
+                # Create the pick line in all channels of the station.
                 line_handles = self.view.GetGrandParent().plotVLine(x = snap_x,
                                                                     label = cur_pick.label,
                                                                     color = 'r')
@@ -221,8 +221,7 @@ class MeasurePoint(InteractivePlugin):
             else:
                 self.logger.error("More than one pick returned for label %s. Don't know what to do.", self.pref_manager.get_value('label'))
 
-            # TODO: Draw the pick lines in all channels of the station.
-
+            # Make the pick lines visible.
             self.view.GetGrandParent().draw()
 
 
@@ -235,6 +234,9 @@ class MeasurePoint(InteractivePlugin):
         self.library.clear()
         self.library.load_catalog_from_db(project = self.parent.project,
                                           name = self.selected_catalog_name)
+
+        # TODO: When the pick catalog selector plugin is available, load the
+        # picks using this plugin.
         # Load the picks for the selected timespan.
         cur_catalog = self.library.catalogs[self.selected_catalog_name]
         cur_catalog.clear_picks()
