@@ -1143,7 +1143,9 @@ class DisplayManager(object):
                 station2Add.addChannel(self.showChannels)
                 for curChannel in station2Add.channels:
                     for curPlugin in addonPlugins:
-                        curChannel.addView(curPlugin.name, curPlugin.getViewClass())
+                        view_class = curPlugin.getViewClass()
+                        if view_class is not None:
+                            curChannel.addView(curPlugin.name, view_class)
                 self.showStations.append(station2Add)
         self.stationsChanged = True
 
@@ -1285,7 +1287,9 @@ class DisplayManager(object):
         station2Show.addChannel(self.showChannels)
         for curChannel in station2Show.channels:
             for curPlugin in addonPlugins:
-                curChannel.addView(curPlugin.name, curPlugin.getViewClass())
+                view_class = curPlugin.getViewClass()
+                if view_class is not None:
+                    curChannel.addView(curPlugin.name, view_class)
 
         # Create the necessary containers.
         stationContainer = self.createStationContainer(station2Show)
@@ -1350,7 +1354,9 @@ class DisplayManager(object):
              curStation.addChannel([channel])
              for curChannel in curStation.channels:
                  for curPlugin in addonPlugins:
-                     curChannel.addView(curPlugin.name, curPlugin.getViewClass())
+                    view_class = curPlugin.getViewClass()
+                    if view_class is not None:
+                        curChannel.addView(curPlugin.name, view_class)
 
 
         # TODO: Only update the data of the added channel.
@@ -1379,9 +1385,11 @@ class DisplayManager(object):
         '''
         for curStation in self.showStations:
             for curChannel in curStation.channels:
-                curChannel.addView(plugin.name, plugin.getViewClass())
-                curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
-                self.createViewContainer(curChannelContainer, plugin.name, plugin.getViewClass())
+                view_class = plugin.getViewClass()
+                if view_class is not None:
+                    curChannel.addView(plugin.name, view_class)
+                    curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
+                    self.createViewContainer(curChannelContainer, plugin.name, view_class)
 
 
     def removeAddonTool(self, plugin):
