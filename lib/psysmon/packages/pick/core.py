@@ -21,6 +21,7 @@
 import logging
 import psysmon
 import obspy.core.utcdatetime as utcdatetime
+import warnings
 
 
 
@@ -187,6 +188,48 @@ class Catalog(object):
         self.picks.extend(picks)
 
 
+    def get_pick(self, start_time = None, end_time = None, station = None, **kwargs):
+        ''' Get picks from the catalog.
+
+        Parameters
+        ----------
+        id : Integer
+            The unique ID of the pick.
+
+        label : String
+            The label of the pick.
+
+        start_time : UTDDateTime
+            The start time of the time window to search.
+
+        end_time: UTCDateTime.
+            The end time of the time window to search.
+
+        station : String
+            The name of the station to which the pick is assigned to.
+        '''
+        ret_picks = self.picks
+
+        valid_keys = ['id', 'label']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_picks = [x for x in ret_picks if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        if start_time is not None:
+            ret_picks = [x for x in ret_picks if x.time >= start_time]
+
+        if end_time is not None:
+            ret_picks = [x for x in ret_picks if x.time <= end_time]
+
+        if station is not None:
+            ret_picks = [x for x in ret_picks if x.channel.parent_station.name == station]
+
+        return ret_picks
+
+
     def write_to_database(self, project, only_changed_picks = True):
         ''' Write the catalog to the database.
 
@@ -268,10 +311,10 @@ class Catalog(object):
                     filter(pick_table.catalog_id == self.db_id)
 
             if start_time:
-                query = query.filter(pick_table.start_time >= start_time.timestamp)
+                query = query.filter(pick_table.time >= start_time.timestamp)
 
             if end_time:
-                query = query.filter(pick_table.start_time <= end_time.timestamp)
+                query = query.filter(pick_table.time <= end_time.timestamp)
 
             if pick_id:
                 query = query.filter(pick_table.id in pick_id)
