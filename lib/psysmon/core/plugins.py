@@ -390,4 +390,5 @@ class AddonPlugin(PluginNode):
             ''' Get a class object of the view of the plugin.
 
             '''
-            assert False, 'The getViewClass must be defined!'
+            #assert False, 'The getViewClass must be defined!'
+            return None
