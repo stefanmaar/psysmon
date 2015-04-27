@@ -272,6 +272,15 @@ class View(wx.Panel):
         self.annotationArea.setLabel(text)
 
 
+    def plotVLine(self, x, **kwargs):
+        ''' Plot a vertical line in the data axes.
+        '''
+        h_line = self.dataAxes.axvline(x = x, **kwargs)
+        if 'label' in kwargs.keys():
+            ylim = self.dataAxes.get_ylim()
+            h_label = self.dataAxes.text(x = x, y = 0, s = kwargs['label'])
+        return (h_line, h_label)
+
 
 
 class ChannelAnnotationArea(wx.Panel):
@@ -383,7 +392,7 @@ class ChannelContainer(wx.Panel):
         self.SetBackgroundColour('yellow3')
 
         self.annotationArea = ChannelAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
-        
+
         self.sizer = wx.GridBagSizer(0,0)
         self.viewSizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -404,12 +413,12 @@ class ChannelContainer(wx.Panel):
         self.views[view.name] = view
 
         if self.views:
-	    self.viewSizer.Add(view, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+            self.viewSizer.Add(view, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
             #channelSize = self.views.itervalues().next().GetMinSize()
             #channelSize[1] = channelSize[1] * len(self.views) 
             #self.SetMinSize(channelSize)
-        
+
         self.sizer.Layout()
         #self.rearrangeViews()
 
@@ -417,7 +426,7 @@ class ChannelContainer(wx.Panel):
 
     def hasView(self, viewName):
         ''' Check if the channel already contains the view.
-        
+
         Parameters
         ----------
         viewName : String
@@ -437,7 +446,7 @@ class ChannelContainer(wx.Panel):
             The name of the view to remove
         '''
         view2Remove = self.views.pop(name)
-        
+
         if view2Remove:
             self.sizer.Remove(view2Remove)
             view2Remove.Destroy()
@@ -448,7 +457,7 @@ class ChannelContainer(wx.Panel):
 
 
     def rearrangeViews(self):
-        
+
         if not self.views:
             return
 
@@ -463,6 +472,23 @@ class ChannelContainer(wx.Panel):
         for k, curView in enumerate(self.views.values()):
             self.viewSizer.Add(curView, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
             curView.Show()
+
+
+    def draw(self):
+        ''' Draw the views of the channel.
+        '''
+        for cur_view in self.views.itervalues():
+            cur_view.draw()
+
+
+    def plotVLine(self, x, **kwargs):
+        ''' Plot a vertical line in all views of the channel.
+        '''
+        h_line = []
+        for cur_view in self.views.itervalues():
+            cur_handle = cur_view.plotVLine(x = x, **kwargs)
+            h_line.append(cur_handle)
+        return h_line
 
 
 
@@ -583,7 +609,21 @@ class StationContainer(wx.Panel):
 
         return curChannel.hasView(viewName)
 
+    def draw(self):
+        ''' Draw all channels of the station.
+        '''
+        for cur_channel in self.channels.itervalues():
+            cur_channel.draw()
 
+
+    def plotVLine(self, x, **kwargs):
+        ''' Plot a vertical line in all channels of the station.
+        '''
+        h_line = []
+        for cur_channel in self.channels.itervalues():
+            cur_handle = cur_channel.plotVLine(x = x, **kwargs)
+            h_line.extend(cur_handle)
+        return h_line
 
 
 
