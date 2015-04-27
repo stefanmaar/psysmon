@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -684,6 +683,7 @@ class SingleChoiceField(Field):
 
     def updateLimit(self):
         self.controlElement.SetItems(self.pref_item.limit)
+        self.setControlElementValue()
 
 
 ## The MultiChoiceField class.
