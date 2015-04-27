@@ -52,7 +52,14 @@ class MeasurePoint(InteractivePlugin):
         self.icons['active'] = icons.hand_2_icon_16
         self.cursor = wx.CURSOR_CROSS
 
+        # The pick catalog library used to manage the catalogs.
         self.library = pick_core.Library('pick library')
+
+        # The name of the selected catalog.
+        self.selected_catalog_name = None
+
+        # The lines of the picks.
+        self.pick_lines = {}
 
         # Add the pages to the preferences manager.
         self.pref_manager.add_page('tool options')
@@ -72,7 +79,8 @@ class MeasurePoint(InteractivePlugin):
                                           group = 'catalog',
                                           value = '',
                                           limit = [],
-                                          tool_tip = 'Select a pick catalog to work on.')
+                                          tool_tip = 'Select a pick catalog to work on.',
+                                          hooks = {'on_value_change': self.on_select_catalog})
         self.pref_manager.add_item(pagename = 'tool options',
                                    item = item)
 
@@ -107,7 +115,132 @@ class MeasurePoint(InteractivePlugin):
         fold_panel = PrefEditPanel(pref = self.pref_manager,
                                   parent = panelBar)
 
+        # Customize the catalog field.
+        #pref_item = self.pref_manager.get_item('pick_catalog')[0]
+        #field = pref_item.gui_element[0]
+        #fold_panel.Bind(wx.EVT_CHOICE, self.on_catalog_selected, field.controlElement)
+
         return fold_panel
+
+
+    def getHooks(self):
+        ''' The callback hooks.
+        '''
+        hooks = {}
+
+        hooks['button_press_event'] = self.on_button_press
+
+        return hooks
+
+
+    def on_button_press(self, event, dataManager = None, displayManager = None):
+        ''' Handle a mouse button press in a view.
+        '''
+        cur_view = event.canvas.GetGrandParent()
+        self.view = cur_view
+
+        if event.button == 2:
+            # Skip the middle mouse button.
+            return
+        elif event.button == 3:
+            # Skipt the right mouse button.
+            return
+        else:
+            if self.selected_catalog_name is None:
+                self.logger.info('You have to select a pick catalog first.')
+            elif cur_view.name == 'plot seismogram':
+                self.pick_seismogram(event, dataManager, displayManager)
+            else:
+                self.logger.info('Picking in a %s view is not supported.', cur_view.name)
+
+
+    def pick_seismogram(self, event, data_manager, display_manager):
+        ''' Create a pick in a seismogram view.
+        '''
+        if event.inaxes is None:
+            return
+
+        cur_axes = self.view.dataAxes
+
+        # Find the seismogram line.
+        seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
+        if len(seismo_line) > 0:
+            seismo_line = seismo_line[0]
+        else:
+            raise RuntimeError('No seismogram line found.')
+
+        # Get the picked sample.
+        xdata = seismo_line.get_xdata()
+        ydata = seismo_line.get_ydata()
+        ind_x = np.searchsorted(xdata, [event.xdata])[0]
+        snap_x = xdata[ind_x]
+        snap_y = ydata[ind_x]
+
+        # Get the channel of the pick.
+        scnl = self.view.GetParent().scnl
+        cur_channel = self.parent.project.geometry_inventory.get_channel(station = scnl[0],
+                                                                         name = scnl[1],
+                                                                         network = scnl[2],
+                                                                         location = scnl[3])
+        if not cur_channel:
+            self.logger.error('No channel for SCNL %s found in the inventory.', scnl)
+        elif len(cur_channel) > 1:
+            self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", scnl)
+        else:
+            # Create the pick and write it to the database.
+            cur_catalog = self.library.catalogs[self.selected_catalog_name]
+            search_win_start = self.parent.displayManager.startTime
+            search_win_end = self.parent.displayManager.endTime
+            cur_pick = cur_catalog.get_pick(start_time = search_win_start,
+                                            end_time = search_win_end,
+                                            label = self.pref_manager.get_value('label'),
+                                            station = scnl[0])
+
+            if len(cur_pick) == 1:
+                cur_pick = cur_pick[0]
+                cur_pick.time = UTCDateTime(snap_x)
+                cur_pick.amp1 = snap_y
+                cur_pick.write_to_database(self.parent.project)
+                for cur_pick_line in self.pick_lines[cur_pick.rid]:
+                    cur_pick_line[0].set_xdata(snap_x)
+                    cur_pick_line[1].set_position((snap_x, 0))
+            elif len(cur_pick) == 0:
+                cur_channel = cur_channel[0]
+                cur_pick = pick_core.Pick(label = self.pref_manager.get_value('label'),
+                                          time = UTCDateTime(snap_x),
+                                          amp1 = snap_y,
+                                          channel = cur_channel)
+                cur_catalog.add_picks([cur_pick,])
+                cur_pick.write_to_database(self.parent.project)
+
+                # Create the pick line.
+                line_handles = self.view.GetGrandParent().plotVLine(x = snap_x,
+                                                                    label = cur_pick.label,
+                                                                    color = 'r')
+                self.pick_lines[cur_pick.rid] = line_handles
+            else:
+                self.logger.error("More than one pick returned for label %s. Don't know what to do.", self.pref_manager.get_value('label'))
+
+            # TODO: Draw the pick lines in all channels of the station.
+
+            self.view.GetGrandParent().draw()
+
+
+
+    def on_select_catalog(self):
+        ''' Handle the catalog selection.
+        '''
+        self.selected_catalog_name = self.pref_manager.get_value('pick_catalog')
+        # Load the catalog from the database.
+        self.library.clear()
+        self.library.load_catalog_from_db(project = self.parent.project,
+                                          name = self.selected_catalog_name)
+        # Load the picks for the selected timespan.
+        cur_catalog = self.library.catalogs[self.selected_catalog_name]
+        cur_catalog.clear_picks()
+        cur_catalog.load_picks(project = self.parent.project,
+                               start_time = self.parent.displayManager.startTime,
+                               end_time = self.parent.displayManager.endTime)
 
 
     def on_create_new_catalog(self, event):
