@@ -29,7 +29,7 @@ import psysmon.packages.pick.core as pick_core
 from obspy.core.utcdatetime import UTCDateTime
 import numpy as np
 
-class MeasurePoint(InteractivePlugin):
+class PickTool(InteractivePlugin):
     '''
 
     '''
@@ -201,9 +201,6 @@ class MeasurePoint(InteractivePlugin):
                 cur_pick.time = UTCDateTime(snap_x)
                 cur_pick.amp1 = snap_y
                 cur_pick.write_to_database(self.parent.project)
-                for cur_pick_line in self.pick_lines[cur_pick.rid]:
-                    cur_pick_line[0].set_xdata(snap_x)
-                    cur_pick_line[1].set_position((snap_x, 0))
             elif len(cur_pick) == 0:
                 cur_channel = cur_channel[0]
                 cur_pick = pick_core.Pick(label = self.pref_manager.get_value('label'),
@@ -212,14 +209,15 @@ class MeasurePoint(InteractivePlugin):
                                           channel = cur_channel)
                 cur_catalog.add_picks([cur_pick,])
                 cur_pick.write_to_database(self.parent.project)
-
-                # Create the pick line in all channels of the station.
-                line_handles = self.view.GetGrandParent().plotVLine(x = snap_x,
-                                                                    label = cur_pick.label,
-                                                                    color = 'r')
-                self.pick_lines[cur_pick.rid] = line_handles
             else:
                 self.logger.error("More than one pick returned for label %s. Don't know what to do.", self.pref_manager.get_value('label'))
+                return
+
+            # Create the pick line in all channels of the station.
+            self.view.GetGrandParent().plot_annotation_vline(x = snap_x,
+                                                             label = cur_pick.label,
+                                                             key = cur_pick.rid,
+                                                             color = 'r')
 
             # Make the pick lines visible.
             self.view.GetGrandParent().draw()
