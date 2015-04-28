@@ -129,6 +129,14 @@ class PluginNode:
         # The preferred position within a category.
         self.position_pref = position_pref
 
+    @property
+    def rid(self):
+        ''' The resource ID of the plugin.
+        '''
+        name_slug = self.name.replace(' ', '_')
+        return '/plugin/' + self.parent.collection_node.rid + '/' + name_slug
+
+
 
     def __getattr__(self, attrname):
         ''' Handle call of attributes which are derived from the parent recorder.
@@ -136,7 +144,7 @@ class PluginNode:
         if attrname in self.pref_manager.get_name():
             return self.pref_manager.get_value(attrname)
         else:
-            raise AttributeError(attrname)
+            raise AttributeError, attrname
 
 
     def register(self, parent):
