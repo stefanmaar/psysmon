@@ -1014,8 +1014,8 @@ class TraceDisplayDlg(wx.Frame):
         for cur_plugin in active_plugins:
             hooks = cur_plugin.getHooks()
             if hooks:
-                if 'after_plot_data' in hooks.keys():
-                    hooks['after_plot_data']()
+                if 'after_plot' in hooks.keys():
+                    hooks['after_plot']()
 
         # Update the viewport to show the changes.
         self.viewPort.Refresh()
@@ -1342,6 +1342,15 @@ class DisplayManager(object):
             curPlugin.plotStation(displayManager = self.parent.displayManager,
                            dataManager = self.parent.dataManager,
                            station = [station2Show,])
+
+
+        # Call the hooks of the plugins.
+        active_plugins = [x for x in self.parent.plugins if x.active]
+        for cur_plugin in active_plugins:
+            hooks = cur_plugin.getHooks()
+            if hooks:
+                if 'after_plot_station' in hooks.keys():
+                    hooks['after_plot_station'](station = [station2Show,])
 
 
         # If an interactive plugin is active, register the hooks for the added

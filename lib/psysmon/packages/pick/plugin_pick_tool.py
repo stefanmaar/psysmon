@@ -123,13 +123,22 @@ class PickTool(InteractivePlugin):
         return fold_panel
 
 
+    def activate(self):
+        ''' Extend the Plugin activate method.
+        '''
+        InteractivePlugin.activate(self)
+        self.add_pick_lines()
+
+
     def getHooks(self):
         ''' The callback hooks.
         '''
         hooks = {}
 
         hooks['button_press_event'] = self.on_button_press
-        hooks['after_plot_data'] = self.on_add_pick_lines
+        hooks['after_plot'] = self.add_pick_lines
+        hooks['after_plot_station'] = self.add_pick_lines_station
+        hooks['after_plot_channel'] = self.add_pick_lines_channel
 
         return hooks
 
@@ -155,10 +164,55 @@ class PickTool(InteractivePlugin):
                 self.logger.info('Picking in a %s view is not supported.', cur_view.name)
 
 
-    def on_add_pick_lines(self):
+    def add_pick_lines(self):
         ''' Add the pick lines to the views.
         '''
-        pass
+        self.add_pick_lines_station(station = self.parent.displayManager.showStations)
+
+
+    def add_pick_lines_station(self, station = None):
+        ''' Add the pick lines to the views of the station.
+        '''
+        if station is None:
+            return
+
+        for cur_station in station:
+            self.add_pick_lines_channel(cur_station.channels)
+
+
+    def add_pick_lines_channel(self, channel = None):
+        ''' Add the pick lines to the views of the channel.
+        '''
+        if channel is None:
+            return
+
+        for cur_plot_channel in channel:
+            scnl = cur_plot_channel.getSCNL()
+            cur_channel = self.parent.project.geometry_inventory.get_channel(station = scnl[0],
+                                                                             name = scnl[1],
+                                                                             network = scnl[2],
+                                                                             location = scnl[3])
+            if not cur_channel:
+                self.logger.error('No channel for SCNL %s found in the inventory.', scnl)
+            elif len(cur_channel) > 1:
+                self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", scnl)
+            else:
+                # Get the pick from the database and create the pick lines.
+                cur_catalog = self.library.catalogs[self.selected_catalog_name]
+                search_win_start = self.parent.displayManager.startTime
+                search_win_end = self.parent.displayManager.endTime
+                picks = cur_catalog.get_pick(start_time = search_win_start,
+                                             end_time = search_win_end,
+                                             station = scnl[0])
+
+                for cur_pick in picks:
+                    # Create the pick line in all channels of the station.
+                    for cur_view in cur_plot_channel.container.views.itervalues():
+                        cur_view.GetGrandParent().plot_annotation_vline(cur_pick.time.timestamp,
+                                                                        label = cur_pick.label,
+                                                                        parent_rid = self.rid,
+                                                                        key = cur_pick.rid,
+                                                                        color = 'r')
 
 
     def pick_seismogram(self, event, data_manager, display_manager):
@@ -223,6 +277,7 @@ class PickTool(InteractivePlugin):
             # Create the pick line in all channels of the station.
             self.view.GetGrandParent().plot_annotation_vline(x = snap_x,
                                                              label = cur_pick.label,
+                                                             parent_rid = self.rid,
                                                              key = cur_pick.rid,
                                                              color = 'r')
 
@@ -248,6 +303,9 @@ class PickTool(InteractivePlugin):
         cur_catalog.load_picks(project = self.parent.project,
                                start_time = self.parent.displayManager.startTime,
                                end_time = self.parent.displayManager.endTime)
+
+        # Update the pick lines.
+        self.add_pick_lines()
 
 
     def on_create_new_catalog(self, event):
