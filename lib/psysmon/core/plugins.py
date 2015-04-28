@@ -183,6 +183,15 @@ class PluginNode:
                              parent = panelBar)
 
 
+    def getHooks(self):
+        ''' Register the callback methods for certain key events.
+
+        The hooks are Matplotlib events (e.g. button_press_event, 
+        button_release_event, motions_notify_event.
+        Other types of hooks can be provided by the collection nodes.
+        '''
+        return None
+
 
 
 
@@ -332,13 +341,6 @@ class InteractivePlugin(PluginNode):
         self.cursor_hotspot = (0,0)
 
 
-    def getHooks(self):
-        ''' Register the mouse event hooks for interactive plugins.
-
-        The hooks are Matplotlib events (e.g. button_press_event, 
-        button_release_event, motions_notify_event.
-        '''
-        return None
 
 
 
