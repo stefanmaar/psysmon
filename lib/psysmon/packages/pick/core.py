@@ -322,7 +322,7 @@ class Catalog(object):
             picks_to_add = []
             for cur_orm in query:
                 try:
-                    cur_pick = Pick.from_orm(cur_orm)
+                    cur_pick = Pick.from_orm(cur_orm, inventory = project.geometry_inventory)
                     picks_to_add.append(cur_pick)
                 except:
                     self.logger.exception("Error when creating an pick object from database values for pick %d. Skipping this pick.", cur_orm.id)
@@ -536,7 +536,7 @@ class Pick(object):
         pick = cls(db_id = pick_orm.id,
                    channel = channel,
                    label = pick_orm.label,
-                   time = pick_orm.time,
+                   time = utcdatetime.UTCDateTime(pick_orm.time),
                    amp1 = pick_orm.amp1,
                    amp2 = pick_orm.amp2,
                    first_motion = pick_orm.first_motion,
