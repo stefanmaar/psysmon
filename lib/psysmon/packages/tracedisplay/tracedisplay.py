@@ -721,7 +721,16 @@ class TraceDisplayDlg(wx.Frame):
                     pass
 
         self.logger.debug('Clicked the interactive tool: %s', plugin.name)
+
+        # Get the hooks and register the matplotlib hooks in the viewport.
         hooks = plugin.getHooks()
+        allowed_matplotlib_hooks = ['button_press_event',
+                                    'button_release_event',
+                                    'motion_notify_event']
+
+        for cur_key in hooks.keys():
+            if cur_key not in allowed_matplotlib_hooks:
+                hooks.pop(cur_key)
 
         # Set the callbacks of the views.
         self.viewPort.clearEventCallbacks()
@@ -999,6 +1008,14 @@ class TraceDisplayDlg(wx.Frame):
         for curPlugin in addonPlugins:
             curPlugin.plot(self.displayManager, self.dataManager)
 
+
+        # Call the hooks of the plugins.
+        active_plugins = [x for x in self.plugins if x.active]
+        for cur_plugin in active_plugins:
+            hooks = cur_plugin.getHooks()
+            if hooks:
+                if 'after_plot_data' in hooks.keys():
+                    hooks['after_plot_data']()
 
         # Update the viewport to show the changes.
         self.viewPort.Refresh()
