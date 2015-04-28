@@ -503,7 +503,7 @@ class TraceDisplayDlg(wx.Frame):
         option_plugins = [x for x in self.plugins if x.mode == 'option']
         command_plugins = [x for x in self.plugins if x.mode == 'command']
         interactive_plugins = [x for x in self.plugins if x.mode == 'interactive']
-        addon_plugins = [x for x in self.plugins if x.mode == 'addon']
+        view_plugins = [x for x in self.plugins if x.mode == 'view']
         id_counter = 0
 
         for curPlugin in sorted(option_plugins, key = attrgetter('position_pref', 'name')):
@@ -551,7 +551,7 @@ class TraceDisplayDlg(wx.Frame):
                                                              id=curTool.id)
                 id_counter += 1
 
-        for curPlugin in sorted(addon_plugins, key = attrgetter('position_pref', 'name')):
+        for curPlugin in sorted(view_plugins, key = attrgetter('position_pref', 'name')):
                 # Create a HybridTool or a normal tool if no preference items
                 # are available. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
@@ -565,10 +565,10 @@ class TraceDisplayDlg(wx.Frame):
                                                                                     bitmap = curPlugin.icons['active'].GetBitmap(),
                                                                                     help_string = curPlugin.name)
                     self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                                 lambda evt, curPlugin=curPlugin: self.onAddonToolDropdownClicked(evt, curPlugin),
+                                                                 lambda evt, curPlugin=curPlugin: self.onViewToolDropdownClicked(evt, curPlugin),
                                                                  id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onAddonToolClicked(evt, curPlugin),
+                                                             lambda evt, curPlugin=curPlugin : self.onViewToolClicked(evt, curPlugin),
                                                              id=curTool.id)
                 id_counter += 1
 
@@ -809,29 +809,29 @@ class TraceDisplayDlg(wx.Frame):
 
 
 
-    def onAddonToolClicked(self, event, plugin):
-        ''' Handle the click of an addon plugin toolbar button.
+    def onViewToolClicked(self, event, plugin):
+        ''' Handle the click of an view plugin toolbar button.
 
         Activate the tool.
         '''
-        self.logger.debug('Clicked the addon tool: %s', plugin.name)
+        self.logger.debug('Clicked the view tool: %s', plugin.name)
 
         if plugin.active == True:
             plugin.deactivate()
-            self.displayManager.removeAddonTool(plugin)
+            self.displayManager.removeViewTool(plugin)
         else:
             plugin.activate()
-            self.displayManager.registerAddonTool(plugin)
+            self.displayManager.registerViewTool(plugin)
 
         self.updateDisplay()
 
 
 
-    def onAddonToolDropdownClicked(self, event, plugin):
-        ''' Handle the click on the dropdown button of an addon plugin toolbar button.
+    def onViewToolDropdownClicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an view plugin toolbar button.
 
         '''
-        self.logger.debug('Clicked the addon tool dropdown button: %s', plugin.name)
+        self.logger.debug('Clicked the view tool dropdown button: %s', plugin.name)
         menu = wx.Menu()
         item = menu.Append(wx.ID_ANY, "edit preferences")
         self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
@@ -1003,9 +1003,9 @@ class TraceDisplayDlg(wx.Frame):
             self.dataManager.processStream()
 
 
-        # Plot the data using the addon tools.
-        addonPlugins = [x for x in self.plugins if x.mode == 'addon' and x.active]
-        for curPlugin in addonPlugins:
+        # Plot the data using the view tools.
+        viewPlugins = [x for x in self.plugins if x.mode == 'view' and x.active]
+        for curPlugin in viewPlugins:
             curPlugin.plot(self.displayManager, self.dataManager)
 
 
@@ -1144,8 +1144,8 @@ class DisplayManager(object):
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
         #self.showViews = [('seismogram', 'seismogram')]
-        # Create the views based on the active addon tools.
-        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
+        # Create the views based on the active view tools.
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
 
 
         # Limit the stations to show.
@@ -1159,7 +1159,7 @@ class DisplayManager(object):
                 station2Add = curStation
                 station2Add.addChannel(self.showChannels)
                 for curChannel in station2Add.channels:
-                    for curPlugin in addonPlugins:
+                    for curPlugin in viewPlugins:
                         view_class = curPlugin.getViewClass()
                         if view_class is not None:
                             curChannel.addView(curPlugin.name, view_class)
@@ -1294,7 +1294,7 @@ class DisplayManager(object):
             The station, network, location code of the station which should be hidden.
         '''
 
-        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
         interactive_plugins = [x for x in self.parent.plugins if x.mode == 'interactive' and x.active]
 
         # Get the selected station and set all currently active
@@ -1303,7 +1303,7 @@ class DisplayManager(object):
         self.addShowStation(station2Show)
         station2Show.addChannel(self.showChannels)
         for curChannel in station2Show.channels:
-            for curPlugin in addonPlugins:
+            for curPlugin in viewPlugins:
                 view_class = curPlugin.getViewClass()
                 if view_class is not None:
                     curChannel.addView(curPlugin.name, view_class)
@@ -1337,8 +1337,8 @@ class DisplayManager(object):
             self.parent.dataManager.processStream(self, scnl = station2Show.getSCNL())
 
 
-        # Plot the data of the station only using the addon tools.
-        for curPlugin in addonPlugins:
+        # Plot the data of the station only using the view tools.
+        for curPlugin in viewPlugins:
             curPlugin.plotStation(displayManager = self.parent.displayManager,
                            dataManager = self.parent.dataManager,
                            station = [station2Show,])
@@ -1365,12 +1365,12 @@ class DisplayManager(object):
         if channel not in self.showChannels:
             self.showChannels.append(channel)
 
-        addonPlugins = [x for x in self.parent.plugins if x.mode == 'addon' and x.active]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
 
         for curStation in self.showStations:
              curStation.addChannel([channel])
              for curChannel in curStation.channels:
-                 for curPlugin in addonPlugins:
+                 for curPlugin in viewPlugins:
                     view_class = curPlugin.getViewClass()
                     if view_class is not None:
                         curChannel.addView(curPlugin.name, view_class)
@@ -1397,7 +1397,7 @@ class DisplayManager(object):
         self.showChannels.remove(channel)
 
 
-    def registerAddonTool(self, plugin):
+    def registerViewTool(self, plugin):
         ''' Create the views needed by the plugin.
         '''
         for curStation in self.showStations:
@@ -1409,9 +1409,9 @@ class DisplayManager(object):
                     self.createViewContainer(curChannelContainer, plugin.name, view_class)
 
 
-    def removeAddonTool(self, plugin):
+    def removeViewTool(self, plugin):
         ''' Remove the views created by the plugin.
-        
+
         '''
         for curStation in self.showStations:
             for curChannel in curStation.channels:

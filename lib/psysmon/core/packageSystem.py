@@ -46,7 +46,7 @@ def scan_module_for_plugins(package_name, plugin_modules):
 
     The plugin classes which are searched for are:
 
-        - :class:`psysmon.core.plugins.AddonPlugin`
+        - :class:`psysmon.core.plugins.ViewPlugin`
         - :class:`psysmon.core.plugins.OptionPlugin`
         - :class:`psysmon.core.plugins.InteractivePlugin`
         - :class:`psysmon.core.plugins.CommandPlugin`
@@ -68,7 +68,7 @@ def scan_module_for_plugins(package_name, plugin_modules):
     import importlib
     import psysmon.core.plugins
 
-    plugin_classes = (psysmon.core.plugins.AddonPlugin,
+    plugin_classes = (psysmon.core.plugins.ViewPlugin,
                       psysmon.core.plugins.OptionPlugin,
                       psysmon.core.plugins.InteractivePlugin,
                       psysmon.core.plugins.CommandPlugin)

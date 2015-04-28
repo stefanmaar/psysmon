@@ -67,7 +67,7 @@ class PluginNode:
         name : String
             The name of the plugin-node.
         mode : String
-            The mode of the plugin-node (option, command, interactive, addon).
+            The mode of the plugin-node (option, command, interactive, view).
         category : String
             The category of the plugin-node.
         tags : list of String
@@ -121,7 +121,7 @@ class PluginNode:
         # should be set.
         self.icons = {}
 
-        # The activation state of the tool. This is used by addon- and
+        # The activation state of the tool. This is used by view- and
         # interactive tools. For other tool modes, the active state is
         # always False.
         self.active = False
@@ -344,10 +344,10 @@ class InteractivePlugin(PluginNode):
 
 
 
-class AddonPlugin(PluginNode):
+class ViewPlugin(PluginNode):
     ''' Add algorithms that are executed before displaying the data.
 
-    This is an addon plugin, that's capable of creating individual views 
+    This plugin is capable of creating individual views 
     which are used in the tracedisplay.
     '''
 
@@ -378,7 +378,7 @@ class AddonPlugin(PluginNode):
         '''
         PluginNode.__init__(self,
                             name = name,
-                            mode = 'addon',
+                            mode = 'view',
                             group = group,
                             category = category,
                             tags = tags,
@@ -392,5 +392,5 @@ class AddonPlugin(PluginNode):
             ''' Get a class object of the view of the plugin.
 
             '''
-            #assert False, 'The getViewClass must be defined!'
-            return None
+            assert False, 'The getViewClass must be defined!'
+

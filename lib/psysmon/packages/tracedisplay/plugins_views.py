@@ -25,7 +25,7 @@ import scipy
 import scipy.signal
 from matplotlib.patches import Rectangle
 import psysmon
-from psysmon.core.plugins import AddonPlugin
+from psysmon.core.plugins import ViewPlugin
 from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
@@ -66,7 +66,7 @@ class Refresh(CommandPlugin):
 
 
 
-class SeismogramPlotter(AddonPlugin):
+class SeismogramPlotter(ViewPlugin):
     '''
 
     '''
@@ -76,7 +76,7 @@ class SeismogramPlotter(AddonPlugin):
         ''' The constructor.
 
         '''
-        AddonPlugin.__init__(self,
+        ViewPlugin.__init__(self,
                              name = 'plot seismogram',
                              category = 'visualize',
                              tags = None
@@ -347,7 +347,7 @@ class SeismogramView(View):
 
 ############## DEMO PLUGIN FOR VIEWS ##########################################
 
-class DemoPlotter(AddonPlugin):
+class DemoPlotter(ViewPlugin):
     '''
 
     '''
@@ -357,7 +357,7 @@ class DemoPlotter(AddonPlugin):
         ''' The constructor.
 
         '''
-        AddonPlugin.__init__(self,
+        ViewPlugin.__init__(self,
                              name = 'demo plotter',
                              category = 'visualize',
                              tags = None
@@ -511,7 +511,7 @@ class DemoView(View):
 
 
 
-class SpectrogramPlotter(AddonPlugin):
+class SpectrogramPlotter(ViewPlugin):
     '''
 
     '''
@@ -521,7 +521,7 @@ class SpectrogramPlotter(AddonPlugin):
         ''' The constructor.
 
         '''
-        AddonPlugin.__init__(self,
+        ViewPlugin.__init__(self,
                              name = 'spectrogram plotter',
                              category = 'visualize',
                              tags = None
