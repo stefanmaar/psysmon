@@ -188,6 +188,9 @@ class View(wx.Panel):
         #self.dataAxes = self.plotCanvas.figure.add_axes([0.1,0.1,0.8,0.8])
         self.dataAxes = self.plotCanvas.figure.add_axes([0,0,1,1])
 
+        # A dictionary of graphic handles to annotation artists.
+        self.annotation_artists = {}
+        self.annotation_artists['vline'] = {}
 
         # A list of matplotlib event connection ids.
         self.cids = []
@@ -272,14 +275,34 @@ class View(wx.Panel):
         self.annotationArea.setLabel(text)
 
 
-    def plotVLine(self, x, **kwargs):
+    def plot_annotation_vline(self, x, key, **kwargs):
         ''' Plot a vertical line in the data axes.
         '''
-        h_line = self.dataAxes.axvline(x = x, **kwargs)
-        if 'label' in kwargs.keys():
-            ylim = self.dataAxes.get_ylim()
-            h_label = self.dataAxes.text(x = x, y = 0, s = kwargs['label'])
-        return (h_line, h_label)
+        if key in self.annotation_artists['vline'].keys():
+            line_artist, label_artist = self.annotation_artists['vline'][key]
+            if line_artist:
+                line_artist.set_xdata(x)
+            if label_artist:
+                label_artist.set_position((x, 0))
+        else:
+            line_artist = self.dataAxes.axvline(x = x, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.dataAxes.get_ylim()
+                label_artist = self.dataAxes.text(x = x, y = 0, s = kwargs['label'])
+            else:
+                label_artist = None
+            self.annotation_artists['vline'][key] = (line_artist, label_artist)
+
+
+    def get_annotation_artist(self, mode, key):
+        ''' Get the annotation artist.
+        '''
+        ret_artist = None
+        if mode in self.annotation_artists.keys():
+            if key in self.annotation_artists[mode].keys():
+                ret_artist = self.annotation_artists[mode][key]
+
+        return ret_artist
 
 
 
@@ -481,14 +504,11 @@ class ChannelContainer(wx.Panel):
             cur_view.draw()
 
 
-    def plotVLine(self, x, **kwargs):
+    def plot_annotation_vline(self, x, key, **kwargs):
         ''' Plot a vertical line in all views of the channel.
         '''
-        h_line = []
         for cur_view in self.views.itervalues():
-            cur_handle = cur_view.plotVLine(x = x, **kwargs)
-            h_line.append(cur_handle)
-        return h_line
+            cur_view.plot_annotation_vline(x = x, key = key, **kwargs)
 
 
 
@@ -616,14 +636,11 @@ class StationContainer(wx.Panel):
             cur_channel.draw()
 
 
-    def plotVLine(self, x, **kwargs):
+    def plot_annotation_vline(self, x, key, **kwargs):
         ''' Plot a vertical line in all channels of the station.
         '''
-        h_line = []
         for cur_channel in self.channels.itervalues():
-            cur_handle = cur_channel.plotVLine(x = x, **kwargs)
-            h_line.extend(cur_handle)
-        return h_line
+            cur_channel.plot_annotation_vline(x = x, key = key, **kwargs)
 
 
 
