@@ -129,6 +129,7 @@ class PickTool(InteractivePlugin):
         hooks = {}
 
         hooks['button_press_event'] = self.on_button_press
+        hooks['after_plot_data'] = self.on_add_pick_lines
 
         return hooks
 
@@ -152,6 +153,12 @@ class PickTool(InteractivePlugin):
                 self.pick_seismogram(event, dataManager, displayManager)
             else:
                 self.logger.info('Picking in a %s view is not supported.', cur_view.name)
+
+
+    def on_add_pick_lines(self):
+        ''' Add the pick lines to the views.
+        '''
+        pass
 
 
     def pick_seismogram(self, event, data_manager, display_manager):
