@@ -22,6 +22,7 @@ import logging
 import psysmon
 import obspy.core.utcdatetime as utcdatetime
 import warnings
+import numpy as np
 
 
 
@@ -230,6 +231,23 @@ class Catalog(object):
         return ret_picks
 
 
+    def get_nearest_pick(self, pick_time, **kwargs):
+        ''' Get the pick nearest to the specified pick time.
+        '''
+        picks = self.get_pick(**kwargs)
+        nearest_pick = None
+        if picks:
+            nearest_pick = picks[0]
+            dist = np.abs(pick_time - nearest_pick.time)
+            for cur_pick in picks[1:]:
+                cur_dist = np.abs(pick_time - cur_pick.time)
+                if cur_dist < dist:
+                    dist = cur_dist
+                    nearest_pick = cur_pick
+
+        return nearest_pick
+
+
     def write_to_database(self, project, only_changed_picks = True):
         ''' Write the catalog to the database.
 
@@ -330,6 +348,14 @@ class Catalog(object):
 
         finally:
             db_session.close()
+
+    def delete_picks_from_db(self, project, picks):
+        ''' Delete picks from the database and the catalog.
+        '''
+        for cur_pick in picks:
+            res = cur_pick.delete_from_db(project = project)
+            if res == 1:
+                self.picks.remove(cur_pick)
 
 
     def clear_picks(self):
@@ -507,6 +533,13 @@ class Pick(object):
             else:
                 raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
 
+
+    def delete_from_db(self, project):
+        ''' Delete a pick from the database.
+        '''
+        pick_orm_class = project.dbTables['pick']
+        result = project.dbEngine.execute(pick_orm_class.__table__.delete().where(pick_orm_class.id == self.db_id))
+        return result.rowcount
 
 
     @classmethod

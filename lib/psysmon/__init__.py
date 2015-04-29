@@ -58,9 +58,11 @@ class LoggingRedirectHandler(logging.Handler):
             #print "REDIRECT :: %s" % msg
 
 
-def getLoggerHandler(mode='console'):
+def getLoggerHandler(mode='console', log_level = None):
     ch = logging.StreamHandler()
-    ch.setLevel(logConfig['level'])
+    if log_level is None:
+        log_level = logConfig['level']
+    ch.setLevel(log_level)
     formatter = logging.Formatter("#LOG# - %(asctime)s - %(process)d - %(levelname)s - %(name)s: %(message)s")
     ch.setFormatter(formatter)
 
@@ -69,11 +71,15 @@ def getLoggerHandler(mode='console'):
     return ch
 
 
-def getLoggerFileHandler(filename=None):
+def getLoggerFileHandler(filename=None, log_level = None):
     if not filename:
         return
+
+    if log_level is None:
+        log_level = logConfig['level']
+
     ch = logging.FileHandler(filename)
-    ch.setLevel(logConfig['level'])
+    ch.setLevel(log_level)
     formatter = logging.Formatter("#LOG# - %(asctime)s - %(levelname)s - %(name)s: %(message)s")
     ch.setFormatter(formatter)
 

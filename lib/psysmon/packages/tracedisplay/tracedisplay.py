@@ -1010,12 +1010,7 @@ class TraceDisplayDlg(wx.Frame):
 
 
         # Call the hooks of the plugins.
-        active_plugins = [x for x in self.plugins if x.active]
-        for cur_plugin in active_plugins:
-            hooks = cur_plugin.getHooks()
-            if hooks:
-                if 'after_plot' in hooks.keys():
-                    hooks['after_plot']()
+        self.call_hook('after_plot')
 
         # Update the viewport to show the changes.
         self.viewPort.Refresh()
@@ -1027,6 +1022,19 @@ class TraceDisplayDlg(wx.Frame):
                                   None)
         self.datetimeInfo.Refresh()
         return
+
+
+    def call_hook(self, hook_name, **kwargs):
+        ''' Call the hook of the plugins.
+        '''
+        active_plugins = [x for x in self.plugins if x.active]
+        for cur_plugin in active_plugins:
+            hooks = cur_plugin.getHooks()
+            if hooks:
+                if hook_name in hooks.keys():
+                    self.logger.debug('Calling hook %s.', hook_name)
+                    hooks[hook_name](**kwargs)
+
 
 
 
@@ -1191,8 +1199,7 @@ class DisplayManager(object):
             self.startTime = self.startTime + time_step
             self.endTime = self.startTime + interval
 
-        self.logger.debug("end of advanceTime")
-
+        self.parent.call_hook('time_limit_changed')
 
 
 
@@ -1203,6 +1210,7 @@ class DisplayManager(object):
         interval = self.endTime - self.startTime
         self.endTime = self.startTime
         self.startTime = self.startTime - interval
+        self.parent.call_hook('time_limit_changed')
 
 
     def growTimePeriod(self, ratio = 50):
@@ -1256,6 +1264,7 @@ class DisplayManager(object):
         duration = self.endTime - self.startTime
         self.startTime = startTime
         self.endTime = startTime + duration
+        self.parent.call_hook('time_limit_changed')
 
 
     def setTimeLimits(self, startTime, endTime):
@@ -1264,6 +1273,7 @@ class DisplayManager(object):
         '''
         self.startTime = startTime
         self.endTime = endTime
+        self.parent.call_hook('time_limit_changed')
 
 
 
@@ -1345,13 +1355,7 @@ class DisplayManager(object):
 
 
         # Call the hooks of the plugins.
-        active_plugins = [x for x in self.parent.plugins if x.active]
-        for cur_plugin in active_plugins:
-            hooks = cur_plugin.getHooks()
-            if hooks:
-                if 'after_plot_station' in hooks.keys():
-                    hooks['after_plot_station'](station = [station2Show,])
-
+        self.parent.call_hook('after_plot_station', station = [station2Show,])
 
         # If an interactive plugin is active, register the hooks for the added
         # station.
@@ -1414,8 +1418,12 @@ class DisplayManager(object):
                 view_class = plugin.getViewClass()
                 if view_class is not None:
                     curChannel.addView(plugin.name, view_class)
-                    curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
-                    self.createViewContainer(curChannelContainer, plugin.name, view_class)
+                    channelContainer = self.parent.viewPort.getChannelContainer(station = curChannel.parent.name,
+                                                                                channel = curChannel.name,
+                                                                                network = curChannel.parent.network,
+                                                                                location = curChannel.parent.location)
+                    for curChannelContainer in channelContainer:
+                        self.createViewContainer(curChannelContainer, plugin.name, view_class)
 
 
     def removeViewTool(self, plugin):
@@ -1424,9 +1432,13 @@ class DisplayManager(object):
         '''
         for curStation in self.showStations:
             for curChannel in curStation.channels:
-                curChannelContainer = self.parent.viewPort.getChannelContainer(curChannel.getSCNL())
+                channelContainers = self.parent.viewPort.getChannelContainer(station = curChannel.parent.name,
+                                                                               channel = curChannel.name,
+                                                                               network = curChannel.parent.network,
+                                                                               location = curChannel.parent.location)
                 curChannel.removeView(plugin.name, 'my View')
-                curChannelContainer.removeView(plugin.name)
+                for curContainer in channelContainers:
+                    curContainer.removeView(plugin.name)
 
 
 
@@ -1548,7 +1560,7 @@ class DisplayManager(object):
             for curChannel in curStation.channels:
                 curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
                 for curViewName, (curViewType, ) in curChannel.views.items():
-                    self.createViewContainer(curChanContainer, curViewName, curViewType) 
+                    self.createViewContainer(curChanContainer, curViewName, curViewType)
 
 
 
@@ -1559,7 +1571,9 @@ class DisplayManager(object):
         viewport = self.parent.viewPort
 
         # Check if the container already exists in the viewport.
-        statContainer = viewport.hasStation(station.getSNL())
+        statContainer = viewport.getStation(name = station.name,
+                                            network = station.network,
+                                            location = station.location)
         if not statContainer:
             statContainer = container.StationContainer(parent = viewport,
                                                 id = wx.ID_ANY,
@@ -1570,6 +1584,8 @@ class DisplayManager(object):
             viewport.addStation(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
+        else:
+            statContainer = statContainer[0]
 
         return statContainer
 
@@ -1580,7 +1596,7 @@ class DisplayManager(object):
 
         '''
         # Check if the container already exists in the station.
-        chanContainer = stationContainer.hasChannel(channel.name)
+        chanContainer = stationContainer.getChannel(name = channel.name)
 
         if not chanContainer:
             if self.channelColors.has_key(channel.name):
@@ -1594,6 +1610,8 @@ class DisplayManager(object):
                                                        color=curColor)
             stationContainer.addChannel(chanContainer)
             channel.container = chanContainer
+        else:
+            chanContainer = chanContainer[0]
 
         return chanContainer
 
@@ -1604,13 +1622,9 @@ class DisplayManager(object):
 
         '''
         # Check if the container already exists in the channel.
-        viewContainer = channelContainer.hasView(name)
+        viewContainer = channelContainer.getView(name = name)
 
         if not viewContainer:
-            #viewContainer = container.viewTypeMap[viewType](channelContainer,
-            #                                            id = wx.ID_ANY,
-            #                                            name = name,
-            #                                            lineColor = channelContainer.color)
             viewContainer = viewClass(channelContainer,
                                       id = wx.ID_ANY,
                                       name = name)
@@ -1622,11 +1636,17 @@ class DisplayManager(object):
         return viewContainer
 
 
-    def getViewContainer(self, scnl=None, viewName=None):
-        ''' Get the view container of a specified scnl code.
+    def getViewContainer(self, station = None,
+                         channel = None, network = None,
+                         location = None, name = None):
+        ''' Get the view container of the specified search terms.
 
         '''
-        return self.parent.viewPort.getViewContainer(scnl, viewName)
+        return self.parent.viewPort.getViewContainer(station = station,
+                                                     channel = channel,
+                                                     network = network,
+                                                     location = location,
+                                                     name = name)
 
 
 

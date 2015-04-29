@@ -281,15 +281,15 @@ class View(wx.Panel):
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in the data axes.
         '''
-
+        self.logger.info('Plotting a annotation line %s, %s.', parent_rid, key)
         annotation_artist = self.get_annotation_artist(mode = 'vline',
                                             parent_rid = parent_rid,
                                             key = key)
 
         if annotation_artist:
             annotation_artist = annotation_artist[0]
-            line_artist = annotation_artist.artist[0]
-            label_artist = annotation_artist.artist[1]
+            line_artist = annotation_artist.line_artist[0]
+            label_artist = annotation_artist.text_artist[0]
             if line_artist:
                 line_artist.set_xdata(x)
             if label_artist:
@@ -304,16 +304,29 @@ class View(wx.Panel):
             annotation_artist = AnnotationArtist(mode = 'vline',
                                                  parent_rid = parent_rid,
                                                  key = key,
-                                                 artist = (line_artist, label_artist))
+                                                 line_artist = [line_artist, ],
+                                                 text_artist = [label_artist, ])
             self.annotation_artists.append(annotation_artist)
 
 
 
 
-    def clear_annotation_artist(self, mode, parent_rid = None, key = None):
+    def clear_annotation_artist(self, mode = None, parent_rid = None, key = None):
         ''' Delete annotation artits from the view.
         '''
-        pass
+        artists_to_remove = self.get_annotation_artist(mode = mode,
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+        for cur_artist in artists_to_remove:
+            for cur_line_artist in cur_artist.line_artist:
+                self.dataAxes.lines.remove(cur_line_artist)
+
+            for cur_text_artist in cur_artist.text_artist:
+                self.dataAxes.texts.remove(cur_text_artist)
+
+            self.annotation_artists.remove(cur_artist)
+
+
 
 
     def get_annotation_artist(self, **kwargs):
@@ -325,7 +338,7 @@ class View(wx.Panel):
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
-                ret_artist = [x for x in ret_artist if getattr(x, cur_key) == cur_value]
+                ret_artist = [x for x in ret_artist if getattr(x, cur_key) == cur_value or cur_value is None]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
@@ -335,14 +348,16 @@ class View(wx.Panel):
 
 class AnnotationArtist(object):
 
-    def __init__(self, mode, parent_rid, key, artist):
+    def __init__(self, mode, parent_rid, key, line_artist, text_artist):
         self.mode = mode
 
         self.parent_rid = parent_rid
 
         self.key = key
 
-        self.artist = artist
+        self.line_artist = line_artist
+
+        self.text_artist = text_artist
 
 
 
@@ -487,15 +502,21 @@ class ChannelContainer(wx.Panel):
 
 
 
-    def hasView(self, viewName):
+    def getView(self, name):
         ''' Check if the channel already contains the view.
 
         Parameters
         ----------
-        viewName : String
+        name : String
             The name of the view to search.
         '''
-        return self.views.get(viewName, None)
+        if name is None:
+            return self.views.values()
+        else:
+            view = self.views.get(name, None)
+            if view:
+                view = [view, ]
+            return view
 
 
 
@@ -552,6 +573,11 @@ class ChannelContainer(wx.Panel):
                                            key = key, **kwargs)
 
 
+    def clear_annotation_artist(self, **kwargs):
+        ''' Delete annotation artits all views of the channel.
+        '''
+        for cur_view in self.views.itervalues():
+            cur_view.clear_annotation_artist(**kwargs)
 
 
 
@@ -619,15 +645,21 @@ class StationContainer(wx.Panel):
 
 
 
-    def hasChannel(self, channelName):
+    def getChannel(self, name):
         ''' Check if the station already contains a channel.
 
         Parameters
         ----------
-        channelName : String
+        name : String
             The name of the channel to search.
         '''
-        return self.channels.get(channelName, None)
+        if name is None:
+            return self.channels.values()
+        else:
+            channel = self.channels.get(name, [])
+            if channel:
+                channel = [channel, ]
+            return channel
 
 
 
@@ -664,11 +696,16 @@ class StationContainer(wx.Panel):
 
 
     def getViewContainer(self, channelName, viewName):
-        curChannel = self.hasChannel(channelName)
-        if not curChannel:
+        channels = self.getChannel(name = channelName)
+        if not channels:
             return None
 
-        return curChannel.hasView(viewName)
+        ret_channel = []
+        for curChannel in channels:
+            ret_channel.extend(curChannel.getView(name = viewName))
+
+        return ret_channel
+
 
     def draw(self):
         ''' Draw all channels of the station.
@@ -684,6 +721,11 @@ class StationContainer(wx.Panel):
             cur_channel.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                               key = key, **kwargs)
 
+    def clear_annotation_artist(self, **kwargs):
+        ''' Delete annotation artits all views of the channel.
+        '''
+        for cur_channel in self.channels.itervalues():
+            cur_channel.clear_annotation_artist(**kwargs)
 
 
 
@@ -1019,25 +1061,25 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
-    def hasStation(self, snl):
+    def getStation(self, **kwargs):
         ''' Check if the viewport already contains a station.
 
         Parameters
         ----------
-        stationName : String
-            The name of the station.
         '''
-        stationsFound = [x for x in self.stations if (x.name, x.network, x.location) == snl]
-        if len(stationsFound) == 1:
-            return stationsFound[0]
-        else:
-            return stationsFound
-        #return self.stations.get(stationName, None)
+        ret_stations = self.stations
+
+        valid_keys = ['name', 'network', 'location']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_stations = [x for x in ret_stations if getattr(x, cur_key) == cur_value or cur_value is None]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_stations
 
 
-
-
-        
 
 
     def sortStations(self, snl=[]):
@@ -1125,27 +1167,40 @@ class TdViewPort(scrolled.ScrolledPanel):
 
 
 
-    def getChannelContainer(self, scnl):
-        curStation = self.hasStation((scnl[0], scnl[2], scnl[3]))
-        
-        if not curStation:
-            return None
+    def getChannelContainer(self, station = None,
+                            channel = None, network = None, location = None):
+        ret_channels = []
+        stations = self.getStation(name = station,
+                                   network = network,
+                                   location = location)
+        if stations:
+            for cur_station in stations:
+                cur_channel = cur_station.getChannel(name = channel)
+                if cur_channel is not None:
+                    ret_channels.extend(cur_channel)
 
-        return curStation.hasChannel(scnl[1])
+        return ret_channels
 
 
 
-    def getViewContainer(self, scnl, viewName):
+    def getViewContainer(self, station = None,
+                         channel = None, network = None,
+                         location = None, name = None):
         ''' Get the view container of a specified scnl code.
-       
+
         '''
-        curStation = self.hasStation((scnl[0], scnl[2], scnl[3]))
-        
-        if not curStation:
-            return None
+        stations = self.getStation(name = station,
+                                   network = network,
+                                   location = location)
 
-        return curStation.getViewContainer(scnl[1], viewName)
+        ret_views = []
 
+        for cur_station in stations:
+            views = cur_station.getViewContainer(channel, name)
+            if views:
+                ret_views.extend(views)
+
+        return ret_views
 
 
     def registerEventCallbacks(self, hooks, dataManager, displayManager):

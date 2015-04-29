@@ -41,8 +41,8 @@ class TracedisplayTestCase(unittest.TestCase):
     def setUpClass(cls):
         # Configure the logger.
         logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
-        logger.addHandler(psysmon.getLoggerHandler())
+        logger.setLevel('INFO')
+        logger.addHandler(psysmon.getLoggerHandler(log_level = 'INFO'))
 
         drop_database_tables(db_dialect = 'mysql',
                               db_driver = None,

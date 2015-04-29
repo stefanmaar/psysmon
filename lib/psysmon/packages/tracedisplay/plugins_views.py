@@ -131,32 +131,37 @@ class SeismogramPlotter(ViewPlugin):
         stream = dataManager.procStream
 
         for curChannel in channels:
-            curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
-            if stream:
-                if curChannel.parent.location == '--':
-                    cur_location = None
+            views = displayManager.getViewContainer(station = curChannel.parent.name,
+                                                      channel = curChannel.name,
+                                                      network = curChannel.parent.network,
+                                                      location = curChannel.parent.location,
+                                                      name = self.name)
+            for curView in views:
+                if stream:
+                    if curChannel.parent.location == '--':
+                        cur_location = None
+                    else:
+                        cur_location = curChannel.parent.location
+
+                    curStream = stream.select(station = curChannel.parent.name,
+                                             channel = curChannel.name,
+                                             network = curChannel.parent.network,
+                                             location = cur_location)
                 else:
-                    cur_location = curChannel.parent.location
+                    curStream = None
 
-                curStream = stream.select(station = curChannel.parent.name,
-                                         channel = curChannel.name,
-                                         network = curChannel.parent.network,
-                                         location = cur_location)
-            else:
-                curStream = None
+                if curStream:
+                    lineColor = [x/255.0 for x in curChannel.container.color]
+                    curView.plot(curStream, lineColor,
+                                 end_time = displayManager.endTime,
+                                 duration = displayManager.endTime - displayManager.startTime,
+                                 show_envelope = self.pref_manager.get_value('show_envelope'),
+                                 minmax_limit = self.pref_manager.get_value('minmax_limit')
+                                 )
 
-            if curStream:
-                lineColor = [x/255.0 for x in curChannel.container.color]
-                curView.plot(curStream, lineColor,
-                             end_time = displayManager.endTime,
-                             duration = displayManager.endTime - displayManager.startTime,
-                             show_envelope = self.pref_manager.get_value('show_envelope'),
-                             minmax_limit = self.pref_manager.get_value('minmax_limit')
-                             )
-
-            curView.setXLimits(left = displayManager.startTime.timestamp,
-                               right = displayManager.endTime.timestamp)
-            curView.draw()
+                curView.setXLimits(left = displayManager.startTime.timestamp,
+                                   right = displayManager.endTime.timestamp)
+                curView.draw()
 
 
 
@@ -394,19 +399,24 @@ class DemoPlotter(ViewPlugin):
         stream = dataManager.procStream
 
         for curChannel in channels:
-            curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
+            views = displayManager.getViewContainer(station = curChannel.parent.name,
+                                                      channel = curChannel.name,
+                                                      network = curChannel.parent.network,
+                                                      location = curChannel.parent.location,
+                                                      name = self.name)
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
                                      location = curChannel.parent.obspy_location)
 
-            if curStream:
-                #lineColor = [x/255.0 for x in curChannel.container.color]
-                curView.plot(curStream, [0.3, 0, 0])
+            for curView in views:
+                if curStream:
+                    #lineColor = [x/255.0 for x in curChannel.container.color]
+                    curView.plot(curStream, [0.3, 0, 0])
 
-            curView.setXLimits(left = displayManager.startTime.timestamp,
-                               right = displayManager.endTime.timestamp)
-            curView.draw()
+                curView.setXLimits(left = displayManager.startTime.timestamp,
+                                   right = displayManager.endTime.timestamp)
+                curView.draw()
 
 
 
@@ -558,19 +568,24 @@ class SpectrogramPlotter(ViewPlugin):
         stream = dataManager.procStream
 
         for curChannel in channels:
-            curView = displayManager.getViewContainer(curChannel.getSCNL(), self.name)
+            views = displayManager.getViewContainer(station = curChannel.parent.name,
+                                                      channel = curChannel.name,
+                                                      network = curChannel.parent.network,
+                                                      location = curChannel.parent.location,
+                                                      name = self.name)
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
                                      location = curChannel.parent.obspy_location)
 
-            if curStream:
-                #lineColor = [x/255.0 for x in curChannel.container.color]
-                curView.plot(curStream, [0.3, 0, 0])
+            for curView in views:
+                if curStream:
+                    #lineColor = [x/255.0 for x in curChannel.container.color]
+                    curView.plot(curStream, [0.3, 0, 0])
 
-            curView.setXLimits(left = displayManager.startTime.timestamp,
-                               right = displayManager.endTime.timestamp)
-            curView.draw()
+                curView.setXLimits(left = displayManager.startTime.timestamp,
+                                   right = displayManager.endTime.timestamp)
+                curView.draw()
 
 
 

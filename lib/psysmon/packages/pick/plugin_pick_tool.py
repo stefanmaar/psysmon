@@ -101,6 +101,14 @@ class PickTool(InteractivePlugin):
         self.pref_manager.add_item(pagename = 'tool options',
                                    item = item)
 
+        item = psy_pm.FloatSpinPrefItem(name = 'delete_snap_length',
+                                       label = 'delete snap [s]',
+                                       group = 'pick options',
+                                       value = 0.1,
+                                       limit = (0, 1000),
+                                       tool_tip = 'The snap length used when deleting picks.')
+        self.pref_manager.add_item(pagename = 'tool options',
+                                   item = item)
 
 
     def buildFoldPanel(self, panelBar):
@@ -139,6 +147,7 @@ class PickTool(InteractivePlugin):
         hooks['after_plot'] = self.add_pick_lines
         hooks['after_plot_station'] = self.add_pick_lines_station
         hooks['after_plot_channel'] = self.add_pick_lines_channel
+        hooks['time_limit_changed'] = self.load_picks
 
         return hooks
 
@@ -153,8 +162,7 @@ class PickTool(InteractivePlugin):
             # Skip the middle mouse button.
             return
         elif event.button == 3:
-            # Skipt the right mouse button.
-            return
+            self.delete_pick(event)
         else:
             if self.selected_catalog_name is None:
                 self.logger.info('You have to select a pick catalog first.')
@@ -207,12 +215,12 @@ class PickTool(InteractivePlugin):
 
                 for cur_pick in picks:
                     # Create the pick line in all channels of the station.
-                    for cur_view in cur_plot_channel.container.views.itervalues():
-                        cur_view.GetGrandParent().plot_annotation_vline(cur_pick.time.timestamp,
-                                                                        label = cur_pick.label,
-                                                                        parent_rid = self.rid,
-                                                                        key = cur_pick.rid,
-                                                                        color = 'r')
+                    cur_plot_channel.container.plot_annotation_vline(cur_pick.time.timestamp,
+                                                                     label = cur_pick.label,
+                                                                     parent_rid = self.rid,
+                                                                     key = cur_pick.rid,
+                                                                     color = 'r')
+                    cur_plot_channel.container.draw()
 
 
     def pick_seismogram(self, event, data_manager, display_manager):
@@ -252,17 +260,12 @@ class PickTool(InteractivePlugin):
             cur_catalog = self.library.catalogs[self.selected_catalog_name]
             search_win_start = self.parent.displayManager.startTime
             search_win_end = self.parent.displayManager.endTime
-            cur_pick = cur_catalog.get_pick(start_time = search_win_start,
+            picks = cur_catalog.get_pick(start_time = search_win_start,
                                             end_time = search_win_end,
                                             label = self.pref_manager.get_value('label'),
                                             station = scnl[0])
 
-            if len(cur_pick) == 1:
-                cur_pick = cur_pick[0]
-                cur_pick.time = UTCDateTime(snap_x)
-                cur_pick.amp1 = snap_y
-                cur_pick.write_to_database(self.parent.project)
-            elif len(cur_pick) == 0:
+            if len(picks) == 0:
                 cur_channel = cur_channel[0]
                 cur_pick = pick_core.Pick(label = self.pref_manager.get_value('label'),
                                           time = UTCDateTime(snap_x),
@@ -271,8 +274,18 @@ class PickTool(InteractivePlugin):
                 cur_catalog.add_picks([cur_pick,])
                 cur_pick.write_to_database(self.parent.project)
             else:
-                self.logger.error("More than one pick returned for label %s. Don't know what to do.", self.pref_manager.get_value('label'))
-                return
+                pick_time = UTCDateTime(snap_x)
+                nearest_pick = picks[0]
+                dist = np.abs(pick_time - nearest_pick.time)
+                for cur_pick in picks[1:]:
+                    cur_dist = np.abs(pick_time - cur_pick.time)
+                    if cur_dist < dist:
+                        dist = cur_dist
+                        nearest_pick = cur_pick
+                nearest_pick.time = pick_time
+                nearest_pick.amp1 = snap_y
+                nearest_pick.write_to_database(self.parent.project)
+                cur_pick = nearest_pick
 
             # Create the pick line in all channels of the station.
             self.view.GetGrandParent().plot_annotation_vline(x = snap_x,
@@ -285,6 +298,55 @@ class PickTool(InteractivePlugin):
             self.view.GetGrandParent().draw()
 
 
+    def delete_pick(self, event):
+        ''' Delete a pick from the database.
+        '''
+        if event.inaxes is None:
+            return
+
+        cur_axes = self.view.dataAxes
+
+        # Find the seismogram line.
+        seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
+        if len(seismo_line) > 0:
+            seismo_line = seismo_line[0]
+        else:
+            raise RuntimeError('No seismogram line found.')
+
+        # Get the picked sample.
+        xdata = seismo_line.get_xdata()
+        ind_x = np.searchsorted(xdata, [event.xdata])[0]
+        snap_x = xdata[ind_x]
+
+        # Get the channel of the pick.
+        scnl = self.view.GetParent().scnl
+        cur_channel = self.parent.project.geometry_inventory.get_channel(station = scnl[0],
+                                                                         name = scnl[1],
+                                                                         network = scnl[2],
+                                                                         location = scnl[3])
+        if not cur_channel:
+            self.logger.error('No channel for SCNL %s found in the inventory.', scnl)
+        elif len(cur_channel) > 1:
+            self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", scnl)
+        else:
+            # Get the nearest pick and delete it.
+            cur_catalog = self.library.catalogs[self.selected_catalog_name]
+            pick = cur_catalog.get_nearest_pick(pick_time = UTCDateTime(snap_x),
+                                                start_time = UTCDateTime(snap_x) - self.pref_manager.get_value('delete_snap_length'),
+                                                end_time = UTCDateTime(snap_x) + self.pref_manager.get_value('delete_snap_length'),
+                                                label = self.pref_manager.get_value('label'),
+                                                station = scnl[0])
+
+            if pick:
+                cur_catalog.delete_picks_from_db(project = self.parent.project,
+                                                 picks = [pick, ])
+                self.view.GetGrandParent().clear_annotation_artist(mode = 'vline',
+                                                                   parent_rid = self.rid,
+                                                                   key = pick.rid)
+
+                self.view.GetGrandParent().draw()
+
+
 
     def on_select_catalog(self):
         ''' Handle the catalog selection.
@@ -295,17 +357,41 @@ class PickTool(InteractivePlugin):
         self.library.load_catalog_from_db(project = self.parent.project,
                                           name = self.selected_catalog_name)
 
-        # TODO: When the pick catalog selector plugin is available, load the
-        # picks using this plugin.
-        # Load the picks for the selected timespan.
+        # Load the picks.
+        self.load_picks()
+
+        # Clear existing pick lines.
+        self.clear_pick_lines()
+
+        # Update the pick lines.
+        self.add_pick_lines()
+
+        # Make the changes visible.
+        #self.parent.viewPort.Refresh()
+        #self.parent.viewPort.Update()
+
+
+    def load_picks(self):
+        ''' Load the picks for the current timespan of the tracedisplay.
+        '''
         cur_catalog = self.library.catalogs[self.selected_catalog_name]
         cur_catalog.clear_picks()
         cur_catalog.load_picks(project = self.parent.project,
                                start_time = self.parent.displayManager.startTime,
                                end_time = self.parent.displayManager.endTime)
 
-        # Update the pick lines.
-        self.add_pick_lines()
+
+    def clear_pick_lines(self):
+        ''' Remove the pick lines from the views.
+        '''
+        views = self.parent.displayManager.getViewContainer()
+        for cur_view in views:
+            cur_view.clear_annotation_artist(mode = 'vline',
+                                             parent_rid = self.rid)
+            cur_view.draw()
+
+
+
 
 
     def on_create_new_catalog(self, event):
