@@ -1498,7 +1498,10 @@ class Station(object):
         self.name = name
 
         ## The station location.
-        self.location = str(location)
+        if location:
+            self.location = str(location)
+        else:
+            self.location = None
 
         ## The station description.
         #
@@ -1586,6 +1589,13 @@ class Station(object):
             return self.parent_network.parent_inventory
         else:
             return None
+
+    @property
+    def location_string(self):
+        if self.location is None:
+            return '--'
+        else:
+            return self.location
 
 
     def __setitem__(self, name, value):

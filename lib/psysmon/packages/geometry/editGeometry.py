@@ -933,7 +933,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 self.SetItemImage(curNetworkItem, self.icons['network'], wx.TreeItemIcon_Normal)
 
                 for curStation in sorted(curNetwork.stations,key = attrgetter('name')):
-                    curStationItem = self.AppendItem(curNetworkItem, curStation.name + ':' + curStation.location)
+                    curStationItem = self.AppendItem(curNetworkItem, curStation.name + ':' + curStation.location_string)
                     self.SetItemPyData(curStationItem, curStation)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
 
