@@ -33,6 +33,7 @@ import os
 import threading
 from obspy.core import read, Stream
 from obspy.earthworm import Client
+import numpy as np
 
 class WaveClient:
     '''The WaveClient class.
@@ -323,7 +324,6 @@ class PsysmonDbWaveClient(WaveClient):
         # Filter the SCNL selections.
         if scnl:
             for stat, chan, net, loc in scnl:
-                # TODO: Check if the data is already available in the trunk.
                 stock_stream = self.get_from_stock(station = stat,
                                                    channel = chan,
                                                    network = net,
@@ -338,7 +338,7 @@ class PsysmonDbWaveClient(WaveClient):
                     cur_start_time = cur_trace.stats.starttime
                     cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
 
-                    stream += stock_stream
+                    stream += stock_stream.split()
 
                     if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
                         self.logger.debug('Get missing data in front...')
@@ -363,6 +363,23 @@ class PsysmonDbWaveClient(WaveClient):
                                                         end_time = endTime)
                         stream += curStream
                         new_data = True
+
+                    if isinstance(stock_stream.traces[0].data, np.ma.masked_array):
+                        # Try to fill the data gaps.
+                        self.logger.debug('There are gaps in the stock stream. Try to fill them...')
+                        stock_stream = stock_stream.split()
+                        gaps = stock_stream.getGaps()
+                        for cur_gap in gaps:
+                            self.logger.debug('Loading data for gap %s.', cur_gap)
+                            curStream = self.load_from_file(station = stat,
+                                                            channel = chan,
+                                                            network = net,
+                                                            location = loc,
+                                                            start_time = cur_gap[4],
+                                                            end_time = cur_gap[5])
+                            stream += curStream
+                            new_data = True
+
 
                 else:
                     self.logger.debug('No stock data available...')
