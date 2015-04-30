@@ -1,224 +1,139 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<inventory name="ALPAACT">
-    <recorder serial="e3358">
-        <type>Earthdata PR 6-24 Portable</type>
-        <sensor_unit label="G_NAWA-HHZ">
-            <rec_channel_name>p0</rec_channel_name>
-            <channel_name>HHZ</channel_name>
-            <sensor_serial>T34340</sensor_serial>
-            <sensor_type>Guralp 3ESP-Compact</sensor_type>
-            <channel_parameters>
-                <start_time>2010-01-01T00:00:00.000000Z</start_time>
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<inventory name="MINIMAL">
+    <sensor serial="KBA">
+        <model>unknown</model>
+        <producer>unknown</producer>
+        <description>unknown</description>
+
+        <component name="Z">
+            <description>The vertical component of the sensor.</description>
+            <component_parameter>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>2000</sensitivity>
+                <sensitivity>1</sensitivity>
                 <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="G_NAWA-HHN">
-            <rec_channel_name>p1</rec_channel_name>
-            <channel_name>HHN</channel_name>
-            <sensor_serial>T34340</sensor_serial>
-            <sensor_type>Guralp 3ESP-Compact</sensor_type>
-            <channel_parameters>
-                <start_time>2010-01-01T00:00:00.000000Z</start_time>
+            </component_parameter>            
+        </component>
+
+        <component name="N">
+            <description>The North component of the sensor.</description>
+            <component_parameter>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>2000</sensitivity>
+                <sensitivity>1</sensitivity>
                 <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="G_NAWA-HHE">
-            <rec_channel_name>p2</rec_channel_name>
-            <channel_name>HHE</channel_name>
-            <sensor_serial>T34340</sensor_serial>
-            <sensor_type>Guralp 3ESP-Compact</sensor_type>
-            <channel_parameters>
-                <start_time>2010-01-01T00:00:00.000000Z</start_time>
+            </component_parameter>            
+        </component>
+
+        <component name="E">
+            <description>The East component of the sensor.</description>
+            <component_parameter>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
-                <gain>0.4</gain>
-                <bitweight>1E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>2000</sensitivity>
+                <sensitivity>1</sensitivity>
                 <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-    </recorder>
-    <recorder serial="9D6C">
-        <type>Reftek 130-01</type>
-        <sensor_unit label="GILA-HHZ-9D6C">
-            <rec_channel_name>101</rec_channel_name>
-            <channel_name>HHZ</channel_name>
-            <sensor_serial>1417</sensor_serial>
-            <sensor_type>Geospace Seismonitor 1Hz</sensor_type>
-            <channel_parameters>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>32</gain>
-                <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="GILA-HHN-9D6C">
-            <rec_channel_name>102</rec_channel_name>
-            <channel_name>HHN</channel_name>
-            <sensor_serial>1417</sensor_serial>
-            <sensor_type>Geospace Seismonitor 1Hz</sensor_type>
-            <channel_parameters>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>32</gain>
-                <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="GILA-HHE-9D6C">
-            <rec_channel_name>103</rec_channel_name>
-            <channel_name>HHE</channel_name>
-            <sensor_serial>1417</sensor_serial>
-            <sensor_type>Geospace Seismonitor 1Hz</sensor_type>
-            <channel_parameters>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>32</gain>
-                <bitweight>1.5895E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>340.55</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-    </recorder>
-    <recorder serial="T3L30">
-        <type>Guralp 3ESPD 30s</type>
-        <sensor_unit label="SITA-HHZ-T3L30">
-            <rec_channel_name>HHZ</rec_channel_name>
-            <channel_name>HHZ</channel_name>
-            <sensor_serial>T3L30</sensor_serial>
-            <sensor_type>Guralp 3ESPD</sensor_type>
-            <channel_parameters>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+            </component_parameter>            
+        </component>
+    </sensor>  
+
+    <recorder serial="KBA">
+        <type>unknown</type>
+        <description></description>
+
+        <stream name="BHZ">
+            <label>BHZ</label>
+            <stream_parameter>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <gain>1</gain>
-                <bitweight>1.276E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>5966</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="SITA-HHN-T3L30">
-            <rec_channel_name>HHN</rec_channel_name>
-            <channel_name>HHN</channel_name>
-            <sensor_serial>T3L30</sensor_serial>
-            <sensor_type>Guralp 3ESPD</sensor_type>
-            <channel_parameters>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <bitweight>1</bitweight>
+            </stream_parameter>
+            <assigned_component>
+                <sensor_serial>KBA</sensor_serial>
+                <component_name>Z</component_name>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+            </assigned_component>
+        </stream>
+
+        <stream name="BHN">
+            <label>BHN</label>
+            <stream_parameter>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <gain>1</gain>
-                <bitweight>1.266E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>5968</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
-        <sensor_unit label="SITA-HHE-T3L30">
-            <rec_channel_name>HHE</rec_channel_name>
-            <channel_name>HHE</channel_name>
-            <sensor_serial>T3L30</sensor_serial>
-            <sensor_type>Guralp 3ESPD</sensor_type>
-            <channel_parameters>
-                <start_time>2009-01-01T00:00:00.000000Z</start_time>
+                <bitweight>1</bitweight>
+            </stream_parameter>
+            <assigned_component>
+                <sensor_serial>KBA</sensor_serial>
+                <component_name>N</component_name>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+            </assigned_component>
+        </stream>
+
+        <stream name="BHE">
+            <label>BHE</label>
+            <stream_parameter>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <gain>1</gain>
-                <bitweight>1.280E-6</bitweight>
-                <bitweight_units>V/count</bitweight_units>
-                <sensitivity>5974</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
-            </channel_parameters>
-        </sensor_unit>
+                <bitweight>1</bitweight>
+            </stream_parameter>
+            <assigned_component>
+                <sensor_serial>KBA</sensor_serial>
+                <component_name>E</component_name>
+                <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                <end_time/>
+            </assigned_component>
+        </stream>
     </recorder>
-    <station code="G_NAWA">
-        <location>00</location>
-        <xcoord>15.706528</xcoord>
-        <ycoord>47.767139</ycoord>
-        <elevation>614</elevation>
-        <coordSystem>epsg:4326</coordSystem>
-        <description>Nasswald</description>
-        <network_code>XX</network_code>
-        <assigned_sensor_unit>
-            <sensor_unit_label>G_NAWA-HHZ</sensor_unit_label>
-            <start_time>2010-05-11T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-        <assigned_sensor_unit>
-            <sensor_unit_label>G_NAWA-HHN</sensor_unit_label>
-            <start_time>2010-05-11T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-        <assigned_sensor_unit>
-            <sensor_unit_label>G_NAWA-HHE</sensor_unit_label>
-            <start_time>2010-05-11T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-    </station>
-    <station code="GILA">
-        <location>00</location>
-        <xcoord>15.887788</xcoord>
-        <ycoord>47.695770</ycoord>
-        <elevation>643</elevation>
-        <coordSystem>epsg:4326</coordSystem>
-        <description>Grillenberg</description>
-        <network_code>XX</network_code>
-        <assigned_sensor_unit>
-            <sensor_unit_label>GILA-HHZ-9D6C</sensor_unit_label>
-            <start_time>2010-02-04T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-        <assigned_sensor_unit>
-            <sensor_unit_label>GILA-HHN-9D6C</sensor_unit_label>
-            <start_time>2010-02-04T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-        <assigned_sensor_unit>
-            <sensor_unit_label>GILA-HHE-9D6C</sensor_unit_label>
-            <start_time>2010-02-04T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-    </station>
-    <station code="SITA">
-        <location>00</location>
-        <xcoord>15.622917</xcoord>
-        <ycoord>48.514472</ycoord>
-        <elevation>380</elevation>
-        <coordSystem>epsg:4326</coordSystem>
-        <description>Schiltern</description>
-        <network_code>XX</network_code>
-        <assigned_sensor_unit>
-            <sensor_unit_label>SITA-HHZ-T3L30</sensor_unit_label>
-            <start_time>2010-06-09T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-        <assigned_sensor_unit>
-            <sensor_unit_label>SITA-HHN-T3L30</sensor_unit_label>
-            <start_time>2010-06-09T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-        <assigned_sensor_unit>
-            <sensor_unit_label>SITA-HHE-T3L30</sensor_unit_label>
-            <start_time>2010-06-09T00:00:00.000000Z</start_time>
-            <end_time/>
-        </assigned_sensor_unit>
-    </station>
-    <network code="XX">
-        <code>XX</code>
-        <description>ALPAACT seismic network</description>
-        <type>Local earthquake monitoring network</type>
+
+
+    <network name="OE">
+        <description>Austrian seismological network.</description>
+        <type>permanent</type>
+
+        <station name="KBA">
+            <location></location>
+            <x>0</x>
+            <y>0</y>
+            <z>0</z>
+            <coord_system>epsg:4326</coord_system>
+            <description>KBA</description>
+
+            <channel name="BHZ">
+                <description>Description for channel BHZ.</description>
+                <assigned_stream>
+                    <recorder_serial>KBA</recorder_serial>
+                    <stream_name>BHZ</stream_name>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="BHN">
+                <description>Description for channel BHN.</description>
+                <assigned_stream>
+                    <recorder_serial>KBA</recorder_serial>
+                    <stream_name>BHN</stream_name>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+
+            <channel name="BHE">
+                <description>Description for channel BHE.</description>
+                <assigned_stream>
+                    <recorder_serial>KBA</recorder_serial>
+                    <stream_name>BHE</stream_name>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_stream>
+            </channel>
+        </station>
+
     </network>
+
 </inventory>
+
