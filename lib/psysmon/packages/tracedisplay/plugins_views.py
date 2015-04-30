@@ -202,12 +202,12 @@ class SeismogramView(View):
 
 
 
-    def plot(self, stream, color, duration, end_time, show_envelope = False, minmax_limit = 20):
+    def plot(self, stream, color, duration, end_time, show_envelope = False, minmax_limit = 20, limit_scale = 10):
         ''' Plot the seismogram.
         '''
         #display_size = wx.GetDisplaySize()
         axes_width = self.dataAxes.get_window_extent().width
-        data_plot_limit = axes_width * 0.75
+        data_plot_limit = axes_width * 0.75 * limit_scale
         self.logger.debug('data_plot_limit: %f', data_plot_limit)
         #data_plot_limit = 1e20
         for trace in stream:
