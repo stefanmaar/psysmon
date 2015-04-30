@@ -274,6 +274,20 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(cur_stream.label, 'Stream-103')
 
 
+    def test_parse_minimal_inventory(self):
+        ''' Test the parsing of a minimal xml file.
+        '''
+        xml_file = os.path.join(self.data_path, 'test_inventory_01.xml')
+        xml_parser = InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+
+        self.assertIsInstance(inventory, Inventory)
+        self.assertEqual(inventory.name, 'MINIMAL')
+
+        # Check bug FS#74
+        self.assertIsNone(inventory.networks[0].stations[0].location)
+
+
     def test_export_xmlfile(self):
         xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
         xml_parser = InventoryXmlParser()
