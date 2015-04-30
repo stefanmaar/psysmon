@@ -1501,7 +1501,7 @@ class Station(object):
         if location:
             self.location = str(location)
         else:
-            self.location = None
+            self.location = '--'
 
         ## The station description.
         #

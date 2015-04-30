@@ -285,7 +285,7 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(inventory.name, 'MINIMAL')
 
         # Check bug FS#74
-        self.assertIsNone(inventory.networks[0].stations[0].location)
+        self.assertEqual(inventory.networks[0].stations[0].location, '--')
 
 
     def test_export_xmlfile(self):
