@@ -91,11 +91,11 @@ if __name__ == "__main__":
     project.loadDatabaseStructure(packages)
     project.load_geometry_inventory()
 
-    for curName, curMode, curOptions in waveclients:
+    for curName, curMode, curAttributes in waveclients:
         if curMode == 'PsysmonDbWaveClient':
             waveclient = PsysmonDbWaveClient(curName, project)
         elif curMode == 'EarthwormWaveclient':
-            waveclient = EarthwormWaveclient(curName, **curOptions)
+            waveclient = EarthwormWaveclient(curName, **curAttributes)
         else:
             waveclient = None
 

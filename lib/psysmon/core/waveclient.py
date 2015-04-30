@@ -35,7 +35,7 @@ from obspy.core import read, Stream
 from obspy.earthworm import Client
 import numpy as np
 
-class WaveClient:
+class WaveClient(object):
     '''The WaveClient class.
 
 
@@ -87,6 +87,14 @@ class WaveClient:
 
         '''
         return self.__class__.__name__
+
+    @property
+    def pickle_attributes(self):
+        ''' The attributes which can be pickled.
+        '''
+        d = {}
+        d['stock_window'] = self.stock_window
+        return d
 
 
     def get_from_stock(self, network, station, location, channel, start_time, end_time):
@@ -527,6 +535,15 @@ class EarthwormWaveclient(WaveClient):
         self.client = Client(self.host,
                              self.port,
                              timeout=2)
+
+    @property
+    def pickle_attributes(self):
+        ''' The attributes which can be pickled.
+        '''
+        d = super(EarthwormWaveclient, self).pickle_attributes
+        d['host'] = self.host
+        d['port'] = self.port
+        return d
 
 
     def getWaveform(self,

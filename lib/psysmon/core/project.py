@@ -1370,7 +1370,7 @@ class User:
             db['collection'] = col2Proc
             db['packages'] = project.psybase.packageMgr.packages
             db['package_directories'] = project.psybase.packageMgr.packageDirectories
-            db['waveclient'] = [(x.name, x.mode, x.options) for x in project.waveclient.itervalues()]
+            db['waveclient'] = [(x.name, x.mode, x.pickle_attributes) for x in project.waveclient.itervalues()]
             db['project_server'] = project.psybase.project_server
             db.close()
 
