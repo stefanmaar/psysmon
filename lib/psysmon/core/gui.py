@@ -1718,9 +1718,9 @@ class EarthwormWaveclientOptions(wx.Panel):
         self.nameLabel = wx.StaticText(self, -1, "name:")
         self.nameEdit = wx.TextCtrl(self, -1, self.client.name, size=(100, -1))
         self.hostLabel = wx.StaticText(self, -1, "host:")
-        self.hostEdit = wx.TextCtrl(self, -1, self.client.options['host'], size=(100, -1))
+        self.hostEdit = wx.TextCtrl(self, -1, self.client.host, size=(100, -1))
         self.portLabel = wx.StaticText(self, -1, "port:")
-        self.portEdit = wx.TextCtrl(self, -1, str(self.client.options['port']), size=(100, -1))
+        self.portEdit = wx.TextCtrl(self, -1, str(self.client.port), size=(100, -1))
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1748,8 +1748,8 @@ class EarthwormWaveclientOptions(wx.Panel):
         the ok button.
         '''
         self.client.name = self.nameEdit.GetValue()
-        self.client.options['host'] = self.hostEdit.GetValue()
-        self.client.options['port'] = int(self.portEdit.GetValue())
+        self.client.host = self.hostEdit.GetValue()
+        self.client.port = int(self.portEdit.GetValue())
         self.logger.debug(self.client.name)
         return self.client
 

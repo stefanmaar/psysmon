@@ -44,7 +44,7 @@ class WaveClient:
 
     '''
 
-    def __init__(self, name, stock_window = 3600, options = {}):
+    def __init__(self, name, stock_window = 3600):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -64,12 +64,6 @@ class WaveClient:
 
         # The name of the waveclient.
         self.name = name
-
-        # The options of the waveclient.
-        # The options can vary depending on the mode of the waveclient.
-        # The options attribute is a dictionary with the option name as the key
-        # and the option values as the value.
-        self.options = options
 
         # The available data of the waveclient. This includes the
         # currently displayed time period and the preloaded data in
@@ -524,14 +518,14 @@ class EarthwormWaveclient(WaveClient):
         WaveClient.__init__(self, name=name, **kwargs)
 
         # The Earthworm waveserver host to which the client should connect.
-        self.options['host'] = host
+        self.host = host
 
         # The port on which the Eartworm waveserver is running on host.
-        self.options['port'] = port
+        self.port = port
 
         # The obspy earthworm waveserver client instance.
-        self.client = Client(self.options['host'],
-                             self.options['port'],
+        self.client = Client(self.host,
+                             self.port,
                              timeout=2)
 
 
