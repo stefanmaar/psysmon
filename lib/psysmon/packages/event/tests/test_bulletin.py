@@ -51,6 +51,13 @@ class BulletinTestCase(unittest.TestCase):
         self.assertEqual(cur_events[0].public_id, '112460')
         self.assertEqual(cur_events[0].description, 'Southeast of Honshu, Japan')
 
+        bulletin_file = os.path.join(self.data_path, 'bulletin_zamg_ims1.0_1.txt')
+        parser = bulletin.ImsParser()
+        parser.parse(bulletin_file)
+        catalog = parser.get_catalog()
+
+        cur_events = catalog.events
+        self.assertEqual(len(cur_events), 13)
 
 
 

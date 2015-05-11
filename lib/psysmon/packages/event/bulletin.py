@@ -107,11 +107,19 @@ class ImsParser(object):
             if len(cur_event_dict['origins']) == 0:
                 self.logger.error("No origins found for event %s. Can't compute the start time.", cur_event_dict['event_id'])
 
-            start_time = min([x['starttime'] for x in cur_event_dict['origins']])
-            end_time = max([utcdatetime.UTCDateTime(start_time.year, start_time.month, start_time.day,
+            orig_start_time = min([x['starttime'] for x in cur_event_dict['origins']])
+            start_time = min([utcdatetime.UTCDateTime(orig_start_time.year, orig_start_time.month, orig_start_time.day,
                             x['arrival_time']['hour'], x['arrival_time']['minute'],
                             int(x['arrival_time']['second']),
                             int(round((x['arrival_time']['second'] - int(x['arrival_time']['second'])) * 1000000))) for x in cur_event_dict['phases']])
+            end_time = max([utcdatetime.UTCDateTime(orig_start_time.year, orig_start_time.month, orig_start_time.day,
+                            x['arrival_time']['hour'], x['arrival_time']['minute'],
+                            int(x['arrival_time']['second']),
+                            int(round((x['arrival_time']['second'] - int(x['arrival_time']['second'])) * 1000000))) for x in cur_event_dict['phases']])
+
+            if start_time == end_time:
+                end_time = start_time + 1;
+
             # TODO: The event type should be an instance of an event_type class
             # which is related to the event_type database table.
             cur_event = ev_core.Event(start_time = start_time,
