@@ -280,11 +280,12 @@ class PrefEditPanel(wx.Panel):
         pagenames = sorted(self.pref.pages.keys())
 
         for cur_pagename in pagenames:
-            panel = PrefPagePanel(parent = self.notebook, 
-                                  id = wx.ID_ANY,
-                                  items = self.pref.pages[cur_pagename]
-                                 )
-            self.notebook.AddPage(panel, cur_pagename)
+            if self.pref.pages[cur_pagename]:
+                panel = PrefPagePanel(parent = self.notebook, 
+                                      id = wx.ID_ANY,
+                                      items = self.pref.pages[cur_pagename]
+                                     )
+                self.notebook.AddPage(panel, cur_pagename)
 
 
 
