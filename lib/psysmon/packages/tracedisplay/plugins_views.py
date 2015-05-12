@@ -542,7 +542,7 @@ class SpectrogramPlotter(ViewPlugin):
         self.logger = logging.getLogger(loggerName)
 
         # Define the plugin icons.
-        self.icons['active'] = icons.twitter_icon_16
+        self.icons['active'] = icons._3x3_grid_2_icon_16
 
 
     def plot(self, displayManager, dataManager):

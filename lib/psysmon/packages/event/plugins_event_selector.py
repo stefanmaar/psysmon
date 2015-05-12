@@ -49,7 +49,7 @@ class SelectEvents(OptionPlugin):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.icons['active'] = icons.pin_map_icon_16
+        self.icons['active'] = icons.flag_icon_16
 
         # Setup the pages of the preference manager.
         self.pref_manager.add_page('Select')

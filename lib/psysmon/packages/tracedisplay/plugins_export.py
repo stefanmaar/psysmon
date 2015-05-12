@@ -45,7 +45,7 @@ class ExportVisible(plugins.CommandPlugin):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.icons['active'] = icons.iconsBlack16.pin_map_icon_16
+        self.icons['active'] = icons.iconsBlack16.export_icon_16
 
 
     def run(self):
@@ -76,7 +76,7 @@ class ExportOriginal(plugins.CommandPlugin):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.icons['active'] = icons.iconsBlack16.pin_map_icon_16
+        self.icons['active'] = icons.iconsBlack16.export_icon_16
 
 
     def run(self):
