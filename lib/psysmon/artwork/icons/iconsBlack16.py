@@ -4966,4 +4966,14 @@ measure_icon_16 = PyEmbeddedImage(
     "AFSIExacccelZk8vmJI4FGePI04FazV7evW8N5iRj75+0cGcpAvY0nOS8RDXDB642X6VZ3m0"
     "/yuPA16wkDw2k/p1NAAAAABJRU5ErkJggg==")
 
-
+#----------------------------------------------------------------------
+event_new_16 = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAA"
+    "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wUMCwYiIuU9EQAAAVZJREFUOMudkD1uwkAQ"
+    "Rr9d27CwsGyExF+BaJAQEko4AjfwEeKbkBNwBMgJaNInN7AbeiMhxVC5R9aXJlgEAcJ50mwx"
+    "mnmzMw4eZDqd2l6v993pdPZJkkSnvPNI82Qy8UmuSXZI+u12e7vf7yMAEKei8XhshRALIcTr"
+    "I1KSwWazWeWC0Wi0BuCjGEEuGA6HxD/Ib2Ct3ZL0SaJAvLn9fn8O4Pl4PAZSSgBYXgxJAUQX"
+    "uVgI8R7H8ZebZdnz7+6DLMtmUkqQXAKAEGK12+2CeyuIbrdrSX4CeAEQkZxJKX2SiyRJni6P"
+    "f96bP61W65pkcDgcoocEANBsNnMJyYjkLE3T9ErjbRqNhjXGhMYYGmPCer1uzwS34i+1Ws1q"
+    "rUOtNbXWYbVatYUEAFCpVKxSKlRKUSkVlstlXPnJfUqlkvU8L/Q8j67rfhQWAIDjOFZKuZZS"
+    "zm/V/ABGubMn3Fno3wAAAABJRU5ErkJggg==")
