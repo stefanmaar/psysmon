@@ -1991,6 +1991,10 @@ class DataManager():
         cur_stream = Stream()
 
         for curStat, curChan, curNet, curLoc in scnl:
+            if curLoc == '--':
+                # Convert location to obspy convention.
+                curLoc = None
+
             cur_stream += self.origStream.select(station = curStat,
                                                  network = curNet,
                                                  location = curLoc,
