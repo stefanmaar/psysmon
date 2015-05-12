@@ -426,6 +426,11 @@ class Library(object):
         else:
             return None
 
+    def clear(self):
+        ''' Remove all catalogs.
+        '''
+        self.catalogs = {}
+
 
     def get_catalogs_in_db(self, project):
         ''' Query the available catalogs in the database.
