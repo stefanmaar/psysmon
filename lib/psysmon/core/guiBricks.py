@@ -32,6 +32,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 #import wx.lib.rcsizer  as rcs
 import psysmon.core.preferences_manager as psy_pm
 from operator import itemgetter
+import wx.lib.mixins.listctrl as listmix
 
 
 
@@ -933,7 +934,7 @@ class DateTimeEditField(Field):
 
 
 
-class ListCtrlEditField(Field):
+class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     ''' A field to edit a list using a wx.ListCtrl.
     '''
     def __init__(self, name, pref_item, size, parent=None):
@@ -941,6 +942,12 @@ class ListCtrlEditField(Field):
 
         '''
         Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
+
+        # Used by ColumnSorterMixin.
+        self.itemDataMap = {}
+        self.il = wx.ImageList(16, 16)
+        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
+        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
 
         # Create the icons for column sorting.
         self.il = wx.ImageList(16, 16)
@@ -968,9 +975,22 @@ class ListCtrlEditField(Field):
 
         self.fill_listctrl(data = pref_item.value)
 
+        listmix.ColumnSorterMixin.__init__(self, len(pref_item.column_labels))
+
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
+
+    def GetListCtrl(self):
+        ''' Used by ColumnSorterMixin.
+        '''
+        return self.controlElement
+
+
+    def GetSortImages(self):
+        ''' Used by ColumnSorterMixin.
+        '''
+        return (self.sm_dn, self.sm_up)
 
 
     def fill_listctrl(self, data):
@@ -983,6 +1003,9 @@ class ListCtrlEditField(Field):
                     self.controlElement.InsertStringItem(index, str(cur_data))
                 else:
                     self.controlElement.SetStringItem(index, k, str(cur_data))
+
+            self.itemDataMap[index] = cur_row
+            self.controlElement.SetItemData(index, index)
 
             index += 1
 
