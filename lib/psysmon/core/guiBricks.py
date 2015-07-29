@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -984,6 +985,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         self.addLabel(self.labelElement)
         self.addControl(self.controlElement)
 
+
     def GetListCtrl(self):
         ''' Used by ColumnSorterMixin.
         '''
@@ -1010,7 +1012,11 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
             self.itemDataMap[index] = cur_row
             self.controlElement.SetItemData(index, index)
 
+            if cur_row in self.pref_item.value:
+                self.controlElement.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+
             index += 1
+
 
 
     def on_item_selected(self, event):
