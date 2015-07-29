@@ -165,24 +165,24 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
         dlg.Destroy()
 
 
-    def execute(self):
+    def execute(self, prevNodeOutput = {}):
         '''
         '''
-        window_length = self.pref_manager.window_length
-        window_overlap = self.pref_manager.window_overlap
-        start_time = self.pref_manager.start_time
-        end_time = self.pref_manager.end_time
+        window_length = self.pref_manager.get_value('window_length')
+        window_overlap = self.pref_manager.get_value('window_overlap')
+        start_time = self.pref_manager.get_value('start_time')
+        end_time = self.pref_manager.get_value('end_time')
 
 	# Split the timespan into processing chunks.
         overlap_length = window_length * (1 - window_overlap/100.)
 
         windows_between = int((end_time - start_time)/overlap_length)
-        window_list = [start_time + x * window_length for x in range(windows_between)]
+        window_list = [start_time + x * overlap_length for x in range(windows_between)]
 	window_list[0] = start_time
 
 
         # Process each SCNL
-        for cur_scnl in self.scnl_list:
+        for cur_scnl in self.pref_manager.get_value('scnl_list'):
             # Get the channel instance from the inventory.
 
             window_psd = []
