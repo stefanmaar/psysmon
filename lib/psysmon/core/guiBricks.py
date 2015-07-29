@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -1016,7 +1015,6 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
                 self.controlElement.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
 
             index += 1
-
 
 
     def on_item_selected(self, event):
