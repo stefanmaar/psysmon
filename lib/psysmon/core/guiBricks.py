@@ -965,7 +965,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
                                           id = wx.ID_ANY,
                                           style=wx.LC_REPORT
                                           | wx.BORDER_NONE
-                                          | wx.LC_SINGLE_SEL
+                                          #| wx.LC_SINGLE_SEL
                                           | wx.LC_SORT_ASCENDING
                                           )
         self.controlElement.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
@@ -973,9 +973,12 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         for k, cur_label in enumerate(pref_item.column_labels):
             self.controlElement.InsertColumn(k, cur_label)
 
-        self.fill_listctrl(data = pref_item.value)
+        self.fill_listctrl(data = pref_item.limit)
 
         listmix.ColumnSorterMixin.__init__(self, len(pref_item.column_labels))
+
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected, self.controlElement)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_deselected, self.controlElement)
 
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
@@ -1008,6 +1011,21 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
             self.controlElement.SetItemData(index, index)
 
             index += 1
+
+
+    def on_item_selected(self, event):
+        '''
+        '''
+        self.pref_item.value.append(self.pref_item.limit[event.m_itemIndex])
+
+
+    def on_item_deselected(self, event):
+        '''
+        '''
+        self.pref_item.value.remove(self.pref_item.limit[event.m_itemIndex])
+
+
+
 
 
 
