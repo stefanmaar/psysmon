@@ -44,6 +44,8 @@ Examples
 
     >>> python psysmon
 '''
+import matplotlib as mpl
+mpl.rcParams['backend'] = 'WXAgg'
 
 import psysmon
 import psysmon.core.gui as psygui
@@ -77,7 +79,6 @@ def run():
     logger = logging.getLogger('psysmon')
     logger.setLevel(psysmon.logConfig['level'])
     logger.addHandler(psysmon.getLoggerHandler())
-
 
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
