@@ -28,6 +28,9 @@ The pSysmon main program.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+import matplotlib as mpl
+mpl.rcParams['backend'] = 'WXAgg'
+
 import psysmon
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 import psysmon.core.base as psybase
