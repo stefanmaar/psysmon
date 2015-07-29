@@ -131,7 +131,8 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
         # Add a list grid edit field.
         item = ListCtrlEditPrefItem(name = 'list ctrl',
                                     group = 'list editor',
-                                    value = [[11, 12, 13, 14],[21, 22, 23,24]],
+                                    value = [],
+                                    limit = [[11, 12, 13, 14],[21, 22, 23,24]],
                                     column_labels = ['eins', 'zwei', 'drei', 'vier'],
                                     tool_tip = 'tooltip of the list ctrl edit control element'
                                    )
