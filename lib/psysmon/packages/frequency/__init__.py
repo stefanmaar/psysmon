@@ -26,7 +26,7 @@ description = "Frequency analysis tools."            # The package description.
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['compute_psd']
+collection_node_modules = ['compute_psd', 'create_psd_images']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
