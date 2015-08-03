@@ -1020,7 +1020,9 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_selected(self, event):
         '''
         '''
-        self.pref_item.value.append(self.pref_item.limit[event.m_itemIndex])
+        selected_value = self.pref_item.limit[event.m_itemIndex]
+        if selected_value not in self.pref_item.value:
+            self.pref_item.value.append(selected_value)
 
 
     def on_item_deselected(self, event):
