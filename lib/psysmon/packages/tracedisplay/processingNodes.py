@@ -319,27 +319,48 @@ class ConvertToSensorUnits(ProcessingNode):
             The data to process.
         '''
         for tr in stream.traces:
-            station = self.parentStack.inventory.get_station(network = tr.stats.network,
-                                                             name = tr.stats.station,
-                                                             location = tr.stats.location)
+            station = self.parentStack.project.geometry_inventory.get_station(network = tr.stats.network,
+                                                                              name = tr.stats.station,
+                                                                              location = tr.stats.location)
             if len(station) > 1:
                 raise ValueError('There are more than one stations. This is not yet supported.')
             station = station[0]
-            sensor = station.get_sensor(channel_name = tr.stats.channel,
-                                        start_time = tr.stats.starttime,
-                                        end_time = tr.stats.endtime)
-            if len(sensor) > 1:
-                raise ValueError('There are more than one sensors. This is not yet supported.')
-            sensor = sensor[0]
-            param = sensor[0].get_parameter(start_time = tr.stats.starttime,
-                                            end_time = tr.stats.endtime)
 
-            if len(param) > 1:
-                raise ValueError('There are more than one parameters. This is not yet supported.')
+            channel = station.get_channel(name = tr.stats.channel)
 
-            param = param[0]
+            if len(channel) > 1:
+                raise ValueError('There are more than one channels. This is not yet supported.')
+            channel = channel[0]
 
-            tr.data = tr.data * param.bitweight / (param.gain * param.sensitivity)
+            stream_tb = channel.get_stream(start_time = tr.stats.starttime,
+                                           end_time = tr.stats.endtime)
+
+            if len(stream_tb) > 1:
+                raise ValueError('There are more than one recorder streams. This is not yet supported.')
+            rec_stream = stream_tb[0].item
+
+            rec_stream_param = rec_stream.get_parameter(start_time = tr.stats.starttime,
+                                                        end_time = tr.stats.endtime)
+            if len(rec_stream_param) > 1:
+                raise ValueError('There are more than one recorder stream parameters. This is not yet supported.')
+            rec_stream_param = rec_stream_param[0]
+
+
+            components_tb = rec_stream.get_component(start_time = tr.stats.starttime,
+                                                     end_time = tr.stats.endtime)
+
+            if len(components_tb) > 1:
+                raise ValueError('There are more than one components. This is not yet supported.')
+            component = components_tb[0].item
+            comp_param = component.get_parameter(start_time = tr.stats.starttime,
+                                                 end_time = tr.stats.endtime)
+
+            if len(comp_param) > 1:
+                raise ValueError('There are more than one parameters for this component. This is not yet supported.')
+
+            comp_param = comp_param[0]
+
+            tr.data = tr.data * rec_stream_param.bitweight / (rec_stream_param.gain * comp_param.sensitivity)
 
 
 class ScaleLog10(ProcessingNode):
