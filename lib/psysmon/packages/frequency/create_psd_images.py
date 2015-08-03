@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -361,7 +360,6 @@ class PSDPlotter:
         time = time - self.starttime
         time = time / 3600.
 
-        ipdb.set_trace() ############################## Breakpoint ##############################
         cur_scnl = (self.station, self.channel, self.network, self.location)
         dpi = 300.
         plot_length = self.endtime - self.starttime
@@ -373,8 +371,8 @@ class PSDPlotter:
         ax.set_ylim((min_frequ, np.max(frequ)))
         ax.set_xlim((0, (self.endtime - self.starttime)/3600.))
         amp_resp = 10 * np.log10(np.abs(psd_matrix))
-        #pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
-        pcm = ax.pcolormesh(time, frequ, amp_resp)
+        pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+        #pcm = ax.pcolormesh(time, frequ, amp_resp)
         cb = plt.colorbar(pcm, ax = ax)
         cb.set_label('PSD [(m/s)^2/Hz] in dB')
         xlim = ax.get_xlim()
