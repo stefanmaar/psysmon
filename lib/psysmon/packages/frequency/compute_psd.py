@@ -30,10 +30,14 @@ The importWaveform module.
 '''
 import os
 import shelve
+import copy
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
+from psysmon.core.processingStack import ProcessingStack
+
 import obspy.core
 from obspy.core.utcdatetime import UTCDateTime
 import matplotlib.mlab as mlab
@@ -52,6 +56,7 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
 
         self.create_time_and_component_prefs()
         self.create_parameters_prefs()
+        self.create_processing_prefs()
         self.create_output_prefs()
 
 
@@ -140,10 +145,26 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
                                    item = pref_item)
 
 
+    def create_processing_prefs(self):
+        ''' Create the processing preference items.
+        '''
+        pagename = '3 processing'
+        self.pref_manager.add_page(pagename)
+
+        item = psy_pm.CustomPrefItem(name = 'processing_stack',
+                                     label = 'processing stack',
+                                     group = 'signal processing',
+                                     value = None,
+                                     gui_class = PStackEditField,
+                                     tool_tip = 'Edit the processing stack nodes.')
+        self.pref_manager.add_item(pagename = pagename,
+                                   item = item)
+
+
     def create_output_prefs(self):
         ''' Create the output preference items.
         '''
-        pagename = '3 output'
+        pagename = '4 output'
         self.pref_manager.add_page(pagename)
 
         item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
@@ -164,6 +185,15 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
             channels = sorted([x.scnl for x in self.project.geometry_inventory.get_channel()])
             self.pref_manager.set_limit('scnl_list', channels)
 
+        # Initialize the processing stack.
+        processing_nodes = self.project.getProcessingNodes(('common', ))
+        if self.pref_manager.get_value('processing_stack') is None:
+                detrend_node_template = [x for x in processing_nodes if x.name == 'detrend'][0]
+                detrend_node = copy.deepcopy(detrend_node_template)
+                self.pref_manager.set_value('processing_stack', [detrend_node, ])
+
+        self.pref_manager.set_limit('processing_stack', processing_nodes)
+
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
@@ -178,6 +208,11 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
         end_time = self.pref_manager.get_value('end_time')
         psd_nfft = self.pref_manager.get_value('psd_nfft')
         psd_overlap = self.pref_manager.get_value('psd_overlap')
+
+        # Create a processing stack instance.
+        processing_stack = ProcessingStack(name = 'pstack',
+                                           project = self.project,
+                                           nodes = self.pref_manager.get_value('processing_stack'))
 
 	# Split the timespan into processing chunks.
         overlap_length = window_length * (1 - window_overlap/100.)
@@ -235,17 +270,13 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
                     # Detrend the data.
                     try:
                         cur_stream = cur_stream.split()
-                        cur_stream.detrend(type = 'constant')
+                        processing_stack.execute(cur_stream)
                     except Exception as e:
                         self.logger.error('Error when processing the stream %s:\n%s', str(cur_stream), e)
                         continue
 
                     # Merge the stream again.
                     cur_stream = cur_stream.merge()
-
-                    # Get the sensor parameters.
-
-                    # If sensor parameters are available: convert to velocity.
 
                     # Compute the PSD using matplotlib.mlab.psd
                     n_overlap = psd_nfft / 100 * psd_overlap
