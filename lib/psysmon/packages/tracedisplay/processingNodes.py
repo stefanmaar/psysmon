@@ -361,6 +361,7 @@ class ConvertToSensorUnits(ProcessingNode):
             comp_param = comp_param[0]
 
             tr.data = tr.data * rec_stream_param.bitweight / (rec_stream_param.gain * comp_param.sensitivity)
+            tr.stats.units = component.output_unit.strip()
 
 
 class ScaleLog10(ProcessingNode):
