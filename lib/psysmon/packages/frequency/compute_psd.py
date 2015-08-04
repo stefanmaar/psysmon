@@ -288,6 +288,19 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
                     if P.ndim == 2:
                         P = P.squeeze()
 
+                    # Get the units of the trace data.
+                    unit = []
+                    for cur_trace in cur_stream:
+                        cur_unit = cur_trace.stats.unit
+                        if cur_unit not in unit:
+                            unit.append(cur_unit)
+
+                    if len(unit) != 1:
+                        self.logger.error('Found more than one unit definition for the stream %s: %s.', cur_stream, unit)
+                        unit = 'undefined'
+                    else:
+                        unit = unit[0]
+
                     # Append the psd data to the window_psd list.
                     #psd_data.append((cur_window_start, frequ, P, window_length, window_overlap,
                     #                   psd_nfft, psd_overlap, cur_scnl))
@@ -299,6 +312,7 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
                     cur_psd['psd_nfft'] = psd_nfft
                     cur_psd['psd_overlap'] = psd_overlap
                     cur_psd['scnl'] = cur_scnl
+                    cur_psd['unit'] = unit
                     psd_data[cur_window_start.isoformat()] = cur_psd
                 else:
                     #psd_data.append((cur_window_start, None, None, window_length, window_overlap,
@@ -311,6 +325,7 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
                     cur_psd['psd_nfft'] = psd_nfft
                     cur_psd['psd_overlap'] = psd_overlap
                     cur_psd['scnl'] = cur_scnl
+                    cur_psd['unit'] = 'undefined'
                     psd_data[cur_window_start.isoformat()] = cur_psd
 
             # Save the remaining psd data.
