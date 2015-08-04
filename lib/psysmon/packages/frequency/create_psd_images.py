@@ -140,6 +140,14 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
         self.pref_manager.add_item(pagename = pagename,
                                    item = item)
 
+        item = psy_pm.CheckBoxPrefItem(name = 'with_average_plot',
+                                       label = 'with average plot',
+                                       group = 'output',
+                                       value = False,
+                                       tool_tip = 'Add the temporal average with noise models to the PSD plot.')
+        self.pref_manager.add_item(pagename = pagename,
+                                   item = item)
+
 
 
 
@@ -334,6 +342,18 @@ class PSDPlotter:
             psd_data.update(cur_psd_data)
 
 
+        unit = [x['unit'] for x in psd_data.itervalues() if x['P'] is not None]
+        unit = list(set(unit))
+
+        if len(unit) == 0:
+            self.logger.error('No unit specifier was found: %s. I set the unit to undefined.', unit)
+            unit = 'undefined'
+        if len(unit) == 1:
+            unit = unit[0]
+        else:
+            self.logger.error('More than one unit specifier were found: %s. I set the unit to undefined.', unit)
+            unit = 'undefined'
+
         # Plot the psd data to file.
         self.logger.info("Creating the images.")
         min_frequ = 0.1
@@ -352,7 +372,9 @@ class PSDPlotter:
                     frequ = cur_psd['frequ']
 
             else:
-                psd_matrix[:,m] = 1
+                psd_matrix[:,m] = np.nan
+
+        psd_matrix = np.ma.masked_where(np.isnan(psd_matrix), psd_matrix)
 
         #psd_matrix = psd_matrix[frequ >= min_frequ, :]
 
@@ -365,18 +387,38 @@ class PSDPlotter:
         plot_length = self.endtime - self.starttime
         width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
         height = 6
+        if width < height:
+            width = height
         fig = plt.figure(figsize=(width, height), dpi = dpi)
         ax = fig.add_subplot(111)
         ax.set_yscale('log')
         ax.set_ylim((min_frequ, np.max(frequ)))
         ax.set_xlim((0, (self.endtime - self.starttime)/3600.))
         amp_resp = 10 * np.log10(np.abs(psd_matrix))
-        pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
-        #pcm = ax.pcolormesh(time, frequ, amp_resp)
+        if unit == 'm/s':
+            pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+            unit_label = '(m/s)^2/Hz'
+        elif unit == 'm/s^2':
+            pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+            unit_label = '(m/s^2)^2/Hz'
+        elif unit == 'counts':
+            pcm = ax.pcolormesh(time, frequ, amp_resp)
+            unit_label = 'counts^2/Hz'
+        else:
+            pcm = ax.pcolormesh(time, frequ, amp_resp)
+            unit_label = '???^2/Hz'
+
         cb = plt.colorbar(pcm, ax = ax)
-        cb.set_label('PSD [(m/s)^2/Hz] in dB')
+        cb.set_label('PSD ' + unit_label + ' in dB')
         xlim = ax.get_xlim()
-        xticks = np.arange(xlim[0],xlim[1], 24)
+
+        if plot_length <= 86400:
+            tick_interval = 2
+        elif plot_length <= 86400 * 7:
+            tick_interval = 12
+        else:
+            tick_interval = 24
+        xticks = np.arange(xlim[0],xlim[1], tick_interval)
         xticks = np.append(xticks, xlim[1])
         ax.set_xticks(xticks)
         ax.set_xlabel('Time since %s [h]' % self.starttime.isoformat())
