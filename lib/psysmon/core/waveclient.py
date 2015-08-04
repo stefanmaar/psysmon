@@ -484,7 +484,7 @@ class PsysmonDbWaveClient(WaveClient):
                         curTrace.stats.station = station
                         curTrace.stats.location = location
                         curTrace.stats.channel = channel
-                        curTrace.stats.units = 'counts'
+                        curTrace.stats.unit = 'counts'
 
                     data_stream += cur_data_stream
 
@@ -646,7 +646,7 @@ class EarthwormWaveclient(WaveClient):
                                              start_time,
                                              end_time)
             for cur_trace in stream:
-                cur_trace.stats.units = 'counts'
+                cur_trace.stats.unit = 'counts'
             self.logger.debug('got waveform: %s', stream)
             self.logger.debug('leave try')
         except Exception as e:
