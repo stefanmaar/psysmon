@@ -490,9 +490,17 @@ class ProjectFileEncoder(json.JSONEncoder):
     def object_to_dict(self, obj, attr):
         ''' Copy selceted attributes of object to a dictionary.
         '''
+        def hint_tuples(item):
+            if isinstance(item, tuple):
+                return {'__tuple__': True, 'items': item}
+            if isinstance(item, list):
+                return [hint_tuples(e) for e in item]
+            else:
+                return item
+
         d = {}
         for cur_attr in attr:
-            d[cur_attr] = getattr(obj, cur_attr)
+            d[cur_attr] = hint_tuples(getattr(obj, cur_attr))
 
         return d
 
@@ -540,6 +548,16 @@ class ProjectFileDecoder(json.JSONDecoder):
             inst = d
 
         return inst
+
+
+    def decode_hinted_tuple(self, item):
+        if isinstance(item, dict):
+            if '__tuple__' in item:
+                return tuple(item['items'])
+        elif isinstance(item, list):
+                return [self.decode_hinted_tuple(x) for x in item]
+        else:
+            return item
 
 
     def convert_project(self, d):
@@ -605,7 +623,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -616,7 +634,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -626,7 +644,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
         inst = class_(**args)
         return inst
 
@@ -635,7 +653,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
         inst = class_(**args)
         return inst
 
@@ -644,7 +662,7 @@ class ProjectFileDecoder(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), value) for key, value in d.items())
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
         inst = class_(**args)
         return inst
 
