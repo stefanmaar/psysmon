@@ -499,14 +499,17 @@ class ImportWaveformEditDlg(wx.Frame):
 
         wildCard = ""
         for curKey in sorted(wildCards.iterkeys()):
-            wildCard = wildCard + wildCards[curKey]
+            if not wildCard:
+                wildCard = wildCards[curKey]
+            else:
+                wildCard = wildCard + '|' + wildCards[curKey]
 
-        wildCard = wildCard + 'All files (*)|*|'
+        wildCard = wildCard + ' |All files (*)|*'
 
 
         dlg = wx.FileDialog(
             self, message="Choose a file",
-            defaultDir=os.getcwd(), 
+            defaultDir=os.getcwd(),
             defaultFile="",
             wildcard=wildCard,
             style=wx.OPEN | wx.MULTIPLE
@@ -661,8 +664,8 @@ class ImportWaveformEditDlg(wx.Frame):
 
 
     def getWildCardData(self):
-        return {'mseed': 'miniSeed (*.msd; *.mseed)|*.msd;*.mseed| ', 
-                'gse2': 'gse2 (*.gse; *.gse2)|*.gse; *.gse2| '
+        return {'mseed': 'miniSeed (*.msd; *.mseed)|*.msd;*.mseed', 
+                'gse2': 'gse2 (*.gse; *.gse2)|*.gse; *.gse2'
                 }
 
 
