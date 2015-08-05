@@ -18,6 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib as mpl
+mpl.rcParams['backend'] = 'WXAgg'
+
 import unittest
 import nose.plugins.attrib as nose_attrib
 import psysmon
