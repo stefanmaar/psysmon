@@ -36,11 +36,13 @@ import re
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from obspy.core.utcdatetime import UTCDateTime
+import obspy.signal
 
 
 class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
@@ -205,7 +207,8 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
                                          starttime = cur_start,
                                          endtime = cur_end,
                                          data_dir = self.pref_manager.get_value('data_dir'),
-                                         output_dir = self.pref_manager.get_value('output_dir'))
+                                         output_dir = self.pref_manager.get_value('output_dir'),
+                                         with_average_plot = self.pref_manager.get_value('with_average_plot'))
 
                 psd_plotter.plot()
 
@@ -215,7 +218,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
 
 class PSDPlotter:
 
-    def __init__(self, station, channel, network, location, data_dir, output_dir, starttime = None, endtime = None):
+    def __init__(self, station, channel, network, location, data_dir, output_dir, starttime = None, endtime = None, with_average_plot = False):
         ''' The constructor.
 
         '''
@@ -239,6 +242,8 @@ class PSDPlotter:
         self.starttime = starttime
 
         self.endtime = endtime
+
+        self.with_average_plot = True
 
 
     def scan_for_files(self):
@@ -390,27 +395,68 @@ class PSDPlotter:
         if width < height:
             width = height
         fig = plt.figure(figsize=(width, height), dpi = dpi)
-        ax = fig.add_subplot(111)
-        ax.set_yscale('log')
-        ax.set_ylim((min_frequ, np.max(frequ)))
-        ax.set_xlim((0, (self.endtime - self.starttime)/3600.))
+        if self.with_average_plot:
+            gs = gridspec.GridSpec(1, 4)
+            ax_avg = fig.add_subplot(gs[0, 0])
+            ax_psd = fig.add_subplot(gs[0, 1:])
+            ax_avg.set_yscale('log')
+            ax_avg.set_ylim((min_frequ, np.max(frequ)))
+        else:
+            ax_psd = fig.add_subplot(111)
+
+        ax_psd.set_yscale('log')
+        ax_psd.set_ylim((min_frequ, np.max(frequ)))
+        ax_psd.set_xlim((0, (self.endtime - self.starttime)/3600.))
         amp_resp = 10 * np.log10(np.abs(psd_matrix))
         if unit == 'm/s':
-            pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
             unit_label = '(m/s)^2/Hz'
         elif unit == 'm/s^2':
-            pcm = ax.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
             unit_label = '(m/s^2)^2/Hz'
         elif unit == 'counts':
-            pcm = ax.pcolormesh(time, frequ, amp_resp)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp)
             unit_label = 'counts^2/Hz'
         else:
-            pcm = ax.pcolormesh(time, frequ, amp_resp)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp)
             unit_label = '???^2/Hz'
 
-        cb = plt.colorbar(pcm, ax = ax)
+        if self.with_average_plot:
+            avg_amp_resp = np.mean(amp_resp, 1)
+            med_amp_resp = np.median(amp_resp, 1)
+            p_nhnm, nhnm = obspy.signal.spectral_estimation.get_NHNM()
+            p_nlnm, nlnm = obspy.signal.spectral_estimation.get_NLNM()
+
+            # obspy returns the NLNM and NHNM values in acceleration.
+            # Convert them to the current unit (see Bormann (1998)).
+            if unit == 'm':
+                nhnm = nhnm + 40 * np.log10(p_nhnm/ (2 * np.pi))
+                nlnm = nlnm + 40 * np.log10(p_nlnm/ (2 * np.pi))
+            elif unit == 'm/s':
+                nhnm = nhnm + 20 * np.log10(p_nhnm/ (2 * np.pi))
+                nlnm = nlnm + 20 * np.log10(p_nlnm/ (2 * np.pi))
+            elif unit != 'm/s^2':
+                nhnm = None
+                nlnm = None
+                self.logger.error('The NLNM and NHNM is not available for the unit: %s.', unit)
+
+            ax_avg.plot(avg_amp_resp, frequ)
+            ax_avg.plot(med_amp_resp, frequ)
+            if nlnm is not None:
+                ax_avg.plot(nlnm, 1/p_nlnm)
+
+            if nhnm is not None:
+                ax_avg.plot(nhnm, 1/p_nhnm)
+
+            ax_avg.set_xlim(pcm.get_clim())
+            xlim = ax_avg.get_xlim()
+            ax_avg.set_xticks(np.arange(xlim[0], xlim[1], 50))
+            ax_avg.set_xticklabels(ax_avg.get_xticks(), rotation = -90)
+            ax_avg.invert_xaxis()
+
+        cb = plt.colorbar(pcm, ax = ax_psd)
         cb.set_label('PSD ' + unit_label + ' in dB')
-        xlim = ax.get_xlim()
+        xlim = ax_psd.get_xlim()
 
         if plot_length <= 86400:
             tick_interval = 2
@@ -420,10 +466,27 @@ class PSDPlotter:
             tick_interval = 24
         xticks = np.arange(xlim[0],xlim[1], tick_interval)
         xticks = np.append(xticks, xlim[1])
-        ax.set_xticks(xticks)
-        ax.set_xlabel('Time since %s [h]' % self.starttime.isoformat())
-        ax.set_ylabel('Frequency [Hz]')
-        ax.set_title('PSD %s %s' % (self.starttime.isoformat(), ':'.join(cur_scnl)))
+        ax_psd.set_xticks(xticks)
+        ax_psd.set_xlabel('Time since %s [h]' % self.starttime.isoformat())
+
+        if self.with_average_plot:
+            ax_avg.set_ylabel('Frequency [Hz]')
+            ax_psd.set_yticklabels([])
+        else:
+            ax_psd.set_ylabel('Frequency [Hz]')
+
+        ax_psd.set_title('PSD %s %s' % (self.starttime.isoformat(), ':'.join(cur_scnl)))
+
+        # Customize the label appearance.
+        tick_labelsize = 8
+        ax_psd.tick_params(axis = 'x', labelsize = tick_labelsize)
+        ax_psd.tick_params(axis = 'y', labelsize = tick_labelsize)
+        if self.with_average_plot:
+            ax_avg.tick_params(axis = 'x', labelsize = tick_labelsize)
+            ax_avg.tick_params(axis = 'y', labelsize = tick_labelsize)
+
+
+        self.logger.info("Saving PSD image file ...", filename)
         fig.savefig(filename, dpi=dpi, bbox_inches = 'tight', pad_inches = 0.1)
         self.logger.info("Saved PSD image to file %s.", filename)
         fig.clear()
