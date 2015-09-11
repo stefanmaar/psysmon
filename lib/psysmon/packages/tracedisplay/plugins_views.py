@@ -733,7 +733,7 @@ class FrequencySpectrumPlotter(ViewPlugin):
             for curView in views:
                 if curStream:
                     #lineColor = [x/255.0 for x in curChannel.container.color]
-                    curView.plot(curStream, [0.3, 0, 0])
+                    curView.plot(curStream)
                 else:
                     curView.clear_lines()
 
@@ -759,7 +759,7 @@ class FrequencySpectrumView(View):
     Display the data as a timeseries.
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
+    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, psdColor=(0, 0, 0), nhnmColor = (1, 0, 0), nlnmColor = (0, 1, 0)):
         View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
 
         # The logging logger instance.
@@ -767,7 +767,10 @@ class FrequencySpectrumView(View):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.line_colors = {}
+	self.line_colors['psd'] = psdColor
+        self.line_colors['nhnm'] = nhnmColor
+        self.line_colors['nlnm'] = nlnmColor
 
         self.scaleBar = None
 
@@ -780,7 +783,7 @@ class FrequencySpectrumView(View):
 
 
 
-    def plot(self, stream, color):
+    def plot(self, stream):
 
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
@@ -808,7 +811,7 @@ class FrequencySpectrumView(View):
 
             # Plot the psd.
             if not self.lines['psd']:
-                self.lines['psd'], = self.dataAxes.plot(frequ[:left_fft], psd[:left_fft], color = color)
+                self.lines['psd'], = self.dataAxes.plot(frequ[:left_fft], psd[:left_fft], color = self.line_colors['psd'])
             else:
                 self.lines['psd'].set_xdata(frequ[:left_fft])
                 self.lines['psd'].set_ydata(psd[:left_fft])
@@ -862,13 +865,13 @@ class FrequencySpectrumView(View):
 
         if nlnm is not None:
             if not self.lines['nlnm']:
-                self.lines['nlnm'], = self.dataAxes.plot(1/p_nlnm, nlnm)
+                self.lines['nlnm'], = self.dataAxes.plot(1/p_nlnm, nlnm, color = self.line_colors['nlnm'])
             else:
                 self.lines['nlnm'].set_xdata(1/p_nlnm)
                 self.lines['nlnm'].set_ydata(nlnm)
         if nhnm is not None:
             if not self.lines['nhnm']:
-                self.lines['nhnm'], = self.dataAxes.plot(1/p_nhnm, nhnm)
+                self.lines['nhnm'], = self.dataAxes.plot(1/p_nhnm, nhnm, color = self.line_colors['nhnm'])
             else:
                 self.lines['nhnm'].set_xdata(1/p_nhnm)
                 self.lines['nhnm'].set_ydata(nhnm)
