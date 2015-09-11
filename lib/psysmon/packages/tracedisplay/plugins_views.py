@@ -31,6 +31,7 @@ from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
+import obspy.signal
 
 
 
@@ -667,4 +668,229 @@ class SpectrogramView(View):
     #    timeRange = yLim[1] - yLim[0]
     #    width = self.dataAxes.get_window_extent().width
     #    return  width / float(timeRange)
+
+
+
+############## FREQUENCY SPECTRUM VIEW ##########################################
+
+class FrequencySpectrumPlotter(ViewPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
+        ''' The constructor.
+
+        '''
+        ViewPlugin.__init__(self,
+                             name = 'frequency spectrum view',
+                             category = 'visualize',
+                             tags = None
+                            )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Define the plugin icons.
+        self.icons['active'] = icons.chart_bar_icon_16
+
+
+    def plot(self, displayManager, dataManager):
+        ''' Plot all available stations.
+
+        '''
+        self.plotStation(displayManager, dataManager, displayManager.showStations)
+
+
+    def plotStation(self, displayManager, dataManager, station):
+        ''' Plot one or more stations.
+
+        '''
+        for curStation in station:
+            self.plotChannel(displayManager, dataManager, curStation.channels)
+
+
+
+    def plotChannel(self, displayManager, dataManager, channels):
+        ''' Plot one or more channels.
+
+        '''
+        stream = dataManager.procStream
+
+        for curChannel in channels:
+            views = displayManager.getViewContainer(station = curChannel.parent.name,
+                                                      channel = curChannel.name,
+                                                      network = curChannel.parent.network,
+                                                      location = curChannel.parent.location,
+                                                      name = self.name)
+            curStream = stream.select(station = curChannel.parent.name,
+                                     channel = curChannel.name,
+                                     network = curChannel.parent.network,
+                                     location = curChannel.parent.obspy_location)
+
+            for curView in views:
+                if curStream:
+                    #lineColor = [x/255.0 for x in curChannel.container.color]
+                    curView.plot(curStream, [0.3, 0, 0])
+                else:
+                    curView.clear_lines()
+
+                #curView.setXLimits(left = displayManager.startTime.timestamp,
+                #                   right = displayManager.endTime.timestamp)
+                curView.draw()
+
+
+
+
+    def getViewClass(self):
+        ''' Get a class object of the view.
+
+        '''
+        return FrequencySpectrumView
+
+
+
+class FrequencySpectrumView(View):
+    '''
+    A standard seismogram view.
+
+    Display the data as a timeseries.
+    '''
+
+    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
+        View.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.t0 = None
+	self.lineColor = [x/255.0 for x in lineColor]
+
+        self.scaleBar = None
+
+        self.lines = {}
+        self.lines['psd'] = None
+        self.lines['nhnm'] = None
+        self.lines['nlnm'] = None
+
+        self.show_noise_model = True
+
+
+
+    def plot(self, stream, color):
+
+        for trace in stream:
+            timeArray = np.arange(0, trace.stats.npts)
+            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = timeArray + trace.stats.starttime.timestamp
+
+            # Check if the data is a ma.maskedarray
+            if np.ma.count_masked(trace.data):
+                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+
+            # Compute the power amplitude density spectrum.
+            # As defined by Havskov and Alguacil (page 164), the power density spectrum can be
+            # written as 
+            #   P = 2* 1/T * deltaT^2 * abs(F_dft)^2
+            #   
+            n_fft = len(trace.data)
+            delta_t = 1 / trace.stats.sampling_rate
+            T = (len(trace.data) - 1) * delta_t
+            Y = scipy.fft(trace.data, n_fft)
+            psd = 2 * delta_t**2 / T * np.abs(Y)**2
+            psd = 10 * np.log10(psd)
+            frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
+
+            left_fft = np.ceil(n_fft / 2.)
+
+            # Plot the psd.
+            if not self.lines['psd']:
+                self.lines['psd'], = self.dataAxes.plot(frequ[:left_fft], psd[:left_fft], color = color)
+            else:
+                self.lines['psd'].set_xdata(frequ[:left_fft])
+                self.lines['psd'].set_ydata(psd[:left_fft])
+
+            cur_unit = trace.stats.unit
+
+            # Plot the noise model.
+            if self.show_noise_model:
+                self.plot_noise_model(cur_unit)
+
+            # Set the axis limits.
+            if cur_unit == 'm/s':
+                self.dataAxes.set_ylim(bottom = -220, top = -80)
+                cur_unit_label = '(m/s)^2/Hz'
+            elif cur_unit == 'm/s^2':
+                self.dataAxes.set_ylim(bottom = -220, top = -80)
+                cur_unit_label = '(m/s^2)^2/Hz'
+            elif cur_unit == 'counts':
+                cur_unit_label = 'counts^2/Hz'
+            else:
+                cur_unit_label = '???^2/Hz'
+
+            self.dataAxes.set_xscale('log')
+            self.dataAxes.set_xlim(left = 1e-3, right = trace.stats.sampling_rate)
+            self.dataAxes.set_frame_on(False)
+            self.dataAxes.tick_params(axis = 'x', pad = -20)
+            self.dataAxes.tick_params(axis = 'y', pad = -40)
+
+            annot_string = 'X-axis: frequency\nX-units: Hz\n\nY-axis: psd\nY-units: %s' % cur_unit_label
+            self.setAnnotation(annot_string)
+            #self.dataAxes.get_xaxis().set_visible(False)
+            #self.dataAxes.get_yaxis().set_visible(False)
+
+
+    def plot_noise_model(self, unit):
+        p_nhnm, nhnm = obspy.signal.spectral_estimation.get_NHNM()
+        p_nlnm, nlnm = obspy.signal.spectral_estimation.get_NLNM()
+
+        # obspy returns the NLNM and NHNM values in acceleration.
+        # Convert them to the current unit (see Bormann (1998)).
+        if unit == 'm':
+            nhnm = nhnm + 40 * np.log10(p_nhnm/ (2 * np.pi))
+            nlnm = nlnm + 40 * np.log10(p_nlnm/ (2 * np.pi))
+        elif unit == 'm/s':
+            nhnm = nhnm + 20 * np.log10(p_nhnm/ (2 * np.pi))
+            nlnm = nlnm + 20 * np.log10(p_nlnm/ (2 * np.pi))
+        elif unit != 'm/s^2':
+            nhnm = None
+            nlnm = None
+            self.logger.error('The NLNM and NHNM is not available for the unit: %s.', unit)
+
+        if nlnm is not None:
+            if not self.lines['nlnm']:
+                self.lines['nlnm'], = self.dataAxes.plot(1/p_nlnm, nlnm)
+            else:
+                self.lines['nlnm'].set_xdata(1/p_nlnm)
+                self.lines['nlnm'].set_ydata(nlnm)
+        if nhnm is not None:
+            if not self.lines['nhnm']:
+                self.lines['nhnm'], = self.dataAxes.plot(1/p_nhnm, nhnm)
+            else:
+                self.lines['nhnm'].set_xdata(1/p_nhnm)
+                self.lines['nhnm'].set_ydata(nhnm)
+
+
+    def clear_lines(self):
+        for cur_line in self.lines.itervalues():
+            if cur_line:
+                cur_line.set_xdata([])
+                cur_line.set_ydata([])
+
+    #def setYLimits(self, bottom, top):
+    #    ''' Set the limits of the y-axes.
+    #    '''
+    #    self.dataAxes.set_ylim(bottom = bottom, top = top)
+
+
+    #def setXLimits(self, left, right):
+    #    ''' Set the limits of the x-axes.
+    #    '''
+    #    self.logger.debug('Set limits: %f, %f', left, right)
+    #    self.dataAxes.set_xlim(left = left, right = right)
+    #
+    #    # Adjust the scale bar.
 
