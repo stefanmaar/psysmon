@@ -29,6 +29,8 @@ This includes the file structure and the database tables.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+import matplotlib as mpl
+mpl.rcParams['backend'] = 'WXAgg'
 
 import sys
 from psysmon.core.test_util import remove_project
