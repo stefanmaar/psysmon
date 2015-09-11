@@ -822,14 +822,14 @@ class FrequencySpectrumView(View):
             # Set the axis limits.
             if cur_unit == 'm/s':
                 self.dataAxes.set_ylim(bottom = -220, top = -80)
-                cur_unit_label = '(m/s)^2/Hz'
+                cur_unit_label = '(m/s)^2/Hz in dB'
             elif cur_unit == 'm/s^2':
                 self.dataAxes.set_ylim(bottom = -220, top = -80)
-                cur_unit_label = '(m/s^2)^2/Hz'
+                cur_unit_label = '(m/s^2)^2/Hz in dB'
             elif cur_unit == 'counts':
-                cur_unit_label = 'counts^2/Hz'
+                cur_unit_label = 'counts^2/Hz in dB'
             else:
-                cur_unit_label = '???^2/Hz'
+                cur_unit_label = '???^2/Hz in dB'
 
             self.dataAxes.set_xscale('log')
             self.dataAxes.set_xlim(left = 1e-3, right = trace.stats.sampling_rate)
