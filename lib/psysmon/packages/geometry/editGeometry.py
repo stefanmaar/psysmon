@@ -445,6 +445,7 @@ class EditGeometryDlg(wx.Frame):
                                              end_time = None)
         self.selected_sensor_component.add_parameter(parameter)
         self.inventoryTree.updateInventoryData()
+        return parameter
 
 
 
@@ -738,7 +739,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def on_add_sensor_component_parameters(self, event):
         ''' Handle the context menu click.
         '''
-        self.Parent.add_sensor_component_parameter()
+        self.Parent.selected_sensor_component_parameters = self.Parent.add_sensor_component_parameter()
+        self.selected_item = 'sensor_component parameter'
+        self.Parent.inventoryViewNotebook.updateSensorListView()
 
 
     def on_collapse_element(self, event):
@@ -921,7 +924,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'SensorComponentParameter' or pyData.__class__.__name__ == 'DbSensorComponentParameter'):
             self.Parent.selected_inventory = pyData.parent_inventory
-            self.Parent.selected_sensor_component = pyData.parent_sensor
+            self.Parent.selected_sensor_component = pyData.parent_component
             self.Parent.selected_sensor_component_parameters = pyData
             self.selected_item = 'sensor_component parameter'
             self.Parent.inventoryViewNotebook.updateSensorListView()
@@ -2184,12 +2187,16 @@ class SensorsPanel(wx.Panel):
         selectedParameter = self.parameterGrid.GetColLabelValue(evt.GetCol())
         gridComponentParameterFields = self.getComponentParameterFields();
         colLabels = [x[1] for x in gridComponentParameterFields]
-        cur_parameter = self.displayed_component.parameters[evt.GetRow()]
+        cur_parameter = self.displayedComponent.parameters[evt.GetRow()]
 
         if selectedParameter in colLabels:
             ind = colLabels.index(selectedParameter)
             fieldName = gridComponentParameterFields[ind][0]
             converter = gridComponentParameterFields[ind][3]
+            # TODO: if the start- or end-time is changed, use the according
+            # set and get methods of the parameter instance to check for valid
+            # changes (e.g. no overlapping). The old
+            # onSensorParameterCellChange method below could have some hints.
             setattr(cur_parameter, fieldName, converter(self.parameterGrid.GetCellValue(evt.GetRow(), evt.GetCol())))
             self.GetTopLevelParent().inventoryTree.updateInventoryData()
         else:
@@ -2377,16 +2384,16 @@ class SensorsPanel(wx.Panel):
     def getComponentParameterFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
-        tableField.append((None, 'start', 'editable', UTCDateTime))
-        tableField.append((None, 'end', 'editable', UTCDateTime))
+        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
+        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
         tableField.append(('sensitivity', 'sensitivity', 'editable', float))
         tableField.append(('input_units', 'input units', 'editable', str))
 	tableField.append(('output_units', 'output units', 'editable', str))
 	tableField.append(('deliver_units', 'input units', 'editable', str))
         tableField.append(('tf_normalization_factor', 'normalization factor', 'editable', float))
         tableField.append(('tf_normalization_frequency', 'normalization frequ.', 'editable', float))
-        tableField.append((None, 'poles', 'readonly', str))      # Poles is a list. Handle them seperately
-        tableField.append((None, 'zeros', 'readonly', str))      # Zeros is a list. Handle them seperately.
+        tableField.append(('poles', 'poles', 'readonly', str))      # Poles is a list. Handle them seperately
+        tableField.append(('zeros', 'zeros', 'readonly', str))      # Zeros is a list. Handle them seperately.
         return tableField
 
 
