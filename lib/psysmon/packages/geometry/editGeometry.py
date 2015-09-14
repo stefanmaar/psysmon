@@ -54,10 +54,13 @@ from mpl_toolkits.basemap import Basemap
 from matplotlib.patches import Polygon
 from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
+from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Sensor
+from psysmon.packages.geometry.inventory import SensorComponent
+from psysmon.packages.geometry.inventory import SensorComponentParameter
 from psysmon.core.gui import psyContextMenu
 import psysmon.core.guiBricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
@@ -127,7 +130,8 @@ class EditGeometryDlg(wx.Frame):
         self.collectionNode = collectionNode
 
 
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         ## The current pSysmon project.
@@ -147,11 +151,17 @@ class EditGeometryDlg(wx.Frame):
         # The network currently selected by the user.
         self.selected_network = None
 
-        # The network currently selected by the user.
+        # The recorder currently selected by the user.
         self.selected_recorder = None
 
-        # The network currently selected by the user.
+        # The sensor currently selected by the user.
         self.selected_sensor = None
+
+        # The sensor component currently selected by the user.
+        self.selected_sensor_component = None
+
+        # The sensor component parameter currently selected by the user.
+        self.selected_sensor_component_parameters = None
 
         # initialize the user interface
         self.initUI()
@@ -248,9 +258,10 @@ class EditGeometryDlg(wx.Frame):
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
-                 ("Add network", "Add a network to the selected inventory.", self.onAddNetwork),
-                 ("Add station", "Add a station to the selected inventory.", self.onAddStation),
-                 ("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
+                 ("Create XML inventory", "Create an empty XML inventory.", self.onCreateXmlInventory),
+                 #("Add network", "Add a network to the selected inventory.", self.onAddNetwork),
+                 #("Add station", "Add a station to the selected inventory.", self.onAddStation),
+                 #("Add recorder", "Add a recorder to the selected inventory.", self.onAddRecorder),
                  ("", "", ""),
                  ("Write to database", "Write the selected inventory to database.", self.onSave2Db)),
                 ("Help",
@@ -315,6 +326,16 @@ class EditGeometryDlg(wx.Frame):
                     print w
 
 
+    def onCreateXmlInventory(self, event):
+        ''' Handle the create new XML inventory menu click.
+        '''
+        inventory_name = wx.GetTextFromUser('new inventory name:', caption = 'Inventory name',
+                                            default_value = '', parent = self)
+        if not inventory_name:
+            return
+        else:
+            self.addXmlInventory(name = inventory_name);
+
 
     def onAddRecorder(self, event):
         self.addRecorder()
@@ -329,6 +350,14 @@ class EditGeometryDlg(wx.Frame):
         ''' Handle the add station menu click.
         '''
         self.addStation()
+
+
+    def addXmlInventory(self, name = 'new inventory'):
+        ''' Add a new XML inventory.
+        '''
+        inventory = Inventory(name, type = 'xml')
+        self.inventories[inventory.name] = inventory
+        self.inventoryTree.updateInventoryData()
 
 
     def addNetwork(self):
@@ -367,7 +396,7 @@ class EditGeometryDlg(wx.Frame):
         if self.selected_inventory is None:
             self.logger.error('You have to create of select an inventory first.')
             return
-        
+
         # Create the Recorder instance.
         rec_2_add = Recorder(serial='-9999', 
                              type = 'new recorder') 
@@ -378,19 +407,45 @@ class EditGeometryDlg(wx.Frame):
     def addSensor(self):
         ''' Add a sensor to the inventory.
         '''
-        if self.selected_recorder is None:
-            self.logger.error('You have to create or select a recorder first.')
+        if self.selected_inventory is None:
+            self.logger.error('You have to create or select an inventory first.')
             return
 
         # Create the Sensor instance.
-        sensor_2_add = Sensor(serial = 'AAAA',
-                              type = 'test sensor',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'AAAA-001-HHZ') 
-
-        self.selected_recorder.add_sensor(sensor_2_add)
+        sensor_2_add = Sensor(serial = 'AAAA')
+        self.selected_inventory.add_sensor(sensor_2_add)
         self.inventoryTree.updateInventoryData()
+        return sensor_2_add
+
+
+    def add_sensor_component(self):
+        ''' Add a component to a sensor.
+        '''
+        if self.selected_sensor is None:
+            self.logger.error('You have to select a sensor first.')
+            return
+
+        # Create the Sensor instance.
+        component = SensorComponent(name = 'new component')
+        self.selected_sensor.add_component(component)
+        self.inventoryTree.updateInventoryData()
+        return component
+
+
+    def add_sensor_component_parameter(self):
+        ''' Add a parameter to a sensor component.
+        '''
+        if self.selected_sensor_component is None:
+            self.logger.error('You have to select a sensor component first.')
+            return
+
+        # Create the paramter instance.
+        parameter = SensorComponentParameter(sensitivity = 1,
+                                             start_time = UTCDateTime('1970-01-01'),
+                                             end_time = None)
+        self.selected_sensor_component.add_parameter(parameter)
+        self.inventoryTree.updateInventoryData()
+
 
 
     def addSensorParameter(self):
@@ -399,7 +454,7 @@ class EditGeometryDlg(wx.Frame):
         if self.selected_sensor is None:
             self.logger.error('You have to create or select a sensor first.')
             return
-        
+
         # Create the SensorParameter instance.
         parameter_2_add = SensorParameter(gain = 1,
                                           bitweight = 2,
@@ -533,17 +588,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         self.selected_item = None
 
-        # Setup the context menu.
-        cmData = (("add", self.onAddElement),
-                  ("remove", self.onRemoveElement),
-                  ("separator", None),
-                  ("expand", self.on_expand_element),
-                  ("collapse", self.on_collapse_element))
-
-        # create the context menu.
-        self.contextMenu = psyContextMenu(cmData)
-
-
         il = wx.ImageList(16, 16)
         self.icons = {}
         self.icons['xmlInventory'] = il.Add(icons.db_icon_16.GetBitmap()) 
@@ -577,16 +621,43 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def onShowContextMenu(self, evt):
         ''' Show the context menu.
         '''
-        if(self.selected_item == 'station'):
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add sensor')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove station')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+        context_menu = None
+        if(self.selected_item == 'inventory'):
+            self.logger.debug('Handling an inventory.')
+            # Setup the context menu.
+            cm_data = (("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'sensor_list'):
+            self.logger.debug('Handling a sensor list.')
+            cm_data = (("add sensor", self.on_add_sensor),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'recorder_list'):
+            self.logger.debug('Handling a recorder list.')
+            cm_data = (("add recorder", self.onAddRecorder),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'network_list'):
+            self.logger.debug('Handling a network list.')
+            cm_data = (("add network", self.onAddNetwork),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'sensor'):
-            #self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add parameter')
-            #self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            #self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove sensor')
-            #self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
             # Create the sensor context menu.
             sub_data = []
             for cur_network in self.GetParent().selected_inventory.get_network():
@@ -594,22 +665,34 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     for cur_station in cur_network.stations:
                         sub_data.append((cur_station.get_snl_string(), self.on_assign_sensor_2_station))
 
-            cm_data = (("add parameter", self.onAddElement),
-                       ("remove sensor", self.onRemoveElement),
-                       ("assign to station", sub_data))
+            cm_data = (("add component", self.on_add_sensor_component),
+                       ("remove sensor", self.on_remove_sensor),
+                       ("assign to recorder", sub_data),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
 
-            context_menu_sensor = psyContextMenu(cm_data)
-            pos = evt.GetPosition()
-            pos = self.ScreenToClient(pos)
-            self.PopupMenu(context_menu_sensor, pos)
-            return
-        elif(self.selected_item == 'inventory'):
-            self.logger.debug('Handling an inventory.')
-        elif(self.selected_item == 'recorder_list'):
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add recorder')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove recorder')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'sensor_component'):
+            self.logger.debug('Handling a sensor component.')
+            cm_data = (("add parameters", self.on_add_sensor_component_parameters),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'station'):
+            # Setup the context menu.
+            cm_data = (("add sensor", self.addSensor),
+                       ("remove station", self.onRemoveElement),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+            context_menu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
         elif(self.selected_item == 'recorder'):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add sensor')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
@@ -620,51 +703,42 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove network')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
-        elif(self.selected_item == 'network_list'):
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add network')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove network')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
-        else:
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
 
-        pos = evt.GetPosition()
-        pos = self.ScreenToClient(pos)
-        self.selected_tree_item_id = self.HitTest(pos)[0]
-        self.PopupMenu(self.contextMenu, pos)
+        if context_menu:
+            pos = evt.GetPosition()
+            pos = self.ScreenToClient(pos)
+            self.selected_tree_item_id = self.HitTest(pos)[0]
+            self.PopupMenu(context_menu, pos)
 
 
-    def onAddElement(self, event):
-        ''' Handle the context menu add click.
+    def on_add_sensor(self, event):
+        ''' Handle the context menu click.
         '''
-        if(self.selected_item == 'station'):
-            self.logger.debug('Handling a station.')
-        elif(self.selected_item == 'sensor'):
-            # Add a new sensor parameter to the selected sensor.
-            self.Parent.addSensorParameter()  
-        elif(self.selected_item == 'inventory'):
-            self.logger.debug('Handling an inventory.')
-        elif(self.selected_item == 'recorder_list'):
-            # Add a new recorder to the inventory.
-            self.Parent.addRecorder()
-        elif(self.selected_item == 'recorder'):
-            # Add a new sensor to the selected recorder.
-            self.Parent.addSensor()
-        elif(self.selected_item == 'network'):
-            # Add a new station to the selected network.
-            self.Parent.addStation()
-        elif(self.selected_item == 'network_list'):
-            # Add a new network to the inventory.
-            self.Parent.addNetwork()
+        self.Parent.selected_sensor = self.Parent.addSensor()
+        self.selected_item = 'sensor'
+        self.Parent.inventoryViewNotebook.updateSensorListView()
 
 
-    def onRemoveElement(self, event):
-        ''' Handle the context menu remove click.
+    def on_remove_sensor(self, event):
+        ''' Handle the context menu click.
         '''
+        # Get the selected sensor.
+        # Remove it from the inventory.
         pass
+
+
+    def on_add_sensor_component(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.selected_sensor_component = self.Parent.add_sensor_component()
+        self.selected_item = 'sensor_component'
+        self.Parent.inventoryViewNotebook.updateSensorListView()
+
+
+    def on_add_sensor_component_parameters(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_sensor_component_parameter()
 
 
     def on_collapse_element(self, event):
@@ -830,37 +904,52 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             pyData = pyData[0]
 
         if(pyData.__class__.__name__ == 'Station' or pyData.__class__.__name__ == 'DbStation'):
-            self.Parent.inventoryViewNotebook.updateStationListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_network = pyData.parent_network
             self.Parent.selected_station = pyData
             self.selected_item = 'station'
+            self.Parent.inventoryViewNotebook.updateStationListView(pyData)
         elif(pyData.__class__.__name__ == 'Sensor' or pyData.__class__.__name__ == 'DbSensor'):
-            self.Parent.inventoryViewNotebook.updateSensorListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_sensor = pyData
             self.selected_item = 'sensor'
-        elif(pyData.__class__.__name__ == 'Inventory' or pyData.__class__.__name__ == 'DbInventory'):
-            self.Parent.selected_inventory = pyData
-            self.selected_item = 'inventory'
+            self.Parent.inventoryViewNotebook.updateSensorListView()
+        elif(pyData.__class__.__name__ == 'SensorComponent' or pyData.__class__.__name__ == 'DbSensorComponent'):
+            self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_sensor_component = pyData
+            self.selected_item = 'sensor_component'
+            self.Parent.inventoryViewNotebook.updateSensorListView()
+        elif(pyData.__class__.__name__ == 'SensorComponentParameter' or pyData.__class__.__name__ == 'DbSensorComponentParameter'):
+            self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_sensor_component = pyData.parent_sensor
+            self.Parent.selected_sensor_component_parameters = pyData
+            self.selected_item = 'sensor_component parameter'
+            self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'Recorder' or pyData.__class__.__name__ == 'DbRecorder'):
-            self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_recorder = pyData
             self.selected_item = 'recorder'
+            self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
         elif(pyData.__class__.__name__ == 'Network' or pyData.__class__.__name__ == 'DbNetwork'):
-            self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_network = pyData
             self.selected_item = 'network'
-        elif(self.GetItemText(evt.GetItem()) == 'Networks'):
-            self.selected_item = 'network_list'
-        elif(self.GetItemText(evt.GetItem()) == 'Recorders'):
-            self.selected_item = 'recorder_list'
-        elif(self.GetItemText(evt.GetItem()) == 'unassigned stations'):
-            self.selected_item = 'unassigned_station_list'
-        elif(self.GetItemText(evt.GetItem()) == 'unassigned sensors'):
-            self.selected_item = 'unassigned_sensor_list'
+            self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
+        elif(pyData.__class__.__name__ == 'Inventory' or pyData.__class__.__name__ == 'DbInventory'):
+            # Check if on of the list items was selected.
+            if(self.GetItemText(evt.GetItem()) == 'Networks'):
+                self.selected_item = 'network_list'
+                self.Parent.selected_inventory = pyData
+            elif(self.GetItemText(evt.GetItem()) == 'Recorders'):
+                self.selected_item = 'recorder_list'
+                self.Parent.selected_inventory = pyData
+            elif(self.GetItemText(evt.GetItem()) == 'Sensors'):
+                self.selected_item = 'sensor_list'
+                self.Parent.selected_inventory = pyData
+            else:
+                # The inventory item was selected.
+                self.Parent.selected_inventory = pyData
+                self.selected_item = 'inventory'
 
 
     ## Update the inventory tree.
@@ -878,23 +967,27 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.SetItemImage(inventoryItem, self.icons['xmlInventory'], wx.TreeItemIcon_Normal)
 
             sensorListItem = self.AppendItem(inventoryItem, 'Sensors')
-            self.SetItemPyData(sensorListItem, curInventory.sensors)
+            self.SetItemPyData(sensorListItem, curInventory)
             self.SetItemBold(sensorListItem, True)
             self.SetItemImage(sensorListItem, self.icons['sensorList'], wx.TreeItemIcon_Normal)
 
             recorderListItem = self.AppendItem(inventoryItem, 'Recorders')
-            self.SetItemPyData(recorderListItem, curInventory.recorders)
+            self.SetItemPyData(recorderListItem, curInventory)
             self.SetItemBold(recorderListItem, True)
             self.SetItemImage(recorderListItem, self.icons['recorderList'], wx.TreeItemIcon_Normal)
 
             networkListItem = self.AppendItem(inventoryItem, 'Networks')
-            self.SetItemPyData(networkListItem, curInventory.networks)
+            self.SetItemPyData(networkListItem, curInventory)
             self.SetItemBold(networkListItem, True)
             self.SetItemImage(networkListItem, self.icons['networkList'], wx.TreeItemIcon_Normal)
 
             # Fill the sensors
             for curSensor in sorted(curInventory.sensors, key = attrgetter('serial')):
-                curSensorItem = self.AppendItem(sensorListItem, curSensor.serial + ' (' + curSensor.model + ')')
+                if curSensor.model is None:
+                    sensor_model = ''
+                else:
+                    sensor_model = curSensor.model
+                curSensorItem = self.AppendItem(sensorListItem, curSensor.serial + ' (' + sensor_model + ')')
                 self.SetItemPyData(curSensorItem, curSensor)
                 self.SetItemImage(curSensorItem, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
@@ -947,7 +1040,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                             self.SetItemPyData(item, curTimebox)
                             self.SetItemImage(item, self.icons['channel_stream'], wx.TreeItemIcon_Normal)
 
-            self.Expand(inventoryItem)
+            self.ExpandAllChildren(inventoryItem)
 
 
 class InventoryViewNotebook(wx.Notebook):
@@ -991,27 +1084,28 @@ class InventoryViewNotebook(wx.Notebook):
         ''' Show the network data in the list view.
         '''
         self.logger.debug("updating the network listview")
-        self.listViewPanel.showControlPanel('network', network)
+        self.listViewPanel.showControlPanel('network')
 
 
     def updateRecorderListView(self, recorder):
         ''' Show the recorder data in the list view.
         '''
         self.logger.debug("updating the recorder listview")
-        self.listViewPanel.showControlPanel('recorder', recorder)
+        self.listViewPanel.showControlPanel('recorder')
 
 
     ## Show the station data in the list view.
     #
     def updateStationListView(self, station):
         self.logger.debug("updating the station listview")
-        self.listViewPanel.showControlPanel('station', station)
+        self.listViewPanel.showControlPanel('station')
 
     ## Show the station data in the list view.
     #
-    def updateSensorListView(self, sensor):
+    def updateSensorListView(self):
         self.logger.debug("updating the sensor listview")
-        self.listViewPanel.showControlPanel('sensor', sensor)
+        self.listViewPanel.showControlPanel('sensor')
+
 
     def updateMapView(self, inventory):
         '''
@@ -1075,14 +1169,14 @@ class ListViewPanel(wx.Panel):
 
 
 
-    def showControlPanel(self, name, data):
+    def showControlPanel(self, name):
 
         activePanel = self.sizer.FindItemAtPosition((0,0))
         if activePanel is not None:
             activePanel.GetWindow().Hide()
             self.sizer.Detach(activePanel.GetWindow())
 
-        self.controlPanels[name].updateData(data)
+        self.controlPanels[name].updateData()
 
         self.controlPanels[name].Show()
         self.sizer.Add(self.controlPanels[name], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
@@ -1537,6 +1631,9 @@ class NetworkPanel(wx.Panel):
         for pos, (field, label, attr) in enumerate(fields):
             if field is not None and getattr(object, field) is not None:
                 grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+            else:
+                grid.SetCellValue(rowNumber, pos, '')
+
             grid.AutoSizeColumns()
 
 
@@ -1891,11 +1988,11 @@ class SensorsPanel(wx.Panel):
         #from matplotlib.figure import Figure
 
         ## The currently displayed sensor.
-        self.displayedSensor = None
+        #self.displayedSensor = None
 
-        self.displayedComponent = None
+        #self.displayedComponent = None
 
-        self.displayedCompnentParameter = None
+        #self.displayedCompnentParameter = None
 
         wx.Panel.__init__(self, parent, id)
 
@@ -1949,7 +2046,8 @@ class SensorsPanel(wx.Panel):
         self.componentGrid.AutoSizeColumns()
 
         #self.sizer.Add(self.tfGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
-        self.mgr.AddPane(self.componentGrid, wx.aui.AuiPaneInfo().Name("components").Caption("components").
+        caption = 'components of sensor %s' % self.displayedSensor
+        self.mgr.AddPane(self.componentGrid, wx.aui.AuiPaneInfo().Name("components").Caption(caption).
                          Bottom().Row(2).Position(0).Layer(0).CloseButton(False).CaptionVisible().
                          MinimizeButton().MaximizeButton().
                          BestSize(wx.Size(300,80)).MinSize(wx.Size(100,100)))
@@ -1973,7 +2071,8 @@ class SensorsPanel(wx.Panel):
         self.componentGrid.AutoSizeColumns()
 
         #self.sizer.Add(self.tfGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
-        self.mgr.AddPane(self.parameterGrid, wx.aui.AuiPaneInfo().Name("parameters").Caption("parameters").
+        caption = 'parameters of component %s' % self.displayedComponent
+        self.mgr.AddPane(self.parameterGrid, wx.aui.AuiPaneInfo().Name("parameters").Caption(caption).
                          Bottom().Row(1).Position(0).Layer(0).CloseButton(False).CaptionVisible().
                          MinimizeButton().MaximizeButton().
                          BestSize(wx.Size(300,80)).MinSize(wx.Size(100,100)))
@@ -2012,6 +2111,34 @@ class SensorsPanel(wx.Panel):
         #self.sizer.AddGrowableCol(0)
         #self.SetSizerAndFit(self.sizer)
 
+
+    @property
+    def displayedSensor(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_sensor
+        else:
+            return None
+
+
+    @property
+    def displayedComponent(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_sensor_component
+        else:
+            return None
+
+    @displayedComponent.setter
+    def displayedComponent(self, value):
+        self.GetTopLevelParent().selected_sensor_component = value
+
+    @property
+    def displayedComponentParameters(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_sensor_component_parameters
+        else:
+            return None
+
+
     def onSensorCellChange(self, evt):
         selectedParameter = self.sensorGrid.GetColLabelValue(evt.GetCol())
         gridSensorFields = self.getSensorFields();
@@ -2021,7 +2148,8 @@ class SensorsPanel(wx.Panel):
             ind = colLabels.index(selectedParameter)
             fieldName = gridSensorFields[ind][0]
             setattr(self.displayedSensor, fieldName, self.sensorGrid.GetCellValue(evt.GetRow(), evt.GetCol()))
-            self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
         else:
             pass
 
@@ -2037,7 +2165,8 @@ class SensorsPanel(wx.Panel):
             fieldName = gridComponentFields[ind][0]
             converter = gridComponentFields[ind][3]
             setattr(cur_component, fieldName, converter(self.componentGrid.GetCellValue(evt.GetRow(), evt.GetCol())))
-            self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
         else:
             pass
 
@@ -2045,7 +2174,8 @@ class SensorsPanel(wx.Panel):
     def onComponentCellLeftClick(self, evt):
         cur_component = self.displayedSensor.components[evt.GetRow()]
         self.displayedComponent = cur_component
-        self.updateParameters(self.displayedComponent)
+        self.updateParameters()
+        self.updatePaneCaption()
         evt.Skip()
 
 
@@ -2061,7 +2191,7 @@ class SensorsPanel(wx.Panel):
             fieldName = gridComponentParameterFields[ind][0]
             converter = gridComponentParameterFields[ind][3]
             setattr(cur_parameter, fieldName, converter(self.parameterGrid.GetCellValue(evt.GetRow(), evt.GetCol())))
-            self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
         else:
             pass
 
@@ -2109,85 +2239,107 @@ class SensorsPanel(wx.Panel):
             fieldName = gridParamFields[ind][0]
             #converter = gridParamFields[ind][3]
             setattr(sensorParameter2Process, fieldName, self.paramGrid.GetCellValue(evt.GetRow(), evt.GetCol()))
-            self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
         else:
             pass
 
-    def updateData(self, sensor):
+
+    def updatePaneCaption(self):
+        # Change the pane captions.
+        if self.displayedSensor:
+            caption = 'components of sensor %s' % self.displayedSensor.serial
+            pane = self.mgr.GetPane('components')
+            pane.Caption(caption)
+
+        if self.displayedComponent:
+            caption = 'parameters of component %s' % self.displayedComponent.name
+        else:
+            caption = 'no component selected'
+        pane = self.mgr.GetPane('parameters')
+        pane.Caption(caption)
+
+        self.mgr.Update()
+
+
+    def updateData(self):
         self.logger.debug("updating the sensors data")
 
-        self.displayedSensor = sensor
-        if sensor.components:
-            self.displayedComponent = sensor.components[0]
+        self.updatePaneCaption()
 
         # Resize the grid rows.
-        self.componentGrid.DeleteRows(0, self.componentGrid.GetNumberRows())
+        if self.componentGrid.GetNumberRows() > 0:
+            self.componentGrid.DeleteRows(0, self.componentGrid.GetNumberRows())
         self.componentGrid.AppendRows(len(self.displayedSensor.components))
 
         # Update the sensor grid fields.
-        self.setGridValues(sensor, self.sensorGrid, self.getSensorFields(), 0)
+        self.setGridValues(self.displayedSensor, self.sensorGrid, self.getSensorFields(), 0)
 
         # Update the component grid fields.
-        for k, cur_component in enumerate(sensor.components):
+        for k, cur_component in enumerate(self.displayedSensor.components):
             self.setGridValues(cur_component, self.componentGrid, self.getComponentFields(), k)
 
         # Update the paramter grid fields.
-        self.updateParameters(self.displayedComponent)
+        self.updateParameters()
+
+        # Update the AUI manager.
 
 
 
-    def updateParameters(self, component):
-        # Resize the grid rows.
-        self.parameterGrid.DeleteRows(0, self.parameterGrid.GetNumberRows())
-        self.parameterGrid.AppendRows(len(component.parameters))
 
-        parameter_fields = self.getComponentParameterFields()
-        field_labels = [x[1] for x in parameter_fields]
+    def updateParameters(self):
+        # Clear the grid.
+        if self.parameterGrid.GetNumberRows() > 0:
+            self.parameterGrid.DeleteRows(0, self.parameterGrid.GetNumberRows())
 
-        # Update the component grid fields.
-        for k, cur_parameter in enumerate(component.parameters):
-            self.setGridValues(cur_parameter, self.parameterGrid, parameter_fields, k)
-            self.parameterGrid.SetCellValue(k, field_labels.index('start'), cur_parameter.start_time_string)
-            self.parameterGrid.SetCellValue(k, field_labels.index('end'), cur_parameter.end_time_string)
-            self.parameterGrid.SetCellValue(k, field_labels.index('zeros'), cur_parameter.zeros_string)
-            self.parameterGrid.SetCellValue(k, field_labels.index('poles'), cur_parameter.poles_string)
+        if self.displayedComponent:
+            # Resize the grid rows.
+            self.parameterGrid.AppendRows(len(self.displayedComponent.parameters))
 
-        if component.parameters:
-            self.displayedComponentParameter = component.parameters[0]
-            self.updateTransferFunction(self.displayedComponentParameter)
+            parameter_fields = self.getComponentParameterFields()
+            field_labels = [x[1] for x in parameter_fields]
 
-        self.parameterGrid.AutoSizeColumns()
+            # Update the component grid fields.
+            for k, cur_parameter in enumerate(self.displayedComponent.parameters):
+                self.setGridValues(cur_parameter, self.parameterGrid, parameter_fields, k)
+                self.parameterGrid.SetCellValue(k, field_labels.index('start'), cur_parameter.start_time_string)
+                self.parameterGrid.SetCellValue(k, field_labels.index('end'), cur_parameter.end_time_string)
+                self.parameterGrid.SetCellValue(k, field_labels.index('zeros'), cur_parameter.zeros_string)
+                self.parameterGrid.SetCellValue(k, field_labels.index('poles'), cur_parameter.poles_string)
 
+            self.updateTransferFunction()
 
-    def updateTransferFunction(self, parameter):
-
-        if not parameter.tf_poles or not parameter.tf_zeros or not parameter.tf_normalization_factor:
-            self.tfMagAxis.clear()
-            self.tfPhaseAxis.clear()
-            return
+            self.parameterGrid.AutoSizeColumns()
 
 
-        h,f = pazToFreqResp(parameter.tf_poles, parameter.tf_zeros, parameter.tf_normalization_factor, 0.005, 8192, freq=True)
-        #h,f = pazToFreqResp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
-        phase = np.unwrap(np.arctan2(-h.imag, h.real)) #take negative of imaginary part
+    def updateTransferFunction(self):
+        if self.displayedComponentParameters:
+            if not self.displayedComponentParameters.tf_poles or not self.displayedComponentParameters.tf_zeros or not self.displayedComponentParameters.tf_normalization_factor:
+                self.tfMagAxis.clear()
+                self.tfPhaseAxis.clear()
+                return
 
-        lines = self.tfMagAxis.get_lines()
-        if lines:
-            for curLine in lines:
-                curLine.remove()
 
-        frequRange = [0.1,1,10,100,1000]
-        self.tfMagAxis.plot(np.log10(f), 20*np.log10(abs(h)), color='k')
-        self.tfMagAxis.set_xticks(np.log10(frequRange))
-        self.tfMagAxis.set_xticklabels(frequRange)
+            h,f = pazToFreqResp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
+            #h,f = pazToFreqResp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
+            phase = np.unwrap(np.arctan2(-h.imag, h.real)) #take negative of imaginary part
 
-        lines = self.tfPhaseAxis.get_lines()
-        if lines:
-            for curLine in lines:
-                curLine.remove()
-        self.tfPhaseAxis.plot(np.log10(f), phase, color='k')
-        self.tfPhaseAxis.set_xticks(np.log10(frequRange))
-        self.tfPhaseAxis.set_xticklabels(frequRange)
+            lines = self.tfMagAxis.get_lines()
+            if lines:
+                for curLine in lines:
+                    curLine.remove()
+
+            frequRange = [0.1,1,10,100,1000]
+            self.tfMagAxis.plot(np.log10(f), 20*np.log10(abs(h)), color='k')
+            self.tfMagAxis.set_xticks(np.log10(frequRange))
+            self.tfMagAxis.set_xticklabels(frequRange)
+
+            lines = self.tfPhaseAxis.get_lines()
+            if lines:
+                for curLine in lines:
+                    curLine.remove()
+            self.tfPhaseAxis.plot(np.log10(f), phase, color='k')
+            self.tfPhaseAxis.set_xticks(np.log10(frequRange))
+            self.tfPhaseAxis.set_xticklabels(frequRange)
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
@@ -2197,6 +2349,8 @@ class SensorsPanel(wx.Panel):
                 # instances are used. Ignore this error and continue.
                 if field is not None and getattr(object, field) is not None:
                     grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                else:
+                    grid.SetCellValue(rowNumber, pos, '')
             except:
                 pass
             grid.AutoSizeColumns()
@@ -2206,6 +2360,7 @@ class SensorsPanel(wx.Panel):
     def getSensorFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('serial', 'serial', 'editable', str))
         tableField.append(('model', 'model', 'editable', str))
         tableField.append(('producer', 'producer', 'editable', str))
         tableField.append(('description', 'description', 'editable', str))
