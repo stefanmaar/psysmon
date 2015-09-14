@@ -18,6 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib as mpl
+mpl.rcParams['backend'] = 'WXAgg'
+
 import unittest
 import nose.plugins.attrib as nose_attrib
 import psysmon
@@ -41,7 +44,7 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         # Configure the logger.
         cls.logger = logging.getLogger('psysmon')
         cls.logger.setLevel('DEBUG')
-        cls.logger.addHandler(psysmon.getLoggerHandler())
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
         drop_database_tables(db_dialect = 'mysql',
                              db_driver = None,
