@@ -207,10 +207,22 @@ class Inventory(object):
         return added_sensor
 
 
-    def remove_sensor(self):
+    def remove_sensor(self, sensor_to_remove):
         ''' Remove a sensor from the inventory.
+
+        Parameters
+        ----------
+        sensor_to_remove : :class:`Sensor`
+            The sensor to remove from the inventory.
         '''
+        # TODO: implement the method.
+
+        # Find all assigned sensors components in the recorder streams and remove them.
+
+
+        # Remove the sensor itself from the inventory.
         pass
+
 
 
     def add_network(self, network):
@@ -850,6 +862,9 @@ class RecorderStream(object):
         name : String
             The name of the component.
 
+        serial : String
+            The serial of the sensor containing the component.
+
         start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
             The start time of the timespan to return.
 
@@ -1079,6 +1094,28 @@ class Sensor(object):
         return ret_component
 
 
+    def pop_component_by_instance(self, component):
+        ''' Remove a component from the sensor using the component instance.
+        '''
+        # Check if the component is assigned to a recorder stream.
+        assigned_streams = []
+        removed_component = None
+        recorder_list = self.parent_inventory.get_recorder()
+        for cur_recorder in recorder_list:
+            stream_list = cur_recorder.get_stream()
+            for cur_stream in stream_list:
+                if cur_stream.get_component(serial = component.serial):
+                    assigned_streams.append(cur_stream)
+
+        if not assigned_streams:
+            # If the component is not assigned to a stream, remove it.
+            if component in self.components:
+                self.components.remove(component)
+                removed_component = component
+
+        return removed_component, assigned_streams
+
+
     def pop_component(self, **kwargs):
         ''' Remove a component from the sensor.
 
@@ -1219,6 +1256,12 @@ class SensorComponent(object):
             self.logger.error('A parameter already exists for the given timespan.')
 
         return added_parameter
+
+
+    def remove_parameter(self, parameter_to_remove):
+        ''' Remove a parameter from the component.
+        '''
+        self.parameters.remove(parameter_to_remove)
 
 
 
