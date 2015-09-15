@@ -521,6 +521,37 @@ class InventoryTestCase(unittest.TestCase):
         self.assertEqual(stream1.components[0], TimeBox(component1, cur_starttime, cur_endtime))
 
 
+    def test_remove_sensor_component(self):
+        inventory = Inventory('inventory_name')
+        recorder1 = Recorder(serial = 'rec1_serial',
+                             type = 'rec1_type')
+
+        stream1 = RecorderStream(name = 'stream1_name',
+                               label = 'stream1_label')
+        recorder1.add_stream(stream1)
+        inventory.add_recorder(recorder1)
+
+        sensor1 = Sensor(serial = 'sensor1_serial',
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
+        component1 = SensorComponent(name = 'comp1_name')
+        sensor1.add_component(component1)
+        inventory.add_sensor(sensor1)
+
+        cur_starttime = UTCDateTime('2014-01-01')
+        cur_endtime = UTCDateTime('2014-02-01')
+        stream1.add_component(serial = 'sensor1_serial',
+                              name = 'comp1_name',
+                              start_time = cur_starttime,
+                              end_time = cur_endtime)
+
+        removed_component, assigned_streams = sensor1.pop_component_by_instance(component1)
+        self.assertIsNone(removed_component)
+        self.assertEqual(len(assigned_streams), 1)
+        self.assertIs(assigned_streams[0].components[0].item, component1)
+
+
+
 
 #def suite():
 #    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
