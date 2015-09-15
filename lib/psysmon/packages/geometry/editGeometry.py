@@ -390,7 +390,7 @@ class EditGeometryDlg(wx.Frame):
         self.inventoryTree.updateInventoryData()
 
 
-    def addRecorder(self):
+    def add_recorder(self):
         ''' Add a recorder to the inventory.
         '''
         if self.selected_inventory is None:
@@ -398,8 +398,8 @@ class EditGeometryDlg(wx.Frame):
             return
 
         # Create the Recorder instance.
-        rec_2_add = Recorder(serial='-9999', 
-                             type = 'new recorder') 
+        rec_2_add = Recorder(serial='-9999',
+                             type = 'new recorder')
         self.selected_inventory.add_recorder(rec_2_add)
         self.inventoryTree.updateInventoryData()
 
@@ -418,6 +418,23 @@ class EditGeometryDlg(wx.Frame):
         return sensor_2_add
 
 
+    def remove_sensor(self):
+        ''' Remove the currently selected sensor.
+        '''
+        if self.selected_sensor is None:
+            self.logger.error('You have to select a sensor first.')
+            return
+
+        # TODO: Implement the method to remove a sensor from the inventory in
+        # the Inventory class.
+
+        #self.selected_inventory.remove_sensor(self.selected_sensor)
+        #self.selected_sensor = None
+        #self.selected_sensor_component = None
+        #self.selected_sensor_component_parameters = None
+        #self.inventoryTree.updateInventoryData()
+
+
     def add_sensor_component(self):
         ''' Add a component to a sensor.
         '''
@@ -430,6 +447,22 @@ class EditGeometryDlg(wx.Frame):
         self.selected_sensor.add_component(component)
         self.inventoryTree.updateInventoryData()
         return component
+
+
+    def remove_sensor_component(self):
+        ''' Remove the currently selected sensor component.
+        '''
+        if self.selected_sensor_component is None:
+            self.logger.error('You have to select a sensor component first.')
+            return
+
+        removed_component, assigned_streams = self.selected_sensor.pop_component_by_instance(self.selected_sensor_component)
+        if removed_component:
+            self.selected_sensor_component = None
+            self.selected_sensor_component_parameters = None
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.info("Can't remove the component. It is assigned to the following recorder streams: %s.", assigned_streams)
 
 
     def add_sensor_component_parameter(self):
@@ -446,6 +479,20 @@ class EditGeometryDlg(wx.Frame):
         self.selected_sensor_component.add_parameter(parameter)
         self.inventoryTree.updateInventoryData()
         return parameter
+
+
+    def remove_sensor_component_parameters(self):
+        ''' Remove the currently selected parameter from the component.
+        '''
+        if self.selected_sensor_component_parameters is None:
+            self.logger.error('You have to select a sensor component parameter first.')
+            return
+
+        self.selected_sensor_component.remove_parameter(self.selected_sensor_component_parameters)
+
+        self.selected_sensor_component_parameters = None
+        self.inventoryTree.updateInventoryData()
+
 
 
 
@@ -642,7 +689,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'recorder_list'):
             self.logger.debug('Handling a recorder list.')
-            cm_data = (("add recorder", self.onAddRecorder),
+            cm_data = (("add recorder", self.on_add_recorder),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -677,6 +724,23 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         elif(self.selected_item == 'sensor_component'):
             self.logger.debug('Handling a sensor component.')
             cm_data = (("add parameters", self.on_add_sensor_component_parameters),
+                       ("remove component", self.on_remove_sensor_component),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'sensor_component_parameter'):
+            self.logger.debug('Handling a sensor component parameter.')
+            cm_data = (("remove parameters", self.on_remove_sensor_component_parameters),)
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'recorder'):
+            self.logger.debug('Handling a recorder.')
+            cm_data = (("add stream", self.on_add_recorder_stream),
+                       ("remove recorder", self.on_remove_recorder),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -694,11 +758,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             # create the context menu.
             context_menu = psyContextMenu(cm_data)
             context_menu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
-        elif(self.selected_item == 'recorder'):
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add sensor')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove recorder')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         elif(self.selected_item == 'network'):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add station')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
@@ -723,9 +782,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def on_remove_sensor(self, event):
         ''' Handle the context menu click.
         '''
-        # Get the selected sensor.
-        # Remove it from the inventory.
         pass
+        #self.Parent.remove_sensor()
+        #self.Parent.inventoryViewNotebook.updateSensorListView()
 
 
     def on_add_sensor_component(self, event):
@@ -736,12 +795,46 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.Parent.inventoryViewNotebook.updateSensorListView()
 
 
+    def on_remove_sensor_component(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_sensor_component()
+        self.Parent.inventoryViewNotebook.updateSensorListView()
+
+
     def on_add_sensor_component_parameters(self, event):
         ''' Handle the context menu click.
         '''
         self.Parent.selected_sensor_component_parameters = self.Parent.add_sensor_component_parameter()
         self.selected_item = 'sensor_component parameter'
         self.Parent.inventoryViewNotebook.updateSensorListView()
+
+
+    def on_remove_sensor_component_parameters(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_sensor_component_parameters()
+        self.Parent.inventoryViewNotebook.updateSensorListView()
+
+
+    def on_add_recorder(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_recorder()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
+
+
+    def on_add_recorder_stream(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_recorder_stream()
+        self.Parent.inventoryViewNotebook.updateSensorListView()
+
+
+    def on_remove_recorder(self, event):
+        ''' Handle the context menu click.
+        '''
+        pass
 
 
     def on_collapse_element(self, event):
@@ -919,14 +1012,16 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'SensorComponent' or pyData.__class__.__name__ == 'DbSensorComponent'):
             self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_sensor = pyData.parent_sensor
             self.Parent.selected_sensor_component = pyData
             self.selected_item = 'sensor_component'
             self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'SensorComponentParameter' or pyData.__class__.__name__ == 'DbSensorComponentParameter'):
             self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_sensor = pyData.parent_component.parent_sensor
             self.Parent.selected_sensor_component = pyData.parent_component
             self.Parent.selected_sensor_component_parameters = pyData
-            self.selected_item = 'sensor_component parameter'
+            self.selected_item = 'sensor_component_parameter'
             self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'Recorder' or pyData.__class__.__name__ == 'DbRecorder'):
             self.Parent.selected_inventory = pyData.parent_inventory
