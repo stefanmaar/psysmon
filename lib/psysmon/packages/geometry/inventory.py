@@ -745,12 +745,14 @@ class RecorderStream(object):
         else:
             return None
 
+
     @property
     def serial(self):
         if self.parent_recorder is not None:
             return self.parent_recorder.serial
         else:
             return None
+
 
 
     def __setitem__(self, name, value):
@@ -836,7 +838,8 @@ class RecorderStream(object):
             else:
                 self.components.append(TimeBox(item = cur_component,
                                                start_time = start_time,
-                                               end_time = end_time))
+                                               end_time = end_time,
+                                               parent = self))
                 self.has_changed = True
                 added_component = cur_component
         else:
@@ -992,6 +995,23 @@ class RecorderStreamParameter(object):
             return self.parent_recorder_stream.parent_inventory
         else:
             return None
+
+
+    @property
+    def start_time_string(self):
+        if self.start_time is None:
+            return 'bing bang'
+        else:
+            return self.start_time.isoformat()
+
+
+    @property
+    def end_time_string(self):
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
+
 
 
 
@@ -1871,7 +1891,8 @@ class Channel(object):
             else:
                 self.streams.append(TimeBox(item = cur_stream,
                                             start_time = start_time,
-                                            end_time = end_time))
+                                            end_time = end_time,
+                                            parent = self))
                 self.has_changed = True
                 added_stream = cur_stream
 
@@ -2083,13 +2104,16 @@ class TimeBox(object):
 
     '''
 
-    def __init__(self, item, start_time, end_time = None):
+    def __init__(self, item, start_time, end_time = None, parent = None):
         ''' Initialize the instance.
 
         Parameters
         ----------
 
         '''
+        # The instance holding the time-box.
+        self.parent = parent
+
         # The item contained in the box.
         self.item = item
 
