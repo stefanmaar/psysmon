@@ -154,6 +154,16 @@ class EditGeometryDlg(wx.Frame):
         # The recorder currently selected by the user.
         self.selected_recorder = None
 
+        # The recorder stream currently selected by the user.
+        self.selected_recorder_stream = None
+
+        # The recorder stream parameter currently selected by the user.
+        self.selected_recorder_stream_parameter = None
+
+        # The sensor component assigned to a recorder stream currently selected
+        # by the user.
+        self.selected_recorder_stream_assigned_component = None
+
         # The sensor currently selected by the user.
         self.selected_sensor = None
 
@@ -643,10 +653,13 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.icons['stationList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['sensorList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['networkList'] = il.Add(icons.notepad_icon_16.GetBitmap())
+        self.icons['recorder_stream_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
+        self.icons['recorder_stream_parameter_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
+        self.icons['recorder_assigned_components_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['network'] = il.Add(icons.network_icon_16.GetBitmap())
         self.icons['station'] = il.Add(icons.pin_map_icon_16.GetBitmap())
-        self.icons['channel'] = il.Add(icons.pin_map_icon_16.GetBitmap())
-        self.icons['channel_stream'] = il.Add(icons.pin_map_icon_16.GetBitmap())
+        self.icons['channel'] = il.Add(icons.pin_sq_right_icon_16.GetBitmap())
+        self.icons['channel_stream'] = il.Add(icons.cassette_icon_16.GetBitmap())
         self.icons['recorder'] = il.Add(icons.cassette_icon_16.GetBitmap())
         self.icons['recorder_stream'] = il.Add(icons.cassette_icon_16.GetBitmap())
         self.icons['sensor'] = il.Add(icons.playback_rec_icon_16.GetBitmap())
@@ -1027,7 +1040,33 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_recorder = pyData
             self.selected_item = 'recorder'
-            self.Parent.inventoryViewNotebook.updateRecorderListView(pyData)
+            self.Parent.inventoryViewNotebook.updateRecorderListView()
+        elif(pyData.__class__.__name__ == 'RecorderStream' or pyData.__class__.__name__ == 'DbRecorderStream'):
+            self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_recorder = pyData.parent_recorder
+            self.Parent.selected_recorder_stream = pyData
+            if self.GetItemText(evt.GetItem()) == 'parameters':
+                self.selected_item = 'recorder_stream_parameter_list'
+            elif self.GetItemText(evt.GetItem()) == 'assigned components':
+                self.selected_item = 'recorder_assigned_components_list'
+            else:
+                self.selected_item = 'recorder_stream'
+            self.Parent.inventoryViewNotebook.updateRecorderListView()
+        elif(pyData.__class__.__name__ == 'TimeBox'):
+            if pyData.item.__class__.__name__ == 'SensorComponent' or pyData.__class__.__name__ == 'DbSensorComponent':
+                self.Parent.selected_inventory = pyData.parent.parent_inventory
+                self.Parent.selected_recorder = pyData.parent.parent_recorder
+                self.Parent.selected_recorder_stream = pyData.parent
+                self.Parent.selected_recorder_stream_assigned_component = pyData
+                self.selected_item = 'recorder_stream_assigned_component'
+                self.Parent.inventoryViewNotebook.updateRecorderListView()
+        elif(pyData.__class__.__name__ == 'RecorderStreamParameter' or pyData.__class__.__name__ == 'DbRecorderStreamParameter'):
+            self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_recorder = pyData.parent_recorder_stream.parent_recorder
+            self.Parent.selected_recorder_stream = pyData.parent_recorder_stream
+            self.Parent.selected_recorder_stream_parameter = pyData
+            self.selected_item = 'recorder_stream_parameter'
+            self.Parent.inventoryViewNotebook.updateRecorderListView()
         elif(pyData.__class__.__name__ == 'Network' or pyData.__class__.__name__ == 'DbNetwork'):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_network = pyData
@@ -1106,16 +1145,29 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 self.SetItemPyData(curRecorderItem, curRecorder)
                 self.SetItemImage(curRecorderItem, self.icons['recorder'], wx.TreeItemIcon_Normal)
 
+
+                # Add the recorder streams.
                 for curStream in sorted(curRecorder.streams, key = attrgetter('name')):
                     curStreamItem = self.AppendItem(curRecorderItem, curStream.name)
                     self.SetItemPyData(curStreamItem, curStream)
                     self.SetItemImage(curStreamItem, self.icons['recorder_stream'], wx.TreeItemIcon_Normal)
 
-                    for curTimebox in sorted(curStream.components, key = attrgetter('start_time')):
-                        item = self.AppendItem(curStreamItem, curTimebox.item.serial + ':' + curTimebox.item.name + ' (' + curTimebox.start_time_string + ' to ' + curTimebox.end_time_string + ')')
-                        self.SetItemPyData(item, curTimebox)
-                        self.SetItemImage(item, self.icons['recorder_stream'], wx.TreeItemIcon_Normal)
+                    # Add the assigned component list icon.
+                    list_item = self.AppendItem(curStreamItem, 'assigned components')
+                    self.SetItemPyData(list_item, curStream)
+                    self.SetItemBold(list_item, True)
+                    self.SetItemImage(list_item, self.icons['recorder_assigned_components_list'], wx.TreeItemIcon_Normal)
 
+                    for curTimebox in sorted(curStream.components, key = attrgetter('start_time')):
+                        item = self.AppendItem(list_item, curTimebox.item.serial + ':' + curTimebox.item.name + ' (' + curTimebox.start_time_string + ' to ' + curTimebox.end_time_string + ')')
+                        self.SetItemPyData(item, curTimebox)
+                        self.SetItemImage(item, self.icons['sensor_component'], wx.TreeItemIcon_Normal)
+
+                    # Add the recorder stream parameter list icon.
+                    list_item = self.AppendItem(curStreamItem, 'parameters')
+                    self.SetItemPyData(list_item, curStream)
+                    self.SetItemBold(list_item, True)
+                    self.SetItemImage(list_item, self.icons['recorder_stream_parameter_list'], wx.TreeItemIcon_Normal)
 
             # Fill the networks.
             for curNetwork in curInventory.networks:
@@ -1185,7 +1237,7 @@ class InventoryViewNotebook(wx.Notebook):
         self.listViewPanel.showControlPanel('network')
 
 
-    def updateRecorderListView(self, recorder):
+    def updateRecorderListView(self):
         ''' Show the recorder data in the list view.
         '''
         self.logger.debug("updating the recorder listview")
@@ -1641,9 +1693,6 @@ class NetworkPanel(wx.Panel):
 
         self.logger = self.GetParent().logger
 
-        ## The currently displayed station.
-        self.displayedNetwork = None;
-
         self.sizer = wx.GridBagSizer(5, 5)
 
         roAttr = wx.grid.GridCellAttr()
@@ -1688,6 +1737,14 @@ class NetworkPanel(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
 
+    @property
+    def selected_network(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_network
+        else:
+            return None
+
+
     def getNetworkFields(self):
         ''' The recorder grid columns.
         '''
@@ -1712,13 +1769,11 @@ class NetworkPanel(wx.Panel):
         return tableField
 
 
-    def updateData(self, network):
+    def updateData(self):
         ''' Update the displayed data.
         '''
-        self.displayedNetwork = network
-
         # Update the sensor grid fields.
-        self.setGridValues(network, self.network_grid, self.getNetworkFields(), 0)
+        self.setGridValues(self.selected_network, self.network_grid, self.getNetworkFields(), 0)
 
         self.network_grid.AutoSizeColumns()
 
@@ -1766,97 +1821,322 @@ class RecorderPanel(wx.Panel):
 
         self.logger = self.GetParent().logger
 
-        ## The currently displayed station.
-        self.displayedRecorder = None;
-
         self.sizer = wx.GridBagSizer(5, 5)
 
+        self.mgr = wx.aui.AuiManager(self)
+
         roAttr = wx.grid.GridCellAttr()
-        roAttr.SetReadOnly(True) 
+        roAttr.SetReadOnly(True)
 
         # Create the recorder grid.
-        #stationColLabels = ['id', 'name', 'network', 'x', 'y', 'z', 'coordSystem', 'description']
         fields = self.getRecorderFields()
-        self.recorder_grid = wx.grid.Grid(self, size=(-1, 100))
+        self.recorder_grid = wx.grid.Grid(self, size=(-1, 40))
         self.recorder_grid.CreateGrid(1, len(fields))
 
         # Bind the recorder_grid events.
         self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onRecorderCellChange)
 
-        for k, (name, label, attr)  in enumerate(fields):
+        # Set the column attributes.
+        for k, (name, label, attr, convert)  in enumerate(fields):
             self.recorder_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.recorder_grid.SetColAttr(k, roAttr)
 
-        self.recorder_grid.AutoSizeColumns() 
+        self.recorder_grid.AutoSizeColumns()
 
-        self.sizer.Add(self.recorder_grid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        self.mgr.AddPane(self.recorder_grid, wx.aui.AuiPaneInfo().Name('recorder').
+                         CentrePane().Layer(0).Position(0).BestSize(wx.Size(-1, 40)).
+                         MinSize(wx.Size(200, 40)))
 
-        # Create the sensor grid.
-        fields = self.getSensorFields()
-        self.sensorGrid = wx.grid.Grid(self, size=(100,100))
-        self.sensorGrid.CreateGrid(5, len(fields))
+        # Create the streams grid.
+        fields = self.getStreamFields()
+        self.stream_grid = wx.grid.Grid(self, size = (-1, 100))
+        self.stream_grid.CreateGrid(1, len(fields))
 
-        # Bind the stationGrid events.
-        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+        # Bind the stream_grid events.
+        self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+                              self.onStreamCellChange)
+        self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
+                              self.onStreamCellLeftClick)
 
-        for k, (name, label, attr) in enumerate(fields):
-            self.sensorGrid.SetColLabelValue(k, label)
+        # Set the column attributes.
+        for k, (name, label, attr, convert)  in enumerate(fields):
+            self.stream_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
-                self.sensorGrid.SetColAttr(k, roAttr)
+                self.stream_grid.SetColAttr(k, roAttr)
+
+        self.stream_grid.AutoSizeColumns()
+
+        self.mgr.AddPane(self.stream_grid, wx.aui.AuiPaneInfo().Name('streams').
+                         Caption('streams of recorder').Bottom().Row(2).Position(0).Layer(0).
+                         CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().
+                         BestSize(wx.Size(-1, 80)).MinSize(wx.Size(200, 40)))
 
 
-        self.sizer.Add(self.sensorGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
+        # Create the stream parameters grid.
+        fields = self.getStreamParameterFields()
+        self.stream_parameter_grid = wx.grid.Grid(self, size = (-1, 100))
+        self.stream_parameter_grid.CreateGrid(1, len(fields))
 
-        self.sizer.AddGrowableRow(1)
-        self.sizer.AddGrowableCol(0)
-        self.SetSizerAndFit(self.sizer)
+        # Bind the stream_parameter_grid events.
+        self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+                                        self.onStreamParameterCellChange)
+        self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
+                                        self.onStreamParameterCellLeftClick)
+
+        # Set the column attributes.
+        for k, (name, label, attr, convert)  in enumerate(fields):
+            self.stream_parameter_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.stream_parameter_grid.SetColAttr(k, roAttr)
+
+        self.stream_parameter_grid.AutoSizeColumns()
+
+        self.mgr.AddPane(self.stream_parameter_grid, wx.aui.AuiPaneInfo().Name('stream parameters').
+                         Caption('parameters of stream').Bottom().Row(1).Position(0).Layer(0).
+                         CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().
+                         BestSize(wx.Size(-1, 80)).MinSize(wx.Size(200, 40)))
+
+
+        # Create the assigned sensor components grid.
+        fields = self.getAssignedComponentFields()
+        self.assigned_component_grid = wx.grid.Grid(self, size = (-1, 100))
+        self.assigned_component_grid.CreateGrid(1, len(fields))
+
+        # Bind the assigned_component_grid events.
+
+        # Set the column attributes.
+        for k, (name, label, attr, convert)  in enumerate(fields):
+            self.assigned_component_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.assigned_component_grid.SetColAttr(k, roAttr)
+
+        self.assigned_component_grid.AutoSizeColumns()
+
+        self.mgr.AddPane(self.assigned_component_grid, wx.aui.AuiPaneInfo().Name('assigned components').
+                         Caption('components assigned to stream').Bottom().Row(0).Position(0).Layer(0).
+                         CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().
+                         BestSize(wx.Size(-1, 80)).MinSize(wx.Size(200, 40)))
+
+
+        self.mgr.Update()
+
+
+    @property
+    def selected_recorder(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_recorder
+        else:
+            return None
+
+
+    @selected_recorder.setter
+    def selected_recorder(self, value):
+        self.GetTopLevelParent().selected_recorder = value
+
+
+    @property
+    def selected_stream(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_recorder_stream
+        else:
+            return None
+
+
+    @selected_stream.setter
+    def selected_stream(self, value):
+        self.GetTopLevelParent().selected_recorder_stream = value
+
+
+    @property
+    def selected_stream_parameter(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_recorder_stream_parameter
+        else:
+            return None
+
+
+    @selected_stream_parameter.setter
+    def selected_stream_parameter(self, value):
+        self.GetTopLevelParent().selected_recorder_stream_parameter = value
+
 
 
     def getRecorderFields(self):
         ''' The recorder grid columns.
         '''
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('serial', 'serial', 'editable'))
-        tableField.append(('type', 'type', 'editable'))
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('serial', 'serial', 'editable', str))
+        tableField.append(('type', 'type', 'editable', str))
         return tableField
 
 
-    def getSensorFields(self):
-        ''' Get the sensor grid columns.
+    def getStreamFields(self):
+        ''' The stream grid columns.
         '''
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('label', 'label', 'readonly'))
-        tableField.append(('recorderSerial', 'rec.serial', 'readonly'))
-        tableField.append(('recorderType', 'rec. type', 'readonly'))
-        tableField.append(('serial', 'serial', 'readonly'))
-        tableField.append(('type', 'type', 'readonly'))
-        tableField.append(('recorderChannel', 'rec. channel', 'readonly'))
-        tableField.append(('channel', 'channel', 'readonly'))
-        tableField.append(('start', 'start', 'editable'))
-        tableField.append(('end', 'end', 'editable'))
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('name', 'name', 'editable', str))
+        tableField.append(('label', 'label', 'editable', str))
         return tableField
 
 
-    def updateData(self, recorder):
+    def getStreamParameterFields(self):
+        ''' The stream parameter grid columns.
+        '''
+        tableField = []
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
+        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
+        tableField.append(('gain', 'gain', 'editable', float))
+        tableField.append(('bitweight', 'bitweight', 'editable', float))
+        return tableField
+
+
+    def getAssignedComponentFields(self):
+        ''' The assigned component grid columns.
+        '''
+        tableField = []
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('serial', 'serial', 'readonly', str))
+        tableField.append(('name', 'name', 'readonly', str))
+        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
+        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
+        return tableField
+
+
+    def updatePaneCaption(self):
+        # Change the pane captions.
+
+        # Update the stream caption.
+        if self.selected_recorder:
+            caption = 'streams of recorder %s' % self.selected_recorder.serial
+            pane = self.mgr.GetPane('streams')
+            pane.Caption(caption)
+
+        # Update the stream parameters caption.
+        if self.selected_stream:
+            caption = 'parameters of stream %s' % self.selected_stream.name
+        else:
+            caption = 'no stream selected'
+        pane = self.mgr.GetPane('stream parameters')
+        pane.Caption(caption)
+
+       # Update the assigned components caption.
+        if self.selected_stream:
+            caption = 'sensor components assigned to stream %s' % self.selected_stream.name
+        else:
+            caption = 'no stream selected'
+        pane = self.mgr.GetPane('assigned components')
+        pane.Caption(caption)
+
+        self.mgr.Update()
+
+
+    def updateData(self):
         ''' Update the displayed data.
         '''
-        self.displayedRecorder = recorder
+        self.updatePaneCaption()
 
-        # Update the sensor grid fields.
-        self.setGridValues(recorder, self.recorder_grid, self.getRecorderFields(), 0)
+        # Resize the grid rows.
+        if self.stream_grid.GetNumberRows() > 0:
+            self.stream_grid.DeleteRows(0, self.stream_grid.GetNumberRows())
+        self.stream_grid.AppendRows(len(self.selected_recorder.streams))
+
+        # Update the recorder grid fields
+        self.setGridValues(self.selected_recorder,
+                           self.recorder_grid, self.getRecorderFields(), 0)
+
+        # Update the stream grid fields
+        for k, cur_component in enumerate(self.selected_recorder.streams):
+            self.setGridValues(cur_component,
+                               self.stream_grid,
+                               self.getStreamFields(),
+                               k)
+
+        # Update the stream parameter grid.
+        self.updateParameters()
+
+        # Update the assigned sensor components grid.
+        self.updateAssignedComponents()
 
         self.recorder_grid.AutoSizeColumns()
+
+
+    def updateParameters(self):
+        ''' Update the displayed stream parameters data.
+        '''
+        # Resize the grid rows.
+        if self.stream_parameter_grid.GetNumberRows() > 0:
+            self.stream_parameter_grid.DeleteRows(0, self.stream_parameter_grid.GetNumberRows())
+
+        if self.selected_stream:
+            self.stream_parameter_grid.AppendRows(len(self.selected_stream.parameters))
+
+            # Update the parameter grid fields.
+            for k, cur_parameter in enumerate(self.selected_stream.parameters):
+                self.setGridValues(cur_parameter,
+                                   self.stream_parameter_grid,
+                                   self.getStreamParameterFields(),
+                                   k)
+
+
+        self.stream_parameter_grid.AutoSizeColumns()
+
+
+    def updateAssignedComponents(self):
+        ''' Update the displayed assigned components data.
+        '''
+        # Resize the grid rows.
+        if self.assigned_component_grid.GetNumberRows() > 0:
+            self.assigned_component_grid.DeleteRows(0, self.assigned_component_grid.GetNumberRows())
+
+        if self.selected_stream:
+            self.assigned_component_grid.AppendRows(len(self.selected_stream.components))
+
+            # Update the assigned component grid fields.
+            for k, cur_timebox in enumerate(self.selected_stream.components):
+                cur_component = cur_timebox.item
+                # Set the field values of the assigned sensor.
+                self.setGridValues(cur_component,
+                                   self.assigned_component_grid,
+                                   self.getAssignedComponentFields(),
+                                   k)
+                # Set the field values of the timebox start- and end-time.
+                self.setGridValues(cur_timebox,
+                                   self.assigned_component_grid,
+                                   self.getAssignedComponentFields(),
+                                   k)
+
+
+
+        self.assigned_component_grid.AutoSizeColumns()
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
         ''' Set the grid values of the specified grid.
         '''
-        for pos, (field, label, attr) in enumerate(fields):
-            if field is not None and getattr(object, field) is not None:
-                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+        for pos, (field, label, attr, converter) in enumerate(fields):
+            # The id field will raise an error when normal inventory
+            # instances are used. Ignore this error and continue.
+            try:
+                # Take care of fields with custom strings. 
+                custom_fields = {}
+                custom_fields['start_time'] = 'start_time_string'
+                custom_fields['end_time'] = 'end_time_string'
+                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                    field = custom_fields[field]
+
+                if field is not None and getattr(object, field) is not None:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                else:
+                    grid.SetCellValue(rowNumber, pos, '')
+            except:
+                pass
             grid.AutoSizeColumns()
 
 
@@ -1866,18 +2146,69 @@ class RecorderPanel(wx.Panel):
         selected_parameter = self.recorder_grid.GetColLabelValue(evt.GetCol())
         grid_fields = self.getRecorderFields();
         col_labels = [x[1] for x in grid_fields]
-        
+
         if selected_parameter in col_labels:
             ind = col_labels.index(selected_parameter)
-            fieldName = grid_fields[ind][0]
-            fieldAttr = grid_fields[ind][2]
-            if fieldAttr == 'editable':
-                setattr(self.displayedRecorder, fieldName, self.recorder_grid.GetCellValue(evt.GetRow(), evt.GetCol()))
-                self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
-                self.logger.debug(self.GetParent().GetParent().GetParent())
+            field_name = grid_fields[ind][0]
+            converter = grid_fields[ind][3]
+            setattr(self.selected_recorder, field_name, converter(self.recorder_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
         else:
             pass
-        
+
+
+    def onStreamCellChange(self, evt):
+        ''' The stream grid cell edit callback.
+        '''
+        selected_parameter = self.stream_grid.GetColLabelValue(evt.GetCol())
+        grid_fields = self.getStreamFields();
+        col_labels = [x[1] for x in grid_fields]
+
+        if selected_parameter in col_labels:
+            ind = col_labels.index(selected_parameter)
+            field_name = grid_fields[ind][0]
+            converter = grid_fields[ind][3]
+            setattr(self.selected_stream, field_name, converter(self.stream_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
+        else:
+            pass
+
+
+    def onStreamCellLeftClick(self, evt):
+        ''' The stream grid cell left click callback.
+        '''
+        self.selected_stream = self.selected_recorder.streams[evt.GetRow()]
+        self.updateParameters()
+        self.updateAssignedComponents()
+        self.updatePaneCaption()
+        evt.Skip()
+
+
+    def onStreamParameterCellChange(self, evt):
+        ''' The stream parameter grid cell edit callback.
+        '''
+        selected_parameter = self.stream_parameter_grid.GetColLabelValue(evt.GetCol())
+        grid_fields = self.getStreamParameterFields();
+        col_labels = [x[1] for x in grid_fields]
+
+        if selected_parameter in col_labels:
+            ind = col_labels.index(selected_parameter)
+            field_name = grid_fields[ind][0]
+            converter = grid_fields[ind][3]
+            setattr(self.selected_stream_parameter, field_name, converter(self.stream_parameter_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
+        else:
+            pass
+
+
+    def onStreamParameterCellLeftClick(self, evt):
+        ''' The stream grid cell left click callback.
+        '''
+        self.selected_stream_parameter = self.selected_stream.parameters[evt.GetRow()]
+        evt.Skip()
 
 
 
@@ -2398,15 +2729,11 @@ class SensorsPanel(wx.Panel):
             self.parameterGrid.AppendRows(len(self.displayedComponent.parameters))
 
             parameter_fields = self.getComponentParameterFields()
-            field_labels = [x[1] for x in parameter_fields]
+            #field_labels = [x[1] for x in parameter_fields]
 
             # Update the component grid fields.
             for k, cur_parameter in enumerate(self.displayedComponent.parameters):
                 self.setGridValues(cur_parameter, self.parameterGrid, parameter_fields, k)
-                self.parameterGrid.SetCellValue(k, field_labels.index('start'), cur_parameter.start_time_string)
-                self.parameterGrid.SetCellValue(k, field_labels.index('end'), cur_parameter.end_time_string)
-                self.parameterGrid.SetCellValue(k, field_labels.index('zeros'), cur_parameter.zeros_string)
-                self.parameterGrid.SetCellValue(k, field_labels.index('poles'), cur_parameter.poles_string)
 
             self.updateTransferFunction()
 
@@ -2446,9 +2773,18 @@ class SensorsPanel(wx.Panel):
 
     def setGridValues(self, object, grid, fields, rowNumber):
         for pos, (field, label, attr, converter) in enumerate(fields):
+            # The id field will raise an error when normal inventory
+            # instances are used. Ignore this error and continue.
             try:
-                # The id field is not will raise an error when normal inventory
-                # instances are used. Ignore this error and continue.
+                # Take care of fields with custom strings. 
+                custom_fields = {}
+                custom_fields['start_time'] = 'start_time_string'
+                custom_fields['end_time'] = 'end_time_string'
+                custom_fields['poles'] = 'poles_string'
+                custom_fields['zeros'] = 'zeros_string'
+                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                    field = custom_fields[field]
+
                 if field is not None and getattr(object, field) is not None:
                     grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
                 else:
