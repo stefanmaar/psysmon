@@ -1693,48 +1693,50 @@ class NetworkPanel(wx.Panel):
 
         self.logger = self.GetParent().logger
 
-        self.sizer = wx.GridBagSizer(5, 5)
+        self.mgr = wx.aui.AuiManager(self)
 
         roAttr = wx.grid.GridCellAttr()
-        roAttr.SetReadOnly(True) 
+        roAttr.SetReadOnly(True)
 
         # Create the recorder grid.
-        #stationColLabels = ['id', 'name', 'network', 'x', 'y', 'z', 'coordSystem', 'description']
         fields = self.getNetworkFields()
-        self.network_grid = wx.grid.Grid(self, size=(-1, 100))
+        self.network_grid = wx.grid.Grid(self)
         self.network_grid.CreateGrid(1, len(fields))
 
         # Bind the network_grid events.
         self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onNetworkCellChange)
 
+        # Set the column attributes.
         for k, (name, label, attr)  in enumerate(fields):
             self.network_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.network_grid.SetColAttr(k, roAttr)
 
-        self.network_grid.AutoSizeColumns() 
+        self.network_grid.AutoSizeColumns()
 
-        self.sizer.Add(self.network_grid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        self.mgr.AddPane(self.network_grid, wx.aui.AuiPaneInfo().Name('network').
+                         CentrePane().Layer(0).Position(0).MinSize(wx.Size(200, 100)))
 
         # Create the station grid.
         fields = self.getStationFields()
-        self.station_grid = wx.grid.Grid(self, size=(100,100))
+        self.station_grid = wx.grid.Grid(self)
         self.station_grid.CreateGrid(5, len(fields))
 
         # Bind the stationGrid events.
         #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
 
+        # Set the column attributes.
         for k, (name, label, attr) in enumerate(fields):
             self.station_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.station_grid.SetColAttr(k, roAttr)
 
+        self.mgr.AddPane(self.station_grid, wx.aui.AuiPaneInfo().Name('stations').
+                         Caption('stations of network').Bottom().Row(1).Position(0).Layer(0).
+                         CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 300)))
 
-        self.sizer.Add(self.station_grid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
-
-        self.sizer.AddGrowableRow(1)
-        self.sizer.AddGrowableCol(0)
-        self.SetSizerAndFit(self.sizer)
+        self.mgr.Update()
 
 
     @property
@@ -1758,14 +1760,14 @@ class NetworkPanel(wx.Panel):
     def getStationFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('name', 'name', 'editable'))
-        tableField.append(('location', 'location', 'editable'))
-        tableField.append(('network', 'network', 'editable'))
-        tableField.append(('x', 'x', 'editable'))
-        tableField.append(('y', 'y', 'editable'))
-        tableField.append(('z', 'z', 'editable'))
-        tableField.append(('coord_system', 'coord. system', 'editable'))
-        tableField.append(('description', 'description', 'editable'))
+        tableField.append(('name', 'name', 'readonly'))
+        tableField.append(('location', 'location', 'readonly'))
+        tableField.append(('network', 'network', 'readonly'))
+        tableField.append(('x', 'x', 'readonly'))
+        tableField.append(('y', 'y', 'readonly'))
+        tableField.append(('z', 'z', 'readonly'))
+        tableField.append(('coord_system', 'coord. system', 'readonly'))
+        tableField.append(('description', 'description', 'readonly'))
         return tableField
 
 
@@ -1774,8 +1776,15 @@ class NetworkPanel(wx.Panel):
         '''
         # Update the sensor grid fields.
         self.setGridValues(self.selected_network, self.network_grid, self.getNetworkFields(), 0)
-
         self.network_grid.AutoSizeColumns()
+
+        # Update the station grid fields.
+        for k, cur_station in enumerate(self.selected_network.stations):
+            self.setGridValues(cur_station,
+                               self.station_grid,
+                               self.getStationFields(),
+                               k)
+        self.station_grid.AutoSizeColumns()
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
@@ -1845,8 +1854,8 @@ class RecorderPanel(wx.Panel):
         self.recorder_grid.AutoSizeColumns()
 
         self.mgr.AddPane(self.recorder_grid, wx.aui.AuiPaneInfo().Name('recorder').
-                         CentrePane().Layer(0).Position(0).BestSize(wx.Size(-1, 40)).
-                         MinSize(wx.Size(200, 40)))
+                         CentrePane().Layer(0).Position(0).Row(0).Floatable(False).
+                         MinSize(wx.Size(200, 100)))
 
         # Create the streams grid.
         fields = self.getStreamFields()
@@ -1868,10 +1877,9 @@ class RecorderPanel(wx.Panel):
         self.stream_grid.AutoSizeColumns()
 
         self.mgr.AddPane(self.stream_grid, wx.aui.AuiPaneInfo().Name('streams').
-                         Caption('streams of recorder').Bottom().Row(2).Position(0).Layer(0).
-                         CloseButton(False).CaptionVisible().
-                         MinimizeButton().MaximizeButton().
-                         BestSize(wx.Size(-1, 80)).MinSize(wx.Size(200, 40)))
+                         Caption('streams of recorder').Bottom().Row(0).Position(0).Layer(1).
+                         Floatable(False).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
         # Create the stream parameters grid.
@@ -1894,10 +1902,9 @@ class RecorderPanel(wx.Panel):
         self.stream_parameter_grid.AutoSizeColumns()
 
         self.mgr.AddPane(self.stream_parameter_grid, wx.aui.AuiPaneInfo().Name('stream parameters').
-                         Caption('parameters of stream').Bottom().Row(1).Position(0).Layer(0).
-                         CloseButton(False).CaptionVisible().
-                         MinimizeButton().MaximizeButton().
-                         BestSize(wx.Size(-1, 80)).MinSize(wx.Size(200, 40)))
+                         Caption('parameters of stream').Bottom().Row(0).Position(0).Layer(2).
+                         Floatable(False).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
         # Create the assigned sensor components grid.
@@ -1916,10 +1923,9 @@ class RecorderPanel(wx.Panel):
         self.assigned_component_grid.AutoSizeColumns()
 
         self.mgr.AddPane(self.assigned_component_grid, wx.aui.AuiPaneInfo().Name('assigned components').
-                         Caption('components assigned to stream').Bottom().Row(0).Position(0).Layer(0).
+                         Caption('components assigned to stream').Bottom().Row(0).Position(0).Layer(3).
                          CloseButton(False).CaptionVisible().
-                         MinimizeButton().MaximizeButton().
-                         BestSize(wx.Size(-1, 80)).MinSize(wx.Size(200, 40)))
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
         self.mgr.Update()
@@ -2222,51 +2228,59 @@ class StationsPanel(wx.Panel):
         ## The currently displayed station.
         self.displayedStation = None;
 
-        self.sizer = wx.GridBagSizer(5, 5)
+        self.mgr = wx.aui.AuiManager(self)
 
         roAttr = wx.grid.GridCellAttr()
-        roAttr.SetReadOnly(True) 
+        roAttr.SetReadOnly(True)
 
-        # Create the station grid.
-        #stationColLabels = ['id', 'name', 'network', 'x', 'y', 'z', 'coordSystem', 'description']
+        # Create the stations grid.
         fields = self.getStationFields()
-        self.stationGrid = wx.grid.Grid(self, size=(-1, 100))
-        self.stationGrid.CreateGrid(1, len(fields))
+        self.station_grid = wx.grid.Grid(self, size=(-1, 100))
+        self.station_grid.CreateGrid(1, len(fields))
 
         # Bind the stationGrid events.
-        self.stationGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+        self.station_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
 
-        for k, (name, label, attr)  in enumerate(fields):
-            self.stationGrid.SetColLabelValue(k, label)
+        for k, (name, label, attr, converter)  in enumerate(fields):
+            self.station_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
-                self.stationGrid.SetColAttr(k, roAttr)
+                self.station_grid.SetColAttr(k, roAttr)
 
-        self.stationGrid.AutoSizeColumns() 
+        self.station_grid.AutoSizeColumns()
 
-        self.sizer.Add(self.stationGrid, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
+        self.mgr.AddPane(self.station_grid, wx.aui.AuiPaneInfo().Name("station").
+                         CentrePane().Layer(0).Position(0).MinSize(wx.Size(200, 100)))
 
 
-        # Create the sensor grid.
-        fields = self.getSensorFields()
-        self.sensorGrid = wx.grid.Grid(self, size=(100,100))
-        self.sensorGrid.CreateGrid(5, len(fields))
+        # Create the channels grid.
+        fields = self.getChannelFields()
+        self.channel_grid = wx.grid.Grid(self, size=(100,100))
+        self.channel_grid.CreateGrid(1, len(fields))
 
         # Bind the stationGrid events.
-        self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+        self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onChannelCellChange)
 
-        for k, (name, label, attr) in enumerate(fields):
-            self.sensorGrid.SetColLabelValue(k, label)
+        for k, (name, label, attr, converter) in enumerate(fields):
+            self.channel_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
-                self.sensorGrid.SetColAttr(k, roAttr)
+                self.channel_grid.SetColAttr(k, roAttr)
 
 
-        self.sizer.Add(self.sensorGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
+        caption = 'channels of station'
+        self.mgr.AddPane(self.channel_grid, wx.aui.AuiPaneInfo().Name("channels").Caption(caption).
+                         Bottom().Row(0).Position(0).Layer(1).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
-        self.sizer.AddGrowableRow(1)
-        self.sizer.AddGrowableCol(0)
-        self.SetSizerAndFit(self.sizer)
+        self.mgr.Update()
 
+
+    @property
+    def selected_station(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_station
+        else:
+            return None
 
 
     ## The cell edit callback.    
@@ -2301,6 +2315,8 @@ class StationsPanel(wx.Panel):
             pass
 
 
+    def onChannelCellChange(self, evt):
+        pass
 
 
     ## The cell edit callback.    
@@ -2334,46 +2350,22 @@ class StationsPanel(wx.Panel):
             dlg.Destroy()
 
 
-    def updateData(self, station):
-
-        self.displayedStation = station
-
+    def updateData(self):
         # Update the sensor grid fields.
-        self.setGridValues(station, self.stationGrid, self.getStationFields(), 0)
+        self.setGridValues(self.selected_station, self.station_grid, self.getStationFields(), 0)
 
-        # Clear the sensor grid rows.
-        self.sensorGrid.DeleteRows(0, self.sensorGrid.GetNumberRows())
+        # Resize the grid rows.
+        if self.channel_grid.GetNumberRows() > 0:
+            self.channel_grid.DeleteRows(0, self.channel_grid.GetNumberRows())
+        self.channel_grid.AppendRows(len(self.selected_station.channels))
 
-        # Add the new number of rows.
-        self.sensorGrid.AppendRows(len(station.sensors))
-
-        # Sort the station sensors and save the sorted list. This list is 
-        # used when changing the sensor values in the inventory.
-        self.tableSensors = sorted(station.sensors, key = lambda sensor: (sensor[0].recorder_serial, sensor[0].serial, sensor[0].channel_name))
-        #self.tableSensors = sorted(station.sensors, key = attrgetter('channel'))
-        # Set the sensor values.
-        for k,(curSensor, startTime, endTime) in enumerate(self.tableSensors):
-            self.sensorGrid.SetCellValue(k, 0, str(curSensor.id))
-            self.sensorGrid.SetCellValue(k, 1, curSensor.label)
-            self.sensorGrid.SetCellValue(k, 2, curSensor.recorder_serial)
-            self.sensorGrid.SetCellValue(k, 3, curSensor.recorder_type)
-            self.sensorGrid.SetCellValue(k, 4, curSensor.serial)
-            self.sensorGrid.SetCellValue(k, 5, curSensor.type)
-            self.sensorGrid.SetCellValue(k, 6, curSensor.rec_channel_name)
-            self.sensorGrid.SetCellValue(k, 7, curSensor.channel_name)
-            if startTime:
-                self.sensorGrid.SetCellValue(k, 8, str(startTime))
-
-            if endTime:
-                self.sensorGrid.SetCellValue(k, 9, str(endTime))
-            else:
-                self.sensorGrid.SetCellValue(k, 9, 'running')
-
-        self.sensorGrid.AutoSizeColumns()
+        # Update the channel grid.
+        for k, cur_channel in enumerate(self.selected_station.channels):
+            self.setGridValues(cur_channel, self.channel_grid, self.getChannelFields(), k)
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
-        for pos, (field, label, attr) in enumerate(fields):
+        for pos, (field, label, attr, converter) in enumerate(fields):
             if field is not None and getattr(object, field) is not None:
                 grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             grid.AutoSizeColumns()
@@ -2382,31 +2374,24 @@ class StationsPanel(wx.Panel):
     ## The station grid columns. 
     def getStationFields(self):
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('name', 'name', 'editable'))
-        tableField.append(('location', 'location', 'editable'))
-        tableField.append(('network', 'network', 'editable'))
-        tableField.append(('x', 'x', 'editable'))
-        tableField.append(('y', 'y', 'editable'))
-        tableField.append(('z', 'z', 'editable'))
-        tableField.append(('coord_system', 'coord. system', 'editable'))
-        tableField.append(('description', 'description', 'editable'))
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('name', 'name', 'editable', str))
+        tableField.append(('location', 'location', 'editable', str))
+        tableField.append(('network', 'network', 'editable', str))
+        tableField.append(('x', 'x', 'editable', float))
+        tableField.append(('y', 'y', 'editable', float))
+        tableField.append(('z', 'z', 'editable', float))
+        tableField.append(('coord_system', 'coord. system', 'editable', str))
+        tableField.append(('description', 'description', 'editable', str))
         return tableField
 
 
-    ## The sensor grid columns.
-    def getSensorFields(self):
+    ## The channel grid columns.
+    def getChannelFields(self):
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('label', 'label', 'readonly'))
-        tableField.append(('recorderSerial', 'rec.serial', 'readonly'))
-        tableField.append(('recorderType', 'rec. type', 'readonly'))
-        tableField.append(('serial', 'serial', 'readonly'))
-        tableField.append(('type', 'type', 'readonly'))
-        tableField.append(('recorderChannel', 'rec. channel', 'readonly'))
-        tableField.append(('channel', 'channel', 'readonly'))
-        tableField.append(('start', 'start', 'editable'))
-        tableField.append(('end', 'end', 'editable'))
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('name', 'name', 'editable', str))
+        tableField.append(('description', 'description', 'editable', str))
         return tableField
 
 
@@ -2450,7 +2435,7 @@ class SensorsPanel(wx.Panel):
         self.sensorGrid.AutoSizeColumns()
 
         self.mgr.AddPane(self.sensorGrid, wx.aui.AuiPaneInfo().Name("sensor").
-                         CentrePane().Layer(0).Position(0).BestSize(wx.Size(-1, 40)).MinSize(wx.Size(200, 40)))
+                         CentrePane().Layer(0).Position(0).MinSize(wx.Size(200, 100)))
 
 
         # Create the sensor component grid.
@@ -2477,9 +2462,8 @@ class SensorsPanel(wx.Panel):
         #self.sizer.Add(self.tfGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
         caption = 'components of sensor %s' % self.displayedSensor
         self.mgr.AddPane(self.componentGrid, wx.aui.AuiPaneInfo().Name("components").Caption(caption).
-                         Bottom().Row(2).Position(0).Layer(0).CloseButton(False).CaptionVisible().
-                         MinimizeButton().MaximizeButton().
-                         BestSize(wx.Size(300,80)).MinSize(wx.Size(100,100)))
+                         Bottom().Row(0).Position(0).Layer(1).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
         # Create the sensor component paramter grid.
@@ -2502,9 +2486,8 @@ class SensorsPanel(wx.Panel):
         #self.sizer.Add(self.tfGrid, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=5)
         caption = 'parameters of component %s' % self.displayedComponent
         self.mgr.AddPane(self.parameterGrid, wx.aui.AuiPaneInfo().Name("parameters").Caption(caption).
-                         Bottom().Row(1).Position(0).Layer(0).CloseButton(False).CaptionVisible().
-                         MinimizeButton().MaximizeButton().
-                         BestSize(wx.Size(300,80)).MinSize(wx.Size(100,100)))
+                         Bottom().Row(0).Position(0).Layer(2).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
         # Create the plot area.
@@ -2529,9 +2512,8 @@ class SensorsPanel(wx.Panel):
         self.tfCanvas.SetMinSize((-1, 320))
         #self.sizer.Add(self.tfCanvas, pos=(2,0), flag=wx.EXPAND|wx.ALL, border=5)
         self.mgr.AddPane(self.tfCanvas, wx.aui.AuiPaneInfo().Name("transfer function").Caption("transfer function").
-                         Bottom().Row(0).Position(0).Layer(0).CloseButton(False).CaptionVisible().
-                         MinimizeButton().MaximizeButton().
-                         BestSize(wx.Size(-1,250)).MinSize(wx.Size(-1,250)))
+                         Bottom().Row(0).Position(0).Layer(3).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 200)))
 
         # tell the manager to 'commit' all the changes just made
         self.mgr.Update()
@@ -2713,10 +2695,6 @@ class SensorsPanel(wx.Panel):
 
         # Update the paramter grid fields.
         self.updateParameters()
-
-        # Update the AUI manager.
-
-
 
 
     def updateParameters(self):
