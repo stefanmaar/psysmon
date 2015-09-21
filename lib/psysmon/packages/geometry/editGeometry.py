@@ -164,6 +164,12 @@ class EditGeometryDlg(wx.Frame):
         # by the user.
         self.selected_recorder_stream_assigned_component = None
 
+        # The station currently selected by the user.
+        self.selected_station = None
+
+        # The channel currently selected by the user.
+        self.selected_channel = None
+
         # The sensor currently selected by the user.
         self.selected_sensor = None
 
@@ -414,6 +420,21 @@ class EditGeometryDlg(wx.Frame):
         self.inventoryTree.updateInventoryData()
 
 
+    def remove_recorder_stream(self):
+        ''' Remove the selected recorder stream from the inventory.
+        '''
+        if self.selected_recorder_stream is None:
+            self.logger.error('You have to select a recorder stream first.')
+        elif self.selected_recorder_stream.assigned_channels:
+            self.logger.info("Can't remove the stream. It is assigned to the following stationchannels: %s", self.selected_recorder_stream.assigned_channels)
+        else:
+            removed_stream = self.selected_recorder.pop_stream_by_instance(self.selected_recorder_stream)
+            if removed_stream:
+                self.selected_recorder_stream = None
+                self.inventoryTree.updateInventoryData()
+
+
+
     def addSensor(self):
         ''' Add a sensor to the inventory.
         '''
@@ -466,13 +487,13 @@ class EditGeometryDlg(wx.Frame):
             self.logger.error('You have to select a sensor component first.')
             return
 
-        removed_component, assigned_streams = self.selected_sensor.pop_component_by_instance(self.selected_sensor_component)
+        removed_component = self.selected_sensor.pop_component_by_instance(self.selected_sensor_component)
         if removed_component:
             self.selected_sensor_component = None
             self.selected_sensor_component_parameters = None
             self.inventoryTree.updateInventoryData()
         else:
-            self.logger.info("Can't remove the component. It is assigned to the following recorder streams: %s.", assigned_streams)
+            self.logger.info("Can't remove the component. It is assigned to the following recorder streams: %s.", self.selected_sensor_component.assigned_streams)
 
 
     def add_sensor_component_parameter(self):
@@ -504,6 +525,15 @@ class EditGeometryDlg(wx.Frame):
         self.inventoryTree.updateInventoryData()
 
 
+    def remove_channel_assigned_recorder_stream(self):
+        ''' Remove the currently selected recorder stream assigned to a channel.
+        '''
+        if self.selected_channel_assigned_recorder_stream is None:
+            self.logger.error('You have to select a recorder stream assignement first.')
+            return
+
+        self.selected_channel.remove_stream_by_instance(self.selected_channel_assigned_recorder_stream)
+        self.inventoryTree.updateInventoryData()
 
 
     def addSensorParameter(self):
@@ -720,15 +750,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'sensor'):
             # Create the sensor context menu.
-            sub_data = []
-            for cur_network in self.GetParent().selected_inventory.get_network():
-                if len(cur_network.stations) > 0:
-                    for cur_station in cur_network.stations:
-                        sub_data.append((cur_station.get_snl_string(), self.on_assign_sensor_2_station))
 
             cm_data = (("add component", self.on_add_sensor_component),
                        ("remove sensor", self.on_remove_sensor),
-                       ("assign to recorder", sub_data),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -736,8 +760,14 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'sensor_component'):
             self.logger.debug('Handling a sensor component.')
+            sub_data = []
+            for cur_recorder in self.GetParent().selected_inventory.get_recorder():
+                for cur_stream in cur_recorder.streams:
+                    sub_data.append(('%s:%s' % (cur_recorder.serial, cur_stream.name), None))
+
             cm_data = (("add parameters", self.on_add_sensor_component_parameters),
                        ("remove component", self.on_remove_sensor_component),
+                       ("assign to recorder", sub_data),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -760,6 +790,22 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
             # create the context menu.
             context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'recorder_stream'):
+            self.logger.debug('Handling a recorder stream.')
+            sub_data = []
+            for cur_sensor in self.GetParent().selected_inventory.get_sensor():
+                for cur_component in cur_sensor.components:
+                    sub_data.append(('%s:%s' % (cur_sensor.serial, cur_component.name), None))
+
+            cm_data = (("assign component", sub_data),
+                       ("add paramter", None),
+                       ("remove stream", self.on_remove_recorder_stream),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'station'):
             # Setup the context menu.
             cm_data = (("add sensor", self.addSensor),
@@ -770,7 +816,25 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
             # create the context menu.
             context_menu = psyContextMenu(cm_data)
-            context_menu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+        elif(self.selected_item == 'channel'):
+            sub_data = []
+            for cur_recorder in self.GetParent().selected_inventory.get_recorder():
+                for cur_stream in cur_recorder.streams:
+                    sub_data.append(('%s:%s' % (cur_stream.serial, cur_stream.name), self.on_assign_stream_to_channel))
+
+            cm_data = (("assign stream", sub_data),
+                       ("remove channel", None),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
+
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'channel_assigned_recorder_stream'):
+            # Setup the context menu.
+            cm_data = (("remove stream assignement", self.on_remove_channel_assigned_recorder_stream),)
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'network'):
             self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add station')
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
@@ -841,13 +905,27 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         ''' Handle the context menu click.
         '''
         self.Parent.add_recorder_stream()
-        self.Parent.inventoryViewNotebook.updateSensorListView()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
 
 
     def on_remove_recorder(self, event):
         ''' Handle the context menu click.
         '''
         pass
+
+
+    def on_remove_recorder_stream(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_recorder_stream()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
+
+
+    def on_remove_channel_assigned_recorder_stream(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_channel_assigned_recorder_stream()
+        self.Parent.inventoryViewNotebook.updateStationListView()
 
 
     def on_collapse_element(self, event):
@@ -860,6 +938,24 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         ''' Expand the selected element.
         '''
         self.ExpandAllChildren(self.selected_tree_item_id)
+
+
+    def on_assign_stream_to_channel(self, event):
+        ''' Assigne a stream to a channel.
+        '''
+        item_id = event.GetId()
+        menu = event.GetEventObject()
+        label = menu.GetLabel(item_id)
+        serial, name = label.split(':')
+
+        added_stream = self.Parent.selected_channel.add_stream(serial = serial,
+                                                               name = name,
+                                                               start_time = '1970-1-1',
+                                                               end_time = None)
+
+        self.Parent.inventoryViewNotebook.updateStationListView()
+        self.updateInventoryData()
+
 
 
     def on_assign_sensor_2_station(self, event):
@@ -1016,8 +1112,20 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_network = pyData.parent_network
             self.Parent.selected_station = pyData
+            if self.Parent.selected_station.channels:
+                self.Parent.selected_channel = pyData.channels[0]
+                if self.Parent.selected_channel.streams:
+                    self.Parent.selected_channel_assigned_recorder_stream = self.Parent.selected_channel.streams[0]
             self.selected_item = 'station'
-            self.Parent.inventoryViewNotebook.updateStationListView(pyData)
+            self.Parent.inventoryViewNotebook.updateStationListView()
+        elif(pyData.__class__.__name__ == 'Channel' or pyData.__class__.__name__ == 'DbChannel'):
+            self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_network = pyData.parent_station.parent_network
+            self.Parent.selected_station = pyData.parent_station
+            self.Parent.selected_channel = pyData
+            self.selected_item = 'channel'
+            self.Parent.inventoryViewNotebook.updateStationListView()
+
         elif(pyData.__class__.__name__ == 'Sensor' or pyData.__class__.__name__ == 'DbSensor'):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_sensor = pyData
@@ -1060,6 +1168,15 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 self.Parent.selected_recorder_stream_assigned_component = pyData
                 self.selected_item = 'recorder_stream_assigned_component'
                 self.Parent.inventoryViewNotebook.updateRecorderListView()
+            elif(pyData.item.__class__.__name__ == 'RecorderStream' or pyData.item.__class__.__name__ == 'DbRecorderStream'):
+                self.Parent.selected_inventory = pyData.parent.parent_inventory
+                self.Parent.selected_network = pyData.parent.parent_station.parent_network
+                self.Parent.selected_station = pyData.parent.parent_station
+                self.Parent.selected_channel = pyData.parent
+                self.Parent.selected_channel_assigned_recorder_stream = pyData
+                self.selected_item = 'channel_assigned_recorder_stream'
+                self.Parent.inventoryViewNotebook.updateStationListView()
+
         elif(pyData.__class__.__name__ == 'RecorderStreamParameter' or pyData.__class__.__name__ == 'DbRecorderStreamParameter'):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_recorder = pyData.parent_recorder_stream.parent_recorder
@@ -1246,7 +1363,7 @@ class InventoryViewNotebook(wx.Notebook):
 
     ## Show the station data in the list view.
     #
-    def updateStationListView(self, station):
+    def updateStationListView(self):
         self.logger.debug("updating the station listview")
         self.listViewPanel.showControlPanel('station')
 
@@ -2257,8 +2374,9 @@ class StationsPanel(wx.Panel):
         self.channel_grid = wx.grid.Grid(self, size=(100,100))
         self.channel_grid.CreateGrid(1, len(fields))
 
-        # Bind the stationGrid events.
+        # Bind the channel grid events.
         self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onChannelCellChange)
+        self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onChannelCellLeftClick)
 
         for k, (name, label, attr, converter) in enumerate(fields):
             self.channel_grid.SetColLabelValue(k, label)
@@ -2269,6 +2387,27 @@ class StationsPanel(wx.Panel):
         caption = 'channels of station'
         self.mgr.AddPane(self.channel_grid, wx.aui.AuiPaneInfo().Name("channels").Caption(caption).
                          Bottom().Row(0).Position(0).Layer(1).CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
+
+
+        # Create the assigned recorder stream grid.
+        fields = self.getAssignedRecorderStreamFields()
+        self.assigned_recorder_stream_grid = wx.grid.Grid(self, size = (100, 100))
+        self.assigned_recorder_stream_grid.CreateGrid(1, len(fields))
+
+        # Bind the assigned recorder streams grid events.
+        self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onAssignedStreamCellChange)
+        self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onAssignedStreamCellLeftClick)
+
+        # Set the column attributes.
+        for k, (name, label, attr, converter) in enumerate(fields):
+            self.assigned_recorder_stream_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.assigned_recorder_stream_grid.SetColAttr(k, roAttr)
+
+        caption = 'recorder streams assigned to channel'
+        self.mgr.AddPane(self.assigned_recorder_stream_grid, wx.aui.AuiPaneInfo().Name("assigned recorder streams").Caption(caption).
+                         Bottom().Row(0).Position(0).Layer(2).CloseButton(False).CaptionVisible().
                          MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 100)))
 
 
@@ -2283,40 +2422,88 @@ class StationsPanel(wx.Panel):
             return None
 
 
-    ## The cell edit callback.    
+    @property
+    def selected_channel(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_channel
+        else:
+            return None
+
+    @selected_channel.setter
+    def selected_channel(self, value):
+        self.GetTopLevelParent().selected_channel = value
+
+
+    @property
+    def selected_channel_assigned_recorder_stream(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_channel_assigned_recorder_stream
+        else:
+            return None
+
+    @selected_channel_assigned_recorder_stream.setter
+    def selected_channel_assigned_recorder_stream(self, value):
+        self.GetTopLevelParent().selected_channel_assigned_recorder_stream = value
+
+
     def onStationCellChange(self, evt):
-        selectedParameter = self.stationGrid.GetColLabelValue(evt.GetCol())
+        selectedParameter = self.station_grid.GetColLabelValue(evt.GetCol())
         gridStationFields = self.getStationFields();
         colLabels = [x[1] for x in gridStationFields]
 
         if selectedParameter in colLabels:
             ind = colLabels.index(selectedParameter)
             fieldName = gridStationFields[ind][0]
-            fieldAttr = gridStationFields[ind][2]
-            if fieldAttr == 'editable':
-                value = self.stationGrid.GetCellValue(evt.GetRow(), evt.GetCol())
-                # If the network name has been changed, check if the
-                # network exists and if so, add the station to it.
+            converter = gridFields[ind][3]
+            value = self.station_grid.GetCellValue(evt.GetRow(), evt.GetCol())
+            setattr(self.selected_station, fieldName, converter(value))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
 
-                if fieldName == 'network':
-                    #new_net = self.displayedStation.parent_inventory.get_network(value)
-                    if self.displayedStation.parent_network is not None:
-                        self.displayedStation.parent_network.remove_station(name = self.displayedStation.name,
-                                                                            location = self.displayedStation.location)
-                    setattr(self.displayedStation, fieldName, value)
-                    self.displayedStation.parent_inventory.move_station(self.displayedStation)
 
-                setattr(self.displayedStation, fieldName, value)
-
-                #self.displayedStation.parent_inventory.refreshNetworks()
-                self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
-                self.logger.debug(self.GetParent().GetParent().GetParent())
-        else:
-            pass
+    def onChannelCellLeftClick(self, evt):
+        self.selected_channel = self.selected_station.channels[evt.GetRow()]
+        self.updateAssignedStreams()
+        self.updatePaneCaption()
+        evt.Skip()
 
 
     def onChannelCellChange(self, evt):
-        pass
+        selectedParameter = self.channel_grid.GetColLabelValue(evt.GetCol())
+        gridFields = self.getChannelFields()
+        colLabels = [x[1] for x in gridFields]
+
+        if selectedParameter in colLabels:
+            ind = colLabels.index(selectedParameter)
+            fieldName = gridFields[ind][0]
+            value = self.channel_grid.GetCellValue(evt.GetRow(), evt.GetCol())
+            setattr(self.selected_channel, fieldName, value)
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+            self.updatePaneCaption()
+
+
+    def onAssignedStreamCellLeftClick(self, evt):
+        self.selected_channel_assigned_recorder_stream = self.selected_channel.streams[evt.GetRow()]
+        evt.Skip()
+
+
+    def onAssignedStreamCellChange(self, evt):
+        selectedParameter = self.assigned_recorder_stream_grid.GetColLabelValue(evt.GetCol())
+        gridFields = self.getAssignedRecorderStreamFields();
+        colLabels = [x[1] for x in gridFields]
+
+        if selectedParameter in colLabels:
+            ind = colLabels.index(selectedParameter)
+            fieldName = gridFields[ind][0]
+            converter = gridFields[ind][3]
+            value = self.assigned_recorder_stream_grid.GetCellValue(evt.GetRow(), evt.GetCol())
+            # TODO: if the start- or end-time is changed, use the according
+            # set and get methods of the parameter instance to check for valid
+            # changes (e.g. no overlapping). The old
+            # onSensorParameterCellChange method below could have some hints.
+            setattr(self.selected_channel_assigned_recorder_stream, fieldName, converter(value))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+
 
 
     ## The cell edit callback.    
@@ -2350,7 +2537,32 @@ class StationsPanel(wx.Panel):
             dlg.Destroy()
 
 
+    def updatePaneCaption(self):
+        ''' Update the caption of the docking panes.
+        '''
+
+        # Update the channel caption. 
+        if self.selected_station:
+            caption = 'channels of station %s' % self.selected_station.name
+            pane = self.mgr.GetPane('channels')
+            pane.Caption(caption)
+
+        # Update the assigned recorder streams caption
+        if self.selected_channel:
+            caption = 'streams assigned to channel %s' % self.selected_channel.name
+        else:
+            caption = 'assigned streams: no channel selected'
+        pane = self.mgr.GetPane('assigned recorder streams')
+        pane.Caption(caption)
+
+        self.mgr.Update()
+
+
     def updateData(self):
+        ''' Update the data shown in the grids.
+        '''
+        self.updatePaneCaption()
+
         # Update the sensor grid fields.
         self.setGridValues(self.selected_station, self.station_grid, self.getStationFields(), 0)
 
@@ -2363,11 +2575,54 @@ class StationsPanel(wx.Panel):
         for k, cur_channel in enumerate(self.selected_station.channels):
             self.setGridValues(cur_channel, self.channel_grid, self.getChannelFields(), k)
 
+        # Update the assigned streams grid.
+        self.updateAssignedStreams()
+
+
+    def updateAssignedStreams(self):
+        ''' Update the displayed assigned streams data.
+        '''
+        # Resize the grid rows.
+        if self.assigned_recorder_stream_grid.GetNumberRows() > 0:
+            self.assigned_recorder_stream_grid.DeleteRows(0, self.assigned_recorder_stream_grid.GetNumberRows())
+
+        if self.selected_channel:
+            self.assigned_recorder_stream_grid.AppendRows(len(self.selected_channel.streams))
+
+            # Update the assigned streams grid.
+            for k, cur_timebox in enumerate(self.selected_channel.streams):
+                # Set the field values of the assined stream.
+                self.setGridValues(cur_timebox.item,
+                                   self.assigned_recorder_stream_grid,
+                                   self.getAssignedRecorderStreamFields(),
+                                   k)
+
+                # Set the field values of the timebox start- and end-time.
+                self.setGridValues(cur_timebox,
+                                   self.assigned_recorder_stream_grid,
+                                   self.getAssignedRecorderStreamFields(),
+                                   k)
+
+
 
     def setGridValues(self, object, grid, fields, rowNumber):
         for pos, (field, label, attr, converter) in enumerate(fields):
-            if field is not None and getattr(object, field) is not None:
-                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+            # The id field will raise an error when normal inventory
+            # instances are used. Ignore this error and continue.
+            try:
+                # Take care of fields with custom strings. 
+                custom_fields = {}
+                custom_fields['start_time'] = 'start_time_string'
+                custom_fields['end_time'] = 'end_time_string'
+                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                    field = custom_fields[field]
+
+                if field is not None and getattr(object, field) is not None:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                else:
+                    grid.SetCellValue(rowNumber, pos, '')
+            except:
+                pass
             grid.AutoSizeColumns()
 
 
@@ -2377,7 +2632,7 @@ class StationsPanel(wx.Panel):
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('name', 'name', 'editable', str))
         tableField.append(('location', 'location', 'editable', str))
-        tableField.append(('network', 'network', 'editable', str))
+        tableField.append(('network', 'network', 'readonly', str))
         tableField.append(('x', 'x', 'editable', float))
         tableField.append(('y', 'y', 'editable', float))
         tableField.append(('z', 'z', 'editable', float))
@@ -2392,6 +2647,17 @@ class StationsPanel(wx.Panel):
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('name', 'name', 'editable', str))
         tableField.append(('description', 'description', 'editable', str))
+        return tableField
+
+
+    def getAssignedRecorderStreamFields(self):
+        tableField = []
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('serial', 'serial', 'readonly', str))
+        tableField.append(('name', 'name', 'readonly', str))
+        tableField.append(('label', 'label', 'readonly', str))
+        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
+        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
         return tableField
 
 
