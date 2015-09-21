@@ -629,6 +629,19 @@ class Recorder(object):
         return added_stream
 
 
+    def pop_stream_by_instance(self, stream):
+        ''' Remove a component from the sensor using the component instance.
+        '''
+        removed_stream = None
+        if not stream.assigned_channels:
+            # If the stream is not assigned to a channel, remove it.
+            if stream in self.streams:
+                self.streams.remove(stream)
+                removed_stream = stream
+
+        return removed_stream
+
+
     def pop_stream(self, **kwargs):
         ''' Remove a stream from the recorder.
 
@@ -752,6 +765,18 @@ class RecorderStream(object):
             return self.parent_recorder.serial
         else:
             return None
+
+
+    @property
+    def assigned_channels(self):
+        # The channels to which the stream is assigned to.
+        assigned_channels = []
+        station_list = self.parent_inventory.get_station()
+        for cur_station in station_list:
+            for cur_channel in cur_station.channels:
+                if cur_channel.get_stream(serial = self.serial, name = self.name):
+                    assigned_channels.append(cur_channel)
+        return assigned_channels
 
 
 
@@ -1117,23 +1142,14 @@ class Sensor(object):
     def pop_component_by_instance(self, component):
         ''' Remove a component from the sensor using the component instance.
         '''
-        # Check if the component is assigned to a recorder stream.
-        assigned_streams = []
         removed_component = None
-        recorder_list = self.parent_inventory.get_recorder()
-        for cur_recorder in recorder_list:
-            stream_list = cur_recorder.get_stream()
-            for cur_stream in stream_list:
-                if cur_stream.get_component(serial = component.serial):
-                    assigned_streams.append(cur_stream)
-
-        if not assigned_streams:
+        if not component.assigned_streams:
             # If the component is not assigned to a stream, remove it.
             if component in self.components:
                 self.components.remove(component)
                 removed_component = component
 
-        return removed_component, assigned_streams
+        return removed_component
 
 
     def pop_component(self, **kwargs):
@@ -1232,6 +1248,19 @@ class SensorComponent(object):
             return self.parent_sensor.serial
         else:
             return None
+
+    @property
+    def assigned_streams(self):
+        # Check if the component is assigned to a recorder stream.
+        assigned_streams = []
+        recorder_list = self.parent_inventory.get_recorder()
+        for cur_recorder in recorder_list:
+            stream_list = cur_recorder.get_stream()
+            for cur_stream in stream_list:
+                if cur_stream.get_component(serial = self.serial,
+                                            name = self.name):
+                    assigned_streams.append(cur_stream)
+        return assigned_streams
 
 
     def __setitem__(self, name, value):
@@ -1882,12 +1911,17 @@ class Channel(object):
                                end_time = end_time):
                 # The stream is already assigned to the station for this
                 # time-span.
+                if start_time is not None:
+                    start_string = end_time.isoformat
+                else:
+                    start_string = 'big bang'
+
                 if end_time is not None:
                     end_string = end_time.isoformat
                 else:
                     end_string = 'running'
 
-                self.logger.error('The stream (serial: %s,  name: %s) is already deployed during the specified timespan from %s to %s.', serial, name, start_time.isoformat, end_string)
+                self.logger.error('The stream (serial: %s,  name: %s) is already deployed during the specified timespan from %s to %s.', serial, name, start_string, end_string)
             else:
                 self.streams.append(TimeBox(item = cur_stream,
                                             start_time = start_time,
@@ -1899,23 +1933,24 @@ class Channel(object):
         return added_stream
 
 
-    def remove_stream(self, cur_stream):
+    def remove_stream_by_instance(self, stream_timebox):
+        ''' Remove a stream timebox.
+        '''
+        self.streams.remove(stream_timebox)
+
+
+    def remove_stream(self, start_time = None, end_time = None, **kwargs):
         ''' Remove a stream from the channel.
 
         Parameters
         ----------
-        cur_stream : tuple (:class:`Stream`, :class:`~obspy.core.utcdatetime.UTCDateTime`, :class:`~obspy.core.utcdatetime.UTCDateTime`) 
-            The stream to be removed from the channel.
         '''
-        self.logger.debug("Removing stream ")
-        self.logger.debug("%s", cur_stream)
+        stream_tb_to_remove = self.get_stream(start_time = start_time,
+                                            end_time = end_time,
+                                            **kwargs)
 
-        #TODO: Implement this method.
-
-        #if sensor not in self.sensors:
-
-        # Remove the stream from the stream list.
-        #self.streams.pop(self.stream.index(cur_stream))
+        for cur_stream_tb in stream_tb_to_remove:
+            self.streams.remove(cur_stream_tb)
 
 
     def get_stream(self, start_time = None, end_time = None, **kwargs):
