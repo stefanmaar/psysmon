@@ -545,11 +545,65 @@ class InventoryTestCase(unittest.TestCase):
                               start_time = cur_starttime,
                               end_time = cur_endtime)
 
-        removed_component, assigned_streams = sensor1.pop_component_by_instance(component1)
-        self.assertIsNone(removed_component)
+        assigned_streams = component1.assigned_streams
         self.assertEqual(len(assigned_streams), 1)
+        self.assertIs(assigned_streams[0], stream1)
+        removed_component = sensor1.pop_component_by_instance(component1)
+        self.assertIsNone(removed_component)
         self.assertIs(assigned_streams[0].components[0].item, component1)
 
+
+    def test_remove_recorder_stream(self):
+        inventory = Inventory('inventory_name')
+        recorder1 = Recorder(serial = 'rec1_serial',
+                             type = 'rec1_type')
+
+        stream1 = RecorderStream(name = 'stream1_name',
+                               label = 'stream1_label')
+        recorder1.add_stream(stream1)
+        inventory.add_recorder(recorder1)
+
+        sensor1 = Sensor(serial = 'sensor1_serial',
+                         model = 'sensor1_model',
+                         producer = 'sensor1_producer')
+        component1 = SensorComponent(name = 'comp1_name')
+        sensor1.add_component(component1)
+        inventory.add_sensor(sensor1)
+
+        cur_starttime = UTCDateTime('2014-01-01')
+        cur_endtime = UTCDateTime('2014-02-01')
+        stream1.add_component(serial = 'sensor1_serial',
+                              name = 'comp1_name',
+                              start_time = cur_starttime,
+                              end_time = cur_endtime)
+
+        network1 = Network(name = 'XX')
+        station1 = Station(name = 'station1_name',
+                           location = 'station1_location',
+                           x = 10,
+                           y = 20,
+                           z = 30)
+        channel1 = Channel(name = 'channel_1')
+        channel2 = Channel(name = 'channel_2')
+        station1.add_channel(channel1)
+        station1.add_channel(channel2)
+
+        network1.add_station(station1)
+        inventory.add_network(network1)
+
+        channel1.add_stream('rec1_serial', 'stream1_name', None, None)
+
+        assigned_channels = stream1.assigned_channels
+        self.assertEqual(len(assigned_channels), 1)
+        self.assertIs(assigned_channels[0], channel1)
+        removed_stream = recorder1.pop_stream_by_instance(stream1)
+        self.assertIsNone(removed_stream)
+        self.assertIs(assigned_channels[0].streams[0].item, stream1)
+
+        # Remove the assignement of the channel to the stream.
+        channel1.remove_stream('rec1_serial', 'stream1_name')
+        self.assertEqual(len(channel1.streams), 0)
+        self.assertEqual(len(stream1.assigned_channels), 0)
 
 
 
