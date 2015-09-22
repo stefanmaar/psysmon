@@ -56,6 +56,7 @@ from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Recorder
+from psysmon.packages.geometry.inventory import RecorderStream
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Sensor
@@ -417,6 +418,20 @@ class EditGeometryDlg(wx.Frame):
         rec_2_add = Recorder(serial='-9999',
                              type = 'new recorder')
         self.selected_inventory.add_recorder(rec_2_add)
+        self.inventoryTree.updateInventoryData()
+
+
+    def add_recorder_stream(self):
+        ''' Add a stream to the selected recorder.
+        '''
+        if self.selected_recorder is None:
+            self.logger.error('You have to select a recorder first.')
+            return
+
+        # Create the stream instance.
+        stream_to_add = RecorderStream(name = '-9999',
+                                       label = 'stream label')
+        self.selected_recorder.add_stream(stream_to_add)
         self.inventoryTree.updateInventoryData()
 
 
@@ -798,7 +813,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     sub_data.append(('%s:%s' % (cur_sensor.serial, cur_component.name), None))
 
             cm_data = (("assign component", sub_data),
-                       ("add paramter", None),
+                       ("add parameter", None),
                        ("remove stream", self.on_remove_recorder_stream),
                        ("separator", None),
                        ("expand", self.on_expand_element),
@@ -1129,12 +1144,18 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         elif(pyData.__class__.__name__ == 'Sensor' or pyData.__class__.__name__ == 'DbSensor'):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_sensor = pyData
+            if self.Parent.selected_sensor.components:
+                self.Parent.selected_sensor_component = self.Parent.selected_sensor.components[0]
+                if self.Parent.selected_sensor_component.parameters:
+                    self.Parent.selected_sensor_component_parameters = self.Parent.selected_sensor_component.parameters[0]
             self.selected_item = 'sensor'
             self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'SensorComponent' or pyData.__class__.__name__ == 'DbSensorComponent'):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_sensor = pyData.parent_sensor
             self.Parent.selected_sensor_component = pyData
+            if self.Parent.selected_sensor_component.parameters:
+                self.Parent.selected_sensor_component_parameters = self.Parent.selected_sensor_component.parameters[0]
             self.selected_item = 'sensor_component'
             self.Parent.inventoryViewNotebook.updateSensorListView()
         elif(pyData.__class__.__name__ == 'SensorComponentParameter' or pyData.__class__.__name__ == 'DbSensorComponentParameter'):
@@ -2926,17 +2947,30 @@ class SensorsPanel(wx.Panel):
 
 
     def updatePaneCaption(self):
-        # Change the pane captions.
+        ''' Update the captions of the docking panels.
+        '''
+        # Update the caption of the sensor components.
         if self.displayedSensor:
             caption = 'components of sensor %s' % self.displayedSensor.serial
             pane = self.mgr.GetPane('components')
             pane.Caption(caption)
 
+
+        # Update the caption of the component parameters.
         if self.displayedComponent:
             caption = 'parameters of component %s' % self.displayedComponent.name
         else:
             caption = 'no component selected'
         pane = self.mgr.GetPane('parameters')
+        pane.Caption(caption)
+
+        # Update the caption of the parameter transfer function.
+        if self.displayedComponentParameters:
+            tmp = self.displayedComponentParameters.parent_component.name + ':(' + self.displayedComponentParameters.start_time_string + ' to ' + self.displayedComponentParameters.end_time_string + ')'
+            caption = 'transfer function of parameter %s' % tmp
+        else:
+            caption = 'no component parameter selected'
+        pane = self.mgr.GetPane('transfer function')
         pane.Caption(caption)
 
         self.mgr.Update()
@@ -3024,8 +3058,8 @@ class SensorsPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                custom_fields['poles'] = 'poles_string'
-                custom_fields['zeros'] = 'zeros_string'
+                custom_fields['tf_poles'] = 'poles_string'
+                custom_fields['tf_zeros'] = 'zeros_string'
                 if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
@@ -3064,12 +3098,20 @@ class SensorsPanel(wx.Panel):
         tableField.append(('sensitivity', 'sensitivity', 'editable', float))
         tableField.append(('input_units', 'input units', 'editable', str))
 	tableField.append(('output_units', 'output units', 'editable', str))
-	tableField.append(('deliver_units', 'input units', 'editable', str))
+	tableField.append(('deliver_units', 'deliver units', 'editable', str))
         tableField.append(('tf_normalization_factor', 'normalization factor', 'editable', float))
         tableField.append(('tf_normalization_frequency', 'normalization frequ.', 'editable', float))
-        tableField.append(('poles', 'poles', 'readonly', str))      # Poles is a list. Handle them seperately
-        tableField.append(('zeros', 'zeros', 'readonly', str))      # Zeros is a list. Handle them seperately.
+        tableField.append(('tf_poles', 'poles', 'editable', self.tf_pz_converter))      # Poles is a list. Handle them seperately
+        tableField.append(('tf_zeros', 'zeros', 'editable', self.tf_pz_converter))      # Zeros is a list. Handle them seperately.
         return tableField
+
+
+    def tf_pz_converter(self, pz_string):
+        ''' Convert a poles or zeros string to a list.
+        '''
+        pz_list = pz_string.split(',')
+        pz_list = [complex(x) for x in pz_list]
+        return pz_list
 
 
 
