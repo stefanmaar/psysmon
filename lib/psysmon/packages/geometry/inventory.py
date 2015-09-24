@@ -40,6 +40,7 @@ import warnings
 import logging
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
+from operator import attrgetter
 
 class Inventory(object):
 
@@ -131,10 +132,11 @@ class Inventory(object):
         return added_recorder
 
 
-    def remove_recorder(self):
+    def remove_recorder_by_instance(self, recorder):
         ''' Remove a recorder from the inventory.
         '''
-        pass
+        if recorder in self.recorders:
+            self.recorders.remove(recorder)
 
 
 
@@ -207,7 +209,7 @@ class Inventory(object):
         return added_sensor
 
 
-    def remove_sensor(self, sensor_to_remove):
+    def remove_sensor_by_instance(self, sensor_to_remove):
         ''' Remove a sensor from the inventory.
 
         Parameters
@@ -215,14 +217,8 @@ class Inventory(object):
         sensor_to_remove : :class:`Sensor`
             The sensor to remove from the inventory.
         '''
-        # TODO: implement the method.
-
-        # Find all assigned sensors components in the recorder streams and remove them.
-
-
-        # Remove the sensor itself from the inventory.
-        pass
-
+        if sensor_to_remove in self.sensors:
+            self.sensors.remove(sensor_to_remove)
 
 
     def add_network(self, network):
@@ -244,6 +240,11 @@ class Inventory(object):
 
         return added_network
 
+    def remove_network_by_instance(self, network_to_remove):
+        ''' Remove a network instance from the inventory.
+        '''
+        if network_to_remove in self.networks:
+            self.networks.remove(network_to_remove)
 
 
     def remove_network(self, name):
@@ -833,9 +834,8 @@ class RecorderStream(object):
         cur_component = self.parent_inventory.get_component(serial = serial,
                                                             name = name)
         if not cur_component:
-            self.logger.error('The specified component (serial = %s, name = %s) was not found in the inventory.',
-                              serial,
-                              name)
+            msg = 'The specified component (serial = %s, name = %s) was not found in the inventory.' % (serial, name)
+            raise RuntimeError(msg)
         elif len(cur_component) == 1:
             cur_component = cur_component[0]
 
@@ -850,16 +850,20 @@ class RecorderStream(object):
                 end_time = None
 
             if self.get_component(start_time = start_time,
-                                  end_time = end_time,
-                                  serial = serial,
-                                  name = name):
-                # The sensor is already assigned to the station for this timespan.
+                                  end_time = end_time):
+                # A sensor is already assigned to the stream for this timespan.
+                if start_time is not None:
+                    start_string = start_time.isoformat
+                else:
+                    start_string = 'big bang'
+
                 if end_time is not None:
                     end_string = end_time.isoformat
                 else:
                     end_string = 'running'
 
-                self.logger.error('The component (serial: %s,  name: %s) is already deployed during the specified timespan from %s to %s.', serial, name, start_time.isoformat, end_string)
+                msg = 'The component (serial: %s,  name: %s) is already deployed during the specified timespan from %s to %s.' % (serial, name, start_string, end_string)
+                raise RuntimeError(msg)
             else:
                 self.components.append(TimeBox(item = cur_component,
                                                start_time = start_time,
@@ -868,18 +872,25 @@ class RecorderStream(object):
                 self.has_changed = True
                 added_component = cur_component
         else:
-            self.logger.error("Got more than one component with serial=%s and name = %s. Only one component with a serial-component combination should be in the inventory. Don't know how to proceed.", 
-                               serial, name)
+            msg = "Got more than one component with serial=%s and name = %s. Only one component with a serial-component combination should be in the inventory. Don't know how to proceed." % (serial, name)
+            raise RuntimeError(msg)
 
         return added_component
 
 
-    def remove_component(self, component):
+    def remove_component_by_instance(self, timebox):
         ''' Remove a component from the stream.
 
         '''
-        # TODO: Implement this method.
-        pass
+        if timebox in self.components:
+            self.components.remove(timebox)
+
+
+    def remove_parameter_by_instance(self, parameter):
+        ''' Remove a parameter from the stream.
+        '''
+        if parameter in self.parameters:
+            self.parameters.remove(parameter)
 
 
     def get_component(self, start_time = None, end_time = None, **kwargs):
@@ -931,10 +942,11 @@ class RecorderStream(object):
         if not self.get_parameter(start_time = parameter_to_add.start_time,
                                   end_time = parameter_to_add.end_time):
             self.parameters.append(parameter_to_add)
+            self.parameters = sorted(self.parameters, key = attrgetter('start_time'))
             parameter_to_add.parent_recorder_stream = self
             added_parameter = parameter_to_add
         else:
-            self.logger.error('A parameter already exists for the given timespan.')
+            raise RuntimeError('A parameter already exists for the given timespan.')
 
         return added_parameter
 
@@ -955,6 +967,79 @@ class RecorderStream(object):
 
         return ret_parameter
 
+
+    def get_free_parameter_slot(self, pos = 'both'):
+        ''' Get a free time slot for a parameter.
+
+        Parameters
+        ----------
+        pos : String
+            The postion of the list of the next free time slot ('front', 'back', 'both').
+        '''
+        if self.parameters:
+            last_parameter = sorted(self.parameters, key = attrgetter('start_time'))[-1]
+            first_parameter = sorted(self.parameters, key = attrgetter('start_time'))[0]
+
+            if pos == 'back':
+                if last_parameter.end_time is None:
+                    return None
+                else:
+                    return (last_parameter.end_time + 1, None)
+
+            elif pos == 'front':
+                if first_parameter.start_time is None:
+                    return None
+                else:
+                    return (None, first_parameter.start_time - 1)
+            elif pos == 'both':
+                if last_parameter.end_time is None:
+                    if first_parameter.start_time is None:
+                        return None
+                    else:
+                        return (None, first_parameter.start_time - 1)
+                else:
+                    return (last_parameter.end_time + 1, None)
+            else:
+                raise ValueError('Use either back, front or both for the pos argument.')
+        else:
+            return (None, None)
+
+
+    def get_free_component_slot(self, pos = 'both'):
+        ''' Get a free time slot for a component.
+
+        Parameters
+        ----------
+        pos : String
+            The postion of the list of the next free time slot ('front', 'back', 'both').
+        '''
+        if self.components:
+            last_component = sorted(self.components, key = attrgetter('start_time'))[-1]
+            first_component = sorted(self.components, key = attrgetter('start_time'))[0]
+
+            if pos == 'back':
+                if last_component.end_time is None:
+                    return None
+                else:
+                    return (last_component.end_time + 1, None)
+
+            elif pos == 'front':
+                if first_component.start_time is None:
+                    return None
+                else:
+                    return (None, first_component.start_time - 1)
+            elif pos == 'both':
+                if last_component.end_time is None:
+                    if first_component.start_time is None:
+                        return None
+                    else:
+                        return (None, first_component.start_time - 1)
+                else:
+                    return (last_component.end_time + 1, None)
+            else:
+                raise ValueError('Use either back, front or both for the pos argument.')
+        else:
+            return (None, None)
 
 
 class RecorderStreamParameter(object):
@@ -1025,7 +1110,7 @@ class RecorderStreamParameter(object):
     @property
     def start_time_string(self):
         if self.start_time is None:
-            return 'bing bang'
+            return 'big bang'
         else:
             return self.start_time.isoformat()
 
@@ -1302,7 +1387,7 @@ class SensorComponent(object):
             parameter_to_add.parent_component = self
             added_parameter = parameter_to_add
         else:
-            self.logger.error('A parameter already exists for the given timespan.')
+            raise RuntimeError('A parameter already exists for the given timespan.')
 
         return added_parameter
 
@@ -1487,7 +1572,7 @@ class SensorComponentParameter(object):
     @property
     def start_time_string(self):
         if self.start_time is None:
-            return 'bing bang'
+            return 'big bang'
         else:
             return self.start_time.isoformat()
 
@@ -1756,6 +1841,13 @@ class Station(object):
             added_channel = cur_channel
 
         return added_channel
+
+
+    def remove_channel_by_instance(self, channel):
+        ''' Remove a channel instance from the station.
+        '''
+        if channel in self.channels:
+            self.channels.remove(channel)
 
 
 
@@ -2069,6 +2161,13 @@ class Network(object):
             return None
 
 
+    def remove_station_by_instance(self, station_to_remove):
+        ''' Remove a station instance from the network.
+        '''
+        if station_to_remove in self.stations:
+            self.stations.remove(station_to_remove)
+
+
     def remove_station(self, name, location):
         ''' Remove a station from the network.
 
@@ -2175,7 +2274,7 @@ class TimeBox(object):
     @property
     def start_time_string(self):
         if self.start_time is None:
-            return 'bing bang'
+            return 'big bang'
         else:
             return self.start_time.isoformat()
 
