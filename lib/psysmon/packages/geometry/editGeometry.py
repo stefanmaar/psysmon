@@ -57,8 +57,10 @@ from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import RecorderStream
+from psysmon.packages.geometry.inventory import RecorderStreamParameter
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
+from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
@@ -354,21 +356,6 @@ class EditGeometryDlg(wx.Frame):
             self.addXmlInventory(name = inventory_name);
 
 
-    def onAddRecorder(self, event):
-        self.addRecorder()
-
-    def onAddNetwork(self, event):
-        ''' Handle the add network menu click.
-        '''
-        self.addNetwork()
-
-
-    def onAddStation(self, event):
-        ''' Handle the add station menu click.
-        '''
-        self.addStation()
-
-
     def addXmlInventory(self, name = 'new inventory'):
         ''' Add a new XML inventory.
         '''
@@ -377,34 +364,83 @@ class EditGeometryDlg(wx.Frame):
         self.inventoryTree.updateInventoryData()
 
 
-    def addNetwork(self):
+    def remove_inventory(self):
+        ''' Remove the selected inventory.
+        '''
+        if self.selected_inventory in self.inventories.values():
+            self.inventories.pop(self.selected_inventory.name)
+            self.inventoryTree.updateInventoryData()
+
+
+    def add_network(self):
         ''' Add a new network to the inventory.
         '''
-        if self.selected_inventory is None:
-            self.logger.error('You have to create or select an inventory first.')
-            return
+        if self.selected_inventory:
+            net2Add = Network(name = '-9999', description = 'A new network.')
+            self.selected_inventory.add_network(net2Add)
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select an inventory first.')
 
-        net2Add = Network(name = '-9999', description = 'A new network.') 
-        self.selected_inventory.add_network(net2Add)
-        self.inventoryTree.updateInventoryData()
 
 
-    def addStation(self):
+    def remove_network(self):
+        ''' Remove the selected network from the inventory.
+        '''
+        if self.selected_network:
+            self.selected_inventory.remove_network_by_instance(self.selected_network)
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select a network first.')
+
+
+    def add_station(self):
         ''' Add a new station to the inventory.
         '''
-        if self.selected_network is None:
+        if self.selected_network:
+            station2Add = Station(name = '-9999',
+                                  location = '00',
+                                  x = 0,
+                                  y = 0,
+                                  z = 0,
+                                  coord_system = 'epsg:4326')
+            self.selected_network.add_station(station2Add)
+            self.inventoryTree.updateInventoryData()
+        else:
             self.logger.error('You have to create or select a network first.')
             return
 
-        station2Add = Station(name = '-9999', 
-                           location = '00',
-                           network = self.selected_network.name,
-                           x = 0,
-                           y = 0,
-                           z = 0,
-                           coord_system = 'epsg:4326') 
-        self.selected_inventory.add_station(station2Add)
-        self.inventoryTree.updateInventoryData()
+
+    def remove_station(self):
+        ''' Remove the selected station from the network.
+        '''
+        if self.selected_station:
+            self.selected_network.remove_station_by_instance(self.selected_station)
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select a station first.')
+
+
+    def add_channel(self):
+        ''' Add a channel to the selected station.
+        '''
+        if self.selected_station:
+            channel_to_add = Channel('-99')
+            self.selected_station.add_channel(channel_to_add)
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select a station first.')
+
+
+    def remove_channel(self):
+        ''' Remove the selected channel from the station.
+        '''
+        if self.selected_channel:
+            self.selected_station.remove_channel_by_instance(self.selected_channel)
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select a channel first.')
+
 
 
     def add_recorder(self):
@@ -435,8 +471,66 @@ class EditGeometryDlg(wx.Frame):
         self.inventoryTree.updateInventoryData()
 
 
+    def add_recorder_stream_parameter(self):
+        ''' Add a parameter to the selected recorder stream.
+        '''
+        if self.selected_recorder_stream:
+            slot = self.selected_recorder_stream.get_free_parameter_slot('both')
+            if slot:
+                parameter_to_add = RecorderStreamParameter(start_time = slot[0],
+                                                           end_time = slot[1])
+                try:
+                    self.selected_recorder_stream.add_parameter(parameter_to_add)
+                except RuntimeError as e:
+                    self.logger.exception(e)
+                    dlg = wx.MessageDialog(self, str(e),
+                                           'Error while adding a new parameter.',
+                                            wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
+                    dlg.Destroy()
+                else:
+                    self.inventoryTree.updateInventoryData()
+            else:
+                msg = "There is no free time slot for a new parameter."
+                dlg = wx.MessageDialog(self, msg,
+                                       'Error while adding a new parameter.',
+                                        wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+
+        else:
+            self.logger.error('You have to select a recorder stream first.')
+
+
+    def remove_recorder(self):
+        ''' Remove the selected recorder from the inventory.
+        '''
+        if self.selected_recorder:
+            has_assigned_streams = False
+            # Check for assigned recorder streams.
+            for cur_stream in self.selected_recorder.streams:
+                if cur_stream.assigned_channels:
+                    has_assigned_streams = True
+                    break
+
+            if has_assigned_streams:
+                msg = "The recorder contains assigned streams. Unassign the streams first."
+                dlg = wx.MessageDialog(self, msg,
+                                       'Error while removing the recorder.',
+                                        wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+            else:
+                self.selected_inventory.remove_recorder_by_instance(self.selected_recorder)
+                self.selected_recorder = None
+                self.selected_recorder_stream = None
+                self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select a recorder first.')
+
+
     def remove_recorder_stream(self):
-        ''' Remove the selected recorder stream from the inventory.
+        ''' Remove the selected recorder stream from the recorder.
         '''
         if self.selected_recorder_stream is None:
             self.logger.error('You have to select a recorder stream first.')
@@ -467,18 +561,29 @@ class EditGeometryDlg(wx.Frame):
     def remove_sensor(self):
         ''' Remove the currently selected sensor.
         '''
-        if self.selected_sensor is None:
-            self.logger.error('You have to select a sensor first.')
-            return
+        if self.selected_sensor:
+            has_assigned_components = False
+            # Check for assigned recorder streams.
+            for cur_component in self.selected_sensor.components:
+                if cur_component.assigned_streams:
+                    has_assigned_components = True
+                    break
 
-        # TODO: Implement the method to remove a sensor from the inventory in
-        # the Inventory class.
-
-        #self.selected_inventory.remove_sensor(self.selected_sensor)
-        #self.selected_sensor = None
-        #self.selected_sensor_component = None
-        #self.selected_sensor_component_parameters = None
-        #self.inventoryTree.updateInventoryData()
+            if has_assigned_components:
+                msg = "The sensor contains assigned components. Unassign the components first."
+                dlg = wx.MessageDialog(self, msg,
+                                       'Error while removing the sensor.',
+                                        wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+            else:
+                self.selected_inventory.remove_sensor_by_instance(self.selected_sensor)
+                self.selected_sensor = None
+                self.selected_sensor_component = None
+                self.selected_sensor_component_parameters = None
+                self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to select a recorder first.')
 
 
     def add_sensor_component(self):
@@ -508,7 +613,13 @@ class EditGeometryDlg(wx.Frame):
             self.selected_sensor_component_parameters = None
             self.inventoryTree.updateInventoryData()
         else:
-            self.logger.info("Can't remove the component. It is assigned to the following recorder streams: %s.", self.selected_sensor_component.assigned_streams)
+            msg = "Can't remove the component. It is assigned to the following recorder streams: %s." % [x.serial + ':' + x.name for x in self.selected_sensor_component.assigned_streams]
+            self.logger.info(msg)
+            dlg = wx.MessageDialog(self, msg,
+                                   'Error while removing a sensor component.',
+                                    wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
 
 
     def add_sensor_component_parameter(self):
@@ -537,6 +648,27 @@ class EditGeometryDlg(wx.Frame):
         self.selected_sensor_component.remove_parameter(self.selected_sensor_component_parameters)
 
         self.selected_sensor_component_parameters = None
+        self.inventoryTree.updateInventoryData()
+
+
+    def remove_recorder_stream_parameter(self):
+        ''' Remove the currently selected recorder stream.
+        '''
+        if self.selected_recorder_stream_parameter:
+            self.selected_recorder_stream.remove_parameter_by_instance(self.selected_recorder_stream_parameter)
+            self.inventoryTree.updateInventoryData()
+        else:
+            self.logger.error('You have to selecte a stream parameter first.')
+
+
+    def remove_recorder_stream_assigned_sensor_component(self):
+        ''' Remove the currently selected sensor component assignment.
+        '''
+        if self.selected_recorder_stream_assigned_component is None:
+            self.logger.error('You have to select a component assignment first.')
+            return
+
+        self.selected_recorder_stream.remove_component_by_instance(self.selected_recorder_stream_assigned_component)
         self.inventoryTree.updateInventoryData()
 
 
@@ -707,9 +839,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.icons['channel_stream'] = il.Add(icons.cassette_icon_16.GetBitmap())
         self.icons['recorder'] = il.Add(icons.cassette_icon_16.GetBitmap())
         self.icons['recorder_stream'] = il.Add(icons.cassette_icon_16.GetBitmap())
+        self.icons['recorder_stream_parameter'] = il.Add(icons.wrench_icon_16.GetBitmap())
         self.icons['sensor'] = il.Add(icons.playback_rec_icon_16.GetBitmap())
         self.icons['sensor_component'] = il.Add(icons.playback_rec_icon_16.GetBitmap())
-        self.icons['sensor_component_parameter'] = il.Add(icons.playback_rec_icon_16.GetBitmap())
+        self.icons['sensor_component_parameter'] = il.Add(icons.wrench_icon_16.GetBitmap())
 
         self.AssignImageList(il)
 
@@ -731,7 +864,9 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         if(self.selected_item == 'inventory'):
             self.logger.debug('Handling an inventory.')
             # Setup the context menu.
-            cm_data = (("expand", self.on_expand_element),
+            cm_data = (("remove", self.on_remove_inventory),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
 
             # create the context menu.
@@ -756,7 +891,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'network_list'):
             self.logger.debug('Handling a network list.')
-            cm_data = (("add network", self.onAddNetwork),
+            cm_data = (("add network", self.on_add_network),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -810,10 +945,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             sub_data = []
             for cur_sensor in self.GetParent().selected_inventory.get_sensor():
                 for cur_component in cur_sensor.components:
-                    sub_data.append(('%s:%s' % (cur_sensor.serial, cur_component.name), None))
+                    sub_data.append(('%s:%s' % (cur_sensor.serial, cur_component.name), self.on_assign_component_to_stream))
 
             cm_data = (("assign component", sub_data),
-                       ("add parameter", None),
+                       ("add parameter", self.on_add_recorder_stream_parameter),
                        ("remove stream", self.on_remove_recorder_stream),
                        ("separator", None),
                        ("expand", self.on_expand_element),
@@ -821,10 +956,17 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
             # create the context menu.
             context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'recorder_stream_assigned_component'):
+            self.logger.debug('Handling a component assigned to a recorder stream.')
+            cm_data = (('remove component assignment', self.on_remove_recorder_stream_assigned_sensor_component),)
+            context_menu = psyContextMenu(cm_data)
+        elif(self.selected_item == 'recorder_stream_parameter'):
+            cm_data = (('remove paramter', self.on_remove_recorder_stream_parameter),)
+            context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'station'):
             # Setup the context menu.
-            cm_data = (("add sensor", self.addSensor),
-                       ("remove station", self.onRemoveElement),
+            cm_data = (("add channel", self.on_add_channel),
+                       ("remove station", self.on_remove_station),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -838,7 +980,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     sub_data.append(('%s:%s' % (cur_stream.serial, cur_stream.name), self.on_assign_stream_to_channel))
 
             cm_data = (("assign stream", sub_data),
-                       ("remove channel", None),
+                       ("remove channel", self.on_remove_channel),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -851,16 +993,34 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             # create the context menu.
             context_menu = psyContextMenu(cm_data)
         elif(self.selected_item == 'network'):
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'add station')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-            self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'remove network')
-            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            cm_data = (("add station", self.on_add_station),
+                       ("remove_network", self.on_remove_network),
+                       ("separator", None),
+                       ("expand", self.on_expand_element),
+                       ("collapse", self.on_collapse_element))
 
+            # create the context menu.
+            context_menu = psyContextMenu(cm_data)
         if context_menu:
             pos = evt.GetPosition()
             pos = self.ScreenToClient(pos)
             self.selected_tree_item_id = self.HitTest(pos)[0]
             self.PopupMenu(context_menu, pos)
+
+
+    def on_remove_inventory(self, event):
+        ''' Handle the context menu click.
+        '''
+        if self.Parent.selected_inventory.type not in 'db':
+            self.Parent.remove_inventory()
+            self.Parent.updateSensorListView()
+        else:
+            msg = "Can't remove the database inventory."
+            dlg = wx.MessageDialog(self, msg,
+                                   'Error while removing an inventory.',
+                                    wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
 
 
     def on_add_sensor(self, event):
@@ -874,9 +1034,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     def on_remove_sensor(self, event):
         ''' Handle the context menu click.
         '''
-        pass
-        #self.Parent.remove_sensor()
-        #self.Parent.inventoryViewNotebook.updateSensorListView()
+        self.Parent.remove_sensor()
+        self.Parent.inventoryViewNotebook.updateSensorListView()
 
 
     def on_add_sensor_component(self, event):
@@ -923,10 +1082,18 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.Parent.inventoryViewNotebook.updateRecorderListView()
 
 
+    def on_add_recorder_stream_parameter(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_recorder_stream_parameter()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
+
+
     def on_remove_recorder(self, event):
         ''' Handle the context menu click.
         '''
-        pass
+        self.Parent.remove_recorder()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
 
 
     def on_remove_recorder_stream(self, event):
@@ -936,11 +1103,68 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.Parent.inventoryViewNotebook.updateRecorderListView()
 
 
+    def on_remove_recorder_stream_parameter(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_recorder_stream_parameter()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
+
+
+    def on_remove_recorder_stream_assigned_sensor_component(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_recorder_stream_assigned_sensor_component()
+        self.Parent.inventoryViewNotebook.updateRecorderListView()
+
+
+    def on_add_network(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_network()
+        self.Parent.inventoryViewNotebook.updateNetworkListView()
+
+
+    def on_remove_network(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_network()
+        self.Parent.inventoryViewNotebook.updateNetworkListView()
+
+
+    def on_add_station(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_station()
+        self.Parent.inventoryViewNotebook.updateStationListView()
+
+    def on_remove_station(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_station()
+        self.Parent.inventoryViewNotebook.updateStationListView()
+
+
+    def on_add_channel(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.add_channel()
+        self.Parent.inventoryViewNotebook.updateStationListView()
+
+
+    def on_remove_channel(self, event):
+        ''' Handle the context menu click.
+        '''
+        self.Parent.remove_channel()
+        self.Parent.inventoryViewNotebook.updateStationListView()
+
+
     def on_remove_channel_assigned_recorder_stream(self, event):
         ''' Handle the context menu click.
         '''
         self.Parent.remove_channel_assigned_recorder_stream()
         self.Parent.inventoryViewNotebook.updateStationListView()
+
+
 
 
     def on_collapse_element(self, event):
@@ -970,6 +1194,37 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         self.Parent.inventoryViewNotebook.updateStationListView()
         self.updateInventoryData()
+
+
+    def on_assign_component_to_stream(self, event):
+        ''' Assign a sensor component to a recorder stream.
+        '''
+        item_id = event.GetId()
+        menu = event.GetEventObject()
+        label = menu.GetLabel(item_id)
+        serial, name = label.split(':')
+
+        slot = self.Parent.selected_recorder_stream.get_free_component_slot()
+
+        if slot:
+            try:
+                self.Parent.selected_recorder_stream.add_component(serial = serial,
+                                                                   name = name,
+                                                                   start_time = slot[0],
+                                                                   end_time = slot[1])
+            except RuntimeError as e:
+                self.logger.excetion(e)
+            else:
+                self.Parent.inventoryViewNotebook.updateRecorderListView()
+                self.updateInventoryData()
+        else:
+            msg = "There is no free time slot for a new component."
+            dlg = wx.MessageDialog(self, msg,
+                                   'Error while adding a component.',
+                                    wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+
 
 
 
@@ -1290,6 +1545,16 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     self.SetItemPyData(curStreamItem, curStream)
                     self.SetItemImage(curStreamItem, self.icons['recorder_stream'], wx.TreeItemIcon_Normal)
 
+                    # Add the recorder stream parameter list icon.
+                    list_item = self.AppendItem(curStreamItem, 'parameters')
+                    self.SetItemPyData(list_item, curStream)
+                    self.SetItemBold(list_item, True)
+                    self.SetItemImage(list_item, self.icons['recorder_stream_parameter_list'], wx.TreeItemIcon_Normal)
+                    for cur_parameter in sorted(curStream.parameters, key = attrgetter('start_time')):
+                        item = self.AppendItem(list_item, '(' + cur_parameter.start_time_string + ' to ' + cur_parameter.end_time_string + ')')
+                        self.SetItemPyData(item, cur_parameter)
+                        self.SetItemImage(item, self.icons['recorder_stream_parameter'], wx.TreeItemIcon_Normal)
+
                     # Add the assigned component list icon.
                     list_item = self.AppendItem(curStreamItem, 'assigned components')
                     self.SetItemPyData(list_item, curStream)
@@ -1301,11 +1566,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                         self.SetItemPyData(item, curTimebox)
                         self.SetItemImage(item, self.icons['sensor_component'], wx.TreeItemIcon_Normal)
 
-                    # Add the recorder stream parameter list icon.
-                    list_item = self.AppendItem(curStreamItem, 'parameters')
-                    self.SetItemPyData(list_item, curStream)
-                    self.SetItemBold(list_item, True)
-                    self.SetItemImage(list_item, self.icons['recorder_stream_parameter_list'], wx.TreeItemIcon_Normal)
 
             # Fill the networks.
             for curNetwork in curInventory.networks:
@@ -1845,7 +2105,7 @@ class NetworkPanel(wx.Panel):
         self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onNetworkCellChange)
 
         # Set the column attributes.
-        for k, (name, label, attr)  in enumerate(fields):
+        for k, (name, label, attr, converter)  in enumerate(fields):
             self.network_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.network_grid.SetColAttr(k, roAttr)
@@ -1864,7 +2124,7 @@ class NetworkPanel(wx.Panel):
         #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
 
         # Set the column attributes.
-        for k, (name, label, attr) in enumerate(fields):
+        for k, (name, label, attr, converter) in enumerate(fields):
             self.station_grid.SetColLabelValue(k, label)
             if(attr == 'readonly'):
                 self.station_grid.SetColAttr(k, roAttr)
@@ -1889,23 +2149,23 @@ class NetworkPanel(wx.Panel):
         ''' The recorder grid columns.
         '''
         tableField = []
-        tableField.append(('name', 'name', 'editable'))
-        tableField.append(('description', 'description', 'editable'))
-        tableField.append(('type', 'type', 'editable'))
+        tableField.append(('name', 'name', 'editable', str))
+        tableField.append(('description', 'description', 'editable', str))
+        tableField.append(('type', 'type', 'editable', str))
         return tableField
 
 
     def getStationFields(self):
         tableField = []
-        tableField.append(('id', 'id', 'readonly'))
-        tableField.append(('name', 'name', 'readonly'))
-        tableField.append(('location', 'location', 'readonly'))
-        tableField.append(('network', 'network', 'readonly'))
-        tableField.append(('x', 'x', 'readonly'))
-        tableField.append(('y', 'y', 'readonly'))
-        tableField.append(('z', 'z', 'readonly'))
-        tableField.append(('coord_system', 'coord. system', 'readonly'))
-        tableField.append(('description', 'description', 'readonly'))
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('name', 'name', 'readonly', str))
+        tableField.append(('location', 'location', 'readonly', str))
+        tableField.append(('network', 'network', 'readonly',str))
+        tableField.append(('x', 'x', 'readonly', float))
+        tableField.append(('y', 'y', 'readonly', float))
+        tableField.append(('z', 'z', 'readonly', float))
+        tableField.append(('coord_system', 'coord. system', 'readonly', str))
+        tableField.append(('description', 'description', 'readonly', str))
         return tableField
 
 
@@ -1928,7 +2188,7 @@ class NetworkPanel(wx.Panel):
     def setGridValues(self, object, grid, fields, rowNumber):
         ''' Set the grid values of the specified grid.
         '''
-        for pos, (field, label, attr) in enumerate(fields):
+        for pos, (field, label, attr, converter) in enumerate(fields):
             if field is not None and getattr(object, field) is not None:
                 grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
             else:
@@ -1947,18 +2207,10 @@ class NetworkPanel(wx.Panel):
         if selectedParameter in colLabels:
             ind = colLabels.index(selectedParameter)
             fieldName = grid_fields[ind][0]
-            fieldAttr = grid_fields[ind][2]
-            if fieldAttr == 'editable':
-                setattr(self.displayedNetwork, fieldName, self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol()))
-                #self.displayedNetwork[fieldName] =  self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())
-                # TODO: For non-db inventories, reassign the stations to the
-                # network.
-                if self.displayedNetwork.parent_inventory.type is not 'db':
-                    self.displayedNetwork.parent_inventory.refreshNetworks()
-                self.GetParent().GetParent().GetParent().inventoryTree.updateInventoryData()
-                self.logger.debug(self.GetParent().GetParent().GetParent())
-        else:
-            pass
+            converter = grid_fields[ind][3]
+
+            setattr(self.selected_network, fieldName, converter(self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
 
 
 class RecorderPanel(wx.Panel):
@@ -2051,6 +2303,10 @@ class RecorderPanel(wx.Panel):
         self.assigned_component_grid.CreateGrid(1, len(fields))
 
         # Bind the assigned_component_grid events.
+        self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+                                        self.onAssignedComponentCellChange)
+        self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
+                                        self.onAssignedComponentCellLeftClick)
 
         # Set the column attributes.
         for k, (name, label, attr, convert)  in enumerate(fields):
@@ -2107,6 +2363,17 @@ class RecorderPanel(wx.Panel):
     def selected_stream_parameter(self, value):
         self.GetTopLevelParent().selected_recorder_stream_parameter = value
 
+
+    @property
+    def selected_assigned_component(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_recorder_stream_assigned_component
+        else:
+            return None
+
+    @selected_assigned_component.setter
+    def selected_assigned_component(self, value):
+        self.GetTopLevelParent().selected_recorder_stream_assigned_component = value
 
 
     def getRecorderFields(self):
@@ -2187,28 +2454,33 @@ class RecorderPanel(wx.Panel):
         self.updatePaneCaption()
 
         # Resize the grid rows.
+        if self.recorder_grid.GetNumberRows() > 0:
+            self.recorder_grid.DeleteRows(0, self.recorder_grid.GetNumberRows())
         if self.stream_grid.GetNumberRows() > 0:
             self.stream_grid.DeleteRows(0, self.stream_grid.GetNumberRows())
-        self.stream_grid.AppendRows(len(self.selected_recorder.streams))
 
-        # Update the recorder grid fields
-        self.setGridValues(self.selected_recorder,
-                           self.recorder_grid, self.getRecorderFields(), 0)
+        if self.selected_recorder:
+            self.recorder_grid.AppendRows(1)
+            self.stream_grid.AppendRows(len(self.selected_recorder.streams))
 
-        # Update the stream grid fields
-        for k, cur_component in enumerate(self.selected_recorder.streams):
-            self.setGridValues(cur_component,
-                               self.stream_grid,
-                               self.getStreamFields(),
-                               k)
+            # Update the recorder grid fields
+            self.setGridValues(self.selected_recorder,
+                               self.recorder_grid, self.getRecorderFields(), 0)
 
-        # Update the stream parameter grid.
-        self.updateParameters()
+            # Update the stream grid fields
+            for k, cur_component in enumerate(self.selected_recorder.streams):
+                self.setGridValues(cur_component,
+                                   self.stream_grid,
+                                   self.getStreamFields(),
+                                   k)
 
-        # Update the assigned sensor components grid.
-        self.updateAssignedComponents()
+            # Update the stream parameter grid.
+            self.updateParameters()
 
-        self.recorder_grid.AutoSizeColumns()
+            # Update the assigned sensor components grid.
+            self.updateAssignedComponents()
+
+            self.recorder_grid.AutoSizeColumns()
 
 
     def updateParameters(self):
@@ -2355,6 +2627,30 @@ class RecorderPanel(wx.Panel):
         evt.Skip()
 
 
+    def onAssignedComponentCellChange(self, evt):
+        ''' The assigned component grid cell edit callback.
+        '''
+        selected_parameter = self.assigned_component_grid.GetColLabelValue(evt.GetCol())
+        grid_fields = self.getAssignedComponentFields();
+        col_labels = [x[1] for x in grid_fields]
+
+        if selected_parameter in col_labels:
+            ind = col_labels.index(selected_parameter)
+            field_name = grid_fields[ind][0]
+            converter = grid_fields[ind][3]
+            setattr(self.selected_assigned_component, field_name, converter(self.assigned_component_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+        else:
+            pass
+
+
+    def onAssignedComponentCellLeftClick(self, evt):
+        ''' The assigned component grid cell left click callback.
+        '''
+        self.selected_assigned_component = self.selected_stream.components[evt.GetRow()]
+        evt.Skip()
+
+
 
 class StationsPanel(wx.Panel):
 
@@ -2469,13 +2765,13 @@ class StationsPanel(wx.Panel):
 
     def onStationCellChange(self, evt):
         selectedParameter = self.station_grid.GetColLabelValue(evt.GetCol())
-        gridStationFields = self.getStationFields();
-        colLabels = [x[1] for x in gridStationFields]
+        grid_fields = self.getStationFields();
+        colLabels = [x[1] for x in grid_fields]
 
         if selectedParameter in colLabels:
             ind = colLabels.index(selectedParameter)
-            fieldName = gridStationFields[ind][0]
-            converter = gridFields[ind][3]
+            fieldName = grid_fields[ind][0]
+            converter = grid_fields[ind][3]
             value = self.station_grid.GetCellValue(evt.GetRow(), evt.GetCol())
             setattr(self.selected_station, fieldName, converter(value))
             self.GetTopLevelParent().inventoryTree.updateInventoryData()
