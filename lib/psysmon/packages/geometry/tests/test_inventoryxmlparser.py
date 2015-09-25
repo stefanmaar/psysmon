@@ -296,11 +296,19 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         outfile = tempfile.mkstemp()
         xml_parser.export_xml(inventory, outfile[1])
 
-        # Read the created outputfile.
-        ei = xml_parser.parse(outfile[1])
+        compare_file = os.path.join(self.data_path, 'simple_inventory_export_compare.xml')
+        c_fid = open(compare_file, 'r')
+        o_fid = open(outfile[1], 'r')
 
-        # Compare the two inventories.
-        self.assertEqual(inventory, ei)
+        try:
+            for cur_line in o_fid:
+                compare_line = c_fid.readline()
+                self.assertEqual(cur_line.strip(), compare_line.strip())
+
+        finally:
+            c_fid.close()
+            o_fid.close()
+
 
         # Remove the output file.
         os.remove(outfile[1])
