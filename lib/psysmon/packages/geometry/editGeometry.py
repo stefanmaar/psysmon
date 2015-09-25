@@ -2401,8 +2401,8 @@ class RecorderPanel(wx.Panel):
         '''
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
-        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
-        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
+        tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
+        tableField.append(('end_time', 'end', 'editable', self.time_string_converter))
         tableField.append(('gain', 'gain', 'editable', float))
         tableField.append(('bitweight', 'bitweight', 'editable', float))
         return tableField
@@ -2415,8 +2415,8 @@ class RecorderPanel(wx.Panel):
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('serial', 'serial', 'readonly', str))
         tableField.append(('name', 'name', 'readonly', str))
-        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
-        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
+        tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
+        tableField.append(('end_time', 'end', 'editable', self.time_string_converter))
         return tableField
 
 
@@ -2650,6 +2650,15 @@ class RecorderPanel(wx.Panel):
         self.selected_assigned_component = self.selected_stream.components[evt.GetRow()]
         evt.Skip()
 
+    def time_string_converter(self, time_string):
+        ''' Convert a start- or end-time string.
+        '''
+        if time_string in ['', 'running', 'big bang']:
+            time_string = None
+        else:
+            time_string = UTCDateTime(time_string)
+
+        return time_string
 
 
 class StationsPanel(wx.Panel):
@@ -2973,9 +2982,20 @@ class StationsPanel(wx.Panel):
         tableField.append(('serial', 'serial', 'readonly', str))
         tableField.append(('name', 'name', 'readonly', str))
         tableField.append(('label', 'label', 'readonly', str))
-        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
-        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
+        tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
+        tableField.append(('end_time', 'end', 'editable', self.time_string_converter))
         return tableField
+
+
+    def time_string_converter(self, time_string):
+        ''' Convert a start- or end-time string.
+        '''
+        if time_string in ['', 'running', 'big bang']:
+            time_string = None
+        else:
+            time_string = UTCDateTime(time_string)
+
+        return time_string
 
 
 class SensorsPanel(wx.Panel):
@@ -3389,8 +3409,8 @@ class SensorsPanel(wx.Panel):
     def getComponentParameterFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
-        tableField.append(('start_time', 'start', 'editable', UTCDateTime))
-        tableField.append(('end_time', 'end', 'editable', UTCDateTime))
+        tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
+        tableField.append(('end_time', 'end', 'editable', self.time_string_converter))
         tableField.append(('sensitivity', 'sensitivity', 'editable', float))
         tableField.append(('input_units', 'input units', 'editable', str))
 	tableField.append(('output_units', 'output units', 'editable', str))
@@ -3400,6 +3420,17 @@ class SensorsPanel(wx.Panel):
         tableField.append(('tf_poles', 'poles', 'editable', self.tf_pz_converter))      # Poles is a list. Handle them seperately
         tableField.append(('tf_zeros', 'zeros', 'editable', self.tf_pz_converter))      # Zeros is a list. Handle them seperately.
         return tableField
+
+
+    def time_string_converter(self, time_string):
+        ''' Convert a start- or end-time string.
+        '''
+        if time_string in ['', 'running', 'big bang']:
+            time_string = None
+        else:
+            time_string = UTCDateTime(time_string)
+
+        return time_string
 
 
     def tf_pz_converter(self, pz_string):
