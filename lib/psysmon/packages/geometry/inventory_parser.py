@@ -159,7 +159,7 @@ class InventoryXmlParser:
                     cur_text = converter[cur_key](getattr(instance, attr_map[cur_key]))
                 else:
                     value = getattr(instance, attr_map[cur_key])
-                    if value:
+                    if value is not None:
                         cur_text = str(value)
                     else:
                         cur_text = ''
