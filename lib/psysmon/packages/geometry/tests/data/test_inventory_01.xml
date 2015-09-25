@@ -7,31 +7,37 @@
 
         <component name="Z">
             <description>The vertical component of the sensor.</description>
+            <input_unit>m</input_unit>
+            <output_unit>m/s</output_unit>
+            <deliver_unit>V</deliver_unit>
             <component_parameter>
                 <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <sensitivity>1</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
 
         <component name="N">
             <description>The North component of the sensor.</description>
+            <input_unit>m</input_unit>
+            <output_unit>m/s</output_unit>
+            <deliver_unit>V</deliver_unit>
             <component_parameter>
                 <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <sensitivity>1</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
 
         <component name="E">
             <description>The East component of the sensor.</description>
+            <input_unit>m</input_unit>
+            <output_unit>m/s</output_unit>
+            <deliver_unit>V</deliver_unit>
             <component_parameter>
                 <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
                 <sensitivity>1</sensitivity>
-                <sensitivity_units>V/m/s</sensitivity_units>
             </component_parameter>            
         </component>
     </sensor>  
