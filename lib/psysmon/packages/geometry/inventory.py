@@ -2271,6 +2271,10 @@ class TimeBox(object):
         return is_equal
 
 
+    def __getattr__(self, attr_name):
+        return getattr(self.item, attr_name)
+
+
     @property
     def start_time_string(self):
         if self.start_time is None:
