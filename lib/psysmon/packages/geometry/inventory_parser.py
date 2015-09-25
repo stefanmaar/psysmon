@@ -31,6 +31,7 @@ This module contains parser classes to read inventory data from files.
 '''
 
 import logging
+from lxml import etree
 
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
@@ -137,105 +138,286 @@ class InventoryXmlParser:
         return inventory
 
 
+    def instance_to_xml(self, instance, root, name, attributes, tags, attr_map, converter, element_handler = {}):
+        ''' Translate an inventory object into a xml element.
+        '''
+        attrib = {}
+        for cur_key in attributes:
+            attrib[cur_key] = getattr(instance, attr_map[cur_key])
+
+        element = etree.SubElement(root, name, **attrib)
+
+        for cur_key in tags:
+            if cur_key in element_handler.keys():
+                eh = element_handler[cur_key]
+                eh(name = cur_key,
+                   value = getattr(instance, attr_map[cur_key]),
+                   root = element)
+            else:
+                tag = etree.SubElement(element, cur_key)
+                if cur_key in converter.keys():
+                    cur_text = converter[cur_key](getattr(instance, attr_map[cur_key]))
+                else:
+                    value = getattr(instance, attr_map[cur_key])
+                    if value:
+                        cur_text = str(value)
+                    else:
+                        cur_text = ''
+
+                tag.text = cur_text
+
+        return element
+
+
+    def clean_time_string(self, value):
+        ''' Remove running and big bang string from time string.
+        '''
+        if value == 'big bang':
+            value = ''
+        elif value == 'running':
+            value = ''
+        return value
+
+
+    def handle_element_pz(self, name, value, root):
+        ''' Convert a list of complex values to a list of xml tree elements.
+        '''
+        for cur_pz in value:
+            element = etree.SubElement(root, name)
+            element.text = str(cur_pz).replace('(', '').replace(')','')
+
+
+
     def export_xml(self, inventory, filename):
         ''' Export an inventory to xml file.
         '''
-        from lxml import etree
-
         root = etree.Element('inventory', name = inventory.name)
 
+        # sensor
+        sensor_attributes = ['serial',]
+        sensor_tags = ['model', 'producer', 'description']
+        sensor_map = {'serial':'serial',
+                      'model':'model',
+                      'producer':'producer',
+                      'description':'description'}
+        sensor_converter = {}
+
+        # sensor component
+        component_attributes = ['name', ]
+        component_tags = ['description', 'input_unit', 'output_unit',
+                          'deliver_unit']
+        component_map = {'name':'name',
+                         'description':'description',
+                         'input_unit':'input_unit',
+                         'output_unit':'output_unit',
+                         'deliver_unit':'deliver_unit'}
+        component_converter = {}
+
+        # sensor component parameter
+        component_parameter_attributes = []
+        component_parameter_tags = ['start_time', 'end_time', 'sensitivity']
+        component_parameter_map = {'start_time':'start_time_string',
+                                   'end_time':'end_time_string',
+                                   'sensitivity':'sensitivity'}
+        component_parameter_converter = {'start_time':self.clean_time_string,
+                                         'end_time':self.clean_time_string}
+
+        component_parameter_paz_attributes = []
+        component_parameter_paz_tags = ['type', 'A0_normalization_factor', 'normalization_frequency',
+                                        'complex_zero', 'complex_pole']
+        component_parameter_paz_map = {'type':'tf_type',
+                                       'A0_normalization_factor':'tf_normalization_factor',
+                                       'normalization_frequency':'tf_normalization_frequency',
+                                       'complex_zero':'tf_zeros',
+                                       'complex_pole':'tf_poles'}
+        component_parameter_paz_converter = {}
+        component_parameter_paz_handler = {'complex_zero':self.handle_element_pz,
+                                           'complex_pole':self.handle_element_pz}
+
+
+        # recorder
+        rec_attributes = ['serial',]
+        rec_tags = ['type', 'description']
+        rec_map = {'serial':'serial',
+                   'type':'type',
+                   'description':'description'}
+        rec_converter = {}
+
+        #stream
+        stream_attributes = ['name',]
+        stream_tags = ['label',]
+        stream_map = {'name':'name',
+                      'label':'label'}
+        stream_converter = {}
+
+        #stream_parameter
+        stream_param_attributes = []
+        stream_param_tags = ['start_time', 'end_time', 'gain', 'bitweight']
+        stream_param_map = {'start_time':'start_time_string',
+                            'end_time':'end_time_string',
+                            'gain':'gain',
+                            'bitweight':'bitweight'}
+        stream_param_converter = {'start_time':self.clean_time_string,
+                                  'end_time':self.clean_time_string}
+
+        # stream assigned component
+        stream_comp_attributes = []
+        stream_comp_tags = ['sensor_serial', 'component_name', 'start_time', 'end_time']
+        stream_comp_map = {'sensor_serial':'serial',
+                           'component_name':'name',
+                           'start_time':'start_time_string',
+                           'end_time':'end_time_string'}
+        stream_comp_converter = {'start_time':self.clean_time_string,
+                                 'end_time':self.clean_time_string}
+
+        # network
+        net_attributes = ['name',]
+        net_tags = ['description', 'type']
+        net_map = {'name':'name',
+                   'description':'description',
+                   'type':'type'}
+        net_converter = {}
+
+        # station
+        stat_attributes = ['name',]
+        stat_tags = ['location', 'x', 'y', 'z', 'coord_system', 'description']
+        stat_map = {'name':'name',
+                    'location':'location',
+                    'x':'x',
+                    'y':'y',
+                    'z':'z',
+                    'coord_system':'coord_system',
+                    'description':'description'}
+        stat_converter = {}
+
+        # channel
+        chan_attributes = ['name',]
+        chan_tags = ['description',]
+        chan_map = {'name':'name',
+                    'description':'description'}
+        chan_converter = {}
+
+        # assigned stream
+        chan_stream_attributes = []
+        chan_stream_tags = ['recorder_serial', 'stream_name', 'start_time', 'end_time']
+        chan_stream_map = {'recorder_serial':'serial',
+                           'stream_name':'name',
+                           'start_time':'start_time_string',
+                           'end_time':'end_time_string'}
+        chan_stream_converter = {'start_time':self.clean_time_string,
+                                 'end_time':self.clean_time_string}
+
+
+
+        # Export the sensors.
+        for cur_sensor in inventory.sensors:
+            sensor_element = self.instance_to_xml(instance = cur_sensor,
+                                                  root = root,
+                                                  name = 'sensor',
+                                                  attributes = sensor_attributes,
+                                                  tags = sensor_tags,
+                                                  attr_map = sensor_map,
+                                                  converter = sensor_converter)
+            for cur_component in cur_sensor.components:
+                comp_element = self.instance_to_xml(instance = cur_component,
+                                                    root = sensor_element,
+                                                    name = 'component',
+                                                    attributes = component_attributes,
+                                                    tags = component_tags,
+                                                    attr_map = component_map,
+                                                    converter = component_converter)
+                for cur_parameter in cur_component.parameters:
+                    param_element = self.instance_to_xml(instance = cur_parameter,
+                                                         root = comp_element,
+                                                         name = 'component_parameter',
+                                                         attributes = component_parameter_attributes,
+                                                         tags = component_parameter_tags,
+                                                         attr_map = component_parameter_map,
+                                                         converter = component_parameter_converter)
+                    paz_element = self.instance_to_xml(instance = cur_parameter,
+                                                       root = param_element,
+                                                       name = 'response_paz',
+                                                       attributes = component_parameter_paz_attributes,
+                                                       tags = component_parameter_paz_tags,
+                                                       attr_map = component_parameter_paz_map,
+                                                       converter = component_parameter_paz_converter,
+                                                       element_handler = component_parameter_paz_handler)
+
+        #Export the recorders.
         for cur_recorder in inventory.recorders:
-            rec_element = etree.SubElement(root, 'recorder', serial = cur_recorder.serial)
-            type = etree.SubElement(rec_element, 'type')
-            type.text = cur_recorder.type
-            description = etree.SubElement(rec_element, 'description')
-            description.text = cur_recorder.description
+            rec_element = self.instance_to_xml(instance = cur_recorder,
+                                               root = root,
+                                               name = 'recorder',
+                                               attributes = rec_attributes,
+                                               tags = rec_tags,
+                                               attr_map = rec_map,
+                                               converter = rec_converter)
 
-            for cur_sensor in cur_recorder.sensors:
-                sen_element = etree.SubElement(rec_element, 'sensor_unit', label = cur_sensor.label)
-                rec_channel_name = etree.SubElement(sen_element, 'rec_channel_name')
-                rec_channel_name.text = cur_sensor.rec_channel_name
-                channel_name = etree.SubElement(sen_element, 'channel_name')
-                channel_name.text = cur_sensor.channel_name
-                sensor_serial = etree.SubElement(sen_element, 'sensor_serial')
-                sensor_serial.text = cur_sensor.serial
-                sensor_type = etree.SubElement(sen_element, 'sensor_type')
-                sensor_type.text = cur_sensor.type
+            for cur_stream in cur_recorder.streams:
+                stream_element = self.instance_to_xml(instance = cur_stream,
+                                                      root = rec_element,
+                                                      name = 'stream',
+                                                      attributes = stream_attributes,
+                                                      tags = stream_tags,
+                                                      attr_map = stream_map,
+                                                      converter = stream_converter)
 
-                for cur_parameter in cur_sensor.parameters:
-                    par_element = etree.SubElement(sen_element, 'channel_parameters')
-                    start_time = etree.SubElement(par_element, 'start_time')
-                    if cur_parameter.start_time is not None:
-                        start_time.text = cur_parameter.start_time.isoformat()
-                    else:
-                        start_time.text = ''
-                    end_time = etree.SubElement(par_element, 'end_time')
-                    if cur_parameter.end_time is not None:
-                        end_time.text = cur_parameter.end_time.isoformat()
-                    else:
-                        end_time.text = ''
-                    gain = etree.SubElement(par_element, 'gain')
-                    gain.text = str(cur_parameter.gain)
-                    bitweight = etree.SubElement(par_element, 'bitweight')
-                    bitweight.text = str(cur_parameter.bitweight)
-                    bitweight_units = etree.SubElement(par_element, 'bitweight_units')
-                    bitweight_units.text = cur_parameter.bitweight_units
-                    sensitivity = etree.SubElement(par_element, 'sensitivity')
-                    sensitivity.text = str(cur_parameter.sensitivity)
+                for cur_param in cur_stream.parameters:
+                    param_element = self.instance_to_xml(instance = cur_param,
+                                                         root = stream_element,
+                                                         name = 'stream_parameter',
+                                                         attributes = stream_param_attributes,
+                                                         tags = stream_param_tags,
+                                                         attr_map = stream_param_map,
+                                                         converter = stream_param_converter)
 
-                    paz_element = etree.SubElement(par_element, 'response_paz')
-                    type = etree.SubElement(paz_element, 'type')
-                    type.text = cur_parameter.tf_type
-                    units = etree.SubElement(paz_element, 'units')
-                    units.text = cur_parameter.tf_units
-                    normalization_factor = etree.SubElement(paz_element, 'A0_normalization_factor')
-                    normalization_factor.text = str(cur_parameter.tf_normalization_factor)
-                    normalization_frequency = etree.SubElement(paz_element, 'normalization_frequency')
-                    normalization_frequency.text = str(cur_parameter.tf_normalization_frequency)
-                    for cur_zero in cur_parameter.tf_zeros:
-                        zero = etree.SubElement(paz_element, 'complex_zero')
-                        zero.text = str(cur_zero).replace('(', '').replace(')','')
-                    for cur_pole in cur_parameter.tf_poles:
-                        pole = etree.SubElement(paz_element, 'complex_pole')
-                        pole.text = str(cur_pole).replace('(', '').replace(')', '')
+                for cur_comp_tb in cur_stream.components:
+                    comp_element = self.instance_to_xml(instance = cur_comp_tb,
+                                                        root = stream_element,
+                                                        name = 'assigned_component',
+                                                        attributes = stream_comp_attributes,
+                                                        tags = stream_comp_tags,
+                                                        attr_map = stream_comp_map,
+                                                        converter = stream_comp_converter)
 
+        # Export the networks.
         for cur_network in inventory.networks:
-            net_element = etree.SubElement(root, 'network', code = cur_network.name)
-            description = etree.SubElement(net_element, 'description')
-            description.text = cur_network.description
-            type = etree.SubElement(net_element, 'type')
-            type.text = cur_network.type
+            net_element = self.instance_to_xml(instance = cur_network,
+                                               root = root,
+                                               name = 'network',
+                                               attributes = net_attributes,
+                                               tags = net_tags,
+                                               attr_map = net_map,
+                                               converter = net_converter)
 
             for cur_station in cur_network.stations:
-                stat_element = etree.SubElement(net_element, 'station', code = cur_station.name)
-                location = etree.SubElement(stat_element, 'location')
-                location.text = cur_station.location
-                xcoord = etree.SubElement(stat_element, 'xcoord')
-                xcoord.text = str(cur_station.x)
-                ycoord = etree.SubElement(stat_element, 'ycoord')
-                ycoord.text = str(cur_station.y)
-                elevation = etree.SubElement(stat_element, 'elevation')
-                elevation.text = str(cur_station.z)
-                coord_system = etree.SubElement(stat_element, 'coord_system')
-                coord_system.text = cur_station.coord_system
-                description = etree.SubElement(stat_element, 'description')
-                description.text = cur_station.description
+                stat_element = self.instance_to_xml(instance = cur_station,
+                                                    root = net_element,
+                                                    name = 'station',
+                                                    attributes = stat_attributes,
+                                                    tags = stat_tags,
+                                                    attr_map = stat_map,
+                                                    converter = stat_converter)
 
-                for cur_sensor, cur_start_time, cur_end_time in cur_station.sensors:
-                    sensor_element = etree.SubElement(stat_element, 'assigned_sensor_unit', )
-                    sensor_unit_label = etree.SubElement(sensor_element, 'sensor_unit_label')
-                    sensor_unit_label.text = cur_sensor.label
-                    start_time = etree.SubElement(sensor_element, 'start_time')
-                    if cur_start_time is not None:
-                        start_time.text = cur_start_time.isoformat()
-                    else:
-                        start_time.text = ''
+                for cur_channel in cur_station.channels:
+                    chan_element = self.instance_to_xml(instance = cur_channel,
+                                                        root = stat_element,
+                                                        name = 'channel',
+                                                        attributes = chan_attributes,
+                                                        tags = chan_tags,
+                                                        attr_map = chan_map,
+                                                        converter = chan_converter)
 
-                    end_time = etree.SubElement(sensor_element, 'end_time')
-                    if cur_end_time is not None:
-                        end_time.text = cur_end_time.isoformat()
-                    else:
-                        end_time.text = ''
+                    for cur_stream_tb in cur_channel.streams:
+                        self.instance_to_xml(instance = cur_stream_tb,
+                                             root = chan_element,
+                                             name = 'assigned_stream',
+                                             attributes = chan_stream_attributes,
+                                             tags = chan_stream_tags,
+                                             attr_map = chan_stream_map,
+                                             converter = chan_stream_converter)
+
+
 
         # Write the xml string to a file.
         et = etree.ElementTree(root)
@@ -243,7 +425,6 @@ class InventoryXmlParser:
         #fid = open(filename, 'w')
         #fid.write(etree.tostring(root, pretty_print = True))
         #fid.close()
-
 
 
 
