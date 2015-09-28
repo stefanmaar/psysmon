@@ -20,13 +20,15 @@
 
 import logging
 import wx
+from obspy.core.utcdatetime import UTCDateTime
+import wx.lib.mixins.listctrl as listmix
+from wx.lib.stattext import GenStaticText as StaticText
+
+import psysmon
 from psysmon.core.plugins import OptionPlugin
 from psysmon.core.guiBricks import PrefEditPanel
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.preferences_manager as psy_pm
-from obspy.core.utcdatetime import UTCDateTime
-import wx.lib.mixins.listctrl as listmix
-from wx.lib.stattext import GenStaticText as StaticText
 
 
 class SelectEvents(OptionPlugin):
@@ -46,10 +48,18 @@ class SelectEvents(OptionPlugin):
                              )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.flag_icon_16
+
+        # The currently selected event.
+        self.selected_event = None
+
+        # The plot colors used by the plugin.
+        self.colors = {}
+        self.colors['event_vspan'] = '0.9'
 
         # Setup the pages of the preference manager.
         self.pref_manager.add_page('Select')
@@ -149,6 +159,62 @@ class SelectEvents(OptionPlugin):
         return fold_panel
 
 
+    def deactivate(self):
+        ''' Extend the Plugin deactivate method.
+        '''
+        OptionPlugin.deactivate(self)
+        self.clear_annotation()
+
+
+    def getHooks(self):
+        ''' The callback hooks.
+        '''
+        hooks = {}
+
+        hooks['after_plot'] = self.on_after_plot
+        hooks['after_plot_station'] = self.on_after_plot_station
+
+        return hooks
+
+
+    def on_after_plot(self):
+        ''' The hook called after the plotting in tracedisplay.
+        '''
+        self.add_event_marker_to_station(station = self.parent.displayManager.showStations)
+
+
+    def on_after_plot_station(self, station):
+        ''' The hook called after the plotting of a station in tracedisplay.
+        '''
+        self.add_event_marker_to_station(station = station)
+
+
+    def add_event_marker_to_station(self, station = None):
+        ''' Add the event markers to station plots.
+        '''
+        if station:
+            for cur_station in station:
+                self.add_event_marker_to_channel(cur_station.channels)
+
+
+    def add_event_marker_to_channel(self, channel = None):
+        ''' Add the event markers to channel plots.
+        '''
+        if channel:
+            for cur_plot_channel in channel:
+                scnl = cur_plot_channel.getSCNL()
+
+                cur_plot_channel.container.plot_annotation_vspan(x_start = self.selected_event[1],
+                                                                 x_end = self.selected_event[2],
+                                                                 label = self.selected_event[0],
+                                                                 parent_rid = self.rid,
+                                                                 key = self.selected_event[0],
+                                                                 color = self.colors['event_vspan'])
+                cur_plot_channel.container.draw()
+
+
+
+
     def load_catalogs(self):
         ''' Load the event catalogs from the database.
 
@@ -210,6 +276,7 @@ class SelectEvents(OptionPlugin):
         event_id = self.events_lb.GetItemText(selected_row)
         start_time = UTCDateTime(self.events_lb.GetItem(selected_row, 1).GetText())
         end_time = start_time + float(self.events_lb.GetItem(selected_row, 2).GetText())
+        self.selected_event = (event_id, start_time, end_time)
 
         # Add the pre- and post event time.
         start_time -= self.pref_manager.get_value('pre_et')
@@ -217,7 +284,19 @@ class SelectEvents(OptionPlugin):
 
         self.parent.displayManager.setTimeLimits(startTime = start_time,
                                                  endTime = end_time)
+
         self.parent.updateDisplay()
+
+
+    def clear_annotation(self):
+        ''' Clear the annotation elements in the tracedisplay views.
+        '''
+        views = self.parent.displayManager.getViewContainer()
+        for cur_view in views:
+            cur_view.clear_annotation_artist(mode = 'vspan',
+                                             parent_rid = self.rid)
+            cur_view.draw()
+
 
 
 
