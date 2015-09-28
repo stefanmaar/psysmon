@@ -138,6 +138,13 @@ class PickTool(InteractivePlugin):
         self.add_pick_lines()
 
 
+    def deactivate(self):
+        ''' Extend the Plugin deactivate method.
+        '''
+        InteractivePlugin.deactivate(self)
+        self.clear_pick_lines()
+
+
     def getHooks(self):
         ''' The callback hooks.
         '''
