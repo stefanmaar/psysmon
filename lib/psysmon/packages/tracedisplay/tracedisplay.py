@@ -596,6 +596,7 @@ class TraceDisplayDlg(wx.Frame):
         self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
         self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.swap_tool)
         self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.restore_tool, kind = 'up')
+        self.shortcutManager.addAction(('WXK_ESCAPE',), self.deactivate_tool)
 
 
     def advanceTime(self, time_step = None):
@@ -672,6 +673,20 @@ class TraceDisplayDlg(wx.Frame):
         self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(self.plugin_to_restore)
         self.plugin_to_restore = None
+
+
+    def deactivate_tool(self):
+        ''' Deactivate the currently active interactive plugin.
+        '''
+        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
+
+        if len(active_plugin) == 0:
+            return
+        elif len(active_plugin) > 1:
+            raise RuntimeError('Only one interactive tool can be active.')
+
+        active_plugin = active_plugin[0]
+        self.deactivate_interactive_plugin(active_plugin)
 
 
 
@@ -775,11 +790,15 @@ class TraceDisplayDlg(wx.Frame):
                     curPanel = self.foldPanels[plugin.name]
                     self.mgr.GetPane(curPanel).Show()
                     self.mgr.Update()
+            plugin.activate()
         else:
             if self.foldPanels[plugin.name].IsShown():
                 curPanel = self.foldPanels[plugin.name]
                 self.mgr.GetPane(curPanel).Hide()
                 self.mgr.Update()
+
+            plugin.deactivate()
+
 
 
 
