@@ -29,6 +29,7 @@ from psysmon.core.plugins import ViewPlugin
 from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 from container import View
+from container import AnnotationArtist
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 import obspy.signal
@@ -172,6 +173,11 @@ class SeismogramPlotter(ViewPlugin):
 
         '''
         return SeismogramView
+
+
+
+
+
 
 
 
@@ -351,6 +357,78 @@ class SeismogramView(View):
         return minmax_data
 
 
+    def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in the data axes.
+        '''
+        self.logger.info('Plotting a annotation line %s, %s.', parent_rid, key)
+        annotation_artist = self.get_annotation_artist(mode = 'vline',
+                                            parent_rid = parent_rid,
+                                            key = key)
+
+        if annotation_artist:
+            annotation_artist = annotation_artist[0]
+            line_artist = annotation_artist.line_artist[0]
+            label_artist = annotation_artist.text_artist[0]
+            if line_artist:
+                line_artist.set_xdata(x)
+            if label_artist:
+                label_artist.set_position((x, 0))
+        else:
+            line_artist = self.dataAxes.axvline(x = x, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.dataAxes.get_ylim()
+                label_artist = self.dataAxes.text(x = x, y = 0, s = kwargs['label'])
+            else:
+                label_artist = None
+
+            annotation_artist = AnnotationArtist(mode = 'vline',
+                                                 parent_rid = parent_rid,
+                                                 key = key)
+            annotation_artist.add_artist([line_artist, label_artist])
+            self.annotation_artists.append(annotation_artist)
+
+
+
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical span in the data axes.
+        '''
+        self.logger.info('Plotting a annotation vspan %s, %s.', parent_rid, key)
+        annotation_artist = self.get_annotation_artist(mode = 'vspan',
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+
+        if annotation_artist:
+            annotation_artist = annotation_artist[0]
+            patch_artist = annotation_artist.patch_artist[0]
+            label_artist = annotation_artist.text_artist[0]
+            if patch_artist:
+                polygon = []
+                polygon.append([x_start, 0])
+                polygon.append([x_start, 1])
+                polygon.append([x_end, 1])
+                polygon.append([x_end, 0])
+                polygon.append([x_start, 0])
+                patch_artist.set_xy(polygon)
+            if label_artist:
+                ylim = self.dataAxes.get_ylim()
+                label_artist.set_position((x_start, ylim[1]))
+        else:
+            vspan_artist = self.dataAxes.axvspan(x_start, x_end, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.dataAxes.get_ylim()
+                label_artist = self.dataAxes.text(x = x_start, y = ylim[1],
+                                                  s = kwargs['label'],
+                                                  verticalalignment = 'top')
+            else:
+                label_artist = None
+            annotation_artist = AnnotationArtist(mode = 'vspan',
+                                                 parent_rid = parent_rid,
+                                                 key = key)
+            annotation_artist.add_artist([vspan_artist, label_artist])
+            self.annotation_artists.append(annotation_artist)
+
+
+
 ############## DEMO PLUGIN FOR VIEWS ##########################################
 
 class DemoPlotter(ViewPlugin):
@@ -517,6 +595,77 @@ class DemoView(View):
         timeRange = yLim[1] - yLim[0]
         width = self.dataAxes.get_window_extent().width
         return  width / float(timeRange)
+
+
+    def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in the data axes.
+        '''
+        self.logger.info('Plotting a annotation line %s, %s.', parent_rid, key)
+        annotation_artist = self.get_annotation_artist(mode = 'vline',
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+
+        if annotation_artist:
+            annotation_artist = annotation_artist[0]
+            line_artist = annotation_artist.line_artist[0]
+            label_artist = annotation_artist.text_artist[0]
+            if line_artist:
+                line_artist.set_xdata(x)
+            if label_artist:
+                label_artist.set_position((x, 0))
+        else:
+            line_artist = self.dataAxes.axvline(x = x, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.dataAxes.get_ylim()
+                label_artist = self.dataAxes.text(x = x, y = 0, s = kwargs['label'])
+            else:
+                label_artist = None
+
+            annotation_artist = AnnotationArtist(mode = 'vline',
+                                                 parent_rid = parent_rid,
+                                                 key = key)
+            annotation_artist.add_artist([line_artist, label_artist])
+            self.annotation_artists.append(annotation_artist)
+
+
+
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical span in the data axes.
+        '''
+        self.logger.info('Plotting a annotation vspan %s, %s.', parent_rid, key)
+        annotation_artist = self.get_annotation_artist(mode = 'vspan',
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+
+        if annotation_artist:
+            annotation_artist = annotation_artist[0]
+            patch_artist = annotation_artist.patch_artist[0]
+            label_artist = annotation_artist.text_artist[0]
+            if patch_artist:
+                polygon = []
+                polygon.append([x_start, 0])
+                polygon.append([x_start, 1])
+                polygon.append([x_end, 1])
+                polygon.append([x_end, 0])
+                polygon.append([x_start, 0])
+                patch_artist.set_xy(polygon)
+            if label_artist:
+                ylim = self.dataAxes.get_ylim()
+                label_artist.set_position((x_start, ylim[1]))
+        else:
+            vspan_artist = self.dataAxes.axvspan(x_start, x_end, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.dataAxes.get_ylim()
+                label_artist = self.dataAxes.text(x = x_start, y = ylim[1],
+                                                  s = kwargs['label'],
+                                                  verticalalignment = 'top')
+            else:
+                label_artist = None
+            annotation_artist = AnnotationArtist(mode = 'vspan',
+                                                 parent_rid = parent_rid,
+                                                 key = key)
+            annotation_artist.add_artist([vspan_artist, label_artist])
+            self.annotation_artists.append(annotation_artist)
 
 
 
