@@ -43,6 +43,7 @@ from wx.lib.masked import TimeCtrl
 from wx.lib.masked import TextCtrl as MaskedTextCtrl
 from psysmon.core.util import _wxdate2pydate, _pydate2wxdate
 from obspy.core import UTCDateTime
+import matplotlib as mpl
 
 
 
@@ -278,36 +279,17 @@ class View(wx.Panel):
         self.annotationArea.setLabel(text)
 
 
+
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in the data axes.
         '''
-        self.logger.info('Plotting a annotation line %s, %s.', parent_rid, key)
-        annotation_artist = self.get_annotation_artist(mode = 'vline',
-                                            parent_rid = parent_rid,
-                                            key = key)
+        pass
 
-        if annotation_artist:
-            annotation_artist = annotation_artist[0]
-            line_artist = annotation_artist.line_artist[0]
-            label_artist = annotation_artist.text_artist[0]
-            if line_artist:
-                line_artist.set_xdata(x)
-            if label_artist:
-                label_artist.set_position((x, 0))
-        else:
-            line_artist = self.dataAxes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
-                ylim = self.dataAxes.get_ylim()
-                label_artist = self.dataAxes.text(x = x, y = 0, s = kwargs['label'])
-            else:
-                label_artist = None
-            annotation_artist = AnnotationArtist(mode = 'vline',
-                                                 parent_rid = parent_rid,
-                                                 key = key,
-                                                 line_artist = [line_artist, ],
-                                                 text_artist = [label_artist, ])
-            self.annotation_artists.append(annotation_artist)
 
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical span in the data axes.
+        '''
+        pass
 
 
 
@@ -320,6 +302,9 @@ class View(wx.Panel):
         for cur_artist in artists_to_remove:
             for cur_line_artist in cur_artist.line_artist:
                 self.dataAxes.lines.remove(cur_line_artist)
+
+            for cur_patch_artist in cur_artist.patch_artist:
+                self.dataAxes.patches.remove(cur_patch_artist)
 
             for cur_text_artist in cur_artist.text_artist:
                 self.dataAxes.texts.remove(cur_text_artist)
@@ -348,16 +333,34 @@ class View(wx.Panel):
 
 class AnnotationArtist(object):
 
-    def __init__(self, mode, parent_rid, key, line_artist, text_artist):
+    def __init__(self, mode, parent_rid, key):
         self.mode = mode
 
         self.parent_rid = parent_rid
 
         self.key = key
 
-        self.line_artist = line_artist
+        self.line_artist = []
 
-        self.text_artist = text_artist
+        self.text_artist = []
+
+        self.patch_artist = []
+
+        self.image_artist = []
+
+
+    def add_artist(self, artist_list):
+        ''' Add an artist.
+        '''
+        for cur_artist in artist_list:
+            if isinstance(cur_artist, mpl.lines.Line2D):
+                self.line_artist.append(cur_artist)
+            elif isinstance(cur_artist, mpl.patches.Patch):
+                self.patch_artist.append(cur_artist)
+            elif isinstance(cur_artist, mpl.text.Text):
+                self.text_artist.append(cur_artist)
+            else:
+                raise RuntimeError('Unknown artist type.')
 
 
 
@@ -571,6 +574,17 @@ class ChannelContainer(wx.Panel):
         for cur_view in self.views.itervalues():
             cur_view.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                            key = key, **kwargs)
+
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical vspan in the views of the channel.
+        '''
+        for cur_view in self.views.itervalues():
+            cur_view.plot_annotation_vspan(x_start = x_start,
+                                           x_end = x_end,
+                                           parent_rid = parent_rid,
+                                           key = key,
+                                           **kwargs)
+
 
 
     def clear_annotation_artist(self, **kwargs):
