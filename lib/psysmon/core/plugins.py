@@ -421,6 +421,10 @@ class SharedInformationBag(object):
     def add_info(self, origin_rid, name, value):
         ''' Add an information to the bag.
         '''
+        # Check if the value is a dictionary.
+        if not isinstance(value, dict):
+            raise ValueError('The value has to be a dictionary.')
+
         # Check if the info already exists in the bag.
         cur_info = self.get_info(origin_rid = origin_rid,
                                  name = name)
@@ -434,17 +438,20 @@ class SharedInformationBag(object):
             self.shared_info.append(cur_info)
 
 
-    def remove_info(self, origin_rid, name):
+    def remove_info(self, origin_rid, name = None):
         ''' Remove an information from the bag.
         '''
         # Check if the info exists in the bag.
-        cur_info = self.get_info(origin_rid = origin_rid,
-                                 name = name)
+        if name is None:
+            info_list = self.get_info(origin_rid = origin_rid)
+        else:
+            info_list = [self.get_info(origin_rid = origin_rid,
+                                     name = name),]
+        removed_info = []
 
-        removed_info = None
-
-        if cur_info:
-            removed_info = self.shared_info.pop(cur_info)
+        for cur_info in info_list:
+            self.shared_info.remove(cur_info)
+            removed_info.append(cur_info)
 
         return removed_info
 
