@@ -303,7 +303,9 @@ class SelectEvents(OptionPlugin):
 
         self.parent.displayManager.setTimeLimits(startTime = start_time,
                                                  endTime = end_time)
-
+        self.parent.plugins_information_bag.add_info(origin_rid = self.rid,
+                                                     name = 'selected_event',
+                                                     value = self.selected_event)
         self.parent.updateDisplay()
 
 
