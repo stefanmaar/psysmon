@@ -402,3 +402,87 @@ class ViewPlugin(PluginNode):
             '''
             assert False, 'The getViewClass must be defined!'
 
+
+
+class SharedInformationBag(object):
+    ''' A container holding information shared between various plugins.
+
+    The bag can be used by plugins to add and remove information that
+    they like to share with other plugins.
+    The bag can be placed in the instance holding the plugins (e.g.
+    the tracedisplay instance).
+    '''
+    def __init__(self):
+        ''' The initialization of the instance.
+        '''
+        self.shared_info = []
+
+
+    def add_info(self, origin_rid, name, value):
+        ''' Add an information to the bag.
+        '''
+        # Check if the info already exists in the bag.
+        cur_info = self.get_info(origin_rid = origin_rid,
+                                 name = name)
+        if cur_info:
+            cur_info.value = value
+        else:
+            # If it doesn't exist, create a new one.
+            cur_info = SharedInformation(origin_rid = origin_rid,
+                                         name = name,
+                                         value = value)
+            self.shared_info.append(cur_info)
+
+
+    def remove_info(self, origin_rid, name):
+        ''' Remove an information from the bag.
+        '''
+        # Check if the info exists in the bag.
+        cur_info = self.get_info(origin_rid = origin_rid,
+                                 name = name)
+
+        removed_info = None
+
+        if cur_info:
+            removed_info = self.shared_info.pop(cur_info)
+
+        return removed_info
+
+
+
+    def get_info(self, **kwargs):
+        ''' Get an information from the bag.
+        '''
+        valid_keys = ['origin_rid', 'name']
+
+        ret_val = self.shared_info
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
+            else:
+                raise RuntimeError('The search attribute %s is not allowed.' % cur_key)
+
+        return ret_val
+
+
+
+class SharedInformation(object):
+    '''
+    '''
+    def __init__(self, origin_rid, name, value):
+        ''' The initialization of the instance.
+        '''
+        # The resource id of the plugin that created the information.
+        self.origin_rid = origin_rid
+
+        # The name of the information.
+        self.name = name
+
+        # The value of the information.
+        self.value = value
+
+
+
+
+
