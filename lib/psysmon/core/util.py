@@ -667,3 +667,60 @@ class ProjectFileDecoder(json.JSONDecoder):
         return inst
 
 
+
+
+
+class HookManager(object):
+    ''' A class handling the callback hooks.
+    '''
+    def __init__(self, caller):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        caller : object
+            The instance calling the hooks.
+        '''
+        # The object calling the hooks.
+        self.caller = caller
+
+        # The allowed hook names and a short description.
+        self.allowed_hooks = {}
+
+        # The keyword arguments of a hook.
+        self.allowed_kwargs = {}
+
+
+    def add_hook(self, name, description, passed_args = None):
+        ''' Add a hook name to the allowed hooks.
+        '''
+        self.allowed_hooks[name] = description
+
+        if passed_args is None:
+            passed_args = {}
+
+        if not isinstance(passed_args, dict):
+            raise ValueError('The passed_args argument has to be a dictionary.')
+
+        self.allowed_kwargs[name] = passed_args
+
+
+
+    def call_hook(self, receivers, hook_name, **kwargs):
+        ''' Call the hook of the receivers.
+
+        Parameters:
+        -----------
+        receivers : list of objects
+            The objects for which the hooks are called.
+        '''
+        if hook_name not in self.allowed_hooks.keys():
+            raise RuntimeError('The name %s is not available in the allowed hooks.' % hook_name)
+
+        for cur_receiver in receivers:
+            hooks = cur_receiver.getHooks()
+            if hooks:
+                if hook_name in hooks.keys():
+                    kwargs = {x:kwargs[x] for x in kwargs if x in self.allowed_kwargs[hook_name]}
+                    hooks[hook_name](**kwargs)
+
