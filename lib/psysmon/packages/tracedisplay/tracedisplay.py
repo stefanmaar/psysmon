@@ -40,6 +40,8 @@ from obspy.core.utcdatetime import UTCDateTime
 import container
 import psysmon.core.preferences_manager as pref_manager
 import psysmon.core.gui_preference_dialog as psy_guiprefdlg
+import psysmon.core.plugins
+import psysmon.core.util
 
 try:
     from agw import foldpanelbar as fpb
@@ -312,7 +314,7 @@ class TraceDisplayDlg(wx.Frame):
 
     '''
 
-    def __init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay", 
+    def __init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay",
                  plugins = None, size=(1000, 600)):
         ''' The constructor.
 
@@ -355,8 +357,23 @@ class TraceDisplayDlg(wx.Frame):
         # Create the dataManager.
         self.dataManager = DataManager(self)
 
+        # Create the plugins shared information bag, which holds all the
+        # information, that's shared by the tracedisplay plugins.
+        self.plugins_information_bag = psysmon.core.plugins.SharedInformationBag()
+
         # A temporary plugin register to swap two plugins.
         self.plugin_to_restore = None
+
+        # Create the hook manager and fill it with the allowed hooks.
+        self.hook_manager = psysmon.core.util.HookManager(self)
+        self.hook_manager.add_hook(name = 'after_plot',
+                                   description = 'Called after the data was plotted in the views.')
+        self.hook_manager.add_hook(name = 'after_plot_station',
+                                   description = 'Called after the data of a station was plotted in the views.',
+                                   passed_args = {'station': 'The station, that was plotted.',})
+        self.hook_manager.add_hook(name = 'time_limit_changed',
+                                   description = 'Called after the time limit of the displayed time-span was changed.')
+
 
         # Register the plugin shortcuts. This has to be done after the various
         # manager instances were created.
@@ -1040,20 +1057,16 @@ class TraceDisplayDlg(wx.Frame):
                                   self.displayManager.endTime, 
                                   None)
         self.datetimeInfo.Refresh()
-        return
+
 
 
     def call_hook(self, hook_name, **kwargs):
         ''' Call the hook of the plugins.
         '''
         active_plugins = [x for x in self.plugins if x.active]
-        for cur_plugin in active_plugins:
-            hooks = cur_plugin.getHooks()
-            if hooks:
-                if hook_name in hooks.keys():
-                    self.logger.debug('Calling hook %s.', hook_name)
-                    hooks[hook_name](**kwargs)
-
+        self.hook_manager.call_hook(receivers = active_plugins,
+                                    hook_name = hook_name,
+                                    **kwargs)
 
 
 
