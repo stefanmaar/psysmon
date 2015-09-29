@@ -133,6 +133,14 @@ class SelectEvents(OptionPlugin):
         self.pref_manager.add_item(pagename = 'Display',
                                    item = item)
 
+        item = psy_pm.CheckBoxPrefItem(name = 'show_event_limits',
+                                       label = 'show event limits',
+                                       value = True,
+                                       hooks = {'on_value_change': self.on_show_event_limits_changed},
+                                       tool_tip = 'Show the limits of the selected event in the views.')
+        self.pref_manager.add_item(pagename = 'Display',
+                                   item = item)
+
 
 
     def buildFoldPanel(self, panelBar):
@@ -166,6 +174,15 @@ class SelectEvents(OptionPlugin):
         self.clear_annotation()
 
 
+    def on_show_event_limits_changed(self):
+        ''' The on_value_changed callback of the show_event_limits item.
+        '''
+        if not self.pref_manager.get_value('show_event_limits'):
+            self.clear_annotation()
+        else:
+            self.on_after_plot()
+
+
     def getHooks(self):
         ''' The callback hooks.
         '''
@@ -180,13 +197,15 @@ class SelectEvents(OptionPlugin):
     def on_after_plot(self):
         ''' The hook called after the plotting in tracedisplay.
         '''
-        self.add_event_marker_to_station(station = self.parent.displayManager.showStations)
+        if self.pref_manager.get_value('show_event_limits'):
+            self.add_event_marker_to_station(station = self.parent.displayManager.showStations)
 
 
     def on_after_plot_station(self, station):
         ''' The hook called after the plotting of a station in tracedisplay.
         '''
-        self.add_event_marker_to_station(station = station)
+        if self.pref_manager.get_value('show_event_limits'):
+            self.add_event_marker_to_station(station = station)
 
 
     def add_event_marker_to_station(self, station = None):
