@@ -55,7 +55,7 @@ class SelectEvents(OptionPlugin):
         self.icons['active'] = icons.flag_icon_16
 
         # The currently selected event.
-        self.selected_event = None
+        self.selected_event = {}
 
         # The plot colors used by the plugin.
         self.colors = {}
@@ -172,6 +172,7 @@ class SelectEvents(OptionPlugin):
         '''
         OptionPlugin.deactivate(self)
         self.clear_annotation()
+        self.parent.plugins_information_bag.remove_info(origin_rid = self.rid)
 
 
     def on_show_event_limits_changed(self):
@@ -223,11 +224,11 @@ class SelectEvents(OptionPlugin):
             for cur_plot_channel in channel:
                 scnl = cur_plot_channel.getSCNL()
 
-                cur_plot_channel.container.plot_annotation_vspan(x_start = self.selected_event[1],
-                                                                 x_end = self.selected_event[2],
-                                                                 label = self.selected_event[0],
+                cur_plot_channel.container.plot_annotation_vspan(x_start = self.selected_event['start_time'],
+                                                                 x_end = self.selected_event['end_time'],
+                                                                 label = self.selected_event['id'],
                                                                  parent_rid = self.rid,
-                                                                 key = self.selected_event[0],
+                                                                 key = self.selected_event['id'],
                                                                  color = self.colors['event_vspan'])
                 cur_plot_channel.container.draw()
 
@@ -295,7 +296,12 @@ class SelectEvents(OptionPlugin):
         event_id = self.events_lb.GetItemText(selected_row)
         start_time = UTCDateTime(self.events_lb.GetItem(selected_row, 1).GetText())
         end_time = start_time + float(self.events_lb.GetItem(selected_row, 2).GetText())
-        self.selected_event = (event_id, start_time, end_time)
+        self.selected_event = {'start_time':start_time,
+                               'end_time':end_time,
+                               'id':event_id}
+        self.parent.plugins_information_bag.add_info(origin_rid = self.rid,
+                                                     name = 'selected_event',
+                                                     value = self.selected_event)
 
         # Add the pre- and post event time.
         start_time -= self.pref_manager.get_value('pre_et')
@@ -303,9 +309,7 @@ class SelectEvents(OptionPlugin):
 
         self.parent.displayManager.setTimeLimits(startTime = start_time,
                                                  endTime = end_time)
-        self.parent.plugins_information_bag.add_info(origin_rid = self.rid,
-                                                     name = 'selected_event',
-                                                     value = self.selected_event)
+
         self.parent.updateDisplay()
 
 

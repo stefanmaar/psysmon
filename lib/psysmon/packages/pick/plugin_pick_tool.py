@@ -58,6 +58,10 @@ class PickTool(InteractivePlugin):
         # The name of the selected catalog.
         self.selected_catalog_name = None
 
+        # A flag indicating if the pick catalog was loaded for a selected
+        # event.
+        self.catalog_loaded_for_selected_event = False
+
         # The lines of the picks.
         self.pick_lines = {}
 
@@ -135,6 +139,7 @@ class PickTool(InteractivePlugin):
         ''' Extend the Plugin activate method.
         '''
         InteractivePlugin.activate(self)
+        self.load_picks()
         self.add_pick_lines()
 
 
@@ -164,6 +169,18 @@ class PickTool(InteractivePlugin):
         '''
         cur_view = event.canvas.GetGrandParent()
         self.view = cur_view
+
+        # If the selected event was removed from the information bag and the
+        # view time limits didn't change, the picks are loaded for the event
+        # time-span and not for the displayed time-span. In this case, reload
+        # the picks and plot the updated pick lines.
+        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
+                                                                           name = 'selected_event')
+        if not selected_event_info and self.catalog_loaded_for_selected_event:
+            self.load_picks()
+            self.clear_pick_lines()
+            self.add_pick_lines()
+
 
         if event.button == 2:
             # Skip the middle mouse button.
@@ -252,6 +269,21 @@ class PickTool(InteractivePlugin):
         snap_x = xdata[ind_x]
         snap_y = ydata[ind_x]
 
+        # Check if it is inside the event limits.
+        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
+                                                                           name = 'selected_event')
+        if selected_event_info:
+            if len(selected_event_info) > 1:
+                raise RuntimeError("More than one event info was returned. This shouldn't happen.")
+            selected_event_info = selected_event_info[0]
+            event_start = selected_event_info.value['start_time']
+            event_end = selected_event_info.value['end_time']
+            if not (snap_x >= event_start.timestamp and snap_x <= event_end.timestamp):
+                self.logger.info("The pick is outside the selected event limits. Setting the pick is not allowed.")
+                return
+
+
+
         # Get the channel of the pick.
         scnl = self.view.GetParent().scnl
         cur_channel = self.parent.project.geometry_inventory.get_channel(station = scnl[0],
@@ -265,8 +297,15 @@ class PickTool(InteractivePlugin):
         else:
             # Create the pick and write it to the database.
             cur_catalog = self.library.catalogs[self.selected_catalog_name]
-            search_win_start = self.parent.displayManager.startTime
-            search_win_end = self.parent.displayManager.endTime
+
+            # Check if a pick already exists in the displayed time span, or, if
+            # an event is selected in the selected event limits.
+            if selected_event_info:
+                search_win_start = selected_event_info.value['start_time']
+                search_win_end = selected_event_info.value['end_time']
+            else:
+                search_win_start = self.parent.displayManager.startTime
+                search_win_end = self.parent.displayManager.endTime
             picks = cur_catalog.get_pick(start_time = search_win_start,
                                             end_time = search_win_end,
                                             label = self.pref_manager.get_value('label'),
@@ -383,9 +422,26 @@ class PickTool(InteractivePlugin):
         '''
         cur_catalog = self.library.catalogs[self.selected_catalog_name]
         cur_catalog.clear_picks()
+
+        # Check if an event is selected. If one is selected, use the event
+        # limits to load the picks.
+        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
+                                                                           name = 'selected_event')
+        if selected_event_info:
+            if len(selected_event_info) > 1:
+                raise RuntimeError("More than one event info was returned. This shouldn't happen.")
+            selected_event_info = selected_event_info[0]
+            time_win_start = selected_event_info.value['start_time']
+            time_win_end = selected_event_info.value['end_time']
+            self.catalog_loaded_for_selected_event = True
+        else:
+            time_win_start = self.parent.displayManager.startTime
+            time_win_end = self.parent.displayManager.endTime
+            self.catalog_loaded_for_selected_event = False
+
         cur_catalog.load_picks(project = self.parent.project,
-                               start_time = self.parent.displayManager.startTime,
-                               end_time = self.parent.displayManager.endTime)
+                               start_time = time_win_start,
+                               end_time = time_win_end)
 
 
     def clear_pick_lines(self):
