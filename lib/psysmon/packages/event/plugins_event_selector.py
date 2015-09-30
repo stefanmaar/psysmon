@@ -168,7 +168,7 @@ class SelectEvents(OptionPlugin):
 
 
     def deactivate(self):
-        ''' Extend the Plugin deactivate method.
+        ''' Extend the plugin deactivate method.
         '''
         OptionPlugin.deactivate(self)
         self.clear_annotation()
@@ -299,9 +299,9 @@ class SelectEvents(OptionPlugin):
         self.selected_event = {'start_time':start_time,
                                'end_time':end_time,
                                'id':event_id}
-        self.parent.plugins_information_bag.add_info(origin_rid = self.rid,
-                                                     name = 'selected_event',
-                                                     value = self.selected_event)
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'selected_event',
+                                    value = self.selected_event)
 
         # Add the pre- and post event time.
         start_time -= self.pref_manager.get_value('pre_et')
