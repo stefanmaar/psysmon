@@ -138,16 +138,19 @@ class PickTool(InteractivePlugin):
     def activate(self):
         ''' Extend the Plugin activate method.
         '''
-        InteractivePlugin.activate(self)
-        self.load_picks()
-        self.add_pick_lines()
+        if self.selected_catalog_name is None:
+            self.logger.info('You have to select a pick catalog first.')
+        else:
+            InteractivePlugin.activate(self)
+            self.load_picks()
+            self.add_pick_lines()
 
 
     def deactivate(self):
         ''' Extend the Plugin deactivate method.
         '''
-        InteractivePlugin.deactivate(self)
         self.clear_pick_lines()
+        InteractivePlugin.deactivate(self)
 
 
     def getHooks(self):
