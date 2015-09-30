@@ -434,6 +434,7 @@ class SharedInformationBag(object):
             else:
                 cur_info = cur_info[0]
                 cur_info.value = value
+                cur_info.last_change_rid = origin_rid
         else:
             # If it doesn't exist, create a new one.
             cur_info = SharedInformation(origin_rid = origin_rid,
@@ -442,7 +443,7 @@ class SharedInformationBag(object):
             self.shared_info.append(cur_info)
 
 
-    def update_info(self, origin_rid, name, value):
+    def update_info(self, origin_rid, name, value, change_rid):
         ''' Update the value of an existing information.
         '''
         # Check if the value is a dictionary.
@@ -458,7 +459,7 @@ class SharedInformationBag(object):
             else:
                 cur_info = cur_info[0]
                 cur_info.value = value
-
+                cur_info.last_change_rid = change_rid
 
 
     def remove_info(self, origin_rid, name = None):
@@ -511,6 +512,9 @@ class SharedInformation(object):
 
         # The value of the information.
         self.value = value
+
+        # The rid of the instance which applied the last change.
+        self.last_change_rid = origin_rid
 
 
 
