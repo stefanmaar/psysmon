@@ -309,7 +309,7 @@ class SelectEvents(OptionPlugin):
 
         self.parent.displayManager.setTimeLimits(startTime = start_time,
                                                  endTime = end_time)
-
+        self.clear_annotation()
         self.parent.updateDisplay()
 
 
