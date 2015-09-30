@@ -167,6 +167,25 @@ class SelectEvents(OptionPlugin):
         return fold_panel
 
 
+    def activate(self):
+        ''' Extend the plugin deactivate method.
+        '''
+        OptionPlugin.activate(self)
+        if self.selected_event:
+            self.parent.add_shared_info(origin_rid = self.rid,
+                                        name = 'selected_event',
+                                        value = self.selected_event)
+
+            # Add the pre- and post event time.
+            start_time = self.selected_event['start_time'] - self.pref_manager.get_value('pre_et')
+            end_time = self.selected_event['end_time'] + self.pref_manager.get_value('post_et')
+
+            self.parent.displayManager.setTimeLimits(startTime = start_time,
+                                                     endTime = end_time)
+            self.clear_annotation()
+            self.parent.updateDisplay()
+
+
     def deactivate(self):
         ''' Extend the plugin deactivate method.
         '''
