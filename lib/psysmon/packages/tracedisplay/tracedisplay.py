@@ -379,6 +379,10 @@ class TraceDisplayDlg(wx.Frame):
         self.hook_manager.add_hook(name = 'plugin_deactivated',
                                    description = 'Called after a plugin was deactivated.',
                                    passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_hook(name = 'shared_information_added',
+                                   description = 'Called after a shared information was added by a plugin.',
+                                   passed_args = {'origin_rid': 'The resource id of the source of the shared information.',
+                                                  'name': 'The name of the shared information.'})
         self.hook_manager.add_view_hook(name = 'button_press_event',
                                         description = 'The matplotlib button_press_event in the view axes.')
         self.hook_manager.add_view_hook(name = 'button_release_event',
@@ -1082,6 +1086,17 @@ class TraceDisplayDlg(wx.Frame):
         self.hook_manager.call_hook(receivers = active_plugins,
                                     hook_name = hook_name,
                                     **kwargs)
+
+
+    def add_shared_info(self, origin_rid, name, value):
+        ''' Add a shared information.
+        '''
+        self.plugins_information_bag.add_info(origin_rid = origin_rid,
+                                              name = name,
+                                              value = value)
+        self.call_hook('shared_information_added',
+                       origin_rid = origin_rid,
+                       name = name)
 
 
 
