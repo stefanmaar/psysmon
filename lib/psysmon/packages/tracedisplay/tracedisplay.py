@@ -374,6 +374,9 @@ class TraceDisplayDlg(wx.Frame):
         self.hook_manager.add_hook(name = 'time_limit_changed',
                                    description = 'Called after the time limit of the displayed time-span was changed.')
         self.hook_manager.add_hook(name = 'plugin_activated',
+                                   description = 'Called after a plugin was activated.',
+                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_hook(name = 'plugin_deactivated',
                                    description = 'Called after a plugin was deactivated.',
                                    passed_args = {'plugin_rid': 'The resource id of the plugin.',})
         self.hook_manager.add_view_hook(name = 'button_press_event',
@@ -739,6 +742,7 @@ class TraceDisplayDlg(wx.Frame):
         self.viewPort.clearEventCallbacks()
         self.viewPort.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
         plugin.deactivate()
+        self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
 
 
     def activate_interactive_plugin(self, plugin):
@@ -774,6 +778,7 @@ class TraceDisplayDlg(wx.Frame):
         self.viewPort.clearEventCallbacks()
         self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
         plugin.activate()
+        self.call_hook('plugin_activated', plugin_rid = plugin.rid)
 
 
 
@@ -822,6 +827,7 @@ class TraceDisplayDlg(wx.Frame):
                 self.mgr.Update()
 
             plugin.deactivate()
+            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
 
 
 
@@ -849,7 +855,6 @@ class TraceDisplayDlg(wx.Frame):
             active_plugin = active_plugin[0]
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
-        self.call_hook('plugin_activated', plugin_rid = plugin.rid)
 
 
 
@@ -862,9 +867,11 @@ class TraceDisplayDlg(wx.Frame):
 
         if plugin.active == True:
             plugin.deactivate()
+            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
             self.displayManager.removeViewTool(plugin)
         else:
             plugin.activate()
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
             self.displayManager.registerViewTool(plugin)
 
         self.updateDisplay()
