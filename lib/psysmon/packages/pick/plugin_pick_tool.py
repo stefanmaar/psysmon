@@ -163,7 +163,8 @@ class PickTool(InteractivePlugin):
         hooks['after_plot_station'] = self.add_pick_lines_station
         hooks['after_plot_channel'] = self.add_pick_lines_channel
         hooks['time_limit_changed'] = self.load_picks
-        hooks['plugin_activated'] = self.on_other_plugin_activated
+        hooks['plugin_deactivated'] = self.on_other_plugin_deactivated
+        hooks['shared_information_added'] = self.on_shared_information_added
 
         return hooks
 
@@ -178,12 +179,12 @@ class PickTool(InteractivePlugin):
         # view time limits didn't change, the picks are loaded for the event
         # time-span and not for the displayed time-span. In this case, reload
         # the picks and plot the updated pick lines.
-        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
-                                                                           name = 'selected_event')
-        if not selected_event_info and self.catalog_loaded_for_selected_event:
-            self.load_picks()
-            self.clear_pick_lines()
-            self.add_pick_lines()
+        #selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
+        #                                                                   name = 'selected_event')
+        #if not selected_event_info and self.catalog_loaded_for_selected_event:
+        #    self.load_picks()
+        #    self.clear_pick_lines()
+        #    self.add_pick_lines()
 
 
         if event.button == 2:
@@ -200,11 +201,22 @@ class PickTool(InteractivePlugin):
                 self.logger.info('Picking in a %s view is not supported.', cur_view.name)
 
 
-    def on_other_plugin_activated(self, plugin_rid):
-        ''' Hook that is called when a plugin is activated in the tracedisplay.
+    def on_shared_information_added(self, origin_rid, name):
+        ''' Hook that is called when a shared information was added by a plugin.
+        '''
+        if origin_rid == '/plugin/tracedisplay/show_events' and name == 'selected_event':
+            self.load_picks()
+            self.clear_pick_lines()
+            self.add_pick_lines()
+
+
+    def on_other_plugin_deactivated(self, plugin_rid):
+        ''' Hook that is called when a plugin is deactivated in the tracedisplay.
         '''
         if plugin_rid == '/plugin/tracedisplay/show_events':
-            self.logger.debug('on_other_plugin_activated')
+            self.load_picks()
+            self.clear_pick_lines()
+            self.add_pick_lines()
 
 
     def add_pick_lines(self):
