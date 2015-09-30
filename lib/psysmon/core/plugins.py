@@ -429,13 +429,36 @@ class SharedInformationBag(object):
         cur_info = self.get_info(origin_rid = origin_rid,
                                  name = name)
         if cur_info:
-            cur_info.value = value
+            if len(cur_info) > 1:
+                raise RuntimeError("More than one info objects returned. This shouldn't happen.")
+            else:
+                cur_info = cur_info[0]
+                cur_info.value = value
         else:
             # If it doesn't exist, create a new one.
             cur_info = SharedInformation(origin_rid = origin_rid,
                                          name = name,
                                          value = value)
             self.shared_info.append(cur_info)
+
+
+    def update_info(self, origin_rid, name, value):
+        ''' Update the value of an existing information.
+        '''
+        # Check if the value is a dictionary.
+        if not isinstance(value, dict):
+            raise ValueError('The value has to be a dictionary.')
+
+        # Check if the info already exists in the bag.
+        cur_info = self.get_info(origin_rid = origin_rid,
+                                 name = name)
+        if cur_info:
+            if len(cur_info) > 1:
+                raise RuntimeError("More than one info objects returned. This shouldn't happen.")
+            else:
+                cur_info = cur_info[0]
+                cur_info.value = value
+
 
 
     def remove_info(self, origin_rid, name = None):
