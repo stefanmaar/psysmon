@@ -155,11 +155,15 @@ class PickTool(InteractivePlugin):
         '''
         hooks = {}
 
+        # The view hooks. These are matplotlib events called from the views.
         hooks['button_press_event'] = self.on_button_press
+
+        # The hooks called from general tracedisplay.
         hooks['after_plot'] = self.add_pick_lines
         hooks['after_plot_station'] = self.add_pick_lines_station
         hooks['after_plot_channel'] = self.add_pick_lines_channel
         hooks['time_limit_changed'] = self.load_picks
+        hooks['plugin_activated'] = self.on_other_plugin_activated
 
         return hooks
 
@@ -194,6 +198,13 @@ class PickTool(InteractivePlugin):
                 self.pick_seismogram(event, dataManager, displayManager)
             else:
                 self.logger.info('Picking in a %s view is not supported.', cur_view.name)
+
+
+    def on_other_plugin_activated(self, plugin_rid):
+        ''' Hook that is called when a plugin is activated in the tracedisplay.
+        '''
+        if plugin_rid == '/plugin/tracedisplay/show_events':
+            self.logger.debug('on_other_plugin_activated')
 
 
     def add_pick_lines(self):
