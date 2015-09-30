@@ -4977,3 +4977,17 @@ event_new_16 = PyEmbeddedImage(
     "f96bP61W65pkcDgcoocEANBsNnMJyYjkLE3T9ErjbRqNhjXGhMYYGmPCer1uzwS34i+1Ws1q"
     "rUOtNbXWYbVatYUEAFCpVKxSKlRKUSkVlstlXPnJfUqlkvU8L/Q8j67rfhQWAIDjOFZKuZZS"
     "zm/V/ABGubMn3Fno3wAAAABJRU5ErkJggg==")
+
+
+#----------------------------------------------------------------------
+event_change_limits_16 = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAA"
+    "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wkeCS4d9boY/QAAAVhJREFUOMudkk9qwkAY"
+    "xd9MEh0dHacI/luIG0EEaT2CN8gRmpvYE3gE7QncdN/eINm4jyA0uspewuumBitWog9mMY83"
+    "v4/vm89BQU2nU9vr9b47nc4+SZLo5DtFHk8mE5/kmmSHpN9ut7f7/T4CAHEKjcdjK4RYCCFe"
+    "i0BJBpvNZpUDRqPRGoCP+xTkgOFwSDygfAbW2i1JnyTuOG9uv9+fA3g+Ho+BlBIAlhdFUgDR"
+    "hRcLId7jOP5ysyx7/u19kGXZTEoJkksAEEKsdrtdcKsF0e12LclPAC8AIpIzKaVPcpEkydNp"
+    "6Oc/du4JAGi1Wtcgg8PhEBUCAECz2cwhJCOSszRN07Pw1Q7+3BqNhjXGhMYYGmPCer1ubwCu"
+    "Q2u1mtVah1praq3DarVq7wIAQKVSsUqpUClFpVRYLpfv37BSqWQ9zws9z6Pruh94aE0dx0op"
+    "11LK+X+ZH8Z0pTjsnaAzAAAAAElFTkSuQmCC")
+
