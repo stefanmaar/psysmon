@@ -685,16 +685,19 @@ class HookManager(object):
         self.caller = caller
 
         # The allowed hook names and a short description.
-        self.allowed_hooks = {}
+        self.hooks = {}
 
         # The keyword arguments of a hook.
-        self.allowed_kwargs = {}
+        self.hook_kwargs = {}
+
+        # The allowed matplotlib event hooks called from the views.
+        self.view_hooks = {}
 
 
     def add_hook(self, name, description, passed_args = None):
         ''' Add a hook name to the allowed hooks.
         '''
-        self.allowed_hooks[name] = description
+        self.hooks[name] = description
 
         if passed_args is None:
             passed_args = {}
@@ -702,8 +705,13 @@ class HookManager(object):
         if not isinstance(passed_args, dict):
             raise ValueError('The passed_args argument has to be a dictionary.')
 
-        self.allowed_kwargs[name] = passed_args
+        self.hook_kwargs[name] = passed_args
 
+
+    def add_view_hook(self, name, description):
+        ''' Add a hook name to the allowed hooks.
+        '''
+        self.view_hooks[name] = description
 
 
     def call_hook(self, receivers, hook_name, **kwargs):
@@ -714,13 +722,13 @@ class HookManager(object):
         receivers : list of objects
             The objects for which the hooks are called.
         '''
-        if hook_name not in self.allowed_hooks.keys():
+        if hook_name not in self.hooks.keys():
             raise RuntimeError('The name %s is not available in the allowed hooks.' % hook_name)
 
         for cur_receiver in receivers:
             hooks = cur_receiver.getHooks()
             if hooks:
                 if hook_name in hooks.keys():
-                    kwargs = {x:kwargs[x] for x in kwargs if x in self.allowed_kwargs[hook_name]}
+                    kwargs = {x:kwargs[x] for x in kwargs if x in self.hook_kwargs[hook_name]}
                     hooks[hook_name](**kwargs)
 
