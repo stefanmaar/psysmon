@@ -373,7 +373,15 @@ class TraceDisplayDlg(wx.Frame):
                                    passed_args = {'station': 'The station, that was plotted.',})
         self.hook_manager.add_hook(name = 'time_limit_changed',
                                    description = 'Called after the time limit of the displayed time-span was changed.')
-
+        self.hook_manager.add_hook(name = 'plugin_activated',
+                                   description = 'Called after a plugin was deactivated.',
+                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_view_hook(name = 'button_press_event',
+                                        description = 'The matplotlib button_press_event in the view axes.')
+        self.hook_manager.add_view_hook(name = 'button_release_event',
+                                        description = 'The matplotlib button_release_event in the view axes.')
+        self.hook_manager.add_view_hook(name = 'motion_notify_event',
+                                        description = 'The matplotlib motion_notify_event in the view axes.')
 
         # Register the plugin shortcuts. This has to be done after the various
         # manager instances were created.
@@ -756,9 +764,7 @@ class TraceDisplayDlg(wx.Frame):
 
         # Get the hooks and register the matplotlib hooks in the viewport.
         hooks = plugin.getHooks()
-        allowed_matplotlib_hooks = ['button_press_event',
-                                    'button_release_event',
-                                    'motion_notify_event']
+        allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
 
         for cur_key in hooks.keys():
             if cur_key not in allowed_matplotlib_hooks:
@@ -808,6 +814,7 @@ class TraceDisplayDlg(wx.Frame):
                     self.mgr.GetPane(curPanel).Show()
                     self.mgr.Update()
             plugin.activate()
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
         else:
             if self.foldPanels[plugin.name].IsShown():
                 curPanel = self.foldPanels[plugin.name]
@@ -842,6 +849,7 @@ class TraceDisplayDlg(wx.Frame):
             active_plugin = active_plugin[0]
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
+        self.call_hook('plugin_activated', plugin_rid = plugin.rid)
 
 
 
