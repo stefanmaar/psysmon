@@ -757,37 +757,38 @@ class TraceDisplayDlg(wx.Frame):
     def activate_interactive_plugin(self, plugin):
         ''' Activate an interactive plugin.
         '''
-        if plugin.cursor is not None:
-            if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
-                image = plugin.cursor.GetImage()
-                # since this image didn't come from a .cur file, tell it where the hotspot is
-                img_size = image.GetSize()
-                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
-                image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
-
-                # make the image into a cursor
-                self.viewPort.SetCursor(wx.CursorFromImage(image))
-            else:
-                try:
-                    self.viewPort.SetCursor(wx.StockCursor(plugin.cursor))
-                except:
-                    pass
-
-        self.logger.debug('Clicked the interactive tool: %s', plugin.name)
-
-        # Get the hooks and register the matplotlib hooks in the viewport.
-        hooks = plugin.getHooks()
-        allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
-
-        for cur_key in hooks.keys():
-            if cur_key not in allowed_matplotlib_hooks:
-                hooks.pop(cur_key)
-
-        # Set the callbacks of the views.
-        self.viewPort.clearEventCallbacks()
-        self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
         plugin.activate()
-        self.call_hook('plugin_activated', plugin_rid = plugin.rid)
+        if plugin.active:
+            if plugin.cursor is not None:
+                if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
+                    image = plugin.cursor.GetImage()
+                    # since this image didn't come from a .cur file, tell it where the hotspot is
+                    img_size = image.GetSize()
+                    image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
+                    image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
+
+                    # make the image into a cursor
+                    self.viewPort.SetCursor(wx.CursorFromImage(image))
+                else:
+                    try:
+                        self.viewPort.SetCursor(wx.StockCursor(plugin.cursor))
+                    except:
+                        pass
+
+            self.logger.debug('Clicked the interactive tool: %s', plugin.name)
+
+            # Get the hooks and register the matplotlib hooks in the viewport.
+            hooks = plugin.getHooks()
+            allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
+
+            for cur_key in hooks.keys():
+                if cur_key not in allowed_matplotlib_hooks:
+                    hooks.pop(cur_key)
+
+            # Set the callbacks of the views.
+            self.viewPort.clearEventCallbacks()
+            self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
 
 
 
