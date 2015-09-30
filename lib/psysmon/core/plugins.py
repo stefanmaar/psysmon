@@ -483,6 +483,14 @@ class SharedInformationBag(object):
 
     def get_info(self, **kwargs):
         ''' Get an information from the bag.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
         '''
         valid_keys = ['origin_rid', 'name']
 

@@ -1090,6 +1090,17 @@ class TraceDisplayDlg(wx.Frame):
 
     def add_shared_info(self, origin_rid, name, value):
         ''' Add a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+
+        value : Dictionary
+            The value of the shared information
         '''
         self.plugins_information_bag.add_info(origin_rid = origin_rid,
                                               name = name,
@@ -1097,6 +1108,47 @@ class TraceDisplayDlg(wx.Frame):
         self.call_hook('shared_information_added',
                        origin_rid = origin_rid,
                        name = name)
+
+
+    def update_shared_info(self, origin_rid, name, value, change_rid):
+        ''' Update a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+
+        value : Dictionary
+            The value of the shared information
+
+        change_rid : String
+            The resource ID of the author which changes the shared information.
+        '''
+        self.plugins_information_bag.update_info(origin_rid = origin_rid,
+                                                 name = name,
+                                                 value = value,
+                                                 change_rid = change_rid)
+        self.call_hook('shared_information_updated',
+                       origin_rid = origin_rid,
+                       name = name,
+                       change_rid = change_rid)
+
+
+    def get_shared_info(self, **kwargs):
+        ''' Get a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+        '''
+        self.plugins_information_bag.get_info(**kwargs)
 
 
 
