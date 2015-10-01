@@ -136,9 +136,7 @@ class Field(wx.Panel):
 
     def onValueChange(self, event):
         self.setPrefValue()
-
-        if 'on_value_change' in self.pref_item.hooks.keys():
-            self.pref_item.hooks['on_value_change']()
+        self.call_hook('on_value_change')
 
 
     ## Set the corresponding value in the options dictionary.
@@ -153,11 +151,19 @@ class Field(wx.Panel):
         self.controlElement.SetValue(self.pref_item.value)
 
 
-    def updateLimit(self, limit):
+    def updateLimit(self):
         pass
 
     def disable(self):
         self.controlElement.Disable()
+
+
+    def call_hook(self, hook_name):
+        ''' Call the registerd hooks of the pref item.
+        '''
+        if hook_name in self.pref_item.hooks.keys():
+            self.pref_item.hooks[hook_name]()
+
 
 
 
@@ -1024,12 +1030,25 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         if selected_value not in self.pref_item.value:
             self.pref_item.value.append(selected_value)
 
+        self.call_hook('on_value_change')
+
 
     def on_item_deselected(self, event):
         '''
         '''
         self.pref_item.value.remove(self.pref_item.limit[event.m_itemIndex])
+        self.call_hook('on_value_change')
 
+
+    def updateLimit(self):
+        '''
+        '''
+        # Check if the value is still available in the limit.
+        # TODO: add a key attribute which sets the fields which should be used
+        # to compare the values (e.g. the database id).
+        self.pref_item.value = [x for x in self.pref_item.value if x in self.pref_item.limit]
+
+        self.fill_listctrl(data = self.pref_item.limit)
 
 
 
