@@ -94,12 +94,23 @@ class SelectEvents(OptionPlugin):
                                    item = item)
 
 
-        item = psy_pm.CustomPrefItem(name = 'events',
-                                     label = 'events',
-                                     group = 'event selection',
-                                     value = [],
-                                     gui_class = EventListField,
-                                     tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
+#        item = psy_pm.CustomPrefItem(name = 'events',
+#                                     label = 'events',
+#                                     group = 'event selection',
+#                                     value = [],
+#                                     gui_class = EventListField,
+#                                     tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
+        column_labels = ['db_id', 'start_time', 'length', 'public_id',
+                         'description', 'agency_uri', 'author_uri',
+                         'comment']
+        item = psy_pm.ListCtrlEditPrefItem(name = 'events',
+                                           label = 'events',
+                                           group = 'event selection',
+                                           value = [],
+                                           column_labels = column_labels,
+                                           limit = [],
+                                           hooks = {'on_value_change': self.on_event_selected},
+                                           tool_tip = 'The available events.')
         self.pref_manager.add_item(pagename = 'Select',
                                    item = item)
 
@@ -147,8 +158,7 @@ class SelectEvents(OptionPlugin):
         ''' Create the foldpanel GUI.
         '''
         # Set the limits of the event_catalog field.
-        self.load_catalogs()
-        catalog_names = [x.name for x in self.catalogs]
+        catalog_names = self.parent.event_library.get_catalogs_in_db(self.parent.project)
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
             self.pref_manager.set_value('event_catalog', catalog_names[0])
@@ -158,11 +168,11 @@ class SelectEvents(OptionPlugin):
 
 
         # Customize the events field.
-        pref_item = self.pref_manager.get_item('events')[0]
-        field = pref_item.gui_element[0]
-        fold_panel.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_event_selected, field.controlElement)
+        #pref_item = self.pref_manager.get_item('events')[0]
+        #field = pref_item.gui_element[0]
+        #fold_panel.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_event_selected, field.controlElement)
 
-        self.events_lb = field.controlElement
+        #self.events_lb = field.controlElement
 
         return fold_panel
 
@@ -210,6 +220,7 @@ class SelectEvents(OptionPlugin):
 
         hooks['after_plot'] = self.on_after_plot
         hooks['after_plot_station'] = self.on_after_plot_station
+        hooks['shared_information_updated'] = self.on_shared_information_updated
 
         return hooks
 
@@ -226,6 +237,19 @@ class SelectEvents(OptionPlugin):
         '''
         if self.pref_manager.get_value('show_event_limits'):
             self.add_event_marker_to_station(station = station)
+
+
+    def on_shared_information_updated(self, updated_info):
+        ''' The hook called after a shared information has been updated.
+        '''
+        if updated_info.origin_rid == self.rid and updated_info.name == 'selected_event':
+            # Reload the events or update the selected event only.
+            # It might be saver, to reload the catalog to ensure consistency.
+            self.selected_event = updated_info.value
+            self.update_events_list()
+            self.clear_annotation()
+            self.add_event_marker_to_station(self.parent.displayManager.showStations)
+
 
 
     def add_event_marker_to_station(self, station = None):
@@ -253,83 +277,84 @@ class SelectEvents(OptionPlugin):
 
 
 
-
-    def load_catalogs(self):
-        ''' Load the event catalogs from the database.
-
-        '''
-        db_session = self.parent.project.getDbSession()
-        try:
-            cat_table = self.parent.project.dbTables['event_catalog'];
-            query = db_session.query(cat_table.id,
-                                     cat_table.name,
-                                     cat_table.description,
-                                     cat_table.agency_uri,
-                                     cat_table.author_uri,
-                                     cat_table.creation_time)
-            self.catalogs = query.all()
-
-        finally:
-            db_session.close()
-
-
     def on_load_events(self, event):
         '''
         '''
-        self.logger.debug('Loading events.')
-        event_table = self.parent.project.dbTables['event']
-        cat_table = self.parent.project.dbTables['event_catalog']
-        db_session = self.parent.project.getDbSession()
-        try:
-            start_time = self.pref_manager.get_value('start_time')
-            duration = self.pref_manager.get_value('window_length')
-            catalog_name = self.pref_manager.get_value('event_catalog')
-            query = db_session.query(event_table.id,
-                                     event_table.start_time,
-                                     event_table.end_time,
-                                     event_table.public_id,
-                                     event_table.description,
-                                     event_table.agency_uri,
-                                     event_table.author_uri,
-                                     event_table.comment,
-                                     event_table.tags).\
-                                     filter(event_table.start_time >= start_time.timestamp).\
-                                     filter(event_table.start_time <= (start_time + duration).timestamp).\
-                                     filter(event_table.ev_catalog_id == cat_table.id).\
-                                     filter(cat_table.name == catalog_name)
-
-            events = query.all()
-            pref_item = self.pref_manager.get_item('events')[0]
-            field = pref_item.gui_element[0]
-            field.set_events(events)
+        self.update_events_list()
 
 
-        finally:
-            db_session.close()
+    def update_events_list(self):
+        ''' Update the events list control.
+        '''
+        event_library = self.parent.event_library
+        catalog_name = self.pref_manager.get_value('event_catalog')
+        start_time = self.pref_manager.get_value('start_time')
+        duration = self.pref_manager.get_value('window_length')
+
+        if catalog_name not in event_library.catalogs.keys():
+            event_library.load_catalog_from_db(project = self.parent.project,
+                                               name = catalog_name)
+
+        cur_catalog = event_library.catalogs[catalog_name]
+        cur_catalog.clear_events()
+        cur_catalog.load_events(project = self.parent.project,
+                                start_time = start_time,
+                                end_time = start_time + duration)
+
+        event_list = self.convert_events_to_list(cur_catalog.events)
+        self.pref_manager.set_limit('events', event_list)
 
 
-    def on_event_selected(self, event):
+    def convert_events_to_list(self, events):
+        ''' Convert a list of event objects to a list suitable for the GUI element.
+        '''
+        list_fields = []
+        list_fields.append(('db_id', 'id', int))
+        list_fields.append(('start_time_string', 'start time', str))
+        list_fields.append(('length', 'length', float))
+        list_fields.append(('public_id', 'public id', str))
+        list_fields.append(('description', 'description', str))
+        list_fields.append(('agency_uri', 'agency', str))
+        list_fields.append(('author_uri', 'author', str))
+        list_fields.append(('comment', 'comment', str))
+
+        event_list = []
+        for cur_event in events:
+            cur_row = []
+            for cur_field in list_fields:
+                cur_name = cur_field[0]
+                cur_row.append(str(getattr(cur_event, cur_name)))
+            event_list.append(cur_row)
+
+        return event_list
+
+
+    def on_event_selected(self):
         '''
         '''
-        selected_row = event.m_itemIndex
-        event_id = self.events_lb.GetItemText(selected_row)
-        start_time = UTCDateTime(self.events_lb.GetItem(selected_row, 1).GetText())
-        end_time = start_time + float(self.events_lb.GetItem(selected_row, 2).GetText())
-        self.selected_event = {'start_time':start_time,
-                               'end_time':end_time,
-                               'id':event_id}
-        self.parent.add_shared_info(origin_rid = self.rid,
-                                    name = 'selected_event',
-                                    value = self.selected_event)
+        selected_event = self.pref_manager.get_value('events')
 
-        # Add the pre- and post event time.
-        start_time -= self.pref_manager.get_value('pre_et')
-        end_time += self.pref_manager.get_value('post_et')
+        if selected_event:
+            selected_event = selected_event[0]
+            event_id = float(selected_event[0])
+            start_time = UTCDateTime(selected_event[1])
+            end_time = start_time + float(selected_event[2])
+            self.selected_event = {'start_time':start_time,
+                                   'end_time':end_time,
+                                   'id':event_id,
+                                   'catalog_name': self.pref_manager.get_value('event_catalog')}
+            self.parent.add_shared_info(origin_rid = self.rid,
+                                        name = 'selected_event',
+                                        value = self.selected_event)
 
-        self.parent.displayManager.setTimeLimits(startTime = start_time,
-                                                 endTime = end_time)
-        self.clear_annotation()
-        self.parent.updateDisplay()
+            # Add the pre- and post event time.
+            start_time -= self.pref_manager.get_value('pre_et')
+            end_time += self.pref_manager.get_value('post_et')
+
+            self.parent.displayManager.setTimeLimits(startTime = start_time,
+                                                     endTime = end_time)
+            self.clear_annotation()
+            self.parent.updateDisplay()
 
 
     def clear_annotation(self):
@@ -380,12 +405,12 @@ class EventListField(wx.Panel, listmix.ColumnSorterMixin):
                                             | wx.LC_SORT_ASCENDING)
 
         # The columns to show as a list to keep it in the correct order.
-        self.columns = ['id', 'start_time', 'length', 'public_id',
+        self.columns = ['db_id', 'start_time', 'length', 'public_id',
                         'description', 'agency_uri', 'author_uri',
                         'comment']
 
         # The labels of the columns.
-        self.column_labels = {'id': 'id',
+        self.column_labels = {'db_id': 'id',
                        'start_time': 'start time',
                        'length': 'length',
                        'public_id': 'public id',

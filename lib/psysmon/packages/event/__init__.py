@@ -30,7 +30,8 @@ collection_node_modules = ['import_bulletin', 'detect_sta_lta',
                            'edit_event_catalogs', 'event_processor']
 
 # Specify the module(s) where to search for plugin classes.
-plugin_modules = ['plugins_event_selector', 'plugins_event_create']
+plugin_modules = ['plugins_event_selector', 'plugins_event_create',
+                  'plugins_event_change_limits']
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = ['pn_amplitude_features', ]

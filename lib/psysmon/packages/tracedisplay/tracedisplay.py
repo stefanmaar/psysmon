@@ -42,6 +42,7 @@ import psysmon.core.preferences_manager as pref_manager
 import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 import psysmon.core.plugins
 import psysmon.core.util
+import psysmon.packages.event.core as ev_core
 
 try:
     from agw import foldpanelbar as fpb
@@ -356,6 +357,9 @@ class TraceDisplayDlg(wx.Frame):
 
         # Create the dataManager.
         self.dataManager = DataManager(self)
+
+        # Create the events library.
+        self.event_library = ev_core.Library(name = self.collection_node.rid)
 
         # Create the plugins shared information bag, which holds all the
         # information, that's shared by the tracedisplay plugins.
@@ -1114,30 +1118,11 @@ class TraceDisplayDlg(wx.Frame):
                        name = name)
 
 
-    def update_shared_info(self, origin_rid, name, value, change_rid):
-        ''' Update a shared information.
-
-        Parameters
-        ----------
-        origin_rid : String
-            The resource ID of the origin of the information.
-
-        name : String
-            The name of the shared information
-
-        value : Dictionary
-            The value of the shared information
-
-        change_rid : String
-            The resource ID of the author which changes the shared information.
+    def notify_shared_info_change(self, updated_info):
+        ''' Notify tracedisplay, that a shared informtion was changed.
         '''
-        updated_info = self.plugins_information_bag.update_info(origin_rid = origin_rid,
-                                                                name = name,
-                                                                value = value,
-                                                                change_rid = change_rid)
-        if updated_info:
-            self.call_hook('shared_information_updated',
-                           updated_info = updated_info)
+        self.call_hook('shared_information_updated',
+                       updated_info = updated_info)
 
 
     def get_shared_info(self, **kwargs):
