@@ -385,9 +385,7 @@ class TraceDisplayDlg(wx.Frame):
                                                   'name': 'The name of the shared information.'})
         self.hook_manager.add_hook(name = 'shared_information_updated',
                                    description = 'Called after a shared information was added by a plugin.',
-                                   passed_args = {'origin_rid': 'The resource id of the source of the shared information.',
-                                                  'name': 'The name of the shared information.',
-                                                  'change_rid': 'The resource id of the resource which applied the last change to the information.'})
+                                   passed_args = {'updated_info': 'The shared information instance which was updated.'})
         self.hook_manager.add_view_hook(name = 'button_press_event',
                                         description = 'The matplotlib button_press_event in the view axes.')
         self.hook_manager.add_view_hook(name = 'button_release_event',
@@ -1133,14 +1131,13 @@ class TraceDisplayDlg(wx.Frame):
         change_rid : String
             The resource ID of the author which changes the shared information.
         '''
-        self.plugins_information_bag.update_info(origin_rid = origin_rid,
-                                                 name = name,
-                                                 value = value,
-                                                 change_rid = change_rid)
-        self.call_hook('shared_information_updated',
-                       origin_rid = origin_rid,
-                       name = name,
-                       change_rid = change_rid)
+        updated_info = self.plugins_information_bag.update_info(origin_rid = origin_rid,
+                                                                name = name,
+                                                                value = value,
+                                                                change_rid = change_rid)
+        if updated_info:
+            self.call_hook('shared_information_updated',
+                           updated_info = updated_info)
 
 
     def get_shared_info(self, **kwargs):
@@ -1154,7 +1151,7 @@ class TraceDisplayDlg(wx.Frame):
         name : String
             The name of the shared information
         '''
-        self.plugins_information_bag.get_info(**kwargs)
+        return self.plugins_information_bag.get_info(**kwargs)
 
 
 
