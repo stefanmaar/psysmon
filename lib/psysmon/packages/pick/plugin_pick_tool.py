@@ -296,8 +296,8 @@ class PickTool(InteractivePlugin):
         snap_y = ydata[ind_x]
 
         # Check if it is inside the event limits.
-        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
-                                                                           name = 'selected_event')
+        selected_event_info = self.parent.get_shared_info(origin_rid = '/plugin/tracedisplay/show_events',
+                                                          name = 'selected_event')
         if selected_event_info:
             if len(selected_event_info) > 1:
                 raise RuntimeError("More than one event info was returned. This shouldn't happen.")
