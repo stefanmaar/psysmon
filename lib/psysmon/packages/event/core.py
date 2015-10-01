@@ -95,6 +95,27 @@ class Event(object):
         return '/event/' + str(self.db_id)
 
 
+    @property
+    def start_time_string(self):
+        ''' The string representation of the start time.
+        '''
+        return self.start_time.isoformat()
+
+
+    @property
+    def end_time_string(self):
+        ''' The string representation of the end time.
+        '''
+        return self.end_time.isoformat()
+
+
+    @property
+    def length(self):
+        ''' The length of the event in seconds.
+        '''
+        return self.end_time - self.start_time
+
+
     def write_to_database(self, project):
         ''' Write the event to the pSysmon database.
         '''
@@ -238,6 +259,9 @@ class Catalog(object):
         for cur_event in events:
             cur_event.parent = self
         self.events.extend(events)
+
+
+    #TODO: Add a get_event method.
 
 
     def write_to_database(self, project, only_changed_events = True):
