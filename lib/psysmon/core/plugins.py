@@ -29,7 +29,6 @@ Extend psysmon with custom code.
 
 This module contains the pSysmon plugin system.
 '''
-
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -460,6 +459,7 @@ class SharedInformationBag(object):
                 cur_info = cur_info[0]
                 cur_info.value = value
                 cur_info.last_change_rid = change_rid
+                return cur_info
 
 
     def remove_info(self, origin_rid, name = None):
