@@ -4991,3 +4991,13 @@ event_change_limits_16 = PyEmbeddedImage(
     "Q2u1mtVah1praq3DarVq7wIAQKVSsUqpUClFpVRYLpfv37BSqWQ9zws9z6Pruh94aE0dx0op"
     "11LK+X+ZH8Z0pTjsnaAzAAAAAElFTkSuQmCC")
 
+#----------------------------------------------------------------------
+localize_graphical_icon_16 = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
+    "AAEoSURBVDiNpdIxSxtQFMXx34tQUcfi1lKhLhlcrLR0ETq20NUppU4uTuLWfgmHzAou+gG6"
+    "OJUOthmKRaFDoAEjgq2gIHaQIlyHvGCwyRPxD295973DuedeESEioIJXWEYNk2jibfdNv5Mi"
+    "QkrpMTYxggYe4g2aETHjFirYxgc6gtnRJ/zG65ID2fZO7+dcaGERX0oCFUyjEV25ay6xl+tF"
+    "+39yzzfZwWyuF3mEYzzBEKYwj1UcoF7MIDv/iL+4yJ+20Ebk+xWMDgqxhiOs4SvO8Qt1nYBP"
+    "8VlnJ172E9hFtTCm5/iJbzjDO1TxHhsJTyOiVQoppTSMBczhBQ7xHY30//TKpJTWcRIRSzAw"
+    "3UJLE2j3LtKdiIh9jKWUxnF3gcwPPLuPwD88gCv4igzZp+wMUgAAAABJRU5ErkJggg==")
