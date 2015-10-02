@@ -449,7 +449,8 @@ class Project:
             name = (name,)
 
         for curName in name:
-            plugins.extend([curPlugin() for curPlugin in self.psybase.packageMgr.plugins[curName]])
+            if curName in self.psybase.packageMgr.plugins.keys():
+                plugins.extend([curPlugin() for curPlugin in self.psybase.packageMgr.plugins[curName]])
         return plugins
 
 
