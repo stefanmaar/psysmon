@@ -42,8 +42,8 @@ from psysmon.artwork.icons import iconsBlack16 as icons
 import wx.aui
 import wx.grid
 import os
-import matplotlib
-matplotlib.use('WXAgg')
+#import matplotlib
+#matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 from wx.lib.pubsub import setupkwargs
