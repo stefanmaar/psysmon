@@ -424,6 +424,9 @@ class PickTool(InteractivePlugin):
         ''' Handle the catalog selection.
         '''
         self.selected_catalog_name = self.pref_manager.get_value('pick_catalog')
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'selected_pick_catalog',
+                                    value = {'catalog_name': self.selected_catalog_name})
         # Load the catalog from the database.
         self.library.clear()
         self.library.load_catalog_from_db(project = self.parent.project,
