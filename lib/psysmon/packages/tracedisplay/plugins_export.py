@@ -19,6 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+
+import wx
+
 import psysmon.core.plugins as plugins
 import psysmon.artwork.icons as icons
 
@@ -84,3 +88,53 @@ class ExportOriginal(plugins.CommandPlugin):
         '''
         self.parent.project.export_data(uri = self.parent.collection_node.rid + '/orig_stream',
                                         data = self.parent.original_data)
+
+
+
+
+
+class ExportVisibleToAscii(plugins.CommandPlugin):
+    ''' Export the visible (processed) data to ASCII formatted files.
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+
+    def __init__(self):
+        ''' Initialize the instance.
+
+        '''
+        plugins.CommandPlugin.__init__(self,
+                                       name = 'export visible to ASCII',
+                                       category = 'export',
+                                       tags = ['export', 'visible', 'ascii']
+                                       )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons.iconsBlack16.export_icon_16
+
+
+    def run(self):
+        ''' Export the visible data to the project server.
+        '''
+        # Get the export directory from the user.
+        dlg = wx.DirDialog(self.parent, "Choose an export directory:",
+                           style = wx.DD_DEFAULT_STYLE
+                           | wx.DD_DIR_MUST_EXIST)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            export_dir = dlg.GetPath()
+
+            for cur_trace in self.parent.visible_data:
+                cur_id = cur_trace.id.replace('.','_')
+                cur_isoformat = cur_trace.stats.starttime.isoformat()
+                cur_isoformat = cur_isoformat.replace(':', '')
+                cur_isoformat = cur_isoformat.replace('.', '_')
+                cur_filename = cur_id + '_' + cur_isoformat + '.ascii'
+                cur_filename = os.path.join(export_dir, cur_filename)
+                cur_trace.write(cur_filename, format = 'TSPAIR')
+                self.logger.info('Exported trace %s to file %s.', cur_trace.id, cur_filename)
+
