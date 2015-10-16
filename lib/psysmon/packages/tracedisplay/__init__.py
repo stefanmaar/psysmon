@@ -32,7 +32,8 @@ plugin_modules = ['plugins_componentselectors',
                   'plugins_views',
                   'plugins_zoom',
                   'plugins_measure',
-                  'plugins_export']
+                  'plugins_export',
+                  'plugins_publish']
 
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = ['tracedisplay', ]
