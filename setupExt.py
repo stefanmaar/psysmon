@@ -125,13 +125,13 @@ def checkForPackage(name, requiredVersion):
                 nn[k] = 0
 
     checkPassed = False
-    for k, cur_n in enumerate(rV):
+    for k, cur_n in enumerate(nn):
         if cur_n > rV[k]:
             checkPassed = True
             break
-        elif cur_n == rV[k] and k < len(nn)-1:
+        elif cur_n == rV[k] and k < len(rV)-1:
             checkPassed = True
-        elif cur_n == rV[k] and k == len(nn)-1:
+        elif cur_n == rV[k] and k == len(rV)-1:
             checkPassed = True
             break
         else:
@@ -148,10 +148,10 @@ def checkForPackage(name, requiredVersion):
     #    checkPassed = True
 
     if not checkPassed:
-        printMessage(
-           '%s %s or later is required; you have %s' %
+        printStatus(name,
+           'PROBLEM - %s %s or later is required; you have %s' %
            (name, requiredVersion, __version__))
     else:
-        printStatus(name, "%s (%s required)" % (__version__, requiredVersion))
+        printStatus(name, "OK - %s (%s required)" % (__version__, requiredVersion))
 
     return checkPassed
