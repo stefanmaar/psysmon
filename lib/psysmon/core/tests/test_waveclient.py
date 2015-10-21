@@ -42,7 +42,7 @@ from psysmon.core.test_util import remove_project_filestructure
 import tempfile
 import os
 
-class ProjectTestCase(unittest.TestCase):
+class WaveclientTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
     """
@@ -64,6 +64,7 @@ class ProjectTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
         print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
         print "removing temporary file structure....\n"
@@ -156,7 +157,7 @@ class ProjectTestCase(unittest.TestCase):
 
 
 def suite():
-    return unittest.makeSuite(ProjectTestCase, 'test')
+    return unittest.makeSuite(WaveclientTestCase, 'test')
 
 
 if __name__ == '__main__':
