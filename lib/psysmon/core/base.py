@@ -48,7 +48,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import Pyro4 as pyro
 
 
-class Base:
+class Base(object):
     '''Handle low level objects of psysmon.
 
     The Base class is the lowest level class of the pSysmon model. It handles 
@@ -129,7 +129,8 @@ class Base:
         self.version = version
 
         # The package manager handling the dynamically loaded packages.
-        self.packageMgr = psysmon.core.packageSystem.PackageManager(self, self.packageDirectory)
+        self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self, 
+                                                                    packageDirectories = self.packageDirectory)
 
         # Load the psysmon packages.
         self.packageMgr.scan4Package()
@@ -140,8 +141,21 @@ class Base:
         self.process_meta['name'] = 'main'
         self.process_meta['pid'] = None
 
+        # The pyro project server lock.
+        self.project_server_lock = threading.Lock()
+
+        # The pyro project server state.
+        self._project_server_starting = False
+        self._project_server_started = False
+
         # The pyro nameserver name of the project server.
         self.pyro_project_server_name = 'psysmon.project_server'
+
+        # The pyro daemon.
+        self.pyro_daemon = None
+
+        # The pyro nameserver.
+        self.pyro_nameserver = None
 
         # The pyro project data server.
         if project_server is None:
@@ -154,9 +168,37 @@ class Base:
             self.project_server = project_server
 
 
+    def __del__(self):
+        '''
+        '''
+        self.logger.debug("__del__ method: cleaning instance")
+
+
+    @property
+    def project_server_started(self):
+        '''
+        '''
+        self.project_server_lock.acquire()
+        cur_state = self._project_server_started
+        self.project_server_lock.release()
+        return cur_state
+
+
+    @property
+    def project_server_starting(self):
+        '''
+        '''
+        self.project_server_lock.acquire()
+        cur_state = self._project_server_starting
+        self.project_server_lock.release()
+        return cur_state
+
+
     def start_project_server(self):
         ''' Start the pyro project server.
         '''
+        self.project_server_lock.acquire()
+        self._project_server_starting = True
         pyro.config.SERIALIZER = 'pickle'
         self.pyro_daemon = pyro.Daemon()
         self.pyro_project_server_uri = self.pyro_daemon.register(self.project_server)
@@ -179,17 +221,25 @@ class Base:
             self.pyro_nameserver = None
             self.logger.warning('No pyro4 nameserver found.')
             self.logger.info('Registered the project server with pyro uri: %s.', self.pyro_project_server_uri)
+        self._project_server_starting = False
+        self._project_server_started = True
+        self.project_server_lock.release()
         self.pyro_daemon.requestLoop()
 
 
     def stop_project_server(self):
         ''' Stop the pyro project server.
         '''
-        try:
-            if self.pyro_nameserver is not None:
-                self.pyro_nameserver.remove(self.pyro_project_server_name)
-        finally:
-            self.pyro_daemon.shutdown()
+        if self.project_server_started:
+            self.project_server_lock.acquire()
+            try:
+                if self.pyro_nameserver is not None:
+                    self.pyro_nameserver.remove(self.pyro_project_server_name)
+            finally:
+                self.logger.debug('Shutting down the pyro_daemon.')
+                self.pyro_daemon.shutdown()
+                self._project_server_started = False
+            self.project_server_lock.release()
 
 
     def createPsysmonDbUser(self, rootUser, rootPwd, dbHost, user, userPwd):
