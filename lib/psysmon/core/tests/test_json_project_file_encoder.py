@@ -31,6 +31,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
         self.db_user = self.db_project.activeUser
 
     def tearDown(self):
+        self.psybase.stop_project_server()
         test_util.drop_project_database_tables(self.db_project)
         shutil.rmtree(self.db_base_dir)
         del self.db_user
@@ -445,11 +446,13 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     }
 }'''
 
-        self.assertMultiLineEqual(encoder.encode(project), expected_result)
-
-        base_dir = project.base_dir
-        test_util.drop_project_database_tables(project)
-        shutil.rmtree(base_dir)
+        try:
+            self.assertMultiLineEqual(encoder.encode(project), expected_result)
+        finally:
+            base_dir = project.base_dir
+            psybase.stop_project_server()
+            test_util.drop_project_database_tables(project)
+            shutil.rmtree(base_dir)
 
 def suite():
     return unittest.makeSuite(ProjectFileEncoderTestCase, 'test')

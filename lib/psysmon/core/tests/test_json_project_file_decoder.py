@@ -5,6 +5,8 @@ import psysmon.core.test_util as test_util
 import shutil
 import psysmon.core.util as util
 import os
+import logging
+import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 
 class ProjectFileDecoderTestCase(unittest.TestCase):
@@ -13,6 +15,9 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        logger = logging.getLogger('psysmon')
+        logger.setLevel('DEBUG')
+        logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
         cls.packages_path = os.path.dirname(os.path.abspath(__file__))
         cls.packages_path = os.path.join(cls.packages_path, 'packages')
 
@@ -27,6 +32,7 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         self.db_user = self.db_project.activeUser
 
     def tearDown(self):
+        self.psybase.stop_project_server()
         test_util.drop_project_database_tables(self.db_project)
         shutil.rmtree(self.db_base_dir)
         del self.db_user
@@ -123,6 +129,7 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         # TODO: Test the project_obj for validity.
         print project_obj.waveclient['db client'].mode
 
+        psybase.stop_project_server()
         base_dir = project.base_dir
         test_util.drop_project_database_tables(project)
         shutil.rmtree(base_dir)
