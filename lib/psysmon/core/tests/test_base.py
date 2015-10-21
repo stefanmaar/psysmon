@@ -11,7 +11,6 @@ import os
 import shutil
 import logging
 import psysmon
-from obspy.core.utcdatetime import UTCDateTime
 
 class BaseTestCase(unittest.TestCase):
     """
