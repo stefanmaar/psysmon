@@ -5,6 +5,7 @@ Created on May 17, 2011
 '''
 
 import unittest
+import logging
 import psysmon.core.project
 import psysmon.core.test_util as test_util
 import os
@@ -18,17 +19,16 @@ class ProjectTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setUpClass...\n"
-
+        # Configure the logger.
+        logger = logging.getLogger('psysmon')
+        logger.setLevel('DEBUG')
+        logger.addHandler(psysmon.getLoggerHandler())
 
     @classmethod
     def tearDownClass(cls):
-        print "Cleaning up....\n"
-        print "done.\n"
-
+        pass
 
     def setUp(self):
-        print "Setting up test method..."
         base_path= os.path.dirname(os.path.abspath(__file__))
         packages_path = os.path.join(base_path, 'packages')
         self.psybase = test_util.create_psybase(package_directory = [packages_path,])
@@ -37,7 +37,7 @@ class ProjectTestCase(unittest.TestCase):
         self.db_user = self.db_project.activeUser
 
     def tearDown(self):
-        print "Tearing down test method..."
+        self.psybase.stop_project_server()
         test_util.drop_project_database_tables(self.db_project)
         shutil.rmtree(self.db_base_dir)
         del self.db_user
