@@ -33,6 +33,7 @@ This module contains the classes needed to run the pSysmon package system.
 import os
 import sys
 import logging
+import weakref
 from sqlalchemy import MetaData
 
 
@@ -210,7 +211,10 @@ class PackageManager:
         self.logger = logging.getLogger(loggerName)
 
         # The parent object holding the package manager.
-        self.parent = parent
+        if parent is not None:
+            self._parent = weakref.ref(parent)
+        else:
+            self._parent = None
 
         # A list of directories holding the packages.
         self.packageDirectories = packageDirectories
@@ -223,6 +227,16 @@ class PackageManager:
 
         # The processing nodes managed by the package manager.
         self.processingNodes = {}
+
+
+    @property
+    def parent(self):
+        '''
+        '''
+        if self._parent is None:
+            return self._parent
+        else:
+            return self._parent()
 
 
     def scan4Package(self):

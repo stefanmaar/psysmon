@@ -31,6 +31,7 @@ This module contains the classes for the project and user management.
 '''
 
 
+import weakref
 import logging
 import os
 import sys
@@ -257,7 +258,10 @@ class Project:
         self.logger = logging.getLogger(loggerName)
 
         # The parent psysmon base.
-        self.psybase = psybase
+        if psybase is not None:
+            self._psybase = weakref.ref(psybase)
+        else:
+            self._psybase = None
 
         # The project name.
         self.name = name
@@ -350,6 +354,13 @@ class Project:
         # The geometry inventory.
         self.geometry_inventory = None
 
+
+    @property
+    def psybase(self):
+        if self._psybase is not None:
+            return self._psybase()
+        else:
+            return self._psybase
 
     @property
     def projectDir(self):
