@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pSysmon'
-copyright = u'2011, Stefan Mertl'
+copyright = u'2015, Stefan Mertl'
 
 # The inheritance diagram.
 inheritance_graph_attrs = dict(rankdir = 'TB', size='""')
@@ -134,7 +134,7 @@ html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = '%Y-%m-%d %H:%M'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
