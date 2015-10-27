@@ -28,10 +28,9 @@ Test case for the waveclient module.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+import nose.plugins.attrib as nose_attrib
 import unittest
 import logging
-
-from obspy.core.utcdatetime import UTCDateTime
 
 import psysmon
 from psysmon.core.test_util import create_psybase
@@ -39,9 +38,9 @@ from psysmon.core.test_util import create_empty_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
-import tempfile
 import os
 
+@nose_attrib.attr('network')
 class WaveclientTestCase(unittest.TestCase):
     """
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
