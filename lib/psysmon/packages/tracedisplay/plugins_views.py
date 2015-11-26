@@ -93,12 +93,32 @@ class SeismogramPlotter(ViewPlugin):
         self.icons['active'] = icons.waveform_icon_16
 
         # Add the plugin preferences.
+        # Show or hide the seismogram envelope.
         item = preferences_manager.CheckBoxPrefItem(name = 'show_envelope',
                                                     label = 'show envelope',
                                                     value = False
                                                    )
         self.pref_manager.add_item(item = item)
 
+        # Set the scaling mode.
+        item = preferences_manager.SingleChoicePrefItem(name = 'scaling_mode',
+                                                        label = 'scaling',
+                                                        limit = ('channel', 'station', 'window', 'manual'),
+                                                        value = 'channel',
+                                                        tool_tip = 'Set the scaling mode.'
+                                                       )
+        self.pref_manager.add_item(item = item)
+
+        # Set the manual scaling value.
+        item = preferences_manager.FloatSpinPrefItem(name = 'manual_y_lim',
+                                                     label = 'manual y limit',
+                                                     value = 10,
+                                                     limit = (0, None),
+                                                     spin_format = '%e'
+                                                    )
+        self.pref_manager.add_item(item = item)
+
+        # Set the limit when the display changes to the min-max method.
         item = preferences_manager.FloatSpinPrefItem(name = 'minmax_limit',
                                                      label = 'min-max limit [s]',
                                                      value = 20.,
@@ -131,8 +151,22 @@ class SeismogramPlotter(ViewPlugin):
 
         '''
         stream = dataManager.procStream
+        scaling_mode = self.pref_manager.get_value('scaling_mode')
+        y_lim = None
+
+        if scaling_mode == 'window':
+            abs_values = [np.max(np.abs(x)) for x in stream.traces]
+            y_lim = np.max(abs_values)
+        elif scaling_mode == 'manual':
+            y_lim = self.pref_manager.get_value('manual_y_lim')
 
         for curChannel in channels:
+            if scaling_mode == 'station':
+                stat_stream = stream.select(station = curChannel.parent.name,
+                                            network = curChannel.parent.network)
+                abs_values = [np.max(np.abs(x)) for x in stat_stream.traces]
+                y_lim = np.max(abs_values)
+
             views = displayManager.getViewContainer(station = curChannel.parent.name,
                                                       channel = curChannel.name,
                                                       network = curChannel.parent.network,
@@ -146,9 +180,9 @@ class SeismogramPlotter(ViewPlugin):
                         cur_location = curChannel.parent.location
 
                     curStream = stream.select(station = curChannel.parent.name,
-                                             channel = curChannel.name,
-                                             network = curChannel.parent.network,
-                                             location = cur_location)
+                                              channel = curChannel.name,
+                                              network = curChannel.parent.network,
+                                              location = cur_location)
                 else:
                     curStream = None
 
@@ -158,7 +192,8 @@ class SeismogramPlotter(ViewPlugin):
                                  end_time = displayManager.endTime,
                                  duration = displayManager.endTime - displayManager.startTime,
                                  show_envelope = self.pref_manager.get_value('show_envelope'),
-                                 minmax_limit = self.pref_manager.get_value('minmax_limit')
+                                 minmax_limit = self.pref_manager.get_value('minmax_limit'),
+                                 y_lim = y_lim
                                  )
 
                 curView.setXLimits(left = displayManager.startTime.timestamp,
@@ -209,7 +244,7 @@ class SeismogramView(View):
 
 
 
-    def plot(self, stream, color, duration, end_time, show_envelope = False, minmax_limit = 20, limit_scale = 10):
+    def plot(self, stream, color, duration, end_time, show_envelope = False, minmax_limit = 20, limit_scale = 10, y_lim = None):
         ''' Plot the seismogram.
         '''
         #display_size = wx.GetDisplaySize()
@@ -275,12 +310,13 @@ class SeismogramView(View):
             self.dataAxes.set_frame_on(False)
             self.dataAxes.get_xaxis().set_visible(False)
             self.dataAxes.get_yaxis().set_visible(False)
-            yLim = np.max(np.abs(trace.data))
+            if y_lim is None:
+                y_lim = np.max(np.abs(trace.data))
             if show_envelope is True:
                 env_max = np.max(trace_envelope)
-                yLim = np.max([yLim, env_max])
-            self.dataAxes.set_ylim(bottom = -yLim, top = yLim)
-            self.logger.debug('yLim: %s', yLim)
+                y_lim = np.max([y_lim, env_max])
+            self.dataAxes.set_ylim(bottom = -y_lim, top = y_lim)
+            self.logger.debug('y_lim: %s', y_lim)
 
         self.add_time_scalebar(duration = duration, end_time = end_time)
 
