@@ -431,7 +431,7 @@ class FloatSpinPrefItem(PreferenceItem):
     '''
     '''
 
-    def __init__(self, name, value, increment = 0.1, digits = 3, **kwargs):
+    def __init__(self, name, value, increment = 0.1, digits = 3, spin_format = '%f', **kwargs):
 
         PreferenceItem.__init__(self, name = name, value = value, 
                 mode = 'float_spin', **kwargs)
@@ -439,6 +439,8 @@ class FloatSpinPrefItem(PreferenceItem):
         self.increment = increment
 
         self.digits = digits
+
+        self.spin_format = spin_format
 
 
 class IntegerControlPrefItem(PreferenceItem):

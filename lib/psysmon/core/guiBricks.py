@@ -615,6 +615,7 @@ class FloatSpinField(Field):
                                       increment = pref_item.increment,
                                       digits = pref_item.digits,
                                       agwStyle=FS.FS_LEFT)
+        self.controlElement.SetFormat(pref_item.spin_format)
 
         # Add the elements to the field sizer.
         self.addLabel(self.labelElement)
