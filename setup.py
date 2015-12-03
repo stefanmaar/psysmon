@@ -81,14 +81,14 @@ packageData = {'psysmon.artwork': ['splash/psysmon.png']}
 # Define the package requirements.
 requirements =[('mpl_toolkits.basemap', '1.0.7'),
                ('lxml', '2.3.2'),
-               ('matplotlib', '1.4.0'),
-               ('numpy', '1.9.1'),
-               ('MySQLdb', '1.2.5'),
+               ('matplotlib', '1.3.0'),
+               ('numpy', '1.8.1'),
+               ('MySQLdb', '1.2.3'),
                ('obspy', '0.9.2'),
                ('pillow', '2.7.0'),
                ('cairo', '1.10.0'),
-               ('Pyro4', '4.32'),
-               ('scipy', '0.15.1'),
+               ('Pyro4', '4.23'),
+               ('scipy', '0.13.1'),
                ('sqlalchemy', '0.9.8'),
                ('wx', '3.0.0')]
 
