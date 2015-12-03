@@ -33,6 +33,8 @@ main program.
 
 
 import logging
+from operator import attrgetter
+
 import wx
 import wx.aui
 import wx.html
@@ -42,6 +44,10 @@ from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
+try:
+    from agw import ribbon as ribbon
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.ribbon as ribbon
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
@@ -2587,3 +2593,206 @@ class FoldPanelBarSplitter(scrolled.ScrolledPanel):
 
 
 
+class PsysmonDockingFrame(wx.Frame):
+    ''' A base class for a frame holding AUI docks.
+    '''
+
+    def __init__(self, parent = None, id = wx.ID_ANY,
+                 title = 'docking frame', size = (1000, 600)):
+        ''' Initialize the instance.
+        '''
+        wx.Frame.__init__(self,
+                          parent = parent,
+                          id = id,
+                          title = title,
+                          pos = wx.DefaultPosition,
+                          style = wx.DEFAULT_FRAME_STYLE)
+        self.SetMinSize(size)
+
+        # The docking manager.
+        self.mgr = wx.aui.AuiManager(self)
+
+        # Create the tool ribbon bar.
+        self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
+
+
+    def init_ribbon_bar(self):
+        ''' Initialize the ribbon bar with the plugins.
+        '''
+        # Build the ribbon bar based on the plugins.
+        # First create all the pages according to the category.
+        self.ribbonPages = {}
+        self.ribbonPanels = {}
+        self.ribbonToolbars = {}
+        self.foldPanels = {}
+        for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = itemgetter(0,1)):
+            if curGroup not in self.ribbonPages.keys():
+                self.logger.debug('Creating page %s', curGroup)
+                self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
+
+            if curCategory not in self.ribbonPanels.keys():
+                self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.ribbonPages[curGroup],
+                                                                    wx.ID_ANY,
+                                                                    curCategory,
+                                                                    wx.NullBitmap,
+                                                                    wx.DefaultPosition,
+                                                                    wx.DefaultSize,
+                                                                    agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
+                # TODO: Find out what I wanted to do with these lines!?!
+                if curCategory == 'interactive':
+                    self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
+                else:
+                    self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
+
+
+        # Fill the ribbon bar with the plugin buttons.
+        option_plugins = [x for x in self.plugins if x.mode == 'option']
+        command_plugins = [x for x in self.plugins if x.mode == 'command']
+        interactive_plugins = [x for x in self.plugins if x.mode == 'interactive']
+        view_plugins = [x for x in self.plugins if x.mode == 'view']
+        id_counter = 0
+
+        for curPlugin in sorted(option_plugins, key = attrgetter('position_pref', 'name')):
+                # Create a tool.
+                curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter, 
+                                                                          bitmap = curPlugin.icons['active'].GetBitmap(), 
+                                                                          help_string = curPlugin.name,
+                                                                          kind = ribbon.RIBBON_BUTTON_TOGGLE)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
+                                                             lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
+                id_counter += 1
+
+        for curPlugin in sorted(command_plugins, key = attrgetter('position_pref', 'name')):
+                # Create a HybridTool or a normal tool if no preference items
+                # are available. The dropdown menu allows to open
+                # the tool parameters in a foldpanel.
+                if len(curPlugin.pref_manager) == 0:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
+                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                              help_string = curPlugin.name)
+                else:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
+                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                    help_string = curPlugin.name)
+                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                                 lambda evt, curPlugin=curPlugin: self.onCommandToolDropdownClicked(evt, curPlugin),
+                                                                 id=curTool.id)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin : self.onCommandToolClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                id_counter += 1
+
+
+        for curPlugin in sorted(interactive_plugins, key = attrgetter('position_pref', 'name')):
+                # Create a HybridTool. The dropdown menu allows to open
+                # the tool parameters in a foldpanel.
+                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
+                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                help_string = curPlugin.name)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin: self.onInteractiveToolDropdownClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                id_counter += 1
+
+        for curPlugin in sorted(view_plugins, key = attrgetter('position_pref', 'name')):
+                # Create a HybridTool or a normal tool if no preference items
+                # are available. The dropdown menu allows to open
+                # the tool parameters in a foldpanel.
+                if len(curPlugin.pref_manager) == 0:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
+                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                              help_string = curPlugin.name)
+
+                else:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
+                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                    help_string = curPlugin.name)
+                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                                 lambda evt, curPlugin=curPlugin: self.onViewToolDropdownClicked(evt, curPlugin),
+                                                                 id=curTool.id)
+                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
+                                                             lambda evt, curPlugin=curPlugin : self.onViewToolClicked(evt, curPlugin),
+                                                             id=curTool.id)
+                id_counter += 1
+
+
+        self.ribbon.Realize()
+
+
+
+    def onOptionToolClicked(self, event, plugin):
+        ''' Handle the click of an option plugin toolbar button.
+
+        Show or hide the foldpanel of the plugin.
+        '''
+        self.logger.debug('Clicked the option tool: %s', plugin.name)
+
+        cur_toolbar = event.GetEventObject()
+        if cur_toolbar.GetToolState(event.GetId()) != ribbon.RIBBON_TOOLBAR_TOOL_TOGGLED:
+            if plugin.name not in self.foldPanels.keys():
+                # The panel of the option tool does't exist. Create it and add
+                # it to the panel manager.
+                curPanel = plugin.buildFoldPanel(self)
+                self.mgr.AddPane(curPanel,
+                                 wx.aui.AuiPaneInfo().Right().
+                                                      Name(plugin.name).
+                                                      Caption(plugin.name).
+                                                      Layer(2).
+                                                      Row(0).
+                                                      Position(0).
+                                                      BestSize(wx.Size(300,-1)).
+                                                      MinSize(wx.Size(200,100)).
+                                                      MinimizeButton(True).
+                                                      MaximizeButton(True).
+                                                      CloseButton(False))
+                # TODO: Add a onOptionToolPanelClose method to handle clicks of
+                # the CloseButton in the AUI pane of the option tools. If the
+                # pane is closed, the toggle state of the ribbonbar button has
+                # be changed. The according event is aui.EVT_AUI_PANE_CLOSE.
+                self.mgr.Update()
+                self.foldPanels[plugin.name] = curPanel
+            else:
+                if not self.foldPanels[plugin.name].IsShown():
+                    curPanel = self.foldPanels[plugin.name]
+                    self.mgr.GetPane(curPanel).Show()
+                    self.mgr.Update()
+            plugin.activate()
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
+        else:
+            if self.foldPanels[plugin.name].IsShown():
+                curPanel = self.foldPanels[plugin.name]
+                self.mgr.GetPane(curPanel).Hide()
+                self.mgr.Update()
+
+            plugin.deactivate()
+            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
+
+
+
+
+    def onCommandToolClicked(self, event, plugin):
+        ''' Handle the click of a command plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the command tool: %s', plugin.name)
+        plugin.run()
+
+
+
+
+    def onInteractiveToolClicked(self, event, plugin):
+        ''' Handle the click of an interactive plugin toolbar button.
+
+        Activate the tool.
+        '''
+        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
+        if len(active_plugin) > 1:
+            raise RuntimeError('Only one interactive tool can be active.')
+        elif len(active_plugin) == 1:
+            active_plugin = active_plugin[0]
+            self.deactivate_interactive_plugin(active_plugin)
+        self.activate_interactive_plugin(plugin)

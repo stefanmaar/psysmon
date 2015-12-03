@@ -26,10 +26,10 @@ description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = []
+collection_node_modules = ['graphic_localization',]
 
 # Specify the module(s) where to search for plugin classes.
-plugin_modules = ['plugins_graphic_localize',]
+plugin_modules = ['plugins_graphic_localize', 'plugins_event_selector']
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []

@@ -35,6 +35,7 @@ Examples
 
 import argparse
 import unittest
+from psysmon.external.html_testrunner import HTMLTestRunner
 
 
 def getsuites(package_names):
@@ -66,8 +67,12 @@ if __name__ == '__main__':
         testsuites.extend(getsuites(args.package))
 
     # Run the testsuites.
+    outfile = file('test_report.html', 'wb')
+    runner = HTMLTestRunner(stream = outfile,
+                            title = 'psysmon testing',
+                            description = 'A first test.')
     for cur_suite in testsuites:
-        unittest.TextTestRunner().run(cur_suite)
+        runner.run(cur_suite)
 
 
 
