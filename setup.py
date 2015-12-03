@@ -87,7 +87,7 @@ requirements =[('mpl_toolkits.basemap', '1.0.7'),
                ('obspy', '0.9.2'),
                ('pillow', '2.3.0'),
                ('cairo', '1.8.8'),
-               ('Pyro4', '4.23'),
+               ('Pyro4', '4.32'),
                ('scipy', '0.13.1'),
                ('sqlalchemy', '0.9.8'),
                ('wx', '3.0.0')]
