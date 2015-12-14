@@ -19,6 +19,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 '''
 The pSysmon setup script.
 
@@ -68,7 +69,9 @@ packages = [
            ]
 
 # Define the scripts to be processed.
-scripts = ['scripts/psysmon']
+# TODO: Scan the scripts folder of all packages.
+scripts = ['scripts/psysmon',
+           'lib/psysmon/packages/reftek/scripts/rt2ms']
 
 # Define some package data.
 packageDir = {'': 'lib',
