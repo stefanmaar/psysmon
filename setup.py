@@ -141,6 +141,14 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension(get_lib_name('signal'),
                          sources = files)
 
+    # LIBRT130
+    path = os.path.join(root_dir, 'packages', 'reftek', 'src')
+    files = [os.path.join(path, 'rt_130wrapper_py.c'),
+             os.path.join(path, 'rt_130_py.c')]
+    printRaw(files)
+    config.add_extension('rt_130_py',
+                         sources = files)
+
     return config
 
 #distutils.log.set_verbosity(1)
