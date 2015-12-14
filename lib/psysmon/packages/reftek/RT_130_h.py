@@ -17,7 +17,7 @@ import sys, exceptions, os, os.path, binascii, string
 #   For testing with python 2.5
 #sys.path.append (os.path.join (".", "construct-2.00-py2.5.egg"))
 import construct
-import rt_130_py
+import psysmon.lib.rt_130_py as rt_130_py
 
 PROG_VERSION = '2009.264'
 
