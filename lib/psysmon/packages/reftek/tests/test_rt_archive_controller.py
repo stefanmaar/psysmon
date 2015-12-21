@@ -37,11 +37,13 @@ class RtArchiveControllerCase(unittest.TestCase):
         '''
         ac = rt.archive.ArchiveController('/home/stefan/Desktop/rt_archive')
         ac.scan()
-        raw_stream = ac.units['9DC8'].streams[1]
-        raw_stream.sort_raw_files()
-        for cur_file in raw_stream.raw_files:
-            print cur_file.filename
-            st = raw_stream.parse(cur_file)
+        #raw_stream = ac.units['9DC8'].streams[1]
+        #raw_stream.sort_raw_files()
+        ac.archive_to_mseed(out_dir = './converted',
+                            unit_id = '9DC8',
+                            stream = 1,
+                            start_time = UTCDateTime(2011,4,22,0,0,0),
+                            end_time = UTCDateTime(2011,4,22,12,0,0))
 
 def suite():
     return unittest.makeSuite(RtArchiveControllerCase, 'test')
