@@ -412,16 +412,23 @@ class ArchiveController(object):
         intervals_between = int((end_day - start_day)/interval)
         chunk_list = [start_day + x * interval for x in range(intervals_between)]
 
+        # Get the required stream.
+        cur_raw_stream = self.get_stream(unit_id = unit_id,
+                                         stream = stream)
+        if not cur_raw_stream:
+            self.logger.error("No stream %d found for unit %s.", stream, unit_id)
+            return
+
         for cur_chunk in chunk_list:
-            # Fetch the time span from the archive.
-            cur_raw_stream = self.get_stream(unit_id = unit_id,
-                                             stream = stream)
+            cur_chunk_end_time = cur_chunk + interval - 1e-6
+            self.logger.info("Processing unit_id %s, stream %d for timespan %s to %s.", unit_id, stream, cur_chunk.isoformat(), cur_chunk_end_time.isoformat())
+            # Fetch the data for the time span from the archive.
             st = cur_raw_stream.get_data(start_time = cur_chunk,
-                                         end_time = cur_chunk + interval)
+                                         end_time = cur_chunk_end_time)
 
             # Trim the stream.
             self.logger.debug('Trimming file.')
-            st.trim(starttime = cur_chunk, endtime = cur_chunk+3600-1/st.traces[0].stats.sampling_rate)
+            st.trim(starttime = cur_chunk, endtime = cur_chunk_end_time)
 
             # Write the stream to MiniSeed format file.
             for cur_trace in st:
