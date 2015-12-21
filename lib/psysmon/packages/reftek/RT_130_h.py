@@ -136,7 +136,7 @@ class PacketHeader (object) :
         #   XXX
         #if ret == None :
         #    raise CorruptPacketError
-        
+
         ph.type = ret[0]
         ph.experiment = ret[1]
         ph.year = ret[2]
@@ -152,9 +152,9 @@ class PacketHeader (object) :
         ph.ms = ret[8]
         ph.bytes = ret[9]
         ph.sequence = ret[10]
-        
+
         #print ph.type, ph.experiment, ph.unit, ph.year, ph.doy, ph.hr, ph.mn, ph.sc, ph.ms, ph.bytes, ph.sequence
-        
+
         return ph
 
 #
@@ -318,6 +318,8 @@ def event_header () :
                            construct.String ("FilterList", 16),
                            construct.String ("Position", 26),
                            construct.String ("RefTek120", 80))
+    # TODO: Check why the allow_overwrite is needed.
+    EH.allow_overwrite = True
     return EH
 
 GAIN_CODE = { ' ':'Unknown', '1':'x1', '2':'x8', '3':'x32', '4':'x128', '5':'x512', '6':'x2048', '7':'x8192', '8':'x100', 'A':'12dB', 'B':'24dB', 'C':'36dB', 'D':'48dB', 'E':'60dB', 'F':'x2', 'G':'x4', 'H':'x16', 'I':'x64', 'J':'x256' }
@@ -375,6 +377,7 @@ class EH (object) :
         eh.Flags = c.BIN.Flags
         eh.DataFormat = hex (c.BIN.DataFormat)
         eh.TriggerTime = c.TriggerTime
+
         eh.TimeSource = TIME_SOURCE[c.TimeSource]
         eh.TimeQuality = TIME_QUALITY[c.TimeQuality]
         eh.ExtStationName = c.ExtStationName
