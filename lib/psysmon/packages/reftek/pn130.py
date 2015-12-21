@@ -43,7 +43,7 @@ class lastPacket (object) :
 
 class timeCheck (object) :
     __slots__ = 'start_time_asc', 'start_time_secs', 'start_time_ms', 'end_time_secs', 'end_time_ms', 'sample_interval', 'samples'
-    
+
     def __init__ (self) :
         self.start_time_asc      = None
         self.start_time_secs     = None
@@ -59,38 +59,49 @@ class readBuffer (object) :
           len = total len of buffer in bytes
     '''
     __slots__ = 'buf', 'ptr', 'len', 'set', 'clear', 'rewind', 'inc'
-    
+
     def __init__ (self) :
         self.clear ()
-        
+
     def set (self, b) :
         self.buf = b
         self.len = len (b)
         self.ptr = 0
-        
+
     def clear (self) :
         self.buf = None
         self.ptr = None
         self.len = None
-        
+
     def rewind (self) :
         self.ptr = 0
-        
+
     def inc (self, n) :
         self.ptr += n
-        
-class dataFile (object) :
+
+
+class RtArchive(object) :
     __slots__ = 'basefile', 'subfiles', 'fh', 'kind', 'next'
-    
-    def __init__ (self, basefile = None) :
-        #   The filename of directory name
-        self.basefile = basefile
-        #   Subfiles in zip, tar, or raw file
-        self.subfiles = []
+
+    def __init__ (self, root = None) :
+        #   The root directory containing the reftek archive.
+        self.root = root
+
+        # A dictionary with the unit IDS as the key. It contains the files
+        # available in the archive for the unit.
+        self.subfiles = {}
+
         #   The open filehandle or None
         self.fh = None
+
         #   What kind of file is this?
         self.kind = None
+
+
+    def add(self, filename):
+        ''' Add a file to the archive.
+        '''
+
 
     def next (self) :
         f = None
@@ -98,18 +109,19 @@ class dataFile (object) :
             f = self.subfiles[0]
         except IndexError :
             self.subfiles = []
-            
+
         try :
             self.subfiles = self.subfiles[1:]
         except IndexError :
             self.subfiles = []
 
         return f
-        
+
+
 class dataPacket (object) :
     '''   Keep start time for each packet of data   '''
     __slots__ = 'year', 'doy', 'hour', 'minute', 'seconds', 'milliseconds', 'trace'
-    
+
     def __init__ (self, c, p) :
         self.year = p.year
         self.doy = p.doy
@@ -118,12 +130,12 @@ class dataPacket (object) :
         self.seconds = p.sc
         self.milliseconds = p.ms
         self.trace = c.data
-        
+
 class event130 (object) :
     __slots__ = ('event', 'year', 'doy', 'hour', 'minute', 'seconds', 'sampleRate', 
                  'sampleCount', 'channel_number', 'stream_number', 'trace', 'gain', 
                  'bitWeight', 'unitID', 'last_sample_time', 'milliseconds')
-    
+
     def __init__ (self) :
         self.event = None
         self.year = None
@@ -145,7 +157,7 @@ class event130 (object) :
 
 class log130 (object) :
     __slots__ = 'year', 'doy', 'hour', 'minute', 'seconds', 'message'
-    
+
     def __init__ (self) :
         self.year = None
         self.doy = None
@@ -153,19 +165,9 @@ class log130 (object) :
         self.minute = None
         self.seconds = None
         self.message = ''
-'''        
-class streams (object) :
-    __slots__ = ('channel')
-    
-    def __init__ (self, stream) :
-        self.channel = []
-        for i in range (NUM_CHANNELS) :
-            t = event130 ()
-            t.channel_number = i
-            t.stream_number = stream
-            self.channel.append (t)
-'''
-validTypes = {'ZIP':'ZIP', 'tar':'tar', 'ref':'ref', 'RAW':'RAW'}
+
+validTypes = {'RAW':'RAW'}
+
 
 class neoRAW :
     '''   rt-130 raw file reader   '''
@@ -176,65 +178,68 @@ class neoRAW :
         self.df.kind = 'RAW'
         #   The buffer to read into
         self.buf = readBuffer ()
-    
+
     #   Prime the pump
     def open (self) :
         self._get_raw_names ()
         self._get_raw_filehandle ()
-        
+
     #   Read into buffer
     def read (self) :
         self._get_rawfile_buf ()
-        
+
     #   Close open file handle
     def close (self) :
         if self.df.fh != None :
             if self.verbose :
                 sys.stderr.write ("Closing subfile.\n")
-                
+
             os.close (self.df.fh)
-            
+
         #self.buf.clear ()
         self.df.fh = None
-        
+
     #   Read and return one packet from buffer
     def getPacket (self) :
         pbuf = None
         if self.buf.ptr >= self.buf.len :
             #self.close ()
             self._get_rawfile_buf ()
-            
+
         ptr = self.buf.ptr
         l = self.buf.len
-        
+
         if ptr < l :
             pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
             len_pbuf = len (pbuf)
             self.buf.inc (len_pbuf)
             if len_pbuf != PACKET_SIZE :
                 sys.stderr.write ("Read Error: read %d of %d\n" % (len_pbuf, PACKET_SIZE))
-        
+
         return pbuf
-    
+
     #   Get all of the sub-file names
     def _get_names (self, dum, dirname, files) :
         if self.verbose :
             sys.stderr.write ("Reading: %s\n" % dirname)
-            
+
         for f in files :
             #   Skip directories
             if os.path.isdir (f) : continue
             #   Found one!
             if fileRE.match (f) or sohRE.match (f) :
                 self.df.subfiles.append (os.path.join (dirname, f))
-                
+
     #   find all of the raw subfiles
     def _get_raw_names (self) :
         self.df.subfiles = []
         filename = os.path.abspath (self.df.basefile)
-        os.path.walk (filename, self._get_names, 1)
+        if os.path.isfile(self.df.basefile):
+            self.df.subfiles.append(filename)
+        else:
+            os.path.walk (filename, self._get_names, 1)
         self.df.subfiles.sort ()
-        
+
     #   Try to get a filehandle for the next file  
     def _get_raw_filehandle (self) :
         self.close ()
@@ -243,17 +248,17 @@ class neoRAW :
             rawfile = self.df.next ()
         except IndexError :
             self.df.fh = None
-        
+
         if rawfile :
             if self.verbose :
                 sys.stderr.write ("\tOpening: %s\n" % rawfile)
-                
+
             try :
                 self.df.fh = os.open (rawfile, os.O_RDONLY)
             except Exception, e :
                 sys.stderr.write ("%s\n" % e)
                 self.df.fh = None
-                
+
     #   Try to read the next buffers worth of data
     def _get_rawfile_buf (self) :
         self.buf.clear ()
@@ -261,7 +266,7 @@ class neoRAW :
         if self.df.fh == None :
             #print "New handle 1"
             self._get_raw_filehandle ()
-            
+
         #   If we have an open filehandle read a buffers worth from it
         if self.df.fh != None :
             buf = os.read (self.df.fh, PACKET_SIZE * 4)
@@ -270,234 +275,7 @@ class neoRAW :
             else :
                 self.close ()
                 self._get_rawfile_buf ()
-                
-class neoZIP :
-    '''   rt-130 zip file reader
-          Uses the module zipfile to process the contents
-    '''
-    def __init__ (self, filename, verbose = False) :
-        self.verbose = verbose
-        self.df = dataFile (filename)
-        self.df.kind = 'ZIP'
-        self.buf = readBuffer ()
-        
-    def open (self) :
-        self._get_raw_names ()
-    
-    def read (self) :
-        self._get_raw_file_buf ()
-        
-    def close (self) :
-        if self.verbose :
-            sys.stderr.write ("Closing: %s" % self.df.basefile)
-            
-        self.df.fh.close ()
-        self.df.fh = None
-        
-    def getPacket (self) :
-        pbuf = None
-        if self.buf.ptr >= self.buf.len :
-            self._get_raw_file_buf ()
-            
-        ptr = self.buf.ptr
-        l = self.buf.len
-        
-        if ptr < l :
-            pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
-            len_pbuf = len (pbuf)
-            self.buf.inc (len_pbuf)
-            if len_pbuf != PACKET_SIZE :
-                sys.stderr.write ("Read Error: read %d of %d\n" % (len_pbuf, PACKET_SIZE))
 
-        return pbuf
-                
-    def _get_raw_file_buf (self) :
-        self.buf.clear ()
-        buf = ''
-        #   Get next file from sorted list
-        while 1 :
-            z = self.df.next ()
-            if not z :
-                return
-            
-            #   Only select files that match RE
-            if fileRE.match (z) or sohRE.match (z) :
-                break
-        
-        if self.verbose :
-            sys.stderr.write ("\tReading: %s\n" % z)
-            
-        try :
-            buf = self.df.fh.read (z)
-        except Exception, e :
-            sys.stderr.write ("%s\n" % e)
-            
-        #   XXX Should really check the size of the buffer here!
-        if buf :
-            self.buf.set (buf)
-        
-    def _get_raw_names (self) :
-        #   Open the zip file
-            
-        try :
-            self.df.fh = zipfile.ZipFile (self.df.basefile)
-        except Exception, e :
-            sys.stderr.write ("%s\n" % e)
-            
-        #   Get a list of filenames
-        zipnames = self.df.fh.namelist ()
-        #   Sort then (by time)
-        zipnames.sort ()
-        self.df.subfiles = zipnames
-        
-class neoTAR :
-    '''   rt-130 tar file reader
-          Uses the module tarfile to process the contents
-    '''
-    def __init__ (self, filename, verbose = False) :
-        self.verbose = verbose
-        self.df = dataFile (filename)
-        self.df.kind = 'tar'
-        self.buf = readBuffer ()
-        
-    def open (self) :
-        self._get_raw_names ()
-    
-    def read (self) :
-        self._get_raw_file_buf ()
-        
-    def close (self) :
-        if self.verbose :
-            sys.stderr.write ("Closing: %s\n" % self.df.basefile)
-            
-        self.df.fh.close ()
-        self.df.fh = None
-        
-    def getPacket (self) :
-        pbuf = None
-        if self.buf.ptr >= self.buf.len :
-            self._get_raw_file_buf ()
-            
-        ptr = self.buf.ptr
-        l = self.buf.len
-        
-        if ptr < l :
-            pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
-            len_pbuf = len (pbuf)
-            self.buf.inc (len_pbuf)
-            if len_pbuf != PACKET_SIZE :
-                sys.stderr.write ("Read Error: read %d of %d\n" % (len_pbuf, PACKET_SIZE))
-
-        return pbuf
-    
-    #   Compare tarfile members by file name
-    def _member_cmp (self, a, b) :
-        return cmp (a.name, b.name)
-        
-    def _get_raw_file_buf (self) :
-        self.buf.clear ()
-        buf = ''
-        #   Get next member
-        while 1 :
-            m = self.df.next ()
-            if not m :
-                return
-            #   Does it match our expected file name?
-            if fileRE.match (m.name) or sohRE.match (m.name) :
-                break
-            
-        if self.verbose :
-            sys.stderr.write ("\tReading: %s" % m.name)
-                
-        
-        try :
-            buf = self.df.fh.extractfile (m).read ()
-        except Exception, e :
-            sys.stderr.write ("%s\n" % e)
-            
-        if buf :
-            self.buf.set (buf)
-        
-    def _get_raw_names (self) :
-        #   Try to open tar file
-        if self.verbose :
-            sys.stderr.write ("Opening: %s\n" % self.df.basefile)
-            
-        try :
-            self.df.fh = tarfile.open (self.df.basefile)
-        except Exception, e :
-            sys.stderr.write ("%s\n" % e)
-            
-        #   Get tar file 'members' and sort them
-        members = self.df.fh.getmembers ()
-        members.sort (self._member_cmp)
-        self.df.subfiles = members
-        
-class neoREF :
-    '''   rt-130 raw ref file reader   '''
-    def __init__ (self, filename, verbose = False) :
-        self.verbose = verbose
-        self.df = dataFile (filename)
-        self.df.kind = 'ref'
-        self.buf = readBuffer ()
-        
-    def open (self) :
-        self._get_raw_names ()
-    
-    def read (self) :
-        self._get_raw_file_buf ()
-        
-    def close (self) :
-        if self.verbose :
-            sys.stderr.write ("Closing: %s" % self.df.basefile)
-            
-        if self.df.fh != None :
-            os.close (self.df.fh)
-            
-        self.df.fh = None
-        
-    def getPacket (self) :
-        pbuf = None
-        if self.buf.ptr >= self.buf.len :
-            self._get_raw_file_buf ()
-            
-        ptr = self.buf.ptr
-        l = self.buf.len
-        
-        if ptr < l :
-            #
-            pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
-            len_pbuf = len (pbuf)
-            self.buf.inc (len_pbuf)
-            if len_pbuf != PACKET_SIZE :
-                sys.stderr.write ("Read Error: read %d of %d\n" % (len_pbuf, PACKET_SIZE))
-                
-        return pbuf
-
-    def _get_raw_file_buf (self) :
-        self.buf.clear ()
-        if self.df.fh != None :
-            try :
-                buf = os.read (self.df.fh, PACKET_SIZE * 4)
-            except Exception, e :
-                sys.stderr.write ("%s\n" % e)
-                
-            if buf :
-                self.buf.set (buf)
-            else :
-                self.close ()
-        
-    def _get_raw_names (self) :
-        self.close ()
-        if self.verbose :
-            sys.stderr.write ("Closing: %s\n" % self.df.basefile)
-            
-        try :
-            self.df.fh = os.open (self.df.basefile, os.O_RDONLY)
-        except Exception, e :
-            sys.stderr.write ("%s\n" % e)
-            
-        self.df.subfiles.append (self.df.basefile)
 
 class pn130 :
     '''   Process rt-130 data into events.
@@ -517,7 +295,7 @@ class pn130 :
         if filetype != None :
             if not validTypes.has_key (filetype) :
                 filetype = None
-    
+
         if filetype == None :
             filetype = self.guess_type (filename)
         #   Set the reader based on filetype
@@ -531,7 +309,7 @@ class pn130 :
             self.reader = neoREF (filename, verbose)
         else :
             self.reader = None
-        
+
         self.verbose = verbose
         self.LOGS = []
         self.LOGptr = 0
@@ -550,7 +328,7 @@ class pn130 :
         #self.num_end_of_event = [-1] * NUM_STREAMS
         self.entry_num = 0
         self.points = [0] * NUM_STREAMS
-                
+
         self.lastDT = lastPacket ()
         self.lastAD = lastPacket ()
         self.lastCD = lastPacket ()
@@ -561,15 +339,15 @@ class pn130 :
         self.lastDS = lastPacket ()
         self.lastFD = lastPacket ()
         self.lastOM = lastPacket ()
-        
+
         self.open ()
-    
+
     #   Initialize inputs
     def open (self) :
         self.reader.open ()
         if self.reader.df.fh == None :
             sys.stderr.write ("Warning: open of %s failed!\n" % self.reader.df.basefile)
-    
+
     #   Keep track of number of packets
     def zero_cnts (self) :
         self.DTcnt = 0
@@ -582,24 +360,25 @@ class pn130 :
         self.DScnt = 0
         self.FDcnt = 0
         self.OMcnt = 0
-    
+
+
     #   Guess file type based on suffix
     def guess_type (self, filename) :
         #   Its a directory so it must be raw data
-        if os.path.isdir (filename) :
+        if os.path.isdir(filename):
             return 'RAW'
-        
+
         suffix = filename[-3:]
         if suffix == 'ZIP' or suffix == 'tar' or suffix == 'ref' :
             return suffix
         else :
             return None
-        
+
     def packet_time_epoch (self, p) :
         tdoy = TimeDoy.TimeDoy ()
         epoch = tdoy.epoch (p.year, p.doy, p.hr, p.mn, p.sc)
         return epoch, int (p.ms)
-        
+
     def packet_time_string (self, p) :
         packet_time = ("%04d:%03d:%02d:%02d:%02d:%03d" % (p.year,
                                                           p.doy,
@@ -607,9 +386,9 @@ class pn130 :
                                                           p.mn,
                                                           p.sc,
                                                           p.ms))
-                                                
+
         return packet_time
-    
+
     def packet_tagline_string (self, p) :
         packet_tagline = ("\n%07d %s exp %02d bytes %04d %s ID: %s seq %04d" % (self.entry_num,
                                                                                       p.type,
@@ -618,9 +397,9 @@ class pn130 :
                                                                                       self.packet_time_string (p),
                                                                                       p.unit,
                                                                                       p.sequence))
-        
+
         return packet_tagline
-    
+
     #   c is the ET payload information
     #   p is the packet header info
     def set_et_info (self, c, p) :
@@ -638,7 +417,7 @@ class pn130 :
             num_channels = int (c.TotalChannels)
         except ValueError, e :
             num_channels = NUM_CHANNELS
-            
+
         #   Only for ET packets
         last_sample_time = c.LastSampleTime
         #   First sample time
@@ -656,16 +435,16 @@ class pn130 :
                 else :
                     #   We really should never get here
                     sys.stderr.write ("Error: Event trailer before any event data. Event %d Channel %d\n" % (event, num_chan))
-            
+
             self.previous_event[stream] = self.current_event[stream]
             self.current_event[stream] = None
         else :
             sys.stderr.write ("Error: Event trailer before event data. Event %d\n" % event)
-            
+
         #   Logging
         self.LOGS.append (self.packet_tagline_string (p))
         s = "Event Trailer"
-            
+
         self.LOGS.append (s)
         s = "  event = %d" % event
         self.LOGS.append (s)
@@ -688,7 +467,7 @@ class pn130 :
         if t[0] != None :
             s = "  last sample = %04d %03d:%02d:%02d:%02d:%03d" % (t[0], t[1], t[2], t[3], t[4], t[5])
             self.LOGS.append (s)
-            
+
         s = "  bit weights = %s" % ' '.join (c.NominalBitWeight).strip ()
         self.LOGS.append (s)
         s = "  true weights = %s" % ' '.join (c.TrueBitWeight).strip ()
@@ -700,7 +479,7 @@ class pn130 :
                                                                                               colonize (c.TriggerTime),
                                                                                               self.points[stream],
                                                                                               c.SampleRate))
-    
+
     def set_eh_info (self, c, p) :
         '''   Set info from event header   '''
         #   Data stream
@@ -714,14 +493,14 @@ class pn130 :
             num_channels = int (c.TotalChannels)
         except ValueError, e :
             num_channels = NUM_CHANNELS
-            
+
         #   Only for ET packets
         last_sample_time = c.LastSampleTime
         #   First sample time
         fst = decode_sample_time (c.FirstSampleTime)
         #
         new_event = build_empty_current_stream ()
-        
+
         #   First time for this event/stream
         if self.current_event[stream] == None :
             #   Set info for new event
@@ -741,7 +520,7 @@ class pn130 :
                 new_event[i].bitWeight = c.TrueBitWeight[i]
                 new_event[i].channel_number = i
                 new_event[i].stream_number = stream
-                    
+
             self.current_event[stream] = new_event
         #   We have seen this stream before
         #   We need to check if its a new event
@@ -766,14 +545,14 @@ class pn130 :
                 new_event[i].bitWeight = c.TrueBitWeight[i]
                 new_event[i].channel_number = i
                 new_event[i].stream_number = stream
-                
+
             self.previous_event[stream] = self.current_event[stream]
             self.current_event[stream] = new_event
-            
+
         #   Logging
         self.LOGS.append (self.packet_tagline_string (p))
         s = "Event Header"
-            
+
         self.LOGS.append (s)
         s = "  event = %d" % event
         self.LOGS.append (s)
@@ -796,7 +575,7 @@ class pn130 :
         if t[0] != None :
             s = "  last sample = %04d %03d:%02d:%02d:%02d:%03d" % (t[0], t[1], t[2], t[3], t[4], t[5])
             self.LOGS.append (s)
-            
+
         s = "  bit weights = %s" % ' '.join (c.NominalBitWeight).strip ()
         self.LOGS.append (s)
         s = "  true weights = %s" % ' '.join (c.TrueBitWeight).strip ()
@@ -837,7 +616,7 @@ class pn130 :
                             #print "%s Chan: %d Strm: %d Time overlap: %s of %7.3f" % (das, i + 1, stream, lst.start_time_asc, delta_secs)       
             else :
                 self.ERRS.append ("Gaps and Overlaps not checked. Missing event trailer")
-            
+
             #   Need to clear for next event
             self.last_packet_time = {}
             '''
@@ -1098,7 +877,7 @@ class pn130 :
         for c in cs :
             #   td is a trigger container
             td = c.Trigger
-            
+
             s = "Data Stream Definition %s ST: %s" % (colonize (c.ImplementTime), p.unit)
             self.LOGS.append (s)
             s = "  Data Stream %s %s %s" % (c.DataStream, c.DataStreamName, c.RecordingDestination)
@@ -1112,11 +891,11 @@ class pn130 :
             s = "  Trigger Type %s" % c.TriggerType
             self.LOGS.append (s)
             if not td : continue
-            for d in td.__dict__.keys () :
+            for d in td.keys () :
                 if not skipRE.match (d) :
                     s = "     Trigger %s %s" % (d, td[d])
                     self.LOGS.append (s)
-                    
+
     def set_ad_info (self, c, p) :
         self.LOGS.append (self.packet_tagline_string (p))
         s = "Auxiliary Data Parameter %s ST: %s" % (c.ImplementTime, p.unit)
@@ -1275,8 +1054,8 @@ class pn130 :
         self.LOGS.append (s)
         s = "  Operating Mode 72A Number of Wake Up Intervals %s" % c._72AWakeUpNumberOfIntervals
         self.LOGS.append (s)
-        
-        
+
+
     #   Process a single packet
     def parse_packet (self, pbuf) :
         #
@@ -1288,7 +1067,7 @@ class pn130 :
         self.entry_num += 1
         if self.verbose :
             sys.stderr.write ("\t\tParsing: Type: %s Unit: %s Sequence: %d\n" % (ret.type, ret.unit, ret.sequence))
-            
+
         #print ret.type
         #
         #   Data packet
@@ -1302,7 +1081,7 @@ class pn130 :
                 return CORRUPT_PACKET
             #except RT_130_h.EmptyDTPacketError :
                 #end_of_event_bool = END_OF_EVENT_DT
-               
+
             packet_data_stream = c.data_stream
             packet_event_number = c.event
             packet_channel_number = c.channel
@@ -1316,7 +1095,7 @@ class pn130 :
             if c.data_format == 0xc0 or c.data_format == 0xc2 :
                 x0 = c.data[-2]; xn = c.data[-1]
                 del c.data[-2:]
-                
+
                 if self.verbose and c.data :
                     if xn != c.data[-1] :
                         sys.stderr.write ("Garbled data packet at: %d:%03d:%02d:%02d:%02d %03dms contains %d samples\n" % (ret.year,
@@ -1326,7 +1105,7 @@ class pn130 :
                                                                                                                            ret.sc,
                                                                                                                            ret.ms,
                                                                                                                            c.samples))
-            
+
             end_of_event_bool = self.set_dt_info (c, ret)
             self.lastDT.header = ret
             self.lastDT.payload = c
@@ -1338,7 +1117,7 @@ class pn130 :
             #   Decode Packet payload into c
             eh = RT_130_h.EH ()
             c = eh.decode (pbuf)
-            
+
             packet_data_stream = c.DataStream
             packet_event_number = c.EventNumber
             #print 'TotalChannels', c.TotalChannels
@@ -1351,7 +1130,7 @@ class pn130 :
             #   Keep last event header packet
             self.lastEH.header = ret
             self.lastEH.payload = c
-            
+
             for chan in range (packet_total_channels) :
                 e = None
                 try :
@@ -1359,12 +1138,12 @@ class pn130 :
                 except Exception, ex :
                     #print ex
                     continue
-                
+
                 if e != None : break
-                
+
             if e != None and packet_event_number > e :
                 end_of_event_bool = END_OF_EVENT_EH
-            
+
             #   Set previous event, set current event
             self.set_eh_info (c, ret)
         #   Event trailer
@@ -1514,16 +1293,16 @@ class pn130 :
             pbuf = self.reader.getPacket ()
         '''
         return pbuf
-                
+
     def getEvent (self) :
         #self.openEvent ()
         while 1 :
             #pbuf = self.getPage ()
             pbuf = self.reader.getPacket ()
             #   End of file, close all streams
-            if not pbuf : 
+            if not pbuf :
                 return -1, sum (self.points)
-                
+
             end_of_event = self.parse_packet (pbuf)
             #   Check if its an end of event and which stream to close
             if end_of_event == 0 :
@@ -1545,11 +1324,11 @@ class pn130 :
                 continue
             elif end_of_event == IGNORE_PACKET :
                 continue
-                
+
             num_points_stream = self.points[stream]
             self.points[stream] = 0
             return stream, num_points_stream
-            
+
 #   Mixins
 '''
 def build_empty_current_event () :
