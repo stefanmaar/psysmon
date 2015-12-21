@@ -75,6 +75,13 @@ class RawFile(object):
         self.end_time = self.start_time + length
 
 
+    @property
+    def abs_filename(self):
+        '''
+        '''
+        return os.path.join(self.path, self.filename)
+
+
 
 
 
@@ -133,7 +140,7 @@ class PasscalRecordingFormatParser(object):
             tr.stats.location = cur_key[2]
             tr.stats.sampling_rate = cur_key[3]
             tr.stats.starttime = self.start_time[cur_key]
-            tr.data = np.array(cur_data)
+            tr.data = np.array(cur_data, dtype = np.dtype(np.int32))
             stream.append(tr)
 
         # Clear the traces and the corresponding start times.
@@ -307,7 +314,7 @@ class Stream(object):
         return st
 
 
-    def get_data(self, start_time, end_time):
+    def get_data(self, start_time, end_time, trim = False):
         ''' Get the data of the stream.
         '''
         raw_files = [x for x in self.raw_files if x.start_time < end_time and x.end_time > start_time]
@@ -316,9 +323,10 @@ class Stream(object):
             # TODO: Add the possibility to define a timespan for the data to
             # parse. Don't read the whole raw_data, but only the desired
             # timespan.
-            st += cur_raw_file.parse()
+            st += self.parser.parse(cur_raw_file.abs_filename)
         st.merge()
-        st.trim(start_time, end_time)
+        if trim:
+            st.trim(start_time, end_time)
         return st
 
 
@@ -379,122 +387,78 @@ class ArchiveController(object):
 
 
 
-    def archive_to_mseed(self, out_dir, unit, stream, channel, starttime, endtime, interval = 3600):
+    def get_stream(self, unit_id, stream):
+        ''' Get an existing stream.
+        '''
+        try:
+            return self.units[unit_id].streams[stream]
+        except:
+            return None
+
+
+    def archive_to_mseed(self, out_dir, unit_id, stream, start_time, end_time, interval = 3600):
         ''' Convert the raw data to miniseed files.
         '''
         interval = float(interval)
         # Convert the timespan into year, day, hour lists.
-        start_day = UTCDateTime(year = starttime.year,
-                                month = starttime.month,
-                                day = starttime.day,
-                                hour = starttime.hour)
-        end_day = UTCDateTime(year = endtime.year,
-                              month = endtime.month,
-                              day = endtime.day,
-                              hour = endtime.hour)
+        start_day = UTCDateTime(year = start_time.year,
+                                month = start_time.month,
+                                day = start_time.day,
+                                hour = start_time.hour)
+        end_day = UTCDateTime(year = end_time.year,
+                              month = end_time.month,
+                              day = end_time.day,
+                              hour = end_time.hour)
         intervals_between = int((end_day - start_day)/interval)
         chunk_list = [start_day + x * interval for x in range(intervals_between)]
 
-        tmp_dir = tempfile.mkdtemp()
         for cur_chunk in chunk_list:
             # Fetch the time span from the archive.
-            select_criteria = '%s,%s,%s,%02d:%03d:%02d:%02d:%02d.000,+3600' % (unit, 
-                    stream, channel, cur_chunk.year, cur_chunk.julday, 
-                    cur_chunk.hour, cur_chunk.minute, cur_chunk.second)
-            try:
-                self.logger.debug('Fetching file.')
-                ret = self.fetch_file(self.archive, select_criteria, tmp_dir)
-                self.logger.debug('Return value: %s', ret)
-            except:
-		self.logger.error('Fetching file failed.')
-		continue
+            cur_raw_stream = self.get_stream(unit_id = unit_id,
+                                             stream = stream)
+            st = cur_raw_stream.get_data(start_time = cur_chunk,
+                                         end_time = cur_chunk + interval)
 
-            cur_rt_file = glob.glob(os.path.join(tmp_dir, '*.rt'))
-            if not cur_rt_file:
-                self.logger.warning("Couldn't fetch data for unit: %s, stream: %s, channel: %s, starttime: %s, endtime: %s.", unit, stream, channel, starttime, endtime)
-                continue
+            # Trim the stream.
+            self.logger.debug('Trimming file.')
+            st.trim(starttime = cur_chunk, endtime = cur_chunk+3600-1/st.traces[0].stats.sampling_rate)
 
-            # Convert the reftek file to miniseed.
-            try:
-		if len(cur_rt_file) > 1:
-                    self.logger.warning("More than 1 reftek file found: %s", cur_rt_file)
-		for cur_file in cur_rt_file:
-                    self.logger.info('Converting file %s', cur_rt_file[0])
-                    ret = self.convert_file(tmp_dir, cur_file)
-            except:
-		self.logger.error("rt_mseed failed.")
-		for cur_file in cur_rt_file:
-                    os.remove(cur_file)
-		continue
+            # Write the stream to MiniSeed format file.
+            for cur_trace in st:
+                if np.ma.isMaskedArray(cur_trace.data):
+                    split_stream = cur_trace.split()
+                    export_traces = split_stream.traces
+                else:
+                    export_traces = [cur_trace, ]
 
-            cur_mseed_file = glob.glob(os.path.join(tmp_dir, '*.msd'))
+                for cur_export_trace in export_traces:
+                    stats = cur_export_trace.stats
+                    trace_length = int((cur_export_trace.stats.endtime - cur_export_trace.stats.starttime) * 1000)
+                    filename = '%04d%03d_%02d%02d%02d%03d_%d_%s_%s_%s.msd' % (stats.starttime.year, stats.starttime.julday, 
+                        stats.starttime.hour, stats.starttime.minute, stats.starttime.second, int(stats.starttime.microsecond/1000),
+                        trace_length, stats.station, stats.location, stats.channel)
 
-            # There should be only one miniseed file.
-            if len(cur_mseed_file) == 0:
-		self.logger.warning("No miniseed file found.")
-		continue
-            if len(cur_mseed_file) > 1:
-		self.logger.error("Found more than one miniseed files. This shouldn't happen. Files: %s", cur_mseed_file)
-		continue
+                    # Check and prepare the BUD directory structure.
+                    cur_outdir = os.path.join(out_dir, "%04d" % stats.starttime.year)
+                    if not os.path.exists(cur_outdir):
+                        os.mkdir(cur_outdir)
 
-            for cur_file in cur_mseed_file:
-                # Extract the unit ID from the filename.
-                tmp = os.path.basename(cur_file).split('_')
-                file_unit_id = tmp[2][1:]
+                    cur_outdir = os.path.join(cur_outdir, "%03d" % stats.starttime.julday)
+                    if not os.path.exists(cur_outdir):
+                        os.mkdir(cur_outdir)
 
-                if unit != file_unit_id.upper():
-                    self.logger.error("The unit id %s doesn't match the filename unit id %s.\nmseed_file: %s; split_filename: %s", unit, file_unit_id, cur_file, tmp)
-                    continue
+                    cur_outdir = os.path.join(cur_outdir, "%s" % stats.station)
+                    if not os.path.exists(cur_outdir):
+                        os.mkdir(cur_outdir)
 
+                    out_file = os.path.join(cur_outdir, filename)
 
-                # Read the miniseed, adjust the header and trim it to the exact hour.
-                self.logger.debug('Reading miniseed file %s.', cur_file)
-                st = read(cur_file)
-                self.logger.debug('Trimming file.')
-                st.trim(starttime = cur_chunk, endtime = cur_chunk+3600-1/st.traces[0].stats.sampling_rate)
-
-                self.logger.debug('Changing header.')
-                # Change the miniseed station value. rt_mseed still writes the station name to the header. I need the unit ID.
-                for cur_trace in st.traces:
-                    cur_trace.stats.station = unit
-
-                stats = st.traces[0].stats
-                filename = '%04d%03d_%02d%02d%02d%03d_%s_%s_%s.msd' % (stats.starttime.year, stats.starttime.julday, 
-                    stats.starttime.hour, stats.starttime.minute, stats.starttime.second, int(stats.starttime.microsecond/1000),
-                    stats.station, stats.location, stats.channel)
-
-                # Check and prepare the BUD directory structure.
-                cur_outdir = os.path.join(out_dir, "%04d" % stats.starttime.year)
-                if not os.path.exists(cur_outdir):
-                    os.mkdir(cur_outdir)
-
-                cur_outdir = os.path.join(cur_outdir, "%03d" % stats.starttime.julday)
-                if not os.path.exists(cur_outdir):
-                    os.mkdir(cur_outdir)
-
-                cur_outdir = os.path.join(cur_outdir, "%s" % stats.station)
-                if not os.path.exists(cur_outdir):
-                    os.mkdir(cur_outdir)
-
-                out_file = os.path.join(cur_outdir, filename)
-
-                try:
-                    self.logger.debug('Writing miniseed file.')
-                    if len(st) > 1:
-                        st.merge()
-                    st.write(out_file, format = 'MSEED', reclen=512, encoding='STEIM2')
-                    self.logger.info('Wrote miniseed file %s containing stream %s.', out_file, st)
-                except:
-                    self.logger.error('Error writing miniseed file %s using obspy.', out_file)
-
-            for cur_file in cur_rt_file:
-                os.remove(cur_file)
-
-            for cur_file in cur_mseed_file:
-                os.remove(cur_file)
-
-        # Clear eventual temporary files created by arcfetch.
-        shutil.rmtree(tmp_dir)
+                    try:
+                        self.logger.debug('Writing miniseed file.')
+                        cur_export_trace.write(out_file, format = 'MSEED', reclen=512, encoding='STEIM2')
+                        self.logger.info('Wrote miniseed file %s containing the trace %s.', out_file, cur_export_trace)
+                    except:
+                        self.logger.exception('Error writing miniseed file %s using obspy.', out_file)
 
 
 
