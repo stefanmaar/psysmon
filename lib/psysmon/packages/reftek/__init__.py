@@ -26,7 +26,7 @@ description = "Reftek file format utilities."   # The package description.
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = []
+collection_node_modules = ['archive_to_miniseed', ]
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
