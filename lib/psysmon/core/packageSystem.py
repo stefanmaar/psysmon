@@ -700,6 +700,9 @@ class Package:
         dependency : String [deprecated] 
             A list of other packages needed to run this package.     
         '''
+        # The system logger used for debugging and system wide error logging.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # The python package name.
         self.pyPackage = ""
@@ -776,6 +779,7 @@ class Package:
             return
 
         for curNode in nodes:
+            self.logger.debug("Adding collection node: %s.", curNode.name)
             curNode.parentPackage = self
             self.collectionNodeTemplates[curNode.name]= curNode
 
