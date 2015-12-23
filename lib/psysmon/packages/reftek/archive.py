@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import psysmon
 import os
 import os.path
 import logging
@@ -79,10 +79,19 @@ class RawFile(object):
         '''
         '''
         if self.parent:
-            return os.path.join(self.parent.archive, self.path, self.filename)
+            return os.path.join(self.parent_archive, self.path, self.filename)
         else:
             return os.path.join(self.path, self.filename)
 
+
+    @property
+    def parent_archive(self):
+        '''
+        '''
+        if self.parent:
+            return self.parent.parent_archive
+        else:
+            return None
 
 
 
@@ -263,9 +272,11 @@ class Unit(object):
     ''' A Reftek recorder unit.
     '''
 
-    def __init__(self, unit_id):
+    def __init__(self, unit_id, parent_archive = None):
         '''
         '''
+        self.parent_archive = parent_archive
+
         self.unit_id = unit_id
 
         self.streams = {}
@@ -275,9 +286,11 @@ class Unit(object):
         '''
         '''
         if raw_file.stream_num not in self.streams.keys():
-            self.streams[raw_file.stream_num] = Stream(raw_file.stream_num)
+            self.streams[raw_file.stream_num] = Stream(raw_file.stream_num, parent_unit = self)
 
         self.streams[raw_file.stream_num].add_raw_file(raw_file)
+
+
 
 
 
@@ -285,9 +298,11 @@ class Stream(object):
     ''' A Reftek recorder stream.
     '''
 
-    def __init__(self, number):
+    def __init__(self, number, parent_unit = None):
         '''
         '''
+        self.parent_unit = parent_unit
+
         self.number = number
 
         self.raw_files = []
@@ -295,10 +310,21 @@ class Stream(object):
         self.parser = PasscalRecordingFormatParser()
 
 
+    @property
+    def parent_archive(self):
+        '''
+        '''
+        if self.parent_unit:
+            return self.parent_unit.parent_archive
+        else:
+            return None
+
+
     def add_raw_file(self, raw_file):
         '''
         '''
         if raw_file.stream_num == self.number:
+            raw_file.parent = self
             self.raw_files.append(raw_file)
 
 
@@ -339,7 +365,7 @@ class ArchiveController(object):
 
     '''
 
-    def __init__(self, archive, data_directory = None):
+    def __init__(self, archive, data_directory = None, last_scan = None):
         ''' The constructor.
 
         '''
@@ -355,6 +381,9 @@ class ArchiveController(object):
 
         # The available units.
         self.units = {}
+
+        # The time of the last archive scan.
+        self.last_scan = last_scan
 
 
     def add_raw_file(self, filename):
@@ -376,10 +405,10 @@ class ArchiveController(object):
         if filename.startswith(os.sep):
             filename = filename[1:]
 
-        cur_raw_file = RawFile(filename, parent = self)
+        cur_raw_file = RawFile(filename)
 
         if cur_raw_file.unit_id not in self.units.keys():
-            self.units[cur_raw_file.unit_id] = Unit(cur_raw_file.unit_id)
+            self.units[cur_raw_file.unit_id] = Unit(cur_raw_file.unit_id, parent_archive = self)
 
         self.units[cur_raw_file.unit_id].add_raw_file(cur_raw_file)
 
@@ -395,6 +424,15 @@ class ArchiveController(object):
             for cur_file in files:
                 if re_raw.match(cur_file):
                     self.add_raw_file(os.path.join(root, cur_file))
+
+        self.last_scan = UTCDateTime()
+
+        # Save the scan results in the archive directory.
+        try:
+            fp = open(os.path.join(self.archive, 'psysmon_archive_scan.json'), mode = 'w')
+            json.dump(self, fp = fp, cls = ArchiveScanEncoder)
+        finally:
+            fp.close()
 
 
 
@@ -495,12 +533,13 @@ class ArchiveScanEncoder(json.JSONEncoder):
         obj_class = obj.__class__.__name__
         base_class = [x.__name__ for x in obj.__class__.__bases__]
 
-        print "Converting obj_class: %s.\n" % obj_class
-
         if obj_class == 'UTCDateTime':
             d = self.convert_utcdatetime(obj)
+        elif obj_class == 'RawFile':
+            d = self.encode_raw_file(obj)
         else:
-            d = self.object_to_dict(obj, ignore = ['logger',])
+            d = self.object_to_dict(obj, ignore = ['logger', 'parent', 'parent_unit', 'parent_archive',
+                                                   'parser'])
 
         # Add the class and module information to the dictionary.
         tmp = {'__baseclass__': base_class,
@@ -514,6 +553,11 @@ class ArchiveScanEncoder(json.JSONEncoder):
     def convert_utcdatetime(self, obj):
         return {'isoformat': obj.isoformat()}
 
+
+    def encode_raw_file(self, obj):
+        attr = ['path', 'filename']
+        d = self.object_to_dict(obj, attr = attr)
+        return d
 
     def object_to_dict(self, obj, attr = None, ignore = None):
         ''' Copy selected attributes of object to a dictionary.
@@ -538,3 +582,95 @@ class ArchiveScanEncoder(json.JSONEncoder):
 
         return d
 
+
+class ArchiveScanDecoder(json.JSONDecoder):
+
+    def __init__(self, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+
+    def convert_object(self, d):
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            module_name = d.pop('__module__')
+            base_class = d.pop('__baseclass__')
+
+            if class_name == 'ArchiveController':
+                inst = self.decode_archive_controller(d)
+            elif class_name == 'Unit':
+                inst = self.decode_unit(d)
+            elif class_name == 'Stream':
+                inst = self.decode_stream(d)
+            elif class_name == 'RawFile':
+                inst = self.decode_raw_file(d)
+            elif class_name == 'UTCDateTime':
+                inst = self.decode_utcdatetime(d)
+            else:
+                inst = {'ERROR': 'MISSING DECODER'}
+        else:
+            inst = d
+
+        return inst
+
+
+    def decode_hinted_tuple(self, item):
+        if isinstance(item, dict):
+            if '__tuple__' in item:
+                return tuple(item['items'])
+        elif isinstance(item, list):
+                return [self.decode_hinted_tuple(x) for x in item]
+        else:
+            return item
+
+
+    def decode_archive_controller(self, d):
+        '''
+        '''
+        inst = psysmon.packages.reftek.archive.ArchiveController(archive = d['archive'],
+                                                                 data_directory = d['data_directory'],
+                                                                 last_scan = d['last_scan'])
+
+        inst.units = d['units']
+        for cur_unit in inst.units.itervalues():
+            cur_unit.parent_archive = inst
+
+        return inst
+
+
+    def decode_unit(self, d):
+        '''
+        '''
+        inst = psysmon.packages.reftek.archive.Unit(unit_id = d['unit_id'])
+
+        # JSON only supports strings as keys of dictionaries.
+        # Restore the streams dictionary with integers as keys.
+        for cur_key, cur_item in d['streams'].iteritems():
+            cur_item.parent_unit = inst
+            inst.streams[int(cur_key)] = cur_item
+
+        return inst
+
+
+    def decode_stream(self, d):
+        '''
+        '''
+        inst = psysmon.packages.reftek.archive.Stream(number = d['number'])
+
+        inst.raw_files = d['raw_files']
+        for cur_file in inst.raw_files:
+            cur_file.parent = inst
+
+        return inst
+
+
+    def decode_raw_file(self, d):
+        '''
+        '''
+        inst = psysmon.packages.reftek.archive.RawFile(filename = os.path.join(d['path'], d['filename']))
+
+        return inst
+
+
+    def decode_utcdatetime(self, d):
+        inst = UTCDateTime(d['isoformat'])
+        return inst
