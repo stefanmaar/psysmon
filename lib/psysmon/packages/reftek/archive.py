@@ -21,18 +21,13 @@
 
 import os
 import os.path
-import glob
-import subprocess
 import logging
-import shutil
 import re
-import tempfile
 import operator as op
 
 import numpy as np
 
 from obspy.core.utcdatetime import UTCDateTime
-from obspy.core import read
 
 import obspy.core.stream
 import obspy.core.trace
