@@ -24,6 +24,7 @@ import os.path
 import logging
 import re
 import operator as op
+import json
 
 import numpy as np
 
@@ -39,7 +40,7 @@ class RawFile(object):
     ''' A Reftek raw file.
     '''
 
-    def __init__(self, filename):
+    def __init__(self, filename, parent = None):
         '''
         It is supposed, that the reftek archive has the follwing directory structure:
             YYYYDDD
@@ -47,6 +48,9 @@ class RawFile(object):
                     STREAM
                         data_files
         '''
+        # The parent archive.
+        self.parent = parent
+
         self.path, self.filename = os.path.split(filename)
 
         tmp = self.path.split(os.sep)
@@ -74,7 +78,10 @@ class RawFile(object):
     def abs_filename(self):
         '''
         '''
-        return os.path.join(self.path, self.filename)
+        if self.parent:
+            return os.path.join(self.parent.archive, self.path, self.filename)
+        else:
+            return os.path.join(self.path, self.filename)
 
 
 
@@ -360,7 +367,16 @@ class ArchiveController(object):
                         data_files
         '''
 
-        cur_raw_file = RawFile(filename)
+        if not filename.startswith(self.archive):
+            self.logger.error("The file %s is not located in the archive %s.", filename, self.archive)
+            return
+
+        filename = filename.replace(self.archive, '')
+
+        if filename.startswith(os.sep):
+            filename = filename[1:]
+
+        cur_raw_file = RawFile(filename, parent = self)
 
         if cur_raw_file.unit_id not in self.units.keys():
             self.units[cur_raw_file.unit_id] = Unit(cur_raw_file.unit_id)
@@ -463,4 +479,62 @@ class ArchiveController(object):
                         self.logger.exception('Error writing miniseed file %s using obspy.', out_file)
 
 
+
+
+class ArchiveScanEncoder(json.JSONEncoder):
+    ''' A JSON endcoder for the reftek archive scan file.
+    '''
+    def __init__(self, **kwargs):
+        json.JSONEncoder.__init__(self, **kwargs)
+        self.indent = 4
+        self.sort_keys = True
+
+    def default(self, obj):
+        ''' Convert reftek archive objects to a dictionary.
+        '''
+        obj_class = obj.__class__.__name__
+        base_class = [x.__name__ for x in obj.__class__.__bases__]
+
+        print "Converting obj_class: %s.\n" % obj_class
+
+        if obj_class == 'UTCDateTime':
+            d = self.convert_utcdatetime(obj)
+        else:
+            d = self.object_to_dict(obj, ignore = ['logger',])
+
+        # Add the class and module information to the dictionary.
+        tmp = {'__baseclass__': base_class,
+               '__class__': obj_class,
+               '__module__': obj.__module__}
+        d.update(tmp)
+
+        return d
+
+
+    def convert_utcdatetime(self, obj):
+        return {'isoformat': obj.isoformat()}
+
+
+    def object_to_dict(self, obj, attr = None, ignore = None):
+        ''' Copy selected attributes of object to a dictionary.
+        '''
+        def hint_tuples(item):
+            if isinstance(item, tuple):
+                return {'__tuple__': True, 'items': item}
+            if isinstance(item, list):
+                return [hint_tuples(e) for e in item]
+            else:
+                return item
+
+        if not attr:
+            attr = obj.__dict__.keys()
+
+        if ignore:
+            attr = [x for x in attr if x not in ignore]
+
+        d = {}
+        for cur_attr in attr:
+            d[cur_attr] = hint_tuples(getattr(obj, cur_attr))
+
+        return d
 
