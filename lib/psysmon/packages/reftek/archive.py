@@ -632,7 +632,7 @@ class ArchiveController(object):
                         trace_length, stats.station, stats.location, stats.channel)
 
                     # Check and prepare the BUD directory structure.
-                    cur_outdir = os.path.join(self.output_dir, "%04d" % stats.starttime.year)
+                    cur_outdir = os.path.join(self.output_directory, "%04d" % stats.starttime.year)
                     if not os.path.exists(cur_outdir):
                         os.mkdir(cur_outdir)
 
