@@ -336,6 +336,12 @@ class Unit(object):
         self.streams[raw_file.stream_num].add_raw_file(raw_file)
 
 
+    def sort_raw_files(self):
+        ''' Sort the raw data files according to their start time.
+        '''
+        for cur_stream in self.streams.itervalues():
+            cur_stream.sort_raw_files()
+
 
 
 
@@ -507,6 +513,12 @@ class ArchiveController(object):
         self.units[cur_raw_file.unit_id].add_raw_file(cur_raw_file)
 
 
+    def sort_raw_files(self):
+        ''' Sort the raw data files according to their start time.
+        '''
+        for cur_unit in self.units.itervalues():
+            cur_unit.sort_raw_files()
+
 
     def scan(self):
         ''' Scan the data directory for reftek raw data files.
@@ -520,6 +532,8 @@ class ArchiveController(object):
                     self.add_raw_file(os.path.join(root, cur_file))
 
         self.last_scan = UTCDateTime()
+
+        self.sort_raw_files()
 
         # Save the scan results in the archive directory.
         try:
