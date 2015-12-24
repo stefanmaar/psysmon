@@ -5,8 +5,6 @@ Created on May 17, 2011
 '''
 
 import unittest
-import os
-from obspy.core.utcdatetime import UTCDateTime
 
 import psysmon.packages.reftek.archive as rt_archive
 
@@ -35,9 +33,6 @@ class JsonScanResultEncoderTestCase(unittest.TestCase):
         '''
         ac = rt_archive.ArchiveController('/home/stefan/Desktop/rt_archive')
         ac.scan()
-        encoder = rt_archive.ArchiveScanEncoder()
-        d = encoder.encode(ac)
-        print d
 
 
 
