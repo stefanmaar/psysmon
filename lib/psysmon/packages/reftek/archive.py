@@ -96,7 +96,7 @@ class RawFile(object):
         ''' The absolute path to the file.
         '''
         if self.parent:
-            return os.path.join(self.parent_archive, self.path, self.filename)
+            return os.path.join(self.parent_archive.archive, self.path, self.filename)
         else:
             return os.path.join(self.path, self.filename)
 
@@ -658,8 +658,8 @@ class ArchiveScanEncoder(json.JSONEncoder):
 
         if obj_class == 'UTCDateTime':
             d = self.convert_utcdatetime(obj)
-        elif obj_class == 'RawFile':
-            d = self.encode_raw_file(obj)
+        elif obj_class == 'Stream':
+            d = self.encode_stream(obj)
         else:
             d = self.object_to_dict(obj, ignore = ['logger', 'parent', 'parent_unit', 'parent_archive',
                                                    'parser'])
@@ -677,10 +677,12 @@ class ArchiveScanEncoder(json.JSONEncoder):
         return {'isoformat': obj.isoformat()}
 
 
-    def encode_raw_file(self, obj):
-        attr = ['path', 'filename']
+    def encode_stream(self, obj):
+        attr = ['number', ]
         d = self.object_to_dict(obj, attr = attr)
+        d['raw_files'] = [x.abs_filename for x in obj.raw_files]
         return d
+
 
     def object_to_dict(self, obj, attr = None, ignore = None):
         ''' Copy selected attributes of object to a dictionary.
@@ -781,9 +783,8 @@ class ArchiveScanDecoder(json.JSONDecoder):
         '''
         inst = psysmon.packages.reftek.archive.Stream(number = d['number'])
 
-        inst.raw_files = d['raw_files']
-        for cur_file in inst.raw_files:
-            cur_file.parent = inst
+        for cur_filename in d['raw_files']:
+            inst.add_raw_file(RawFile(cur_filename))
 
         return inst
 
