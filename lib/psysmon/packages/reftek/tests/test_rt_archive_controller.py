@@ -35,12 +35,10 @@ class RtArchiveControllerCase(unittest.TestCase):
     def test_scan(self):
         ''' Test the scanning of a Reftek archive.
         '''
-        ac = rt.archive.ArchiveController('/home/stefan/Desktop/rt_archive')
+        ac = rt.archive.ArchiveController('/home/stefan/Desktop/rt_archive',
+                                          output_directory = './converted')
         ac.scan()
-        #raw_stream = ac.units['9DC8'].streams[1]
-        #raw_stream.sort_raw_files()
-        ac.archive_to_mseed(out_dir = './converted',
-                            unit_id = '9DC8',
+        ac.archive_to_mseed(unit_id = '9DC8',
                             stream = 1,
                             start_time = UTCDateTime(2011,4,22,0,0,0),
                             end_time = UTCDateTime(2011,4,22,12,0,0))
