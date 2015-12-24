@@ -7,7 +7,11 @@
 #   Steve Azevedo, July 2008
 #
 
-import sys, exceptions, os, os.path, binascii, string
+import sys
+import exceptions
+import os
+import os.path
+import string
 #   For python 2.4
 #sys.path.append (os.path.join (os.environ['KITCHEN'], "apps", "pn2", "construct-2.0-2.4.zip"))
 #   For testing with python2.4
