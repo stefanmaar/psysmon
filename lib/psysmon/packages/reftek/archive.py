@@ -40,22 +40,37 @@ class RawFile(object):
     ''' A Reftek raw file.
     '''
 
-    def __init__(self, filename, parent = None):
-        '''
+    def __init__(self, full_filename, parent = None):
+        ''' Initialization of the instance.
+
         It is supposed, that the reftek archive has the follwing directory structure:
             YYYYDDD
                 UNIT_ID
                     STREAM
                         data_files
+
+        Parameters
+        ----------
+        full_filename : String
+            The absolute path to the reftek raw data file.
+
+        parent : :class:`Stream`
+            The parent stream holding the raw file.
         '''
-        # The parent archive.
+        # The parent stream.
         self.parent = parent
 
-        self.path, self.filename = os.path.split(filename)
+        # The path and filename.
+        self.path, self.filename = os.path.split(full_filename)
 
         tmp = self.path.split(os.sep)
+
+        # The stream number
         self.stream_num = int(tmp[-1])
+
+        # The recorder unit id.
         self.unit_id = tmp[-2]
+
         year = int(tmp[-3][0:4])
         doy = int(tmp[-3][4:])
         hour = int(self.filename[0:2])
@@ -64,6 +79,7 @@ class RawFile(object):
         millisecond = int(self.filename[6:9])
         length = float.fromhex(self.filename[10:]) / 1000.
 
+        # The start time of the file.
         self.start_time = UTCDateTime(year = year,
                                       julday = doy,
                                       hour = hour,
@@ -71,12 +87,13 @@ class RawFile(object):
                                       second = second,
                                       microsecond = millisecond * 1000)
 
+        # The end time of the file.
         self.end_time = self.start_time + length
 
 
     @property
     def abs_filename(self):
-        '''
+        ''' The absolute path to the file.
         '''
         if self.parent:
             return os.path.join(self.parent_archive, self.path, self.filename)
@@ -86,7 +103,7 @@ class RawFile(object):
 
     @property
     def parent_archive(self):
-        '''
+        ''' The archive holding the raw file.
         '''
         if self.parent:
             return self.parent.parent_archive
@@ -97,15 +114,16 @@ class RawFile(object):
 
 
 class PasscalRecordingFormatParser(object):
-    '''
+    ''' A parser for the Passcal Recording Format used by the Reftek-130 data logger.
     '''
     def __init__(self):
+        ''' Initialization of the instance.
         '''
-        '''
+
+        # The size of the data packets.
         self.packet_size = 1024
 
-        self.packets = {}
-
+        # The methods for the individual packet types.
         self.packet_parser = {}
         self.packet_parser['AD'] = self.parse_ad_packet
         self.packet_parser['CD'] = self.parse_cd_packet
@@ -117,15 +135,24 @@ class PasscalRecordingFormatParser(object):
         self.packet_parser['SH'] = self.parse_sh_packet
         self.packet_parser['SC'] = self.parse_sc_packet
 
+        # The events found in the raw data files.
         self.events = {}
 
+        # The parsed sample data.
         self.traces = {}
+
+        # The start times of the traces.
         self.start_time = {}
 
 
 
     def parse(self, filename):
-        ''' Parse the pakets of the file.
+        ''' Parse the pakets of a reftek raw data file.
+
+        Parameters
+        ----------
+        filename : String
+            The absolute path to a reftek raw data file.
         '''
         stream = obspy.core.stream.Stream()
 
@@ -163,6 +190,11 @@ class PasscalRecordingFormatParser(object):
 
     def parse_packet(self, packet_buffer):
         ''' Parse a Reftek 130 packet.
+
+        Parameters
+        ----------
+        packet_buffer : List
+            The binary data of a packet read from the reftek raw data file.
         '''
         packet_header =  RT_130_h.PacketHeader().decode(packet_buffer)
         if packet_header.type != 'DT':
@@ -273,7 +305,15 @@ class Unit(object):
     '''
 
     def __init__(self, unit_id, parent_archive = None):
-        '''
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        unit_id : String
+            The unit ID of a reftek recorder.
+
+        parent_archive : :class:`ArchiveController`
+            The parent archive holding the unit.
         '''
         self.parent_archive = parent_archive
 
@@ -283,7 +323,12 @@ class Unit(object):
 
 
     def add_raw_file(self, raw_file):
-        '''
+        ''' Add a reftek raw data file to the unit.
+
+        Parameters
+        ----------
+        raw_file : :class:`RawFile`
+            The RawFile instance representing a reftek raw data file.
         '''
         if raw_file.stream_num not in self.streams.keys():
             self.streams[raw_file.stream_num] = Stream(raw_file.stream_num, parent_unit = self)
@@ -299,7 +344,15 @@ class Stream(object):
     '''
 
     def __init__(self, number, parent_unit = None):
-        '''
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        number : Integer
+            The number of the stream.
+
+        parent_unit : :class:`Unit`
+            The parent unit holding the stream.
         '''
         self.parent_unit = parent_unit
 
@@ -321,7 +374,10 @@ class Stream(object):
 
 
     def add_raw_file(self, raw_file):
-        '''
+        ''' Add a reftek raw data file to the stream.
+
+        raw_file : :class:`RawFile`
+            The RawFile instance representing a reftek raw data file.
         '''
         if raw_file.stream_num == self.number:
             raw_file.parent = self
@@ -329,13 +385,23 @@ class Stream(object):
 
 
     def sort_raw_files(self):
-        '''
+        ''' Sort the raw data files according to the start time.
         '''
         self.raw_files = sorted(self.raw_files, key = op.attrgetter('start_time'))
 
 
     def parse(self, raw_file):
-        '''
+        ''' Parse a reftek raw data file.
+
+        Parameters
+        ----------
+        raw_file : :class:`RawFile`
+            The raw data file to parse.
+
+        Returns
+        -------
+        st : :class:`~obspy.core.stream.Stream`
+            The data parsed from the file.
         '''
         st = self.parser.parse(os.path.join(raw_file.path, raw_file.filename))
         # TODO: return a copy of the stream.
@@ -344,6 +410,18 @@ class Stream(object):
 
     def get_data(self, start_time, end_time, trim = False):
         ''' Get the data of the stream.
+
+        Parameters
+        ----------
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The start time of the time span for which to load the data.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The end time of the time span for which to load the data.
+
+        trim : Boolean
+            If true, the returned data stream is trimmed to the specified time limits.
+            If false, the data stream is returned as loaded from the raw data files.
         '''
         raw_files = [x for x in self.raw_files if x.start_time < end_time and x.end_time > start_time]
         st = obspy.core.stream.Stream()
@@ -365,8 +443,19 @@ class ArchiveController(object):
 
     '''
 
-    def __init__(self, archive, data_directory = None, last_scan = None):
-        ''' The constructor.
+    def __init__(self, archive, output_directory = None, last_scan = None):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        archive : String
+            The path to the Reftek raw data file archive.
+
+        output_directory : String
+            The path to the directory where to save any converted data files.
+
+        last_scan : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time of the last scan of the archive.
 
         '''
         # The logger instance.
@@ -377,7 +466,7 @@ class ArchiveController(object):
         self.archive = archive
 
         # The directory to handle.
-        self.data_directory = data_directory
+        self.output_directory = output_directory
 
         # The available units.
         self.units = {}
@@ -394,6 +483,11 @@ class ArchiveController(object):
                 UNIT_ID
                     STREAM
                         data_files
+
+        Parameters
+        ----------
+        filename : String
+            The absolute path to the reftek raw data file.
         '''
 
         if not filename.startswith(self.archive):
@@ -415,7 +509,7 @@ class ArchiveController(object):
 
 
     def scan(self):
-        ''' Scan the data directory for files.
+        ''' Scan the data directory for reftek raw data files.
 
         '''
         re_raw = re.compile (".*\w{9}_\w{8}$")
@@ -438,6 +532,14 @@ class ArchiveController(object):
 
     def get_stream(self, unit_id, stream):
         ''' Get an existing stream.
+
+        Parameters
+        ----------
+        unit_id : String
+            The unit ID of the reftek recorder.
+
+        stream : Integer
+            The number of the stream.
         '''
         try:
             return self.units[unit_id].streams[stream]
@@ -445,8 +547,29 @@ class ArchiveController(object):
             return None
 
 
-    def archive_to_mseed(self, out_dir, unit_id, stream, start_time, end_time, interval = 3600):
+    def archive_to_mseed(self, unit_id, stream, start_time, end_time, interval = 3600):
         ''' Convert the raw data to miniseed files.
+
+        Read Reftek raw data files from the archive and convert them to MiniSeed
+        files using the obspy miniseed support. The data of the specified time span
+        is converted to miniseed files with a specified length (interval).
+
+        Parameters
+        ----------
+        unit_id : String
+            The unit ID of the reftek recorder.
+
+        stream : Integer
+            The number of the stream.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The start time of the time span to convert.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The end time of the time span to convert.
+
+        interval : Float
+            The length in seconds of the converted miniseed files.
         '''
         interval = float(interval)
         # Convert the timespan into year, day, hour lists.
@@ -495,7 +618,7 @@ class ArchiveController(object):
                         trace_length, stats.station, stats.location, stats.channel)
 
                     # Check and prepare the BUD directory structure.
-                    cur_outdir = os.path.join(out_dir, "%04d" % stats.starttime.year)
+                    cur_outdir = os.path.join(self.output_dir, "%04d" % stats.starttime.year)
                     if not os.path.exists(cur_outdir):
                         os.mkdir(cur_outdir)
 
@@ -520,7 +643,7 @@ class ArchiveController(object):
 
 
 class ArchiveScanEncoder(json.JSONEncoder):
-    ''' A JSON endcoder for the reftek archive scan file.
+    ''' A JSON encoder for the reftek archive scan file.
     '''
     def __init__(self, **kwargs):
         json.JSONEncoder.__init__(self, **kwargs)
@@ -584,6 +707,8 @@ class ArchiveScanEncoder(json.JSONEncoder):
 
 
 class ArchiveScanDecoder(json.JSONDecoder):
+    ''' A JSON decoder for the reftek archive scan file.
+    '''
 
     def __init__(self, **kwargs):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
