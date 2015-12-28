@@ -237,8 +237,8 @@ class PasscalRecordingFormatParser(object):
                                      microsecond = packet_header.ms * 1000)
             sampling_rate = float(cur_event.SampleRate)
             station = packet_header.unit
-            channel = str(data_packet.channel)
-            location = str(data_packet.data_stream)
+            channel = str(data_packet.channel + 1)          # The channel is zero-based, add 1.
+            location = str(data_packet.data_stream + 1)     # The streeam is zero-based, add 1.
 
             #   If data is steim1 or steim2 then x0 is in 2nd to last data sample
             #   and xn is in the last data sample
