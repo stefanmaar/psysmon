@@ -1180,7 +1180,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
 
     def on_assign_stream_to_channel(self, event):
-        ''' Assigne a stream to a channel.
+        ''' Assign a stream to a channel.
         '''
         item_id = event.GetId()
         menu = event.GetEventObject()
@@ -1189,7 +1189,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         added_stream = self.Parent.selected_channel.add_stream(serial = serial,
                                                                name = name,
-                                                               start_time = '1970-1-1',
+                                                               start_time = UTCDateTime('1970-1-1'),
                                                                end_time = None)
 
         self.Parent.inventoryViewNotebook.updateStationListView()
