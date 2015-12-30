@@ -54,7 +54,7 @@ from psysmon.packages.geometry.db_inventory import DbInventory
 import psysmon.core.database_util as db_util
 
 
-class Project:
+class Project(object):
     ''' The psysmon project.
 
     The psysmon project handles low level communication with the database, 
@@ -362,6 +362,14 @@ class Project:
         else:
             return self._psybase
 
+    @psybase.setter
+    def psybase(self, value):
+        if value is not None:
+            self._psybase = weakref.ref(value)
+        else:
+            self._psybase = None
+
+
     @property
     def projectDir(self):
         return os.path.join(self.base_dir, self.slug)
@@ -390,7 +398,7 @@ class Project:
         # to be removed.
         # These values have to be reset when loading the project.
         del result['logger']
-        result['psybase'] = None
+        result['_psybase'] = None
         result['dbEngine'] = None
         result['dbSessionClass'] = None
         result['dbBase'] = None
@@ -1380,7 +1388,6 @@ class User:
             db = shelve.open(filename, flag='n')
             db['project'] = project
             db['collection'] = col2Proc
-            db['packages'] = project.psybase.packageMgr.packages
             db['package_directories'] = project.psybase.packageMgr.packageDirectories
             db['waveclient'] = [(x.name, x.mode, x.pickle_attributes) for x in project.waveclient.itervalues()]
             db['project_server'] = project.psybase.project_server

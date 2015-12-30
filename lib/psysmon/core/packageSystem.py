@@ -239,6 +239,15 @@ class PackageManager:
             return self._parent()
 
 
+    def __getstate__(self):
+        ''' Remove unpickleable attributes before pickling the instance.
+        '''
+        result = self.__dict__.copy()
+
+        result['_parent'] = None
+        return result
+
+
     def scan4Package(self):
         '''Scan for available pSysmon packages.
 
