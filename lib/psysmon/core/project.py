@@ -47,6 +47,7 @@ from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import obspy.core
 import obspy.core.utcdatetime as utcdatetime
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.util as psy_util
@@ -552,6 +553,51 @@ class Project(object):
         # Change the default waveclient if needed.
         if self.defaultWaveclient == oldName:
             self.defaultWaveclient = client.name
+
+
+    def request_data_stream(self, start_time, end_time, scnl):
+        ''' Get a data stream from the waveclient(s).
+
+        Parameters
+        ----------
+        startTime : UTCDateTime
+            The begin datetime of the data to fetch.
+
+        endTime : UTCDateTime
+            The end datetime of the data to fetch.
+
+        scnl : List of Tuples (STATION, CHANNEL, NETWORK, LOCATION)
+            The channels for which to get the waveform data.
+
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
+
+        '''
+        data_sources = {}
+        for cur_scnl in scnl:
+            if cur_scnl in self.scnlDataSources.keys():
+                if self.scnlDataSources[cur_scnl] not in data_sources.keys():
+                    data_sources[self.scnlDataSources[cur_scnl]] = [cur_scnl, ]
+                else:
+                    data_sources[self.scnlDataSources[cur_scnl]].append(cur_scnl)
+            else:
+                if self.defaultWaveclient not in data_sources.keys():
+                    data_sources[self.defaultWaveclient] = [cur_scnl, ]
+                else:
+                    data_sources[self.defaultWaveclient].append(cur_scnl)
+
+        stream = obspy.core.Stream()
+
+        for cur_name in data_sources.iterkeys():
+            curWaveclient = self.waveclient[cur_name]
+            curStream =  curWaveclient.getWaveform(startTime = start_time,
+                                                   endTime = end_time,
+                                                   scnl = scnl)
+            stream += curStream
+
+        return stream
 
 
 
