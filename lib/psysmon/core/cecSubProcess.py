@@ -60,7 +60,6 @@ if __name__ == "__main__":
     sys.path.extend(package_directories)
     project = db['project']
     collection = db['collection']
-    packages = db['packages']
     waveclients = db['waveclient']
     project_server = db['project_server']
     db.close()
@@ -91,7 +90,7 @@ if __name__ == "__main__":
 
     # Reinitialize the project.
     project.connect2Db()
-    project.loadDatabaseStructure(packages)
+    project.loadDatabaseStructure(psyBase.packageMgr.packages)
     project.load_geometry_inventory()
 
     for curName, curMode, curAttributes in waveclients:
