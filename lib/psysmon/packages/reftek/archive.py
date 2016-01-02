@@ -379,6 +379,24 @@ class Stream(object):
             return None
 
 
+    @property
+    def first_data_time(self):
+        '''
+        '''
+        if self.raw_files:
+            self.sort_raw_files()
+            return self.raw_files[0].start_time
+
+
+    @property
+    def last_data_time(self):
+        '''
+        '''
+        if self.raw_files:
+            self.sort_raw_files()
+            return self.raw_files[-1].end_time
+
+
     def add_raw_file(self, raw_file):
         ''' Add a reftek raw data file to the stream.
 
