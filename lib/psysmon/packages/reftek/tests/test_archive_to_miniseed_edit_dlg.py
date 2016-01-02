@@ -28,6 +28,7 @@ import psysmon
 import logging
 import os
 
+import psysmon
 import psysmon.core.gui as psygui
 from psysmon.core.test_util import create_psybase
 from obspy.core.utcdatetime import UTCDateTime
@@ -40,9 +41,9 @@ class ConvertArchiveToMiniseedEditDlgTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Configure the logger.
-        logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
-        logger.addHandler(psysmon.getLoggerHandler())
+        cls.logger = logging.getLogger('psysmon')
+        cls.logger.setLevel('DEBUG')
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
         cls.psybase = create_psybase()
 
@@ -60,12 +61,13 @@ class ConvertArchiveToMiniseedEditDlgTestCase(unittest.TestCase):
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('reftek archive to miniseed')
         self.node = nodeTemplate()
 
-        #self.node.pref_manager.set_value('start_time', UTCDateTime('2010-08-31T00:00:00'))
-        #self.node.pref_manager.set_value('end_time', UTCDateTime('2010-09-01T00:00:00'))
+        self.node.pref_manager.set_value('start_time', UTCDateTime('2011-06-04T00:00:00'))
+        self.node.pref_manager.set_value('end_time', UTCDateTime('2011-06-07T00:00:00'))
 
         # Create a logger for the node.
-        loggerName = __name__+ "." + self.node.__class__.__name__
-        self.node.logger = logging.getLogger(loggerName)
+        logger_prefix = psysmon.logConfig['package_prefix']
+        logger_name = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.node.logger = logging.getLogger(logger_name)
 
 
     def tearDown(self):
