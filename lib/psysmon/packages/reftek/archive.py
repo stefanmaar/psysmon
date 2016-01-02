@@ -524,6 +524,10 @@ class ArchiveController(object):
         ''' Scan the data directory for reftek raw data files.
 
         '''
+        if not os.path.isdir(self.archive):
+            self.logger.error("The reftek archive directory %s doesn't exist.", self.archive)
+            return
+
         re_raw = re.compile (".*\w{9}_\w{8}$")
 
         for root, dirs, files in os.walk(self.archive):
