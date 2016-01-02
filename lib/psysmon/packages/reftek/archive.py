@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of psysmomat.
@@ -154,7 +155,7 @@ class PasscalRecordingFormatParser(object):
         filename : String
             The absolute path to a reftek raw data file.
         '''
-        stream = obspy.core.stream.Stream()
+        self.stream = obspy.core.stream.Stream()
 
         fh = open(filename, 'rb')
 
@@ -179,13 +180,13 @@ class PasscalRecordingFormatParser(object):
             tr.stats.sampling_rate = cur_key[3]
             tr.stats.starttime = self.start_time[cur_key]
             tr.data = np.array(cur_data, dtype = np.dtype(np.int32))
-            stream.append(tr)
+            self.stream.append(tr)
 
         # Clear the traces and the corresponding start times.
         self.traces = {}
         self.start_time = {}
 
-        return stream
+        return self.stream.copy()
 
 
     def parse_packet(self, packet_buffer):
@@ -227,8 +228,8 @@ class PasscalRecordingFormatParser(object):
         ''' Parse a data packet.
         '''
         data_packet = RT_130_h.DT().decode(packet_buffer)
-        if data_packet.event in self.events.keys():
-            cur_event = self.events[data_packet.event]
+        if data_packet.event in self.events[packet_header.unit].keys():
+            cur_event = self.events[packet_header.unit][data_packet.event]
             start_time = UTCDateTime(year = packet_header.year,
                                      julday = packet_header.doy,
                                      hour = packet_header.hr,
@@ -260,6 +261,16 @@ class PasscalRecordingFormatParser(object):
                     # data.
                     # Start a new trace data.
                     print "dt doesn't match: %f" % dt
+                    ipdb.set_trace() ############################## Breakpoint ##############################
+                    tr = obspy.core.trace.Trace()
+                    tr.stats.station = cur_key[0]
+                    tr.stats.channel = cur_key[1]
+                    tr.stats.location = cur_key[2]
+                    tr.stats.sampling_rate = cur_key[3]
+                    tr.stats.starttime = self.start_time[cur_key]
+                    tr.data = np.array(self.traces[cur_key], dtype = np.dtype(np.int32))
+                    self.stream.append(tr)
+                    self.traces.pop(cur_key)
         else:
             print "No event found for the data packet event: %d." % data_packet.event
 
@@ -269,7 +280,9 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event header packet.
         '''
         event_header = RT_130_h.EH().decode(packet_buffer)
-        self.events[event_header.EventNumber] = event_header
+        if packet_header.unit not in self.events.keys():
+            self.events[packet_header.unit] = {}
+        self.events[packet_header.unit][event_header.EventNumber] = event_header
         print "event: %d " % event_header.EventNumber
 
 
@@ -277,6 +290,9 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event trailer packet.
         '''
         event_trailer = RT_130_h.EH().decode(packet_buffer)
+        if packet_header.unit in self.events.keys():
+            if event_trailer.EventNumber in self.events[packet_header.unit]:
+                self.events[packet_header.unit].pop(event_trailer.EventNumber)
 
 
     def parse_om_packet(self, packet_header, packet_buffer):
