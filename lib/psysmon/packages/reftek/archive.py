@@ -528,6 +528,8 @@ class ArchiveController(object):
             self.logger.error("The reftek archive directory %s doesn't exist.", self.archive)
             return
 
+        self.logger.info("Scanning the archive directory %s.", self.archive)
+
         re_raw = re.compile (".*\w{9}_\w{8}$")
 
         for root, dirs, files in os.walk(self.archive):
@@ -541,8 +543,10 @@ class ArchiveController(object):
 
         # Save the scan results in the archive directory.
         try:
-            fp = open(os.path.join(self.archive, 'psysmon_archive_scan.json'), mode = 'w')
+            result_file = os.path.join(self.archive, 'psysmon_archive_scan.json')
+            fp = open(result_file, mode = 'w')
             json.dump(self, fp = fp, cls = ArchiveScanEncoder)
+            self.logger.info("Saved the scan result in the file %s.", result_file)
         finally:
             fp.close()
 
