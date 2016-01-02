@@ -499,6 +499,20 @@ class ArchiveController(object):
         self.last_scan = last_scan
 
 
+    @property
+    def summary(self):
+        '''
+        '''
+        summary = {}
+        summary['scan_time'] = self.last_scan.isoformat()
+        stream_list = []
+        for cur_unit in self.units.itervalues():
+            cur_stream = [(cur_unit.unit_id, x.number, x.first_data_time.isoformat(), x.last_data_time.isoformat()) for x in cur_unit.streams.itervalues()]
+            stream_list.extend(cur_stream)
+        summary['stream_list'] = stream_list
+        return summary
+
+
     def add_raw_file(self, filename):
         ''' Add a Reftek raw data file.
 
@@ -567,6 +581,12 @@ class ArchiveController(object):
             fp = open(result_file, mode = 'w')
             json.dump(self, fp = fp, cls = ArchiveScanEncoder)
             self.logger.info("Saved the scan result in the file %s.", result_file)
+            fp.close()
+
+            result_file = os.path.join(self.archive, 'psysmon_archive_scan_summary.json')
+            fp = open(result_file, mode = 'w')
+            json.dump(self.summary, fp = fp)
+            self.logger.info("Saved the scan result summary in the file %s.", result_file)
         finally:
             fp.close()
 
@@ -796,7 +816,7 @@ class ArchiveScanDecoder(json.JSONDecoder):
         '''
         '''
         inst = psysmon.packages.reftek.archive.ArchiveController(archive = d['archive'],
-                                                                 data_directory = d['data_directory'],
+                                                                 output_directory = d['output_directory'],
                                                                  last_scan = d['last_scan'])
 
         inst.units = d['units']
