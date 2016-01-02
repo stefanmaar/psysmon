@@ -551,8 +551,10 @@ class ArchiveController(object):
         re_raw = re.compile (".*\w{9}_\w{8}$")
 
         for root, dirs, files in os.walk(self.archive):
+            dirs.sort()
             for cur_file in files:
                 if re_raw.match(cur_file):
+                    self.logger.debug('Adding file %s.', os.path.join(root, cur_file))
                     self.add_raw_file(os.path.join(root, cur_file))
 
         self.last_scan = UTCDateTime()
