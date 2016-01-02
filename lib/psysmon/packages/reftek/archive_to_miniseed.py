@@ -30,6 +30,7 @@ The convert reftek archive to miniseed module.
 '''
 import os.path
 import json
+import logging
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
@@ -53,6 +54,7 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
         psysmon.core.packageNodes.CollectionNode.__init__(self, **args)
 
         self.create_archive_prefs()
+        self.create_output_prefs()
 
         self.scan_summary = {}
 
@@ -114,6 +116,22 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
                                    item = pref_item)
 
 
+    def create_output_prefs(self):
+        ''' Create the output preference items.
+        '''
+        pagename = '2 output'
+        self.pref_manager.add_page(pagename)
+
+        item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
+                                        label = 'output directory',
+                                        group = 'output',
+                                        value = '',
+                                        tool_tip = 'Specify a directory where to save the MiniSeed files.'
+                                       )
+        self.pref_manager.add_item(pagename = pagename,
+                                   item = item)
+
+
     def edit(self):
         ''' Create the edit dialog.
         '''
@@ -126,13 +144,42 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
         dlg.Destroy()
 
 
+    def execute(self, prefNodeOutput = {}):
+        '''
+        '''
+        archive_dir = self.pref_manager.get_value('archive_dir')
+        archive_scan_file = os.path.join(archive_dir, 'psysmon_archive_scan.json')
+        if os.path.isfile(archive_scan_file):
+            #self.logger.info('Found an archive scan summary file: %s. Using this file.', archive_scan_file)
+            try:
+                fp = open(archive_scan_file)
+                ac = json.load(fp = fp, cls = psysmon.packages.reftek.archive.ArchiveScanDecoder)
+            finally:
+                fp.close()
+
+            stream_list = self.pref_manager.get_value('unit_list')
+            start_time = self.pref_manager.get_value('start_time')
+            end_time = self.pref_manager.get_value('end_time')
+            output_dir = self.pref_manager.get_value('output_dir')
+
+            ac.output_directory = output_dir
+            for cur_stream in stream_list:
+                #self.logger.debug("Converting stream %s.", cur_stream)
+                stream_start_time = utcdatetime.UTCDateTime(cur_stream[2])
+                stream_end_time = utcdatetime.UTCDateTime(cur_stream[3])
+                ac.archive_to_mseed(unit_id = cur_stream[0],
+                                    stream = cur_stream[1],
+                                    start_time = stream_start_time,
+                                    end_time = stream_end_time)
+
+
     def load_scan_summary(self):
         '''
         '''
         archive_dir = self.pref_manager.get_value('archive_dir')
         archive_scan_file = os.path.join(archive_dir, 'psysmon_archive_scan_summary.json')
         if os.path.isfile(archive_scan_file):
-            self.logger.info('Found an archive scan summary file: %s. Using this file.', archive_scan_file)
+            #self.logger.info('Found an archive scan summary file: %s. Using this file.', archive_scan_file)
             try:
                 fp = open(archive_scan_file)
                 self.scan_summary = json.load(fp)
