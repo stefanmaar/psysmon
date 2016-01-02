@@ -28,6 +28,8 @@ The convert reftek archive to miniseed module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+import os.path
+import json
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
@@ -52,7 +54,7 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
 
         self.create_archive_prefs()
 
-        self.ac = None
+        self.scan_summary = {}
 
 
     def create_archive_prefs(self):
@@ -116,22 +118,41 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
         ''' Create the edit dialog.
         '''
         # Initialize the archive controller.
-        archive_dir = self.pref_manager.get_value('archive_dir')
-        self.ac = psysmon.packages.reftek.archive.ArchiveController(archive = archive_dir)
-        # TODO: If available, load the last scan from the json file.
+        self.load_scan_summary()
+        self.update_units_list()
 
         dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 
 
+    def load_scan_summary(self):
+        '''
+        '''
+        archive_dir = self.pref_manager.get_value('archive_dir')
+        archive_scan_file = os.path.join(archive_dir, 'psysmon_archive_scan_summary.json')
+        if os.path.isfile(archive_scan_file):
+            self.logger.info('Found an archive scan summary file: %s. Using this file.', archive_scan_file)
+            try:
+                fp = open(archive_scan_file)
+                self.scan_summary = json.load(fp)
+            finally:
+                fp.close()
+
+
+
+    def update_units_list(self):
+        '''
+        '''
+        if self.scan_summary.has_key('stream_list'):
+            self.pref_manager.set_limit('unit_list', self.scan_summary['stream_list'])
+
+
     def on_archive_dir_changed(self):
         ''' Handle the changed archive_dir.
         '''
-        if self.ac:
-            self.ac.archive = self.pref_manager.get_value('archive_dir')
-            self.units = {}
-            self.last_scan = None
+        self.load_scan_summary()
+        self.update_units_list()
 
 
     def on_scan_archive(self, event):
@@ -139,10 +160,8 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
 
         Scan the archive and fill the units listcontrol.
         '''
-        self.ac.scan()
-        stream_list = []
-        for cur_unit in self.ac.units.itervalues():
-            cur_stream = [(cur_unit.unit_id, x.number, x.first_data_time.isoformat(), x.last_data_time.isoformat()) for x in cur_unit.streams.itervalues()]
-            stream_list.extend(cur_stream)
-
-        self.pref_manager.set_limit('unit_list', stream_list)
+        archive_dir = self.pref_manager.get_value('archive_dir')
+        ac = psysmon.packages.reftek.archive.ArchiveController(archive = archive_dir)
+        ac.scan()
+        self.scan_summary = ac.summary
+        self.update_units_list()
