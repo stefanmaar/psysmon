@@ -165,13 +165,19 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
 
             ac.output_directory = output_dir
             for cur_stream in stream_list:
+                cur_start_time = start_time
+                cur_end_time = end_time
                 #self.logger.debug("Converting stream %s.", cur_stream)
                 stream_start_time = utcdatetime.UTCDateTime(cur_stream[2])
                 stream_end_time = utcdatetime.UTCDateTime(cur_stream[3])
+                if stream_start_time > cur_start_time:
+                    cur_start_time = stream_start_time
+                if stream_end_time < cur_end_time:
+                    cur_end_time = stream_end_time
                 ac.archive_to_mseed(unit_id = cur_stream[0],
                                     stream = cur_stream[1],
-                                    start_time = stream_start_time,
-                                    end_time = stream_end_time)
+                                    start_time = cur_start_time,
+                                    end_time = cur_end_time)
 
 
     def load_scan_summary(self):
