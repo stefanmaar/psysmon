@@ -150,7 +150,7 @@ class PasscalRecordingFormatParser(object):
 
 
 
-    def parse(self, filename):
+    def parse(self, filename, start_time = None, end_time = None):
         ''' Parse the pakets of a reftek raw data file.
 
         Parameters
@@ -158,6 +158,8 @@ class PasscalRecordingFormatParser(object):
         filename : String
             The absolute path to a reftek raw data file.
         '''
+        self.parse_start_time = start_time
+        self.parse_end_time = end_time
         self.traces = {}
         self.start_time = {}
         self.stream = obspy.core.stream.Stream()
@@ -205,6 +207,7 @@ class PasscalRecordingFormatParser(object):
         packet_header =  RT_130_h.PacketHeader().decode(packet_buffer)
         if packet_header.type != 'DT':
             self.logger.debug("Found a packet: %s.", packet_header.type)
+
         if packet_header.type in self.packet_parser.keys():
             self.packet_parser[packet_header.type](packet_header, packet_buffer)
         else:
@@ -233,6 +236,8 @@ class PasscalRecordingFormatParser(object):
         ''' Parse a data packet.
         '''
         data_packet = RT_130_h.DT().decode(packet_buffer)
+
+        # Get the sampling rate from the event header.
         if packet_header.unit in self.events.keys() and data_packet.event in self.events[packet_header.unit].keys():
             cur_event = self.events[packet_header.unit][data_packet.event]
             sampling_rate = float(cur_event.SampleRate)
@@ -250,12 +255,22 @@ class PasscalRecordingFormatParser(object):
             self.logger.error("No event found for the data packet event: %s - %d. Can't determine sampling rate.", packet_header.unit, data_packet.event)
             return
 
+        # Check if the data packet is inside the requested time span.
         start_time = UTCDateTime(year = packet_header.year,
                                  julday = packet_header.doy,
                                  hour = packet_header.hr,
                                  minute = packet_header.mn,
                                  second = packet_header.sc,
                                  microsecond = packet_header.ms * 1000)
+
+        end_time = start_time + 1562. / sampling_rate        # In a highliy compressed data packet, max. 1561 data samples can be stored.
+
+        if self.parse_start_time and self.parse_end_time:
+            if not (start_time <= self.parse_end_time and end_time >= self.parse_start_time):
+                # The data is not inside the requested interval. Ignore it.
+                return
+
+
         station = packet_header.unit
         channel = str(data_packet.channel + 1)          # The channel is zero-based, add 1.
         location = str(data_packet.data_stream + 1)     # The streeam is zero-based, add 1.
@@ -495,11 +510,10 @@ class Stream(object):
         raw_files = [x for x in self.raw_files if x.start_time < end_time and x.end_time > start_time]
         st = obspy.core.stream.Stream()
         for cur_raw_file in raw_files:
-            # TODO: Add the possibility to define a timespan for the data to
-            # parse. Don't read the whole raw_data, but only the desired
-            # timespan.
             self.logger.debug("Parsing file %s.", cur_raw_file.abs_filename)
-            st += self.parser.parse(cur_raw_file.abs_filename)
+            st += self.parser.parse(cur_raw_file.abs_filename,
+                                    start_time = start_time,
+                                    end_time = end_time)
         st.merge()
         if trim:
             st.trim(start_time, end_time)
