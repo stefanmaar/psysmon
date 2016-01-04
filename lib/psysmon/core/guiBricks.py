@@ -950,17 +950,6 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         '''
         Field.__init__(self, parent=parent, name=name, pref_item = pref_item, size=size)
 
-        # Used by ColumnSorterMixin.
-        self.itemDataMap = {}
-        self.il = wx.ImageList(16, 16)
-        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
-        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
-
-        # Create the icons for column sorting.
-        self.il = wx.ImageList(16, 16)
-        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
-        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
-
         # Create the field label.
         self.labelElement = StaticText(parent=self,
                                        ID=wx.ID_ANY,
@@ -968,21 +957,22 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
                                        style=wx.ALIGN_RIGHT)
 
         # Create the field text control.
-        self.controlElement = wx.ListCtrl(parent = self,
-                                          id = wx.ID_ANY,
-                                          style=wx.LC_REPORT
-                                          | wx.BORDER_NONE
-                                          #| wx.LC_SINGLE_SEL
-                                          | wx.LC_SORT_ASCENDING
-                                          )
-        self.controlElement.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+        self.controlElement = SortableListCtrl(parent = self,
+                                               id = wx.ID_ANY,
+                                               style=wx.LC_REPORT
+                                               | wx.BORDER_NONE
+                                               #| wx.LC_SINGLE_SEL
+                                               | wx.LC_SORT_ASCENDING,
+                                               n_columns = len(pref_item.column_labels)
+                                              )
+        self.controlElement.itemDataMap = {}
 
         for k, cur_label in enumerate(pref_item.column_labels):
             self.controlElement.InsertColumn(k, cur_label)
 
         self.fill_listctrl(data = pref_item.limit)
 
-        listmix.ColumnSorterMixin.__init__(self, len(pref_item.column_labels))
+        #listmix.ColumnSorterMixin.__init__(self, len(pref_item.column_labels))
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected, self.controlElement)
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_deselected, self.controlElement)
@@ -992,16 +982,8 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         self.addControl(self.controlElement)
 
 
-    def GetListCtrl(self):
-        ''' Used by ColumnSorterMixin.
-        '''
-        return self.controlElement
 
 
-    def GetSortImages(self):
-        ''' Used by ColumnSorterMixin.
-        '''
-        return (self.sm_dn, self.sm_up)
 
 
     def fill_listctrl(self, data):
@@ -1015,7 +997,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
                 else:
                     self.controlElement.SetStringItem(index, k, str(cur_data))
 
-            self.itemDataMap[index] = cur_row
+            self.controlElement.itemDataMap[index] = cur_row
             self.controlElement.SetItemData(index, index)
 
             if cur_row in self.pref_item.value:
@@ -1027,7 +1009,8 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_selected(self, event):
         '''
         '''
-        selected_value = self.pref_item.limit[event.m_itemIndex]
+        item_data = self.controlElement.GetItemData(event.m_itemIndex)
+        selected_value = self.controlElement.itemDataMap[item_data]
         if selected_value not in self.pref_item.value:
             self.pref_item.value.append(selected_value)
 
@@ -1037,7 +1020,9 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_deselected(self, event):
         '''
         '''
-        self.pref_item.value.remove(self.pref_item.limit[event.m_itemIndex])
+        item_data = self.controlElement.GetItemData(event.m_itemIndex)
+        selected_value = self.controlElement.itemDataMap[item_data]
+        self.pref_item.value.remove(selected_value)
         self.call_hook('on_value_change')
 
 
@@ -1052,7 +1037,36 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         self.fill_listctrl(data = self.pref_item.limit)
 
 
+class SortableListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
 
+    def __init__(self, parent, id = wx.ID_ANY,
+                 pos = wx.DefaultPosition,
+                 size = wx.DefaultSize, style = None,
+                 n_columns = None):
+        wx.ListCtrl.__init__(self, parent, id, pos, size, style)
+        listmix.ColumnSorterMixin.__init__(self, n_columns)
+
+        # Used by ColumnSorterMixin.
+        self.il = wx.ImageList(16, 16)
+        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
+        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
+
+        # Create the icons for column sorting.
+        self.il = wx.ImageList(16, 16)
+        self.sm_up = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_UP, wx.ART_OTHER, (16,16)))
+        self.sm_dn = self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN, wx.ART_OTHER, (16,16)))
+
+        self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+
+    def GetListCtrl(self):
+        ''' Used by ColumnSorterMixin.
+        '''
+        return self
+
+    def GetSortImages(self):
+        ''' Used by ColumnSorterMixin.
+        '''
+        return (self.sm_dn, self.sm_up)
 
 
 class ListGridEditField(Field):
