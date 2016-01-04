@@ -236,6 +236,14 @@ class PasscalRecordingFormatParser(object):
         if packet_header.unit in self.events.keys() and data_packet.event in self.events[packet_header.unit].keys():
             cur_event = self.events[packet_header.unit][data_packet.event]
             sampling_rate = float(cur_event.SampleRate)
+        elif packet_header.unit in self.events.keys():
+            # TODO: Add a user flag to select the guessing of the sampling
+            # rate.
+            keys = np.array(self.events[packet_header.unit].keys())
+            min_ind = np.argmin(np.abs(keys - data_packet.event))
+            cur_event = self.events[packet_header.unit][keys[min_ind]]
+            sampling_rate = float(cur_event.SampleRate)
+            self.logger.warning("No matching event found for the data packet event: %s - %d. Guessing the sampling from past events to: %f.", packet_header.unit, data_packet.event, sampling_rate)
         else:
             # TODO: Add an option to override the sampling rate if no event is
             # found.
