@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of psysmomat.
@@ -120,6 +119,10 @@ class PasscalRecordingFormatParser(object):
     def __init__(self):
         ''' Initialization of the instance.
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         # The size of the data packets.
         self.packet_size = 1024
@@ -136,8 +139,8 @@ class PasscalRecordingFormatParser(object):
         self.packet_parser['SH'] = self.parse_sh_packet
         self.packet_parser['SC'] = self.parse_sc_packet
 
-        # The events found in the raw data files.
-        self.events = {}
+        # The active event found in the raw data files.
+        self.active_event = {}
 
         # The parsed sample data.
         self.traces = {}
@@ -155,6 +158,8 @@ class PasscalRecordingFormatParser(object):
         filename : String
             The absolute path to a reftek raw data file.
         '''
+        self.traces = {}
+        self.start_time = {}
         self.stream = obspy.core.stream.Stream()
 
         fh = open(filename, 'rb')
@@ -199,11 +204,11 @@ class PasscalRecordingFormatParser(object):
         '''
         packet_header =  RT_130_h.PacketHeader().decode(packet_buffer)
         if packet_header.type != 'DT':
-            print "Found a packet: %s." % packet_header.type
+            self.logger.debug("Found a packet: %s.", packet_header.type)
         if packet_header.type in self.packet_parser.keys():
             self.packet_parser[packet_header.type](packet_header, packet_buffer)
         else:
-            print "Unknown data packet: %s." % packet_header.type
+            self.logger.error("Unknown data packet: %s.", packet_header.type)
 
 
     def parse_ad_packet(self, packet_header, packet_buffer):
@@ -228,8 +233,8 @@ class PasscalRecordingFormatParser(object):
         ''' Parse a data packet.
         '''
         data_packet = RT_130_h.DT().decode(packet_buffer)
-        if data_packet.event in self.events[packet_header.unit].keys():
-            cur_event = self.events[packet_header.unit][data_packet.event]
+        if packet_header.unit in self.active_event.keys() and data_packet.event == self.active_event[packet_header.unit].EventNumber:
+            cur_event = self.active_event[packet_header.unit]
             start_time = UTCDateTime(year = packet_header.year,
                                      julday = packet_header.doy,
                                      hour = packet_header.hr,
@@ -260,8 +265,7 @@ class PasscalRecordingFormatParser(object):
                     # Write the trace data to the stream and clear the trace
                     # data.
                     # Start a new trace data.
-                    print "dt doesn't match: %f" % dt
-                    ipdb.set_trace() ############################## Breakpoint ##############################
+                    self.logger.debug("dt (%f) doesn't match. Starting a new trace for %s.", dt, cur_key)
                     tr = obspy.core.trace.Trace()
                     tr.stats.station = cur_key[0]
                     tr.stats.channel = cur_key[1]
@@ -271,8 +275,9 @@ class PasscalRecordingFormatParser(object):
                     tr.data = np.array(self.traces[cur_key], dtype = np.dtype(np.int32))
                     self.stream.append(tr)
                     self.traces.pop(cur_key)
+                    self.start_time.pop(cur_key)
         else:
-            print "No event found for the data packet event: %d." % data_packet.event
+            self.logger.error("No event found for the data packet event: %s - %d. Current active event is: %d.", packet_header.unit, data_packet.event, self.active_event[packet_header.unit].EventNumber)
 
 
 
@@ -280,19 +285,25 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event header packet.
         '''
         event_header = RT_130_h.EH().decode(packet_buffer)
-        if packet_header.unit not in self.events.keys():
-            self.events[packet_header.unit] = {}
-        self.events[packet_header.unit][event_header.EventNumber] = event_header
-        print "event: %d " % event_header.EventNumber
+        if packet_header.unit not in self.active_event.keys():
+            self.active_event[packet_header.unit] = {}
+        self.active_event[packet_header.unit] = event_header
+        self.logger.debug("Opened active event of %s: %d.", packet_header.unit, event_header.EventNumber)
 
 
     def parse_et_packet(self, packet_header, packet_buffer):
         ''' Parse an event trailer packet.
         '''
         event_trailer = RT_130_h.EH().decode(packet_buffer)
-        if packet_header.unit in self.events.keys():
-            if event_trailer.EventNumber in self.events[packet_header.unit]:
-                self.events[packet_header.unit].pop(event_trailer.EventNumber)
+        if packet_header.unit in self.active_event.keys():
+            if event_trailer.EventNumber == self.active_event[packet_header.unit].EventNumber:
+                self.active_event.pop(packet_header.unit)
+                self.logger.debug("Closed active event of %s: %d.", packet_header.unit, event_trailer.EventNumber)
+            else:
+                self.active_event.pop(packet_header.unit)
+                self.logger.error("The active event %d doesn't match the event to close. Closed active event of %s: %d.", self.active_event[packet_header.unit].EventNumber, packet_header.unit, event_trailer.EventNumber)
+
+
 
 
     def parse_om_packet(self, packet_header, packet_buffer):
@@ -376,6 +387,11 @@ class Stream(object):
         parent_unit : :class:`Unit`
             The parent unit holding the stream.
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         self.parent_unit = parent_unit
 
         self.number = number
@@ -469,6 +485,7 @@ class Stream(object):
             # TODO: Add the possibility to define a timespan for the data to
             # parse. Don't read the whole raw_data, but only the desired
             # timespan.
+            self.logger.debug("Parsing file %s.", cur_raw_file.abs_filename)
             st += self.parser.parse(cur_raw_file.abs_filename)
         st.merge()
         if trim:
