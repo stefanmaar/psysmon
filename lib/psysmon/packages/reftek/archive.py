@@ -277,7 +277,13 @@ class PasscalRecordingFormatParser(object):
                     self.traces.pop(cur_key)
                     self.start_time.pop(cur_key)
         else:
-            self.logger.error("No event found for the data packet event: %s - %d. Current active event is: %d.", packet_header.unit, data_packet.event, self.active_event[packet_header.unit].EventNumber)
+            self.logger.error("No event found for the data packet event: %s - %d.", packet_header.unit, data_packet.event)
+            if packet_header.unit in self.active_event.keys():
+                self.logger.debug("Currently active event of unit %s is: %d.", packet_header.unit, self.active_event[packet_header.unit].EventNumber)
+            else:
+                self.logger.debug("There is no active event available for unit %s.", packet_header.unit)
+
+
 
 
 
@@ -300,8 +306,8 @@ class PasscalRecordingFormatParser(object):
                 self.active_event.pop(packet_header.unit)
                 self.logger.debug("Closed active event of %s: %d.", packet_header.unit, event_trailer.EventNumber)
             else:
-                self.active_event.pop(packet_header.unit)
                 self.logger.error("The active event %d doesn't match the event to close. Closed active event of %s: %d.", self.active_event[packet_header.unit].EventNumber, packet_header.unit, event_trailer.EventNumber)
+                self.active_event.pop(packet_header.unit)
 
 
 
@@ -692,6 +698,10 @@ class ArchiveController(object):
             # Fetch the data for the time span from the archive.
             st = cur_raw_stream.get_data(start_time = cur_chunk,
                                          end_time = cur_chunk_end_time)
+
+            if not st:
+                self.logger.warning("No data found.")
+                continue
 
             # Trim the stream.
             self.logger.debug('Trimming file.')
