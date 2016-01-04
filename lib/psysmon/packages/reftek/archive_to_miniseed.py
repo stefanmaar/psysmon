@@ -154,6 +154,7 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
                 fp = open(archive_scan_file)
                 self.logger.info('Loading the archive scan result file: %s.', archive_scan_file)
                 ac = json.load(fp = fp, cls = psysmon.packages.reftek.archive.ArchiveScanDecoder)
+                ac.sort_raw_files()
             finally:
                 fp.close()
 
