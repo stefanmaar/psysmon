@@ -140,7 +140,7 @@ class PasscalRecordingFormatParser(object):
         self.packet_parser['SC'] = self.parse_sc_packet
 
         # The active event found in the raw data files.
-        self.active_event = {}
+        self.events = {}
 
         # The parsed sample data.
         self.traces = {}
@@ -233,57 +233,55 @@ class PasscalRecordingFormatParser(object):
         ''' Parse a data packet.
         '''
         data_packet = RT_130_h.DT().decode(packet_buffer)
-        if packet_header.unit in self.active_event.keys() and data_packet.event == self.active_event[packet_header.unit].EventNumber:
-            cur_event = self.active_event[packet_header.unit]
-            start_time = UTCDateTime(year = packet_header.year,
-                                     julday = packet_header.doy,
-                                     hour = packet_header.hr,
-                                     minute = packet_header.mn,
-                                     second = packet_header.sc,
-                                     microsecond = packet_header.ms * 1000)
+        if packet_header.unit in self.events.keys() and data_packet.event in self.events[packet_header.unit].keys():
+            cur_event = self.events[packet_header.unit][data_packet.event]
             sampling_rate = float(cur_event.SampleRate)
-            station = packet_header.unit
-            channel = str(data_packet.channel + 1)          # The channel is zero-based, add 1.
-            location = str(data_packet.data_stream + 1)     # The streeam is zero-based, add 1.
-
-            #   If data is steim1 or steim2 then x0 is in 2nd to last data sample
-            #   and xn is in the last data sample
-            if data_packet.data_format == 0xc0 or data_packet.data_format == 0xc2 :
-                del data_packet.data[-2:]
-
-            cur_key = (station, channel, location, sampling_rate)
-            if cur_key not in self.traces:
-                self.traces[cur_key] = data_packet.data
-                self.start_time[cur_key] = start_time
-            else:
-                # Check if the data time.
-                end_time = self.start_time[cur_key] + (len(self.traces[cur_key]) - 1) / sampling_rate
-                dt = start_time - end_time
-                if dt > 0 and np.abs(dt - 1/sampling_rate) <= 1/(10*sampling_rate):
-                    self.traces[cur_key].extend(data_packet.data)
-                else:
-                    # Write the trace data to the stream and clear the trace
-                    # data.
-                    # Start a new trace data.
-                    self.logger.debug("dt (%f) doesn't match. Starting a new trace for %s.", dt, cur_key)
-                    tr = obspy.core.trace.Trace()
-                    tr.stats.station = cur_key[0]
-                    tr.stats.channel = cur_key[1]
-                    tr.stats.location = cur_key[2]
-                    tr.stats.sampling_rate = cur_key[3]
-                    tr.stats.starttime = self.start_time[cur_key]
-                    tr.data = np.array(self.traces[cur_key], dtype = np.dtype(np.int32))
-                    self.stream.append(tr)
-                    self.traces.pop(cur_key)
-                    self.start_time.pop(cur_key)
         else:
-            self.logger.error("No event found for the data packet event: %s - %d.", packet_header.unit, data_packet.event)
-            if packet_header.unit in self.active_event.keys():
-                self.logger.debug("Currently active event of unit %s is: %d.", packet_header.unit, self.active_event[packet_header.unit].EventNumber)
+            # TODO: Add an option to override the sampling rate if no event is
+            # found.
+            self.logger.error("No event found for the data packet event: %s - %d. Can't determine sampling rate.", packet_header.unit, data_packet.event)
+            return
+
+        start_time = UTCDateTime(year = packet_header.year,
+                                 julday = packet_header.doy,
+                                 hour = packet_header.hr,
+                                 minute = packet_header.mn,
+                                 second = packet_header.sc,
+                                 microsecond = packet_header.ms * 1000)
+        station = packet_header.unit
+        channel = str(data_packet.channel + 1)          # The channel is zero-based, add 1.
+        location = str(data_packet.data_stream + 1)     # The streeam is zero-based, add 1.
+
+        #   If data is steim1 or steim2 then x0 is in 2nd to last data sample
+        #   and xn is in the last data sample
+        if data_packet.data_format == 0xc0 or data_packet.data_format == 0xc2 :
+            del data_packet.data[-2:]
+
+        cur_key = (station, channel, location, sampling_rate)
+        if cur_key not in self.traces:
+            self.traces[cur_key] = data_packet.data
+            self.start_time[cur_key] = start_time
+        else:
+            # Check if the data time.
+            end_time = self.start_time[cur_key] + (len(self.traces[cur_key]) - 1) / sampling_rate
+            dt = start_time - end_time
+            if dt > 0 and np.abs(dt - 1/sampling_rate) <= 1/(10*sampling_rate):
+                self.traces[cur_key].extend(data_packet.data)
             else:
-                self.logger.debug("There is no active event available for unit %s.", packet_header.unit)
-
-
+                # Write the trace data to the stream and clear the trace
+                # data.
+                # Start a new trace data.
+                self.logger.debug("dt (%f) doesn't match. Starting a new trace for %s.", dt, cur_key)
+                tr = obspy.core.trace.Trace()
+                tr.stats.station = cur_key[0]
+                tr.stats.channel = cur_key[1]
+                tr.stats.location = cur_key[2]
+                tr.stats.sampling_rate = cur_key[3]
+                tr.stats.starttime = self.start_time[cur_key]
+                tr.data = np.array(self.traces[cur_key], dtype = np.dtype(np.int32))
+                self.stream.append(tr)
+                self.traces.pop(cur_key)
+                self.start_time.pop(cur_key)
 
 
 
@@ -291,23 +289,24 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event header packet.
         '''
         event_header = RT_130_h.EH().decode(packet_buffer)
-        if packet_header.unit not in self.active_event.keys():
-            self.active_event[packet_header.unit] = {}
-        self.active_event[packet_header.unit] = event_header
-        self.logger.debug("Opened active event of %s: %d.", packet_header.unit, event_header.EventNumber)
+        if packet_header.unit not in self.events.keys():
+            self.events[packet_header.unit] = {}
+        self.events[packet_header.unit][event_header.EventNumber] = event_header
+        self.logger.debug("Added event of unit %s: %d.", packet_header.unit, event_header.EventNumber)
 
 
     def parse_et_packet(self, packet_header, packet_buffer):
         ''' Parse an event trailer packet.
         '''
         event_trailer = RT_130_h.EH().decode(packet_buffer)
-        if packet_header.unit in self.active_event.keys():
-            if event_trailer.EventNumber == self.active_event[packet_header.unit].EventNumber:
-                self.active_event.pop(packet_header.unit)
-                self.logger.debug("Closed active event of %s: %d.", packet_header.unit, event_trailer.EventNumber)
-            else:
-                self.logger.error("The active event %d doesn't match the event to close. Closed active event of %s: %d.", self.active_event[packet_header.unit].EventNumber, packet_header.unit, event_trailer.EventNumber)
-                self.active_event.pop(packet_header.unit)
+        #if packet_header.unit in self.active_event.keys():
+        #    if event_trailer.EventNumber == self.active_event[packet_header.unit].EventNumber:
+        #        self.active_event.pop(packet_header.unit)
+        #        self.logger.debug("Closed active event of %s: %d.", packet_header.unit, event_trailer.EventNumber)
+        #    else:
+        #        self.logger.error("The active event %d doesn't match the event to close. Closed active event of %s: %d.", self.active_event[packet_header.unit].EventNumber, packet_header.unit, event_trailer.EventNumber)
+        #        self.active_event.pop(packet_header.unit)
+
 
 
 
