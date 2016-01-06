@@ -759,11 +759,11 @@ class Collection:
         for (ind, curNode) in enumerate(self.nodes):
             #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
             if ind == 0:
-                if curNode.mode != 'standalone':
+                if curNode.mode != 'standalone' and curNode.enabled:
                     curNode.run(procName=self.procName)
             else:
                 #curNode.run(threadId=self.threadId)
-                if curNode.mode != 'standalone':
+                if curNode.mode != 'standalone' and curNode.enabled:
                     curNode.run(procName=self.procName,
                                 prevNodeOutput=self.nodes[ind-1].output)
 
