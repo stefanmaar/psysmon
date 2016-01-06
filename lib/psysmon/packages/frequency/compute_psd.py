@@ -221,12 +221,12 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
         window_list = [start_time + x * overlap_length for x in range(windows_between)]
 	window_list[0] = start_time
 
-        save_day = UTCDateTime(year = start_time.year,
-                               month = start_time.month,
-                               day = start_time.day)
-
         # Process each SCNL
         for cur_scnl in self.pref_manager.get_value('scnl_list'):
+            save_day = UTCDateTime(year = start_time.year,
+                                   month = start_time.month,
+                                   day = start_time.day)
+
             # Get the channel instance from the inventory.
             cur_channel = self.project.geometry_inventory.get_channel(station = cur_scnl[0],
                                                                       network = cur_scnl[2],
@@ -244,7 +244,8 @@ class ComputePsdNode(psysmon.core.packageNodes.CollectionNode):
 
             # Compute the psd for each window.
             for k, cur_window_start in enumerate(window_list):
-                print "Computing window %s." % str(cur_window_start)
+                self.logger.info("Computing window %s.", str(cur_window_start))
+
 
                 # If the current window starts on a new day, save the old
                 # window_psd to a daily file.
