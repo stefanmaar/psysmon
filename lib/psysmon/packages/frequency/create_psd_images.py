@@ -379,6 +379,11 @@ class PSDPlotter:
             else:
                 psd_matrix[:,m] = np.nan
 
+        if frequ is None:
+            # There was no valid data found at all. Don't create an image.
+            self.logger.warning("No data found.")
+            return
+
         psd_matrix = np.ma.masked_where(np.isnan(psd_matrix), psd_matrix)
 
         #psd_matrix = psd_matrix[frequ >= min_frequ, :]
@@ -486,8 +491,9 @@ class PSDPlotter:
             ax_avg.tick_params(axis = 'y', labelsize = tick_labelsize)
 
 
-        self.logger.info("Saving PSD image file ...", filename)
-        fig.savefig(filename, dpi=dpi, bbox_inches = 'tight', pad_inches = 0.1)
+        self.logger.info("Saving PSD image file ...")
+        #fig.savefig(filename, dpi=dpi, bbox_inches = 'tight', pad_inches = 0.1)
+        fig.savefig(filename, dpi=dpi, pad_inches = 0.1)
         self.logger.info("Saved PSD image to file %s.", filename)
         fig.clear()
         plt.close(fig)
