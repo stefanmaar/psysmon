@@ -514,7 +514,11 @@ class Stream(object):
             st += self.parser.parse(cur_raw_file.abs_filename,
                                     start_time = start_time,
                                     end_time = end_time)
-        st.merge()
+        try:
+            st.merge()
+        except:
+            self.logger.exception("Couldn't merge the stream\n %s.\nTry to go on with an unmerged stream.", st)
+
         if trim:
             st.trim(start_time, end_time)
         return st
