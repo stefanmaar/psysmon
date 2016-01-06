@@ -70,7 +70,7 @@ if __name__ == "__main__":
     logger = logging.getLogger('psysmon')
     logger.setLevel(psysmon.logConfig['level'])
     logger.addHandler(psysmon.getLoggerFileHandler(logfileName))
-    logger.addHandler(psysmon.getLoggerHandler())
+    #logger.addHandler(psysmon.getLoggerHandler())
 
     logger.info('Starting process %s', proc_name)
     logger.info('Loading data from file %s', filename)
@@ -111,11 +111,14 @@ if __name__ == "__main__":
     logger.debug('psyBase: %s', project.psybase)
 
     collection.setDataShelfFile(filename)
-    collection.execute()
-
-    logger.info('Finished the execution. Cleaning up....')
-    logger.info('Unregistering the exported data from the project server.')
-    psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
-    logger.info('Deleting data file %s.', filename)
-    os.remove(filename)
+    try:
+        collection.execute()
+        logger.info('Finished the execution. Cleaning up....')
+    except:
+        logger.exception("Failed to execute the collection successfully.")
+    finally:
+        logger.info('Unregistering the exported data from the project server.')
+        psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
+        logger.info('Deleting data file %s.', filename)
+        os.remove(filename)
 
