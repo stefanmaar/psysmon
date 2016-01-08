@@ -44,6 +44,7 @@ from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
+import wx.lib.colourdb
 try:
     from agw import ribbon as ribbon
 except ImportError: # if it's not there locally, try the wxPython lib.
@@ -96,6 +97,8 @@ class PSysmonGui(wx.Frame):
     def __init__(self, psyBase,  parent, id=-1, title='pSysmon', pos=wx.DefaultPosition, 
                  size=(800,600), style=wx.DEFAULT_FRAME_STYLE):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
+
+        wx.lib.colourdb.updateColourDB()
 
         bitmapDir = os.path.join(psyBase.baseDirectory, 'artwork', 'splash')
         pn = os.path.normpath(os.path.join(bitmapDir, "psysmon.png"))
@@ -680,6 +683,8 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
         cmData = (("edit node", parent.onEditNode),
+                  ("disable node", parent.onDisableNode),
+                  ("enable node", parent.onEnableNode),
                   ("remove node", parent.onRemoveNode),
                   ("separator", None),
                   ("load collection", parent.onCollectionLoad),
@@ -811,6 +816,19 @@ class CollectionPanel(wx.Panel):
             dlg.ShowModal() 
 
 
+    def onDisableNode(self, event):
+        selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+        if selectedNode.mode != 'standalone':
+            selectedNode.enabled = False
+            self.collectionListCtrl.SetItemTextColour(self.selectedCollectionNodeIndex, wx.TheColourDatabase.Find('GREY70'))
+
+
+    def onEnableNode(self, event):
+        selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+        if selectedNode.mode != 'standalone':
+            selectedNode.enabled = True
+            self.collectionListCtrl.SetItemTextColour(self.selectedCollectionNodeIndex, wx.BLACK)
+
     ## Select node item callback.
     #
     # This method responds to events raised by selecting a collection node in 
@@ -883,6 +901,8 @@ class CollectionPanel(wx.Panel):
             self.collectionListCtrl.DeleteAllItems()
             for k, curNode in enumerate(activeCollection.nodes):
                 self.collectionListCtrl.InsertStringItem(k, curNode.name)
+                if not curNode.enabled:
+                    self.collectionListCtrl.SetItemTextColour(k, wx.TheColourDatabase.Find('GREY70'))
 
 
 class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
