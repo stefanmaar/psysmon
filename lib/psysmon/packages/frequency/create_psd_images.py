@@ -243,7 +243,7 @@ class PSDPlotter:
 
         self.endtime = endtime
 
-        self.with_average_plot = True
+        self.with_average_plot = with_average_plot
 
 
     def scan_for_files(self):
@@ -362,11 +362,9 @@ class PSDPlotter:
         # Plot the psd data to file.
         self.logger.info("Creating the images.")
         min_frequ = 0.1
-        filename = '%s_%s_%s_%s_%s_%s.png' % (self.starttime.strftime('%Y%m%d'),
-                                              self.endtime.strftime('%Y%m%d'),
-                                              self.station, self.channel,
-                                              self.network, self.location)
-        filename = os.path.join(self.output_dir, filename)
+
+
+
         psd_matrix = np.zeros((psd_nfft/2. + 1, len(psd_data)))
         frequ = None
         time_key = sorted([x for x in psd_data.keys()])
@@ -394,20 +392,39 @@ class PSDPlotter:
 
         cur_scnl = (self.station, self.channel, self.network, self.location)
         dpi = 300.
+        cm_to_inch = 2.54
+        avg_width = 4 / cm_to_inch
+        psd_min_width = 10 / cm_to_inch
+        cb_width = 2 / cm_to_inch
         plot_length = self.endtime - self.starttime
-        width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
-        height = 6
-        if width < height:
-            width = height
+        #width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
+        psd_width = len(time) / dpi
+        if psd_width < psd_min_width:
+            psd_width = psd_min_width
+        height = 6.
+        width = avg_width + psd_width + cb_width
+
+        # Font sizes.
+        axes_label_size = 8
+        tick_label_size = 8
+        title_size = 12
+
         fig = plt.figure(figsize=(width, height), dpi = dpi)
         if self.with_average_plot:
-            gs = gridspec.GridSpec(1, 4)
-            ax_avg = fig.add_subplot(gs[0, 0])
-            ax_psd = fig.add_subplot(gs[0, 1:])
+            #gs = gridspec.GridSpec(1, 2,
+            #                       width_ratios = [1, 4])
+            #ax_avg = fig.add_subplot(gs[0, 0])
+            #ax_psd = fig.add_subplot(gs[0, 1])
+
+            ax_avg = fig.add_axes([0, 0.1, avg_width/width, 0.8])
+            ax_psd = fig.add_axes([avg_width/width, 0.1, psd_width/width, 0.8])
+            pos = ax_psd.get_position()
+            ax_cb = fig.add_axes([pos.x1, 0.1, cb_width/width, 0.8])
             ax_avg.set_yscale('log')
             ax_avg.set_ylim((min_frequ, np.max(frequ)))
         else:
             ax_psd = fig.add_subplot(111)
+
 
         ax_psd.set_yscale('log')
         ax_psd.set_ylim((min_frequ, np.max(frequ)))
@@ -445,22 +462,27 @@ class PSDPlotter:
                 nlnm = None
                 self.logger.error('The NLNM and NHNM is not available for the unit: %s.', unit)
 
-            ax_avg.plot(avg_amp_resp, frequ)
-            ax_avg.plot(med_amp_resp, frequ)
             if nlnm is not None:
-                ax_avg.plot(nlnm, 1/p_nlnm)
+                ax_avg.plot(nlnm, 1/p_nlnm, color = 'lightgray')
 
             if nhnm is not None:
-                ax_avg.plot(nhnm, 1/p_nhnm)
+                ax_avg.plot(nhnm, 1/p_nhnm, color = 'lightgray')
+
+            ax_avg.plot(avg_amp_resp, frequ, color = 'saddlebrown')
+            ax_avg.plot(med_amp_resp, frequ, color = 'darkviolet')
 
             ax_avg.set_xlim(pcm.get_clim())
             xlim = ax_avg.get_xlim()
-            ax_avg.set_xticks(np.arange(xlim[0], xlim[1], 50))
-            ax_avg.set_xticklabels(ax_avg.get_xticks(), rotation = -90)
+            xtick_labels = -np.arange(np.abs(xlim[1]), np.abs(xlim[0]), 50)
+            ax_avg.set_xticks(xtick_labels.astype(np.int))
+            #ax_avg.set_xticklabels(ax_avg.get_xticks(), rotation = 'vertical', va = 'top')
+            ax_avg.set_xticklabels(ax_avg.get_xticks())
             ax_avg.invert_xaxis()
 
-        cb = plt.colorbar(pcm, ax = ax_psd)
-        cb.set_label('PSD ' + unit_label + ' in dB')
+        cb = fig.colorbar(pcm, ax = ax_psd, cax = ax_cb)
+        cb.set_label('PSD ' + unit_label + ' in dB', fontsize = axes_label_size)
+        cb.ax.tick_params(axis = 'both', labelsize = tick_label_size)
+
         xlim = ax_psd.get_xlim()
 
         if plot_length <= 86400:
@@ -472,28 +494,66 @@ class PSDPlotter:
         xticks = np.arange(xlim[0],xlim[1], tick_interval)
         xticks = np.append(xticks, xlim[1])
         ax_psd.set_xticks(xticks)
-        ax_psd.set_xlabel('Time since %s [h]' % self.starttime.isoformat())
+        ax_psd.set_xlabel('Time since %s [h]' % self.starttime.isoformat(), fontsize = axes_label_size)
 
         if self.with_average_plot:
-            ax_avg.set_ylabel('Frequency [Hz]')
-            ax_psd.set_yticklabels([])
+            ax_avg.set_ylabel('Frequency [Hz]', fontsize = axes_label_size)
+            ax_avg.xaxis.tick_top()
+            ax_avg.xaxis.set_ticks_position('both')
+            ax_psd.yaxis.tick_right()
+            ax_psd.yaxis.set_ticks_position('both')
         else:
-            ax_psd.set_ylabel('Frequency [Hz]')
+            ax_psd.set_ylabel('Frequency [Hz]', fontsize = axes_label_size)
 
-        ax_psd.set_title('PSD %s %s' % (self.starttime.isoformat(), ':'.join(cur_scnl)))
+        ax_psd.set_title('PSD %s %s' % (self.starttime.isoformat(), ':'.join(cur_scnl)), fontsize = title_size)
 
         # Customize the label appearance.
-        tick_labelsize = 8
-        ax_psd.tick_params(axis = 'x', labelsize = tick_labelsize)
-        ax_psd.tick_params(axis = 'y', labelsize = tick_labelsize)
+        ax_psd.tick_params(axis = 'both', labelsize = tick_label_size)
         if self.with_average_plot:
-            ax_avg.tick_params(axis = 'x', labelsize = tick_labelsize)
-            ax_avg.tick_params(axis = 'y', labelsize = tick_labelsize)
+            ax_avg.tick_params(axis = 'both', labelsize = tick_label_size)
 
+        # Rearrange the axes to include all labels.
+        if self.with_average_plot:
+            # Fix the average axes.
+            bbox = ax_avg.yaxis.get_tightbbox(fig.canvas.get_renderer())
+            bbox_i = bbox.inverse_transformed(fig.transFigure)
+            pos = ax_avg.get_position()
+            pos.x0 = pos.x0 + np.abs(bbox_i.x0)
+            ax_avg.set_position(pos)
+
+            # Shift the colorbar to the right of the psd axis labels.
+            bbox = ax_psd.yaxis.get_tightbbox(fig.canvas.get_renderer())
+            bbox_i = bbox.inverse_transformed(fig.transFigure)
+            pos = cb.ax.get_position()
+            pos.x0 = bbox_i.x1 + 0.25/cm_to_inch/width
+            pos.x1 = pos.x0 + 0.5/cm_to_inch/width
+            cb.ax.set_position(pos)
+
+            # Change the right border of the psd plot to make space for the
+            # colorbar.
+            bbox = ax_cb.yaxis.get_tightbbox(fig.canvas.get_renderer())
+            bbox_i = bbox.inverse_transformed(fig.transFigure)
+            pos = ax_psd.get_position()
+            pos.x1 = pos.x1 - (bbox_i.x1 - 1)
+            ax_psd.set_position(pos)
+            pos = ax_cb.get_position()
+            pos.x0 = pos.x0 - (bbox_i.x1 - 1)
+            pos.x1 = pos.x1 - (bbox_i.x1 - 1)
+            ax_cb.set_position(pos)
+
+
+        filename = '%s_%s_%s_%s_%s_%s.png' % (self.starttime.strftime('%Y%m%d'),
+                                              self.endtime.strftime('%Y%m%d'),
+                                              self.station, self.channel,
+                                              self.network, self.location)
+        filename = filename.lower()
+        output_dir = os.path.join(self.output_dir, self.station.lower())
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        filename = os.path.join(output_dir, filename)
 
         self.logger.info("Saving PSD image file ...")
-        #fig.savefig(filename, dpi=dpi, bbox_inches = 'tight', pad_inches = 0.1)
-        fig.savefig(filename, dpi=dpi, pad_inches = 0.1)
+        fig.savefig(filename, dpi=dpi)
         self.logger.info("Saved PSD image to file %s.", filename)
         fig.clear()
         plt.close(fig)
