@@ -401,13 +401,20 @@ class PSDPlotter:
         psd_width = len(time) / dpi
         if psd_width < psd_min_width:
             psd_width = psd_min_width
-        height = 6.
+
+        height = 8 / cm_to_inch
         width = avg_width + psd_width + cb_width
+
+        # TODO: Add the feature to specify the total width and height. This is
+        # useful for preparing the plots for publication.
+        #width = 16 / cm_to_inch
+        #avg_width = 2 / cm_to_inch
+        #cb_width = 1 / cm_to_inch
 
         # Font sizes.
         axes_label_size = 8
         tick_label_size = 8
-        title_size = 12
+        title_size = 10
 
         fig = plt.figure(figsize=(width, height), dpi = dpi)
         if self.with_average_plot:
@@ -416,10 +423,10 @@ class PSDPlotter:
             #ax_avg = fig.add_subplot(gs[0, 0])
             #ax_psd = fig.add_subplot(gs[0, 1])
 
-            ax_avg = fig.add_axes([0, 0.1, avg_width/width, 0.8])
-            ax_psd = fig.add_axes([avg_width/width, 0.1, psd_width/width, 0.8])
+            ax_avg = fig.add_axes([0, 0.15, avg_width/width, 0.75])
+            ax_psd = fig.add_axes([avg_width/width, 0.15, psd_width/width, 0.75])
             pos = ax_psd.get_position()
-            ax_cb = fig.add_axes([pos.x1, 0.1, cb_width/width, 0.8])
+            ax_cb = fig.add_axes([pos.x1, 0.15, cb_width/width, 0.75])
             ax_avg.set_yscale('log')
             ax_avg.set_ylim((min_frequ, np.max(frequ)))
         else:
@@ -473,8 +480,10 @@ class PSDPlotter:
 
             ax_avg.set_xlim(pcm.get_clim())
             xlim = ax_avg.get_xlim()
-            xtick_labels = -np.arange(np.abs(xlim[1]), np.abs(xlim[0]), 50)
-            ax_avg.set_xticks(xtick_labels.astype(np.int))
+            #xtick_labels = -np.arange(np.abs(xlim[1]), np.abs(xlim[0]), 50)
+            xtick_labels = xlim
+            ax_avg.set_xticks(xtick_labels)
+            #ax_avg.set_xticks(xtick_labels.astype(np.int))
             #ax_avg.set_xticklabels(ax_avg.get_xticks(), rotation = 'vertical', va = 'top')
             ax_avg.set_xticklabels(ax_avg.get_xticks())
             ax_avg.invert_xaxis()
@@ -540,6 +549,9 @@ class PSDPlotter:
             pos.x0 = pos.x0 - (bbox_i.x1 - 1)
             pos.x1 = pos.x1 - (bbox_i.x1 - 1)
             ax_cb.set_position(pos)
+
+            # TODO: Adjust the height of the axes as well to make shure, that
+            # the axis ticks and labels and the figure title are shown.
 
 
         filename = '%s_%s_%s_%s_%s_%s.png' % (self.starttime.strftime('%Y%m%d'),
