@@ -80,7 +80,8 @@
 
 
     <recorder serial="9D6C">
-        <type>Reftek 130-01</type>
+        <model>130-01</model>
+        <producer>Reftek</producer>
         <description>Recorder description.</description>
 
         <stream name="101">
@@ -93,6 +94,8 @@
             </stream_parameter>
             <assigned_component>
                 <sensor_serial>1417</sensor_serial>
+                <sensor_model>Seismonitor 1Hz</sensor_model>
+                <sensor_producer>Geospace</sensor_producer>
                 <component_name>Z</component_name>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time>2009-02-01T00:00:00.000000Z</end_time>
@@ -109,6 +112,8 @@
             </stream_parameter>
             <assigned_component>
                 <sensor_serial>1417</sensor_serial>
+                <sensor_model>Seismonitor 1Hz</sensor_model>
+                <sensor_producer>Geospace</sensor_producer>
                 <component_name>N</component_name>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
@@ -125,6 +130,8 @@
             </stream_parameter>
             <assigned_component>
                 <sensor_serial>1417</sensor_serial>
+                <sensor_model>Seismonitor 1Hz</sensor_model>
+                <sensor_producer>Geospace</sensor_producer>
                 <component_name>E</component_name>
                 <start_time>2009-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
@@ -149,6 +156,8 @@
             <channel name="HHZ">
                 <description>Description for channel HHZ.</description>
                 <assigned_stream>
+                    <recorder_producer>Reftek</recorder_producer>
+                    <recorder_model>130-01</recorder_model>
                     <recorder_serial>9D6C</recorder_serial>
                     <stream_name>101</stream_name>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
@@ -159,6 +168,8 @@
             <channel name="HHN">
                 <description>Description for channel HHN.</description>
                 <assigned_stream>
+                    <recorder_producer>Reftek</recorder_producer>
+                    <recorder_model>130-01</recorder_model>
                     <recorder_serial>9D6C</recorder_serial>
                     <stream_name>102</stream_name>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>
@@ -169,6 +180,8 @@
             <channel name="HHE">
                 <description>Description for channel HHE.</description>
                 <assigned_stream>
+                    <recorder_producer>Reftek</recorder_producer>
+                    <recorder_model>130-01</recorder_model>
                     <recorder_serial>9D6C</recorder_serial>
                     <stream_name>103</stream_name>
                     <start_time>2010-02-04T00:00:00.000000Z</start_time>

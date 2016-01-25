@@ -43,7 +43,8 @@
     </sensor>  
 
     <recorder serial="KBA">
-        <type>unknown</type>
+        <model>unknown</model>
+        <producer>unknown</producer>
         <description></description>
 
         <stream name="BHZ">
@@ -56,6 +57,8 @@
             </stream_parameter>
             <assigned_component>
                 <sensor_serial>KBA</sensor_serial>
+                <sensor_model>unknown</sensor_model>
+                <sensor_producer>unknown</sensor_producer>
                 <component_name>Z</component_name>
                 <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
@@ -72,6 +75,8 @@
             </stream_parameter>
             <assigned_component>
                 <sensor_serial>KBA</sensor_serial>
+                <sensor_model>unknown</sensor_model>
+                <sensor_producer>unknown</sensor_producer>
                 <component_name>N</component_name>
                 <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
@@ -88,6 +93,8 @@
             </stream_parameter>
             <assigned_component>
                 <sensor_serial>KBA</sensor_serial>
+                <sensor_model>unknown</sensor_model>
+                <sensor_producer>unknown</sensor_producer>
                 <component_name>E</component_name>
                 <start_time>2000-01-01T00:00:00.000000Z</start_time>
                 <end_time/>
@@ -112,6 +119,8 @@
                 <description>Description for channel BHZ.</description>
                 <assigned_stream>
                     <recorder_serial>KBA</recorder_serial>
+                    <recorder_model>unknown</recorder_model>
+                    <recorder_producer>unknown</recorder_producer>
                     <stream_name>BHZ</stream_name>
                     <start_time>2000-01-01T00:00:00.000000Z</start_time>
                     <end_time/>
@@ -122,6 +131,8 @@
                 <description>Description for channel BHN.</description>
                 <assigned_stream>
                     <recorder_serial>KBA</recorder_serial>
+                    <recorder_model>unknown</recorder_model>
+                    <recorder_producer>unknown</recorder_producer>
                     <stream_name>BHN</stream_name>
                     <start_time>2000-01-01T00:00:00.000000Z</start_time>
                     <end_time/>
@@ -132,6 +143,8 @@
                 <description>Description for channel BHE.</description>
                 <assigned_stream>
                     <recorder_serial>KBA</recorder_serial>
+                    <recorder_model>unknown</recorder_model>
+                    <recorder_producer>unknown</recorder_producer>
                     <stream_name>BHE</stream_name>
                     <start_time>2000-01-01T00:00:00.000000Z</start_time>
                     <end_time/>
