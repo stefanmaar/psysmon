@@ -452,7 +452,8 @@ class EditGeometryDlg(wx.Frame):
 
         # Create the Recorder instance.
         rec_2_add = Recorder(serial='-9999',
-                             type = 'new recorder')
+                             model = 'recorder model',
+                             producer = 'recorder producer')
         self.selected_inventory.add_recorder(rec_2_add)
         self.inventoryTree.updateInventoryData()
 
@@ -552,7 +553,9 @@ class EditGeometryDlg(wx.Frame):
             return
 
         # Create the Sensor instance.
-        sensor_2_add = Sensor(serial = 'AAAA')
+        sensor_2_add = Sensor(serial = 'AAAA',
+                              model = 'sensor model',
+                              producer = 'sensor_producer')
         self.selected_inventory.add_sensor(sensor_2_add)
         self.inventoryTree.updateInventoryData()
         return sensor_2_add
@@ -945,7 +948,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             sub_data = []
             for cur_sensor in self.GetParent().selected_inventory.get_sensor():
                 for cur_component in cur_sensor.components:
-                    sub_data.append(('%s:%s' % (cur_sensor.serial, cur_component.name), self.on_assign_component_to_stream))
+                    sub_data.append(('%s:%s:%s:%s' % (cur_sensor.serial, cur_sensor.model, cur_sensor.producer, cur_component.name), self.on_assign_component_to_stream))
 
             cm_data = (("assign component", sub_data),
                        ("add parameter", self.on_add_recorder_stream_parameter),
@@ -977,7 +980,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             sub_data = []
             for cur_recorder in self.GetParent().selected_inventory.get_recorder():
                 for cur_stream in cur_recorder.streams:
-                    sub_data.append(('%s:%s' % (cur_stream.serial, cur_stream.name), self.on_assign_stream_to_channel))
+                    sub_data.append(('%s:%s:%s:%s' % (cur_stream.serial, cur_stream.model, cur_stream.producer, cur_stream.name), self.on_assign_stream_to_channel))
 
             cm_data = (("assign stream", sub_data),
                        ("remove channel", self.on_remove_channel),
@@ -1185,9 +1188,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         item_id = event.GetId()
         menu = event.GetEventObject()
         label = menu.GetLabel(item_id)
-        serial, name = label.split(':')
+        serial, model, producer, name = label.split(':')
 
         added_stream = self.Parent.selected_channel.add_stream(serial = serial,
+                                                               model = model,
+                                                               producer = producer,
                                                                name = name,
                                                                start_time = UTCDateTime('1970-1-1'),
                                                                end_time = None)
@@ -1202,13 +1207,15 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         item_id = event.GetId()
         menu = event.GetEventObject()
         label = menu.GetLabel(item_id)
-        serial, name = label.split(':')
+        serial, model, producer, name = label.split(':')
 
         slot = self.Parent.selected_recorder_stream.get_free_component_slot()
 
         if slot:
             try:
                 self.Parent.selected_recorder_stream.add_component(serial = serial,
+                                                                   model = model,
+                                                                   producer = producer,
                                                                    name = name,
                                                                    start_time = slot[0],
                                                                    end_time = slot[1])
@@ -1517,7 +1524,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                     sensor_model = ''
                 else:
                     sensor_model = curSensor.model
-                curSensorItem = self.AppendItem(sensorListItem, curSensor.serial + ' (' + sensor_model + ')')
+                curSensorItem = self.AppendItem(sensorListItem, curSensor.serial + ' (' + curSensor.producer + ':' + sensor_model + ')')
                 self.SetItemPyData(curSensorItem, curSensor)
                 self.SetItemImage(curSensorItem, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
@@ -1534,7 +1541,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
             # Fill the recorders.
             for curRecorder in sorted(curInventory.recorders, key = attrgetter('serial')):
-                curRecorderItem = self.AppendItem(recorderListItem, curRecorder.serial + ' (' + curRecorder.type + ')')
+                curRecorderItem = self.AppendItem(recorderListItem, curRecorder.serial + ' (' + curRecorder.producer + ':' + curRecorder.model + ')')
                 self.SetItemPyData(curRecorderItem, curRecorder)
                 self.SetItemImage(curRecorderItem, self.icons['recorder'], wx.TreeItemIcon_Normal)
 
@@ -2382,7 +2389,8 @@ class RecorderPanel(wx.Panel):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('serial', 'serial', 'editable', str))
-        tableField.append(('type', 'type', 'editable', str))
+        tableField.append(('model', 'model', 'editable', str))
+        tableField.append(('producer', 'producer', 'editable', str))
         return tableField
 
 
@@ -2414,6 +2422,8 @@ class RecorderPanel(wx.Panel):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('serial', 'serial', 'readonly', str))
+        tableField.append(('model', 'model', 'readonly', str))
+        tableField.append(('producer', 'producer', 'readonly', str))
         tableField.append(('name', 'name', 'readonly', str))
         tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
         tableField.append(('end_time', 'end', 'editable', self.time_string_converter))
@@ -2980,6 +2990,8 @@ class StationsPanel(wx.Panel):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('serial', 'serial', 'readonly', str))
+        tableField.append(('model', 'model', 'readonly', str))
+        tableField.append(('producer', 'producer', 'readonly', str))
         tableField.append(('name', 'name', 'readonly', str))
         tableField.append(('label', 'label', 'readonly', str))
         tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
