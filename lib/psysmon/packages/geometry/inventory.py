@@ -324,8 +324,11 @@ class Inventory(object):
         serial : String
             The serial number of the recorder.
 
-        type : String
-            The recorder type.
+        model : String
+            The recorder model.
+
+        producer : String
+            The recorder producer.
 
         Returns
         -------
@@ -334,7 +337,7 @@ class Inventory(object):
         '''
         ret_recorder = self.recorders
 
-        valid_keys = ['serial', 'type']
+        valid_keys = ['serial', 'model', 'producer']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
@@ -351,14 +354,20 @@ class Inventory(object):
         Parameters
         ----------
         serial : String
-            The serial number of the recorder containing the component.
+            The serial number of the recorder containing the stream.
+
+        model : String
+            The model of the recorder containing the stream.
+
+        producer : String
+            The producer of the recorder containing the stream.
 
         name : String
             The name of the component.
         '''
         ret_stream = list(itertools.chain.from_iterable([x.streams for x in self.recorders]))
 
-        valid_keys = ['name', 'serial']
+        valid_keys = ['name', 'serial', 'model', 'producer']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
@@ -408,13 +417,19 @@ class Inventory(object):
         serial : String
             The serial number of the sensor containing the component.
 
+        model : String
+            The model of the sensor containing the component.
+
+        producer : String
+            The producer of the sensor containing the component.
+
         name : String
             The name of the component.
         '''
         ret_component = list(itertools.chain.from_iterable([x.components for x in self.sensors]))
 
 
-        valid_keys = ['name', 'serial']
+        valid_keys = ['name', 'serial', 'model', 'producer']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
@@ -548,7 +563,7 @@ class Recorder(object):
     ''' A seismic data recorder.
     '''
 
-    def __init__(self, serial, type, description = None, id=None, parent_inventory=None,
+    def __init__(self, serial, model, producer, description = None, id=None, parent_inventory=None,
             author_uri = None, agency_uri = None, creation_time = None):
         ''' Initialize the instance.
 
@@ -559,8 +574,11 @@ class Recorder(object):
         ## The recorder serial number.
         self.serial = str(serial)
 
-        ## The recorder type.
-        self.type = type
+        # The model name or number.
+        self.model = model
+
+        # The producer of the sensor.
+        self.producer = producer
 
         # The description of the recorder.
         self.description = description
@@ -590,7 +608,7 @@ class Recorder(object):
     def __str__(self):
         ''' Returns a readable representation of the Recorder instance.
         '''
-        out = 'id:\t%s\nserial:\t%s\ntype:\t%s\n%d sensor(s):\n' % (str(self.id), self.serial, self.type, len(self.sensors))
+        out = 'id:\t%s\nserial:\t%s\nmodel:\t%s\n%d sensor(s):\n' % (str(self.id), self.serial, self.model, len(self.sensors))
         return out
 
 
@@ -601,7 +619,7 @@ class Recorder(object):
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['id', 'serial', 'type', 'description', 'has_changed',
+            compare_attributes = ['id', 'serial', 'model', 'producer', 'description', 'has_changed',
                                   'streams']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
@@ -769,6 +787,21 @@ class RecorderStream(object):
 
 
     @property
+    def model(self):
+        if self.parent_recorder is not None:
+            return self.parent_recorder.model
+        else:
+            return None
+
+    @property
+    def producer(self):
+        if self.parent_recorder is not None:
+            return self.parent_recorder.producer
+        else:
+            return None
+
+
+    @property
     def assigned_channels(self):
         # The channels to which the stream is assigned to.
         assigned_channels = []
@@ -806,7 +839,7 @@ class RecorderStream(object):
             return False
 
 
-    def add_component(self, serial, name, start_time, end_time):
+    def add_component(self, serial, model, producer, name, start_time, end_time):
         ''' Add a sensor component to the stream.
 
         The component with specified serial and name is searched
@@ -817,6 +850,12 @@ class RecorderStream(object):
         ----------
         serial : String
             The serial number of the sensor which holds the component.
+
+        model : String
+            The model of the sensor which holds the component.
+
+        producer : String
+            The producer of the sensor which holds the component.
 
         name : String
             The name of the component.
@@ -832,6 +871,8 @@ class RecorderStream(object):
 
         added_component = None
         cur_component = self.parent_inventory.get_component(serial = serial,
+                                                            model = model,
+                                                            producer = producer,
                                                             name = name)
         if not cur_component:
             msg = 'The specified component (serial = %s, name = %s) was not found in the inventory.' % (serial, name)
@@ -1131,7 +1172,7 @@ class Sensor(object):
 
     '''
 
-    def __init__(self, serial, model = None, producer = None, description = None,
+    def __init__(self, serial, model, producer, description = None,
                  author_uri = None, agency_uri = None,
                  creation_time = None, parent_inventory = None):
         ''' Initialize the instance
@@ -1333,6 +1374,22 @@ class SensorComponent(object):
             return self.parent_sensor.serial
         else:
             return None
+
+    @property
+    def model(self):
+        if self.parent_sensor is not None:
+            return self.parent_sensor.model
+        else:
+            return None
+
+    @property
+    def producer(self):
+        if self.parent_sensor is not None:
+            return self.parent_sensor.producer
+        else:
+            return None
+
+
 
     @property
     def assigned_streams(self):
@@ -1956,13 +2013,19 @@ class Channel(object):
         return str.join(':', self.scnl())
 
 
-    def add_stream(self, serial, name, start_time, end_time):
+    def add_stream(self, serial, model, producer, name, start_time, end_time):
         ''' Add a stream to the channel.
 
         Parameters
         ----------
         serial : String
             The serial number of the recorder containing the stream.
+
+        model : String
+            The model of the recorder containing the stream.
+
+        producer : String
+            The producer of the recorder containing the stream.
 
         name : String
             The name of the stream.
@@ -1978,12 +2041,13 @@ class Channel(object):
 
         added_stream = None
         cur_stream = self.parent_inventory.get_stream(serial = serial,
+                                                      model = model,
+                                                      producer = producer,
                                                       name = name)
 
         if not cur_stream:
-            self.logger.error('The specified stream (serial = %s, name = %s) was not found in the inventory.',
-                              serial,
-                              name)
+            self.logger.error('The specified stream (serial = %s, model = %s, producer = %s, name = %s) was not found in the inventory.',
+                              serial, model, producer, name)
         elif len(cur_stream) == 1:
             cur_stream = cur_stream[0]
 
@@ -1998,6 +2062,8 @@ class Channel(object):
                 end_time = None
 
             if self.get_stream(serial = serial,
+                               model = model,
+                               producer = producer,
                                name = name,
                                start_time = start_time,
                                end_time = end_time):
@@ -2051,14 +2117,20 @@ class Channel(object):
         Parameters
         ----------
         serial : String
-            The serial number of the parent recorder.
+            The serial number of the recorder containing the stream.
+
+        model : String
+            The model of the recorder containing the stream.
+
+        producer : String
+            The producer of the recorder containing the stream.
 
         name : String
             The name of the stream.
         '''
         ret_stream = self.streams
 
-        valid_keys = ['serial', 'name']
+        valid_keys = ['serial', 'model', 'producer', 'name']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
