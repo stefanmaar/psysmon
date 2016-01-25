@@ -1,106 +1,110 @@
 ﻿<?xml version='1.0' encoding='UTF-8'?>
 <inventory name="MINIMAL">
-    <sensor serial="KBA">
-        <model>unknown</model>
-        <producer>unknown</producer>
-        <description>unknown</description>
+    <sensor_list>
+        <sensor serial="KBA">
+            <model>unknown</model>
+            <producer>unknown</producer>
+            <description>unknown</description>
 
-        <component name="Z">
-            <description>The vertical component of the sensor.</description>
-            <input_unit>m</input_unit>
-            <output_unit>m/s</output_unit>
-            <deliver_unit>V</deliver_unit>
-            <component_parameter>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>1</sensitivity>
-            </component_parameter>            
-        </component>
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <component_parameter>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1</sensitivity>
+                </component_parameter>            
+            </component>
 
-        <component name="N">
-            <description>The North component of the sensor.</description>
-            <input_unit>m</input_unit>
-            <output_unit>m/s</output_unit>
-            <deliver_unit>V</deliver_unit>
-            <component_parameter>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>1</sensitivity>
-            </component_parameter>            
-        </component>
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <component_parameter>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1</sensitivity>
+                </component_parameter>            
+            </component>
 
-        <component name="E">
-            <description>The East component of the sensor.</description>
-            <input_unit>m</input_unit>
-            <output_unit>m/s</output_unit>
-            <deliver_unit>V</deliver_unit>
-            <component_parameter>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <sensitivity>1</sensitivity>
-            </component_parameter>            
-        </component>
-    </sensor>  
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <component_parameter>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+    </sensor_list>
 
-    <recorder serial="KBA">
-        <model>unknown</model>
-        <producer>unknown</producer>
-        <description></description>
+    <recorder_list>
+        <recorder serial="KBA">
+            <model>unknown</model>
+            <producer>unknown</producer>
+            <description></description>
 
-        <stream name="BHZ">
-            <label>BHZ</label>
-            <stream_parameter>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>1</gain>
-                <bitweight>1</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>KBA</sensor_serial>
-                <sensor_model>unknown</sensor_model>
-                <sensor_producer>unknown</sensor_producer>
-                <component_name>Z</component_name>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
+            <stream name="BHZ">
+                <label>BHZ</label>
+                <stream_parameter>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>KBA</sensor_serial>
+                    <sensor_model>unknown</sensor_model>
+                    <sensor_producer>unknown</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
 
-        <stream name="BHN">
-            <label>BHN</label>
-            <stream_parameter>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>1</gain>
-                <bitweight>1</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>KBA</sensor_serial>
-                <sensor_model>unknown</sensor_model>
-                <sensor_producer>unknown</sensor_producer>
-                <component_name>N</component_name>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
+            <stream name="BHN">
+                <label>BHN</label>
+                <stream_parameter>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>KBA</sensor_serial>
+                    <sensor_model>unknown</sensor_model>
+                    <sensor_producer>unknown</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
 
-        <stream name="BHE">
-            <label>BHE</label>
-            <stream_parameter>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-                <gain>1</gain>
-                <bitweight>1</bitweight>
-            </stream_parameter>
-            <assigned_component>
-                <sensor_serial>KBA</sensor_serial>
-                <sensor_model>unknown</sensor_model>
-                <sensor_producer>unknown</sensor_producer>
-                <component_name>E</component_name>
-                <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                <end_time/>
-            </assigned_component>
-        </stream>
-    </recorder>
+            <stream name="BHE">
+                <label>BHE</label>
+                <stream_parameter>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>KBA</sensor_serial>
+                    <sensor_model>unknown</sensor_model>
+                    <sensor_producer>unknown</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+        </recorder>
+    </recorder_list>
 
 
     <network name="OE">
