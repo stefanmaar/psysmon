@@ -121,15 +121,19 @@ class InventoryXmlParser:
         inventory.name = inventory_root.attrib['name']
 
         # Get the recorders and stations of the inventory.
-        sensors = tree.findall('sensor')
-        recorders = tree.findall('recorder')
+        sensor_list = tree.findall('sensor_list')
+        recorder_list = tree.findall('recorder_list')
         networks = tree.findall('network')
 
         # Process the sensors first.
-        self.process_sensors(inventory, sensors)
+        for cur_sensor_list in sensor_list:
+            sensors = cur_sensor_list.findall('sensor')
+            self.process_sensors(inventory, sensors)
 
         # Next process the recorders. These might depend on sensors.
-        self.process_recorders(inventory, recorders)
+        for cur_recorder_list in recorder_list:
+            recorders = cur_recorder_list.findall('recorder')
+            self.process_recorders(inventory, recorders)
 
         # And last process the networks which might depend on recorders.
         self.process_networks(inventory, networks)
