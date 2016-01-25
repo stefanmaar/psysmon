@@ -83,7 +83,7 @@ class InventoryXmlParser:
         #self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
         #self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
 
-        self.required_tags['recorder'] = ('type', 'description')
+        self.required_tags['recorder'] = ('model', 'producer', 'description')
         self.required_tags['stream'] = ('label', 'stream_parameter', 'assigned_component')
         self.required_tags['stream_parameter'] = ('start_time', 'end_time', 'gain',
                                         'bitweight')
@@ -94,7 +94,8 @@ class InventoryXmlParser:
         self.required_tags['station'] = ('location', 'x', 'y', 'z',
                                         'coord_system', 'description')
         self.required_tags['channel'] = ('description', 'assigned_stream')
-        self.required_tags['assigned_stream'] = ('recorder_serial', 'stream_name',
+        self.required_tags['assigned_stream'] = ('recorder_serial', 'recorder_model',
+                                                 'recorder_producer','stream_name',
                                                  'start_time', 'end_time')
 
 
@@ -237,9 +238,10 @@ class InventoryXmlParser:
 
         # recorder
         rec_attributes = ['serial',]
-        rec_tags = ['type', 'description']
+        rec_tags = ['model', 'producer', 'description']
         rec_map = {'serial':'serial',
-                   'type':'type',
+                   'model':'model',
+                   'producer':'producer',
                    'description':'description'}
         rec_converter = {}
 
@@ -262,8 +264,11 @@ class InventoryXmlParser:
 
         # stream assigned component
         stream_comp_attributes = []
-        stream_comp_tags = ['sensor_serial', 'component_name', 'start_time', 'end_time']
+        stream_comp_tags = ['sensor_serial', 'sensor_model', 'sensor_producer',
+                            'component_name', 'start_time', 'end_time']
         stream_comp_map = {'sensor_serial':'serial',
+                           'sensor_model':'model',
+                           'sensor_producer':'producer',
                            'component_name':'name',
                            'start_time':'start_time_string',
                            'end_time':'end_time_string'}
@@ -299,8 +304,11 @@ class InventoryXmlParser:
 
         # assigned stream
         chan_stream_attributes = []
-        chan_stream_tags = ['recorder_serial', 'stream_name', 'start_time', 'end_time']
+        chan_stream_tags = ['recorder_serial', 'recorder_model', 'recorder_producer',
+                            'stream_name', 'start_time', 'end_time']
         chan_stream_map = {'recorder_serial':'serial',
+                           'recorder_model':'model',
+                           'recorder_producer':'producer',
                            'stream_name':'name',
                            'start_time':'start_time_string',
                            'end_time':'end_time_string'}
@@ -635,6 +643,8 @@ class InventoryXmlParser:
                 continue
 
             stream.add_component(serial = content['sensor_serial'],
+                                 model = content['sensor_model'],
+                                 producer = content['sensor_producer'],
                                  name = content['component_name'],
                                  start_time = content['start_time'],
                                  end_time = content['end_time'])
@@ -747,6 +757,8 @@ class InventoryXmlParser:
                 continue
 
             channel.add_stream(serial = content['recorder_serial'],
+                               model = content['recorder_model'],
+                               producer = content['recorder_producer'],
                                name = content['stream_name'],
                                start_time = content['start_time'],
                                end_time = content['end_time'])
