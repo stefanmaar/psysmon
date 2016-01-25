@@ -40,13 +40,14 @@ def databaseFactory(base):
     class GeomRecorder(base):
         __tablename__ = 'geom_recorder'
         __table_args__ = (
-                          UniqueConstraint('serial', 'type'),
+                          UniqueConstraint('serial', 'model', 'producer'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
-        type = Column(String(255), nullable=False)
+        model = Column(String(100), nullable=False)
+        producer = Column(String(100), nullable=False)
         description = Column(String(255), nullable=True)
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
@@ -57,16 +58,17 @@ def databaseFactory(base):
                                backref = 'parent')
 
 
-        def __init__(self, serial, type,
+        def __init__(self, serial, model, producer,
                 agency_uri, author_uri, creation_time):
             self.serial = serial
-            self.type = type
+            self.model = model
+            self.producer = producer
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
 
         def __repr__(self):
-            return "Recorder\nid: %d\nserial: %s\ntype: %s\n" % (self.id, self.serial, self.type)
+            return "Recorder\nid: %d\nserial: %s\nmodel: %s\n" % (self.id, self.serial, self.model)
 
     tables.append(GeomRecorder)
 
@@ -173,14 +175,14 @@ def databaseFactory(base):
     class GeomSensor(base):
         __tablename__ = 'geom_sensor'
         __table_args__ = (
-                          UniqueConstraint('serial',),
+                          UniqueConstraint('serial', 'model', 'producer'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
-        model = Column(String(100))
-        producer = Column(String(100))
+        model = Column(String(100), nullable=False)
+        producer = Column(String(100), nullable = False)
         description = Column(String(255))
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
