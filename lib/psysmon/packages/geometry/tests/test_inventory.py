@@ -353,7 +353,7 @@ class InventoryTestCase(unittest.TestCase):
 
 
     def test_add_stream_to_recorder(self):
-        recorder = Recorder(serial = 'AAAA', type = 'test recorder')
+        recorder = Recorder(serial = 'AAAA', model = 'test_model', producer = 'test_producer')
 
         stream1 = RecorderStream(name = 'stream1_name',
                                  label = 'stream1_label')
@@ -392,7 +392,7 @@ class InventoryTestCase(unittest.TestCase):
 
 
     def test_get_stream_from_recorder(self):
-        recorder = Recorder(serial = 'AAAA', type = 'test recorder')
+        recorder = Recorder(serial = 'AAAA', model = 'test_model', producer = 'test_producer')
 
         stream_2_add = RecorderStream(name = 'stream1_name',
                                       label = 'stream1_label')
@@ -496,7 +496,8 @@ class InventoryTestCase(unittest.TestCase):
     def test_add_component_to_stream(self):
         inventory = Inventory('inventory_name')
         recorder1 = Recorder(serial = 'rec1_serial',
-                             type = 'rec1_type')
+                             model = 'rec1_model',
+                             producer = 'rec1_producer')
 
         stream1 = RecorderStream(name = 'stream1_name',
                                label = 'stream1_label')
@@ -524,7 +525,8 @@ class InventoryTestCase(unittest.TestCase):
     def test_remove_sensor_component(self):
         inventory = Inventory('inventory_name')
         recorder1 = Recorder(serial = 'rec1_serial',
-                             type = 'rec1_type')
+                             model = 'rec1_model',
+                             producer = 'rec1_producer')
 
         stream1 = RecorderStream(name = 'stream1_name',
                                label = 'stream1_label')
@@ -556,7 +558,8 @@ class InventoryTestCase(unittest.TestCase):
     def test_remove_recorder_stream(self):
         inventory = Inventory('inventory_name')
         recorder1 = Recorder(serial = 'rec1_serial',
-                             type = 'rec1_type')
+                             model = 'rec1_model',
+                             producer = 'rec1_producer')
 
         stream1 = RecorderStream(name = 'stream1_name',
                                label = 'stream1_label')
@@ -591,7 +594,12 @@ class InventoryTestCase(unittest.TestCase):
         network1.add_station(station1)
         inventory.add_network(network1)
 
-        channel1.add_stream('rec1_serial', 'stream1_name', None, None)
+        channel1.add_stream(serial = 'rec1_serial',
+                            model = 'rec1_model',
+                            producer = 'rec1_producer',
+                            name = 'stream1_name',
+                            start_time = None,
+                            end_time = None)
 
         assigned_channels = stream1.assigned_channels
         self.assertEqual(len(assigned_channels), 1)
