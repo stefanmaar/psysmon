@@ -40,7 +40,7 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         # Configure the logger.
         cls.logger = logging.getLogger('psysmon')
         cls.logger.setLevel('DEBUG')
-        cls.logger.addHandler(psysmon.getLoggerHandler())
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
     @classmethod
     def tearDownClass(cls):
@@ -58,7 +58,7 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         inventory = xml_parser.parse(xml_file)
 
         self.assertIsInstance(inventory, Inventory)
-        self.assertEqual(inventory.name, 'ALPAACT')
+        self.assertEqual(inventory.name, 'SIMPLE')
 
         # Test the sensor.
         self.assertEqual(len(inventory.sensors), 1)
@@ -143,7 +143,8 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(len(inventory.recorders), 1)
         cur_recorder = inventory.recorders[0]
         self.assertEqual(cur_recorder.serial, '9D6C')
-        self.assertEqual(cur_recorder.type, 'Reftek 130-01')
+        self.assertEqual(cur_recorder.model, '130-01')
+        self.assertEqual(cur_recorder.producer, 'Reftek')
         self.assertEqual(cur_recorder.description, 'Recorder description.')
         self.assertEqual(len(cur_recorder.streams), 3)
 
