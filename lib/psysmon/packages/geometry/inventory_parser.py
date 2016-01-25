@@ -322,9 +322,10 @@ class InventoryXmlParser:
 
 
         # Export the sensors.
+        sensor_list = etree.SubElement(root, 'sensor_list')
         for cur_sensor in inventory.sensors:
             sensor_element = self.instance_to_xml(instance = cur_sensor,
-                                                  root = root,
+                                                  root = sensor_list,
                                                   name = 'sensor',
                                                   attributes = sensor_attributes,
                                                   tags = sensor_tags,
@@ -356,9 +357,10 @@ class InventoryXmlParser:
                                                        element_handler = component_parameter_paz_handler)
 
         #Export the recorders.
+        recorder_list = etree.SubElement(root, 'recorder_list')
         for cur_recorder in inventory.recorders:
             rec_element = self.instance_to_xml(instance = cur_recorder,
-                                               root = root,
+                                               root = recorder_list,
                                                name = 'recorder',
                                                attributes = rec_attributes,
                                                tags = rec_tags,
