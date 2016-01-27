@@ -51,7 +51,6 @@ def databaseFactory(base):
         network = Column(String(10), nullable=False, default='')
         recorder_serial = Column(String(45), nullable=False)
         stream = Column(String(45), nullable=False)
-        location = Column(String(3), nullable=False)
         sps = Column(Integer, nullable=False)
         numsamp = Column(Integer, nullable=False)
         begin_date = Column(String(26), nullable=False)
