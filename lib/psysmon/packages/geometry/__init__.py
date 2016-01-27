@@ -28,6 +28,17 @@ website = "http://www.stefanmertl.com"
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = ['editGeometry',]
 
+''' Database change history
+version 0.0.2 - 2016-01-27
+Added the following fields to geom_recorder:
+    model
+    producer
+Removed the following fields from geom_recorder:
+    type
+Added the following unique constraint to geom_recorder:
+    serial, model, producer
+
+'''
 
 def databaseFactory(base):
     from sqlalchemy import Column, Integer, String, Float
