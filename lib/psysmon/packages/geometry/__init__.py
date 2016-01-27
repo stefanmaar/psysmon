@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "geometry"
-version = "0.0.1"
+version = "0.0.2"
 author = "Stefan Mertl"
 minPsysmonVersion = "0.0.1"
 description = "The geometry package."
