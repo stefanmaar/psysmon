@@ -289,8 +289,26 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(inventory.networks[0].stations[0].location, '--')
 
 
+    def test_parse_multiple_locations_inventory(self):
+        '''
+        '''
+        xml_file = os.path.join(self.data_path, 'inventory_multiple_locations.xml')
+        xml_parser = InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+
+        self.assertIsInstance(inventory, Inventory)
+        self.assertEqual(inventory.name, 'MULTI_LOCATIONS')
+
+        self.assertEqual(len(inventory.networks[0].stations), 2)
+        self.assertEqual(inventory.networks[0].stations[0].location, '00')
+        self.assertEqual(inventory.networks[0].stations[1].location, '01')
+        self.assertEqual(len(inventory.networks[0].stations[0].channels), 3)
+        self.assertEqual(len(inventory.networks[0].stations[1].channels), 3)
+
+
+
     def test_export_xmlfile(self):
-        xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
+        xml_file = os.path.join(self.data_path, 'inventory_multiple_locations.xml')
         xml_parser = InventoryXmlParser()
         inventory = xml_parser.parse(xml_file)
 
@@ -309,10 +327,10 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         finally:
             c_fid.close()
             o_fid.close()
+            # Remove the output file.
+            os.remove(outfile[1])
 
 
-        # Remove the output file.
-        os.remove(outfile[1])
 
 
 

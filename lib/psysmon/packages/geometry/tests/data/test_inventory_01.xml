@@ -112,48 +112,49 @@
         <type>permanent</type>
 
         <station name="KBA">
-            <location></location>
-            <x>0</x>
-            <y>0</y>
-            <z>0</z>
-            <coord_system>epsg:4326</coord_system>
-            <description>KBA</description>
+            <location name="">
+                <x>0</x>
+                <y>0</y>
+                <z>0</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>KBA</description>
 
-            <channel name="BHZ">
-                <description>Description for channel BHZ.</description>
-                <assigned_stream>
-                    <recorder_serial>KBA</recorder_serial>
-                    <recorder_model>unknown</recorder_model>
-                    <recorder_producer>unknown</recorder_producer>
-                    <stream_name>BHZ</stream_name>
-                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                    <end_time/>
-                </assigned_stream>
-            </channel>
+                <channel name="BHZ">
+                    <description>Description for channel BHZ.</description>
+                    <assigned_stream>
+                        <recorder_serial>KBA</recorder_serial>
+                        <recorder_model>unknown</recorder_model>
+                        <recorder_producer>unknown</recorder_producer>
+                        <stream_name>BHZ</stream_name>
+                        <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
 
-            <channel name="BHN">
-                <description>Description for channel BHN.</description>
-                <assigned_stream>
-                    <recorder_serial>KBA</recorder_serial>
-                    <recorder_model>unknown</recorder_model>
-                    <recorder_producer>unknown</recorder_producer>
-                    <stream_name>BHN</stream_name>
-                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                    <end_time/>
-                </assigned_stream>
-            </channel>
+                <channel name="BHN">
+                    <description>Description for channel BHN.</description>
+                    <assigned_stream>
+                        <recorder_serial>KBA</recorder_serial>
+                        <recorder_model>unknown</recorder_model>
+                        <recorder_producer>unknown</recorder_producer>
+                        <stream_name>BHN</stream_name>
+                        <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
 
-            <channel name="BHE">
-                <description>Description for channel BHE.</description>
-                <assigned_stream>
-                    <recorder_serial>KBA</recorder_serial>
-                    <recorder_model>unknown</recorder_model>
-                    <recorder_producer>unknown</recorder_producer>
-                    <stream_name>BHE</stream_name>
-                    <start_time>2000-01-01T00:00:00.000000Z</start_time>
-                    <end_time/>
-                </assigned_stream>
-            </channel>
+                <channel name="BHE">
+                    <description>Description for channel BHE.</description>
+                    <assigned_stream>
+                        <recorder_serial>KBA</recorder_serial>
+                        <recorder_model>unknown</recorder_model>
+                        <recorder_producer>unknown</recorder_producer>
+                        <stream_name>BHE</stream_name>
+                        <start_time>2000-01-01T00:00:00.000000Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
         </station>
 
     </network>

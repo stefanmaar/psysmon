@@ -150,49 +150,49 @@
         <type>network type</type>
 
         <station name="GILA">
-            <location>00</location>
-            <x>15.887788</x>
-            <y>47.695770</y>
-            <z>643</z>
-            <coord_system>epsg:4326</coord_system>
-            <description>Grillenberg</description>
+            <location name="00">
+                <x>15.887788</x>
+                <y>47.695770</y>
+                <z>643</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Grillenberg</description>
 
-            <channel name="HHZ">
-                <description>Description for channel HHZ.</description>
-                <assigned_stream>
-                    <recorder_producer>Reftek</recorder_producer>
-                    <recorder_model>130-01</recorder_model>
-                    <recorder_serial>9D6C</recorder_serial>
-                    <stream_name>101</stream_name>
-                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
-                    <end_time/>
-                </assigned_stream>
-            </channel>
+                <channel name="HHZ">
+                    <description>Description for channel HHZ.</description>
+                    <assigned_stream>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <recorder_model>130-01</recorder_model>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <stream_name>101</stream_name>
+                        <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
 
-            <channel name="HHN">
-                <description>Description for channel HHN.</description>
-                <assigned_stream>
-                    <recorder_producer>Reftek</recorder_producer>
-                    <recorder_model>130-01</recorder_model>
-                    <recorder_serial>9D6C</recorder_serial>
-                    <stream_name>102</stream_name>
-                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
-                    <end_time/>
-                </assigned_stream>
-            </channel>
+                <channel name="HHN">
+                    <description>Description for channel HHN.</description>
+                    <assigned_stream>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <recorder_model>130-01</recorder_model>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <stream_name>102</stream_name>
+                        <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
 
-            <channel name="HHE">
-                <description>Description for channel HHE.</description>
-                <assigned_stream>
-                    <recorder_producer>Reftek</recorder_producer>
-                    <recorder_model>130-01</recorder_model>
-                    <recorder_serial>9D6C</recorder_serial>
-                    <stream_name>103</stream_name>
-                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
-                    <end_time/>
-                </assigned_stream>
-            </channel>
-
+                <channel name="HHE">
+                    <description>Description for channel HHE.</description>
+                    <assigned_stream>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <recorder_model>130-01</recorder_model>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <stream_name>103</stream_name>
+                        <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
         </station>
     </network>
 </inventory>
