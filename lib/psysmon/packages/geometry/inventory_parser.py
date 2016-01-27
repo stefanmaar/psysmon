@@ -85,11 +85,11 @@ class InventoryXmlParser:
         #self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
 
         self.required_tags['recorder'] = ('model', 'producer', 'description')
-        self.required_tags['stream'] = ('label', 'stream_parameter', 'assigned_component')
+        self.required_tags['stream'] = ('label', )
         self.required_tags['stream_parameter'] = ('start_time', 'end_time', 'gain',
                                         'bitweight')
-        self.required_tags['assigned_component'] = ('sensor_serial', 'component_name',
-                                                    'start_time', 'end_time')
+        self.required_tags['assigned_component'] = ('sensor_serial', 'sensor_model', 'sensor_producer',
+                                                    'component_name', 'start_time', 'end_time')
 
         self.required_tags['network'] = ('description', 'type')
         self.required_tags['station'] = ('location', )
@@ -103,14 +103,15 @@ class InventoryXmlParser:
 
 
     def parse(self, filename, inventory_name = 'new xml inventory'):
-        from lxml.etree import parse
+        import lxml.etree
 
         self.logger.debug("parsing file...\n")
 
         inventory = Inventory(inventory_name, type = 'xml')
 
         # Parse the xml file passed as argument.
-        tree = parse(filename)
+        parser = lxml.etree.XMLParser(remove_comments = True)
+        tree = lxml.etree.parse(filename, parser)
         inventory_root = tree.getroot()
 
         # Check if the root element is of type inventory.
