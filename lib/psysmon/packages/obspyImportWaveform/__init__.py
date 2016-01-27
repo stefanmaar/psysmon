@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "obspyImportWaveform"
-version = "0.0.1"
+version = "0.0.2"
 author = "Stefan Mertl"
 minPsysmonVersion = "0.0.1"
 description = "The obspyImportWaveform packages"
@@ -28,6 +28,13 @@ website = "http://www.stefanmertl.com"
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = ['importWaveform', ]
 
+'''
+Database change history.
+version 0.0.2 - 2016-01-27
+Removed the location field. The location and channel values in the obspy
+trace header is used to build the stream name LOCATION:CHANNEL.
+
+'''
 
 def databaseFactory(base):
     from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
