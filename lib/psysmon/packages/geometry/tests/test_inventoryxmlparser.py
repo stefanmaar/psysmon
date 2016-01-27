@@ -40,7 +40,7 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         # Configure the logger.
         cls.logger = logging.getLogger('psysmon')
         cls.logger.setLevel('DEBUG')
-        cls.logger.addHandler(psysmon.getLoggerHandler())
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
     @classmethod
     def tearDownClass(cls):
@@ -58,7 +58,7 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         inventory = xml_parser.parse(xml_file)
 
         self.assertIsInstance(inventory, Inventory)
-        self.assertEqual(inventory.name, 'ALPAACT')
+        self.assertEqual(inventory.name, 'SIMPLE')
 
         # Test the sensor.
         self.assertEqual(len(inventory.sensors), 1)
@@ -143,7 +143,8 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(len(inventory.recorders), 1)
         cur_recorder = inventory.recorders[0]
         self.assertEqual(cur_recorder.serial, '9D6C')
-        self.assertEqual(cur_recorder.type, 'Reftek 130-01')
+        self.assertEqual(cur_recorder.model, '130-01')
+        self.assertEqual(cur_recorder.producer, 'Reftek')
         self.assertEqual(cur_recorder.description, 'Recorder description.')
         self.assertEqual(len(cur_recorder.streams), 3)
 
@@ -288,8 +289,26 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(inventory.networks[0].stations[0].location, '--')
 
 
+    def test_parse_multiple_locations_inventory(self):
+        '''
+        '''
+        xml_file = os.path.join(self.data_path, 'inventory_multiple_locations.xml')
+        xml_parser = InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+
+        self.assertIsInstance(inventory, Inventory)
+        self.assertEqual(inventory.name, 'MULTI_LOCATIONS')
+
+        self.assertEqual(len(inventory.networks[0].stations), 2)
+        self.assertEqual(inventory.networks[0].stations[0].location, '00')
+        self.assertEqual(inventory.networks[0].stations[1].location, '01')
+        self.assertEqual(len(inventory.networks[0].stations[0].channels), 3)
+        self.assertEqual(len(inventory.networks[0].stations[1].channels), 3)
+
+
+
     def test_export_xmlfile(self):
-        xml_file = os.path.join(self.data_path, 'simple_inventory.xml')
+        xml_file = os.path.join(self.data_path, 'inventory_multiple_locations.xml')
         xml_parser = InventoryXmlParser()
         inventory = xml_parser.parse(xml_file)
 
@@ -308,10 +327,10 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         finally:
             c_fid.close()
             o_fid.close()
+            # Remove the output file.
+            os.remove(outfile[1])
 
 
-        # Remove the output file.
-        os.remove(outfile[1])
 
 
 

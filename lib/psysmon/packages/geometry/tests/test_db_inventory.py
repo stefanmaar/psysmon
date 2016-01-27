@@ -67,7 +67,7 @@ class DbInventoryTestCase(unittest.TestCase):
         # Configure the logger.
         cls.logger = logging.getLogger('psysmon')
         cls.logger.setLevel('DEBUG')
-        cls.logger.addHandler(psysmon.getLoggerHandler())
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
         cls.data_path = os.path.dirname(os.path.abspath(__file__))
         cls.data_path = os.path.join(cls.data_path, 'data')
@@ -343,10 +343,12 @@ class DbInventoryTestCase(unittest.TestCase):
 
         try:
             recorder1 = Recorder(serial = 'recorder1_serial',
-                                 type = 'recorder1_type')
+                                 model = 'recorder1_model',
+                                 producer = 'recorder1_producer')
 
             recorder2 = Recorder(serial = 'recorder2_serial',
-                                 type = 'recorder2_type')
+                                 model = 'recorder2_model',
+                                 producer = 'recorder2_producer')
 
             stream1 = RecorderStream(name = 'stream1_name',
                                      label = 'stream1_label')
@@ -382,7 +384,8 @@ class DbInventoryTestCase(unittest.TestCase):
         try:
             # Create a recorder and a stream.
             recorder1 = Recorder(serial = 'recorder1_serial',
-                                 type = 'recorder1_type')
+                                 model = 'recorder1_model',
+                                 producer = 'recorder1_producer')
 
             stream1 = RecorderStream(name = 'stream1_name',
                                      label = 'stream1_label')
@@ -427,6 +430,8 @@ class DbInventoryTestCase(unittest.TestCase):
             cur_end_time = UTCDateTime('2014-02-01')
             cur_channel = added_network1.stations[0].channels[0]
             cur_channel.add_stream(serial = 'recorder1_serial',
+                                   model = 'recorder1_model',
+                                   producer = 'recorder1_producer',
                                    name = 'stream1_name',
                                    start_time = cur_start_time,
                                    end_time = cur_end_time)
@@ -448,7 +453,8 @@ class DbInventoryTestCase(unittest.TestCase):
 
         try:
             recorder1 = Recorder(serial = 'recorder1_serial',
-                                type = 'recorder1_type')
+                                 model = 'recorder1_model',
+                                 producer = 'recorder1_producer')
 
 
             stream1 = RecorderStream(name = 'stream1_name',
@@ -473,6 +479,8 @@ class DbInventoryTestCase(unittest.TestCase):
 
             db_stream1 = db_recorder1.streams[0]
             db_stream1.add_component(serial = 'sensor1_serial',
+                                     model = 'sensor1_model',
+                                     producer = 'sensor1_producer',
                                      name = 'comp1_name',
                                      start_time = cur_start_time,
                                      end_time = cur_end_time)
@@ -534,23 +542,22 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Add a station to the XX network.
             stat_2_add = Station(name = 'AAA',
-                                 network = 'XX',
                                  location = '00',
                                  x = 0,
                                  y = 0,
                                  z = 0,
                                  coord_system = 'epsg:4316')
-            added_station_1 = db_inventory.add_station(stat_2_add)
+            added_station_1 = db_inventory.add_station(network_name = 'XX',
+                                                       station_to_add = stat_2_add)
 
             # Add a station to the YY network.
             stat_2_add = Station(name = 'AAA',
-                                 network = 'YY',
                                  location = '00',
                                  x = 0,
                                  y = 0,
                                  z = 0,
                                  coord_system = 'epsg:4316')
-            added_station_2 = db_inventory.add_station(stat_2_add)
+            added_station_2 = added_network_2.add_station(stat_2_add)
 
             removed_station = db_inventory.remove_station(('AAA', 'XX', '00'))
             self.assertEqual(removed_station, added_station_1)
@@ -578,13 +585,12 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Add a station to the XX network.
             stat_2_add = Station(name = 'AAA',
-                                 network = 'XX',
                                  location = '00',
                                  x = 0,
                                  y = 0,
                                  z = 0,
                                  coord_system = 'epsg:4316')
-            added_station_1 = db_inventory.add_station(stat_2_add)
+            added_station_1 = added_network_1.add_station(stat_2_add)
 
             removed_station = added_network_1.remove_station(name = 'AAA', location = '00')
             added_network_2.add_station(removed_station)
@@ -684,10 +690,12 @@ class DbInventoryTestCase(unittest.TestCase):
         try:
             # Add recorders to the database.
             recorder1 = Recorder(serial = 'recorder1_serial',
-                                 type = 'recorder1_type')
+                                 model = 'recorder1_model',
+                                 producer = 'recorder1_producer')
 
             recorder2 = Recorder(serial = 'recorder2_serial',
-                                 type = 'recorder2_type')
+                                 model = 'recorder2_model',
+                                 producer = 'recorder2_producer')
 
             stream1 = RecorderStream(name = 'stream1_name',
                                      label = 'stream1_label')
@@ -721,7 +729,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(cur_recorder.streams), 1)
         self.assertEqual(len(cur_recorder.orm.streams), 1)
         self.assertEqual(cur_recorder.serial, 'recorder1_serial')
-        self.assertEqual(cur_recorder.type, 'recorder1_type')
+        self.assertEqual(cur_recorder.model, 'recorder1_model')
+        self.assertEqual(cur_recorder.producer, 'recorder1_producer')
         self.assertIsNotNone(cur_recorder.id)
 
         cur_stream = cur_recorder.streams[0]
@@ -778,10 +787,12 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Add recorders to the database.
             recorder1 = Recorder(serial = 'recorder1_serial',
-                                 type = 'recorder1_type')
+                                 model = 'recorder1_model',
+                                 producer = 'recorder1_producer')
 
             recorder2 = Recorder(serial = 'recorder2_serial',
-                                 type = 'recorder2_type')
+                                 model = 'recorder2_model',
+                                 producer = 'recorder2_producer')
 
             stream1 = RecorderStream(name = 'stream1_name',
                                      label = 'stream1_label')
@@ -805,6 +816,8 @@ class DbInventoryTestCase(unittest.TestCase):
             cur_stream = cur_recorder.get_stream(name = 'stream1_name')
             cur_stream = cur_stream[0]
             cur_stream.add_component(serial = 'sensor1_serial',
+                                     model = 'sensor1_model',
+                                     producer = 'sensor1_producer',
                                      name = 'comp1_name',
                                      start_time = cur_start_time,
                                      end_time = cur_end_time)
@@ -944,7 +957,8 @@ class DbInventoryTestCase(unittest.TestCase):
 
             # Create a recorder and a stream.
             recorder1 = Recorder(serial = 'recorder1_serial',
-                                 type = 'recorder1_type')
+                                 model = 'recorder1_model',
+                                 producer = 'recorder1_producer')
 
             stream1 = RecorderStream(name = 'stream1_name',
                                      label = 'stream1_label')
@@ -991,6 +1005,8 @@ class DbInventoryTestCase(unittest.TestCase):
             cur_channel = db_inventory.get_channel(name = 'channel1_name')
             cur_channel = cur_channel[0]
             cur_channel.add_stream(serial = 'recorder1_serial',
+                                   model = 'recorder1_model',
+                                   producer = 'recorder1_producer',
                                    name = 'stream1_name',
                                    start_time = cur_start_time,
                                    end_time = cur_end_time)
@@ -1020,7 +1036,6 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(cur_channel.streams), 1)
 
 
-    @nose_attrib.attr('need_for_update')
     def test_change_network(self):
         db_inventory = DbInventory(self.project)
 
@@ -1033,16 +1048,15 @@ class DbInventoryTestCase(unittest.TestCase):
         added_network.type = 'changed type'
 
         self.assertEqual(added_network.name, 'YY')
-        self.assertEqual(added_network.geom_network.name, 'YY')
+        self.assertEqual(added_network.orm.name, 'YY')
         self.assertEqual(added_network.description, 'changed description')
-        self.assertEqual(added_network.geom_network.description, 'changed description')
+        self.assertEqual(added_network.orm.description, 'changed description')
         self.assertEqual(added_network.type, 'changed type')
-        self.assertEqual(added_network.geom_network.type, 'changed type')
+        self.assertEqual(added_network.orm.type, 'changed type')
 
         db_inventory.close()
 
 
-    @nose_attrib.attr('need_for_update')
     def test_change_station(self):
         db_inventory = DbInventory(self.project)
 
@@ -1052,105 +1066,48 @@ class DbInventoryTestCase(unittest.TestCase):
 
         # Add a station to the XX network.
         stat_2_add = Station(name = 'AAA',
-                             network = 'XX',
                              location = '00',
                              x = 0,
                              y = 0,
                              z = 0,
                              coord_system = 'epsg:4316')
-        added_station = db_inventory.add_station(stat_2_add)
+        added_station = added_network.add_station(stat_2_add)
 
         cur_station = added_station
-        test_attr = [('name', 'BBB'), ('network', 'YY'), 
+        test_attr = [('name', 'BBB'), 
                      ('location', '01'), ('x', 999), ('y', 999), ('z', 999),
                      ('coord_system', 'epsg:0000')]
         for cur_attr, cur_value in test_attr:
             setattr(cur_station, cur_attr, cur_value)
             self.assertEqual(getattr(cur_station, cur_attr), cur_value)
-            self.assertEqual(getattr(cur_station.geom_station, cur_attr), cur_value)
+            self.assertEqual(getattr(cur_station.orm, cur_attr), cur_value)
 
 
         db_inventory.close()
 
-    @nose_attrib.attr('need_for_update')
+
     def test_change_recorder(self):
         db_inventory = DbInventory(self.project)
 
-        rec_2_add = Recorder(serial = 'AAAA', type = 'test recorder', description = 'test description')
+        rec_2_add = Recorder(serial = 'AAAA',
+                             model = 'recorder1_model',
+                             producer = 'recorder1_producer',
+                             description = 'test description')
         added_recorder = db_inventory.add_recorder(rec_2_add)
 
         added_recorder.serial = 'BBBB'
-        added_recorder.type = 'changed type'
-        added_recorder.description = 'changed description' 
+        added_recorder.model = 'changed model'
+        added_recorder.producer = 'changed producer'
+        added_recorder.description = 'changed description'
 
         self.assertEqual(added_recorder.serial, 'BBBB')
-        self.assertEqual(added_recorder.geom_recorder.serial, 'BBBB')
+        self.assertEqual(added_recorder.orm.serial, 'BBBB')
         self.assertEqual(added_recorder.description, 'changed description')
-        self.assertEqual(added_recorder.geom_recorder.description, 'changed description')
-        self.assertEqual(added_recorder.type, 'changed type')
-        self.assertEqual(added_recorder.geom_recorder.type, 'changed type')
-
-        db_inventory.close()
-
-
-    @nose_attrib.attr('need_for_update')
-    def test_change_sensor(self):
-        db_inventory = DbInventory(self.project)
-
-        added_recorder = []
-
-        # Add a recorder with a sensor.
-        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
-        sensor_2_add = Sensor(serial = 'AAAA',
-                              type = 'test sensor',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'AAAA-001-HHZ') 
-        rec_2_add.add_sensor(sensor_2_add)
-        added_recorder.append(db_inventory.add_recorder(rec_2_add))
-
-        cur_sensor = added_recorder[0].sensors[0]
-        test_attr = ['label', 'serial', 'type', 'rec_channel_name', 'channel_name']
-        for cur_attr in test_attr:
-            setattr(cur_sensor, cur_attr, 'changed_' + cur_attr)
-            self.assertEqual(getattr(cur_sensor, cur_attr), 'changed_' + cur_attr)
-
-        db_inventory.close()
-
-
-    @nose_attrib.attr('need_for_update')
-    def test_change_sensor_parameter(self):
-        db_inventory = DbInventory(self.project)
-
-        added_recorder = []
-
-        # Add a recorder with a sensor.
-        rec_2_add = Recorder(serial = 'BBBB', type = 'test recorder')
-        sensor_2_add = Sensor(serial = 'AAAA',
-                              type = 'test sensor',
-                              rec_channel_name = '001',
-                              channel_name = 'HHZ',
-                              label = 'AAAA-001-HHZ') 
-
-        parameter_2_add = SensorComponentParameter(gain = 1,
-                                          bitweight = 2,
-                                          bitweight_units = 'bw_units',
-                                          sensitivity = 3,
-                                          start_time = UTCDateTime('1976-06-20'),
-                                          end_time = UTCDateTime('2012-06-20'),
-                                          tf_poles = [complex('1+1j'), complex('1+2j')],
-                                          tf_zeros = [complex('0+1j'), complex('0+2j')])
-
-        sensor_2_add.add_parameter(parameter_2_add)
-        rec_2_add.add_sensor(sensor_2_add)
-        added_recorder.append(db_inventory.add_recorder(rec_2_add))
-
-        cur_parameter = added_recorder[0].sensors[0].parameters[0]
-
-        value = UTCDateTime('1976-01-01')
-        cur_parameter.start_time = value
-        self.assertEqual(cur_parameter.start_time, value)
-        self.assertEqual(cur_parameter.geom_sensor_parameter.start_time, value.timestamp) 
+        self.assertEqual(added_recorder.orm.description, 'changed description')
+        self.assertEqual(added_recorder.model, 'changed model')
+        self.assertEqual(added_recorder.orm.model, 'changed model')
+        self.assertEqual(added_recorder.producer, 'changed producer')
+        self.assertEqual(added_recorder.orm.producer, 'changed producer')
 
         db_inventory.close()
 
@@ -1242,7 +1199,8 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(len(db_inventory.recorders), 1)
         cur_recorder = db_inventory.recorders[0]
         self.assertEqual(cur_recorder.serial, '9D6C')
-        self.assertEqual(cur_recorder.type, 'Reftek 130-01')
+        self.assertEqual(cur_recorder.model, '130-01')
+        self.assertEqual(cur_recorder.producer, 'Reftek')
         self.assertEqual(cur_recorder.description, 'Recorder description.')
         self.assertEqual(len(cur_recorder.streams), 3)
 

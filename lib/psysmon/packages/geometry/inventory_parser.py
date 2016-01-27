@@ -68,6 +68,7 @@ class InventoryXmlParser:
         self.required_attributes['assigned_component'] = ()
         self.required_attributes['network'] = ('name', )
         self.required_attributes['station'] = ('name', )
+        self.required_attributes['location'] = ('name', )
         self.required_attributes['channel'] = ('name', )
         self.required_attributes['assigned_stream'] = ()
 
@@ -83,31 +84,34 @@ class InventoryXmlParser:
         #self.required_tags['complex_zero'] = ('real_zero', 'imaginary_zero')
         #self.required_tags['complex_pole'] = ('real_pole', 'imaginary_pole')
 
-        self.required_tags['recorder'] = ('type', 'description')
-        self.required_tags['stream'] = ('label', 'stream_parameter', 'assigned_component')
+        self.required_tags['recorder'] = ('model', 'producer', 'description')
+        self.required_tags['stream'] = ('label', )
         self.required_tags['stream_parameter'] = ('start_time', 'end_time', 'gain',
                                         'bitweight')
-        self.required_tags['assigned_component'] = ('sensor_serial', 'component_name',
-                                                    'start_time', 'end_time')
+        self.required_tags['assigned_component'] = ('sensor_serial', 'sensor_model', 'sensor_producer',
+                                                    'component_name', 'start_time', 'end_time')
 
         self.required_tags['network'] = ('description', 'type')
-        self.required_tags['station'] = ('location', 'x', 'y', 'z',
+        self.required_tags['station'] = ('location', )
+        self.required_tags['location'] = ('x', 'y', 'z',
                                         'coord_system', 'description')
-        self.required_tags['channel'] = ('description', 'assigned_stream')
-        self.required_tags['assigned_stream'] = ('recorder_serial', 'stream_name',
+        self.required_tags['channel'] = ('description', )
+        self.required_tags['assigned_stream'] = ('recorder_serial', 'recorder_model',
+                                                 'recorder_producer','stream_name',
                                                  'start_time', 'end_time')
 
 
 
     def parse(self, filename, inventory_name = 'new xml inventory'):
-        from lxml.etree import parse
+        import lxml.etree
 
         self.logger.debug("parsing file...\n")
 
         inventory = Inventory(inventory_name, type = 'xml')
 
         # Parse the xml file passed as argument.
-        tree = parse(filename)
+        parser = lxml.etree.XMLParser(remove_comments = True)
+        tree = lxml.etree.parse(filename, parser)
         inventory_root = tree.getroot()
 
         # Check if the root element is of type inventory.
@@ -120,15 +124,19 @@ class InventoryXmlParser:
         inventory.name = inventory_root.attrib['name']
 
         # Get the recorders and stations of the inventory.
-        sensors = tree.findall('sensor')
-        recorders = tree.findall('recorder')
+        sensor_list = tree.findall('sensor_list')
+        recorder_list = tree.findall('recorder_list')
         networks = tree.findall('network')
 
         # Process the sensors first.
-        self.process_sensors(inventory, sensors)
+        for cur_sensor_list in sensor_list:
+            sensors = cur_sensor_list.findall('sensor')
+            self.process_sensors(inventory, sensors)
 
         # Next process the recorders. These might depend on sensors.
-        self.process_recorders(inventory, recorders)
+        for cur_recorder_list in recorder_list:
+            recorders = cur_recorder_list.findall('recorder')
+            self.process_recorders(inventory, recorders)
 
         # And last process the networks which might depend on recorders.
         self.process_networks(inventory, networks)
@@ -237,9 +245,10 @@ class InventoryXmlParser:
 
         # recorder
         rec_attributes = ['serial',]
-        rec_tags = ['type', 'description']
+        rec_tags = ['model', 'producer', 'description']
         rec_map = {'serial':'serial',
-                   'type':'type',
+                   'model':'model',
+                   'producer':'producer',
                    'description':'description'}
         rec_converter = {}
 
@@ -262,8 +271,11 @@ class InventoryXmlParser:
 
         # stream assigned component
         stream_comp_attributes = []
-        stream_comp_tags = ['sensor_serial', 'component_name', 'start_time', 'end_time']
+        stream_comp_tags = ['sensor_serial', 'sensor_model', 'sensor_producer',
+                            'component_name', 'start_time', 'end_time']
         stream_comp_map = {'sensor_serial':'serial',
+                           'sensor_model':'model',
+                           'sensor_producer':'producer',
                            'component_name':'name',
                            'start_time':'start_time_string',
                            'end_time':'end_time_string'}
@@ -280,15 +292,20 @@ class InventoryXmlParser:
 
         # station
         stat_attributes = ['name',]
-        stat_tags = ['location', 'x', 'y', 'z', 'coord_system', 'description']
-        stat_map = {'name':'name',
-                    'location':'location',
+        stat_tags = []
+        stat_map = {}
+        stat_converter = {}
+
+        #location
+        loc_attributes = ['name',]
+        loc_tags = ['x', 'y', 'z', 'coord_system', 'description']
+        loc_map = {'name':'location',
                     'x':'x',
                     'y':'y',
                     'z':'z',
                     'coord_system':'coord_system',
                     'description':'description'}
-        stat_converter = {}
+        loc_converter = {}
 
         # channel
         chan_attributes = ['name',]
@@ -299,8 +316,11 @@ class InventoryXmlParser:
 
         # assigned stream
         chan_stream_attributes = []
-        chan_stream_tags = ['recorder_serial', 'stream_name', 'start_time', 'end_time']
+        chan_stream_tags = ['recorder_serial', 'recorder_model', 'recorder_producer',
+                            'stream_name', 'start_time', 'end_time']
         chan_stream_map = {'recorder_serial':'serial',
+                           'recorder_model':'model',
+                           'recorder_producer':'producer',
                            'stream_name':'name',
                            'start_time':'start_time_string',
                            'end_time':'end_time_string'}
@@ -310,9 +330,10 @@ class InventoryXmlParser:
 
 
         # Export the sensors.
+        sensor_list = etree.SubElement(root, 'sensor_list')
         for cur_sensor in inventory.sensors:
             sensor_element = self.instance_to_xml(instance = cur_sensor,
-                                                  root = root,
+                                                  root = sensor_list,
                                                   name = 'sensor',
                                                   attributes = sensor_attributes,
                                                   tags = sensor_tags,
@@ -344,9 +365,10 @@ class InventoryXmlParser:
                                                        element_handler = component_parameter_paz_handler)
 
         #Export the recorders.
+        recorder_list = etree.SubElement(root, 'recorder_list')
         for cur_recorder in inventory.recorders:
             rec_element = self.instance_to_xml(instance = cur_recorder,
-                                               root = root,
+                                               root = recorder_list,
                                                name = 'recorder',
                                                attributes = rec_attributes,
                                                tags = rec_tags,
@@ -390,32 +412,43 @@ class InventoryXmlParser:
                                                attr_map = net_map,
                                                converter = net_converter)
 
-            for cur_station in cur_network.stations:
-                stat_element = self.instance_to_xml(instance = cur_station,
-                                                    root = net_element,
-                                                    name = 'station',
-                                                    attributes = stat_attributes,
-                                                    tags = stat_tags,
-                                                    attr_map = stat_map,
-                                                    converter = stat_converter)
+            # Get the unique station names.
+            stat_names = [x.name for x in cur_network.stations]
+            stat_names = list(set(stat_names))
 
-                for cur_channel in cur_station.channels:
-                    chan_element = self.instance_to_xml(instance = cur_channel,
+            for cur_stat_name in stat_names:
+                cur_station_list = cur_network.get_station(name = cur_stat_name)
+
+                # Create the station element.
+                stat_element = etree.SubElement(net_element, 'station', name = cur_stat_name)
+
+                for cur_station in cur_station_list:
+                    # Add the location elements.
+                    loc_element = self.instance_to_xml(instance = cur_station,
                                                         root = stat_element,
-                                                        name = 'channel',
-                                                        attributes = chan_attributes,
-                                                        tags = chan_tags,
-                                                        attr_map = chan_map,
-                                                        converter = chan_converter)
+                                                        name = 'location',
+                                                        attributes = loc_attributes,
+                                                        tags = loc_tags,
+                                                        attr_map = loc_map,
+                                                        converter = loc_converter)
 
-                    for cur_stream_tb in cur_channel.streams:
-                        self.instance_to_xml(instance = cur_stream_tb,
-                                             root = chan_element,
-                                             name = 'assigned_stream',
-                                             attributes = chan_stream_attributes,
-                                             tags = chan_stream_tags,
-                                             attr_map = chan_stream_map,
-                                             converter = chan_stream_converter)
+                    for cur_channel in cur_station.channels:
+                        chan_element = self.instance_to_xml(instance = cur_channel,
+                                                            root = loc_element,
+                                                            name = 'channel',
+                                                            attributes = chan_attributes,
+                                                            tags = chan_tags,
+                                                            attr_map = chan_map,
+                                                            converter = chan_converter)
+
+                        for cur_stream_tb in cur_channel.streams:
+                            self.instance_to_xml(instance = cur_stream_tb,
+                                                 root = chan_element,
+                                                 name = 'assigned_stream',
+                                                 attributes = chan_stream_attributes,
+                                                 tags = chan_stream_tags,
+                                                 attr_map = chan_stream_map,
+                                                 converter = chan_stream_converter)
 
 
 
@@ -635,6 +668,8 @@ class InventoryXmlParser:
                 continue
 
             stream.add_component(serial = content['sensor_serial'],
+                                 model = content['sensor_model'],
+                                 producer = content['sensor_producer'],
                                  name = content['component_name'],
                                  start_time = content['start_time'],
                                  end_time = content['end_time'])
@@ -689,15 +724,23 @@ class InventoryXmlParser:
             if self.check_completeness(cur_station, content, 'station') is False:
                 continue
 
-            if 'channel' in content.keys():
-                content.pop('channel')
+            locations = cur_station.findall('location')
 
-            station_to_add = Station(name = cur_station.attrib['name'], **content)
+            for cur_location in locations:
+                loc_content = self.parse_node(cur_location)
 
-            network.add_station(station_to_add)
+                if 'channel' in loc_content.keys():
+                    loc_content.pop('channel')
 
-            channels = cur_station.findall('channel')
-            self.process_channels(station_to_add, channels)
+                station_to_add = Station(name = cur_station.attrib['name'],
+                                         location = cur_location.attrib['name'],
+                                         **loc_content)
+
+                network.add_station(station_to_add)
+
+                channels = cur_location.findall('channel')
+                self.process_channels(station_to_add, channels)
+
 
 
     def process_channels(self, station, channels):
@@ -747,6 +790,8 @@ class InventoryXmlParser:
                 continue
 
             channel.add_stream(serial = content['recorder_serial'],
+                               model = content['recorder_model'],
+                               producer = content['recorder_producer'],
                                name = content['stream_name'],
                                start_time = content['start_time'],
                                end_time = content['end_time'])

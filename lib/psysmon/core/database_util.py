@@ -128,6 +128,30 @@ def update_db_table(engine, table, metadata, prefix):
                                table = table,
                                fk_symbol = cur_key.name)
 
+
+    # I couldn't figure out how to get the existing unique constraints.
+    # Therefore, remove all existing unique constraints and than add the new
+    # ones.
+    #const_to_remove = exist_table.constraints.difference(new_table.constraints)
+    #for cur_const in const_to_remove:
+    #    if isinstance(cur_const, sqa.schema.PrimaryKeyConstraint):
+    #        logger.error("Changing a primary key is not supported. (%s)", cur_const)
+    #        continue
+    #    table_updated = True
+    insp = sqa.inspect(engine)
+    unique_const = insp.get_unique_constraints(exist_table.name)
+    for cur_const in unique_const:
+        remove_unique_constraint(engine, table, cur_const['name'])
+
+
+    const_to_add = new_table.constraints.difference(exist_table.constraints)
+    for cur_const in const_to_add:
+        if isinstance(cur_const, sqa.schema.PrimaryKeyConstraint):
+            logger.error("Changing a primary key is not supported. (%s)", cur_const)
+            continue
+        add_unique_constraint(engine, table, cur_const)
+        table_updated = True
+
     return table_updated
 
 
@@ -136,7 +160,10 @@ def add_column(engine, table, column, prefix):
     '''
     table_name = table.__table__.name
     column_type = column.type.compile(engine.dialect)
-    engine.execute('ALTER TABLE %s ADD COLUMN %s %s' % (table_name, column.name, column_type))
+    if column.nullable:
+        engine.execute('ALTER TABLE %s ADD COLUMN %s %s' % (table_name, column.name, column_type))
+    else:
+        engine.execute('ALTER TABLE %s ADD COLUMN %s %s NOT NULL' % (table_name, column.name, column_type))
 
     for cur_key in column.foreign_keys:
         add_foreign_key(engine = engine,
@@ -176,6 +203,28 @@ def remove_foreign_key(engine, table, fk_symbol):
     '''
     table_name = table.__table__.name
     engine.execute('ALTER TABLE %s DROP FOREIGN KEY %s' % (table_name, fk_symbol))
+
+
+def add_unique_constraint(engine, table, constraint):
+    ''' Add a unique constraint to the table.
+    '''
+    table_name = table.__table__.name
+    col_names = [x.name for x in constraint.columns]
+    const_name = constraint.name
+
+    if const_name:
+        sql_cmd = 'ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)' % (table_name, const_name, ','.join(col_names))
+    else:
+        sql_cmd = 'ALTER TABLE %s ADD CONSTRAINT UNIQUE (%s)' % (table_name, ','.join(col_names))
+
+    engine.execute(sql_cmd)
+
+
+def remove_unique_constraint(engine, table, name):
+    ''' Remove a unique constraint from the table using the constraint name.
+    '''
+    table_name = table.__table__.name
+    engine.execute('ALTER TABLE %s DROP INDEX %s' % (table_name, name))
 
 
 def compare_column_type(col1, col2):

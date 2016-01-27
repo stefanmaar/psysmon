@@ -477,7 +477,8 @@ class DbRecorder(Recorder):
             # Create a new database recorder instance.
             orm_class = self.parent_inventory.project.dbTables['geom_recorder']
             self.orm = orm_class(serial = self.serial,
-                                 type = self.type,
+                                 model = self.model,
+                                 producer = self.producer,
                                  agency_uri = self.agency_uri,
                                  author_uri = self.author_uri,
                                  creation_time = self.creation_time)
@@ -498,7 +499,8 @@ class DbRecorder(Recorder):
     def from_sqlalchemy_orm(cls, parent_inventory, orm):
         recorder = cls(parent_inventory = parent_inventory,
                        serial = orm.serial,
-                       type = orm.type,
+                       model = orm.model,
+                       producer = orm.producer,
                        description = orm.description,
                        author_uri = orm.author_uri,
                        agency_uri = orm.agency_uri,
@@ -516,7 +518,8 @@ class DbRecorder(Recorder):
     def from_inventory_instance(cls, parent_inventory, instance):
         recorder = cls(parent_inventory = parent_inventory,
                        serial = instance.serial,
-                       type = instance.type,
+                       model = instance.model,
+                       producer = instance.producer,
                        author_uri = instance.author_uri,
                        agency_uri = instance.agency_uri,
                        creation_time = instance.creation_time,
@@ -533,7 +536,8 @@ class DbRecorder(Recorder):
         '''
         attr_map = {};
         attr_map['serial'] = 'serial'
-        attr_map['type'] = 'type'
+        attr_map['model'] = 'model'
+        attr_map['producer'] = 'producer'
         attr_map['description'] = 'description'
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
@@ -604,6 +608,8 @@ class DbRecorderStream(RecorderStream):
         for cur_component_to_stream in orm.components:
             cur_component = cur_component_to_stream.component
             tmp = stream.add_component(serial = cur_component.parent.serial,
+                                 model = cur_component.parent.model,
+                                 producer = cur_component.parent.producer,
                                  name = cur_component.name,
                                  start_time = cur_component_to_stream.start_time,
                                  end_time = cur_component_to_stream.end_time,
@@ -626,6 +632,8 @@ class DbRecorderStream(RecorderStream):
 
         for cur_timebox in instance.components:
             cur_stream.add_component(serial = cur_timebox.item.serial,
+                                     model = cur_timebox.item.model,
+                                     producer = cur_timebox.item.producer,
                                      name = cur_timebox.item.name,
                                      start_time = cur_timebox.start_time,
                                      end_time = cur_timebox.end_time)
@@ -656,7 +664,7 @@ class DbRecorderStream(RecorderStream):
             self.__dict__[attr] = value
 
 
-    def add_component(self, serial, name, start_time, end_time, ignore_orm = False):
+    def add_component(self, serial, model, producer, name, start_time, end_time, ignore_orm = False):
         ''' Add a sensor component to the stream.
 
         The component with specified serial and name is searched
@@ -667,6 +675,12 @@ class DbRecorderStream(RecorderStream):
         ----------
         serial : String
             The serial number of the sensor which holds the component.
+
+        model : String
+            The model of the sensor which holds the component.
+
+        producer : String
+            The producer of the sensor which holds the component.
 
         name : String
             The name of the component.
@@ -684,6 +698,8 @@ class DbRecorderStream(RecorderStream):
         '''
         added_component = RecorderStream.add_component(self,
                                                        serial = serial,
+                                                       model = model,
+                                                       producer = producer,
                                                        name = name,
                                                        start_time = start_time,
                                                        end_time = end_time)
@@ -1293,6 +1309,8 @@ class DbChannel(Channel):
                 cur_end_time = None
 
             channel.add_stream(serial = cur_stream.parent.serial,
+                               model = cur_stream.parent.model,
+                               producer = cur_stream.parent.producer,
                                name = cur_stream.name,
                                start_time = cur_start_time,
                                end_time = cur_end_time,
@@ -1314,6 +1332,8 @@ class DbChannel(Channel):
 
         for cur_timebox in instance.streams:
             channel.add_stream(serial = cur_timebox.item.serial,
+                               model = cur_timebox.item.model,
+                               producer = cur_timebox.item.producer,
                                name = cur_timebox.item.name,
                                start_time = cur_timebox.start_time,
                                end_time = cur_timebox.end_time)
@@ -1339,13 +1359,19 @@ class DbChannel(Channel):
             self.__dict__[attr] = value
 
 
-    def add_stream(self, serial, name, start_time, end_time, ignore_orm = False):
+    def add_stream(self, serial, model, producer, name, start_time, end_time, ignore_orm = False):
         ''' Add a stream to the channel.
 
         Parameters
         ----------
         serial : String
             The serial number of the recorder containing the stream.
+
+        model : String
+            The model of the recorder containing the stream.
+
+        producer : String
+            The producer of the recorder containing the stream.
 
         name : String
             The name of the stream.
@@ -1363,6 +1389,8 @@ class DbChannel(Channel):
         '''
         added_stream = Channel.add_stream(self,
                                           serial = serial,
+                                          model = model,
+                                          producer = producer,
                                           name = name,
                                           start_time = start_time,
                                           end_time = end_time)
