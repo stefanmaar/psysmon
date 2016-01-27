@@ -68,6 +68,7 @@ class InventoryXmlParser:
         self.required_attributes['assigned_component'] = ()
         self.required_attributes['network'] = ('name', )
         self.required_attributes['station'] = ('name', )
+        self.required_attributes['location'] = ('name', )
         self.required_attributes['channel'] = ('name', )
         self.required_attributes['assigned_stream'] = ()
 
@@ -91,9 +92,10 @@ class InventoryXmlParser:
                                                     'start_time', 'end_time')
 
         self.required_tags['network'] = ('description', 'type')
-        self.required_tags['station'] = ('location', 'x', 'y', 'z',
+        self.required_tags['station'] = ('location', )
+        self.required_tags['location'] = ('x', 'y', 'z',
                                         'coord_system', 'description')
-        self.required_tags['channel'] = ('description', 'assigned_stream')
+        self.required_tags['channel'] = ('description', )
         self.required_tags['assigned_stream'] = ('recorder_serial', 'recorder_model',
                                                  'recorder_producer','stream_name',
                                                  'start_time', 'end_time')
@@ -289,15 +291,20 @@ class InventoryXmlParser:
 
         # station
         stat_attributes = ['name',]
-        stat_tags = ['location', 'x', 'y', 'z', 'coord_system', 'description']
-        stat_map = {'name':'name',
-                    'location':'location',
+        stat_tags = []
+        stat_map = {}
+        stat_converter = {}
+
+        #location
+        loc_attributes = ['name',]
+        loc_tags = ['x', 'y', 'z', 'coord_system', 'description']
+        loc_map = {'name':'location',
                     'x':'x',
                     'y':'y',
                     'z':'z',
                     'coord_system':'coord_system',
                     'description':'description'}
-        stat_converter = {}
+        loc_converter = {}
 
         # channel
         chan_attributes = ['name',]
@@ -404,32 +411,43 @@ class InventoryXmlParser:
                                                attr_map = net_map,
                                                converter = net_converter)
 
-            for cur_station in cur_network.stations:
-                stat_element = self.instance_to_xml(instance = cur_station,
-                                                    root = net_element,
-                                                    name = 'station',
-                                                    attributes = stat_attributes,
-                                                    tags = stat_tags,
-                                                    attr_map = stat_map,
-                                                    converter = stat_converter)
+            # Get the unique station names.
+            stat_names = [x.name for x in cur_network.stations]
+            stat_names = list(set(stat_names))
 
-                for cur_channel in cur_station.channels:
-                    chan_element = self.instance_to_xml(instance = cur_channel,
+            for cur_stat_name in stat_names:
+                cur_station_list = cur_network.get_station(name = cur_stat_name)
+
+                # Create the station element.
+                stat_element = etree.SubElement(net_element, 'station', name = cur_stat_name)
+
+                for cur_station in cur_station_list:
+                    # Add the location elements.
+                    loc_element = self.instance_to_xml(instance = cur_station,
                                                         root = stat_element,
-                                                        name = 'channel',
-                                                        attributes = chan_attributes,
-                                                        tags = chan_tags,
-                                                        attr_map = chan_map,
-                                                        converter = chan_converter)
+                                                        name = 'location',
+                                                        attributes = loc_attributes,
+                                                        tags = loc_tags,
+                                                        attr_map = loc_map,
+                                                        converter = loc_converter)
 
-                    for cur_stream_tb in cur_channel.streams:
-                        self.instance_to_xml(instance = cur_stream_tb,
-                                             root = chan_element,
-                                             name = 'assigned_stream',
-                                             attributes = chan_stream_attributes,
-                                             tags = chan_stream_tags,
-                                             attr_map = chan_stream_map,
-                                             converter = chan_stream_converter)
+                    for cur_channel in cur_station.channels:
+                        chan_element = self.instance_to_xml(instance = cur_channel,
+                                                            root = loc_element,
+                                                            name = 'channel',
+                                                            attributes = chan_attributes,
+                                                            tags = chan_tags,
+                                                            attr_map = chan_map,
+                                                            converter = chan_converter)
+
+                        for cur_stream_tb in cur_channel.streams:
+                            self.instance_to_xml(instance = cur_stream_tb,
+                                                 root = chan_element,
+                                                 name = 'assigned_stream',
+                                                 attributes = chan_stream_attributes,
+                                                 tags = chan_stream_tags,
+                                                 attr_map = chan_stream_map,
+                                                 converter = chan_stream_converter)
 
 
 
@@ -705,15 +723,23 @@ class InventoryXmlParser:
             if self.check_completeness(cur_station, content, 'station') is False:
                 continue
 
-            if 'channel' in content.keys():
-                content.pop('channel')
+            locations = cur_station.findall('location')
 
-            station_to_add = Station(name = cur_station.attrib['name'], **content)
+            for cur_location in locations:
+                loc_content = self.parse_node(cur_location)
 
-            network.add_station(station_to_add)
+                if 'channel' in loc_content.keys():
+                    loc_content.pop('channel')
 
-            channels = cur_station.findall('channel')
-            self.process_channels(station_to_add, channels)
+                station_to_add = Station(name = cur_station.attrib['name'],
+                                         location = cur_location.attrib['name'],
+                                         **loc_content)
+
+                network.add_station(station_to_add)
+
+                channels = cur_location.findall('channel')
+                self.process_channels(station_to_add, channels)
+
 
 
     def process_channels(self, station, channels):
