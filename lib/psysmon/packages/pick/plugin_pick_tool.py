@@ -121,8 +121,8 @@ class PickTool(InteractivePlugin):
         # Set the limits of the event_catalog field.
         catalog_names = self.library.get_catalogs_in_db(project = self.parent.project)
         self.pref_manager.set_limit('pick_catalog', catalog_names)
-        if catalog_names:
-            self.pref_manager.set_value('pick_catalog', catalog_names[0])
+        #if catalog_names:
+        #    self.pref_manager.set_value('pick_catalog', catalog_names[0])
 
         fold_panel = PrefEditPanel(pref = self.pref_manager,
                                   parent = panelBar)
@@ -296,7 +296,7 @@ class PickTool(InteractivePlugin):
         snap_y = ydata[ind_x]
 
         # Check if it is inside the event limits.
-        selected_event_info = self.parent.get_shared_info(origin_rid = '/plugin/tracedisplay/show_events',
+        selected_event_info = self.parent.get_shared_info(origin_rid = self.parent.collection_node.rid + '/plugin/show_events',
                                                           name = 'selected_event')
         if selected_event_info:
             if len(selected_event_info) > 1:
