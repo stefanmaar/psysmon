@@ -133,7 +133,7 @@ class PluginNode:
         ''' The resource ID of the plugin.
         '''
         name_slug = self.name.replace(' ', '_')
-        return '/plugin/' + self.parent.collection_node.rid + '/' + name_slug
+        return self.parent.collection_node.rid + '/plugin/' + name_slug
 
 
 
