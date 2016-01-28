@@ -457,7 +457,11 @@ class PsysmonDbWaveClient(WaveClient):
             if end_time:
                 query = query.filter(self.traceheader.begin_time < end_time.timestamp)
 
-            for cur_timebox in cur_channel.streams:
+            # Get the streams assigned to the channel for the requested
+            # time-span.
+            assigned_streams = cur_channel.get_stream(start_time = start_time,
+                                                      end_time = end_time)
+            for cur_timebox in assigned_streams:
                 cur_rec_stream = cur_timebox.item
 
                 # Create a new query with filters for the serial and stream
