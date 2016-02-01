@@ -52,6 +52,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
+import psysmon
 from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
@@ -2635,6 +2636,33 @@ class PsysmonDockingFrame(wx.Frame):
         # Create the tool ribbon bar.
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
 
+        # Create the plugins shared information bag, which holds all the
+        # information, that's shared by the tracedisplay plugins.
+        self.plugins_information_bag = psysmon.core.plugins.SharedInformationBag()
+
+        # Create the hook manager and fill it with the allowed hooks.
+        self.hook_manager = psysmon.core.util.HookManager(self)
+
+        self.hook_manager.add_hook(name = 'plugin_activated',
+                                   description = 'Called after a plugin was activated.',
+                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_hook(name = 'plugin_deactivated',
+                                   description = 'Called after a plugin was deactivated.',
+                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_hook(name = 'shared_information_added',
+                                   description = 'Called after a shared information was added by a plugin.',
+                                   passed_args = {'origin_rid': 'The resource id of the source of the shared information.',
+                                                  'name': 'The name of the shared information.'})
+        self.hook_manager.add_hook(name = 'shared_information_updated',
+                                   description = 'Called after a shared information was added by a plugin.',
+                                   passed_args = {'updated_info': 'The shared information instance which was updated.'})
+        self.hook_manager.add_view_hook(name = 'button_press_event',
+                                        description = 'The matplotlib button_press_event in the view axes.')
+        self.hook_manager.add_view_hook(name = 'button_release_event',
+                                        description = 'The matplotlib button_release_event in the view axes.')
+        self.hook_manager.add_view_hook(name = 'motion_notify_event',
+                                        description = 'The matplotlib motion_notify_event in the view axes.')
+
 
     def init_ribbon_bar(self):
         ''' Initialize the ribbon bar with the plugins.
@@ -2816,3 +2844,55 @@ class PsysmonDockingFrame(wx.Frame):
             active_plugin = active_plugin[0]
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
+
+
+    def call_hook(self, hook_name, **kwargs):
+        ''' Call the hook of the plugins.
+        '''
+        active_plugins = [x for x in self.plugins if x.active]
+        self.hook_manager.call_hook(receivers = active_plugins,
+                                    hook_name = hook_name,
+                                    **kwargs)
+
+
+    def add_shared_info(self, origin_rid, name, value):
+        ''' Add a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+
+        value : Dictionary
+            The value of the shared information
+        '''
+        self.plugins_information_bag.add_info(origin_rid = origin_rid,
+                                              name = name,
+                                              value = value)
+        self.call_hook('shared_information_added',
+                       origin_rid = origin_rid,
+                       name = name)
+
+
+    def notify_shared_info_change(self, updated_info):
+        ''' Notify tracedisplay, that a shared informtion was changed.
+        '''
+        self.call_hook('shared_information_updated',
+                       updated_info = updated_info)
+
+
+    def get_shared_info(self, **kwargs):
+        ''' Get a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+        '''
+        return self.plugins_information_bag.get_info(**kwargs)
