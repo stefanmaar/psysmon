@@ -38,6 +38,7 @@ from matplotlib.figure import Figure
 import psysmon
 import psysmon.core.packageNodes as packageNodes
 import psysmon.core.gui as gui
+import psysmon.packages.event.core as ev_core
 
 
 class GraphicLocalizationNode(packageNodes.CollectionNode):
@@ -63,7 +64,8 @@ class GraphicLocalizationNode(packageNodes.CollectionNode):
         '''
         app = gui.PSysmonApp()
 
-        dlg = GraphicLocalizerDialog(project = self.project,
+        dlg = GraphicLocalizerDialog(collection_node = self,
+                                     project = self.project,
                                      parent = None,
                                      event_id = None,
                                      event_catalog_name = None,
@@ -125,7 +127,7 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
     Similar to the tracedisplay it uses the AUI Manager and plugins.
     '''
 
-    def __init__(self, project, parent = None, event_id = None,
+    def __init__(self, collection_node, project, parent = None, event_id = None,
                  event_catalog_name = None, pick_catalog_name = None,
                  id = wx.ID_ANY, title = 'graphical localizer', size = (1000, 600)):
         ''' Initialize the instance.
@@ -144,12 +146,17 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         self.project = project
 
         # The instance which created the dialog.
-        self.parent = parent
+        self.collection_node = collection_node
 
         # Get the available plugins and filter them for the needed ones.
         needed_plugins = ['select event',]
         self.plugins = self.project.getPlugins(('common', 'GraphicLocalizer'))
         self.plugins = [x for x in self.plugins if x.name in needed_plugins]
+        for cur_plugin in self.plugins:
+            cur_plugin.parent = self
+
+        # Create the events library.
+        self.event_library = ev_core.Library(name = self.collection_node.rid)
 
         # Initialize the user interface.
         self.init_user_interface()
