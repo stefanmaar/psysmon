@@ -29,7 +29,7 @@ website = "http://psysmon.mertl-research.at"    # The package website.
 collection_node_modules = []
 
 # Specify the module(s) where to search for plugin classes.
-plugin_modules = ['plugin_pick_tool',]
+plugin_modules = ['plugin_pick_tool', 'plugin_pick_selector']
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
