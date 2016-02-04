@@ -158,6 +158,16 @@ class SelectEvents(OptionPlugin):
         ''' Create the foldpanel GUI.
         '''
         # Set the limits of the event_catalog field.
+        # TODO: Create some kind of shared resource manager which can be used
+        # to create instances which might be needed by several plugins. The
+        # plugins should not have to rely on the existing instance in the
+        # parent object.
+        # They request the needed instance.
+        # If none is available, create it.
+        # Another plugin can request the instance and use t.
+        # Delete the instance if it is not needed by any plugin when
+        # deactivating the plugin.
+        # With this option, 
         catalog_names = self.parent.event_library.get_catalogs_in_db(self.parent.project)
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
