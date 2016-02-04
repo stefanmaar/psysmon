@@ -23,6 +23,7 @@ import psysmon
 import obspy.core.utcdatetime as utcdatetime
 import warnings
 import numpy as np
+import sqlalchemy
 
 
 
@@ -306,7 +307,7 @@ class Catalog(object):
 
 
     def load_picks(self, project, start_time = None, end_time = None,
-            pick_id = None):
+            pick_id = None, event_id = None):
         ''' Load picks from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -321,6 +322,9 @@ class Catalog(object):
 
         pick_id : Integer
             The database ID of the pick.
+
+        event_id : List of Integer
+            The id of the event to which the pick is associated to.
         '''
         if project is None:
             raise RuntimeError("The project is None. Can't query the database without a project.")
@@ -339,6 +343,9 @@ class Catalog(object):
 
             if pick_id:
                 query = query.filter(pick_table.id in pick_id)
+
+            if event_id:
+                query = query.filter(sqlalchemy.or_(pick_table.ev_id == x for x in event_id))
 
             picks_to_add = []
             for cur_orm in query:
