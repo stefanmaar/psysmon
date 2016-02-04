@@ -52,7 +52,7 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         self.icons['active'] = icons.iconsBlack16.hand_2_icon_16
 
         # The pick catalog library used to manage the catalogs.
-        self.library = psysmon.packages.pick.core.Library('pick library')
+        self.library = psysmon.packages.pick.core.Library(name = self.rid)
 
         # The name of the selected catalog.
         self.selected_catalog_name = None
