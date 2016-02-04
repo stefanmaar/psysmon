@@ -133,8 +133,10 @@ class PluginNode:
         ''' The resource ID of the plugin.
         '''
         name_slug = self.name.replace(' ', '_')
-        return self.parent.collection_node.rid + '/plugin/' + name_slug
-
+        if self.parent:
+            return self.parent.collection_node.rid + '/plugin/' + name_slug
+        else:
+            return '/plugin/' + name_slug
 
 
     def __getattr__(self, attrname):
