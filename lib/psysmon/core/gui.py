@@ -2830,6 +2830,15 @@ class PsysmonDockingFrame(wx.Frame):
         plugin.run()
 
 
+    def onCommandToolDropdownClicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an command plugin toolbar button.
+
+        '''
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, "edit preferences")
+        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
+        event.PopupMenu(menu)
+
 
 
     def onInteractiveToolClicked(self, event, plugin):
@@ -2844,6 +2853,37 @@ class PsysmonDockingFrame(wx.Frame):
             active_plugin = active_plugin[0]
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
+
+
+    def onEditToolPreferences(self, event, plugin):
+        ''' Handle the edit preferences dropdown click.
+
+        '''
+        self.logger.debug('Dropdown clicked -> editing preferences.')
+
+        if plugin.name not in self.foldPanels.keys():
+            #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
+            #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
+
+            curPanel = plugin.buildFoldPanel(self)
+            self.mgr.AddPane(curPanel,
+                             wx.aui.AuiPaneInfo().Right().
+                                                  Name(plugin.name).
+                                                  Caption(plugin.name).
+                                                  Layer(2).
+                                                  Row(0).
+                                                  Position(0).
+                                                  BestSize(wx.Size(300,-1)).
+                                                  MinSize(wx.Size(200,100)).
+                                                  MinimizeButton(True).
+                                                  MaximizeButton(True))
+            self.mgr.Update()
+            self.foldPanels[plugin.name] = curPanel
+        else:
+            if not self.foldPanels[plugin.name].IsShown():
+                curPanel = self.foldPanels[plugin.name]
+                self.mgr.GetPane(curPanel).Show()
+                self.mgr.Update()
 
 
     def call_hook(self, hook_name, **kwargs):
