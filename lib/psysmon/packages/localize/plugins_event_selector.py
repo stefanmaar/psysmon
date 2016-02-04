@@ -36,7 +36,7 @@ class SelectEvents(OptionPlugin):
     '''
 
     '''
-    nodeClass = 'GraphicLocalizer'
+    nodeClass = 'GraphicLocalizationNode'
 
     def __init__(self):
         ''' Initialize the instance.

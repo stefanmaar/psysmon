@@ -148,8 +148,8 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         self.collection_node = collection_node
 
         # Get the available plugins and filter them for the needed ones.
-        needed_plugins = ['select event', 'select picks']
-        self.plugins = self.project.getPlugins(('common', 'GraphicLocalizer'))
+        needed_plugins = ['select event', 'select picks', 'circle method']
+        self.plugins = self.project.getPlugins(('common', 'GraphicLocalizationNode'))
         self.plugins = [x for x in self.plugins if x.name in needed_plugins]
         for cur_plugin in self.plugins:
             cur_plugin.parent = self
