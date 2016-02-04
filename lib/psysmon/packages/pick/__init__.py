@@ -99,6 +99,11 @@ def databaseFactory(base):
                                       onupdate = 'cascade',
                                       ondelete = 'set null'),
                            nullable = True)
+        ev_id = Column(Integer,
+                       ForeignKey('event.id',
+                                  onupdate = 'cascade',
+                                  ondelete = 'set null'),
+                       nullable = True)
         label = Column(String(255), nullable = False)
         time = Column(Float(53), nullable = False)
         amp1 = Column(Float, nullable = False)
@@ -112,12 +117,13 @@ def databaseFactory(base):
         stream = relationship('GeomRecorderStream')
 
 
-        def __init__(self, catalog_id, stream_id,
+        def __init__(self, catalog_id, stream_id, ev_id,
                      label, time, amp1, amp2,
                      first_motion, error, agency_uri, author_uri,
                      creation_time):
             self.catalog_id = catalog_id
             self.stream_id = stream_id
+            self.ev_id = ev_id
             self.label = label
             self.time = time
             self.amp1 = amp1
