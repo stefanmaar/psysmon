@@ -28,6 +28,8 @@ import psysmon.core.preferences_manager
 import psysmon.core.guiBricks
 import psysmon.artwork.icons as icons
 
+import obspy.core.utcdatetime as utcdatetime
+
 class SelectPicks(psysmon.core.plugins.OptionPlugin):
     '''
 
@@ -80,6 +82,22 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
                                    item = item)
 
 
+        column_labels = ['db_id', 'scnl', 'label', 'time',
+                         'agency_uri', 'author_uri']
+
+        item = psysmon.core.preferences_manager.ListCtrlEditPrefItem(name = 'picks',
+                                                                     label = 'picks',
+                                                                     group = 'pick selection',
+                                                                     value = [],
+                                                                     column_labels = column_labels,
+                                                                     limit = [],
+                                                                     hooks = {'on_value_change': self.on_pick_selected},
+                                                                     tool_tip = 'The available picks for the selected event.')
+        self.pref_manager.add_item(pagename = 'select',
+                                   item = item)
+
+
+
     def buildFoldPanel(self, panelBar):
         ''' Create the foldpanel GUI.
         '''
@@ -108,12 +126,67 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
                                     name = 'selected_pick_catalog',
                                     value = {'catalog_name': self.selected_catalog_name})
 
+        self.logger.info("Selected a catalog.")
+
         # Load the catalog from the database.
         self.library.clear()
         self.library.load_catalog_from_db(project = self.parent.project,
                                           name = self.selected_catalog_name)
 
         # Load the picks.
-        #self.load_picks()
+        self.load_picks()
 
+
+
+    def on_pick_selected(self):
+        ''' Handle a value change in the picks list control.
+
+        '''
+        selected_picks = self.pref_manager.get_value('picks')
+        self.logger.info("Selected picks: %s", selected_picks)
+
+
+    def load_picks(self):
+        ''' Load the picks for the selected event.
+        '''
+        cur_catalog = self.library.catalogs[self.selected_catalog_name]
+        cur_catalog.clear_picks()
+
+        # Check if an event is selected. If one is selected, use the event
+        # limits to load the picks.
+        selected_event_info = self.parent.get_shared_info(origin_rid = self.parent.collection_node.rid + '/plugin/select_event',
+                                                                           name = 'selected_event')
+        if selected_event_info:
+            if len(selected_event_info) > 1:
+                raise RuntimeError("More than one event info was returned. This shouldn't happen.")
+            selected_event_info = selected_event_info[0]
+            cur_catalog.load_picks(project = self.parent.project,
+                                   event_id = [selected_event_info.value['id'], ])
+            pick_list = self.convert_picks_to_list(cur_catalog.picks)
+            self.pref_manager.set_limit('picks', pick_list)
+
+
+    def convert_picks_to_list(self, picks):
+        ''' Convert a list of pick objects to a list suitable for the GUI element.
+        '''
+        list_fields = []
+        list_fields.append(('db_id', 'id', int))
+        list_fields.append(('scnl_string', 'scnl', str))
+        list_fields.append(('label', 'label', str))
+        list_fields.append(('time', 'time', str))
+        list_fields.append(('agency_uri', 'agency_uri', str))
+        list_fields.append(('author_uri', 'author_uri', str))
+
+        pick_list = []
+        for cur_pick in picks:
+            cur_row = []
+            for cur_field in list_fields:
+                cur_name = cur_field[0]
+                if cur_name == 'scnl_string':
+                    cur_row.append(str(cur_pick.channel.scnl_string))
+                else:
+                    cur_row.append(str(getattr(cur_pick, cur_name)))
+            pick_list.append(cur_row)
+
+        return pick_list
 
