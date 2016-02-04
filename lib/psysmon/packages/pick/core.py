@@ -208,10 +208,13 @@ class Catalog(object):
 
         station : String
             The name of the station to which the pick is assigned to.
+
+        event_id : Integer
+            The ID of the event to which the pick is associated.
         '''
         ret_picks = self.picks
 
-        valid_keys = ['id', 'label']
+        valid_keys = ['id', 'label', 'event_id']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
