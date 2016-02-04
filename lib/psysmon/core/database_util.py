@@ -40,6 +40,7 @@ def db_table_migration(engine, table, prefix):
     ''' Check if a database table migration is needed and apply the changes.
     '''
     logger.info('Checking if database table %s needs an update.', table.__table__.name)
+    table_updated = False
     cur_metadata = sqa.MetaData(engine)
     cur_metadata.reflect(engine)
     if table.__table__.name in cur_metadata.tables.keys():
@@ -54,6 +55,9 @@ def db_table_migration(engine, table, prefix):
         # The table is missing in the schema, create it.
         logger.info('The table %s is not existing, create it.', table.__table__.name)
         table.create()
+        table_updated = True
+
+    return table_updated
 
 
 def update_db_table(engine, table, metadata, prefix):

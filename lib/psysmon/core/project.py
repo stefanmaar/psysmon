@@ -760,9 +760,10 @@ class Project(object):
         if not self.dbBase:
             self.connect2Db()
 
-        pkg_version_changed = False
-        db_migration_error = False
+        save_needed = False
         for _, curPkg in packages.iteritems():
+            pkg_version_changed = False
+            update_success = True
             if not curPkg.databaseFactory:
                 self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
@@ -779,21 +780,24 @@ class Project(object):
                             pkg_version_changed = True
                             # Check for changes in the database.
                             self.logger.info('%s - The current package version %s is newer than the one used (%s) when the project was saved - an update is needed.',curPkg.name, curPkg.version, self.pkg_version[curPkg.name])
-                            db_util.db_table_migration(table = curTable,
-                                                       engine = self.dbEngine,
-                                                       prefix = self.slug + '_')
+                            update_success = db_util.db_table_migration(table = curTable,
+                                                                        engine = self.dbEngine,
+                                                                        prefix = self.slug + '_')
 
-                            # Update the project package version to the current
-                            # one.
-                            self.pkg_version[curPkg.name] = curPkg.version
                     except:
-                        db_migration_error = True
+                        update_success = False
                         self.logger.exception("Couldn't migrate the table %s.", curName)
                         continue
 
                     self.dbTables[curName] = curTable
 
-        if pkg_version_changed is True and db_migration_error is not True:
+            # Update the project package version to the current
+            # one.
+            if pkg_version_changed and update_success:
+                self.pkg_version[curPkg.name] = curPkg.version
+                save_needed = True
+
+        if save_needed:
             # Save the project to update the package versions.
             self.save_json()
 
