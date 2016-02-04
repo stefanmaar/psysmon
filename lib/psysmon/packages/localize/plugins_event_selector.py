@@ -29,6 +29,7 @@ from psysmon.core.plugins import OptionPlugin
 from psysmon.core.guiBricks import PrefEditPanel
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.preferences_manager as psy_pm
+import psysmon.packages.event.core as ev_core
 
 
 class SelectEvents(OptionPlugin):
@@ -53,6 +54,9 @@ class SelectEvents(OptionPlugin):
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.flag_icon_16
+
+        # The events library.
+        self.library = ev_core.Library(name = self.rid)
 
         # The currently selected event.
         self.selected_event = {}
@@ -120,7 +124,7 @@ class SelectEvents(OptionPlugin):
         ''' Create the foldpanel GUI.
         '''
         # Set the limits of the event_catalog field.
-        catalog_names = self.parent.event_library.get_catalogs_in_db(self.parent.project)
+        catalog_names = self.library.get_catalogs_in_db(self.parent.project)
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
             self.pref_manager.set_value('event_catalog', catalog_names[0])
@@ -139,15 +143,6 @@ class SelectEvents(OptionPlugin):
             self.parent.add_shared_info(origin_rid = self.rid,
                                         name = 'selected_event',
                                         value = self.selected_event)
-
-            # Add the pre- and post event time.
-            start_time = self.selected_event['start_time'] - self.pref_manager.get_value('pre_et')
-            end_time = self.selected_event['end_time'] + self.pref_manager.get_value('post_et')
-
-            self.parent.displayManager.setTimeLimits(startTime = start_time,
-                                                     endTime = end_time)
-            self.clear_annotation()
-            self.parent.updateDisplay()
 
 
     def deactivate(self):
@@ -174,7 +169,7 @@ class SelectEvents(OptionPlugin):
     def update_events_list(self):
         ''' Update the events list control.
         '''
-        event_library = self.parent.event_library
+        event_library = self.library
         catalog_name = self.pref_manager.get_value('event_catalog')
         start_time = self.pref_manager.get_value('start_time')
         duration = self.pref_manager.get_value('window_length')

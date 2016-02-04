@@ -38,7 +38,6 @@ from matplotlib.figure import Figure
 import psysmon
 import psysmon.core.packageNodes as packageNodes
 import psysmon.core.gui as gui
-import psysmon.packages.event.core as ev_core
 
 
 class GraphicLocalizationNode(packageNodes.CollectionNode):
@@ -154,9 +153,6 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         self.plugins = [x for x in self.plugins if x.name in needed_plugins]
         for cur_plugin in self.plugins:
             cur_plugin.parent = self
-
-        # Create the events library.
-        self.event_library = ev_core.Library(name = self.collection_node.rid)
 
         # Initialize the user interface.
         self.init_user_interface()
