@@ -246,9 +246,9 @@ def databaseFactory(base):
                 agency_uri, author_uri, creation_time):
             self.name = name
             self.description = description
-            self.input_unit = input_unit,
-            self.output_unit = output_unit,
-            self.deliver_unit = deliver_unit,
+            self.input_unit = input_unit
+            self.output_unit = output_unit
+            self.deliver_unit = deliver_unit
             self.agency_uri = agency_uri
             self.author_uri = author_uri
             self.creation_time = creation_time
