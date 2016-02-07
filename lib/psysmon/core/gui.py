@@ -52,6 +52,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
+import sqlalchemy
 import psysmon
 from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
@@ -1431,6 +1432,7 @@ class DataSourceDlg(wx.Dialog):
         dlg = EditWaveclientDlg(psyBase = self.psyBase,
                                 client = client2Edit)
         dlg.ShowModal()
+        dlg.Destroy()
 
         # Check if the name of the waveclient has changed.
         if client2Edit.name != selectedItem:
@@ -1561,9 +1563,13 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # The waveclient holding the options.
         self.client = client
 
+        # The currently selected directory index.
+        self.selected_waveform_dir = None
+
         # Create the grid editing buttons.
         addDirButton = wx.Button(self, wx.ID_ANY, "add")
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
+        changeAliasButton = wx.Button(self, wx.ID_ANY, "change alias")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1572,6 +1578,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Fill the grid button sizer
         gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(changeAliasButton, 0, wx.EXPAND|wx.ALL)
 
         fields = self.getGridColumns()
         self.wfListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
@@ -1590,6 +1597,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
+        self.Bind(wx.EVT_BUTTON, self.onChangeAlias, changeAliasButton)
+
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onDirectorySelected, self.wfListCtrl)
 
         self.project = project
         self.wfDir = self.project.dbTables['waveform_dir']
@@ -1597,14 +1607,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.dbSession = self.project.getDbSession()
 
         # A list of available waveform directories. It consits of tuples of
-        # wfDir mapper instances.
-        #self.wfDirList =  self.dbSession.query(self.wfDir
-        #                                      ).join(self.wfDirAlias, 
-        #                                             self.wfDir.id == self.wfDirAlias.wf_id
-        #                                            ).filter(self.wfDirAlias.user == self.project.activeUser.name
-        #                                                    ).all()
-
-        self.wfDirList = self.client.waveformDirList
+        self.wfDirList = self.dbSession.query(self.wfDir).join(self.wfDirAlias,
+                                                               self.wfDir.id==self.wfDirAlias.wf_id
+                                                              ).filter(self.wfDirAlias.user==self.project.activeUser.name).all()
 
         self.updateWfListCtrl()
 
@@ -1622,6 +1627,12 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         return tableField
 
 
+    def onDirectorySelected(self, evt):
+        ''' The item selected callback of the directory list.
+        '''
+        self.selected_waveform_dir = self.wfDirList[evt.GetIndex()]
+
+
     def onAddDirectory(self, event):
         ''' The add directory callback.
 
@@ -1629,6 +1640,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         If a directory has been selected, call to insert the directory 
         into the database.
         '''
+
         # In this case we include a "New directory" button.
         dlg = wx.DirDialog(self, "Choose a directory:",
                           style=wx.DD_DEFAULT_STYLE
@@ -1651,17 +1663,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
             #self.dbSession.add(newWfDirAlias)
 
             self.wfDirList.append(newWfDir)
-            self.addItem2WfListCtrl(newWfDir)
-
-            #rowNumber = 1
-            #action = Action(style='METHOD',
-            #                affectedObject=None,
-            #                dataBefore=None,
-            #                dataAfter=None,
-            #                undoMethod=self.removeDirectory,
-            #                undoParameters=rowNumber
-            #                )
-            #self.history.do(action)
+            self.updateWfListCtrl()
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
@@ -1675,27 +1677,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         for k, curDir in enumerate(self.wfDirList):
             self.wfListCtrl.InsertStringItem(k, str(curDir.id))
             self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
-            self.wfListCtrl.SetStringItem(k, 2, curDir.alias)
+            self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
             self.wfListCtrl.SetStringItem(k, 3, curDir.description)
 
-        self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
-
-
-    def addItem2WfListCtrl(self, item):
-        ''' Add a waveform directory to the list control.
-
-        Parameters
-        ----------
-        item : Object
-            The waveformDir mapper instance to be added to the list control.
-        '''
-        k = self.wfListCtrl.GetItemCount()
-        self.wfListCtrl.InsertStringItem(k, str(item.id))
-        self.wfListCtrl.SetStringItem(k, 1, item.directory)
-        self.wfListCtrl.SetStringItem(k, 2, item.aliases[0].alias)
-        self.wfListCtrl.SetStringItem(k, 3, item.description)
         self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
         self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
@@ -1707,22 +1691,65 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         selectedRow =  self.wfListCtrl.GetFocusedItem()
         #item2Delete =  self.wfListCtrl.GetItem(selectedRow, 0)
         obj2Delete = self.wfDirList.pop(selectedRow)
-        self.dbSession.delete(obj2Delete)
+        try:
+            self.dbSession.delete(obj2Delete)
+        except sqlalchemy.exc.InvalidRequestError:
+            self.dbSession.expunge(obj2Delete)
+
         self.wfListCtrl.DeleteItem(selectedRow)
-        #self.dbSession.query(self.wfDir).filter(self.wfDir.id==id2Delete).delete()
 
 
-    
+    def onChangeAlias(self, event):
+        ''' The change alias button callback.
+
+        Select a new directory to use a the waveform directory alias.
+
+        Parameters
+        ----------
+        event :
+            The wxPython event passed to the callback.
+        '''
+        if not self.selected_waveform_dir:
+            return
+
+        # In this case we include a "New directory" button.
+        dlg = wx.DirDialog(self, "Choose a new alias directory:",
+                          style=wx.DD_DEFAULT_STYLE
+                           | wx.DD_DIR_MUST_EXIST,
+                           defaultPath = self.selected_waveform_dir.aliases[0].alias
+                           )
+
+        # If the user selects OK, then we process the dialog's data.
+        # This is done by getting the path data from the dialog - BEFORE
+        # we destroy it.
+        if dlg.ShowModal() == wx.ID_OK:
+            self.logger.info('New alias directory: %s', dlg.GetPath())
+            self.selected_waveform_dir.aliases[0].alias = dlg.GetPath()
+            self.updateWfListCtrl()
+
+        # Only destroy a dialog after you're done with it.
+        dlg.Destroy()
+
+
     def onOk(self):
         ''' Apply the changes.
 
         This method should be called by the dialog holding the options when the user clicks 
         the ok button.
         '''
-        self.dbSession.commit()
+        try:
+            self.dbSession.commit()
+        finally:
+            self.dbSession.close()
         # Reload the project's waveform directory list to make sure, that it's 
         # consistent with the database.
         self.client.loadWaveformDirList()
+
+
+    def onCancel(self):
+        ''' Called when the dialog cancel button is clicked.
+        '''
+        self.dbSession.close()
 
 
 
@@ -1781,6 +1808,12 @@ class EarthwormWaveclientOptions(wx.Panel):
         return self.client
 
 
+    def onCancel(self):
+        ''' Called when the dialog cancel button is clicked.
+        '''
+        pass
+
+
 
 
 class EditWaveclientDlg(wx.Dialog):
@@ -1826,6 +1859,7 @@ class EditWaveclientDlg(wx.Dialog):
         self.SetSizerAndFit(sizer)
 
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
+        self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
 
 
 
@@ -1849,7 +1883,23 @@ class EditWaveclientDlg(wx.Dialog):
         '''
         # Call the onOk method of the options class.
         self.optionsPanel.onOk()
-        self.Destroy()
+        self.EndModal(wx.ID_OK)
+
+
+    def onCancel(self, event):
+        ''' The cancel button callback.
+
+        Parameters
+        ----------
+        event :
+            The wxPython event passed to the callback.
+
+        Commit the database changes and update the project's waveform directory 
+        list.
+        '''
+        # Call the onOk method of the options class.
+        self.optionsPanel.onCancel()
+        self.EndModal(wx.ID_CANCEL)
 
 
 
