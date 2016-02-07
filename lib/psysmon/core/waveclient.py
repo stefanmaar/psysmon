@@ -507,6 +507,7 @@ class PsysmonDbWaveClient(WaveClient):
         if wfDir is None or wfDirAlias is None:
             return
 
+        # TODO: make the waveform dir list a dynamic property.
         dbSession = self.project.getDbSession()
         self.waveformDirList = dbSession.query(wfDir.id,
                                                wfDir.directory,
