@@ -576,7 +576,15 @@ class ImportWaveformEditDlg(wx.Frame):
         dlg = mdd.MultiDirDialog(self,
                                  title = 'Choose one or more directories',
                                  defaultPath = start_path,
-                                 agwStyle = mdd.DD_MULTIPLE | mdd.DD_DIR_MUST_EXIST)
+                                 agwStyle = mdd.DD_DIR_MUST_EXIST)
+        # BUGFIX FS#81
+        # When the DD_MULTIPLE style is used, the root folder is kept in the
+        # selected paths list after setting the default path. When the user
+        # doesn't select any folder, the root folder will be returned together
+        # with the default path by the GetPaths() method.
+        # Setting the MULTIPLE flag after the initialization as a single
+        # selection dialog fixes this problem.
+        dlg.dirCtrl.GetTreeCtrl().SetWindowStyle(dlg.dirCtrl.GetTreeCtrl().GetWindowStyle() | wx.TR_MULTIPLE)
 
         # If the user selects OK, then we process the dialog's data.
         # This is done by getting the path data from the dialog - BEFORE
