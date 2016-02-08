@@ -43,7 +43,7 @@ class ImportWaveformEditDlgTestCase(unittest.TestCase):
         # Configure the logger.
         logger = logging.getLogger('psysmon')
         logger.setLevel('DEBUG')
-        logger.addHandler(psysmon.getLoggerHandler())
+        logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
         cls.psybase = create_psybase()
         cls.project = create_empty_project(cls.psybase)
@@ -52,6 +52,7 @@ class ImportWaveformEditDlgTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
         print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
         print "removing temporary file structure....\n"
