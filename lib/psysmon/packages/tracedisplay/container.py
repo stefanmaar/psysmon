@@ -203,8 +203,6 @@ class View(wx.Panel):
         self.Bind(wx.EVT_KEY_UP, self.onKeyUp)
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
-        #self.Bind(wx.EVT_SIZE, self._onSize)
-
     def __del__(self):
         print "Deleting the view."
 
