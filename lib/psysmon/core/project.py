@@ -51,6 +51,7 @@ import obspy.core
 import obspy.core.utcdatetime as utcdatetime
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.util as psy_util
+import psysmon.core.json_util
 from psysmon.packages.geometry.db_inventory import DbInventory
 import psysmon.core.database_util as db_util
 
@@ -834,7 +835,7 @@ class Project(object):
         '''
         import json
         fp = open(os.path.join(self.projectDir, self.projectFile), mode = 'w')
-        json.dump(self, fp = fp, cls = psy_util.ProjectFileEncoder)
+        json.dump(self, fp = fp, cls = psysmon.core.json_util.ProjectFileEncoder)
         fp.close()
 
 
