@@ -81,13 +81,24 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         self.pref_manager.add_item(pagename = 'select',
                                    item = item)
 
+        # TODO: Add seperate selections for the P- and S-phases.
+        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 'phases',
+                                          label = 'phases',
+                                          group = 'phase selection',
+                                          value = [],
+                                          limit = [],
+                                          tool_tip = 'Select the phases to use for the localization.',
+                                          hooks = {'on_value_change': self.on_phases_select})
+        self.pref_manager.add_item(pagename = 'select',
+                                   item = item)
+
 
         column_labels = ['db_id', 'scnl', 'label', 'time',
                          'agency_uri', 'author_uri']
 
         item = psysmon.core.preferences_manager.ListCtrlEditPrefItem(name = 'picks',
                                                                      label = 'picks',
-                                                                     group = 'pick selection',
+                                                                     group = 'available picks',
                                                                      value = [],
                                                                      column_labels = column_labels,
                                                                      limit = [],
@@ -122,9 +133,6 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         ''' Handle the catalog selection.
         '''
         self.selected_catalog_name = self.pref_manager.get_value('pick_catalog')
-        self.parent.add_shared_info(origin_rid = self.rid,
-                                    name = 'selected_pick_catalog',
-                                    value = {'catalog_name': self.selected_catalog_name})
 
         self.logger.info("Selected a catalog.")
 
@@ -136,14 +144,34 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         # Load the picks.
         self.load_picks()
 
+        # Share the selected catalog.
+        selected_catalog = self.library.catalogs[self.selected_catalog_name]
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'selected_pick_catalog',
+                                    value = {'catalog': selected_catalog})
 
+
+    def on_phases_select(self):
+        ''' Handle the phase selection.
+
+        '''
+        selected_phases = self.pref_manager.get_value('phases')
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'selected_phases',
+                                    value = {'phases': selected_phases})
 
     def on_pick_selected(self):
         ''' Handle a value change in the picks list control.
 
         '''
-        selected_picks = self.pref_manager.get_value('picks')
-        self.logger.info("Selected picks: %s", selected_picks)
+        cur_catalog = self.library.catalogs[self.selected_catalog_name]
+        pick_ids = [int(x[0]) for x in self.pref_manager.get_value('picks')]
+        selected_picks = []
+        for cur_id in pick_ids:
+            selected_picks.extend(cur_catalog.get_pick(db_id = cur_id))
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'selected_picks',
+                                    value = {'picks': selected_picks})
 
 
     def load_picks(self):
@@ -164,6 +192,9 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
                                    event_id = [selected_event_info.value['id'], ])
             pick_list = self.convert_picks_to_list(cur_catalog.picks)
             self.pref_manager.set_limit('picks', pick_list)
+
+            labels = list(set([x.label for x in cur_catalog.picks]))
+            self.pref_manager.set_limit('phases', labels)
 
 
     def convert_picks_to_list(self, picks):
