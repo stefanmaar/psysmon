@@ -765,6 +765,11 @@ class MultiChoiceField(Field):
             self.controlElement.SetStringSelection(curValue)
 
 
+    def updateLimit(self):
+        self.controlElement.SetItems(self.pref_item.limit)
+        self.setControlElementValue()
+
+
 
 class FileBrowseField(Field):
     ''' The fileBrowseField class.
