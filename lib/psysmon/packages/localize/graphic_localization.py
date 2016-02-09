@@ -148,7 +148,7 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         self.collection_node = collection_node
 
         # Get the available plugins and filter them for the needed ones.
-        needed_plugins = ['select event', 'select picks', 'circle method']
+        needed_plugins = ['select event', 'select picks', 'circle method', 'map view']
         self.plugins = self.project.getPlugins(('common', 'GraphicLocalizationNode'))
         self.plugins = [x for x in self.plugins if x.name in needed_plugins]
         for cur_plugin in self.plugins:
@@ -157,32 +157,37 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         # Initialize the user interface.
         self.init_user_interface()
 
+        # Update the display.
+        self.update_display()
+
 
     def init_user_interface(self):
         ''' Create the graphical user interface.
         '''
         # Create the center panel holding the plot axes.
-        self.map_panel = MapViewPanel(self)
-
-        self.mgr.AddPane(self.map_panel,
-                         wx.aui.AuiPaneInfo().Name('map').CenterPane())
-
-        self.mgr.AddPane(self.ribbon,
-                         wx.aui.AuiPaneInfo().Top().
-                                              Name('palette').
-                                              Caption('palette').
-                                              Layer(1).
-                                              Row(0).
-                                              Position(0).
-                                              BestSize(wx.Size(-1,50)).
-                                              MinSize(wx.Size(-1,80)).
-                                              CloseButton(False))
+        #self.map_panel = MapViewPanel(self)
 
         # Initialize the ribbon bar using the loaded plugins.
         self.init_ribbon_bar()
 
+        # Add a default view container.
+        # TODO: For the future, for each selected event a view container could
+        # be created - don't know if that makes sense.
+        container_node = psysmon.core.gui_view.ViewContainerNode(name = 'default',
+                                                                 parent = self.viewport)
+        self.viewport.add_node(container_node)
+
         # Tell the docking manager to commit all the changes.
         self.mgr.Update()
+
+
+    def update_display(self):
+        ''' Update the display.
+        '''
+        # Plot the data using the view tools.
+        view_plugins = [x for x in self.plugins if x.mode == 'view' and x.active]
+        for cur_plugin in view_plugins:
+            cur_plugin.plot()
 
 
 

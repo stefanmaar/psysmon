@@ -29,8 +29,10 @@ website = "http://www.stefanmertl.com"          # The package website.
 collection_node_modules = ['graphic_localization',]
 
 # Specify the module(s) where to search for plugin classes.
-plugin_modules = ['plugins_graphic_localize', 'plugins_event_selector',
-                  'plugins_localize_circle']
+plugin_modules = ['plugins_graphic_localize',
+                  'plugins_event_selector',
+                  'plugins_localize_circle',
+                  'plugins_view_map']
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
