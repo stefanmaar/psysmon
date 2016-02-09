@@ -195,7 +195,7 @@ class Catalog(object):
 
         Parameters
         ----------
-        id : Integer
+        db_id : Integer
             The unique ID of the pick.
 
         label : String
@@ -215,7 +215,7 @@ class Catalog(object):
         '''
         ret_picks = self.picks
 
-        valid_keys = ['id', 'label', 'event_id']
+        valid_keys = ['db_id', 'label', 'event_id']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
