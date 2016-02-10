@@ -67,7 +67,7 @@ class DbInventoryTestCase(unittest.TestCase):
         # Configure the logger.
         cls.logger = logging.getLogger('psysmon')
         cls.logger.setLevel('DEBUG')
-        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'INFO'))
 
         cls.data_path = os.path.dirname(os.path.abspath(__file__))
         cls.data_path = os.path.join(cls.data_path, 'data')
@@ -197,7 +197,7 @@ class DbInventoryTestCase(unittest.TestCase):
             self.assertEqual(added_network1.stations[0].channels[0].name, 'channel1_name')
             self.assertEqual(added_network1.stations[1].channels[0].name, 'channel2_name')
 
-
+            
             db_inventory.commit()
         finally:
             db_inventory.close()
@@ -332,6 +332,10 @@ class DbInventoryTestCase(unittest.TestCase):
             self.assertIsInstance(db_inventory.sensors[0].components[0], DbSensorComponent)
             self.assertEqual(len(db_inventory.sensors[0].components[0].parameters), 1)
             self.assertIsInstance(db_inventory.sensors[0].components[0].parameters[0], DbSensorComponentParameter)
+
+            self.assertEqual(db_inventory.sensors[0].components[0].orm.input_unit, 'm')
+            self.assertEqual(db_inventory.sensors[0].components[0].orm.output_unit, 'm/s')
+            self.assertEqual(db_inventory.sensors[0].components[0].orm.deliver_unit, 'V')
 
             db_inventory.commit()
         finally:

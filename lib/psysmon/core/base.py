@@ -40,6 +40,7 @@ from psysmon import __version__ as version
 import psysmon.core.packageSystem
 import psysmon.core.project
 import psysmon.core.util
+import psysmon.core.json_util
 import psysmon.core.project_server
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.error import PsysmonError
@@ -401,7 +402,7 @@ class Base(object):
         import json
         project_dir = os.path.dirname(filename)
         fp = open(filename, 'r')
-        self.project = json.load(fp, cls = psysmon.core.util.ProjectFileDecoder)
+        self.project = json.load(fp, cls = psysmon.core.json_util.ProjectFileDecoder)
         fp.close()
 
         # Set some runtime dependent variables.

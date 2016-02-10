@@ -18,25 +18,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib as mpl
-mpl.rcParams['backend'] = 'WXAgg'
-
 import unittest
 import nose.plugins.attrib as nose_attrib
 import psysmon
 import logging
 import os
 from psysmon.core.test_util import create_psybase
-from psysmon.core.test_util import create_empty_project
+from psysmon.core.test_util import create_full_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
+from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
+import obspy.core.utcdatetime as utcdatetime
 
 
 @nose_attrib.attr('interactive')
-class ImportWaveformEditDlgTestCase(unittest.TestCase):
+class GraphicLocalizationTestCase(unittest.TestCase):
     """
-    Test suite for psysmon.packages.obspyImportWaveform.ImportWaveformEditDlg
     """
     @classmethod
     def setUpClass(cls):
@@ -45,9 +43,19 @@ class ImportWaveformEditDlgTestCase(unittest.TestCase):
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
+        drop_database_tables(db_dialect = 'mysql',
+                              db_driver = None,
+                              db_host = 'localhost',
+                              db_name = 'psysmon_unit_test',
+                              db_user = 'unit_test',
+                              db_pwd = 'test',
+                              project_name = 'unit_test')
+
+
         cls.psybase = create_psybase()
-        cls.project = create_empty_project(cls.psybase)
-        print "In setUpClass...\n"
+        create_full_project(cls.psybase)
+        cls.project = cls.psybase.project
+        cls.project.dbEngine.echo = False
 
 
     @classmethod
@@ -65,9 +73,11 @@ class ImportWaveformEditDlgTestCase(unittest.TestCase):
     def setUp(self):
         self.app =psygui.PSysmonApp()
 
-        nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('import waveform')
+        nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('graphic localization')
         self.node = nodeTemplate()
         self.node.project = self.project
+
+        #self.node.pref_manager.set_value('start_time', utcdatetime.UTCDateTime('2010-08-31T08:00:00'))
 
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__
@@ -75,19 +85,17 @@ class ImportWaveformEditDlgTestCase(unittest.TestCase):
 
 
     def tearDown(self):
+        self.psybase.project_server.unregister_data()
         print "\n\nEs war sehr schoen - auf Wiederseh'n.\n"
 
     def testDlg(self):
-        self.node.edit()
+        self.node.execute()
         self.app.MainLoop()
 
-#def suite():
-#    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
-#    return suite
 
 def suite():
     # return unittest.TestSuite(map(EditGeometryDlgTestCase, tests))
-    return unittest.makeSuite(ImportWaveformEditDlgTestCase, 'test')
+    return unittest.makeSuite(GraphicLocalizationTestCase, 'test')
 
 if __name__ == '__main__':
     unittest.main(defaultTest='suite')

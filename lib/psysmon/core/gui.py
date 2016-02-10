@@ -53,6 +53,8 @@ import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
 import sqlalchemy
+import psysmon
+import psysmon.core.gui_view
 from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
@@ -2682,8 +2684,77 @@ class PsysmonDockingFrame(wx.Frame):
         # The docking manager.
         self.mgr = wx.aui.AuiManager(self)
 
-        # Create the tool ribbon bar.
+        # Create the tool ribbon bar instance.
+        # The ribbon bar itself is filled using the init_ribbon_bar method
+        # by the instance inheriting the PsysmonDockingFrame.
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
+
+        # Initialize the viewport.
+        self.init_viewport()
+
+        # Initialize the ribbon bar aui manager pane.
+        self.init_ribbon_pane()
+
+        # Create the plugins shared information bag, which holds all the
+        # information, that's shared by the tracedisplay plugins.
+        self.plugins_information_bag = psysmon.core.plugins.SharedInformationBag()
+
+        # Create the hook manager and fill it with the allowed hooks.
+        self.hook_manager = psysmon.core.util.HookManager(self)
+
+        self.hook_manager.add_hook(name = 'plugin_activated',
+                                   description = 'Called after a plugin was activated.',
+                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_hook(name = 'plugin_deactivated',
+                                   description = 'Called after a plugin was deactivated.',
+                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
+        self.hook_manager.add_hook(name = 'shared_information_added',
+                                   description = 'Called after a shared information was added by a plugin.',
+                                   passed_args = {'origin_rid': 'The resource id of the source of the shared information.',
+                                                  'name': 'The name of the shared information.'})
+        self.hook_manager.add_hook(name = 'shared_information_updated',
+                                   description = 'Called after a shared information was added by a plugin.',
+                                   passed_args = {'updated_info': 'The shared information instance which was updated.'})
+        self.hook_manager.add_view_hook(name = 'button_press_event',
+                                        description = 'The matplotlib button_press_event in the view axes.')
+        self.hook_manager.add_view_hook(name = 'button_release_event',
+                                        description = 'The matplotlib button_release_event in the view axes.')
+        self.hook_manager.add_view_hook(name = 'motion_notify_event',
+                                        description = 'The matplotlib motion_notify_event in the view axes.')
+
+
+    def init_viewport(self):
+        ''' Initialize the viewport.
+        '''
+        self.center_panel = wx.Panel(parent = self, id = wx.ID_ANY)
+        self.viewport_sizer = wx.GridBagSizer()
+        self.viewport = psysmon.core.gui_view.Viewport(parent = self.center_panel)
+        self.viewport_sizer.Add(self.viewport,
+                                pos = (0,0),
+                                flag = wx.EXPAND|wx.ALL,
+                                border = 0)
+        self.viewport_sizer.AddGrowableRow(0)
+        self.viewport_sizer.AddGrowableCol(0)
+        self.center_panel.SetSizer(self.viewport_sizer)
+
+        self.mgr.AddPane(self.center_panel,
+                         wx.aui.AuiPaneInfo().Name('viewport').CenterPane())
+
+
+    def init_ribbon_pane(self):
+        ''' Initialize the aui manager pane for the ribbon bar.
+        '''
+        self.mgr.AddPane(self.ribbon,
+                         wx.aui.AuiPaneInfo().Top().
+                                              Name('palette').
+                                              Caption('palette').
+                                              Layer(1).
+                                              Row(0).
+                                              Position(0).
+                                              BestSize(wx.Size(-1,50)).
+                                              MinSize(wx.Size(-1,80)).
+                                              CloseButton(False))
+
 
 
     def init_ribbon_bar(self):
@@ -2729,7 +2800,7 @@ class PsysmonDockingFrame(wx.Frame):
                                                                           help_string = curPlugin.name,
                                                                           kind = ribbon.RIBBON_BUTTON_TOGGLE)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
-                                                             lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
+                                                             lambda evt, curPlugin=curPlugin : self.on_option_tool_clicked(evt, curPlugin), id=curTool.id)
                 id_counter += 1
 
         for curPlugin in sorted(command_plugins, key = attrgetter('position_pref', 'name')):
@@ -2745,10 +2816,10 @@ class PsysmonDockingFrame(wx.Frame):
                                                                                     bitmap = curPlugin.icons['active'].GetBitmap(),
                                                                                     help_string = curPlugin.name)
                     self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                                 lambda evt, curPlugin=curPlugin: self.onCommandToolDropdownClicked(evt, curPlugin),
+                                                                 lambda evt, curPlugin=curPlugin: self.on_command_tool_dropdown_clicked(evt, curPlugin),
                                                                  id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onCommandToolClicked(evt, curPlugin),
+                                                             lambda evt, curPlugin=curPlugin : self.on_command_tool_clicked(evt, curPlugin),
                                                              id=curTool.id)
                 id_counter += 1
 
@@ -2760,10 +2831,10 @@ class PsysmonDockingFrame(wx.Frame):
                                                                                 bitmap = curPlugin.icons['active'].GetBitmap(),
                                                                                 help_string = curPlugin.name)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin),
+                                                             lambda evt, curPlugin=curPlugin : self.on_interactive_tool_clicked(evt, curPlugin),
                                                              id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin: self.onInteractiveToolDropdownClicked(evt, curPlugin),
+                                                             lambda evt, curPlugin=curPlugin: self.on_interactive_tool_dropdown_clicked(evt, curPlugin),
                                                              id=curTool.id)
                 id_counter += 1
 
@@ -2781,10 +2852,10 @@ class PsysmonDockingFrame(wx.Frame):
                                                                                     bitmap = curPlugin.icons['active'].GetBitmap(),
                                                                                     help_string = curPlugin.name)
                     self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                                 lambda evt, curPlugin=curPlugin: self.onViewToolDropdownClicked(evt, curPlugin),
+                                                                 lambda evt, curPlugin=curPlugin: self.on_view_tool_dropdown_clicked(evt, curPlugin),
                                                                  id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onViewToolClicked(evt, curPlugin),
+                                                             lambda evt, curPlugin=curPlugin : self.on_view_tool_clicked(evt, curPlugin),
                                                              id=curTool.id)
                 id_counter += 1
 
@@ -2793,7 +2864,7 @@ class PsysmonDockingFrame(wx.Frame):
 
 
 
-    def onOptionToolClicked(self, event, plugin):
+    def on_option_tool_clicked(self, event, plugin):
         ''' Handle the click of an option plugin toolbar button.
 
         Show or hide the foldpanel of the plugin.
@@ -2843,7 +2914,7 @@ class PsysmonDockingFrame(wx.Frame):
 
 
 
-    def onCommandToolClicked(self, event, plugin):
+    def on_command_tool_clicked(self, event, plugin):
         ''' Handle the click of a command plugin toolbar button.
 
         Activate the tool.
@@ -2852,9 +2923,18 @@ class PsysmonDockingFrame(wx.Frame):
         plugin.run()
 
 
+    def on_command_tool_dropdown_clicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an command plugin toolbar button.
+
+        '''
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, "edit preferences")
+        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.on_edit_tool_preferences(evt, plugin), item)
+        event.PopupMenu(menu)
 
 
-    def onInteractiveToolClicked(self, event, plugin):
+
+    def on_interactive_tool_clicked(self, event, plugin):
         ''' Handle the click of an interactive plugin toolbar button.
 
         Activate the tool.
@@ -2866,3 +2946,129 @@ class PsysmonDockingFrame(wx.Frame):
             active_plugin = active_plugin[0]
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
+
+
+    def on_interactive_tool_dropdown_clicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an interactive plugin toolbar button.
+
+        '''
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, "edit preferences")
+        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
+        event.PopupMenu(menu)
+
+
+    def on_edit_tool_preferences(self, event, plugin):
+        ''' Handle the edit preferences dropdown click.
+
+        '''
+        self.logger.debug('Dropdown clicked -> editing preferences.')
+
+        if plugin.name not in self.foldPanels.keys():
+            #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
+            #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
+
+            curPanel = plugin.buildFoldPanel(self)
+            self.mgr.AddPane(curPanel,
+                             wx.aui.AuiPaneInfo().Right().
+                                                  Name(plugin.name).
+                                                  Caption(plugin.name).
+                                                  Layer(2).
+                                                  Row(0).
+                                                  Position(0).
+                                                  BestSize(wx.Size(300,-1)).
+                                                  MinSize(wx.Size(200,100)).
+                                                  MinimizeButton(True).
+                                                  MaximizeButton(True))
+            self.mgr.Update()
+            self.foldPanels[plugin.name] = curPanel
+        else:
+            if not self.foldPanels[plugin.name].IsShown():
+                curPanel = self.foldPanels[plugin.name]
+                self.mgr.GetPane(curPanel).Show()
+                self.mgr.Update()
+
+
+    def on_view_tool_clicked(self, event, plugin):
+        ''' Handle the click of an view plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the view tool: %s', plugin.name)
+
+        if plugin.active == True:
+            plugin.deactivate()
+            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
+            self.displayManager.removeViewTool(plugin)
+        else:
+            plugin.activate()
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
+            self.viewport.register_view_plugin(plugin)
+
+        self.viewport.Refresh()
+        self.viewport.Update()
+
+        self.update_display()
+
+
+    def on_view_tool_dropdown_clicked(self, event, plugin):
+        ''' Handle the click on the dropdown button of an view plugin toolbar button.
+
+        '''
+        self.logger.debug('Clicked the view tool dropdown button: %s', plugin.name)
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, "edit preferences")
+        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
+        event.PopupMenu(menu)
+
+
+    def call_hook(self, hook_name, **kwargs):
+        ''' Call the hook of the plugins.
+        '''
+        active_plugins = [x for x in self.plugins if x.active]
+        self.hook_manager.call_hook(receivers = active_plugins,
+                                    hook_name = hook_name,
+                                    **kwargs)
+
+
+    def add_shared_info(self, origin_rid, name, value):
+        ''' Add a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+
+        value : Dictionary
+            The value of the shared information
+        '''
+        self.plugins_information_bag.add_info(origin_rid = origin_rid,
+                                              name = name,
+                                              value = value)
+        self.call_hook('shared_information_added',
+                       origin_rid = origin_rid,
+                       name = name)
+
+
+    def notify_shared_info_change(self, updated_info):
+        ''' Notify tracedisplay, that a shared informtion was changed.
+        '''
+        self.call_hook('shared_information_updated',
+                       updated_info = updated_info)
+
+
+    def get_shared_info(self, **kwargs):
+        ''' Get a shared information.
+
+        Parameters
+        ----------
+        origin_rid : String
+            The resource ID of the origin of the information.
+
+        name : String
+            The name of the shared information
+        '''
+        return self.plugins_information_bag.get_info(**kwargs)

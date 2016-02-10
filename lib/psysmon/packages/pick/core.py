@@ -23,6 +23,7 @@ import psysmon
 import obspy.core.utcdatetime as utcdatetime
 import warnings
 import numpy as np
+import sqlalchemy
 
 
 
@@ -194,7 +195,7 @@ class Catalog(object):
 
         Parameters
         ----------
-        id : Integer
+        db_id : Integer
             The unique ID of the pick.
 
         label : String
@@ -208,10 +209,13 @@ class Catalog(object):
 
         station : String
             The name of the station to which the pick is assigned to.
+
+        event_id : Integer
+            The ID of the event to which the pick is associated.
         '''
         ret_picks = self.picks
 
-        valid_keys = ['id', 'label']
+        valid_keys = ['db_id', 'label', 'event_id']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
@@ -303,7 +307,7 @@ class Catalog(object):
 
 
     def load_picks(self, project, start_time = None, end_time = None,
-            pick_id = None):
+            pick_id = None, event_id = None):
         ''' Load picks from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -318,6 +322,9 @@ class Catalog(object):
 
         pick_id : Integer
             The database ID of the pick.
+
+        event_id : List of Integer
+            The id of the event to which the pick is associated to.
         '''
         if project is None:
             raise RuntimeError("The project is None. Can't query the database without a project.")
@@ -336,6 +343,9 @@ class Catalog(object):
 
             if pick_id:
                 query = query.filter(pick_table.id in pick_id)
+
+            if event_id:
+                query = query.filter(sqlalchemy.or_(pick_table.ev_id == x for x in event_id))
 
             picks_to_add = []
             for cur_orm in query:
@@ -400,7 +410,7 @@ class Pick(object):
     def __init__(self, label, time, amp1, channel,
                  amp2 = None, first_motion = 0, error = None,
                  agency_uri = None, author_uri = None, creation_time = None,
-                 db_id = None, parent = None, changed = True):
+                 db_id = None, event_id = None, parent = None, changed = True):
         ''' Initialize the instance.
         '''
         # The logging logger instance.
@@ -413,6 +423,9 @@ class Pick(object):
 
         # The unique database id.
         self.db_id = db_id
+
+        # The unique database id of the event to which the pick is associated.
+        self.event_id = event_id
 
         # The label of the pick.
         self.label = label
@@ -490,6 +503,7 @@ class Pick(object):
             pick_orm_class = project.dbTables['pick']
             pick_orm = pick_orm_class(catalog_id = catalog_id,
                                       stream_id = stream.id,
+                                      ev_id = self.event_id,
                                       label = self.label,
                                       time = self.time.timestamp,
                                       amp1 = self.amp1,
@@ -516,6 +530,7 @@ class Pick(object):
                 else:
                     pick_orm.ev_catalog_id = None
                 pick_orm.stream_id = stream.id
+                pick_orm.ev_id = self.event_id
                 pick_orm.label = self.label
                 pick_orm.time = self.time.timestamp
                 pick_orm.amp1 = self.amp1
@@ -567,6 +582,7 @@ class Pick(object):
                 channel = None
 
         pick = cls(db_id = pick_orm.id,
+                   event_id = pick_orm.ev_id,
                    channel = channel,
                    label = pick_orm.label,
                    time = utcdatetime.UTCDateTime(pick_orm.time),

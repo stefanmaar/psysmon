@@ -2010,7 +2010,7 @@ class Channel(object):
 
     @property
     def scnl_string(self):
-        return str.join(':', self.scnl())
+        return str.join(':', self.scnl)
 
 
     def add_stream(self, serial, model, producer, name, start_time, end_time):

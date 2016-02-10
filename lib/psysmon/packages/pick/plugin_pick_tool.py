@@ -265,13 +265,7 @@ class PickTool(InteractivePlugin):
 
                 for cur_pick in picks:
                     # Create the pick line in all channels of the station.
-                    cur_plot_channel.container.plot_annotation_vline(cur_pick.time.timestamp,
-                                                                     label = cur_pick.label,
-                                                                     parent_rid = self.rid,
-                                                                     key = cur_pick.rid,
-                                                                     color = 'r')
-                    cur_plot_channel.container.draw()
-
+                    self.plot_pick_line(cur_pick, cur_plot_channel.container)
 
     def pick_seismogram(self, event, data_manager, display_manager):
         ''' Create a pick in a seismogram view.
@@ -304,10 +298,12 @@ class PickTool(InteractivePlugin):
             selected_event_info = selected_event_info[0]
             event_start = selected_event_info.value['start_time']
             event_end = selected_event_info.value['end_time']
+            event_id = selected_event_info.value['id']
             if not (snap_x >= event_start.timestamp and snap_x <= event_end.timestamp):
                 self.logger.info("The pick is outside the selected event limits. Setting the pick is not allowed.")
                 return
-
+        else:
+            event_id = None
 
 
         # Get the channel of the pick.
@@ -332,17 +328,26 @@ class PickTool(InteractivePlugin):
             else:
                 search_win_start = self.parent.displayManager.startTime
                 search_win_end = self.parent.displayManager.endTime
-            picks = cur_catalog.get_pick(start_time = search_win_start,
-                                            end_time = search_win_end,
-                                            label = self.pref_manager.get_value('label'),
-                                            station = scnl[0])
+
+            if event_id is not None:
+                picks = cur_catalog.get_pick(start_time = search_win_start,
+                                             end_time = search_win_end,
+                                             label = self.pref_manager.get_value('label'),
+                                             station = scnl[0],
+                                             event_id = event_id)
+            else:
+                picks = cur_catalog.get_pick(start_time = search_win_start,
+                                             end_time = search_win_end,
+                                             label = self.pref_manager.get_value('label'),
+                                             station = scnl[0])
 
             if len(picks) == 0:
                 cur_channel = cur_channel[0]
                 cur_pick = pick_core.Pick(label = self.pref_manager.get_value('label'),
                                           time = UTCDateTime(snap_x),
                                           amp1 = snap_y,
-                                          channel = cur_channel)
+                                          channel = cur_channel,
+                                          event_id = event_id)
                 cur_catalog.add_picks([cur_pick,])
                 cur_pick.write_to_database(self.parent.project)
             else:
@@ -356,18 +361,32 @@ class PickTool(InteractivePlugin):
                         nearest_pick = cur_pick
                 nearest_pick.time = pick_time
                 nearest_pick.amp1 = snap_y
+                if event_id:
+                    nearest_pick.event_id = event_id
                 nearest_pick.write_to_database(self.parent.project)
                 cur_pick = nearest_pick
 
             # Create the pick line in all channels of the station.
-            self.view.GetGrandParent().plot_annotation_vline(x = snap_x,
-                                                             label = cur_pick.label,
-                                                             parent_rid = self.rid,
-                                                             key = cur_pick.rid,
-                                                             color = 'r')
+            self.plot_pick_line(cur_pick, self.view.GetGrandParent())
 
             # Make the pick lines visible.
             self.view.GetGrandParent().draw()
+
+    def plot_pick_line(self, pick, container):
+        ''' Plot a pick line in the container.
+        '''
+        if pick.event_id:
+            line_color = 'firebrick'
+        else:
+            line_color = 'darkgrey'
+
+        container.plot_annotation_vline(pick.time.timestamp,
+                                        label = pick.label,
+                                        parent_rid = self.rid,
+                                        key = pick.rid,
+                                        color = line_color)
+        container.draw()
+
 
 
     def delete_pick(self, event):

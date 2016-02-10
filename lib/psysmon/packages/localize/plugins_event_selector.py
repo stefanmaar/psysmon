@@ -29,22 +29,23 @@ from psysmon.core.plugins import OptionPlugin
 from psysmon.core.guiBricks import PrefEditPanel
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.preferences_manager as psy_pm
+import psysmon.packages.event.core as ev_core
 
 
 class SelectEvents(OptionPlugin):
     '''
 
     '''
-    nodeClass = 'TraceDisplay'
+    nodeClass = 'GraphicLocalizationNode'
 
     def __init__(self):
         ''' Initialize the instance.
 
         '''
         OptionPlugin.__init__(self,
-                              name = 'show events',
-                              category = 'view',
-                              tags = ['show', 'events']
+                              name = 'select event',
+                              category = 'select',
+                              tags = ['event', 'select']
                              )
 
         # Create the logging logger instance.
@@ -54,16 +55,17 @@ class SelectEvents(OptionPlugin):
 
         self.icons['active'] = icons.flag_icon_16
 
+        # The events library.
+        self.library = ev_core.Library(name = self.rid)
+
         # The currently selected event.
         self.selected_event = {}
 
         # The plot colors used by the plugin.
         self.colors = {}
-        self.colors['event_vspan'] = '0.9'
 
         # Setup the pages of the preference manager.
         self.pref_manager.add_page('Select')
-        self.pref_manager.add_page('Display')
 
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                            label = 'start time',
@@ -94,12 +96,6 @@ class SelectEvents(OptionPlugin):
                                    item = item)
 
 
-#        item = psy_pm.CustomPrefItem(name = 'events',
-#                                     label = 'events',
-#                                     group = 'event selection',
-#                                     value = [],
-#                                     gui_class = EventListField,
-#                                     tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
         column_labels = ['db_id', 'start_time', 'length', 'public_id',
                          'description', 'agency_uri', 'author_uri',
                          'comment']
@@ -124,65 +120,17 @@ class SelectEvents(OptionPlugin):
                                    item = item)
 
 
-        item = psy_pm.FloatSpinPrefItem(name = 'pre_et',
-                                        label = 'pre event time [s]',
-                                        group = 'display range',
-                                        value = 5,
-                                        limit = (0, 86400),
-                                        digits = 1,
-                                        tool_tip = 'The length of the time window to show before the event start.')
-        self.pref_manager.add_item(pagename = 'Display',
-                                   item = item)
-
-        item = psy_pm.FloatSpinPrefItem(name = 'post_et',
-                                        label = 'post event time [s]',
-                                        group = 'display range',
-                                        value = 10,
-                                        limit = (0, 86400),
-                                        digits = 1,
-                                        tool_tip = 'The length of the time window to show after the event end.')
-        self.pref_manager.add_item(pagename = 'Display',
-                                   item = item)
-
-        item = psy_pm.CheckBoxPrefItem(name = 'show_event_limits',
-                                       label = 'show event limits',
-                                       value = True,
-                                       hooks = {'on_value_change': self.on_show_event_limits_changed},
-                                       tool_tip = 'Show the limits of the selected event in the views.')
-        self.pref_manager.add_item(pagename = 'Display',
-                                   item = item)
-
-
-
     def buildFoldPanel(self, panelBar):
         ''' Create the foldpanel GUI.
         '''
         # Set the limits of the event_catalog field.
-        # TODO: Create some kind of shared resource manager which can be used
-        # to create instances which might be needed by several plugins. The
-        # plugins should not have to rely on the existing instance in the
-        # parent object.
-        # They request the needed instance.
-        # If none is available, create it.
-        # Another plugin can request the instance and use t.
-        # Delete the instance if it is not needed by any plugin when
-        # deactivating the plugin.
-        # With this option, 
-        catalog_names = self.parent.event_library.get_catalogs_in_db(self.parent.project)
+        catalog_names = self.library.get_catalogs_in_db(self.parent.project)
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
             self.pref_manager.set_value('event_catalog', catalog_names[0])
 
         fold_panel = PrefEditPanel(pref = self.pref_manager,
                                   parent = panelBar)
-
-
-        # Customize the events field.
-        #pref_item = self.pref_manager.get_item('events')[0]
-        #field = pref_item.gui_element[0]
-        #fold_panel.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_event_selected, field.controlElement)
-
-        #self.events_lb = field.controlElement
 
         return fold_panel
 
@@ -196,15 +144,6 @@ class SelectEvents(OptionPlugin):
                                         name = 'selected_event',
                                         value = self.selected_event)
 
-            # Add the pre- and post event time.
-            start_time = self.selected_event['start_time'] - self.pref_manager.get_value('pre_et')
-            end_time = self.selected_event['end_time'] + self.pref_manager.get_value('post_et')
-
-            self.parent.displayManager.setTimeLimits(startTime = start_time,
-                                                     endTime = end_time)
-            self.clear_annotation()
-            self.parent.updateDisplay()
-
 
     def deactivate(self):
         ''' Extend the plugin deactivate method.
@@ -214,77 +153,11 @@ class SelectEvents(OptionPlugin):
         self.parent.plugins_information_bag.remove_info(origin_rid = self.rid)
 
 
-    def on_show_event_limits_changed(self):
-        ''' The on_value_changed callback of the show_event_limits item.
-        '''
-        if not self.pref_manager.get_value('show_event_limits'):
-            self.clear_annotation()
-        else:
-            self.on_after_plot()
-
-
     def getHooks(self):
         ''' The callback hooks.
         '''
         hooks = {}
-
-        hooks['after_plot'] = self.on_after_plot
-        hooks['after_plot_station'] = self.on_after_plot_station
-        hooks['shared_information_updated'] = self.on_shared_information_updated
-
         return hooks
-
-
-    def on_after_plot(self):
-        ''' The hook called after the plotting in tracedisplay.
-        '''
-        if self.pref_manager.get_value('show_event_limits'):
-            self.add_event_marker_to_station(station = self.parent.displayManager.showStations)
-
-
-    def on_after_plot_station(self, station):
-        ''' The hook called after the plotting of a station in tracedisplay.
-        '''
-        if self.pref_manager.get_value('show_event_limits'):
-            self.add_event_marker_to_station(station = station)
-
-
-    def on_shared_information_updated(self, updated_info):
-        ''' The hook called after a shared information has been updated.
-        '''
-        if updated_info.origin_rid == self.rid and updated_info.name == 'selected_event':
-            # Reload the events or update the selected event only.
-            # It might be saver, to reload the catalog to ensure consistency.
-            self.selected_event = updated_info.value
-            self.update_events_list()
-            self.clear_annotation()
-            self.add_event_marker_to_station(self.parent.displayManager.showStations)
-
-
-
-    def add_event_marker_to_station(self, station = None):
-        ''' Add the event markers to station plots.
-        '''
-        if station:
-            for cur_station in station:
-                self.add_event_marker_to_channel(cur_station.channels)
-
-
-    def add_event_marker_to_channel(self, channel = None):
-        ''' Add the event markers to channel plots.
-        '''
-        if channel:
-            for cur_plot_channel in channel:
-                scnl = cur_plot_channel.getSCNL()
-
-                cur_plot_channel.container.plot_annotation_vspan(x_start = self.selected_event['start_time'],
-                                                                 x_end = self.selected_event['end_time'],
-                                                                 label = self.selected_event['id'],
-                                                                 parent_rid = self.rid,
-                                                                 key = self.selected_event['id'],
-                                                                 color = self.colors['event_vspan'])
-                cur_plot_channel.container.draw()
-
 
 
     def on_load_events(self, event):
@@ -296,7 +169,7 @@ class SelectEvents(OptionPlugin):
     def update_events_list(self):
         ''' Update the events list control.
         '''
-        event_library = self.parent.event_library
+        event_library = self.library
         catalog_name = self.pref_manager.get_value('event_catalog')
         start_time = self.pref_manager.get_value('start_time')
         duration = self.pref_manager.get_value('window_length')
@@ -357,25 +230,14 @@ class SelectEvents(OptionPlugin):
                                         name = 'selected_event',
                                         value = self.selected_event)
 
-            # Add the pre- and post event time.
-            start_time -= self.pref_manager.get_value('pre_et')
-            end_time += self.pref_manager.get_value('post_et')
-
-            self.parent.displayManager.setTimeLimits(startTime = start_time,
-                                                     endTime = end_time)
-            self.clear_annotation()
-            self.parent.updateDisplay()
+            #self.clear_annotation()
+            #self.parent.updateDisplay()
 
 
     def clear_annotation(self):
         ''' Clear the annotation elements in the tracedisplay views.
         '''
-        views = self.parent.displayManager.getViewContainer()
-        for cur_view in views:
-            cur_view.clear_annotation_artist(mode = 'vspan',
-                                             parent_rid = self.rid)
-            cur_view.draw()
-
+        pass
 
 
 
