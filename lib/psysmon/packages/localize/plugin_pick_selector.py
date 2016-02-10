@@ -61,6 +61,9 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
 
         # Setup the pages of the preference manager.
         self.pref_manager.add_page('select')
+
+        # Setup the order of the groups.
+        self.pref_manager.group_order = ['catalog', 'phase selection', 'available picks']
         # Add the plugin preferences.
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'catalog_mode',
                                           label = 'mode',
