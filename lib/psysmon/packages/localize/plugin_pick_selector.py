@@ -34,7 +34,7 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
     '''
 
     '''
-    nodeClass = 'common'
+    nodeClass = 'GraphicLocalizationNode'
 
     def __init__(self):
         ''' Initialize the instance.
@@ -81,17 +81,25 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         self.pref_manager.add_item(pagename = 'select',
                                    item = item)
 
-        # TODO: Add seperate selections for the P- and S-phases.
-        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 'phases',
-                                          label = 'phases',
+        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 'p_phases',
+                                          label = 'P phases',
                                           group = 'phase selection',
                                           value = [],
                                           limit = [],
-                                          tool_tip = 'Select the phases to use for the localization.',
+                                          tool_tip = 'Select the P phases to use for the localization.',
                                           hooks = {'on_value_change': self.on_phases_select})
         self.pref_manager.add_item(pagename = 'select',
                                    item = item)
 
+        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 's_phases',
+                                          label = 'S phases',
+                                          group = 'phase selection',
+                                          value = [],
+                                          limit = [],
+                                          tool_tip = 'Select the S phases to use for the localization.',
+                                          hooks = {'on_value_change': self.on_phases_select})
+        self.pref_manager.add_item(pagename = 'select',
+                                   item = item)
 
         column_labels = ['db_id', 'scnl', 'label', 'time',
                          'agency_uri', 'author_uri']
@@ -129,6 +137,23 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         return fold_panel
 
 
+    def getHooks(self):
+        ''' The callback hooks.
+        '''
+        hooks = {}
+
+        hooks['shared_information_added'] = self.on_shared_information_added
+        return hooks
+
+
+    def on_shared_information_added(self, origin_rid, name):
+        ''' Hook that is called when a shared information was added by a plugin.
+        '''
+        rid = '/plugin/select_event'
+        if origin_rid.endswith(rid) and name == 'selected_event':
+            self.load_picks()
+
+
     def on_select_catalog(self):
         ''' Handle the catalog selection.
         '''
@@ -155,10 +180,12 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         ''' Handle the phase selection.
 
         '''
-        selected_phases = self.pref_manager.get_value('phases')
+        selected_p_phases = self.pref_manager.get_value('p_phases')
+        selected_s_phases = self.pref_manager.get_value('s_phases')
         self.parent.add_shared_info(origin_rid = self.rid,
                                     name = 'selected_phases',
-                                    value = {'phases': selected_phases})
+                                    value = {'p_phases': selected_p_phases,
+                                             's_phases': selected_s_phases})
 
     def on_pick_selected(self):
         ''' Handle a value change in the picks list control.
@@ -194,7 +221,10 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
             self.pref_manager.set_limit('picks', pick_list)
 
             labels = list(set([x.label for x in cur_catalog.picks]))
-            self.pref_manager.set_limit('phases', labels)
+            p_phases = [x for x in labels if x.lower().startswith('p')]
+            s_phases = [x for x in labels if x.lower().startswith('s')]
+            self.pref_manager.set_limit('p_phases', p_phases)
+            self.pref_manager.set_limit('s_phases', s_phases)
 
 
     def convert_picks_to_list(self, picks):
