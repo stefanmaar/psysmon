@@ -174,10 +174,15 @@ class PrefPagePanel(wx.Panel):
     ''' A panel representing a page of the preference manager.
 
     '''
-    def __init__(self, parent = None, id = wx.ID_ANY, items = None):
+    def __init__(self, parent = None, id = wx.ID_ANY, items = None, group_order = None):
         wx.Panel.__init__(self, parent = parent, id = id)
 
         self.items = items
+
+        if group_order:
+            self.group_order = group_order
+        else:
+            self.group_order = []
 
         self.init_ui()
 
@@ -190,7 +195,17 @@ class PrefPagePanel(wx.Panel):
         # Find all groups.
         groups = list(set([x.group for x in self.items]))
 
-        for k, cur_group in enumerate(groups):
+        sorted_groups = []
+        # Get all groups for which a sort order is defined.
+        for cur_group in self.group_order:
+            if cur_group in groups:
+                sorted_groups.append(cur_group)
+                groups.remove(cur_group)
+        # Sort the rest alphabetically.
+        sorted_groups.extend(sorted(groups))
+
+
+        for k, cur_group in enumerate(sorted_groups):
             # Create a static box container for the group.
             if cur_group is None:
                 container_label = ''
@@ -288,9 +303,10 @@ class PrefEditPanel(wx.Panel):
 
         for cur_pagename in pagenames:
             if self.pref.pages[cur_pagename]:
-                panel = PrefPagePanel(parent = self.notebook, 
+                panel = PrefPagePanel(parent = self.notebook,
                                       id = wx.ID_ANY,
-                                      items = self.pref.pages[cur_pagename]
+                                      items = self.pref.pages[cur_pagename],
+                                      group_order = self.pref.group_order
                                      )
                 self.notebook.AddPage(panel, cur_pagename)
 

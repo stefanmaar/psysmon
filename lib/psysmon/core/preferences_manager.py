@@ -49,6 +49,8 @@ class PreferencesManager:
         else:
             self.pages = pages
 
+        self.group_order = []
+
 
     def __str__(self):
         ''' The string representation of the instance.
