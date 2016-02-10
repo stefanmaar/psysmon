@@ -75,50 +75,6 @@ class GraphicLocalizationNode(packageNodes.CollectionNode):
         app.MainLoop()
 
 
-class MapViewPanel(wx.Panel):
-    '''
-    The MapViewPanel class.
-
-    This class creates a panel holding a mpl_toolkits.basemap map.
-    This map is used to display the stations contained in the inventory.
-
-    :ivar sizer: The sizer used for the panel layout.
-    :ivar mapFigure: The matplotlib figure holding the map axes.
-    :ivar mapAx: The matplotlib axes holding the Basemap.
-    :ivar mapCanvas: The wxPython figureCanvas holding the matplotlib figure.
-    :ivar map: The station map (`~mpl_toolkits.basemap.Basemap`).
-    '''
-    def __init__(self, parent, id=wx.ID_ANY):
-        '''
-        The constructor.
-
-        Create an instance of the MapViewPanel class.
-
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.packages.geometry.MapViewPanel`
-        :param parent: The parent object containing the panel.
-        :type self: A wxPython window.
-        :param id: The id of the panel.
-        :type id: 
-        '''
-        wx.Panel.__init__(self, parent, id)
-
-        self.logger = self.GetParent().logger
-
-        self.sizer = wx.GridBagSizer(0, 0)
-
-        self.map_figure = Figure((8,4), dpi=75, facecolor='white')
-        self.map_ax = self.map_figure.add_subplot(111)
-        self.map_ax.set_aspect('equal')
-        self.map_canvas = FigureCanvas(self, -1, self.map_figure)
-
-        self.sizer.Add(self.map_canvas, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=0)
-        self.sizer.AddGrowableCol(0)
-        self.sizer.AddGrowableRow(0)
-        self.SetSizerAndFit(self.sizer)
-
-
-
 
 class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
     ''' The dialog window of the graphical localization plugin.
@@ -174,7 +130,8 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         # TODO: For the future, for each selected event a view container could
         # be created - don't know if that makes sense.
         container_node = psysmon.core.gui_view.ViewContainerNode(name = 'default',
-                                                                 parent = self.viewport)
+                                                                 parent = self.viewport,
+                                                                 color = 'lightgrey')
         self.viewport.add_node(container_node)
 
         # Tell the docking manager to commit all the changes.

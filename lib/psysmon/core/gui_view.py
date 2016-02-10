@@ -424,7 +424,8 @@ class ViewContainerNode(wx.Panel):
             view_class = plugin.getViewClass()
             if view_class is not None:
                 cur_view_node = view_class(parent = self,
-                                           name = plugin.rid)
+                                           name = plugin.rid,
+                                           color = 'white')
                 self.add_node(cur_view_node)
 
 
@@ -502,7 +503,7 @@ class ViewNode(wx.Panel):
 
     def on_enter_window(self, event):
         self.logger.debug("on_enter_window in view %s. event: %s", self.name, event)
-        self.SetBackgroundColour('blue')
+        #self.SetBackgroundColour('blue')
         self.SetFocus()
         self.Refresh()
 

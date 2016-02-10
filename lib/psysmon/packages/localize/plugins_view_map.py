@@ -53,7 +53,7 @@ class MapPlotter(psysmon.core.plugins.ViewPlugin):
         self.logger = logging.getLogger(loggerName)
 
         # Define the plugin icons.
-        self.icons['active'] = icons.iconsBlack16.waveform_icon_16
+        self.icons['active'] = icons.iconsBlack16.globe_1_icon_16
 
         # Add the plugin preferences.
         # Show or hide the seismogram envelope.
@@ -106,14 +106,15 @@ class MapView(psysmon.core.gui_view.ViewNode):
 
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None):
+    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, **kwargs):
         ''' Initialize the instance.
         '''
         psysmon.core.gui_view.ViewNode.__init__(self,
                                                 parent=parent,
                                                 id=id,
                                                 parent_viewport = parent_viewport,
-                                                name=name)
+                                                name=name,
+                                                **kwargs)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -122,6 +123,7 @@ class MapView(psysmon.core.gui_view.ViewNode):
 
         # Setup the axes.
         self.axes.set_aspect('equal')
+        self.axes.set_position([0.1, 0.1, 0.8, 0.8])
 
         # The map configuration.
         self.map_config = {}
@@ -152,7 +154,7 @@ class MapView(psysmon.core.gui_view.ViewNode):
         self.map_config['epsg'] = 'epsg:' + code[0][0]
 
         # Add some map annotation.
-        self.axes.text(0.9, 0.9, self.map_config['epsg'],
+        self.axes.text(1, 1.02, self.map_config['epsg'],
             ha = 'right', transform = self.axes.transAxes)
 
         # Activate the auto scaling.
