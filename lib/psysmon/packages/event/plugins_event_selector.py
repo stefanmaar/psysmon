@@ -157,22 +157,6 @@ class SelectEvents(OptionPlugin):
     def buildFoldPanel(self, panelBar):
         ''' Create the foldpanel GUI.
         '''
-        # Set the limits of the event_catalog field.
-        # TODO: Create some kind of shared resource manager which can be used
-        # to create instances which might be needed by several plugins. The
-        # plugins should not have to rely on the existing instance in the
-        # parent object.
-        # They request the needed instance.
-        # If none is available, create it.
-        # Another plugin can request the instance and use t.
-        # Delete the instance if it is not needed by any plugin when
-        # deactivating the plugin.
-        # With this option, 
-        catalog_names = self.parent.event_library.get_catalogs_in_db(self.parent.project)
-        self.pref_manager.set_limit('event_catalog', catalog_names)
-        if catalog_names:
-            self.pref_manager.set_value('event_catalog', catalog_names[0])
-
         fold_panel = PrefEditPanel(pref = self.pref_manager,
                                   parent = panelBar)
 
@@ -188,9 +172,19 @@ class SelectEvents(OptionPlugin):
 
 
     def activate(self):
-        ''' Extend the plugin deactivate method.
+        ''' Extend the plugin activate method.
         '''
         OptionPlugin.activate(self)
+
+        # Initialize the catalog names.
+        catalog_names = self.parent.event_library.get_catalogs_in_db(self.parent.project)
+        self.pref_manager.set_limit('event_catalog', catalog_names)
+        if catalog_names:
+            self.pref_manager.set_value('event_catalog', catalog_names[0])
+
+        # If an event already was selected, share it again.
+        # TODO: Think about not deleting the shared information if the plugin
+        # is deactivated. Otherwise not many plugins can be opened at a time.
         if self.selected_event:
             self.parent.add_shared_info(origin_rid = self.rid,
                                         name = 'selected_event',
@@ -211,6 +205,8 @@ class SelectEvents(OptionPlugin):
         '''
         OptionPlugin.deactivate(self)
         self.clear_annotation()
+        # TODO: Think about not deleting the shared information if the plugin
+        # is deactivated. Otherwise not many plugins can be opened at a time.
         self.parent.plugins_information_bag.remove_info(origin_rid = self.rid)
 
 
