@@ -36,7 +36,10 @@ import wx
 import wx.lib.scrolledpanel
 
 import matplotlib as mpl
-import matplotlib.backends.backend_wxagg
+try:
+    from matplotlib.backends.backend_wxagg import FigureCanvas
+except:
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 
 import psysmon.core.util
 
@@ -568,7 +571,7 @@ class PlotPanel(wx.Panel):
 
         # initialize matplotlib stuff
         self.figure = mpl.figure.Figure(None, dpi=dpi, facecolor='white')
-        self.canvas = mpl.backends.backend_wxagg.FigureCanvas(self, -1, self.figure)
+        self.canvas = FigureCanvas(self, -1, self.figure)
         self.axes = self.figure.add_axes([0,0,1,1])
         self.canvas.SetMinSize((30, 10))
         self.SetBackgroundColour('white')
