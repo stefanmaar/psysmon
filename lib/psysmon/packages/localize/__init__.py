@@ -33,6 +33,7 @@ plugin_modules = ['plugins_graphic_localize',
                   'plugins_event_selector',
                   'plugins_localize_circle',
                   'plugins_view_map',
+                  'plugins_export_result',
                   'plugin_pick_selector']
 
 # Specify the module(s) where to search for processing node classes.
