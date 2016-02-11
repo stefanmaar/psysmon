@@ -148,6 +148,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
         if not stations:
             stations = self.parent.project.geometry_inventory.get_station()
 
+        used_picks = []
         vp = self.pref_manager.get_value('p_velocity')
         epidist = {}
         for cur_station in stations:
@@ -178,6 +179,16 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
                     sp_diff = cur_s.time - cur_p.time
                     cur_epidist = sp_diff * vp / (np.sqrt(3) - 1)
                     epidist[cur_station.name][(cur_p.label, cur_s.label)] = cur_epidist
+
+                    used_picks.append(cur_p)
+                    used_picks.append(cur_s)
+
+        used_data = {}
+        used_data['picks'] = used_picks
+        used_data['event_id'] = event_id
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'used_data',
+                                    value = used_data)
 
         return epidist
 
