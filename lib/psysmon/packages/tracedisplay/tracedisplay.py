@@ -630,7 +630,13 @@ class TraceDisplayDlg(wx.Frame):
         self.viewPort.Bind(wx.EVT_KEY_UP, self.onKeyUp)
 
         self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
+        self.shortcutManager.addAction(('SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
+        self.shortcutManager.addAction(('CTRL', 'WXK_RIGHT',), self.advanceTimePercentage, step = 10)
+        self.shortcutManager.addAction(('ALT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 5)
         self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
+        self.shortcutManager.addAction(('SHIFT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 25)
+        self.shortcutManager.addAction(('CTRL', 'WXK_LEFT',), self.decreaseTimePercentage, step = 10)
+        self.shortcutManager.addAction(('ALT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 5)
         self.shortcutManager.addAction(('"-"',), self.growTimePeriod)
         self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
         self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.swap_tool)
@@ -648,6 +654,15 @@ class TraceDisplayDlg(wx.Frame):
             oldFocus.SetFocus()
 
 
+    def advanceTimePercentage(self, step = 100):
+        ''' Decrease the display time by one step.
+        '''
+        oldFocus = wx.Window.FindFocus()
+        self.displayManager.advanceTimePercentage(step)
+        self.updateDisplay()
+        oldFocus.SetFocus()
+
+
     def decreaseTime(self):
         ''' Decrease the display time by one step.
         '''
@@ -655,6 +670,16 @@ class TraceDisplayDlg(wx.Frame):
         self.displayManager.decreaseTime()
         self.updateDisplay()
         oldFocus.SetFocus()
+
+
+    def decreaseTimePercentage(self, step = 100):
+        ''' Decrease the display time by one step.
+        '''
+        oldFocus = wx.Window.FindFocus()
+        self.displayManager.decreaseTimePercentage(step)
+        self.updateDisplay()
+        oldFocus.SetFocus()
+
 
     def growTimePeriod(self, ratio = 50):
         ''' Grow the time period by a given ratio.
@@ -988,10 +1013,11 @@ class TraceDisplayDlg(wx.Frame):
         pressedKey.append(keyName)
         pressedKeyString = modString + keyName
         self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
-        action = self.shortcutManager.getAction(tuple(pressedKey))
-        print pressedKey
+        action, kwargs = self.shortcutManager.getAction(tuple(pressedKey))
 
-        if action:
+        if action and kwargs:
+            action(**kwargs)
+        elif action:
             action()
 
 
@@ -1030,9 +1056,11 @@ class TraceDisplayDlg(wx.Frame):
         pressedKey.append(keyName)
         pressedKeyString = modString + keyName
         self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
-        action = self.shortcutManager.getAction(tuple(pressedKey), kind = 'up')
+        action, kwargs = self.shortcutManager.getAction(tuple(pressedKey), kind = 'up')
 
-        if action is not None:
+        if action and kwargs:
+            action(**kwargs)
+        elif action:
             action()
 
 
@@ -1157,8 +1185,10 @@ class ShortcutManager:
         # and the pressed key.
         self.actions = {}
 
+        self.kwargs = {}
 
-    def addAction(self, keyCombination, action, kind = 'down'):
+
+    def addAction(self, keyCombination, action, kind = 'down', **kwargs):
         ''' Add an action to the shortcut options.
 
         Parameters
@@ -1175,6 +1205,7 @@ class ShortcutManager:
 
         '''
         self.actions[(kind, keyCombination)] = action
+        self.kwargs[(kind, keyCombination)] = kwargs
 
 
     def getAction(self, keyCombination, kind = 'down'):
@@ -1197,7 +1228,10 @@ class ShortcutManager:
         '''
         self.logger.debug("Searching for: %s", keyCombination)
         self.logger.debug("Available actions: %s", self.actions)
-        return self.actions.get((kind, keyCombination), None)
+        action = self.actions.get((kind, keyCombination), None)
+        kwargs = self.kwargs.get((kind, keyCombination), None)
+
+        return (action, kwargs)
 
 
 
@@ -1304,15 +1338,37 @@ class DisplayManager(object):
         self.parent.call_hook('time_limit_changed')
 
 
-
-    def decreaseTime(self):
+    def advanceTimePercentage(self, step):
         ''' Decrease the time by one step.
 
         '''
         interval = self.endTime - self.startTime
-        self.endTime = self.startTime
-        self.startTime = self.startTime - interval
+        time_step = interval * step/100.
+        self.advanceTime(time_step = time_step)
+
+
+    def decreaseTime(self, time_step = None):
+        ''' Decrease the time by one step.
+
+        '''
+        if time_step is None:
+            interval = self.endTime - self.startTime
+            self.endTime = self.startTime
+            self.startTime = self.startTime - interval
+        else:
+            interval = self.endTime - self.startTime
+            self.startTime = self.startTime - time_step
+            self.endTime = self.startTime + interval
         self.parent.call_hook('time_limit_changed')
+
+
+    def decreaseTimePercentage(self, step):
+        ''' Decrease the time by one step.
+
+        '''
+        interval = self.endTime - self.startTime
+        time_step = interval * step/100.
+        self.decreaseTime(time_step = time_step)
 
 
     def growTimePeriod(self, ratio = 50):
