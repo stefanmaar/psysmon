@@ -625,28 +625,32 @@ class TraceDisplayDlg(wx.Frame):
         ''' Initialize the key event bindings.
 
         '''
+        # The released modifier key.
+        self.modifier_key_up = None
+        self.pressed_keys = []
+
         self.logger.debug('Binding key events.')
         self.viewPort.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         self.viewPort.Bind(wx.EVT_KEY_UP, self.onKeyUp)
 
         self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
-        self.shortcutManager.addAction(('SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
-        self.shortcutManager.addAction(('CTRL', 'WXK_RIGHT',), self.advanceTimePercentage, step = 10)
-        self.shortcutManager.addAction(('ALT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 1)
+        self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
+        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_RIGHT',), self.advanceTimePercentage, step = 10)
+        self.shortcutManager.addAction(('WXK_ALT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 1)
         self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
-        self.shortcutManager.addAction(('SHIFT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 25)
-        self.shortcutManager.addAction(('CTRL', 'WXK_LEFT',), self.decreaseTimePercentage, step = 10)
-        self.shortcutManager.addAction(('ALT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 1)
+        self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 25)
+        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_LEFT',), self.decreaseTimePercentage, step = 10)
+        self.shortcutManager.addAction(('WXK_ALT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 1)
         self.shortcutManager.addAction(('"-"',), self.growTimePeriod)
-        self.shortcutManager.addAction(('SHIFT', '"-"',), self.growTimePeriod, ratio = 25)
-        self.shortcutManager.addAction(('CTRL', '"-"',), self.growTimePeriod, ratio = 10)
-        self.shortcutManager.addAction(('ALT', '"-"',), self.growTimePeriod, ratio = 1)
+        self.shortcutManager.addAction(('WXK_SHIFT', '"-"',), self.growTimePeriod, ratio = 25)
+        self.shortcutManager.addAction(('WXK_COMMAND', '"-"',), self.growTimePeriod, ratio = 10)
+        self.shortcutManager.addAction(('WXK_ALT', '"-"',), self.growTimePeriod, ratio = 1)
         self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
-        self.shortcutManager.addAction(('SHIFT', '"+"',), self.shrinkTimePeriod, ratio = 25)
-        self.shortcutManager.addAction(('CTRL', '"+"',), self.shrinkTimePeriod, ratio = 10)
-        self.shortcutManager.addAction(('ALT', '"+"',), self.shrinkTimePeriod, ratio = 1)
-        self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.swap_tool)
-        self.shortcutManager.addAction(('CTRL', 'WXK_SPACE'), self.restore_tool, kind = 'up')
+        self.shortcutManager.addAction(('WXK_SHIFT', '"+"',), self.shrinkTimePeriod, ratio = 25)
+        self.shortcutManager.addAction(('WXK_COMMAND', '"+"',), self.shrinkTimePeriod, ratio = 10)
+        self.shortcutManager.addAction(('WXK_ALT', '"+"',), self.shrinkTimePeriod, ratio = 1)
+        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.swap_tool)
+        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.restore_tool, kind = 'up')
         self.shortcutManager.addAction(('WXK_ESCAPE',), self.deactivate_tool)
 
 
@@ -710,13 +714,15 @@ class TraceDisplayDlg(wx.Frame):
         swap_tool_name = 'zoom'
 
         active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
-        if len(active_plugin) == 0:
-            return
-        elif len(active_plugin) > 1:
+        if len(active_plugin) > 1:
             raise RuntimeError('Only one interactive tool can be active.')
-        active_plugin = active_plugin[0]
+        try:
+            active_plugin = active_plugin[0]
+        except:
+            active_plugin = None
 
-        if active_plugin.name == swap_tool_name:
+        if active_plugin is not None and active_plugin.name == swap_tool_name:
+            # The swap tool is already active.
             return
 
         swap_plugin = [x for x in self.plugins if x.name == swap_tool_name]
@@ -726,7 +732,8 @@ class TraceDisplayDlg(wx.Frame):
 
         self.plugin_to_restore = active_plugin
 
-        self.deactivate_interactive_plugin(active_plugin)
+        if active_plugin:
+            self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(swap_plugin)
 
 
@@ -741,8 +748,9 @@ class TraceDisplayDlg(wx.Frame):
 
         active_plugin = active_plugin[0]
         self.deactivate_interactive_plugin(active_plugin)
-        self.activate_interactive_plugin(self.plugin_to_restore)
-        self.plugin_to_restore = None
+        if self.plugin_to_restore is not None:
+            self.activate_interactive_plugin(self.plugin_to_restore)
+            self.plugin_to_restore = None
 
 
     def deactivate_tool(self):
@@ -991,6 +999,10 @@ class TraceDisplayDlg(wx.Frame):
         keyCode = event.GetKeyCode()
         keyName = keyMap.get(keyCode, None)
 
+        if keyName in ['WXK_SHIFT', 'WXK_COMMAND', 'WXK_ALT']:
+            # Don't handle the key modifier as individual key events.
+            return
+
         self.logger.debug('Keycode: %d', keyCode)
 
         if keyName is None:
@@ -1004,21 +1016,26 @@ class TraceDisplayDlg(wx.Frame):
             else:
                 keyName = "(%s)" % keyCode
 
+        if keyName and keyName not in self.pressed_keys:
+            self.pressed_keys.append(keyName)
+
+
 
         # Process the modifiers.
         pressedKey = []
         modString = ""
-        for mod, ch in [(event.ControlDown(), 'CTRL'),
-                        (event.AltDown(),     'ALT'),
-                        (event.ShiftDown(),   'SHIFT'),
+        for mod, ch in [(event.ControlDown(), 'WXK_COMMAND'),
+                        (event.AltDown(),     'WXK_ALT'),
+                        (event.ShiftDown(),   'WXK_SHIFT'),
                         (event.MetaDown(),    'META')]:
             if mod:
                 pressedKey.append(ch)
                 modString += ch + " + "
 
         pressedKey.append(keyName)
-        pressedKeyString = modString + keyName
-        self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
+        print "pressed key: %s." % pressedKey
+        print "self.pressed_keys: %s." % self.pressed_keys
+        self.logger.debug('pressed key: %s - %s', keyCode, pressedKey)
         action, kwargs = self.shortcutManager.getAction(tuple(pressedKey))
 
         if action and kwargs:
@@ -1034,6 +1051,13 @@ class TraceDisplayDlg(wx.Frame):
         keyCode = event.GetKeyCode()
         keyName = keyMap.get(keyCode, None)
 
+        if keyName in ['WXK_SHIFT', 'WXK_COMMAND', 'WXK_ALT']:
+            if self.pressed_keys:
+                # Store the released modifier.
+                print "KEY UP of %s." % keyName
+                self.modifier_key_up = keyName
+            return
+
         self.logger.debug('Keycode: %d', keyCode)
 
         if keyName is None:
@@ -1047,21 +1071,28 @@ class TraceDisplayDlg(wx.Frame):
             else:
                 keyName = "(%s)" % keyCode
 
+        if keyName:
+            self.pressed_keys.remove(keyName)
 
         # Process the modifiers.
         pressedKey = []
         modString = ""
-        for mod, ch in [(event.ControlDown(), 'CTRL'),
-                        (event.AltDown(),     'ALT'),
-                        (event.ShiftDown(),   'SHIFT'),
+        for mod, ch in [(event.ControlDown(), 'WXK_COMMAND'),
+                        (event.AltDown(),     'WXK_ALT'),
+                        (event.ShiftDown(),   'WXK_SHIFT'),
                         (event.MetaDown(),    'META')]:
             if mod:
                 pressedKey.append(ch)
                 modString += ch + " + "
 
+        if self.modifier_key_up:
+            pressedKey.append(self.modifier_key_up)
+            self.modifier_key_up = None
+
         pressedKey.append(keyName)
-        pressedKeyString = modString + keyName
-        self.logger.debug('Pressed key: %s - %s', keyCode, pressedKeyString)
+        print "released key: %s." % pressedKey
+        print "self.pressed_keys: %s." % self.pressed_keys
+        self.logger.debug('Released key: %s - %s', keyCode, pressedKey)
         action, kwargs = self.shortcutManager.getAction(tuple(pressedKey), kind = 'up')
 
         if action and kwargs:
