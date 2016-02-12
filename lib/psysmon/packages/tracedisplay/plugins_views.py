@@ -100,6 +100,15 @@ class SeismogramPlotter(ViewPlugin):
                                                    )
         self.pref_manager.add_item(item = item)
 
+        # The envelope style.
+        item = preferences_manager.SingleChoicePrefItem(name = 'envelope_style',
+                                                        label = 'envelope style',
+                                                        limit = ('top', 'bottom', 'top-bottom', 'filled'),
+                                                        value = 'top',
+                                                        tool_tip = 'The style of the envelope.'
+                                                       )
+        self.pref_manager.add_item(item = item)
+
         # Set the scaling mode.
         item = preferences_manager.SingleChoicePrefItem(name = 'scaling_mode',
                                                         label = 'scaling',
@@ -192,6 +201,7 @@ class SeismogramPlotter(ViewPlugin):
                                  end_time = displayManager.endTime,
                                  duration = displayManager.endTime - displayManager.startTime,
                                  show_envelope = self.pref_manager.get_value('show_envelope'),
+                                 envelope_style = self.pref_manager.get_value('envelope_style'),
                                  minmax_limit = self.pref_manager.get_value('minmax_limit'),
                                  y_lim = y_lim
                                  )
@@ -240,11 +250,14 @@ class SeismogramView(View):
 
         self.line = None
 
-        self.envelope_line = None
+        self.envelope_line_top = None
+        self.envelope_line_bottom = None
+        self.envelope_line_filled = None
 
 
 
-    def plot(self, stream, color, duration, end_time, show_envelope = False, minmax_limit = 20, limit_scale = 10, y_lim = None):
+    def plot(self, stream, color, duration, end_time, show_envelope = False, 
+             envelope_style = 'top', minmax_limit = 20, limit_scale = 10, y_lim = None):
         ''' Plot the seismogram.
         '''
         #display_size = wx.GetDisplaySize()
@@ -297,14 +310,49 @@ class SeismogramView(View):
                 self.line.set_ydata(trace_data)
 
             if show_envelope is True:
-                if self.envelope_line is None:
-                    self.envelope_line, = self.dataAxes.plot(timeArray, trace_envelope, color = 'r', label = 'seismogram_envelope')
-                else:
-                    self.envelope_line.set_xdata(timeArray)
-                    self.envelope_line.set_ydata(trace_envelope)
-            elif self.envelope_line is not None:
-                self.dataAxes.lines.remove(self.envelope_line)
-                self.envelope_line = None
+                if envelope_style == 'top' or envelope_style == 'top-bottom':
+                    if self.envelope_line_top is None:
+                        self.envelope_line_top, = self.dataAxes.plot(timeArray, trace_envelope, color = 'r', label = 'seismogram_envelope')
+                    else:
+                        self.envelope_line_top.set_xdata(timeArray)
+                        self.envelope_line_top.set_ydata(trace_envelope)
+
+                if envelope_style == 'bottom' or envelope_style == 'top-bottom':
+                    if self.envelope_line_bottom is None:
+                        self.envelope_line_bottom, = self.dataAxes.plot(timeArray, -trace_envelope, color = 'r', label = 'seismogram_envelope')
+                    else:
+                        self.envelope_line_bottom.set_xdata(timeArray)
+                        self.envelope_line_bottom.set_ydata(-trace_envelope)
+
+                if envelope_style == 'top':
+                    if self.envelope_line_bottom:
+                        self.dataAxes.lines.remove(self.envelope_line_bottom)
+                        self.envelope_line_bottom = None
+                    if self.envelope_line_filled:
+                        self.dataAxes.lines.remove(self.envelope_line_filled)
+                        self.envelope_line_filled = None
+                elif envelope_style == 'bottom':
+                    if self.envelope_line_top:
+                        self.dataAxes.lines.remove(self.envelope_line_top)
+                        self.envelope_line_top = None
+                    if self.envelope_line_filled:
+                        self.dataAxes.lines.remove(self.envelope_line_filled)
+                        self.envelope_line_filled = None
+                elif envelope_style == 'top-bottom':
+                    if self.envelope_line_filled:
+                        self.dataAxes.lines.remove(self.envelope_line_filled)
+                        self.envelope_line_filled = None
+
+            else:
+                if self.envelope_line_top:
+                    self.dataAxes.lines.remove(self.envelope_line_top)
+                    self.envelope_line_top = None
+                if self.envelope_line_bottom:
+                    self.dataAxes.lines.remove(self.envelope_line_bottom)
+                    self.envelope_line_bottom = None
+                if self.envelope_line_filled:
+                    self.dataAxes.lines.remove(self.envelope_line_filled)
+                    self.envelope_line_filled = None
 
 
             self.dataAxes.set_frame_on(False)
