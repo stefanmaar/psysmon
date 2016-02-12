@@ -126,8 +126,6 @@ class PlotPanel(wx.Panel):
 
     def onSetFocus(self, event):
         print "Canvas got Focus"
-        print "Event should propagate: %s" % event.ShouldPropagate()
-        #event.ResumePropagation(1)
         event.Skip()
 
     def onSetFocus2(self, event):
