@@ -94,9 +94,18 @@ class SeismogramPlotter(ViewPlugin):
 
         # Add the plugin preferences.
         # Show or hide the seismogram envelope.
+        item = preferences_manager.CheckBoxPrefItem(name = 'show_wiggle_trace',
+                                                    label = 'show wiggle trace',
+                                                    value = True,
+                                                    tool_tip = 'Show the seismogram wiggle trace.'
+                                                   )
+        self.pref_manager.add_item(item = item)
+
+        # Show or hide the seismogram envelope.
         item = preferences_manager.CheckBoxPrefItem(name = 'show_envelope',
                                                     label = 'show envelope',
-                                                    value = False
+                                                    value = False,
+                                                    tool_tip = 'Show the seismogram envelope.'
                                                    )
         self.pref_manager.add_item(item = item)
 
@@ -200,6 +209,7 @@ class SeismogramPlotter(ViewPlugin):
                     curView.plot(curStream, lineColor,
                                  end_time = displayManager.endTime,
                                  duration = displayManager.endTime - displayManager.startTime,
+                                 show_wiggle_trace = self.pref_manager.get_value('show_wiggle_trace'),
                                  show_envelope = self.pref_manager.get_value('show_envelope'),
                                  envelope_style = self.pref_manager.get_value('envelope_style'),
                                  minmax_limit = self.pref_manager.get_value('minmax_limit'),
@@ -252,11 +262,11 @@ class SeismogramView(View):
 
         self.envelope_line_top = None
         self.envelope_line_bottom = None
-        self.envelope_line_filled = None
+        self.envelope_collection_filled = None
 
 
 
-    def plot(self, stream, color, duration, end_time, show_envelope = False, 
+    def plot(self, stream, color, duration, end_time, show_wiggle_trace = True, show_envelope = False,
              envelope_style = 'top', minmax_limit = 20, limit_scale = 10, y_lim = None):
         ''' Plot the seismogram.
         '''
@@ -303,45 +313,67 @@ class SeismogramView(View):
 
             self.logger.debug('len(trace_data): %d', len(trace_data))
 
-            if self.line is None:
-                self.line, = self.dataAxes.plot(timeArray, trace_data, color = color, label = 'seismogram')
+            if show_wiggle_trace:
+                if self.line is None:
+                    self.line, = self.dataAxes.plot(timeArray, trace_data, color = color, label = 'seismogram')
+                else:
+                    self.line.set_xdata(timeArray)
+                    self.line.set_ydata(trace_data)
             else:
-                self.line.set_xdata(timeArray)
-                self.line.set_ydata(trace_data)
+                if self.line is not None:
+                    self.dataAxes.lines.remove(self.line)
+                    self.line = None
 
             if show_envelope is True:
                 if envelope_style == 'top' or envelope_style == 'top-bottom':
                     if self.envelope_line_top is None:
-                        self.envelope_line_top, = self.dataAxes.plot(timeArray, trace_envelope, color = 'r', label = 'seismogram_envelope')
+                        self.envelope_line_top, = self.dataAxes.plot(timeArray, trace_envelope, color = 'saddlebrown', label = 'seismogram_envelope')
                     else:
                         self.envelope_line_top.set_xdata(timeArray)
                         self.envelope_line_top.set_ydata(trace_envelope)
 
                 if envelope_style == 'bottom' or envelope_style == 'top-bottom':
                     if self.envelope_line_bottom is None:
-                        self.envelope_line_bottom, = self.dataAxes.plot(timeArray, -trace_envelope, color = 'r', label = 'seismogram_envelope')
+                        self.envelope_line_bottom, = self.dataAxes.plot(timeArray, -trace_envelope, color = 'saddlebrown', label = 'seismogram_envelope')
                     else:
                         self.envelope_line_bottom.set_xdata(timeArray)
                         self.envelope_line_bottom.set_ydata(-trace_envelope)
+
+                if envelope_style == 'filled':
+                    if self.envelope_collection_filled is not None:
+                        self.dataAxes.collections.remove(self.envelope_collection_filled)
+
+                    self.envelope_collection_filled = self.dataAxes.fill_between(x = timeArray,
+                                                                         y1 = trace_envelope.flatten(),
+                                                                         y2 = -trace_envelope.flatten(),
+                                                                         color = 'lightgrey', edgecolor = 'lightgrey',
+                                                                         label = 'seismogram_envelope')
 
                 if envelope_style == 'top':
                     if self.envelope_line_bottom:
                         self.dataAxes.lines.remove(self.envelope_line_bottom)
                         self.envelope_line_bottom = None
-                    if self.envelope_line_filled:
-                        self.dataAxes.lines.remove(self.envelope_line_filled)
-                        self.envelope_line_filled = None
+                    if self.envelope_collection_filled:
+                        self.dataAxes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled = None
                 elif envelope_style == 'bottom':
                     if self.envelope_line_top:
                         self.dataAxes.lines.remove(self.envelope_line_top)
                         self.envelope_line_top = None
-                    if self.envelope_line_filled:
-                        self.dataAxes.lines.remove(self.envelope_line_filled)
-                        self.envelope_line_filled = None
+                    if self.envelope_collection_filled:
+                        self.dataAxes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled = None
                 elif envelope_style == 'top-bottom':
-                    if self.envelope_line_filled:
-                        self.dataAxes.lines.remove(self.envelope_line_filled)
-                        self.envelope_line_filled = None
+                    if self.envelope_collection_filled:
+                        self.dataAxes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled = None
+                elif envelope_style == 'filled':
+                    if self.envelope_line_top:
+                        self.dataAxes.lines.remove(self.envelope_line_top)
+                        self.envelope_line_top = None
+                    if self.envelope_line_bottom:
+                        self.dataAxes.lines.remove(self.envelope_line_bottom)
+                        self.envelope_line_bottom = None
 
             else:
                 if self.envelope_line_top:
@@ -350,9 +382,9 @@ class SeismogramView(View):
                 if self.envelope_line_bottom:
                     self.dataAxes.lines.remove(self.envelope_line_bottom)
                     self.envelope_line_bottom = None
-                if self.envelope_line_filled:
-                    self.dataAxes.lines.remove(self.envelope_line_filled)
-                    self.envelope_line_filled = None
+                if self.envelope_collection_filled:
+                    self.dataAxes.collections.remove(self.envelope_collection_filled)
+                    self.envelope_collection_filled = None
 
 
             self.dataAxes.set_frame_on(False)
