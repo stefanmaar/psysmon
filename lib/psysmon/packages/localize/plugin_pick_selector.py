@@ -63,7 +63,7 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         self.pref_manager.add_page('select')
 
         # Setup the order of the groups.
-        self.pref_manager.group_order = ['catalog', 'phase selection', 'available picks']
+        self.pref_manager.group_order = ['catalog', 'available picks']
         # Add the plugin preferences.
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'catalog_mode',
                                           label = 'mode',
@@ -84,25 +84,6 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         self.pref_manager.add_item(pagename = 'select',
                                    item = item)
 
-        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 'p_phases',
-                                          label = 'P phases',
-                                          group = 'phase selection',
-                                          value = [],
-                                          limit = [],
-                                          tool_tip = 'Select the P phases to use for the localization.',
-                                          hooks = {'on_value_change': self.on_phases_select})
-        self.pref_manager.add_item(pagename = 'select',
-                                   item = item)
-
-        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 's_phases',
-                                          label = 'S phases',
-                                          group = 'phase selection',
-                                          value = [],
-                                          limit = [],
-                                          tool_tip = 'Select the S phases to use for the localization.',
-                                          hooks = {'on_value_change': self.on_phases_select})
-        self.pref_manager.add_item(pagename = 'select',
-                                   item = item)
 
         column_labels = ['db_id', 'scnl', 'label', 'time',
                          'agency_uri', 'author_uri']
@@ -179,17 +160,6 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
                                     value = {'catalog': selected_catalog})
 
 
-    def on_phases_select(self):
-        ''' Handle the phase selection.
-
-        '''
-        selected_p_phases = self.pref_manager.get_value('p_phases')
-        selected_s_phases = self.pref_manager.get_value('s_phases')
-        self.parent.add_shared_info(origin_rid = self.rid,
-                                    name = 'selected_phases',
-                                    value = {'p_phases': selected_p_phases,
-                                             's_phases': selected_s_phases})
-
     def on_pick_selected(self):
         ''' Handle a value change in the picks list control.
 
@@ -223,11 +193,11 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
             pick_list = self.convert_picks_to_list(cur_catalog.picks)
             self.pref_manager.set_limit('picks', pick_list)
 
-            labels = list(set([x.label for x in cur_catalog.picks]))
-            p_phases = [x for x in labels if x.lower().startswith('p')]
-            s_phases = [x for x in labels if x.lower().startswith('s')]
-            self.pref_manager.set_limit('p_phases', p_phases)
-            self.pref_manager.set_limit('s_phases', s_phases)
+        # Update the shared information.
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'selected_pick_catalog',
+                                    value = {'catalog': cur_catalog})
+
 
 
     def convert_picks_to_list(self, picks):

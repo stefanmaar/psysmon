@@ -65,9 +65,12 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
 
         self.icons['active'] = psysmon.artwork.icons.iconsBlack16.localize_graphical_icon_16
 
+        # Setup the order of the groups.
+        self.pref_manager.group_order = ['phase selection', 'velocity model']
         # Add the plugin preferences.
         item = preferences_manager.IntegerSpinPrefItem(name = 'p_velocity',
                                                        label = 'P velocity [m/s]',
+                                                       group = 'velocity model',
                                                        value = 5000,
                                                        limit = (1, 100000),
                                                        tool_tip = 'The P-wave velocity in m/s.'
@@ -75,8 +78,68 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
         self.pref_manager.add_item(item = item)
 
 
+        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 'p_phases',
+                                          label = 'P phases',
+                                          group = 'phase selection',
+                                          value = [],
+                                          limit = [],
+                                          tool_tip = 'Select the P phases to use for the localization.')
+        self.pref_manager.add_item(item = item)
+
+        item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 's_phases',
+                                          label = 'S phases',
+                                          group = 'phase selection',
+                                          value = [],
+                                          limit = [],
+                                          tool_tip = 'Select the S phases to use for the localization.')
+        self.pref_manager.add_item(item = item)
+
+
         # The plotted circles.
         self.circles = []
+
+
+    def getHooks(self):
+        ''' The callback hooks.
+        '''
+        hooks = {}
+
+        hooks['shared_information_added'] = self.on_shared_information_added
+        return hooks
+
+
+    def on_shared_information_added(self, origin_rid, name):
+        ''' Hook that is called when a shared information was added by a plugin.
+        '''
+        rid = '/plugin/select_picks'
+        if origin_rid.endswith(rid) and name == 'selected_pick_catalog':
+            self.update_phases()
+
+
+    def update_phases(self):
+        ''' Update the available P- and S-phases.
+        '''
+        # TODO: Get the selected pick catalog. The pick catalog should contain
+        # only the picks of the selected event. This should be handled by the
+        # select_picks plugin.
+        # Check for the shared pick catalog.
+        pick_info = self.parent.get_shared_info(name = 'selected_pick_catalog')
+        if pick_info:
+            if len(pick_info) > 1:
+                raise RuntimeError("More than one pick catalog info was returned. This shouldn't happen.")
+            pick_info = pick_info[0]
+            catalog = pick_info.value['catalog']
+        else:
+            self.logger.error("No selected pick catalog available. Can't continue the localization.")
+            return
+
+        labels = list(set([x.label for x in catalog.picks]))
+        p_phases = [x for x in labels if x.lower().startswith('p')]
+        s_phases = [x for x in labels if x.lower().startswith('s')]
+        self.pref_manager.set_limit('p_phases', p_phases)
+        self.pref_manager.set_limit('s_phases', s_phases)
+        # TODO: Check if the currently selected values are part of the
+        # available limits. This should be done by the pref_manager fields.
 
 
     def run(self):
@@ -111,26 +174,16 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
                 self.logger.error("No selected pick catalog available. Can't continue the localization.")
                 return
 
-
-            # TODO: Split the selected phases into P- and S- phases.
-            # Check for the shared phases.
-            phase_info = self.parent.get_shared_info(name = 'selected_phases')
-            if phase_info:
-                if len(phase_info) > 1:
-                    raise RuntimeError("More than one phase info was returned. This shouldn't happen.")
-                phase_info = phase_info[0]
-                p_phases = phase_info.value['p_phases']
-                s_phases = phase_info.value['s_phases']
-            else:
-                self.logger.error("No selected phases available. Can't continue the localization.")
-                return
-
+            p_phases = self.pref_manager.get_value('p_phases')
+            s_phases = self.pref_manager.get_value('s_phases')
 
             # Compute the epidistances.
             epidist = self.compute_epidist(event_id, pick_catalog, p_phases, s_phases)
 
             # Plot the circles into the map view axes.
             self.plot_circles(epidist)
+
+
 
 
     def compute_epidist(self, event_id, pick_catalog, p_phases, s_phases, stations = None):
