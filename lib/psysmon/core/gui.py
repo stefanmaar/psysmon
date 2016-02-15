@@ -3025,7 +3025,11 @@ class PsysmonDockingFrame(wx.Frame):
     def call_hook(self, hook_name, **kwargs):
         ''' Call the hook of the plugins.
         '''
-        active_plugins = [x for x in self.plugins if x.active]
+        # TODO: Think about calling the hooks of all plugins, even if they are
+        # not activated. This would keep track of changes within deactivated
+        # plugins. It might cause some troubles with plugins, for which the
+        # fold panel was not yet created, check this.
+        active_plugins = [x for x in self.plugins if x.active or x.mode == 'command']
         self.hook_manager.call_hook(receivers = active_plugins,
                                     hook_name = hook_name,
                                     **kwargs)
