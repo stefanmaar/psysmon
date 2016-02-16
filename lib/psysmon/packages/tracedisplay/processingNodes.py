@@ -22,6 +22,7 @@ from psysmon.core.processingStack import ProcessingNode
 from psysmon.core.preferences_manager import SingleChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
 from psysmon.core.preferences_manager import IntegerSpinPrefItem
+from psysmon.core.preferences_manager import CheckBoxPrefItem
 import numpy as np
 import scipy as sp
 
@@ -152,6 +153,13 @@ class FilterBandPass(ProcessingNode):
                              )
         self.pref_manager.add_item(item = item)
 
+        # Zero phase checkbox.
+        item = CheckBoxPrefItem(name = 'zero_phase',
+                                label = 'zero phase',
+                                value = False,
+                                tool_tip = 'Use a zero phase filtering.')
+        self.pref_manager.add_item(item = item)
+
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
         #self.logger = logging.getLogger(loggerName)
@@ -170,7 +178,8 @@ class FilterBandPass(ProcessingNode):
         stream.filter('bandpass',
                       freqmin = self.pref_manager.get_value('min. frequ.'),
                       freqmax = self.pref_manager.get_value('max. frequ.'),
-                      corners = self.pref_manager.get_value('corners')
+                      corners = self.pref_manager.get_value('corners'),
+                      zerophase = self.pref_manager.get_value('zero_phase')
                      )
 
 
@@ -210,6 +219,12 @@ class FilterLowPass(ProcessingNode):
                              )
         self.pref_manager.add_item(item = item)
 
+        # Zero phase checkbox.
+        item = CheckBoxPrefItem(name = 'zero_phase',
+                                label = 'zero phase',
+                                value = False,
+                                tool_tip = 'Use a zero phase filtering.')
+        self.pref_manager.add_item(item = item)
 
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
@@ -229,7 +244,8 @@ class FilterLowPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('lowpass',
-                      freq = self.pref_manager.get_value('frequ.')
+                      freq = self.pref_manager.get_value('frequ.'),
+                      zerophase = self.pref_manager.get_value('zero_phase')
                      )
 
 
@@ -270,6 +286,12 @@ class FilterHighPass(ProcessingNode):
                              )
         self.pref_manager.add_item(item = item)
 
+        # Zero phase checkbox.
+        item = CheckBoxPrefItem(name = 'zero_phase',
+                                label = 'zero phase',
+                                value = False,
+                                tool_tip = 'Use a zero phase filtering.')
+        self.pref_manager.add_item(item = item)
         # Create the logging logger instance.
         #loggerName = __name__ + "." + self.__class__.__name__
         #self.logger = logging.getLogger(loggerName)
@@ -285,7 +307,8 @@ class FilterHighPass(ProcessingNode):
         '''
         #self.logger.debug('Executing the processing node.')
         stream.filter('highpass',
-                      freq = self.pref_manager.get_value('frequ.')
+                      freq = self.pref_manager.get_value('frequ.'),
+                      zerophase = self.pref_manager.get_value('zero_phase')
                      )
 
 
