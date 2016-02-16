@@ -282,9 +282,9 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
             for cur_text in text_2_delete:
                 cur_view.axes.texts.remove(cur_text)
             # Add the used velocity to the map.
-            cur_view.axes.text(0.98, 0.02, 'vp = ' + str(self.pref_manager.get_value('p_velocity')) + ' m/s',
+            cur_view.axes.text(0.98, 0.02, 'circle vp = ' + str(self.pref_manager.get_value('p_velocity')) + ' m/s',
                 ha = 'right', transform = cur_view.axes.transAxes, gid = self.rid)
 
-            cur_view.axes.autoscale(True)
+            #cur_view.axes.autoscale(True)
             cur_view.draw()
 
