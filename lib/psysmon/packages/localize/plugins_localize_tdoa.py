@@ -164,6 +164,12 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
 
             phases = self.pref_manager.get_value('phases')
 
+            # Remove existing hyperbola from the view.
+            for cur_view in map_view:
+                hyp_to_delete = [x for x in cur_view.axes.lines if x.get_gid() == self.rid]
+                for cur_hyp in hyp_to_delete:
+                    cur_view.axes.lines.remove(cur_hyp)
+
             # Compute the epidistances.
             self.run_tdoa(event_id, pick_catalog, phases)
         else:
@@ -210,14 +216,12 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
                         raise RuntimeError("More than one phase was returned for station %s, event_id %d and label %s. This shouldn't happen." % (cur_slave.name, event_id, cur_phase))
                     cur_slave_pick = cur_slave_pick[0]
 
-                    self.plot_hyperbola(cur_master, cur_slave, cur_master_pick, cur_slave_pick)
-
-                    #sp_diff = cur_s.time - cur_p.time
-                    #cur_epidist = sp_diff * vp / (np.sqrt(3) - 1)
-                    #epidist[cur_station.name][(cur_p.label, cur_s.label)] = cur_epidist
-
-                    used_picks.append(cur_master_pick)
-                    used_picks.append(cur_slave_pick)
+                    try:
+                        self.plot_hyperbola(cur_master, cur_slave, cur_master_pick, cur_slave_pick)
+                        used_picks.append(cur_master_pick)
+                        used_picks.append(cur_slave_pick)
+                    except:
+                        self.logger.exception("Couldn't plot the hyperbola. Skipping this combination %s-%s phase %s.", cur_master.name, cur_slave.name, cur_phase)
 
         # Get all map views.
         map_view_name = self.rid[:self.rid.rfind('/') + 1] + 'map_view'
@@ -284,10 +288,6 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
         for cur_view in map_view:
             proj = basemap.pyproj.Proj(init = cur_view.map_config['epsg'])
 
-            # Remove existing circles from the view.
-            #hyp_to_delete = [x for x in cur_view.axes.lines if x.get_gid() == self.rid]
-            #for cur_hyp in hyp_to_delete:
-            #    cur_view.axes.lines.remove(cur_hyp)
 
             master_lon, master_lat = master.get_lon_lat()
             master_x, master_y = proj(master_lon, master_lat)
@@ -296,11 +296,16 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
 
             r1 = np.array([master_x, master_y])
             r2 = np.array([slave_x, slave_y])
-            hyp = self.compute_hyperbola(r1, r2, master_pick.time, slave_pick.time, 1000)
+            try:
+                label = master.name + ':' + slave.name + ':' + master_pick.label
+                hyp = self.compute_hyperbola(r1, r2, master_pick.time, slave_pick.time, 10000)
+                if np.all(np.isnan(hyp)):
+                    self.logger.warning("Couldn't compute any hyperbola points for %s in view %s.", label, cur_view)
+                cur_view.axes.autoscale(False)
+                cur_view.axes.plot(hyp[:,0], hyp[:,1], gid = self.rid, label = label)
+            except:
+                self.logger.exception("Couldn't plot the hyperbola. Skipping the hyperbola for %s in view %s.", label, cur_view)
 
-            label = master.name + ':' + slave.name + ':' + master_pick.label
-            cur_view.axes.autoscale(False)
-            cur_view.axes.plot(hyp[:,0], hyp[:,1], gid = self.rid, label = label)
 
 
 
