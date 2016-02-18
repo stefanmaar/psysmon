@@ -78,7 +78,7 @@ class SelectEvents(OptionPlugin):
                                         label = 'window length [s]',
                                         group = 'detection time span',
                                         value = 3600,
-                                        limit = (0, 86400),
+                                        limit = (0, 3153600000),
                                         digits = 1,
                                         tool_tip = 'The length of the time window for which events should be loaded.')
         self.pref_manager.add_item(pagename = 'Select',
