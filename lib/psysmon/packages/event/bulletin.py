@@ -33,9 +33,11 @@ import os
 import psysmon
 import logging
 import re
-import psysmon.packages.event.core as ev_core
+import csv
+
 import obspy.core.utcdatetime as utcdatetime
 
+import psysmon.packages.event.core as ev_core
 
 
 class ImsParser(object):
@@ -376,6 +378,76 @@ class ImsParser(object):
         cur_phase['arrival_identification'] = cur_line[114:122].strip()
 
         self.event_dict['phases'].append(cur_phase)
+
+
+
+
+
+class CsvParser(object):
+    ''' Parse a CSV event file.
+    '''
+
+    def __init__(self):
+        # the logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        logger_name = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+
+        self.events = []
+
+
+    def parse(self, filename):
+        ''' Parse a text file in CSV format.
+
+        First row is a header line.
+        The following lines contain the data.
+
+        public_id, start_time, end_time, description, author_uri, agency_uri
+        event_1,2015-01-01T01:00:00.000000,2015-01-01T01:00:10.000000,example event 1,sm,mr
+        event_2,2015-01-02T01:00:00.000000,2015-01-02T01:00:10.000000,example event 1,sm,mr
+
+        If the author_uri AND the agency uri is empty, the URIs of the current psysmon user will be used.
+
+        Parameters
+        ----------
+        filename : String
+            The CSV file to parse.
+        '''
+        if not os.path.exists(filename):
+            self.logger.error("The filename %s doesn't exist.", filename)
+            return False
+
+        with open(filename, 'rb') as event_file:
+            csv_reader = csv.reader(event_file, delimiter = ',', quotechar = '"')
+            header_line = csv_reader.next()
+            for cur_row in csv_reader:
+                if cur_row:
+                    cur_event = ev_core.Event(public_id = cur_row[0],
+                                              start_time = utcdatetime.UTCDateTime(cur_row[1]),
+                                              end_time = utcdatetime.UTCDateTime(cur_row[2]),
+                                              description = cur_row[3],
+                                              author_uri = cur_row[4],
+                                              agency_uri = cur_row[5])
+                    self.events.append(cur_event)
+
+        return True
+
+
+    def get_catalog(self, name = 'csv_parsed', author_uri = None, agency_uri = None):
+        ''' Get a catalog instance of the parsed csv file.
+        '''
+        catalog = ev_core.Catalog(name = name, agency_uri = agency_uri,
+                                  author_uri = author_uri)
+
+        # Adjust the URIs of the events.
+        if author_uri or agency_uri:
+            for cur_event in self.events:
+                if not cur_event.author_uri and not cur_event.agency_uri:
+                    cur_event.author_uri = author_uri
+                    cur_event.agency_uri = agency_uri
+        catalog.add_events(self.events)
+
+        return catalog
 
 
 

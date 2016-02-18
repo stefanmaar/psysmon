@@ -55,7 +55,7 @@ class ImportBulletin(CollectionNode):
         CollectionNode.__init__(self, **args)
         pref_item = psy_pm.SingleChoicePrefItem(name = 'bulletin_format',
                                                 label = 'bulletin format',
-                                                limit = ['IMS1.0', 'QuakeML'],
+                                                limit = ['IMS1.0', 'CSV'],
                                                 value = 'IMS1.0')
         self.pref_manager.add_item(item = pref_item)
         pref_item = CustomPrefItem(name = 'input_files', value = [])
@@ -78,12 +78,15 @@ class ImportBulletin(CollectionNode):
 
             if cur_format == 'IMS1.0':
                 parser = bulletin.ImsParser()
+            elif cur_format == 'CSV':
+                parser = bulletin.CsvParser()
             else:
                 parser = None
 
             if parser is not None:
                 parser.parse(cur_file)
-                catalog = parser.get_catalog()
+                catalog = parser.get_catalog(author_uri = self.project.activeUser.author_uri,
+                                             agency_uri = self.project.activeUser.agency_uri)
                 catalog.write_to_database(self.project)
 
 
@@ -302,7 +305,8 @@ class ImportBulletinEditDlg(wx.Frame):
 
     def get_wildcard_data(self):
         return {'txt': 'text (*.txt)|*.txt',
-                'gse2': 'gse2 (*.gse; *.gse2)|*.gse; *.gse2'
+                'gse2': 'gse2 (*.gse; *.gse2)|*.gse; *.gse2',
+                'csv': 'csv (*.csv)|*.csv'
                 }
 
 
