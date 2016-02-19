@@ -1136,6 +1136,15 @@ class TraceDisplayDlg(wx.Frame):
         for curPlugin in viewPlugins:
             curPlugin.plot(self.displayManager, self.dataManager)
 
+        # Hide those views which don't contain any data.
+        for cur_station in self.displayManager.showStations:
+            for cur_channel in cur_station.channels:
+                if not cur_channel.container.data_plotted:
+                    self.viewPort.hideChannel([cur_channel.getSCNL(),])
+                else:
+                    self.viewPort.showChannel([cur_channel.getSCNL(),])
+
+
 
         # Call the hooks of the plugins.
         self.call_hook('after_plot')
@@ -1548,6 +1557,13 @@ class DisplayManager(object):
                            dataManager = self.parent.dataManager,
                            station = [station2Show,])
 
+        # Hide those views which don't contain any data.
+        for cur_channel in station2Show.channels:
+            if not cur_channel.container.data_plotted:
+                self.parent.viewPort.hideChannel([cur_channel.getSCNL(),])
+            else:
+                self.parent.viewPort.showChannel([cur_channel.getSCNL(),])
+
 
         # Call the hooks of the plugins.
         self.parent.call_hook('after_plot_station', station = [station2Show,])
@@ -1582,7 +1598,6 @@ class DisplayManager(object):
                     view_class = curPlugin.getViewClass()
                     if view_class is not None:
                         curChannel.addView(curPlugin.name, view_class)
-
 
         # TODO: Only update the data of the added channel.
         self.stationsChanged = True

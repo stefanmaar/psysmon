@@ -133,7 +133,7 @@ class PlotPanel(wx.Panel):
 
     def onKeyDown(self, event):
         print "Propagating keyDown in plotPanel"
-        event.ResumePropagation(1)
+        event.ResumePropagation(30)
         event.Skip()
 
     def onKeyUp(self, event):
@@ -166,7 +166,7 @@ class View(wx.Panel):
     def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None):
         wx.Panel.__init__(self, parent)
 
-        self.SetBackgroundColour('cyan3')
+        self.SetBackgroundColour('white')
 
         self.plotCanvas = PlotPanel(self, color='violet')
         self.annotationArea = TdViewAnnotationPanel(self, color='gray80')
@@ -201,9 +201,19 @@ class View(wx.Panel):
         self.Bind(wx.EVT_KEY_UP, self.onKeyUp)
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
+
+    @property
+    def data_plotted(self):
+        ''' Indicate if the view has plotted any data.
+        '''
+        if self.dataAxes.lines:
+            return True
+        else:
+            return False
+
+
     def __del__(self):
         print "Deleting the view."
-
 
     def draw(self):
         ''' Draw the canvas to make the changes visible.
@@ -217,6 +227,8 @@ class View(wx.Panel):
         self.SetBackgroundColour('blue')
         self.SetFocus()
         self.Refresh()
+        event.ResumePropagation(30)
+        event.Skip()
 
     def onLeaveWindow(self, event):
         print "Entered view."
@@ -227,7 +239,8 @@ class View(wx.Panel):
         print "view got focus."
 
     def onKeyDown(self, event):
-        event.ResumePropagation(1)
+        print "onKeyDown in view."
+        event.ResumePropagation(30)
         event.Skip()
 
     def onKeyUp(self, event):
@@ -466,7 +479,9 @@ class ChannelContainer(wx.Panel):
         # A dictionary containing the views of the channel.
         self.views = {}
 
-        self.SetBackgroundColour('yellow3')
+        self.show_channel = True
+
+        self.SetBackgroundColour('white')
 
         self.annotationArea = ChannelAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
 
@@ -479,11 +494,39 @@ class ChannelContainer(wx.Panel):
         self.sizer.AddGrowableCol(1)
         self.SetSizer(self.sizer)
 
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
+
 
     @property
     def scnl(self):
         parent = self.GetParent()
         return (parent.name, self.name, parent.network, parent.location)
+
+
+    @property
+    def data_plotted(self):
+        ''' Indicate if the view has plotted any data.
+        '''
+        for cur_view in self.views.itervalues():
+            if cur_view.data_plotted:
+                return True
+        return False
+
+    def onKeyDown(self, event):
+        print "onKeyDown in channel container."
+        event.ResumePropagation(30)
+        event.Skip()
+
+    def onEnterWindow(self, event):
+        print "Entered station container."
+        self.SetFocus()
+        self.Refresh()
+
+    def onSetFocus(self, event):
+        print "onSetFocus in station container."
+        event.Skip()
 
     def addView(self, view):
         view.Reparent(self)
@@ -633,10 +676,21 @@ class StationContainer(wx.Panel):
         self.sizer.AddGrowableRow(0)
         self.SetSizer(self.sizer)
 
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+
     @property
     def snl(self):
         return (self.name, self.network, self.location)
 
+    def onKeyDown(self, event):
+        print "onKeyDown in station container."
+        event.ResumePropagation(30)
+        event.Skip()
+
+    def onSetFocus(self, event):
+        print "onSetFocus in station container."
+        event.Skip()
 
     def addChannel(self, channel):
         channel.Reparent(self)
@@ -686,6 +740,28 @@ class StationContainer(wx.Panel):
         self.channelSizer.Layout()
 
 
+    def hideChannel(self, channelName):
+
+        chan2Hide = self.channels[channelName]
+
+        if chan2Hide:
+            chan2Hide.show_channel = False
+            self.rearrangeChannels()
+            self.channelSizer.Layout()
+            self.sizer.Layout()
+
+
+    def showChannel(self, channelName):
+
+        chan2Show = self.channels[channelName]
+
+        if chan2Show:
+            chan2Show.show_channel = True
+            self.rearrangeChannels()
+            self.channelSizer.Layout()
+            self.sizer.Layout()
+
+
     def rearrangeChannels(self):
 
         if not self.channels:
@@ -695,13 +771,21 @@ class StationContainer(wx.Panel):
             self.channelSizer.Hide(curChannel)
             self.channelSizer.Detach(curChannel)
 
-        stationSize = self.channels.itervalues().next().GetMinSize()
-        stationSize[1] = stationSize[1] * len(self.channels)
-        self.SetMinSize(stationSize)
+        #show_channels = [x for x in self.channels.itervalues() if x.show_channel]
+        show_channels = [x for x in self.channels.itervalues()]
+        if show_channels:
+            stationSize = show_channels[0].GetMinSize()
+            print "stationSize: %s" % stationSize
+            stationSize[1] = stationSize[1] * len(show_channels)
+            self.SetMinSize(stationSize)
+            print "self.MinSize: %s" % self.GetMinSize()
 
-        for curChannel in self.channels.values():
-            self.channelSizer.Add(curChannel, 1, flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
-            curChannel.Show()
+        for curChannel in show_channels:
+            if curChannel.show_channel:
+                self.channelSizer.Add(curChannel, 1, flag=wx.TOP|wx.BOTTOM|wx.EXPAND, border=1)
+                curChannel.Show()
+            else:
+                curChannel.Hide()
 
 
 
@@ -1156,6 +1240,24 @@ class TdViewPort(scrolled.ScrolledPanel):
                 statFound.removeChannel(curSCNL[1])
 
 
+    def hideChannel(self, scnl):
+
+        for curSCNL in scnl:
+            statFound = [x for x in self.stations if x.name == curSCNL[0]]
+
+            if statFound:
+                statFound = statFound[0]
+                statFound.hideChannel(curSCNL[1])
+
+
+    def showChannel(self, scnl):
+
+        for curSCNL in scnl:
+            statFound = [x for x in self.stations if x.name == curSCNL[0]]
+
+            if statFound:
+                statFound = statFound[0]
+                statFound.showChannel(curSCNL[1])
 
 
     def rearrangeStations(self):
