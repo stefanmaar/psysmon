@@ -520,12 +520,12 @@ class ChannelContainer(wx.Panel):
         event.Skip()
 
     def onEnterWindow(self, event):
-        print "Entered station container."
+        print "Entered channel container."
         self.SetFocus()
         self.Refresh()
 
     def onSetFocus(self, event):
-        print "onSetFocus in station container."
+        print "onSetFocus in channel container."
         event.Skip()
 
     def addView(self, view):
@@ -678,6 +678,7 @@ class StationContainer(wx.Panel):
 
         self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
 
     @property
     def snl(self):
@@ -690,7 +691,11 @@ class StationContainer(wx.Panel):
 
     def onSetFocus(self, event):
         print "onSetFocus in station container."
-        event.Skip()
+
+    def onEnterWindow(self, event):
+        print "Entered station container."
+        self.SetFocus()
+        self.Refresh()
 
     def addChannel(self, channel):
         channel.Reparent(self)
@@ -1021,7 +1026,8 @@ class StationAnnotationArea(wx.Panel):
 	self.SetBackgroundColour(self.bgColor)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-
+        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
     def OnPaint(self, event):
         #print "OnPaint"
@@ -1029,6 +1035,15 @@ class StationAnnotationArea(wx.Panel):
         dc = wx.PaintDC(self)
         gc = self.makeGC(dc)
         self.draw(gc)
+
+    def onSetFocus(self, event):
+        print "onSetFocus in station annotation"
+
+
+    def onKeyDown(self, event):
+        print "onKeyDown in station annotation"
+        event.ResumePropagation(1)
+        event.Skip()
 
     def makeGC(self, dc):
         try:

@@ -1576,6 +1576,7 @@ class DisplayManager(object):
                                                         self.parent.dataManager,
                                                         self.parent.displayManager)
 
+        self.parent.viewPort.SetFocus()
 
 
     def showChannel(self, channel):
