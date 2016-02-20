@@ -51,9 +51,14 @@ class TracedisplayEditDialogTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.psybase.stop_project_server()
+        print "dropping database tables...\n"
         drop_project_database_tables(cls.project)
+        print "removing temporary file structure....\n"
         remove_project_filestructure(cls.project)
+        print "removing temporary base directory....\n"
         os.removedirs(cls.project.base_dir)
+        print "....finished cleaning up.\n"
 
 
     def setUp(self):
@@ -74,7 +79,6 @@ class TracedisplayEditDialogTestCase(unittest.TestCase):
     def testDlg(self):
         self.node.edit()
         self.app.MainLoop()
-        pass
 
 
 def suite():
