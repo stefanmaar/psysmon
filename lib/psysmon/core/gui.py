@@ -60,7 +60,8 @@ from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 from datetime import datetime
 import webbrowser
-from wx.lib.mixins.inspection import InspectionMixin
+#from wx.lib.mixins.inspection import InspectionMixin
+import wx.lib.mixins.inspection as wit
 import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
 import wx.lib.platebtn as platebtn
@@ -74,17 +75,17 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 
 
 ## The pSysmon main application.
-class PSysmonApp(wx.App, InspectionMixin):
+class PSysmonApp(wx.App, wit.InspectionMixin):
     ''' The pSysmon wxPython App class.
     '''
     ## The constructor
     #
-    def __init__(self, redirect=False, filename=None,
-                 useBestVisual=False, clearSigInt=True):
-        wx.App.__init__(self, redirect, filename, useBestVisual,
-                        clearSigInt)
+    #def __init__(self, redirect=False, filename=None,
+    #             useBestVisual=False, clearSigInt=True):
+    #    wx.App.__init__(self, redirect, filename, useBestVisual,
+    #                    clearSigInt)
 
-    def onInit(self):
+    def OnInit(self):
         self.Init()         # The widget inspection tool can be called using CTRL+ALT+i
         return True
 
