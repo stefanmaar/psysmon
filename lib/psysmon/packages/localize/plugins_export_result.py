@@ -111,12 +111,12 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
             postfix = '_event_%d_%s' % (int(event_id), time_str)
             ext = 'csv'
             used_picks = sorted(used_picks, key = op.attrgetter('label'))
-            pick_rows = [(x.event_id, x.channel.scnl_string, x.time.isoformat()) for x in used_picks]
+            pick_rows = [(x.event_id, x.channel.scnl_string, x.label, x.time.isoformat()) for x in used_picks]
             # Write the pick data to a csv file.
             filename = os.path.join(output_dir, prefix + exp_type + postfix + '.' + ext)
             with open(filename, 'wb') as export_file:
                 csv_writer = csv.writer(export_file, delimiter = ',', quoting = csv.QUOTE_MINIMAL)
-                csv_writer.writerow(['event_id', 'scnl', 'time'])
+                csv_writer.writerow(['event_id', 'scnl', 'label', 'time'])
                 csv_writer.writerows(pick_rows)
 
             # Export the map image.
