@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "geometry"
-version = "0.0.2"
+version = "0.0.3"
 author = "Stefan Mertl"
 minPsysmonVersion = "0.0.1"
 description = "The geometry package."
@@ -29,6 +29,10 @@ website = "http://www.stefanmertl.com"
 collection_node_modules = ['editGeometry',]
 
 ''' Database change history
+version 0.0.3 - 2016-04-28
+Changed the primary key of geom_component_to_stream:
+    stream_id, component_id, start_time
+
 version 0.0.2 - 2016-01-27
 Added the following fields to geom_recorder:
     model
@@ -168,7 +172,7 @@ def databaseFactory(base):
 
         stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
         component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
-        start_time = Column(Float(53), nullable=False)
+        start_time = Column(Float(53), primary_key=True, nullable=False)
         end_time = Column(Float(53))
 
         component = relationship('GeomSensorComponent')
