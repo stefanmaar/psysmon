@@ -246,7 +246,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
 
 
     def edit(self):
-        stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
+        stations = sorted([x.name + ':' + x.location for x in self.project.geometry_inventory.get_station()])
         self.pref_manager.set_limit('show_stations', stations)
 
         channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
@@ -1117,7 +1117,7 @@ class TraceDisplayDlg(wx.Frame):
         # TODO: Call these method only, if the displayed stations or
         if self.displayManager.stationsChanged:
             self.displayManager.createContainers() 
-            self.viewPort.sortStations(snl=[(x[0],x[1],x[2]) for x in self.displayManager.getSCNL('show')])
+            self.viewPort.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
             self.displayManager.stationsChanged = False
 
         # TODO: Request the needed data from the wave client.
@@ -1345,7 +1345,7 @@ class DisplayManager(object):
         #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
         show_stations = self.pref_manager.get_value('show_stations')
         for curStation in self.availableStations:
-            if curStation.name in show_stations:
+            if curStation.label in show_stations:
                 station2Add = curStation
                 station2Add.addChannel(self.showChannels)
                 for curChannel in station2Add.channels:
@@ -1489,8 +1489,6 @@ class DisplayManager(object):
         snl : tuple (String, String, String)
             The station, network, location code of the station which should be hidden.
         '''
-
-
         stat2Remove = [x for x in self.showStations if snl == x.getSNL()]
 
         for curStation in stat2Remove:
@@ -1861,7 +1859,7 @@ class DisplayManager(object):
 
 
 
-class DisplayStation():
+class DisplayStation(object):
     ''' Handling the stations used in tracedisplay.
 
     Attributes
@@ -1904,6 +1902,9 @@ class DisplayStation():
         # The channels contained in the station.
         self.channels = []
 
+    @property
+    def label(self):
+        return self.name + ':' + self.location
 
 
     def addChannel(self, channelName):

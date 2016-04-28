@@ -665,7 +665,8 @@ class StationContainer(wx.Panel):
 
         self.SetBackgroundColour('white')
 
-        self.annotationArea = StationAnnotationArea(self, id=wx.ID_ANY, label=self.name, color=color)
+        label = self.name + ":" + self.location
+        self.annotationArea = StationAnnotationArea(self, id=wx.ID_ANY, label=label, color=color)
 
         self.channelSizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -683,6 +684,7 @@ class StationContainer(wx.Panel):
     @property
     def snl(self):
         return (self.name, self.network, self.location)
+
 
     def onKeyDown(self, event):
         print "onKeyDown in station container."
@@ -1206,7 +1208,7 @@ class TdViewPort(scrolled.ScrolledPanel):
         # Sort the stations list according to snl.
         tmp = []
         for curSnl in snl:
-            statFound = [x for x in self.stations if x.name == curSnl[0]]
+            statFound = [x for x in self.stations if x.snl == curSnl]
 
             # Add the station only if it's not already contained in the list.
             if statFound[0] not in tmp:
@@ -1232,7 +1234,7 @@ class TdViewPort(scrolled.ScrolledPanel):
         station : :class:`StationContainer`
             The station object which should be removed.
         '''
-        statFound = [x for x in self.stations if x.name == snl[0]]
+        statFound = [x for x in self.stations if x.snl == snl]
         if statFound:
             self.logger.debug('Hiding the station.')
             statFound = statFound[0]
@@ -1248,7 +1250,7 @@ class TdViewPort(scrolled.ScrolledPanel):
     def removeChannel(self, scnl):
 
         for curSCNL in scnl:
-            statFound = [x for x in self.stations if x.name == curSCNL[0]]
+            statFound = [x for x in self.stations if x.snl == (curSCNL[0], curSCNL[2], curSCNL[3])]
 
             if statFound:
                 statFound = statFound[0]
@@ -1258,7 +1260,7 @@ class TdViewPort(scrolled.ScrolledPanel):
     def hideChannel(self, scnl):
 
         for curSCNL in scnl:
-            statFound = [x for x in self.stations if x.name == curSCNL[0]]
+            statFound = [x for x in self.stations if x.snl == (curSCNL[0], curSCNL[2], curSCNL[3])]
 
             if statFound:
                 statFound = statFound[0]
@@ -1268,7 +1270,7 @@ class TdViewPort(scrolled.ScrolledPanel):
     def showChannel(self, scnl):
 
         for curSCNL in scnl:
-            statFound = [x for x in self.stations if x.name == curSCNL[0]]
+            statFound = [x for x in self.stations if x.snl == (curSCNL[0], curSCNL[2], curSCNL[3])]
 
             if statFound:
                 statFound = statFound[0]
