@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -2173,6 +2174,8 @@ class NetworkPanel(wx.Panel):
         tableField.append(('z', 'z', 'readonly', float))
         tableField.append(('coord_system', 'coord. system', 'readonly', str))
         tableField.append(('description', 'description', 'readonly', str))
+        tableField.append(('available_channels_string', 'channels', 'readonly', str))
+        tableField.append(('assigned_recorders_string', 'recorders', 'readonly', str))
         return tableField
 
 
@@ -2182,6 +2185,12 @@ class NetworkPanel(wx.Panel):
         # Update the sensor grid fields.
         self.setGridValues(self.selected_network, self.network_grid, self.getNetworkFields(), 0)
         self.network_grid.AutoSizeColumns()
+
+
+        # Resize the grid rows.
+        if self.station_grid.GetNumberRows() > 0:
+            self.station_grid.DeleteRows(0, self.station_grid.GetNumberRows())
+        self.station_grid.AppendRows(len(self.selected_network.stations))
 
         # Update the station grid fields.
         for k, cur_station in enumerate(self.selected_network.stations):
@@ -2197,7 +2206,10 @@ class NetworkPanel(wx.Panel):
         '''
         for pos, (field, label, attr, converter) in enumerate(fields):
             if field is not None and getattr(object, field) is not None:
-                grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                try:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                except:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field).encode("utf8")))
             else:
                 grid.SetCellValue(rowNumber, pos, '')
 
