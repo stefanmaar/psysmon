@@ -1831,6 +1831,27 @@ class Station(object):
         else:
             return self.location
 
+    @property
+    def available_channels_string(self):
+        if self.channels:
+            return str.join(',', sorted([x.name for x in self.channels]))
+        else:
+            return ''
+
+    @property
+    def assigned_recorders_string(self):
+        recorders = []
+        for cur_channel in self.channels:
+            recorders.extend(cur_channel.assigned_recorders)
+
+        recorders = list(set(recorders))
+
+        if recorders:
+            return str.join(',', sorted(recorders))
+        else:
+            return ''
+
+
 
     def __setitem__(self, name, value):
         self.logger.debug("Setting the %s attribute to %s.", name, value)
@@ -2011,6 +2032,10 @@ class Channel(object):
     @property
     def scnl_string(self):
         return str.join(':', self.scnl)
+
+    @property
+    def assigned_recorders(self):
+        return list(set([x.item.serial for x in self.streams]))
 
 
     def add_stream(self, serial, model, producer, name, start_time, end_time):
