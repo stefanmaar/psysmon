@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -2966,11 +2965,23 @@ class StationsPanel(wx.Panel):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
-                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                    try:
+                        grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                    except:
+                        try:
+                            grid.SetCellValue(rowNumber, pos, str(getattr(object, field).encode("utf8")))
+                        except:
+                            grid.SetCellValue(rowNumber, pos, 'Error converting the value to string.')
                 else:
                     grid.SetCellValue(rowNumber, pos, '')
             except:
-                pass
+                # If the field doesn't exist in the object (e.g. id for non
+                # database inventory instances). An AttributeError is raised in
+                # this case.
+                # TODO: handle the AttributeError individually in case other
+                # errors are raised.
+                grid.SetCellValue(rowNumber, pos, '')
+
             grid.AutoSizeColumns()
 
 
