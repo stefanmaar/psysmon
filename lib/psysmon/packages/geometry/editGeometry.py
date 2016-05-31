@@ -372,6 +372,27 @@ class EditGeometryDlg(wx.Frame):
             self.inventoryTree.updateInventoryData()
 
 
+    def clear_inventory(self):
+        ''' Clear all elements from the selected inventory.
+        '''
+        if self.selected_inventory:
+            self.selected_inventory.networks = []
+            self.selected_inventory.recorders = []
+            self.selected_inventory.sensors = []
+            self.inventoryTree.updateInventoryData()
+
+            if self.selected_inventory.type == 'db':
+                # Clear all geometry database tables.
+                project_slug = self.psyProject.slug
+                tables_to_clear = [table for table in reversed(self.psyProject.dbMetaData.sorted_tables) if table.key.startswith(project_slug + '_geom')]
+                for cur_table in tables_to_clear:
+                    self.psyProject.dbEngine.execute(cur_table.delete())
+
+                # Remove all elements from the session.
+                self.selected_inventory.db_session.expunge_all()
+
+
+
     def add_network(self):
         ''' Add a new network to the inventory.
         '''
@@ -728,19 +749,26 @@ class EditGeometryDlg(wx.Frame):
         self.logger.debug("inventory type: %s",self.selected_inventory.type)
 
         if self.selected_inventory.type not in 'db':
-            self.logger.debug("Saving a non db inventory to the database.")
+            if self.db_inventory.sensors or self.db_inventory.recorders or self.db_inventory.networks:
+                msg = "The database inventory is not empty. Adding elements to an existing database inventory is currently not working. Please clear the database inventory first and then write your new inventory to the database.."
+                dlg = wx.MessageDialog(self, msg,
+                                       'Error while updating the database inventory.',
+                                        wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+            else:
+                self.logger.debug("Saving a non db inventory to the database.")
 
-            for cur_sensor in self.selected_inventory.sensors:
-                self.db_inventory.add_sensor(cur_sensor)
+                for cur_sensor in self.selected_inventory.sensors:
+                    self.db_inventory.add_sensor(cur_sensor)
 
-            for cur_recorder in self.selected_inventory.recorders:
-                self.db_inventory.add_recorder(cur_recorder)
+                for cur_recorder in self.selected_inventory.recorders:
+                    self.db_inventory.add_recorder(cur_recorder)
 
-            for cur_network in self.selected_inventory.networks:
-                self.db_inventory.add_network(cur_network)
+                for cur_network in self.selected_inventory.networks:
+                    self.db_inventory.add_network(cur_network)
 
-            self.db_inventory.commit()
-
+                self.db_inventory.commit()
         else:
             self.logger.debug("Updating the existing project inventory database.")
             self.db_inventory.commit()
@@ -868,6 +896,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.logger.debug('Handling an inventory.')
             # Setup the context menu.
             cm_data = (("remove", self.on_remove_inventory),
+                       ("clear", self.on_clear_inventory),
                        ("separator", None),
                        ("expand", self.on_expand_element),
                        ("collapse", self.on_collapse_element))
@@ -1024,6 +1053,17 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                                     wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
+
+
+    def on_clear_inventory(self, event):
+        ''' Handle the context menu click.
+        '''
+        msg = "Do you really want to clear the selected inventory?"
+        dlg = wx.MessageDialog(self, msg,
+                               'Confirm to clear the selected inventory.',
+                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            self.Parent.clear_inventory()
 
 
     def on_add_sensor(self, event):
