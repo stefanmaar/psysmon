@@ -290,7 +290,9 @@ class PackageManager:
                         self.logger.debug("Package check failed!")
 
                 except IndexError:
-                    self.logger.debug("No init file found.")
+                    self.logger.exception("No init file found for package %s.", pkgName)
+                except ImportError:
+                    self.logger.exception("Can't import package %s.", pkgName)
 
 
 
