@@ -70,6 +70,12 @@ class Station(inventory.Station):
         # The station correction for the backprojection.
         self.corr = corr
 
+        # The waveform data.
+        self.data = None
+
+        # The pseudo-magnitude matrix.
+        self.pseudo_mag = None
+
 
 
 class SourceMap(object):
@@ -107,7 +113,6 @@ class SourceMap(object):
         self.map_x_coord = []
         self.map_y_coord = []
 
-
         # The resulting source map.
         self.result_map = []
 
@@ -143,7 +148,9 @@ class SourceMap(object):
         epsg_dict = geom_util.get_epsg_dict()
         code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
 
-        proj = pyproj.Proj(init = 'epsg:'+code[0][0])
+        self.map_config['epsg'] = 'epsg:'+code[0][0]
+
+        proj = pyproj.Proj(init = self.map_config['epsg'])
 
         x_coord, y_coord = proj(lon, lat)
 
@@ -172,8 +179,12 @@ class SourceMap(object):
         '''
         x_grid, y_grid = np.meshgrid(self.map_x_coord, self.map_y_coord)
 
+        proj = pyproj.Proj(init = self.map_config['epsg'])
+
         for cur_station in self.compute_stations:
-            cur_station.epi_dist = np.sqrt(x_grid**2 + y_grid**2)
+            stat_lon_lat = cur_station.get_lon_lat()
+            stat_x, stat_y = proj(stat_lon_lat[0], stat_lon_lat[1])
+            cur_station.epi_dist = np.sqrt((stat_x - x_grid)**2 + (stat_y - y_grid)**2)
             cur_station.hypo_dist = np.sqrt(cur_station.epi_dist**2 + self.hypo_depth**2)
             cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist) + cur_station.corr
 
