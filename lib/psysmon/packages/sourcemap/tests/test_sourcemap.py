@@ -21,7 +21,7 @@
 import unittest
 
 import logging
-#import os
+import os
 
 import psysmon
 import psysmon.packages.geometry.inventory as inventory
@@ -41,8 +41,8 @@ class SourceMapTestCase(unittest.TestCase):
         cls.logger.setLevel('DEBUG')
         cls.logger.addHandler(psysmon.getLoggerHandler())
 
-        #cls.data_path = os.path.dirname(os.path.abspath(__file__))
-        #cls.data_path = os.path.join(cls.data_path, 'data')
+        cls.data_path = os.path.dirname(os.path.abspath(__file__))
+        cls.data_path = os.path.join(cls.data_path, 'data')
 
 
     def test_station(self):
@@ -168,6 +168,39 @@ class SourceMapTestCase(unittest.TestCase):
         sm.compute_map_configuration()
         sm.compute_map_grid()
         sm.compute_backprojection()
+
+
+    def test_synthetic_data(self):
+        ''' Test the computation using the synthetic data set.
+        '''
+        import pickle
+        import psysmon.packages.geometry.inventory_parser as inventory_parser
+
+        # Read the station geometry.
+        self.logger.setLevel('INFO')
+        xml_file = os.path.join(self.data_path, 'alpaact_inventory.xml')
+        xml_parser = inventory_parser.InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+        self.logger.setLevel('DEBUG')
+
+        # Convert the stations to sourcemap stations.
+        station_list = []
+        for cur_station in inventory.networks[0].stations:
+            station_list.append(sourcemap.core.Station(cur_station))
+
+
+        # Load the synthetic data.
+        data_file = os.path.join(self.data_path, 'sourcemap_synthetic_data.pkl')
+        fid = open(data_file, 'rb')
+        db = pickle.load(fid)
+        fid.close()
+
+        sm = sourcemap.core.SourceMap(stations = station_list, alpha = db['alpha'])
+        sm.compute_map_configuration()
+        sm.compute_map_grid()
+        sm.compute_backprojection()
+
+
 
 def suite():
     return unittest.makeSuite(SourceMapTestCase, 'test')
