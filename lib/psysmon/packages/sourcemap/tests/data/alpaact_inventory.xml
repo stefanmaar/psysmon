@@ -1,0 +1,4425 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<inventory name="alpaact_sensors">
+
+    <sensor_list>
+        <!-- ******************************************************************* -->
+        <!--                          REFTEK SENSORS                             -->
+        <!-- ******************************************************************* -->
+        <sensor serial="G09101VS">
+            <model>Observer 120s</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1980.45</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2011.54</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2008.88</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="G09155VS">
+            <model>Observer 120s</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1987.69</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1987.79</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>1996.34</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+
+        <!-- ******************************************************************* -->
+        <!--                          GURALP SENSORS                             -->
+        <!-- ******************************************************************* -->
+        <sensor serial="6257">
+            <model>6TD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="3L29">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5914</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5964</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5954</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="3L30">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5966</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5968</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5974</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <!-- TODO: Check if the sensitivity is correct. The value given by Maria is
+             half of the values of the other EPSDs -->
+        <sensor serial="3M83">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2982</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>3007</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2983</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="3M87">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5958</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>6004</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>5974</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34213">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34339">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34340">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34341">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34342">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34343">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34350">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+
+        <sensor serial="34352">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+
+        <sensor serial="34353">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="34355">
+            <model>3ESP-compact</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>2000</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+
+        <!-- ******************************************************************* -->
+        <!--                          GEOSPACE SENSORS                           -->
+        <!-- ******************************************************************* -->
+        <sensor serial="1417">
+            <model>Seismonitor</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>378.35</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>364.09</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>394.09</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <!-- TODO: The sensitivity is the one taken from 1417. Get the real
+             values from the calibration sheet. -->
+        <sensor serial="1418">
+            <model>Seismonitor</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>378.35</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>364.09</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>394.09</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="142840-001">
+            <model>GS-11D-1C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="142840-006">
+            <model>GS-11D-1C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="142840-009">
+            <model>GS-11D-1C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="GS11D-GE01">
+            <model>GS-11D-3C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="GS11D-GE02B">
+            <model>GS-11D-3C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="GS11D-GE03">
+            <model>GS-11D-3C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="GS11D-GE04">
+            <model>GS-11D-3C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="GS11D-GE05">
+            <model>GS-11D-3C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+
+        <sensor serial="GS11D-GSAL001">
+            <model>GS-11D-3C</model>
+            <producer>Geospace</producer>
+            <description></description>
+
+            <component name="Z">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="N">
+                <description>The North component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="E">
+                <description>The East component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>            
+                <component_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <sensitivity>81.00</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>  
+    </sensor_list>
+
+    <recorder_list>
+        <!-- ******************************************************************* -->
+        <!--                        REFTEK RECORDERS                             -->
+        <!-- ******************************************************************* -->
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="9882">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="988D">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="9890">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GSAL001</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-03-22T00:00:00.000000Z</start_time>
+                    <end_time>2010-07-06T00:00:00.000000Z</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2013-07-04T00:00:00.000000Z</start_time>
+                    <end_time></end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GSAL001</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-03-22T00:00:00.000000Z</start_time>
+                    <end_time>2010-07-06T00:00:00.000000Z</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2013-07-04T00:00:00.000000Z</start_time>
+                    <end_time></end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GSAL001</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-03-22T00:00:00.000000Z</start_time>
+                    <end_time>2010-07-06T00:00:00.000000Z</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2013-07-04T00:00:00.000000Z</start_time>
+                    <end_time></end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="9898">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="989A">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="9D6C">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time>2011-02-02T12:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE03</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-10T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time>2011-02-02T12:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE03</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-10T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-02-04T00:00:00.000000Z</start_time>
+                    <end_time>2011-02-02T12:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE03</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-10T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="9DC8">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-09T12:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-09T12:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>1417</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-09T12:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:4">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE02B</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-09T12:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:5">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE02B</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-09T12:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:6">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE02B</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-09T12:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="9EB2">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE04</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-21T00:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE04</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-21T00:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE04</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-21T00:00:00.000000Z</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="A00D">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE01</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-09T02:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE01</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-09T02:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE01</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-09T02:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:4">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142840-009</sensor_serial>
+                    <sensor_model>GS-11D-1C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-09T02:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:5">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142840-006</sensor_serial>
+                    <sensor_model>GS-11D-1C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-09T02:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:6">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142840-001</sensor_serial>
+                    <sensor_model>GS-11D-1C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-09T02:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: Dieser Recorder wurde zw. 2010 und 2014 nicht verwendet. -->
+        <recorder serial="A04A">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="A04C">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="AAEA">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+        </recorder>
+
+
+        <recorder serial="AB38">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09101VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2009-09-20T08:30:00</start_time>
+                    <end_time>2011-04-22T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09101VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2009-09-20T08:30:00</start_time>
+                    <end_time>2011-04-22T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09101VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2009-09-20T08:30:00</start_time>
+                    <end_time>2011-04-22T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="2:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09101VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-04-22T00:00:00</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="2:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09101VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-04-22T00:00:00</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="2:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09101VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-04-22T00:00:00</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+        </recorder>
+
+        <recorder serial="AF67">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09155VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-02T12:00:00</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09155VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-02T12:00:00</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>G09155VS</sensor_serial>
+                    <sensor_model>Observer 120s</sensor_model>
+                    <sensor_producer>Reftek</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-02T12:00:00</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: War wirklich 1417 bei diesem Recorder? -->
+        <recorder serial="B2A3">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE05</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2011-02-22T12:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>1418</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2013-03-28T00:00:00</start_time>
+                    <end_time>2014-01-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE05</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2011-02-22T12:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>1418</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2013-03-28T00:00:00</start_time>
+                    <end_time>2014-01-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>GS11D-GE05</sensor_serial>
+                    <sensor_model>GS-11D-3C</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2011-02-22T12:00:00</start_time>
+                    <end_time>2013-02-01T00:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>1418</sensor_serial>
+                    <sensor_model>Seismonitor</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2013-03-28T00:00:00</start_time>
+                    <end_time>2014-01-01T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <!-- TODO: This recorder is not in the original alpaact inventory. -->
+        <recorder serial="B32F">
+            <model>130</model>
+            <producer>Reftek</producer>
+            <description></description>
+
+            <stream name="1:1">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="1:2">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+            <stream name="1:3">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+            </stream>
+
+        </recorder>
+
+        <!-- ******************************************************************* -->
+        <!--                        GURALP RECORDERS                             -->
+        <!-- ******************************************************************* -->
+        <recorder serial="6257">
+            <model>6TD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <stream name="00:HHZ">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>4e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>6257</sensor_serial>
+                    <sensor_model>6TD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2009-03-27T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHN">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>4e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>6257</sensor_serial>
+                    <sensor_model>6TD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2009-03-27T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHE">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>4e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>6257</sensor_serial>
+                    <sensor_model>6TD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2009-03-27T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="3L29">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <stream name="00:HHZ">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.273e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3L29</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2009-09-15T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHN">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.258e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3L29</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2009-09-15T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHE">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.261e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3L29</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2009-09-15T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="3L30">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <stream name="00:HHZ">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.276e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3L30</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2009-06-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHN">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.266e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3L30</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2009-06-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHE">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.28e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3L30</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2009-06-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="3M83">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <stream name="00:HHZ">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.27e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3M83</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-07-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHN">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.27e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3M83</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-07-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHE">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.27e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3M83</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-07-09T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="3M87">
+            <model>3ESPD</model>
+            <producer>Guralp</producer>
+            <description></description>
+
+            <stream name="00:HHZ">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.274e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3M87</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHN">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.268e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3M87</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:HHE">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>1</gain>
+                    <bitweight>1.275e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>3M87</sensor_serial>
+                    <sensor_model>3ESPD</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-03-02T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <!-- ******************************************************************* -->
+        <!--                       EARTHDATA RECORDERS                           -->
+        <!-- ******************************************************************* -->
+        <recorder serial="e3354">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34339</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-11T00:00:00</start_time>
+                    <end_time>2010-07-14T17:30:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>34350</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-07-22T11:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34339</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-11T00:00:00</start_time>
+                    <end_time>2010-07-14T17:30:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>34350</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-07-22T11:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34339</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-11T00:00:00</start_time>
+                    <end_time>2010-07-14T17:30:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>34350</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-07-22T11:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3355">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34355</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-12T00:00:00.000000Z</start_time>
+                    <end_time>2011-05-27T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34355</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-12T00:00:00.000000Z</start_time>
+                    <end_time>2011-05-27T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34355</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-12T00:00:00.000000Z</start_time>
+                    <end_time>2011-05-27T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3356">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34352</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-12T00:00:00</start_time>
+                    <end_time>2011-05-27T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34352</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-12T00:00:00</start_time>
+                    <end_time>2011-05-27T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34352</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-12T00:00:00</start_time>
+                    <end_time>2011-05-27T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3357">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34339</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-07-14T18:00:00</start_time>
+                    <end_time>2011-05-26T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34339</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-07-14T18:00:00</start_time>
+                    <end_time>2011-05-26T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34339</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-07-14T18:00:00</start_time>
+                    <end_time>2011-05-26T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3358">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34340</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-11T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34340</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-11T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34340</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-11T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3359">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34213</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-20T00:00:00.000000Z</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34213</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-20T00:00:00.000000Z</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34213</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-20T00:00:00.000000Z</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3360">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34350</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-20T00:00:00</start_time>
+                    <end_time>2010-07-22T10:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>34343</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-08-10T00:00:00</start_time>
+                    <end_time>2011-05-26T10:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34350</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-20T00:00:00</start_time>
+                    <end_time>2010-07-22T10:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>34343</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-08-10T00:00:00</start_time>
+                    <end_time>2011-05-26T10:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34350</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-20T00:00:00</start_time>
+                    <end_time>2010-07-22T10:00:00</end_time>
+                </assigned_component>
+                <assigned_component>
+                    <sensor_serial>34343</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-08-10T00:00:00</start_time>
+                    <end_time>2011-05-26T10:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3361">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34342</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-10T00:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34342</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-05-10T00:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34342</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-05-10T00:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3362">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34353</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-07-02T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34353</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-07-02T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34353</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-07-02T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+        <recorder serial="e3363">
+            <model>PR 6-24 portable</model>
+            <producer>Earthdata</producer>
+            <description></description>
+
+            <stream name="11:p0">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34341</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>Z</component_name>
+                    <start_time>2010-05-10T00:00:00</start_time>
+                    <end_time>2011-05-30T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p1">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34353</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>N</component_name>
+                    <start_time>2010-07-02T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+            <stream name="11:p2">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2010-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                    <gain>0.4</gain>
+                    <bitweight>1e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>34353</sensor_serial>
+                    <sensor_model>3ESP-compact</sensor_model>
+                    <sensor_producer>Guralp</sensor_producer>
+                    <component_name>E</component_name>
+                    <start_time>2010-07-02T00:00:00</start_time>
+                    <end_time>2011-05-31T00:00:00</end_time>
+                </assigned_component>
+            </stream>
+
+        </recorder>
+
+    </recorder_list>
+
+    <network name="AP">
+        <description>ALPAACT</description>
+        <type>temporary</type>
+
+        <station name="ALBA">
+            <location name="00">
+                <x>15.962308</x>
+                <y>48.159233</y>
+                <z>418</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Altlengbach</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>AB38</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2009-09-20T08:30:00</start_time>
+                        <end_time>2011-04-22T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>AB38</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>2:1</stream_name>
+                        <start_time>2011-04-22T00:00:00</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>AB38</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2009-09-20T08:30:00</start_time>
+                        <end_time>2011-04-22T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>AB38</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>2:2</stream_name>
+                        <start_time>2011-04-22T00:00:00</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>AB38</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2009-09-20T08:30:00</start_time>
+                        <end_time>2011-04-22T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>AB38</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>2:3</stream_name>
+                        <start_time>2011-04-22T00:00:00</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="BISA">
+            <location name="00">
+                <x>16.3945555555556</x>
+                <y>48.3124722222222</y>
+                <z>240</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Bisamberg</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>6257</recorder_serial>
+                        <recorder_model>6TD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHZ</stream_name>
+                        <start_time>2009-03-27T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>6257</recorder_serial>
+                        <recorder_model>6TD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHN</stream_name>
+                        <start_time>2009-03-27T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>6257</recorder_serial>
+                        <recorder_model>6TD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHE</stream_name>
+                        <start_time>2009-03-27T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="ALLA">
+            <location name="00">
+                <x>16.0538888888889</x>
+                <y>48.0480833333333</y>
+                <z>410</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Alland</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3356</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-12T00:00:00</start_time>
+                        <end_time>2011-05-27T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3356</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-12T00:00:00</start_time>
+                        <end_time>2011-05-27T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3356</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-12T00:00:00</start_time>
+                        <end_time>2011-05-27T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GRUA">
+            <location name="00">
+                <x>15.9996944444444</x>
+                <y>47.8</y>
+                <z>608</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Grünbach</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3361</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-10T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3361</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-10T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3361</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-10T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="JOAA">
+            <location name="00">
+                <x>15.32089</x>
+                <y>47.86154</y>
+                <z>810</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Joachimsberg</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3362</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-07-02T00:00:00</start_time>
+                        <end_time>2011-05-31T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3362</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-07-02T00:00:00</start_time>
+                        <end_time>2011-05-31T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3362</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-07-02T00:00:00</start_time>
+                        <end_time>2011-05-31T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="NAWA">
+            <location name="00">
+                <x>15.7065277777778</x>
+                <y>47.7671388888889</y>
+                <z>614</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Nasswald</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3358</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-11T00:00:00</start_time>
+                        <end_time>2011-05-31T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3358</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-11T00:00:00</start_time>
+                        <end_time>2011-05-31T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3358</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-11T00:00:00</start_time>
+                        <end_time>2011-05-31T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="PITA">
+            <location name="00">
+                <x>16.18875</x>
+                <y>47.7166388888889</y>
+                <z>391</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Pitten</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3363</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-10T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>9890</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2013-07-04T00:00:00.000000Z</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3363</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-10T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>9890</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2013-07-04T00:00:00.000000Z</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3363</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-10T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>9890</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2013-07-04T00:00:00.000000Z</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="RETA">
+            <location name="00">
+                <x>15.7718611</x>
+                <y>47.5293889</y>
+                <z>950</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Rettenegg</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3360</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-08-10T00:00:00</start_time>
+                        <end_time>2011-05-26T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3360</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-08-10T00:00:00</start_time>
+                        <end_time>2011-05-26T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3360</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-08-10T00:00:00</start_time>
+                        <end_time>2011-05-26T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="SIGA">
+            <location name="00">
+                <x>16.5480277777778</x>
+                <y>47.7861944444444</y>
+                <z>177</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Siegendorf</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3360</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-20T00:00:00</start_time>
+                        <end_time>2010-07-22T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>e3354</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-07-22T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3360</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-20T00:00:00</start_time>
+                        <end_time>2010-07-22T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>e3354</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-07-22T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3360</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-20T00:00:00</start_time>
+                        <end_time>2010-07-22T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>e3354</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-07-22T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="VEIA">
+            <location name="00">
+                <x>15.4893055555556</x>
+                <y>47.5793611111111</y>
+                <z>694</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Veitsch</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3354</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-11T00:00:00</start_time>
+                        <end_time>2010-07-14T17:30:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>e3357</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-07-14T18:00:00</start_time>
+                        <end_time>2011-05-26T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>B2A3</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2013-03-01T00:00:00</start_time>
+                        <end_time>2014-01-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3354</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-11T00:00:00</start_time>
+                        <end_time>2010-07-14T17:30:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>e3357</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-07-14T18:00:00</start_time>
+                        <end_time>2011-05-26T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>B2A3</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2013-03-01T00:00:00</start_time>
+                        <end_time>2014-01-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3354</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-11T00:00:00</start_time>
+                        <end_time>2010-07-14T17:30:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>e3357</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-07-14T18:00:00</start_time>
+                        <end_time>2011-05-26T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>B2A3</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2013-03-01T00:00:00</start_time>
+                        <end_time>2014-01-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="VELA">
+            <location name="00">
+                <x>16.44525</x>
+                <y>48.0479166666667</y>
+                <z>183</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Velm</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3355</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-12T00:00:00</start_time>
+                        <end_time>2011-05-27T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3355</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-12T00:00:00</start_time>
+                        <end_time>2011-05-27T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3355</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-12T00:00:00</start_time>
+                        <end_time>2011-05-27T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="WISA">
+            <location name="00">
+                <x>16.2917222222222</x>
+                <y>47.6076388888889</y>
+                <z>763</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Wiesmath</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3359</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p0</stream_name>
+                        <start_time>2010-05-20T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3359</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p1</stream_name>
+                        <start_time>2010-05-20T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>e3359</recorder_serial>
+                        <recorder_model>PR 6-24 portable</recorder_model>
+                        <recorder_producer>Earthdata</recorder_producer>
+                        <stream_name>11:p2</stream_name>
+                        <start_time>2010-05-20T00:00:00</start_time>
+                        <end_time>2011-05-30T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE01">
+            <location name="00">
+                <x>16.5386062111111</x>
+                <y>48.2209551777778</y>
+                <z>159</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Bohrstelle 3 Komponenten</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>A00D</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2011-02-09T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>A00D</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2011-02-09T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>A00D</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2011-02-09T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE01A">
+            <location name="00">
+                <x>16.5387279083333</x>
+                <y>48.2212568666667</y>
+                <z>159</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Bohrstelle Array</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>A00D</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:4</stream_name>
+                        <start_time>2011-02-09T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE01B">
+            <location name="00">
+                <x>16.5388183861111</x>
+                <y>48.2206835833333</y>
+                <z>159</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Bohrstelle Array</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>A00D</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:5</stream_name>
+                        <start_time>2011-02-09T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE01C">
+            <location name="00">
+                <x>16.5382027</x>
+                <y>48.2207705055556</y>
+                <z>159</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Bohrstelle Array</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>A00D</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:6</stream_name>
+                        <start_time>2011-02-09T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE02">
+            <location name="A">
+                <x>16.54456</x>
+                <y>48.2316266666667</y>
+                <z>156</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>MA42 1Hz</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9DC8</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2011-02-09T02:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9DC8</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2011-02-09T02:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9DC8</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2011-02-09T02:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="B">
+                <x>16.54456</x>
+                <y>48.2316266666667</y>
+                <z>156</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>MA42 4.5Hz</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9DC8</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:4</stream_name>
+                        <start_time>2011-02-09T02:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9DC8</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:5</stream_name>
+                        <start_time>2011-02-09T02:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9DC8</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:6</stream_name>
+                        <start_time>2011-02-09T02:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE03">
+            <location name="00">
+                <x>16.474718</x>
+                <y>48.226627</y>
+                <z>163</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Fernwärme Schacht</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2011-02-10T12:00:00</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2011-02-10T12:00:00</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2011-02-10T12:00:00</start_time>
+                        <end_time></end_time>
+                    </assigned_stream>
+                </channel>
+
+            </location>
+        </station>
+
+        <station name="GE04">
+            <location name="00">
+                <x>16.5595516666667</x>
+                <y>48.1993483333333</y>
+                <z>158</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Boku Großenzersdorf</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9EB2</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2011-02-21T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9EB2</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2011-02-21T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9EB2</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2011-02-21T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GE05">
+            <location name="00">
+                <x>16.559052</x>
+                <y>48.252668</y>
+                <z>153</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Raasdorf</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>B2A3</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2011-02-22T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>B2A3</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2011-02-22T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>B2A3</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2011-02-22T12:00:00</start_time>
+                        <end_time>2013-02-01T00:00:00</end_time>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GILA">
+            <location name="00">
+                <x>15.887788</x>
+                <y>47.69577</y>
+                <z>643</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Grillenberg</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2010-02-04T00:00:00</start_time>
+                        <end_time>2011-02-02T12:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>AF67</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2011-02-02T12:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2010-02-04T00:00:00</start_time>
+                        <end_time>2011-02-02T12:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>AF67</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2011-02-02T12:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9D6C</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2010-02-04T00:00:00</start_time>
+                        <end_time>2011-02-02T12:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>AF67</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2011-02-02T12:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="GUWA">
+            <location name="00">
+                <x>15.346444</x>
+                <y>47.696306</y>
+                <z>880</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Gusswerk</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3M87</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHZ</stream_name>
+                        <start_time>2010-03-02T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3M87</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHN</stream_name>
+                        <start_time>2010-03-02T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3M87</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHE</stream_name>
+                        <start_time>2010-03-02T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+            </location>
+        </station>
+
+        <station name="MARA">
+            <location name="00">
+                <x>15.950533</x>
+                <y>47.543083</y>
+                <z>1048</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Mariensee</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9890</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:1</stream_name>
+                        <start_time>2010-03-22T00:00:00</start_time>
+                        <end_time>2010-07-06T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>3M83</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHZ</stream_name>
+                        <start_time>2010-07-06T00:00:01</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9890</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:2</stream_name>
+                        <start_time>2010-03-22T00:00:00</start_time>
+                        <end_time>2010-07-06T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>3M83</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHN</stream_name>
+                        <start_time>2010-07-06T00:00:01</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>9890</recorder_serial>
+                        <recorder_model>130</recorder_model>
+                        <recorder_producer>Reftek</recorder_producer>
+                        <stream_name>1:3</stream_name>
+                        <start_time>2010-03-22T00:00:00</start_time>
+                        <end_time>2010-07-06T00:00:00</end_time>
+                    </assigned_stream>
+                    <assigned_stream>
+                        <recorder_serial>3M83</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHE</stream_name>
+                        <start_time>2010-07-06T00:00:01</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="PUBA">
+            <location name="00">
+                <x>16.674806</x>
+                <y>47.921028</y>
+                <z>170</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Purbach</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3L29</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHZ</stream_name>
+                        <start_time>2009-09-15T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3L29</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHN</stream_name>
+                        <start_time>2009-09-15T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3L29</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHE</stream_name>
+                        <start_time>2009-09-15T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+            </location>
+        </station>
+
+        <station name="SITA">
+            <location name="00">
+                <x>15.6229166666667</x>
+                <y>48.5144722222222</y>
+                <z>380</z>
+                <coord_system>epsg:4326</coord_system>
+                <description>Schiltern</description>
+
+                <channel name="HHZ">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3L30</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHZ</stream_name>
+                        <start_time>2009-06-09T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3L30</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHN</stream_name>
+                        <start_time>2009-06-09T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description></description>
+                    <assigned_stream>
+                        <recorder_serial>3L30</recorder_serial>
+                        <recorder_model>3ESPD</recorder_model>
+                        <recorder_producer>Guralp</recorder_producer>
+                        <stream_name>00:HHE</stream_name>
+                        <start_time>2009-06-09T00:00:00</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+    </network>
+</inventory>
