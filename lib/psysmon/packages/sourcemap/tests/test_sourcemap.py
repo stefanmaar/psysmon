@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -22,6 +23,8 @@ import unittest
 
 import logging
 import os
+
+import numpy as np
 
 import psysmon
 import psysmon.packages.geometry.inventory as inventory
@@ -58,7 +61,26 @@ class SourceMapTestCase(unittest.TestCase):
         net.add_station(station)
         inv.add_network(net)
 
-        sm_station = sourcemap.core.Station(station)
+
+        data_v = np.zeros(100)
+        data_h1 = np.zeros(100)
+        data_h2 = np.zeros(100)
+
+        data_v[20] = 10
+        data_v[30] = -5
+        data_h1[10] = 2
+        data_h1[3] = -8
+        data_h2[30] = 5
+        data_h2[31] = -6
+
+        sm_station = sourcemap.core.Station(station,
+                                            data_v = data_v,
+                                            data_h1 = data_h1,
+                                            data_h2 = data_h2)
+
+        alt_res = sm_station.alt_resultant
+        self.assertEqual(alt_res, np.sqrt(446))
+
 
 
     def test_compute_map_configuration(self):
@@ -183,11 +205,6 @@ class SourceMapTestCase(unittest.TestCase):
         inventory = xml_parser.parse(xml_file)
         self.logger.setLevel('DEBUG')
 
-        # Convert the stations to sourcemap stations.
-        station_list = []
-        for cur_station in inventory.networks[0].stations:
-            station_list.append(sourcemap.core.Station(cur_station))
-
 
         # Load the synthetic data.
         data_file = os.path.join(self.data_path, 'sourcemap_synthetic_data.pkl')
@@ -195,10 +212,34 @@ class SourceMapTestCase(unittest.TestCase):
         db = pickle.load(fid)
         fid.close()
 
+
+        # Convert the stations to sourcemap stations.
+        station_list = []
+        for cur_station in inventory.networks[0].stations:
+            data_v = db['seismograms'][cur_station.snl]
+            data_h1 = np.zeros(len(data_v))
+            data_h2 = np.zeros(len(data_v))
+            station_list.append(sourcemap.core.Station(cur_station,
+                                                       data_v = data_v,
+                                                       data_h1 = data_h1,
+                                                       data_h2 = data_h2))
+
         sm = sourcemap.core.SourceMap(stations = station_list, alpha = db['alpha'])
         sm.compute_map_configuration()
         sm.compute_map_grid()
         sm.compute_backprojection()
+        sm.compute_pseudomag()
+        sm.compute_sourcemap()
+
+        # Plot the map.
+        from mpl_toolkits.basemap import pyproj
+        import matplotlib.pyplot as plt
+        proj = pyproj.Proj(init = sm.map_config['epsg'])
+        hypo_x, hypo_y = proj(db['hypo_lon_lat'][0], db['hypo_lon_lat'][1])
+        plt.pcolormesh(sm.map_x_coord, sm.map_y_coord, sm.result_map)
+        plt.plot(hypo_x, hypo_y, '^', markersize = 10)
+        plt.colorbar()
+        plt.show()
 
 
 
