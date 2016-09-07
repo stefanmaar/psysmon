@@ -41,7 +41,7 @@ class Station(inventory.Station):
     ''' The sourcemap station.
 
     '''
-    def __init__(self, station, corr = 1):
+    def __init__(self, station, data_v = None, data_h1 = None, data_h2 = None, corr = 0):
         ''' Initialize the instance.
         '''
         inventory.Station.__init__(self,
@@ -71,10 +71,21 @@ class Station(inventory.Station):
         self.corr = corr
 
         # The waveform data.
-        self.data = None
+        self.data_v = data_v
+        self.data_h1 = data_h1
+        self.data_h2 = data_h2
 
         # The pseudo-magnitude matrix.
         self.pseudo_mag = None
+
+
+    @property
+    def alt_resultant(self):
+        minmax_v = np.abs(np.min(self.data_v)) + np.abs(np.max(self.data_v))
+        minmax_h1 = np.abs(np.min(self.data_h1)) + np.abs(np.max(self.data_h1))
+        minmax_h2 = np.abs(np.min(self.data_h2)) + np.abs(np.max(self.data_h2))
+        return np.sqrt(minmax_v**2 + minmax_h1**2 + minmax_h2**2)
+
 
 
 
@@ -187,6 +198,22 @@ class SourceMap(object):
             cur_station.epi_dist = np.sqrt((stat_x - x_grid)**2 + (stat_y - y_grid)**2)
             cur_station.hypo_dist = np.sqrt(cur_station.epi_dist**2 + self.hypo_depth**2)
             cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist) + cur_station.corr
+
+
+    def compute_pseudomag(self):
+        ''' Compute the pseudo-magnitude.
+        '''
+        for cur_station in self.compute_stations:
+            cur_station.pseudo_mag = np.log10(cur_station.alt_resultant) + cur_station.backprojection
+            #cur_station.pseudo_mag = np.log10(np.abs(np.max(cur_station.data_v))) + cur_station.backprojection
+
+
+    def compute_sourcemap(self):
+        ''' Compute the source map.
+        '''
+        pm_list = [x.pseudo_mag for x in self.compute_stations]
+        pm_mat = np.dstack(pm_list)
+        self.result_map = pm_mat.min(axis = 2)
 
 
 
