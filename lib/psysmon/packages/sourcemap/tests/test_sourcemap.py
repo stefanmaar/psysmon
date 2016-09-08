@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -215,7 +214,10 @@ class SourceMapTestCase(unittest.TestCase):
 
         # Convert the stations to sourcemap stations.
         station_list = []
+        compute_stations = ['ALBA', 'GE03', 'GILA', 'GUWA', 'MARA', 'PITA', 'PUBA', 'SITA', 'VEIA']
         for cur_station in inventory.networks[0].stations:
+            if cur_station.name not in compute_stations:
+                continue
             data_v = db['seismograms'][cur_station.snl]
             data_h1 = np.zeros(len(data_v))
             data_h2 = np.zeros(len(data_v))
@@ -224,7 +226,7 @@ class SourceMapTestCase(unittest.TestCase):
                                                        data_h1 = data_h1,
                                                        data_h2 = data_h2))
 
-        sm = sourcemap.core.SourceMap(stations = station_list, alpha = db['alpha'])
+        sm = sourcemap.core.SourceMap(stations = station_list, alpha = db['alpha'], method = 'quart')
         sm.compute_map_configuration()
         sm.compute_map_grid()
         sm.compute_backprojection()
