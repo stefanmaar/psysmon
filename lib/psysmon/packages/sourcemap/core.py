@@ -93,7 +93,7 @@ class SourceMap(object):
     ''' The sourcemap.
     '''
 
-    def __init__(self, stations, map_dx = 1000, map_dy = 1000, hypo_depth = 8000, alpha = 1):
+    def __init__(self, stations, map_dx = 1000, map_dy = 1000, hypo_depth = 8000, alpha = 1, method = 'min'):
         ''' Initialize the instance.
         '''
         # The logging logger instance.
@@ -116,6 +116,9 @@ class SourceMap(object):
 
         # The alpha value of the backprojection.
         self.alpha = alpha
+
+        # The sourcemap computation method.
+        self.method = method
 
         # The map configuration.
         self.map_config = {}
@@ -213,7 +216,19 @@ class SourceMap(object):
         '''
         pm_list = [x.pseudo_mag for x in self.compute_stations]
         pm_mat = np.dstack(pm_list)
-        self.result_map = pm_mat.min(axis = 2)
+        if self.method == 'std':
+            self.result_map = np.std(pm_mat, axis = 2)
+        elif self.method == 'min':
+            self.result_map = pm_mat.min(axis = 2)
+        elif self.method == 'quart':
+            perc_25 = np.percentile(pm_mat, 25., axis = 2)
+            perc_75 = np.percentile(pm_mat, 75., axis = 2)
+            self.result_map = perc_75 - perc_25
+        else:
+            self.logging.error('Unknown computation method: %s.', self.method)
+
+
+
 
 
 
