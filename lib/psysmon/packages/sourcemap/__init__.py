@@ -28,3 +28,7 @@ website = "http://www.mertl-research.at"
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = []
 
+# Specify the module(s) where to search for plugin classes.
+plugin_modules = ['plugins_sourcemap',]
+
+
