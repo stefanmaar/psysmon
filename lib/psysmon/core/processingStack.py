@@ -33,7 +33,9 @@ This module contains the pSysmon processingStack system.
 import os
 import copy
 import itertools
+import weakref
 from operator import attrgetter
+
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -48,7 +50,7 @@ class ProcessingStack:
     The processing stack takes care about passing the correct data to the processingNode
     and to pass the processed data to the next processing node.
     '''
-    def __init__(self, name, project, nodes = None):
+    def __init__(self, name, project, nodes = None, parent = None):
         ''' The constructor
 
         '''
@@ -67,12 +69,27 @@ class ProcessingStack:
         # The current project.
         self.project = project
 
+        # The object holding the processing stack.
+        if parent is not None:
+            self._parent = weakref.ref(parent)
+        else:
+            self._parent = None
+
 
     @property
     def geometry_inventory(self):
         ''' The geometry inventory of the parent project.
         '''
         return self.project.geometry_inventory
+
+    @property
+    def parent(self):
+        '''
+        '''
+        if self._parent is None:
+            return self._parent
+        else:
+            return self._parent()
 
 
     def __getitem__(self, index):
