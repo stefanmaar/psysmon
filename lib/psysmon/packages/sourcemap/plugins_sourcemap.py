@@ -83,10 +83,8 @@ class PublishVisible(plugins.CommandPlugin):
         #                                data = self.parent.visible_data)
 
 
-        # TODO: Make alpha a plugin preference.
         alpha = self.pref_manager.get_value('alpha')
 
-        # TODO: Make the correction factors a preference.
         corr_set = self.pref_manager.get_value('corr')
         cn = {}
         cn['1-5'] = {'ALBA': -0.1689, 'ARSA': 0.050, 'BISA': -1.1685, 'CONA': 0.233, 'CSNA': 0.2366, 'GILA': 0.1307,
