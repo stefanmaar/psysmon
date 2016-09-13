@@ -351,7 +351,6 @@ class SlidingWindowProcessor(object):
         windowlist_start = [start_time + x * (window_length * overlap) for x in range(0, int(n_windows))]
 
         try:
-            # TODO: Loop over the windows.
             for k, cur_window_start in enumerate(windowlist_start):
                 self.logger.info("Processing sliding window %d/%d.", k, n_windows)
 
@@ -367,7 +366,15 @@ class SlidingWindowProcessor(object):
                                               process_limits = process_limits)
 
                 # Put the results of the processing stack into the results bag.
-                #results = self.processing_stack.get_results()
+                results = self.processing_stack.get_results()
+
+                # TODO: Add a field to the processing node edit dialog to
+                # select the formats in which the result should be saved.
+                # Be sure to distinguish between results that can be combined
+                # in a list (e.g. value results), or those, that provide a
+                # single output format (like the grid_2d result).
+                for cur_result in results:
+                    cur_result.save(formats = ['png',])
                 #resource_id = self.project.rid + cur_event.rid
                 #result_bag.add(resource_id = resource_id,
                 #                    results = results)
