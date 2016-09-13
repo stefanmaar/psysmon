@@ -281,8 +281,8 @@ class ProcessingNode:
 
 
 
-    def add_result(self, name, scnl, value, res_type = 'value',
-                   custom_class = None):
+    def add_result(self, name, res_type = 'value', description = None,
+                   custom_class = None, **kwargs):
         ''' Add a result.
 
         Parameters
@@ -301,15 +301,27 @@ class ProcessingNode:
                 self.results[name] = ValueResult(name = name,
                                                  origin_name = self.name,
                                                  origin_pos = self.parentStack.nodes.index(self),
-                                                 res_type = res_type)
+                                                 res_type = res_type,
+                                                 description = description)
+            elif res_type == 'grid_2d':
+                self.results[name] = Grid2dResult(name = name,
+                                                  origin_name = self.name,
+                                                  origin_pos = self.parentStack.nodes.index(self),
+                                                  description = description)
             else:
                 raise ValueError('The result of type %s is not supported.' % res_type)
 
         if self.results[name].type != res_type:
             raise ValueError("The type %s of the existing results doesn't match the type %s of the result to add." % (self.results[name].type, res_type))
 
-        self.results[name].add_value(scnl = scnl, value = value)
 
+        if res_type == 'value':
+            self.results[name].add_value(scnl = kwargs['scnl'],
+                                         value = kwargs['value'])
+        elif res_type == 'grid_2d':
+            self.results[name].add_grid(grid = kwargs['grid'],
+                                        x_coord = kwargs['x_coord'],
+                                        y_coord = kwargs['y_coord'])
 
 
 
@@ -454,7 +466,7 @@ class Result(object):
     '''
 
     def __init__(self, name, origin_name, origin_pos, res_type = None,
-                 origin_resource = None):
+                 origin_resource = None, description = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -474,6 +486,12 @@ class Result(object):
 
         # The parent resource ID for which the result was computed.
         self.origin_resource = origin_resource
+
+        # Additional values describing the result data.
+        if description:
+            self.description = description
+        else:
+            self.description = {}
 
 
     @property
@@ -539,4 +557,80 @@ class ValueResult(Result):
             scnl = self.values.keys()
 
         return scnl, [self.values.get(key, None) for key in scnl]
+
+
+
+
+class Grid2dResult(Result):
+    ''' A result representing a 2D grid.
+    '''
+    def __init__(self, res_type = 'grid_2d', **kwargs):
+        ''' Initialize the instance.
+        '''
+        Result.__init__(self, res_type = 'grid_2d', **kwargs)
+
+        self.x_coord = []
+
+        self.y_coord = []
+
+        self.grid = []
+
+
+    def add_grid(self, grid, x_coord, y_coord):
+        ''' Add a grid to the result.
+        '''
+        self.grid = grid
+
+        self.x_coord = x_coord
+
+        self.y_coord = y_coord
+
+
+    def save(self, formats = ['ascii_grid',]):
+        ''' Save the result in the specified format.
+
+        Parameters
+        ----------
+        format : List of Strings
+            The formats in which the result should be written.
+            ('ascii_grid', 'png')
+        '''
+
+        for cur_format in formats:
+            if cur_format == 'ascii_grid':
+                self.save_ascii_grid()
+            elif cur_format == 'png':
+                self.save_png()
+            else:
+                # TODO: Throw an exception.
+                pass
+
+    def save_png(self):
+        ''' Save the result as a png image.
+        '''
+        # TODO: Think about a consistent method to save results, that provide a
+        # single file output like the grid_2d and those that provide outputs
+        # that can be combined in a spreadsheet like the value results. The
+        # saving currently is not consistent. See also the todo note in
+        # window_processor modul in the process method.
+        from mpl_toolkits.basemap import pyproj
+        import matplotlib.pyplot as plt
+
+        map_config = self.description['map_config']
+        proj = pyproj.Proj(init = map_config['epsg'])
+        #stat_lon_lat = [x.get_lon_lat() for x in sm.compute_stations]
+        #stat_lon = [x[0] for x in stat_lon_lat]
+        #stat_lat = [x[1] for x in stat_lon_lat]
+        #stat_x, stat_y = proj(stat_lon, stat_lat)
+        plt.pcolormesh(self.x_coord, self.y_coord, self.grid, cmap = 'rainbow')
+        plt.colorbar()
+        plt.contour(self.x_coord, self.y_coord, self.grid, colors = 'k')
+        #plt.scatter(stat_x, stat_y)
+        plt.show()
+
+
+
+
+
+
 
