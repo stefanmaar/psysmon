@@ -134,19 +134,33 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
         sm.compute_pseudomag()
         sm.compute_sourcemap()
 
+        # Create a 2D grid result.
+        # TODO: Add the station coordinates to the description.
+        res_desc = {}
+        res_desc['cn'] = cn
+        res_desc['alpha'] = alpha
+        res_desc['map_config'] = sm.map_config
+        self.add_result(name = 'sourcemap',
+                        res_type = 'grid_2d',
+                        grid = sm.result_map,
+                        x_coord = sm.map_x_coord,
+                        y_coord = sm.map_y_coord,
+                        description = res_desc)
+
+
 
         # Plot the map.
-        from mpl_toolkits.basemap import pyproj
-        proj = pyproj.Proj(init = sm.map_config['epsg'])
-        stat_lon_lat = [x.get_lon_lat() for x in sm.compute_stations]
-        stat_lon = [x[0] for x in stat_lon_lat]
-        stat_lat = [x[1] for x in stat_lon_lat]
-        stat_x, stat_y = proj(stat_lon, stat_lat)
-        plt.pcolormesh(sm.map_x_coord, sm.map_y_coord, sm.result_map, cmap = 'rainbow')
-        plt.colorbar()
-        plt.contour(sm.map_x_coord, sm.map_y_coord, sm.result_map, colors = 'k')
-        plt.scatter(stat_x, stat_y)
-        plt.show()
+        #from mpl_toolkits.basemap import pyproj
+        #proj = pyproj.Proj(init = sm.map_config['epsg'])
+        #stat_lon_lat = [x.get_lon_lat() for x in sm.compute_stations]
+        #stat_lon = [x[0] for x in stat_lon_lat]
+        #stat_lat = [x[1] for x in stat_lon_lat]
+        #stat_x, stat_y = proj(stat_lon, stat_lat)
+        #plt.pcolormesh(sm.map_x_coord, sm.map_y_coord, sm.result_map, cmap = 'rainbow')
+        #plt.colorbar()
+        #plt.contour(sm.map_x_coord, sm.map_y_coord, sm.result_map, colors = 'k')
+        #plt.scatter(stat_x, stat_y)
+        #plt.show()
 
 
 
