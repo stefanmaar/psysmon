@@ -41,6 +41,8 @@ import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
+import numpy as np
+
 class ProcessingStack:
     ''' The ProcessingStack class.
 
@@ -377,7 +379,11 @@ class ProcessingNode:
         elif res_type == 'grid_2d':
             self.results[name].add_grid(grid = kwargs['grid'],
                                         x_coord = kwargs['x_coord'],
-                                        y_coord = kwargs['y_coord'])
+                                        y_coord = kwargs['y_coord'],
+                                        dx = kwargs['dx'],
+                                        dy = kwargs['dy'],
+                                        start_time = kwargs['start_time'],
+                                        end_time = kwargs['end_time'])
 
 
 
@@ -631,8 +637,12 @@ class Grid2dResult(Result):
 
         self.grid = []
 
+        self.start_time = None
 
-    def add_grid(self, grid, x_coord, y_coord):
+        self.end_time = None
+
+
+    def add_grid(self, grid, x_coord, y_coord, dx, dy, start_time, end_time, nodata_value = -9999):
         ''' Add a grid to the result.
         '''
         self.grid = grid
@@ -641,8 +651,18 @@ class Grid2dResult(Result):
 
         self.y_coord = y_coord
 
+        self.dx = dx
 
-    def save(self, formats = ['ascii_grid',]):
+        self.dy = dy
+
+        self.start_time = start_time
+
+        self.end_time = end_time
+
+        self.nodata_value = nodata_value
+
+
+    def save(self, formats = ['ascii_grid',], output_dir = None):
         ''' Save the result in the specified format.
 
         Parameters
@@ -654,14 +674,14 @@ class Grid2dResult(Result):
 
         for cur_format in formats:
             if cur_format == 'ascii_grid':
-                self.save_ascii_grid()
+                self.save_ascii_grid(output_dir = output_dir)
             elif cur_format == 'png':
-                self.save_png()
+                self.save_png(output_dir = output_dir)
             else:
                 # TODO: Throw an exception.
                 pass
 
-    def save_png(self):
+    def save_png(self, output_dir):
         ''' Save the result as a png image.
         '''
         # TODO: Think about a consistent method to save results, that provide a
@@ -683,6 +703,52 @@ class Grid2dResult(Result):
         plt.contour(self.x_coord, self.y_coord, self.grid, colors = 'k')
         #plt.scatter(stat_x, stat_y)
         plt.show()
+
+
+    def save_ascii_grid(self, output_dir):
+        ''' Save the result in ascii grid format.
+        '''
+        import json
+
+        if self.dx != self.dy:
+            #self.logger.error("The grid cell size in dx (%f) and dy(%f) are not equal. Can't save in ASCII grid format.", self.dx, self.dy)
+            return
+
+        if not output_dir:
+            output_dir = ''
+
+        header = "ncols     %s\n" % self.grid.shape[1]
+        header += "nrows    %s\n" % self.grid.shape[0]
+        header += "xllcorner %f\n" % self.x_coord[0]
+        header += "yllcorner %f\n" % self.y_coord[0]
+        header += "cellsize %f\n" % self.dx
+        header += "NODATA_value %f\n" % self.nodata_value
+
+        filename = self.rid.replace('/', '-')
+        if filename.startswith('-'):
+            filename = filename[1:]
+        if filename.endswith('-'):
+            filename = filename[:-1]
+
+        asc_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.asc'
+
+        json_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '_description.json'
+
+        output_dir = os.path.join(output_dir, self.name)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        asc_filename = os.path.join(output_dir, asc_filename)
+        json_filename = os.path.join(output_dir, json_filename)
+
+        np.savetxt(asc_filename,
+                   np.flipud(self.grid),
+                   comments = '',
+                   header=header)
+        #self.logger.info("Saved %s result %s to file %s.", self.res_type, self.rid, self.asc_filename)
+
+        with open(json_filename, 'w') as fp:
+            json.dump(self.description, fp, indent = 4, sort_keys = True)
+            #self.logger.info("Saved %s description %s to file %s.", self.res_type, self.rid, self.json_filename)
 
 
 
