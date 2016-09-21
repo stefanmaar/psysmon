@@ -418,6 +418,11 @@ class PSysmonGui(wx.Frame):
     # @param event The event object.
     def onClose(self, event):
         # Save the gui configuration to a JSON file
+        # Remove the wx-redirect logging handler from the logger.
+        handler_list = self.logger.parent.handlers
+        for cur_handler in handler_list:
+            if isinstance(cur_handler, psysmon.LoggingRedirectHandler):
+                self.logger.parent.removeHandler(cur_handler)
         import json
         import platform
         if platform.system() == 'Linux':
