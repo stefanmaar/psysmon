@@ -375,8 +375,11 @@ class SlidingWindowProcessor(object):
                 # Be sure to distinguish between results that can be combined
                 # in a list (e.g. value results), or those, that provide a
                 # single output format (like the grid_2d result).
+                if not os.path.exists(self.output_dir):
+                    os.makedirs(self.output_dir)
+
                 for cur_result in results:
-                    cur_result.save(formats = ['png',])
+                    cur_result.save(formats = ['ascii_grid',], output_dir = self.output_dir)
                 #resource_id = self.project.rid + cur_event.rid
                 #result_bag.add(resource_id = resource_id,
                 #                    results = results)
