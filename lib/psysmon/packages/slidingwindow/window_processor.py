@@ -361,9 +361,11 @@ class SlidingWindowProcessor(object):
                                              scnl = scnl)
 
                 # Execute the processing stack.
+                resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
                 process_limits = (cur_window_start, cur_window_start + window_length)
                 self.processing_stack.execute(stream = stream,
-                                              process_limits = process_limits)
+                                              process_limits = process_limits,
+                                              origin_resource = resource_id)
 
                 # Put the results of the processing stack into the results bag.
                 results = self.processing_stack.get_results()
