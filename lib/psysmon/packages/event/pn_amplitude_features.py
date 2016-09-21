@@ -53,7 +53,7 @@ class ComputeAmplitudeFeatures(ProcessingNode):
         self.pref_manager.add_item(item = item)
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters

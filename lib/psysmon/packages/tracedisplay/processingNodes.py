@@ -55,7 +55,7 @@ class Detrend(ProcessingNode):
         self.pref_manager.add_item(item = item)
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -96,7 +96,7 @@ class MedianFilter(ProcessingNode):
         self.pref_manager.add_item(item = item)
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -166,7 +166,7 @@ class FilterBandPass(ProcessingNode):
 
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -234,7 +234,7 @@ class FilterLowPass(ProcessingNode):
 
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -297,7 +297,7 @@ class FilterHighPass(ProcessingNode):
         #self.logger = logging.getLogger(loggerName)
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -333,7 +333,7 @@ class ConvertToSensorUnits(ProcessingNode):
                                )
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -406,7 +406,7 @@ class ScaleLog10(ProcessingNode):
                                )
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters

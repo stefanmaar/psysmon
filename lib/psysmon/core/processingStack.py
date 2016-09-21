@@ -152,7 +152,7 @@ class ProcessingStack:
 
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack.
 
         Parameters
@@ -164,7 +164,7 @@ class ProcessingStack:
         for curNode in self.nodes:
             curNode.clear_results()
             if curNode.isEnabled():
-                curNode.execute(stream, process_limits)
+                curNode.execute(stream, process_limits, origin_resource)
 
 
     def clear_results(self):
@@ -258,7 +258,7 @@ class ProcessingNode:
 
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -282,7 +282,7 @@ class ProcessingNode:
 
 
     def add_result(self, name, res_type = 'value', description = None,
-                   custom_class = None, **kwargs):
+                   origin_resource = None, custom_class = None, **kwargs):
         ''' Add a result.
 
         Parameters
@@ -302,12 +302,14 @@ class ProcessingNode:
                                                  origin_name = self.name,
                                                  origin_pos = self.parentStack.nodes.index(self),
                                                  res_type = res_type,
-                                                 description = description)
+                                                 description = description,
+                                                 origin_resource = origin_resource)
             elif res_type == 'grid_2d':
                 self.results[name] = Grid2dResult(name = name,
                                                   origin_name = self.name,
                                                   origin_pos = self.parentStack.nodes.index(self),
-                                                  description = description)
+                                                  description = description,
+                                                  origin_resource = origin_resource)
             else:
                 raise ValueError('The result of type %s is not supported.' % res_type)
 
