@@ -52,6 +52,20 @@ class PreferencesManager:
         self.group_order = []
 
 
+    @property
+    def settings(self):
+        ''' The configuration settings of the preference items.
+        '''
+        settings = {}
+        for cur_name, cur_page in self.pages.items():
+            settings[cur_name] = {}
+            for cur_item in cur_page:
+                settings[cur_name][cur_item.name] = cur_item.value
+
+        return settings
+
+
+
     def __str__(self):
         ''' The string representation of the instance.
 
