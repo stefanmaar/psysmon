@@ -34,8 +34,10 @@ import os
 import copy
 import itertools
 import weakref
+import logging
 from operator import attrgetter
 
+import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -101,6 +103,21 @@ class ProcessingStack:
             The index of the collection node to get from the nodes list.
         '''
         return self.nodes[index]
+
+
+    def get_settings(self, upper_node_limit = None):
+        ''' Get the settings of the nodes in the processing stack.
+
+        The upper limit can be set by the upper_node_limit attribute.
+        '''
+        settings = []
+        for cur_node in self.nodes:
+            settings.append(cur_node.settings)
+
+            if cur_node == upper_node_limit:
+                break
+
+        return settings
 
 
     def addNode(self, nodeTemplate, position = -1):
@@ -183,6 +200,7 @@ class ProcessingStack:
 
 
 
+
 class ProcessingNode:
     ''' The ProcessingNode class.
 
@@ -229,6 +247,42 @@ class ProcessingNode:
 
         # The enabled state of the node.
         self.enabled = enabled
+
+    @property
+    def settings(self):
+        ''' The configuration settings of the node.
+        '''
+        settings = {}
+        settings[self.name] = self.pref_manager.settings
+        return settings
+
+
+    def __getstate__(self):
+        ''' Remove instances that can't be pickled.
+        '''
+        result = self.__dict__.copy()
+
+        # The following attributes can't be pickled and therefore have
+        # to be removed.
+        # These values have to be reset when loading the project.
+        if 'logger' in result.keys():
+            del result['logger']
+        return result
+
+
+    def __setstate__(self, d):
+        ''' Fill missing attributes after unpickling.
+
+        '''
+        self.__dict__.update(d) # I *think* this is a safe way to do it
+        #print dir(self)
+
+        # Track some instance attribute changes.
+        if not "logger" in dir(self):
+            logger_prefix = psysmon.logConfig['package_prefix']
+            loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+            self.logger = logging.getLogger(loggerName)
+
 
 
     def isEnabled(self):
