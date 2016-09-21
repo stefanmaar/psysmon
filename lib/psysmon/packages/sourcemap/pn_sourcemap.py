@@ -142,7 +142,7 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
         # Create a 2D grid result.
         # TODO: Add the station coordinates to the description.
         res_desc = {}
-        res_desc['cn'] = cn
+        res_desc['cn'] = cn[corr_set]
         res_desc['alpha'] = alpha
         res_desc['map_config'] = sm.map_config
         res_desc['start_time'] = process_limits[0].isoformat()
@@ -154,6 +154,10 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
                         grid = sm.result_map,
                         x_coord = sm.map_x_coord,
                         y_coord = sm.map_y_coord,
+                        dx = sm.map_dx,
+                        dy = sm.map_dy,
+                        start_time = process_limits[0],
+                        end_time = process_limits[1],
                         description = res_desc,
                         origin_resource = origin_resource)
 
