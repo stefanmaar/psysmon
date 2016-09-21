@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+import logging
 
 import psysmon.core.processingStack
 import psysmon.core.preferences_manager as pm
@@ -47,6 +48,10 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
                                                              tags = ['amplitude', 'localize', 'sourcemap'],
                                                              **kwargs
                                                             )
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         item = pm.FloatSpinPrefItem(name = 'alpha',
                                     value = 1.61,
@@ -67,7 +72,7 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
 
 
 
-    def execute(self, stream, process_limits = None):
+    def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
 
         Parameters
@@ -119,7 +124,7 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
             else:
                 corr = 0
 
-            print "Cn: %s - %f" % (cur_station.name, corr)
+            self.logger.info("Cn: %s - %f", cur_station.name, corr)
             station_list.append(sourcemap.core.Station(cur_station,
                                                        data_v = data_v,
                                                        data_h1 = data_h1,
@@ -140,12 +145,17 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
         res_desc['cn'] = cn
         res_desc['alpha'] = alpha
         res_desc['map_config'] = sm.map_config
+        res_desc['start_time'] = process_limits[0].isoformat()
+        res_desc['end_time'] = process_limits[1].isoformat()
+        res_desc['station_list'] = [x.snl for x in station_list]
+        res_desc['preprocessing'] = self.parentStack.get_settings(upper_node_limit = self)
         self.add_result(name = 'sourcemap',
                         res_type = 'grid_2d',
                         grid = sm.result_map,
                         x_coord = sm.map_x_coord,
                         y_coord = sm.map_y_coord,
-                        description = res_desc)
+                        description = res_desc,
+                        origin_resource = origin_resource)
 
 
 
