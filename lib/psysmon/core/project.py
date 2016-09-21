@@ -797,6 +797,10 @@ class Project(object):
             if pkg_version_changed and update_success:
                 self.pkg_version[curPkg.name] = curPkg.version
                 save_needed = True
+            elif pkg_version_changed:
+                self.logger.error('There were errors while migrating the database. Please check the log file and the database consistency.')
+                self.pkg_version[curPkg.name] = curPkg.version
+                save_needed = True
 
         if save_needed:
             # Save the project to update the package versions.
