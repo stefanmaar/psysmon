@@ -676,6 +676,16 @@ class Collection:
             self.nodes.insert(position, node)
 
 
+    def addNode2Looper(self, node, position):
+        ''' Add a looper child node to a looper node.
+        '''
+        cur_node = self.nodes[position]
+        if isinstance(cur_node, psysmon.core.packageNodes.LooperCollectionNode):
+            # Add the node to the looper node.
+            cur_node.add_child(node)
+        else:
+            raise PsysmonError('The selected collection node is not a looper node.')
+
     def popNode(self, position):
         ''' Remove a node from the collection.
 

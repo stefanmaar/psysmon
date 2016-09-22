@@ -33,7 +33,7 @@ the :mod:`~psysmon.core.packageSystem`.
 
 from psysmon.core.preferences_manager import PreferencesManager
 
-class CollectionNode:
+class CollectionNode(object):
     ''' The base class of all psysmon collection nodes.
 
     All collection nodes contained in psysmon packages have to inherit from 
@@ -59,7 +59,7 @@ class CollectionNode:
 
     '''
 
-    ## The CollectionNode constructor.
+    ## The CollectionNode vnstructor.
     #
     # @param self The Object pointer.
     # @param name The name of the collection node.
@@ -304,4 +304,40 @@ class CollectionNode:
 
 
 
+
+class LooperCollectionNode(CollectionNode):
+    ''' A Collection node with a looping funcionality.
+
+    The collection node can hold a list of child nodes which are executed in a loop.
+    '''
+
+    def __init__(self, **kwargs):
+        ''' Initialize the instance.
+        '''
+        CollectionNode.__init__(self, **kwargs)
+
+        self.children = []
+
+
+    def add_child(self, child_node, position = None):
+        ''' Add a child node to the looper.
+        '''
+        self.children.append(child_node)
+
+
+    def remove_child(self, position):
+        ''' Remove a child node from the looper.
+        '''
+        pass
+
+
+class LooperCollectionChildNode(CollectionNode):
+    ''' A looper collection child node.
+
+    '''
+
+    def __init__(self, **kwargs):
+        ''' Initialize the instance.
+        '''
+        CollectionNode.__init__(self, **kwargs)
 

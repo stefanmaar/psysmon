@@ -112,9 +112,14 @@ def scan_module_for_collection_nodes(package_name, node_modules):
     node_templates = []
     for cur_node_module in node_modules:
         try:
+            print cur_node_module
             mod = importlib.import_module(package_name + '.' + cur_node_module)
             for name, obj in inspect.getmembers(mod):
                 if inspect.isclass(obj) and psysmon.core.packageNodes.CollectionNode in obj.__bases__:
+                    node_templates.append(obj)
+                elif inspect.isclass(obj) and psysmon.core.packageNodes.LooperCollectionNode in obj.__bases__:
+                    node_templates.append(obj)
+                elif inspect.isclass(obj) and psysmon.core.packageNodes.LooperCollectionChildNode in obj.__bases__:
                     node_templates.append(obj)
         except Exception, e:
             print e

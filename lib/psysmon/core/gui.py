@@ -691,6 +691,7 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         wx.ListCtrl.__init__(self, parent, id, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
+        # create the context menu.
         cmData = (("edit node", parent.onEditNode),
                   ("disable node", parent.onDisableNode),
                   ("enable node", parent.onEnableNode),
@@ -699,11 +700,10 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
                   ("load collection", parent.onCollectionLoad),
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
-
-        # create the context menu.
         self.contextMenu = psyContextMenu(cmData)
 
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
+
 
     def onShowContextMenu(self, event):
         try:
@@ -724,6 +724,54 @@ class CollectionListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self.PopupMenu(self.contextMenu)
 
 
+class CollectionTreeCtrl(wx.TreeCtrl):
+    def __init__(self, parent, id, pos, size, style):
+        wx.TreeCtrl.__init__(self, parent, id, pos, size, style)
+
+        il = wx.ImageList(16, 16)
+        self.icons = {}
+        self.icons['node'] = il.Add(iconsBlack16.network_icon_16.GetBitmap()) 
+        self.icons['looper_node'] = il.Add(iconsBlack16.notepad_icon_16.GetBitmap())
+        self.icons['looper_node_child'] = il.Add(iconsBlack16.pin_map_icon_16.GetBitmap())
+
+        self.AssignImageList(il)
+
+        self.root = self.AddRoot("collection")
+
+        self.SetMinSize(size)
+
+        # create the context menu.
+        cmData = (("edit node", parent.onEditNode),
+                  ("disable node", parent.onDisableNode),
+                  ("enable node", parent.onEnableNode),
+                  ("remove node", parent.onRemoveNode),
+                  ("separator", None),
+                  ("load collection", parent.onCollectionLoad),
+                  ("new collection", parent.onCollectionNew),
+                  ("delete collection", parent.onCollectionDelete))
+        self.contextMenu = psyContextMenu(cmData)
+
+        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.onShowContextMenu)
+
+
+    def onShowContextMenu(self, event):
+        try:
+            selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
+            if(selectedNode.mode == 'standalone'):
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            elif(selectedNode.mode == 'uneditable'):
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            else:
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+        except Exception:
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+
+        self.PopupMenu(self.contextMenu)
 
 
 ## The collection panel.
@@ -745,23 +793,31 @@ class CollectionPanel(wx.Panel):
 
         self.SetBackgroundColour((255, 255, 255))
 
-        self.collectionListCtrl = CollectionListCtrl(self, id=wx.ID_ANY,
-                                 size=(200, -1),
-                                 style=wx.LC_REPORT 
-                                 | wx.BORDER_NONE
-                                 | wx.LC_SORT_ASCENDING
-                                 | wx.LC_SINGLE_SEL
-                                 | wx.LC_NO_HEADER
-                                 )
-        self.collectionListCtrl.SetMinSize((200, -1))
+        if False:
+            self.collectionListCtrl = CollectionListCtrl(self, id=wx.ID_ANY,
+                                     size=(200, -1),
+                                     style=wx.LC_REPORT 
+                                     | wx.BORDER_NONE
+                                     | wx.LC_SORT_ASCENDING
+                                     | wx.LC_SINGLE_SEL
+                                     | wx.LC_NO_HEADER
+                                     )
+            self.collectionListCtrl.SetMinSize((200, -1))
 
-        columns = {1: 'node'}
+            columns = {1: 'node'}
 
-        for colNum, name in columns.iteritems():
-            self.collectionListCtrl.InsertColumn(colNum, name)
+            for colNum, name in columns.iteritems():
+                self.collectionListCtrl.InsertColumn(colNum, name)
 
-        sizer = wx.GridBagSizer(5, 5)
-        sizer.Add(self.collectionListCtrl, pos=(0, 0), flag=wx.EXPAND|wx.ALL, border=0)
+            sizer = wx.GridBagSizer(5, 5)
+            sizer.Add(self.collectionListCtrl, pos=(0, 0), flag=wx.EXPAND|wx.ALL, border=0)
+        else:
+            self.collectionTreeCtrl = CollectionTreeCtrl(self, id = wx.ID_ANY,
+                                                         pos = wx.DefaultPosition,
+                                                         size = (200, -1),
+                                                         style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT)
+            sizer = wx.GridBagSizer(5, 5)
+            sizer.Add(self.collectionTreeCtrl, pos=(0, 0), flag=wx.EXPAND|wx.ALL, border=0)
 
         self.executeButton = wx.Button(self, 10, "execute", (20, 20))
         sizer.Add(self.executeButton, pos=(1,0), flag=wx.EXPAND|wx.ALL, border=2)
@@ -771,15 +827,26 @@ class CollectionPanel(wx.Panel):
         #sizer.AddGrowableCol(1)
         self.SetSizerAndFit(sizer)
 
+        # create the context menu.
+        cmData = (("load collection", self.onCollectionLoad),
+                  ("new collection", self.onCollectionNew),
+                  ("delete collection", self.onCollectionDelete))
+        self.contextMenu = psyContextMenu(cmData)
 
         # Bind the events
         self.Bind(wx.EVT_BUTTON, self.onExecuteCollection)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onCollectionNodeItemSelected)
+        #self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onCollectionNodeItemSelected)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.onCollectionNodeItemSelected)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
 
         self.selectedCollectionNodeIndex = -1
 
 
-    # DEFINE THE CONTEXT MENU EVENT HANDLER.
+
+
+    def onShowContextMenu(self, event):
+        self.PopupMenu(self.contextMenu)
+
 
     # Execute collection button callback.
     #
@@ -846,8 +913,9 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.    
     def onCollectionNodeItemSelected(self, evt):
-        self.logger.debug("Selected node at position %d in collection.", evt.GetIndex())
-        self.selectedCollectionNodeIndex = evt.GetIndex()
+        collection_pos = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
+        self.logger.debug("Selected node at position %d in collection.", collection_pos)
+        self.selectedCollectionNodeIndex = collection_pos
 
 
     # Load a collection context menu callback.
@@ -889,7 +957,6 @@ class CollectionPanel(wx.Panel):
         self.logger.debug("Delete a collection.")
 
 
-
     def refreshCollection(self):
         '''
         Refresh the collection nodes displayed in the collection listbox.
@@ -898,8 +965,48 @@ class CollectionPanel(wx.Panel):
         :type self: :class:`~psysmon.core.gui.CollectionPanel`
         '''
         if not self.psyBase.project:
+            self.collectionTreeCtrl.DeleteChildren(self.collectionTreeCtrl.root)
+            return
+
+        activeCollection = self.psyBase.project.getActiveCollection()
+        if activeCollection:
+            auiPane = self.GetParent().mgr.GetPane('collection')
+            auiPane.Caption(activeCollection.name)
+            self.GetParent().mgr.Update()
+
+            self.collectionTreeCtrl.DeleteChildren(self.collectionTreeCtrl.root)
+            for k, curNode in enumerate(activeCollection.nodes):
+                if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
+                    node_string = curNode.name + ' (looper)'
+                    looper_node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
+                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, k)
+                    #self.SetItemBold(sensorListItem, True)
+                    self.collectionTreeCtrl.SetItemImage(looper_node_item, self.collectionTreeCtrl.icons['looper_node'], wx.TreeItemIcon_Normal)
+
+                    for child_pos, cur_child in enumerate(curNode.children):
+                        node_string = cur_child.name + '(child)'
+                        node_item = self.collectionTreeCtrl.AppendItem(looper_node_item, node_string)
+                        self.collectionTreeCtrl.SetItemPyData(node_item, child_pos)
+                        self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['looper_node_child'], wx.TreeItemIcon_Normal)
+                else:
+                    node_string = curNode.name
+                    node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
+                    self.collectionTreeCtrl.SetItemPyData(node_item, k)
+                    self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['node'], wx.TreeItemIcon_Normal)
+
+                #if not curNode.enabled:
+                #    self.collectionListCtrl.SetItemTextColour(k, wx.TheColourDatabase.Find('GREY70'))
+
+    def refreshCollectionOld(self):
+        '''
+        Refresh the collection nodes displayed in the collection listbox.
+
+        :param self: The object pointer.
+        :type self: :class:`~psysmon.core.gui.CollectionPanel`
+        '''
+        if not self.psyBase.project:
             self.collectionListCtrl.DeleteAllItems()
-            return 
+            return
 
         activeCollection = self.psyBase.project.getActiveCollection()
         if activeCollection:
@@ -908,8 +1015,20 @@ class CollectionPanel(wx.Panel):
             self.GetParent().mgr.Update()
 
             self.collectionListCtrl.DeleteAllItems()
-            for k, curNode in enumerate(activeCollection.nodes):
-                self.collectionListCtrl.InsertStringItem(k, curNode.name)
+            k = 0
+            for curNode in activeCollection.nodes:
+                if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
+                    node_string = curNode.name + ' (looper)'
+                    self.collectionListCtrl.InsertStringItem(k, node_string)
+                    k += 1
+                    for cur_child in curNode.children:
+                        node_string = '    ' + cur_child.name + '(child)'
+                        self.collectionListCtrl.InsertStringItem(k, node_string)
+                        k += 1
+                else:
+                    node_string = curNode.name
+                    self.collectionListCtrl.InsertStringItem(k, node_string)
+
                 if not curNode.enabled:
                     self.collectionListCtrl.SetItemTextColour(k, wx.TheColourDatabase.Find('GREY70'))
 
@@ -1136,18 +1255,30 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         #pub.sendMessage("log.general.status", msg = msg)
         self.logger.info(msg)
 
-        try:
+        if psysmon.core.packageNodes.LooperCollectionChildNode in self.selectedCollectionNodeTemplate.__bases__:
+            # Check if a collection exists.
+
+            # Check if the selected node is a looper node.
+            #selected_node = self.Parent.psyBase.project.getNodeFromCollection(self.collectionPanel.selectedCollectionNodeIndex)
+            #if psysmon.core.packageNodes.LooperCollectionNode in selected_node:
+
+            # Add the currend looper child node to the looper node.
             pos = self.collectionPanel.selectedCollectionNodeIndex
-            if pos != -1:
-                pos += 1    # Add after the selected node in the collection.
-            self.psyBase.project.addNode2Collection(self.selectedCollectionNodeTemplate, pos)
+            self.psyBase.project.addNode2Looper(self.selectedCollectionNodeTemplate, pos)
             self.collectionPanel.refreshCollection()
-        except PsysmonError:
-            msg = "No collection found. Create one first."
-            dlg = wx.MessageDialog(None, msg, 
-                                   "pSysmon runtime error.",
-                                   wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
+        else:
+            try:
+                pos = self.collectionPanel.selectedCollectionNodeIndex
+                if pos != -1:
+                    pos += 1    # Add after the selected node in the collection.
+                self.psyBase.project.addNode2Collection(self.selectedCollectionNodeTemplate, pos)
+                self.collectionPanel.refreshCollection()
+            except PsysmonError:
+                msg = "No collection found. Create one first."
+                dlg = wx.MessageDialog(None, msg, 
+                                       "pSysmon runtime error.",
+                                       wx.OK | wx.ICON_ERROR)
+                dlg.ShowModal()
 
     ## Show the node's online help file.
     # 
