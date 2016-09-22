@@ -47,6 +47,7 @@ class Station(inventory.Station):
         inventory.Station.__init__(self,
                                    name = station.name,
                                    location = station.location,
+                                   parent_network = station.parent_network,
                                    x = station.x,
                                    y = station.y,
                                    z = station.z,
