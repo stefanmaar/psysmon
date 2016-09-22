@@ -35,14 +35,21 @@ class RtArchiveControllerCase(unittest.TestCase):
     def test_scan(self):
         ''' Test the scanning of a Reftek archive.
         '''
-        ac = rt.archive.ArchiveController('/home/stefan/Desktop/rt_archive',
-                                          output_directory = './converted')
-        ac.scan()
-        ac.archive_to_mseed(unit_id = '9DC8',
-                            stream = 1,
-                            start_time = UTCDateTime(2011,4,22,0,0,0),
-                            end_time = UTCDateTime(2011,4,22,12,0,0))
+        #ac = rt.archive.ArchiveController('/data/data01/alpaact/test/reftek_archive',
+        #                                  output_directory = '/data/data01/alpaact/test/converted')
+        #ac.scan()
+        #ac.archive_to_mseed(unit_id = '9DC8',
+        #                    stream = 1,
+        #                    start_time = UTCDateTime(2011,6,4,0,0,0),
+        #                    end_time = UTCDateTime(2011,6,4,12,0,0))
 
+        ac = rt.archive.ArchiveController('/data/data01/alpaact/test/reftek_archive_dt',
+                                          output_directory = '/data/data01/alpaact/test/converted')
+        ac.scan()
+        ac.archive_to_mseed(unit_id = 'B2A3',
+                            stream = 1,
+                            start_time = UTCDateTime(2012,7,8,0,0,0),
+                            end_time = UTCDateTime(2012,7,9,0,0,0))
 def suite():
     return unittest.makeSuite(RtArchiveControllerCase, 'test')
 
