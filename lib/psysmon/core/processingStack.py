@@ -112,9 +112,9 @@ class ProcessingStack:
 
         The upper limit can be set by the upper_node_limit attribute.
         '''
-        settings = []
-        for cur_node in self.nodes:
-            settings.append(cur_node.settings)
+        settings = {}
+        for pos, cur_node in enumerate(self.nodes):
+            settings[pos+1] = cur_node.settings
 
             if cur_node == upper_node_limit:
                 break
@@ -337,7 +337,7 @@ class ProcessingNode:
 
 
 
-    def add_result(self, name, res_type = 'value', description = None,
+    def add_result(self, name, res_type = 'value', metadata = None,
                    origin_resource = None, custom_class = None, **kwargs):
         ''' Add a result.
 
@@ -358,13 +358,13 @@ class ProcessingNode:
                                                  origin_name = self.name,
                                                  origin_pos = self.parentStack.nodes.index(self),
                                                  res_type = res_type,
-                                                 description = description,
+                                                 metadata = metadata,
                                                  origin_resource = origin_resource)
             elif res_type == 'grid_2d':
                 self.results[name] = Grid2dResult(name = name,
                                                   origin_name = self.name,
                                                   origin_pos = self.parentStack.nodes.index(self),
-                                                  description = description,
+                                                  metadata = metadata,
                                                   origin_resource = origin_resource)
             else:
                 raise ValueError('The result of type %s is not supported.' % res_type)
@@ -521,7 +521,7 @@ class Result(object):
     '''
 
     def __init__(self, name, origin_name, origin_pos, res_type = None,
-                 origin_resource = None, description = None):
+                 origin_resource = None, metadata = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -543,10 +543,10 @@ class Result(object):
         self.origin_resource = origin_resource
 
         # Additional values describing the result data.
-        if description:
-            self.description = description
+        if metadata:
+            self.metadata = metadata
         else:
-            self.description = {}
+            self.metadata = {}
 
 
     @property
@@ -689,7 +689,7 @@ class Grid2dResult(Result):
         from mpl_toolkits.basemap import pyproj
         import matplotlib.pyplot as plt
 
-        map_config = self.description['map_config']
+        map_config = self.metadata['map_config']
         proj = pyproj.Proj(init = map_config['epsg'])
         #stat_lon_lat = [x.get_lon_lat() for x in sm.compute_stations]
         #stat_lon = [x[0] for x in stat_lon_lat]
@@ -729,7 +729,7 @@ class Grid2dResult(Result):
 
         asc_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.asc'
 
-        json_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '_description.json'
+        json_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '_metadata.json'
 
         prj_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.prj'
 
@@ -751,8 +751,8 @@ class Grid2dResult(Result):
                 fp.write('PROJCS[\nAUTHORITY["EPSG","%s"]\n]' % self.epsg.split(':')[1])
 
         with open(json_filename, 'w') as fp:
-            json.dump(self.description, fp, indent = 4, sort_keys = True)
-            #self.logger.info("Saved %s description %s to file %s.", self.res_type, self.rid, self.json_filename)
+            json.dump(self.metadata, fp, indent = 4, sort_keys = True)
+            #self.logger.info("Saved %s metadata %s to file %s.", self.res_type, self.rid, self.json_filename)
 
 
 
