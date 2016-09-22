@@ -1815,7 +1815,7 @@ class Station(object):
 
     @property
     def snl_string(self):
-        return str.join(':', self.get_snl())
+        return str.join(':', self.snl)
 
     @property
     def parent_inventory(self):
