@@ -189,7 +189,7 @@ class PickTestCase(unittest.TestCase):
 def suite():
 #    tests = ['testXmlImport']
 #    return unittest.TestSuite(map(InventoryTestCase, tests))
-    return unittest.makeSuite(EventTestCase, 'test')
+    return unittest.makeSuite(PickTestCase, 'test')
 
 
 if __name__ == '__main__':
