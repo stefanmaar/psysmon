@@ -374,16 +374,9 @@ class ProcessingNode:
 
 
         if res_type == 'value':
-            self.results[name].add_value(scnl = kwargs['scnl'],
-                                         value = kwargs['value'])
+            self.results[name].add_value(**kwargs)
         elif res_type == 'grid_2d':
-            self.results[name].add_grid(grid = kwargs['grid'],
-                                        x_coord = kwargs['x_coord'],
-                                        y_coord = kwargs['y_coord'],
-                                        dx = kwargs['dx'],
-                                        dy = kwargs['dy'],
-                                        start_time = kwargs['start_time'],
-                                        end_time = kwargs['end_time'])
+            self.results[name].add_grid(**kwargs)
 
 
 
@@ -641,8 +634,10 @@ class Grid2dResult(Result):
 
         self.end_time = None
 
+        self.epsg = None
 
-    def add_grid(self, grid, x_coord, y_coord, dx, dy, start_time, end_time, nodata_value = -9999):
+
+    def add_grid(self, grid, x_coord, y_coord, dx, dy, start_time, end_time, nodata_value = -9999, epsg = None):
         ''' Add a grid to the result.
         '''
         self.grid = grid
@@ -660,6 +655,8 @@ class Grid2dResult(Result):
         self.end_time = end_time
 
         self.nodata_value = nodata_value
+
+        self.epsg = epsg
 
 
     def save(self, formats = ['ascii_grid',], output_dir = None):
@@ -734,17 +731,24 @@ class Grid2dResult(Result):
 
         json_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '_description.json'
 
+        prj_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.prj'
+
         output_dir = os.path.join(output_dir, self.name)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         asc_filename = os.path.join(output_dir, asc_filename)
         json_filename = os.path.join(output_dir, json_filename)
+        prj_filename = os.path.join(output_dir, prj_filename)
 
         np.savetxt(asc_filename,
                    np.flipud(self.grid),
                    comments = '',
                    header=header)
         #self.logger.info("Saved %s result %s to file %s.", self.res_type, self.rid, self.asc_filename)
+
+        if self.epsg:
+            with open(prj_filename, 'w') as fp:
+                fp.write('PROJCS[\nAUTHORITY["EPSG","%s"]\n]' % self.epsg.split(':')[1])
 
         with open(json_filename, 'w') as fp:
             json.dump(self.description, fp, indent = 4, sort_keys = True)

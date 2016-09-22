@@ -147,7 +147,7 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
         res_desc['map_config'] = sm.map_config
         res_desc['start_time'] = process_limits[0].isoformat()
         res_desc['end_time'] = process_limits[1].isoformat()
-        res_desc['station_list'] = [x.snl for x in station_list]
+        res_desc['station_list'] = [{'snl': x.snl, 'x': x.x, 'y': x.y, 'z': x.z, 'epsg': x.coord_system} for x in station_list]
         res_desc['preprocessing'] = self.parentStack.get_settings(upper_node_limit = self)
         self.add_result(name = 'sourcemap',
                         res_type = 'grid_2d',
@@ -158,6 +158,7 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
                         dy = sm.map_dy,
                         start_time = process_limits[0],
                         end_time = process_limits[1],
+                        epsg = sm.map_config['epsg'],
                         description = res_desc,
                         origin_resource = origin_resource)
 
