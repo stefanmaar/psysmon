@@ -26,7 +26,10 @@ description = "The sliding window processing package."            # The package 
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['window_processor', 'time_window_looper', 'example_looper_child']
+collection_node_modules = ['window_processor',
+                           'time_window_looper',
+                           'example_looper_child',
+                           'compute_amplitude_features']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
