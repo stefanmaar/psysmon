@@ -1226,7 +1226,7 @@ class User:
         PsysmonError : :class:`~psysmon.core.util.PsysmonError` 
             Error raised when no active collection is present.
         '''
-        if self.activeCollection:
+        if self.activeCollection is not None:
             self.activeCollection.addNode(node, position)
         else:
             raise PsysmonError('No active collection found!')
@@ -1235,7 +1235,7 @@ class User:
     def addNode2Looper(self, node, position):
         ''' Add a looper child node to a looper node.
         '''
-        if self.activeCollection:
+        if self.activeCollection is not None:
             self.activeCollection.addNode2Looper(node, position)
         else:
             raise PsysmonError('No active collection found!')
@@ -1254,7 +1254,7 @@ class User:
         PsysmonError : :class:`PsysmonError` 
             Error raised when no active collection is present.
         '''
-        if self.activeCollection:
+        if self.activeCollection is not None:
             self.activeCollection.popNode(position)
         else:
             raise PsysmonError('No active collection found!') 
@@ -1278,7 +1278,7 @@ class User:
         PsysmonError : :class:`PsysmonError` 
             Error raised when no active collection is present.
         '''
-        if self.activeCollection:
+        if self.activeCollection is not None:
             return self.activeCollection[position]
         else:
             raise PsysmonError('No active collection found!') 
@@ -1302,7 +1302,7 @@ class User:
         PsysmonError : :class:`PsysmonError` 
             Error raised when no active collection is present.
         '''
-        if self.activeCollection:
+        if self.activeCollection is not None:
             self.activeCollection.editNode(position)
         else:
             raise PsysmonError('No active collection found!') 
@@ -1324,7 +1324,7 @@ class User:
         PsysmonError : :class:`PsysmonError` 
             Error raised when no active collection is present.
         '''
-        if self.activeCollection:
+        if self.activeCollection is not None:
             self.activeCollection.executeNode(position)
         else:
             raise PsysmonError('No active collection found!') 
@@ -1426,7 +1426,7 @@ class User:
             #self.logger.debug("End checking process %d.", proc.pid)
 
 
-        if self.activeCollection:
+        if self.activeCollection is not None:
             if not project.threadMutex:
                 project.threadMutex = thread.allocate_lock()
 

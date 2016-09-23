@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -730,9 +731,9 @@ class CollectionTreeCtrl(wx.TreeCtrl):
 
         il = wx.ImageList(16, 16)
         self.icons = {}
-        self.icons['node'] = il.Add(iconsBlack16.network_icon_16.GetBitmap()) 
-        self.icons['looper_node'] = il.Add(iconsBlack16.notepad_icon_16.GetBitmap())
-        self.icons['looper_node_child'] = il.Add(iconsBlack16.pin_map_icon_16.GetBitmap())
+        self.icons['node'] = il.Add(iconsBlack16.arrow_r_icon_16.GetBitmap())
+        self.icons['looper_node'] = il.Add(iconsBlack16.playback_reload_icon_16.GetBitmap())
+        self.icons['looper_node_child'] = il.Add(iconsBlack16.arrow_l_icon_16.GetBitmap())
 
         self.AssignImageList(il)
 
@@ -840,6 +841,8 @@ class CollectionPanel(wx.Panel):
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
 
         self.selectedCollectionNodeIndex = -1
+        self.selectedLooperChildNodeIndex = -1
+        self.selectedNodeType = None
 
 
 
@@ -861,8 +864,20 @@ class CollectionPanel(wx.Panel):
     # @param event The event object. 
     def onRemoveNode(self, event):
         try:
-            self.logger.debug("Removing node at index %d.", self.selectedCollectionNodeIndex)
-            self.psyBase.project.removeNodeFromCollection(self.selectedCollectionNodeIndex)
+            if self.selectedNodeType in ['node', 'looper']:
+                self.logger.debug("Removing node at index %d.", self.selectedCollectionNodeIndex)
+                self.psyBase.project.removeNodeFromCollection(self.selectedCollectionNodeIndex)
+                self.selectedCollectionNodeIndex -= 1
+                if self.selectedCollectionNodeIndex < 0 and len(self.psyBase.project.activeUser.activeCollection) > 0:
+                    self.selectedCollectionNodeIndex = 0
+                if self.selectedNodeType == 'looper':
+                    self.selectedLooperChildNodeIndex = -1
+            elif self.selectedNodeType == 'looper_child':
+                selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+                selectedNode.children.pop(self.selectedLooperChildNodeIndex)
+                self.selectedLooperChildNodeIndex -= 1
+                if self.selectedLooperChildNodeIndex < 0 and len(selectedNode.children) > 0:
+                    self.selectedLooperChildNodeIndex = 0
             self.refreshCollection()
         except PsysmonError as e:
             msg = "Cannot remove the collection node:\n %s" % e
@@ -878,12 +893,17 @@ class CollectionPanel(wx.Panel):
     # @param event The event object. 
     def onEditNode(self, event):
         try:
-            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            if self.selectedNodeType in ['node', 'looper']:
+                selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            elif self.selectedNodeType == 'looper_child':
+                selectedLooper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+                selectedNode = selectedLooper.children[self.selectedLooperChildNodeIndex]
+
             if(selectedNode.mode == 'standalone'):
                 self.logger.debug("in standalone")
-                self.psyBase.project.executeNode(self.selectedCollectionNodeIndex)
+                selectedNode.execute()
             else:
-                self.psyBase.project.editNode(self.selectedCollectionNodeIndex)
+                selectedNode.edit()
         except PsysmonError as e:
             msg = "Cannot edit the node:\n %s" % e
             dlg = wx.MessageDialog(None, msg, 
@@ -893,17 +913,27 @@ class CollectionPanel(wx.Panel):
 
 
     def onDisableNode(self, event):
-        selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+        if self.selectedNodeType in ['node', 'looper']:
+            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+        elif self.selectedNodeType == 'looper_child':
+            selectedLooper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            selectedNode = selectedLooper.children[self.selectedLooperChildNodeIndex]
+
         if selectedNode.mode != 'standalone':
             selectedNode.enabled = False
-            self.collectionListCtrl.SetItemTextColour(self.selectedCollectionNodeIndex, wx.TheColourDatabase.Find('GREY70'))
+            self.collectionTreeCtrl.SetItemTextColour(self.collectionTreeCtrl.GetSelection(), wx.TheColourDatabase.Find('GREY70'))
 
 
     def onEnableNode(self, event):
-        selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+        if self.selectedNodeType in ['node', 'looper']:
+            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+        elif self.selectedNodeType == 'looper_child':
+            selectedLooper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            selectedNode = selectedLooper.children[self.selectedLooperChildNodeIndex]
+
         if selectedNode.mode != 'standalone':
             selectedNode.enabled = True
-            self.collectionListCtrl.SetItemTextColour(self.selectedCollectionNodeIndex, wx.BLACK)
+            self.collectionTreeCtrl.SetItemTextColour(self.collectionTreeCtrl.GetSelection(), wx.BLACK)
 
     ## Select node item callback.
     #
@@ -913,9 +943,13 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.    
     def onCollectionNodeItemSelected(self, evt):
-        collection_pos = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
-        self.logger.debug("Selected node at position %d in collection.", collection_pos)
-        self.selectedCollectionNodeIndex = collection_pos
+        collection_pos, node_type = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
+        self.logger.debug("Selected node %s at position %d in collection.", node_type, collection_pos)
+        self.selectedNodeType = node_type
+        if node_type in ['node', 'looper']:
+            self.selectedCollectionNodeIndex = collection_pos
+        elif node_type == 'looper_child':
+            self.selectedLooperChildNodeIndex = collection_pos
 
 
     # Load a collection context menu callback.
@@ -929,6 +963,7 @@ class CollectionPanel(wx.Panel):
                                     "Load collection", 
                                     choices)
         if dlg.ShowModal() == wx.ID_OK:
+            ipdb.set_trace() ############################## Breakpoint ##############################
             self.psyBase.project.setActiveCollection(dlg.GetStringSelection())
             self.refreshCollection()   
         dlg.Destroy()
@@ -969,7 +1004,7 @@ class CollectionPanel(wx.Panel):
             return
 
         activeCollection = self.psyBase.project.getActiveCollection()
-        if activeCollection:
+        if activeCollection is not None:
             auiPane = self.GetParent().mgr.GetPane('collection')
             auiPane.Caption(activeCollection.name)
             self.GetParent().mgr.Update()
@@ -979,58 +1014,31 @@ class CollectionPanel(wx.Panel):
                 if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
                     node_string = curNode.name + ' (looper)'
                     looper_node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
-                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, k)
-                    #self.SetItemBold(sensorListItem, True)
+                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, (k, 'looper'))
                     self.collectionTreeCtrl.SetItemImage(looper_node_item, self.collectionTreeCtrl.icons['looper_node'], wx.TreeItemIcon_Normal)
+                    if k == self.selectedCollectionNodeIndex:
+                        self.collectionTreeCtrl.SelectItem(looper_node_item)
+                    if not curNode.enabled:
+                        self.collectionTreeCtrl.SetItemTextColour(looper_node_item, wx.TheColourDatabase.Find('GREY70'))
 
                     for child_pos, cur_child in enumerate(curNode.children):
                         node_string = cur_child.name + '(child)'
                         node_item = self.collectionTreeCtrl.AppendItem(looper_node_item, node_string)
-                        self.collectionTreeCtrl.SetItemPyData(node_item, child_pos)
+                        self.collectionTreeCtrl.SetItemPyData(node_item, (child_pos, 'looper_child'))
                         self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['looper_node_child'], wx.TreeItemIcon_Normal)
+                        if not curNode.enabled:
+                            self.collectionTreeCtrl.SetItemTextColour(node_item, wx.TheColourDatabase.Find('GREY70'))
                 else:
                     node_string = curNode.name
                     node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
-                    self.collectionTreeCtrl.SetItemPyData(node_item, k)
+                    self.collectionTreeCtrl.SetItemPyData(node_item, (k, 'node'))
                     self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['node'], wx.TreeItemIcon_Normal)
+                    if k == self.selectedCollectionNodeIndex:
+                        self.collectionTreeCtrl.SelectItem(node_item)
+                    if not curNode.enabled:
+                        self.collectionTreeCtrl.SetItemTextColour(node_item, wx.TheColourDatabase.Find('GREY70'))
 
-                #if not curNode.enabled:
-                #    self.collectionListCtrl.SetItemTextColour(k, wx.TheColourDatabase.Find('GREY70'))
-
-    def refreshCollectionOld(self):
-        '''
-        Refresh the collection nodes displayed in the collection listbox.
-
-        :param self: The object pointer.
-        :type self: :class:`~psysmon.core.gui.CollectionPanel`
-        '''
-        if not self.psyBase.project:
-            self.collectionListCtrl.DeleteAllItems()
-            return
-
-        activeCollection = self.psyBase.project.getActiveCollection()
-        if activeCollection:
-            auiPane = self.GetParent().mgr.GetPane('collection')
-            auiPane.Caption(activeCollection.name)
-            self.GetParent().mgr.Update()
-
-            self.collectionListCtrl.DeleteAllItems()
-            k = 0
-            for curNode in activeCollection.nodes:
-                if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
-                    node_string = curNode.name + ' (looper)'
-                    self.collectionListCtrl.InsertStringItem(k, node_string)
-                    k += 1
-                    for cur_child in curNode.children:
-                        node_string = '    ' + cur_child.name + '(child)'
-                        self.collectionListCtrl.InsertStringItem(k, node_string)
-                        k += 1
-                else:
-                    node_string = curNode.name
-                    self.collectionListCtrl.InsertStringItem(k, node_string)
-
-                if not curNode.enabled:
-                    self.collectionListCtrl.SetItemTextColour(k, wx.TheColourDatabase.Find('GREY70'))
+        self.collectionTreeCtrl.ExpandAll()
 
 
 class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):

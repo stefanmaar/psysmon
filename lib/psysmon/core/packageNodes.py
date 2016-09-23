@@ -32,6 +32,7 @@ the :mod:`~psysmon.core.packageSystem`.
 '''
 
 from psysmon.core.preferences_manager import PreferencesManager
+import psysmon.core.result as result
 
 class CollectionNode(object):
     ''' The base class of all psysmon collection nodes.
@@ -340,4 +341,8 @@ class LooperCollectionChildNode(CollectionNode):
         ''' Initialize the instance.
         '''
         CollectionNode.__init__(self, **kwargs)
+
+        self.result_bag = result.ResultBag()
+
+
 

@@ -521,7 +521,7 @@ class Base(object):
 
 
 
-class Collection:
+class Collection(object):
     ''' Manage a list of collection nodes.
 
     A collection holds the associated collection nodes in a list.
@@ -601,6 +601,11 @@ class Collection:
             The node at position index.
         '''
         return self.nodes[index]
+
+    def __len__(self):
+        ''' The length of the collection.
+        '''
+        return len(self.nodes)
 
 
     @property
