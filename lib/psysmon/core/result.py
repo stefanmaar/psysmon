@@ -59,6 +59,10 @@ class ResultBag(object):
         results : List of :class:`Result` or :class:`Result` instance
             The results to add to the bag.
         '''
+        import collections
+        if not isinstance(results, collections.Iterable):
+            results = [results, ]
+
         if resource_id not in self.results.keys():
             self.results[resource_id] = {}
 
@@ -175,8 +179,6 @@ class Result(object):
         # The position of the origin node in the stack.
         self.origin_pos = origin_pos
 
-        # The result data.
-        self.values = {}
 
         # The parent resource ID for which the result was computed.
         self.origin_resource = origin_resource
@@ -195,13 +197,6 @@ class Result(object):
         name_slug = self.name.replace(' ', '_')
         origin_name_slug = self.origin_name.replace(' ', '_')
         return '/result/' + origin_name_slug + '/' + str(self.origin_pos) + '/' + name_slug
-
-
-
-    def add_value(self, scnl, value):
-        ''' Add a value to the result.
-        '''
-        self.values[scnl] = value
 
 
     def get_as_list(self, scnl = None):
@@ -227,11 +222,17 @@ class ValueResult(Result):
     ''' A result representing a single value.
 
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, value, scnl, **kwargs):
         ''' Initialize the instance.
 
         '''
         Result.__init__(self, **kwargs)
+
+        # The trace indicator for which the value was computed.
+        self.scnl = scnl
+
+        # The result data.
+        self.value = value
 
 
     def get_as_list(self, scnl = None):
