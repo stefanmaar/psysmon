@@ -38,6 +38,7 @@ import threading
 from datetime import datetime
 from psysmon import __version__ as version
 import psysmon.core.packageSystem
+import psysmon.core.packageNodes
 import psysmon.core.project
 import psysmon.core.util
 import psysmon.core.json_util
@@ -816,6 +817,10 @@ class Collection(object):
 
         for curNode in self.nodes:
             curNode.project = self.project
+
+            if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
+                for cur_child in curNode.children:
+                    cur_child.project = self.project
 
 
     def createNodeLoggers(self):
