@@ -41,7 +41,7 @@ import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.processingStack import ProcessingStack
-from psysmon.core.processingStack import ResultBag
+from psysmon.core.result import ResultBag
 
 
 
