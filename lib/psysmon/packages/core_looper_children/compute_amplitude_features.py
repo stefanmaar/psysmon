@@ -24,7 +24,6 @@ from psysmon.core.preferences_manager import FloatSpinPrefItem
 import psysmon.core.result as result
 import psysmon.core.util as p_util
 import numpy as np
-import scipy as sp
 
 
 class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):

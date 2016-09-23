@@ -18,18 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-name = "slidingwindow"                          # The package name.
+name = "core looper children"                          # The package name.
 version = "0.0.1"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
-description = "The sliding window processing package."            # The package description.
+description = "The core looper collection nodes."            # The package description.
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['window_processor',
-                           'time_window_looper',
-                           'example_looper_child',
-                           'compute_amplitude_features']
+collection_node_modules = ['compute_amplitude_features', 'processing_stack']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
