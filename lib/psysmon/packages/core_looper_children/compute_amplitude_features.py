@@ -91,7 +91,7 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                                          origin_resource = origin_resource,
                                          scnl = cur_scnl,
                                          value = max_abs)
-            self.result_bag.add_result(self.rid, cur_res)
+            self.result_bag.add(self.rid, cur_res)
 
 
             # Compute the maximum range of the trace.
@@ -101,7 +101,7 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                                          origin_resource = origin_resource,
                                          scnl = cur_scnl,
                                          value = peak_to_peak)
-            self.result_bag.add_result(self.rid, cur_res)
+            self.result_bag.add(self.rid, cur_res)
 
 
 
