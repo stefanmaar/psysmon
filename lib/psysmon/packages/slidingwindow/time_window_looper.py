@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -41,9 +40,7 @@ from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
-from psysmon.core.processingStack import ProcessingStack
-from psysmon.core.processingStack import ResultBag
-
+from psysmon.core.result import ResultBag
 
 
 ## Documentation for class WindowProcessorNode
@@ -87,16 +84,25 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
     def execute(self, prevNodeOutput={}):
         # Get the output directory from the pref_manager. If no directory is
         # specified create one based on the node resource id.
-        ipdb.set_trace() ############################## Breakpoint ##############################
         output_dir = self.pref_manager.get_value('output_dir')
         if not output_dir:
             output_dir = self.project.dataDir
 
+        processor = SlidingWindowProcessor(project = self.project,
+                                           output_dir = output_dir,
+                                           parent_rid = self.rid)
         # TODO: Loop through the children nodes and execute each node. Maybe do
         # this in a separate class. Take the Sliding Window Processor. The
         # processed stream has to be passed from one node to the other like in
         # the processing stack. The input parameters of the execute node should
         # be the same as for the current processing nodes.
+        processor.process(looper_nodes = self.children,
+                          start_time = self.pref_manager.get_value('start_time'),
+                          end_time = self.pref_manager.get_value('end_time'),
+                          station_names = self.pref_manager.get_value('stations'),
+                          channel_names = self.pref_manager.get_value('channels'),
+                          window_length = self.pref_manager.get_value('window_length'),
+                          overlap = self.pref_manager.get_value('window_overlap'))
 
 
 
@@ -209,3 +215,156 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
 
 
+class SlidingWindowProcessor(object):
+
+    def __init__(self, project, output_dir, parent_rid = None):
+        ''' Initialize the instance.
+
+        '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.project = project
+
+        self.parent_rid = parent_rid
+
+        if self.parent_rid is not None:
+            rid_dir = self.parent_rid.replace('/', '-').replace(':', '-')
+            if rid_dir.startswith('-'):
+                rid_dir = rid_dir[1:]
+            if rid_dir.endswith('-'):
+                rid_dir = rid_dir[:-1]
+            self.output_dir = os.path.join(output_dir, rid_dir)
+        else:
+            self.output_dir = output_dir
+
+
+
+    #@profile(immediate=True)
+    def process(self, looper_nodes, start_time, end_time, station_names, channel_names, window_length, overlap):
+        ''' Start the processing.
+
+        Parameters
+        ----------
+        looper_nodes : list of
+            The looper nodes to execute.
+
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The start time of the timespan for which to detect the events.
+
+        end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The end time of the timespan for which to detect the events.
+
+        station_names : list of Strings
+            The names of the stations to process.
+
+        channel_names : list of Strings
+            The names of the channels to process.
+
+        window_length : float
+            The length of the sliding windwow in seconds.
+
+        overlap : float
+            The overlap of the window in percent.
+        '''
+        self.logger.info("Processing timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
+
+        window_length = float(window_length)
+        overlap = 1 - float(overlap) / 100.
+
+        result_bag = ResultBag()
+
+        # Get the channels to process.
+        channels = []
+        for cur_station in station_names:
+            for cur_channel in channel_names:
+                channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
+                                                                            name = cur_channel))
+        scnl = [x.scnl for x in channels]
+
+
+        # TODO: Compute the start times of the sliding windows.
+        windowlist_start = [start_time, ]
+        n_windows = (end_time - start_time) / (window_length * overlap)
+        windowlist_start = [start_time + x * (window_length * overlap) for x in range(0, int(n_windows))]
+
+        try:
+            for k, cur_window_start in enumerate(windowlist_start):
+                self.logger.info("Processing sliding window %d/%d.", k, n_windows)
+
+                self.logger.info("Initial stream request for time-span: %s to %s.", cur_window_start.isoformat(),
+                                                                                    (cur_window_start + window_length).isoformat())
+                stream = self.request_stream(start_time = cur_window_start,
+                                             end_time = cur_window_start + window_length,
+                                             scnl = scnl)
+
+                # Execute the looper nodes.
+                resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
+                process_limits = (cur_window_start, cur_window_start + window_length)
+                for cur_node in looper_nodes:
+                    cur_node.execute(stream = stream,
+                                     process_limits = process_limits,
+                                     origin_resource = resource_id)
+                    # Get the results of the node.
+
+                # Handle the results.
+
+                # Put the results of the processing stack into the results bag.
+                #results = self.processing_stack.get_results()
+
+                # TODO: Add a field to the processing node edit dialog to
+                # select the formats in which the result should be saved.
+                # Be sure to distinguish between results that can be combined
+                # in a list (e.g. value results), or those, that provide a
+                # single output format (like the grid_2d result).
+                #if not os.path.exists(self.output_dir):
+                #    os.makedirs(self.output_dir)
+
+                #for cur_result in results:
+                #    cur_result.save(formats = ['ascii_grid',], output_dir = self.output_dir)
+                #resource_id = self.project.rid + cur_event.rid
+                #result_bag.add(resource_id = resource_id,
+                #                    results = results)
+
+        finally:
+            # Add the time-span directory to the output directory.
+            #if k != len(catalog.events) - 1:
+            #    cur_end_time = cur_event.end_time
+            #else:
+            #    cur_end_time = end_time
+            #timespan_dir = start_time.strftime('%Y%m%dT%H%M%S') + '_to_' + cur_end_time.strftime('%Y%m%dT%H%M%S')
+            #cur_output_dir = os.path.join(self.output_dir, timespan_dir)
+            # Save the processing results to files.
+            #result_bag.save(output_dir = cur_output_dir, scnl = scnl)
+            pass
+
+
+    def request_stream(self, start_time, end_time, scnl):
+        ''' Request a data stream from the waveclient.
+
+        '''
+        data_sources = {}
+        for cur_scnl in scnl:
+            if cur_scnl in self.project.scnlDataSources.keys():
+                if self.project.scnlDataSources[cur_scnl] not in data_sources.keys():
+                    data_sources[self.project.scnlDataSources[cur_scnl]] = [cur_scnl, ]
+                else:
+                    data_sources[self.project.scnlDataSources[cur_scnl]].append(cur_scnl)
+            else:
+                if self.project.defaultWaveclient not in data_sources.keys():
+                    data_sources[self.project.defaultWaveclient] = [cur_scnl, ]
+                else:
+                    data_sources[self.project.defaultWaveclient].append(cur_scnl)
+
+        stream = obspy.core.Stream()
+
+        for cur_name in data_sources.iterkeys():
+            curWaveclient = self.project.waveclient[cur_name]
+            curStream =  curWaveclient.getWaveform(startTime = start_time,
+                                                   endTime = end_time,
+                                                   scnl = scnl)
+            stream += curStream
+
+        return stream
