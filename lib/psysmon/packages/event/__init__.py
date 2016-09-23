@@ -34,7 +34,7 @@ plugin_modules = ['plugins_event_selector', 'plugins_event_create',
                   'plugins_event_change_limits']
 
 # Specify the module(s) where to search for processing node classes.
-processing_node_modules = ['pn_amplitude_features', ]
+processing_node_modules = []
 
 def databaseFactory(base):
     from sqlalchemy import Column
