@@ -24,10 +24,7 @@ import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.tracedisplay.plugins_processingstack as plugins_processingstack
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
-import psysmon.core.result as result
-import psysmon.core.util as p_util
 import psysmon.core.processingStack as ps
-import numpy as np
 
 
 class ProcessingStackLooperChild(package_nodes.LooperCollectionChildNode):
