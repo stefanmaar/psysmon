@@ -32,7 +32,7 @@ the :mod:`~psysmon.core.packageSystem`.
 '''
 
 from psysmon.core.preferences_manager import PreferencesManager
-import psysmon.core.result as result
+import psysmon.core.result as core_result
 
 class CollectionNode(object):
     ''' The base class of all psysmon collection nodes.
@@ -312,12 +312,15 @@ class LooperCollectionNode(CollectionNode):
     The collection node can hold a list of child nodes which are executed in a loop.
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, children = None, **kwargs):
         ''' Initialize the instance.
         '''
         CollectionNode.__init__(self, **kwargs)
 
-        self.children = []
+        if children is None:
+            self.children = []
+        else:
+            self.children = children
 
 
     def add_child(self, child_node, position = None):
@@ -342,7 +345,7 @@ class LooperCollectionChildNode(CollectionNode):
         '''
         CollectionNode.__init__(self, **kwargs)
 
-        self.result_bag = result.ResultBag()
+        self.result_bag = core_result.ResultBag()
 
 
 
