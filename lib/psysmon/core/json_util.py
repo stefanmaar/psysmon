@@ -58,6 +58,10 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_collection(obj)
         elif 'CollectionNode' in base_class:
             d = self.convert_collection_node(obj)
+        elif 'LooperCollectionNode' in base_class:
+            d = self.convert_looper_collection_node(obj)
+        elif 'LooperCollectionChildNode' in base_class:
+            d = self.convert_looper_collection_child_node(obj)
         elif obj_class == 'PreferencesManager':
             d = self.convert_preferencesmanager(obj)
         elif obj_class == 'CustomPrefItem':
@@ -113,6 +117,18 @@ class ProjectFileEncoder(json.JSONEncoder):
 
 
     def convert_collection_node(self, obj):
+        attr = ['enabled', 'requires', 'provides', 'pref_manager']
+        d = self.object_to_dict(obj, attr)
+        return d
+
+
+    def convert_looper_collection_node(self, obj):
+        attr = ['enabled', 'requires', 'provides', 'pref_manager', 'children']
+        d = self.object_to_dict(obj, attr)
+        return d
+
+
+    def convert_looper_collection_child_node(self, obj):
         attr = ['enabled', 'requires', 'provides', 'pref_manager']
         d = self.object_to_dict(obj, attr)
         return d
@@ -223,6 +239,10 @@ class ProjectFileDecoder(json.JSONDecoder):
                 inst = self.convert_class_object(d, class_name, module_name)
             elif 'CollectionNode' in base_class:
                 inst = self.convert_collectionnode(d, class_name, module_name)
+            elif 'LooperCollectionNode' in base_class:
+                inst = self.convert_looper_collection_node(d, class_name, module_name)
+            elif 'LooperCollectionChildNode' in base_class:
+                inst = self.convert_looper_collection_child_node(d, class_name, module_name)
             elif 'PreferenceItem' in base_class:
                 inst = self.convert_preferenceitem(d, class_name, module_name)
             elif 'WaveClient' in base_class:
@@ -311,6 +331,28 @@ class ProjectFileDecoder(json.JSONDecoder):
 
 
     def convert_collectionnode(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_looper_collection_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_looper_collection_child_node(self, d, class_name, module_name):
         import importlib
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
