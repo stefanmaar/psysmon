@@ -32,7 +32,7 @@ collection_node_modules = []
 plugin_modules = ['plugins_sourcemap',]
 
 # Specify the module(s) where to search for processing node classes.
-processing_node_modules = ['pn_sourcemap', ]
+processing_node_modules = []
 
 
 
