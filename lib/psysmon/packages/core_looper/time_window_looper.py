@@ -308,6 +308,10 @@ class SlidingWindowProcessor(object):
                                      process_limits = process_limits,
                                      origin_resource = resource_id)
                     # Get the results of the node.
+                    if cur_node.result_bag:
+                        for cur_result in cur_node.result_bag.results:
+                            cur_result.save(output_dir = self.output_dir)
+
 
                 # Handle the results.
 
