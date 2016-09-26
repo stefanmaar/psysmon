@@ -73,6 +73,16 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
+        # Create a table result.
+        columns = ['max_abs', 'peak_to_peak']
+        table_result = result.TableResult(name = 'amplitude features',
+                                          key_name = 'scnl',
+                                          start_time = process_limits[0],
+                                          end_time = process_limits[1],
+                                          origin_name = self.name,
+                                          origin_resource = origin_resource,
+                                          column_names = columns)
+
         for tr in stream.traces:
             if process_limits is not None:
                 proc_trace = tr.slice(starttime = process_limits[0],
@@ -85,23 +95,18 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
 
             # Compute the absolute maximum value of the trace.
             max_abs = np.max(np.abs(proc_trace.data))
-            cur_scnl = p_util.traceid_to_scnl(tr.id)
-            cur_res = result.ValueResult(name = 'max_abs',
-                                         origin_name = self.name,
-                                         origin_resource = origin_resource,
-                                         scnl = cur_scnl,
-                                         value = max_abs)
-            self.result_bag.add(self.rid, cur_res)
-
 
             # Compute the maximum range of the trace.
             peak_to_peak = np.max(proc_trace.data) + np.abs(np.min(proc_trace.data))
-            cur_res = result.ValueResult(name = 'peak_to_peak',
-                                         origin_name = self.name,
-                                         origin_resource = origin_resource,
-                                         scnl = cur_scnl,
-                                         value = peak_to_peak)
-            self.result_bag.add(self.rid, cur_res)
+
+
+            cur_scnl = p_util.traceid_to_scnl(tr.id)
+            table_result.add_row(key = cur_scnl,
+                                 max_abs = max_abs,
+                                 peak_to_peak = peak_to_peak)
+
+
+        self.result_bag.add(table_result)
 
 
 
