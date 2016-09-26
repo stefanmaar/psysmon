@@ -32,7 +32,7 @@ This module contains the pSysmon result system.
 
 import os
 import itertools
-from operator import attrgetter
+import warnings
 
 import numpy as np
 
@@ -44,18 +44,15 @@ class ResultBag(object):
     def __init__(self):
         ''' Initialize the instance.
         '''
-        # A dictionary with the resource_ids as keys.
-        self.results = {}
+        # A list holding all results.
+        self.results = []
 
 
-    def add(self, resource_id, results):
+    def add(self, results):
         ''' Add results computed for a certain resource.
 
         Parameters
         ----------
-        resource_id : String
-            The id of the resource for which the results where computed.
-
         results : List of :class:`Result` or :class:`Result` instance
             The results to add to the bag.
         '''
@@ -63,12 +60,7 @@ class ResultBag(object):
         if not isinstance(results, collections.Iterable):
             results = [results, ]
 
-        if resource_id not in self.results.keys():
-            self.results[resource_id] = {}
-
-        for cur_result in results:
-            cur_result.origin_resource = resource_id
-            self.results[resource_id][cur_result.rid] = cur_result
+        self.results.extend(results)
 
 
     def save(self, output_dir, scnl, group_by = 'result', format = 'csv'):
@@ -133,19 +125,22 @@ class ResultBag(object):
 
 
 
-    def get_results(self, resource_rid = None, result_rid = None):
+    def get_results(self, **kwargs):
         ''' Get the results based on some search criteria.
 
         '''
-        ret_val = sorted(list(itertools.chain.from_iterable([x.values() for x in self.results.values()])),
-                         key = attrgetter('rid', 'origin_resource'),
-                         reverse = False)
+        #ret_val = sorted(list(itertools.chain.from_iterable([x.values() for x in self.results.values()])),
+        #                 key = attrgetter('rid', 'origin_resource'),
+        #                 reverse = False)
+        ret_val = self.results
 
-        if result_rid:
-            ret_val = [x for x in ret_val if x.rid == result_rid]
+        valid_keys = ['resource_id', 'result_rid', 'name']
 
-        if resource_rid:
-            ret_val = [x for x in ret_val if x.rid == result_rid]
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_val
 
@@ -167,7 +162,8 @@ class Result(object):
     '''
 
     def __init__(self, name, origin_name, origin_pos = None,
-                 origin_resource = None, metadata = None):
+                 origin_resource = None, metadata = None,
+                 start_time = None, end_time = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -179,9 +175,14 @@ class Result(object):
         # The position of the origin node in the stack.
         self.origin_pos = origin_pos
 
-
         # The parent resource ID for which the result was computed.
         self.origin_resource = origin_resource
+
+        # The start time of the time window to which the result is associated.
+        self.start_time = start_time
+
+        # The end time of the time window to which the result is associated.
+        self.end_time = end_time
 
         # Additional values describing the result data.
         if metadata:
@@ -196,7 +197,7 @@ class Result(object):
         '''
         name_slug = self.name.replace(' ', '_')
         origin_name_slug = self.origin_name.replace(' ', '_')
-        return '/result/' + origin_name_slug + '/' + str(self.origin_pos) + '/' + name_slug
+        return '/result/' + origin_name_slug + '/' + name_slug + '/' + self.start_time.isoformat().replace(':', '').replace('-', '') + '-' + self.end_time.isoformat().replace(':', '').replace('-', '')
 
 
     def get_as_list(self, scnl = None):
@@ -222,14 +223,11 @@ class ValueResult(Result):
     ''' A result representing a single value.
 
     '''
-    def __init__(self, value, scnl, **kwargs):
+    def __init__(self, value, **kwargs):
         ''' Initialize the instance.
 
         '''
         Result.__init__(self, **kwargs)
-
-        # The trace indicator for which the value was computed.
-        self.scnl = scnl
 
         # The result data.
         self.value = value
@@ -255,14 +253,148 @@ class ValueResult(Result):
 
 
 
+class TableResult(Result):
+    ''' A table holding one or more single value Results.
+    '''
+
+    def __init__(self, key_name, column_names, **kwargs):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        column_names : List of String
+            The names of the columns of the table.
+        '''
+        Result.__init__(self, **kwargs)
+
+        self.key_name = key_name
+
+        self.column_names = column_names
+
+        self.rows = []
+
+    def add_row(self, key, **kwargs):
+        ''' Add a value result to the spreadsheet.
+
+        Parameters
+        ----------
+        result : :class:`ValueResult` instance
+            The result to add to the spreadsheet.
+        '''
+        row = TableResultRow(key, self.column_names)
+        row.add_cells(**kwargs)
+        self.rows.append(row)
+
+
+    def save(self, formats = ['csv', ], output_dir = None):
+        ''' Save the result in the specified format.
+
+        Parameters
+        ----------
+        format : List of Strings
+            The formats in which the result should be written.
+            ('csv')
+        '''
+        for cur_format in formats:
+            if cur_format == 'csv':
+                self.save_csv(output_dir = output_dir)
+            else:
+                # TODO: Throw an exception.
+                pass
+
+    def save_csv(self, output_dir):
+        '''Save the result in CSV format.
+        '''
+        import csv
+
+        export_values = []
+        for cur_row in self.rows:
+            cur_values = [cur_row.key, self.start_time.isoformat(), self.end_time.isoformat()]
+            cur_values.extend([cur_row[key] for key in self.column_names])
+            #cur_values.reverse()
+            #try:
+            #    id_only = cur_row.origin_resource.split('/')[-1]
+            #    if id_only.isdigit():
+            #        id_only = int(id_only)
+            #except:
+            #    id_only = ''
+            #cur_values.append(id_only)
+            #cur_values.append(cur_row.origin_resource)
+            #cur_values.reverse()
+            export_values.append(cur_values)
+
+        # Save the export values to a csv file.
+        filename = self.rid.replace('/', '-')
+        if filename.startswith('-'):
+            filename = filename[1:]
+        if filename.endswith('-'):
+            filename = filename[:-1]
+        filename = filename + '.csv'
+        filename = os.path.join(output_dir, filename)
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        fid = open(filename, 'wt')
+        try:
+            header = [self.key_name, 'start_time', 'end_time']
+            header.extend(self.column_names)
+            writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
+            writer.writerow(header)
+            writer.writerows(export_values)
+        finally:
+            fid.close()
+
+
+
+class TableResultRow(object):
+    ''' Row of the table result class.
+    '''
+
+    def __init__(self, key, columns):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        key : String or number
+            The row identifier.
+        '''
+        self.key = key
+
+        self.cells = {}
+        for cur_column in columns:
+            self.cells[cur_column] = None
+
+
+    def __getitem__(self, key):
+        ''' Return the cell value of the column key.
+        '''
+        return self.cells[key]
+
+
+    def add_cells(self, **kwargs):
+        ''' Add values to the row.
+        '''
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in self.cells.keys():
+                self.cells[cur_key] = cur_value
+            else:
+                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, self.cells.keys()), RuntimeWarning)
+
+
+
+
+
 
 class Grid2dResult(Result):
     ''' A result representing a 2D grid.
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, grid, x_coord, y_coord, dx, dy, nodata_value = -9999, epsg = None, **kwargs):
         ''' Initialize the instance.
         '''
         Result.__init__(self, **kwargs)
+
+        self.grid = grid
 
         self.x_coord = []
 
@@ -270,33 +402,13 @@ class Grid2dResult(Result):
 
         self.grid = []
 
-        self.start_time = None
-
-        self.end_time = None
-
-        self.epsg = None
-
-
-    def add_grid(self, grid, x_coord, y_coord, dx, dy, start_time, end_time, nodata_value = -9999, epsg = None):
-        ''' Add a grid to the result.
-        '''
-        self.grid = grid
-
-        self.x_coord = x_coord
-
-        self.y_coord = y_coord
-
         self.dx = dx
 
         self.dy = dy
 
-        self.start_time = start_time
-
-        self.end_time = end_time
+        self.epsg = epsg
 
         self.nodata_value = nodata_value
-
-        self.epsg = epsg
 
 
     def save(self, formats = ['ascii_grid',], output_dir = None):
