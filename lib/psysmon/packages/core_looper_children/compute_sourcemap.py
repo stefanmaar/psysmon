@@ -19,39 +19,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
-import logging
 
-import psysmon.core.processingStack
+import psysmon.core.packageNodes as package_nodes
+import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.core.preferences_manager as pm
-import psysmon.core.util as p_util
+import psysmon.core.result as result
 import psysmon.packages.sourcemap as sourcemap
 
 import numpy as np
-import scipy as sp
-import matplotlib.pyplot as plt
 
 
-class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
-    ''' Apply a median filter to a timeseries.
+class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
+    ''' Compute the sourcemap for a given time window.
 
     '''
-    nodeClass = 'SlidingWindowProcessorNode'
+    name = 'compute sourcemap'
+    mode = 'looper child'
+    category = 'Localization'
+    tags = ['stable', 'looper child', 'sourcemap']
 
-    def __init__(self, **kwargs):
+    def __init__(self, **args):
         ''' The constructor
 
         '''
-        psysmon.core.processingStack.ProcessingNode.__init__(self,
-                                                             name = 'compute sourcemap',
-                                                             mode = 'editable',
-                                                             category = 'sourcemap',
-                                                             tags = ['amplitude', 'localize', 'sourcemap'],
-                                                             **kwargs
-                                                            )
-        # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        package_nodes.LooperCollectionChildNode.__init__(self, **args)
 
         item = pm.FloatSpinPrefItem(name = 'alpha',
                                     value = 1.61,
@@ -70,6 +61,18 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
                                        tool_tip = 'Select the sourcemap computation method.')
         self.pref_manager.add_item(item = item)
 
+
+    def edit(self):
+        ''' Create the preferences edit dialog.
+        '''
+        # Create the edit dialog.
+        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+
+        # Enable/Disable the gui elements based on the pref_manager settings.
+        #self.on_select_individual()
+
+        dlg.ShowModal()
+        dlg.Destroy()
 
 
     def execute(self, stream, process_limits = None, origin_resource = None):
@@ -148,16 +151,18 @@ class ComputeSourcemap(psysmon.core.processingStack.ProcessingNode):
                                               'end_time': process_limits[1].isoformat()}
         metadata['station_list'] = {x.snl_string: {'x': x.x, 'y': x.y, 'z': x.z, 'epsg': x.coord_system} for x in station_list}
         metadata['preprocessing'] = self.parentStack.get_settings(upper_node_limit = self)
-        self.add_result(name = 'sourcemap',
-                        res_type = 'grid_2d',
-                        grid = sm.result_map,
-                        x_coord = sm.map_x_coord,
-                        y_coord = sm.map_y_coord,
-                        dx = sm.map_dx,
-                        dy = sm.map_dy,
-                        start_time = process_limits[0],
-                        end_time = process_limits[1],
-                        epsg = sm.map_config['epsg'],
-                        metadata = metadata,
-                        origin_resource = origin_resource)
+
+        grid_result = result.Grid2dResult(name = 'sourcemap',
+                                          start_time = process_limits[0],
+                                          end_time = process_limits[1],
+                                          origin_name = self.name,
+                                          origin_resource = origin_resource,
+                                          x_coord = sm.map_x_coord,
+                                          y_coord = sm.map_y_coord,
+                                          grid = sm.result_map,
+                                          dx = sm.map_dx,
+                                          dy = sm.map_dy,
+                                          epsg = sm.map_config['epsg'],
+                                          metadata = metadata)
+        self.result_bag.add(grid_result)
 
