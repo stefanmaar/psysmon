@@ -27,6 +27,8 @@ from psysmon.core.gui import psyContextMenu
 from wx.lib.stattext import GenStaticText as StaticText
 import copy
 
+import psysmon.core.preferences_manager as preferences_manager
+
 
 class ProcessingStack(OptionPlugin):
     '''
@@ -165,6 +167,30 @@ class ProcessingStack(OptionPlugin):
 
 
 
+
+class ProcessingStackPrefItem(preferences_manager.PreferenceItem):
+    '''
+    '''
+    def __init__(self, name, value, **kwargs):
+        preferences_manager.PreferenceItem.__init__(self, name = name, value = value,
+                                                    mode = 'processing_stack', **kwargs)
+
+        self.gui_class = PStackEditField
+
+
+    @property
+    def settings(self):
+        '''
+        '''
+        settings = []
+        if self.value:
+            for cur_node in self.value:
+                settings.append(cur_node.settings)
+
+        return settings
+
+
+
 class PStackEditField(wx.Panel):
 
     def __init__(self, name, pref_item, size, parent = None):
@@ -207,9 +233,6 @@ class PStackEditField(wx.Panel):
 
     def __del__(self):
         self.pref_item.remove_gui_element(self)
-
-
-
 
 
 
