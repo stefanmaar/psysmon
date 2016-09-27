@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -963,7 +962,6 @@ class CollectionPanel(wx.Panel):
                                     "Load collection", 
                                     choices)
         if dlg.ShowModal() == wx.ID_OK:
-            ipdb.set_trace() ############################## Breakpoint ##############################
             self.psyBase.project.setActiveCollection(dlg.GetStringSelection())
             self.refreshCollection()   
         dlg.Destroy()
