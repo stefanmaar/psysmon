@@ -60,7 +60,7 @@ class PreferencesManager:
         for cur_name, cur_page in self.pages.items():
             settings[cur_name] = {}
             for cur_item in cur_page:
-                settings[cur_name][cur_item.name] = cur_item.value
+                settings[cur_name][cur_item.name] = cur_item.settings
 
         return settings
 
@@ -314,6 +314,10 @@ class PreferenceItem(object):
         else:
             self.hooks = hooks
 
+
+    @property
+    def settings(self):
+        return self.value
 
     #@property
     #def value(self):
