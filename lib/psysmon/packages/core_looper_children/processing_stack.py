@@ -90,12 +90,11 @@ class ProcessingStackLooperChild(package_nodes.LooperCollectionChildNode):
         '''
         self.pref_manager.add_page('processing stack')
 
-        item = preferences_manager.CustomPrefItem(name = 'processing_stack',
-                                                  label = 'processing stack',
-                                                  group = 'event processing',
-                                                  value = None,
-                                                  gui_class = plugins_processingstack.PStackEditField,
-                                                  tool_tip = 'Edit the processing stack nodes.')
+        item = plugins_processingstack.ProcessingStackPrefItem(name = 'processing_stack',
+                                                           label = 'processing stack',
+                                                           group = 'event processing',
+                                                           value = None,
+                                                           tool_tip = 'Edit the processing stack nodes.')
         self.pref_manager.add_item(pagename = 'processing stack',
                                    item = item)
 
