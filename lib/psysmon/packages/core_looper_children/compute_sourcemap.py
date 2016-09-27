@@ -95,8 +95,8 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         station_list = []
 
         # TODO: Make the station selection coded by SNL.
-        station_names = self.parentStack.parent.pref_manager.get_value('stations')
-        process_stations = [self.parentStack.project.geometry_inventory.get_station(name = x) for x in station_names]
+        station_names = self.parent.pref_manager.get_value('stations')
+        process_stations = [self.project.geometry_inventory.get_station(name = x) for x in station_names]
         process_stations = list(itertools.chain.from_iterable(process_stations))
         for cur_station in process_stations:
             cur_stream = stream.select(station = cur_station.name)
@@ -144,13 +144,16 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
         # Create a 2D grid result.
         metadata = {}
-        metadata['cn'] = cn[corr_set]
+        if corr_set == 'none':
+            metadata['cn'] = 'none'
+        else:
+            metadata['cn'] = cn[corr_set]
         metadata['alpha'] = alpha
         metadata['map_config'] = sm.map_config
         metadata['processing_time_window'] = {'start_time': process_limits[0].isoformat(),
                                               'end_time': process_limits[1].isoformat()}
         metadata['station_list'] = {x.snl_string: {'x': x.x, 'y': x.y, 'z': x.z, 'epsg': x.coord_system} for x in station_list}
-        metadata['preprocessing'] = self.parentStack.get_settings(upper_node_limit = self)
+        metadata['preprocessing'] = self.parent.get_settings(upper_node_limit = self)
 
         grid_result = result.Grid2dResult(name = 'sourcemap',
                                           start_time = process_limits[0],
