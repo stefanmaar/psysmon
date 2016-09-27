@@ -31,6 +31,10 @@ This module contains the base classes of the nodes used in
 the :mod:`~psysmon.core.packageSystem`.
 '''
 
+import weakref
+import logging
+
+import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.result as core_result
 
@@ -317,15 +321,16 @@ class LooperCollectionNode(CollectionNode):
         '''
         CollectionNode.__init__(self, **kwargs)
 
-        if children is None:
-            self.children = []
-        else:
-            self.children = children
+        self.children = []
+        if children is not None:
+            for cur_child in children:
+                self.add_child(cur_child)
 
 
     def add_child(self, child_node, position = None):
         ''' Add a child node to the looper.
         '''
+        child_node.parent = self
         self.children.append(child_node)
 
 
@@ -335,17 +340,94 @@ class LooperCollectionNode(CollectionNode):
         pass
 
 
+    def get_settings(self, upper_node_limit = None):
+        ''' Get the settings of the nodes in the processing stack.
+
+        The upper limit can be set by the upper_node_limit attribute.
+        '''
+        settings = {}
+        for pos, cur_node in enumerate(self.children):
+            settings[pos+1] = cur_node.settings
+
+            if cur_node == upper_node_limit:
+                break
+
+        return settings
+
+
 class LooperCollectionChildNode(CollectionNode):
     ''' A looper collection child node.
 
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, parent = None, **kwargs):
         ''' Initialize the instance.
         '''
         CollectionNode.__init__(self, **kwargs)
 
         self.result_bag = core_result.ResultBag()
 
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
 
+        # The parent object holding the package manager.
+        if parent is not None:
+            self._parent = weakref.ref(parent)
+        else:
+            self._parent = None
+
+
+    @property
+    def parent(self):
+        '''
+        '''
+        if self._parent is None:
+            return self._parent
+        else:
+            return self._parent()
+
+    @parent.setter
+    def parent(self, value):
+        if value is not None:
+            self._parent = weakref.ref(value)
+        else:
+            self._parent = None
+
+
+    @property
+    def settings(self):
+        ''' The configuration settings of the node.
+        '''
+        settings = {}
+        settings[self.name] = self.pref_manager.settings
+        return settings
+
+
+    def __getstate__(self):
+        ''' Remove instances that can't be pickled.
+        '''
+        result = self.__dict__.copy()
+
+        # The following attributes can't be pickled and therefore have
+        # to be removed.
+        # These values have to be reset when loading the project.
+        if 'logger' in result.keys():
+            del result['logger']
+        return result
+
+
+    def __setstate__(self, d):
+        ''' Fill missing attributes after unpickling.
+
+        '''
+        self.__dict__.update(d) # I *think* this is a safe way to do it
+        #print dir(self)
+
+        # Track some instance attribute changes.
+        if not "logger" in dir(self):
+            logger_prefix = psysmon.logConfig['package_prefix']
+            loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+            self.logger = logging.getLogger(loggerName)
