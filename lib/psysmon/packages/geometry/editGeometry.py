@@ -275,6 +275,8 @@ class EditGeometryDlg(wx.Frame):
                  ("Import from XML", "Import inventory from XML file.", self.onImportFromXml),
                  ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml),
                  ("", "", ""),
+                 ("Export stations to CSV", "Export the stations of the selected inventory to a CSV file.", self.onExportStations2Csv),
+                 ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
                  ("Create XML inventory", "Create an empty XML inventory.", self.onCreateXmlInventory),
@@ -343,6 +345,47 @@ class EditGeometryDlg(wx.Frame):
                 inventory_parser.export_xml(self.selected_inventory, path)
             except Warning as w:
                     print w
+
+
+    def onExportStations2Csv(self, event):
+        ''' Import the stations to a CSV formatted file.
+        '''
+        import csv
+
+        if not self.selected_inventory:
+            self.logger.info("No inventory selected.")
+            return
+
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="xml file (*.csv)"\
+                     "All files (*.*)|*.*",
+            style=wx.SAVE | wx.CHANGE_DIR
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response, 
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            path = dlg.GetPath()
+
+            export_values = []
+            for cur_network in self.selected_inventory.networks:
+                for cur_station in cur_network.stations:
+                    export_values.append([cur_station.name, cur_station.network, cur_station.location,
+                                          cur_station.x, cur_station.y, cur_station.z, cur_station.coord_system,
+                                          cur_station.description])
+
+            fid = open(path, 'wt')
+            try:
+                header = ['name', 'network', 'location', 'x', 'y', 'z', 'coord_system', 'description']
+                writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
+                writer.writerow(header)
+                writer.writerows(export_values)
+            finally:
+                fid.close()
 
 
     def onCreateXmlInventory(self, event):
