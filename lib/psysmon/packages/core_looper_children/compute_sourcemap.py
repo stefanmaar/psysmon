@@ -108,7 +108,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
                 data_v = trace_v.traces[0].data
             else:
                 self.logger.error("No vertical data found.")
-                return
+                continue
 
             if trace_h1:
                 data_h1 = trace_h1.traces[0].data
@@ -168,4 +168,25 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
                                           epsg = sm.map_config['epsg'],
                                           metadata = metadata)
         self.result_bag.add(grid_result)
+
+        columns = ['name', 'network', 'location', 'x', 'y', 'z', 'coord_system', 'description']
+        table_result = result.TableResult(name = 'sourcemap_used_stations',
+                                          key_name = 'snl',
+                                          start_time = process_limits[0],
+                                          end_time = process_limits[1],
+                                          origin_name = self.name,
+                                          origin_resource = origin_resource,
+                                          column_names = columns)
+        for cur_station in station_list:
+            table_result.add_row(key = cur_station.snl,
+                                 name = cur_station.name,
+                                 network = cur_station.network,
+                                 location = cur_station.location,
+                                 x = cur_station.x,
+                                 y = cur_station.y,
+                                 z = cur_station.z,
+                                 coord_system = cur_station.coord_system,
+                                 description = cur_station.description)
+        self.result_bag.add(table_result)
+
 
