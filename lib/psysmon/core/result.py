@@ -396,11 +396,9 @@ class Grid2dResult(Result):
 
         self.grid = grid
 
-        self.x_coord = []
+        self.x_coord = x_coord
 
-        self.y_coord = []
-
-        self.grid = []
+        self.y_coord = y_coord
 
         self.dx = dx
 
