@@ -226,7 +226,7 @@ class SourceMapTestCase(unittest.TestCase):
                                                        data_h1 = data_h1,
                                                        data_h2 = data_h2))
 
-        sm = sourcemap.core.SourceMap(stations = station_list, alpha = db['alpha'], method = 'quart')
+        sm = sourcemap.core.SourceMap(stations = station_list, alpha = db['alpha'], method = 'min')
         sm.compute_map_configuration()
         sm.compute_map_grid()
         sm.compute_backprojection()
