@@ -773,7 +773,6 @@ class TraceDisplayDlg(wx.Frame):
         '''
         self.displayManager.setDuration(duration)
         self.updateDisplay()
-        print "##### end of set duration"
 
 
     def setStartTime(self, startTime):
@@ -1033,8 +1032,8 @@ class TraceDisplayDlg(wx.Frame):
                 modString += ch + " + "
 
         pressedKey.append(keyName)
-        print "pressed key: %s." % pressedKey
-        print "self.pressed_keys: %s." % self.pressed_keys
+        #print "pressed key: %s." % pressedKey
+        #print "self.pressed_keys: %s." % self.pressed_keys
         self.logger.debug('pressed key: %s - %s', keyCode, pressedKey)
         action, kwargs = self.shortcutManager.getAction(tuple(pressedKey))
 
@@ -1054,7 +1053,7 @@ class TraceDisplayDlg(wx.Frame):
         if keyName in ['WXK_SHIFT', 'WXK_COMMAND', 'WXK_ALT']:
             if self.pressed_keys:
                 # Store the released modifier.
-                print "KEY UP of %s." % keyName
+                #print "KEY UP of %s." % keyName
                 self.modifier_key_up = keyName
             return
 
@@ -1090,8 +1089,8 @@ class TraceDisplayDlg(wx.Frame):
             self.modifier_key_up = None
 
         pressedKey.append(keyName)
-        print "released key: %s." % pressedKey
-        print "self.pressed_keys: %s." % self.pressed_keys
+        #print "released key: %s." % pressedKey
+        #print "self.pressed_keys: %s." % self.pressed_keys
         self.logger.debug('Released key: %s - %s', keyCode, pressedKey)
         action, kwargs = self.shortcutManager.getAction(tuple(pressedKey), kind = 'up')
 
@@ -1120,6 +1119,11 @@ class TraceDisplayDlg(wx.Frame):
             self.viewPort.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
             self.displayManager.stationsChanged = False
 
+        # Update the viewport to show the changes.
+        self.viewPort.SetupScrolling()
+        self.viewPort.Refresh()
+        self.viewPort.Update()
+
         # TODO: Request the needed data from the wave client.
         self.dataManager.requestStream(startTime = self.displayManager.startTime,
                                        endTime = self.displayManager.endTime,
@@ -1137,27 +1141,27 @@ class TraceDisplayDlg(wx.Frame):
             curPlugin.plot(self.displayManager, self.dataManager)
 
         # Hide those views which don't contain any data.
-        for cur_station in self.displayManager.showStations:
-            for cur_channel in cur_station.channels:
-                if not cur_channel.container.data_plotted:
-                    self.viewPort.hideChannel([cur_channel.getSCNL(),])
-                else:
-                    self.viewPort.showChannel([cur_channel.getSCNL(),])
-
+        # TODO: This part destroys the scrolling.
+        #for cur_station in self.displayManager.showStations:
+        #    for cur_channel in cur_station.channels:
+        #        if not cur_channel.container.data_plotted:
+        #            self.viewPort.hideChannel([cur_channel.getSCNL(),])
+        #        else:
+        #            self.viewPort.showChannel([cur_channel.getSCNL(),])
 
 
         # Call the hooks of the plugins.
         self.call_hook('after_plot')
 
-        # Update the viewport to show the changes.
-        self.viewPort.Refresh()
-        self.viewPort.Update()
 
         # Update the time information panel.
         self.datetimeInfo.setTime(self.displayManager.startTime, 
                                   self.displayManager.endTime, 
                                   None)
         self.datetimeInfo.Refresh()
+
+
+        print "#### Ende von updateDisplay"
 
 
 
@@ -1529,7 +1533,9 @@ class DisplayManager(object):
 
         # Update the display
         self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
+        self.parent.viewPort.SetupScrolling()
         self.parent.viewPort.Refresh()
+        self.parent.viewPort.Update()
 
 
         # Request the data.
@@ -1556,11 +1562,14 @@ class DisplayManager(object):
                            station = [station2Show,])
 
         # Hide those views which don't contain any data.
-        for cur_channel in station2Show.channels:
-            if not cur_channel.container.data_plotted:
-                self.parent.viewPort.hideChannel([cur_channel.getSCNL(),])
-            else:
-                self.parent.viewPort.showChannel([cur_channel.getSCNL(),])
+        # TODO: This destroys the scrolling when adding new channels. See also
+        # the updatedisplay method.
+        # Don't hide the complete channel. Just hide the data axes in the view.
+        #for cur_channel in station2Show.channels:
+        #    if not cur_channel.container.data_plotted:
+        #        self.parent.viewPort.hideChannel([cur_channel.getSCNL(),])
+        #    else:
+        #        self.parent.viewPort.showChannel([cur_channel.getSCNL(),])
 
 
         # Call the hooks of the plugins.
@@ -1575,6 +1584,7 @@ class DisplayManager(object):
                                                         self.parent.displayManager)
 
         self.parent.viewPort.SetFocus()
+        print "####### Am Ende von showStation"
 
 
     def showChannel(self, channel):
@@ -1601,6 +1611,7 @@ class DisplayManager(object):
         # TODO: Only update the data of the added channel.
         self.stationsChanged = True
         self.parent.updateDisplay() 
+        print "#### Ende von shwoChannel"
 
 
 
