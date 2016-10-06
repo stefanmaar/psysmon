@@ -1161,7 +1161,6 @@ class TraceDisplayDlg(wx.Frame):
         self.datetimeInfo.Refresh()
 
 
-        print "#### Ende von updateDisplay"
 
 
 
@@ -1517,7 +1516,13 @@ class DisplayManager(object):
         # channels.
         station2Show = self.getAvailableStation(snl)
         self.addShowStation(station2Show)
-        station2Show.addChannel(self.showChannels)
+
+        # Check if the station has the demanded channels.
+        station_channels = self.inventory.get_channel(station = snl[0],
+                                                      network = snl[1],
+                                                      location = snl[2])
+        channel_names = [x.name for x in station_channels if x.name in self.showChannels]
+        station2Show.addChannel(channel_names)
         for curChannel in station2Show.channels:
             for curPlugin in viewPlugins:
                 view_class = curPlugin.getViewClass()
@@ -1584,7 +1589,6 @@ class DisplayManager(object):
                                                         self.parent.displayManager)
 
         self.parent.viewPort.SetFocus()
-        print "####### Am Ende von showStation"
 
 
     def showChannel(self, channel):
@@ -1595,23 +1599,29 @@ class DisplayManager(object):
         channel : String
             The channel name which should be shown.
         '''
+
         if channel not in self.showChannels:
             self.showChannels.append(channel)
 
         viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
 
         for curStation in self.showStations:
-             curStation.addChannel([channel])
-             for curChannel in curStation.channels:
-                 for curPlugin in viewPlugins:
-                    view_class = curPlugin.getViewClass()
-                    if view_class is not None:
-                        curChannel.addView(curPlugin.name, view_class)
+            # Check if the station has the demanded channels.
+            station_channels = self.inventory.get_channel(station = curStation.name,
+                                                          network = curStation.network,
+                                                          location = curStation.location)
+            channel_names = [x.name for x in station_channels if x.name in self.showChannels]
+            if channel in channel_names:
+                curStation.addChannel([channel,])
+                for curChannel in curStation.channels:
+                    for curPlugin in viewPlugins:
+                        view_class = curPlugin.getViewClass()
+                        if view_class is not None:
+                            curChannel.addView(curPlugin.name, view_class)
 
         # TODO: Only update the data of the added channel.
         self.stationsChanged = True
         self.parent.updateDisplay() 
-        print "#### Ende von shwoChannel"
 
 
 
