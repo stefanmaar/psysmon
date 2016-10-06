@@ -264,6 +264,10 @@ class SeismogramView(View):
         self.envelope_line_bottom = None
         self.envelope_collection_filled = None
 
+        self.dataAxes.set_frame_on(False)
+        self.dataAxes.get_xaxis().set_visible(False)
+        self.dataAxes.get_yaxis().set_visible(False)
+
 
 
     def plot(self, stream, color, duration, end_time, show_wiggle_trace = True, show_envelope = False,
@@ -387,9 +391,6 @@ class SeismogramView(View):
                     self.envelope_collection_filled = None
 
 
-            self.dataAxes.set_frame_on(False)
-            self.dataAxes.get_xaxis().set_visible(False)
-            self.dataAxes.get_yaxis().set_visible(False)
             if y_lim is None:
                 y_lim = np.max(np.abs(trace.data))
             if show_envelope is True:
@@ -398,6 +399,9 @@ class SeismogramView(View):
             self.dataAxes.set_ylim(bottom = -y_lim, top = y_lim)
             self.logger.debug('y_lim: %s', y_lim)
 
+        self.dataAxes.set_frame_on(False)
+        self.dataAxes.get_xaxis().set_visible(False)
+        self.dataAxes.get_yaxis().set_visible(False)
         self.add_time_scalebar(duration = duration, end_time = end_time)
 
 
