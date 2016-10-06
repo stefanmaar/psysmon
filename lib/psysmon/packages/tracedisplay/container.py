@@ -117,32 +117,34 @@ class PlotPanel(wx.Panel):
 
 
     def onClick(self, event):
-        print "Clicked in View. event: %s" % event.guiEvent
+        #print "Clicked in View. event: %s" % event.guiEvent
         event.guiEvent.ResumePropagation(1)
         event.guiEvent.Skip()
 
     def onWxClick(self, event):
-        print "Got the WX event."
+        #print "Got the WX event."
+        pass
 
     def onSetFocus(self, event):
-        print "Canvas got Focus"
+        #print "Canvas got Focus"
         event.Skip()
 
     def onSetFocus2(self, event):
-        print "PlotPanel got Focus"
+        #print "PlotPanel got Focus"
+        pass
 
     def onKeyDown(self, event):
-        print "Propagating keyDown in plotPanel"
+        #print "Propagating keyDown in plotPanel"
         event.ResumePropagation(30)
         event.Skip()
 
     def onKeyUp(self, event):
-        print "Propagating keyUp in plotPanel"
+        #print "Propagating keyUp in plotPanel"
         event.ResumePropagation(1)
         event.Skip()
 
     def onLeftDown(self, event):
-        print "PlotPanel LEFT DOWN"
+        #print "PlotPanel LEFT DOWN"
         event.ResumePropagation(30)
         event.Skip()
 
@@ -213,7 +215,8 @@ class View(wx.Panel):
 
 
     def __del__(self):
-        print "Deleting the view."
+        #print "Deleting the view."
+        pass
 
     def draw(self):
         ''' Draw the canvas to make the changes visible.
@@ -222,7 +225,7 @@ class View(wx.Panel):
 
 
     def onEnterWindow(self, event):
-        print "Entered view."
+        #print "Entered view."
         #self.plotCanvas.SetColor((0,255,255))
         self.SetBackgroundColour('blue')
         self.SetFocus()
@@ -231,15 +234,16 @@ class View(wx.Panel):
         event.Skip()
 
     def onLeaveWindow(self, event):
-        print "Entered view."
+        #print "Entered view."
         self.SetBackgroundColour('green')
         self.Refresh()
 
     def onSetFocus(self, event):
-        print "view got focus."
+        #print "view got focus."
+        pass
 
     def onKeyDown(self, event):
-        print "onKeyDown in view."
+        #print "onKeyDown in view."
         event.ResumePropagation(30)
         event.Skip()
 
@@ -257,13 +261,15 @@ class View(wx.Panel):
         self.plotCanvas.Resize()
 
     def onRelease(self, event):
-        print "RELEASING BUTTON"
+        #print "RELEASING BUTTON"
+        pass
 
     def onPress(self, event):
-        print "PRESS BUTTON"
+        #print "PRESS BUTTON"
+        pass
 
     def onLeftDown(self, event):
-        print "view LEFT DOWN"
+        #print "view LEFT DOWN"
         event.Skip()
 
 
