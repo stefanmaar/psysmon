@@ -151,10 +151,10 @@ class PublishVisible(plugins.CommandPlugin):
         plt.contour(sm.map_x_coord, sm.map_y_coord, sm.result_map, colors = 'k')
         plt.scatter(stat_x, stat_y)
 
-        epi_lon = 16.3960
-        epi_lat = 47.9012
-        epi_x, epi_y = proj(epi_lon, epi_lat)
-        plt.plot(epi_x, epi_y, '*')
+        #epi_lon = 16.3960
+        #epi_lat = 47.9012
+        #epi_x, epi_y = proj(epi_lon, epi_lat)
+        #plt.plot(epi_x, epi_y, '*')
 
         plt.show()
 
