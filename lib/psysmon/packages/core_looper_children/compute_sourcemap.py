@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+import os
+import csv
 
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -49,10 +51,11 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
                                     limit = (0,100))
         self.pref_manager.add_item(item = item)
 
-        item = pm.SingleChoicePrefItem(name = 'corr',
-                                       value = 'none',
-                                       limit = ['none', '1-5', '1-10'],
-                                       tool_tip = 'Select the station correction values. None for zero correction.')
+        item = pm.FileBrowsePrefItem(name = 'corr_filename',
+                                    value = '',
+                                    filemask = 'comma separated version (*.csv)|*.csv|' \
+                                                'all files (*)|*',
+                                    tool_tip = 'Specify the CSV file holding the station correction values.')
         self.pref_manager.add_item(item = item)
 
         item = pm.SingleChoicePrefItem(name = 'method',
@@ -85,12 +88,18 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         '''
         alpha = self.pref_manager.get_value('alpha')
 
-        corr_set = self.pref_manager.get_value('corr')
-        cn = {}
-        cn['1-5'] = {'ALBA': -0.1689, 'ARSA': 0.050, 'BISA': -1.1685, 'CONA': 0.233, 'CSNA': 0.2366, 'GILA': 0.1307,
-                     'GUWA': 0.2436, 'MARA': 0.1389, 'PUBA': 0.1928, 'SITA': -0.0937, 'SOP': 0.2004}
-        cn['1-10'] = {'ALBA': -0.3522, 'ARSA': 0.1491, 'BISA': -1.0543, 'CONA': 0.3833, 'CSNA': 0.3254, 'GILA': 0.1925,
-                      'GUWA': 0.1688, 'MARA': 0.0035, 'PUBA': 0.1601, 'SITA': -0.2707, 'SOP': 0.2944}
+        # Try to load the station correction file.
+        corr_filename = self.pref_manager.get_value('corr_filename')
+        stat_corr = {}
+        if os.path.exists(corr_filename):
+            with open(corr_filename) as fp:
+                reader = csv.DictReader(fp)
+                for cur_row in reader:
+                    cur_net = cur_row['network']
+                    cur_station = cur_row['station']
+                    cur_loc = cur_row['location']
+                    cur_corr = float(cur_row['corr'])
+                    stat_corr[(cur_station, cur_net, cur_loc)] = cur_corr
 
         station_list = []
 
@@ -120,10 +129,8 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
             else:
                 data_h2 = np.zeros(len(data_v))
 
-            if corr_set == 'none':
-                corr = 0
-            elif cur_station.name in cn[corr_set].keys():
-                corr = cn[corr_set][cur_station.name]
+            if cur_station.snl in stat_corr.keys():
+                corr = stat_corr[cur_station.snl]
             else:
                 corr = 0
 
@@ -144,10 +151,12 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
         # Create a 2D grid result.
         metadata = {}
-        if corr_set == 'none':
-            metadata['cn'] = 'none'
-        else:
-            metadata['cn'] = cn[corr_set]
+        # Create a new stat_corr dict with the keys converted to string.
+        # Otherwise a dump to json textfile is not possible.
+        meta_stat_corr = {}
+        for cur_key in stat_corr.keys():
+            meta_stat_corr[':'.join(cur_key)] = stat_corr[cur_key]
+        metadata['stat_corr'] = meta_stat_corr
         metadata['alpha'] = alpha
         metadata['map_config'] = sm.map_config
         metadata['processing_time_window'] = {'start_time': process_limits[0].isoformat(),

@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import csv
 
 
 import psysmon.core.plugins as plugins
@@ -51,7 +53,8 @@ class PublishVisible(plugins.CommandPlugin):
                                        )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.iconsBlack16.export_icon_16
@@ -61,10 +64,12 @@ class PublishVisible(plugins.CommandPlugin):
                                                      limit = (0,100))
         self.pref_manager.add_item(item = item)
 
-        item = preferences_manager.SingleChoicePrefItem(name = 'corr',
-                                                        value = 'none',
-                                                        limit = ['none', '1-5', '1-10'],
-                                                        tool_tip = 'Select the station correction values. None for zero correction.')
+
+        item = preferences_manager.FileBrowsePrefItem(name = 'corr_filename',
+                                                      value = '',
+                                                      filemask = 'comma separated version (*.csv)|*.csv|' \
+                                                                'all files (*)|*',
+                                                      tool_tip = 'Specify the CSV file holding the station correction values.')
         self.pref_manager.add_item(item = item)
 
         item = preferences_manager.SingleChoicePrefItem(name = 'method',
@@ -85,12 +90,18 @@ class PublishVisible(plugins.CommandPlugin):
 
         alpha = self.pref_manager.get_value('alpha')
 
-        corr_set = self.pref_manager.get_value('corr')
-        cn = {}
-        cn['1-5'] = {'ALBA': -0.1689, 'ARSA': 0.050, 'BISA': -1.1685, 'CONA': 0.233, 'CSNA': 0.2366, 'GILA': 0.1307,
-                     'GUWA': 0.2436, 'MARA': 0.1389, 'PUBA': 0.1928, 'SITA': -0.0937, 'SOP': 0.2004}
-        cn['1-10'] = {'ALBA': -0.3522, 'ARSA': 0.1491, 'BISA': -1.0543, 'CONA': 0.3833, 'CSNA': 0.3254, 'GILA': 0.1925,
-                      'GUWA': 0.1688, 'MARA': 0.0035, 'PUBA': 0.1601, 'SITA': -0.2707, 'SOP': 0.2944}
+        # Try to load the station correction file.
+        corr_filename = self.pref_manager.get_value('corr_filename')
+        stat_corr = {}
+        if os.path.exists(corr_filename):
+            with open(corr_filename) as fp:
+                reader = csv.DictReader(fp)
+                for cur_row in reader:
+                    cur_net = cur_row['network']
+                    cur_station = cur_row['station']
+                    cur_loc = cur_row['location']
+                    cur_corr = float(cur_row['corr'])
+                    stat_corr[(cur_station, cur_net, cur_loc)] = cur_corr
 
         proc_stream = self.parent.dataManager.procStream
 
@@ -117,14 +128,12 @@ class PublishVisible(plugins.CommandPlugin):
             else:
                 data_h2 = np.zeros(len(data_v))
 
-            if corr_set == 'none':
-                corr = 0
-            elif cur_station.name in cn[corr_set].keys():
-                corr = cn[corr_set][cur_station.name]
+            if cur_station.snl in stat_corr.keys():
+                corr = stat_corr[cur_station.snl]
             else:
                 corr = 0
 
-            print "Cn: %s - %f" % (cur_station.name, corr)
+            self.logger.info("station correction: %s - %f", cur_station.name, corr)
             station_list.append(sourcemap.core.Station(cur_station.station,
                                                        data_v = data_v,
                                                        data_h1 = data_h1,
