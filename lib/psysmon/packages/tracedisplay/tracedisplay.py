@@ -1927,6 +1927,10 @@ class DisplayStation(object):
     def label(self):
         return self.name + ':' + self.location
 
+    @property
+    def snl(self):
+        return self.station.snl
+
 
     def addChannel(self, channelName):
         ''' Add a channel to the station.
