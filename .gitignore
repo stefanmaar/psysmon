@@ -40,3 +40,7 @@ MANIFEST
 # Ignore the egg installation folder.
 psysmon.egg-info/
 
+
+# Ignore custom packages.
+lib/psysmon/packages/seismicsculpture
+
