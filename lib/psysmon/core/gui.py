@@ -151,7 +151,7 @@ class PSysmonGui(wx.Frame):
             config = json.load(fp)
             fp.close()
 
-            for cur_file in config['recent_files']:
+            for cur_file in reversed(config['recent_files']):
                 self.filehistory.AddFileToHistory(cur_file)
 
 
@@ -162,22 +162,22 @@ class PSysmonGui(wx.Frame):
     # @param self The Object pointer.
     def menuData(self):
         return (("File",
-                 ("&New project", "Create a new project.", self.onCreateNewProject, True),
-                 ("&Open project", "Open an existing project.", self.onOpenProject, True),
-                 ("Open recent", "Open a recent project.", None, True),
-                 ("&Close project", "Close the current project.", self.onCloseProject, False),
-                 ("&Save project", "Save the current project.", self.onSaveProject, False),
-                 ("", "", "", True),
-                 ("&Exit", "Exit pSysmon.", self.onClose, True)),
+                 ("&New project", "Create a new project.", self.onCreateNewProject, True, False, None),
+                 ("&Open project", "Open an existing project.", self.onOpenProject, True, False, None),
+                 ("Open recent", "Open a recent project.", None, True, True, ()),
+                 ("&Close project", "Close the current project.", self.onCloseProject, False, False, None),
+                 ("&Save project", "Save the current project.", self.onSaveProject, False, False, None),
+                 ("", "", "", True, False, None),
+                 ("&Exit", "Exit pSysmon.", self.onClose, True, False, None)),
                 ("Edit",
-                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser, True)),
+                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser, True, False, None)),
                 ("Project",
-                 ("Data sources", "Edit the data sources of the project.", self.onEditDataSources, False),
-                 ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources, False),
-                 ("", "", "", True),
-                 ("Project preferences","Edit the project preferences", self.onEditProjectPreferences, False)),
+                 ("Data sources", "Edit the data sources of the project.", self.onEditDataSources, False, False, None),
+                 ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources, False, False, None),
+                 ("", "", "", True, False, None),
+                 ("Project preferences","Edit the project preferences", self.onEditProjectPreferences, False, False, None)),
                 ("Help",
-                 ("&About", "About pSysmon", self.onAbout, True))
+                 ("&About", "About pSysmon", self.onAbout, True, False, None))
                )
 
     ## Create the PSysmonGui menubar.
@@ -205,12 +205,21 @@ class PSysmonGui(wx.Frame):
     def createMenu(self, menuData):
         menu = wx.Menu()
 
-        for curLabel, curStatus, curHandler, editable in menuData:
+        for curLabel, curStatus, curHandler, editable, is_submenu, submenu_data in menuData:
             if not curLabel:
                 menu.AppendSeparator()
                 continue
+            elif is_submenu:
+                cur_sub_menu = self.createMenu(submenu_data)
+                menuItem = menu.AppendMenu(wx.ID_ANY, curLabel, cur_sub_menu)
+                # Add the filehistory to the menu.
+                if curLabel.lower() == 'open recent':
+                    self.filehistory = wx.FileHistory()
+                    self.filehistory.UseMenu(cur_sub_menu)
+                    self.Bind(wx.EVT_MENU_RANGE, self.onOpenRecentProject, id=wx.ID_FILE1, id2=wx.ID_FILE9)
 
-            menuItem = menu.Append(wx.ID_ANY, curLabel, curStatus)
+            else:
+                menuItem = menu.Append(wx.ID_ANY, curLabel, curStatus)
             menuItem.Enable(editable)
             self.Bind(wx.EVT_MENU, curHandler, menuItem)
 
@@ -226,15 +235,22 @@ class PSysmonGui(wx.Frame):
         self.createMenuBar()
 
         # Add the file history to the File menu.
-        self.filehistory = wx.FileHistory()
-        menubar = self.GetMenuBar()
-        menus = menubar.GetMenus()
-        tmp = [x[0] for x in menus if x[1] == 'File']
-        if len(tmp) == 1:
-            tmp = tmp[0]
-            self.filehistory.UseMenu(tmp)
-        else:
-            self.logger.error("No File menu found. Couldn't add the filehistory.")
+        if False:
+            self.filehistory = wx.FileHistory()
+            menubar = self.GetMenuBar()
+            menus = menubar.GetMenus()
+            tmp = [x[0] for x in menus if x[1] == 'File']
+            if len(tmp) == 1:
+                tmp = tmp[0]
+                recent_menu = [x for x in tmp.GetMenuItems() if x.GetLabel().lower() == "open recent"]
+                if len(recent_menu) == 1:
+                    recent_menu = recent_menu[0]
+                    self.filehistory.UseMenu(recent_menu.GetMenu())
+                else:
+                    self.logger.error("No open recent menu found. Couldn't add the filehistory.")
+
+            else:
+                self.logger.error("No File menu found. Couldn't add the filehistory.")
 
         self.collectionPanel = CollectionPanel(self, self.psyBase, size=(300, -1))
         self.collectionNodeInventoryPanel = CollectionNodeInventoryPanel(self, self.psyBase)
@@ -312,66 +328,78 @@ class PSysmonGui(wx.Frame):
             # This returns a Python list of files that were selected.
             path = dlg.GetPath()
 
+
+            self.loadProject(path)
+
+
+
+    def onOpenRecentProject(self, event):
+        fileNum = event.GetId() - wx.ID_FILE1
+        path = self.filehistory.GetHistoryFile(fileNum)
+        self.filehistory.AddFileToHistory(path)  # move up the list
+        print "Opening recent project: %s." % path
+        self.loadProject(path)
+
+
+    def loadProject(self, path):
+        ''' Load a psysmon project.
+        '''
+        # Quest for the user and the database password.
+        dlg = ProjectLoginDlg()
+        dlg.ShowModal()
+        userData = dlg.userData
+        projectLoaded = self.psyBase.load_json_project(path,
+                                                       user_name = userData['user'],
+                                                       user_pwd = userData['pwd']
+                                                      )
+        #projectLoaded = self.psyBase.loadPsysmonProject(path, 
+        #                                                user_name = userData['user'],
+        #                                                user_pwd = userData['pwd']
+        #                                                )
+
+        #userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
+
+        if not projectLoaded:
+            self.psyBase.project = ""
+            msg = "No valid user found. Project not loaded."
+            dlg = wx.MessageDialog(None, msg,
+                                   "pSysmon runtime error.",
+                                   wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+
+        else:
+            # Load the current database structure.
+            #self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
+
+            # Load the waveform directories.
+            #self.psyBase.project.loadWaveformDirList()
+
+            # By default, the project has a database waveclient.
+            #waveclient = PsysmonDbWaveClient('main client', self.psyBase.project)
+            #self.psyBase.project.addWaveClient(waveclient)
+
+            # Add the default localhost earthworm waveclient.
+            #waveclient = EarthwormWaveClient('earthworm localhost')
+            #self.psyBase.project.addWaveClient(waveclient)
+
+            # Check if the database tables have to be updated.
+            #self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
+
+            # Update the collection panel display.
+            self.collectionPanel.refreshCollection()
+
+            # Activate the user interfaces.
+            self.enableGuiElements(mode = 'project')
+
+            # Set the loaded project name as the title.
+            self.SetTitle(self.psyBase.project.name)
+
+            # Save the project path in the filehistory.
             self.filehistory.AddFileToHistory(path)
 
-            #self.psyBase.loadPsysmonProject(path)
-
-            # Quest for the user and the database password.
-            dlg = ProjectLoginDlg()
-            dlg.ShowModal()
-            userData = dlg.userData
-            projectLoaded = self.psyBase.load_json_project(path, 
-                                                           user_name = userData['user'],
-                                                           user_pwd = userData['pwd']
-                                                          )
-            #projectLoaded = self.psyBase.loadPsysmonProject(path, 
-            #                                                user_name = userData['user'],
-            #                                                user_pwd = userData['pwd']
-            #                                                )
-
-            #userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
-
-            if not projectLoaded:
-                self.psyBase.project = ""
-                msg = "No valid user found. Project not loaded."
-                dlg = wx.MessageDialog(None, msg, 
-                                       "pSysmon runtime error.",
-                                       wx.OK | wx.ICON_ERROR)
-                dlg.ShowModal()
-
-            else:
-                # Load the current database structure.
-                #self.psyBase.project.loadDatabaseStructure(self.psyBase.packageMgr.packages)
-
-                # Load the waveform directories.
-                #self.psyBase.project.loadWaveformDirList()
-
-                # By default, the project has a database waveclient.
-                #waveclient = PsysmonDbWaveClient('main client', self.psyBase.project)
-                #self.psyBase.project.addWaveClient(waveclient)
-
-                # Add the default localhost earthworm waveclient.
-                #waveclient = EarthwormWaveClient('earthworm localhost')
-                #self.psyBase.project.addWaveClient(waveclient)
-
-                # Check if the database tables have to be updated.
-                #self.psyBase.project.checkDbVersions(self.psyBase.packageMgr.packages)
-
-                # Update the collection panel display.
-                self.collectionPanel.refreshCollection()
-
-                # Activate the user interfaces.
-                self.enableGuiElements(mode = 'project')
-
-                # Set the loaded project name as the title.
-                self.SetTitle(self.psyBase.project.name)
-
-                # Set the status message.
-                self.logger.info("Loaded project %s successfully.", self.psyBase.project.name)
-                #self.psyBase.project.log('status', statusString)
-
-
-
+            # Set the status message.
+            self.logger.info("Loaded project %s successfully.", self.psyBase.project.name)
+            #self.psyBase.project.log('status', statusString)
 
         # Destroy the dialog. 
         dlg.Destroy()
