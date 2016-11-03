@@ -31,8 +31,9 @@ MANIFEST
 *.dll
 
 # Ignore some doc folders
-/doc/build/
-/doc/source/autogen/
+/doc/source_doc/build/
+/doc/source_doc/source/autogen/
+/doc/user_doc/build/
 
 # Ignore miniseed data files
 .msd
