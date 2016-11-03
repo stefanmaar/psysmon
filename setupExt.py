@@ -31,6 +31,7 @@ Some setup helper functions.
 import os
 import sys
 import re
+import fnmatch
 from textwrap import fill
 
 if sys.version_info[0] < 3:
@@ -155,3 +156,23 @@ def checkForPackage(name, requiredVersion):
         printStatus(name, "OK - %s (%s required)" % (__version__, requiredVersion))
 
     return checkPassed
+
+
+
+def get_data_files(data_path, target_dir = '', exclude_dirs = None):
+    ''' Recursively include data files.
+    '''
+    if exclude_dirs is None:
+        exclude_dirs = []
+    data_files = []
+    exclude_wildcards = ['*.py', '*.pyc', '*.pyo', '*.pdf', '.git*']
+    for root, dirs, files in os.walk(data_path, topdown = True):
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        cur_file_list = []
+        for name in files:
+            if any(fnmatch.fnmatch(name, w) for w in exclude_wildcards):
+                continue
+            cur_file_list.append(os.path.join(root, name))
+        data_files.append((os.path.join(target_dir, root.replace(data_path, '')), cur_file_list))
+
+    return data_files

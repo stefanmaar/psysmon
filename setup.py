@@ -34,11 +34,12 @@ import sys
 import os
 import glob
 import inspect
-#import distutils
+#import distutil
+import setuptools
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 from setupExt import printStatus, printMessage, printLine, printRaw, \
-    checkForPackage
+    checkForPackage, get_data_files
 
 
 # Get the current pSysmon version, author and description.
@@ -77,6 +78,13 @@ scripts = ['scripts/psysmon',
 packageDir = {'': 'lib',
               'psysmon.artwork': 'lib/psysmon/artwork'}
 packageData = {'psysmon.artwork': ['splash/psysmon.png']}
+
+# Add the documentation data files.
+data_files = get_data_files(os.path.join(os.getcwd(), 'doc/user_doc/build/html/'),
+                            target_dir = 'psysmon/doc',
+                            exclude_dirs = ['_sources'])
+data_files = []
+
 
 # Define additinal files to be copied.
 #dataFiles = ('artwork', ['lib/psysmon/artwork/splash/splash.png'])
@@ -174,6 +182,7 @@ setup(name = 'psysmon',
       platforms = 'any',
       scripts = scripts,
       package_data = packageData,
+      data_files = data_files,
       ext_package = 'psysmon.lib',
       configuration = configuration
      )
