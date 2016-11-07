@@ -33,10 +33,13 @@ __keywords__ = "seismological prototyping prototype data processing earthquake o
 
 import logging
 import wx
+import os
 
 logConfig = {}
 logConfig['level'] = 'INFO'
 logConfig['package_prefix'] = 'psysmon.packages'
+
+doc_entry_point = os.path.join(os.path.dirname(__file__), 'doc')
 
 
 class LoggingMainProcessFilter(logging.Filter):
