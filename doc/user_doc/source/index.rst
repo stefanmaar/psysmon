@@ -4,5 +4,10 @@
    contain the root `toctree` directive.
 
 
-The pSysmon User Documentation
-------------------------------
+The psysmon user documentation contents
+---------------------------------------
+.. toctree::
+   :maxdepth: 2
+
+   intro
+   packages
