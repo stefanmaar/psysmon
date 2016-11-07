@@ -177,6 +177,7 @@ class PSysmonGui(wx.Frame):
                  ("", "", "", True, False, None),
                  ("Project preferences","Edit the project preferences", self.onEditProjectPreferences, False, False, None)),
                 ("Help",
+                 ("&Help", "psysmon help", self.onHelp, True, False, None),
                  ("&About", "About pSysmon", self.onAbout, True, False, None))
                )
 
@@ -479,10 +480,23 @@ class PSysmonGui(wx.Frame):
     # @param event The event object.       
     def onAbout(self, event):
         # A message dialog box with an OK button. wx.OK is a standard ID in wxWidgets.
-        dlg = wx.MessageDialog(self, "I love pSysmon so damn much!", "About pSysmon", wx.OK)
+        dlg = wx.MessageDialog(self, "psysmon is a seismological prototyping and processing software!", "About pSysmon", wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
+
+    def onHelp(self, event):
+        # A message dialog box with an OK button. wx.OK is a standard ID in wxWidgets.
+        doc_dir = psysmon.doc_entry_point
+        doc_file = 'index.html'
+
+        filename = os.path.join(doc_dir, doc_file)
+
+        if os.path.isfile(filename):
+            webbrowser.open_new(filename)
+        else:
+            msg =  "Couldn't find the documentation file %s." % filename
+            self.logger.warning(msg)
 
 
     def closeProject(self):
@@ -1319,21 +1333,17 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
     # Each collection node should provide a html formatted help file. This 
     # file can be shown using the collection node inventory context menu.
     def onCollectionNodeHelp(self, event):
-        docFile = self.selectedCollectionNodeTemplate.docEntryPoint
-        docDir = self.selectedCollectionNodeTemplate.parentPackage.docDir
+        doc_dir = psysmon.doc_entry_point
 
-        if docFile and docDir:
-            docFile = os.path.join(docDir, docFile)
+        package_name = self.selectedCollectionNodeTemplate.parentPackage.name
+        node_name = self.selectedCollectionNodeTemplate.name.replace(' ', '_')
 
-            if os.path.isfile(docFile):
-                webbrowser.open(docFile)
-            else:
-                msg =  "No documentation found for node %s " % self.selectedCollectionNodeTemplate.name
-                #pub.sendMessage("log.general.status", msg = msg)
-                self.logger.warning(msg)
+        filename = os.path.join(doc_dir, 'packages', package_name, node_name + '.html')
+
+        if os.path.isfile(filename):
+            webbrowser.open_new(filename)
         else:
-            msg =  "No documentation found for node %s " % self.selectedCollectionNodeTemplate.name
-            #pub.sendMessage("log.general.status", msg = msg)
+            msg =  "Couldn't find the documentation file %s." % filename
             self.logger.warning(msg)
 
 
