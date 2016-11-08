@@ -128,6 +128,9 @@ class PSysmonGui(wx.Frame):
 
         self.load_config()
 
+        # Load new colour names into the colour database.
+        wx.lib.colourdb.updateColourDB()
+
 
 
     def load_config(self):
@@ -346,27 +349,22 @@ class PSysmonGui(wx.Frame):
         ''' Load a psysmon project.
         '''
         # Quest for the user and the database password.
+        self.logger.info("Loading the project file %s.", path)
         dlg = ProjectLoginDlg()
         dlg.ShowModal()
         userData = dlg.userData
         projectLoaded = self.psyBase.load_json_project(path,
                                                        user_name = userData['user'],
-                                                       user_pwd = userData['pwd']
-                                                      )
-        #projectLoaded = self.psyBase.loadPsysmonProject(path, 
-        #                                                user_name = userData['user'],
-        #                                                user_pwd = userData['pwd']
-        #                                                )
-
-        #userSet = self.psyBase.project.setActiveUser(userData['user'], userData['pwd'])
+                                                       user_pwd = userData['pwd'])
 
         if not projectLoaded:
             self.psyBase.project = ""
-            msg = "No valid user found. Project not loaded."
-            dlg = wx.MessageDialog(None, msg,
-                                   "pSysmon runtime error.",
-                                   wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
+            #msg = "No valid user found. Project not loaded."
+            #dlg = wx.MessageDialog(None, msg,
+            #                       "pSysmon runtime error.",
+            #                       wx.OK | wx.ICON_ERROR)
+            #dlg.ShowModal()
+            self.logger.error("No valid user found. Project not loaded.")
 
         else:
             # Load the current database structure.
@@ -522,11 +520,11 @@ class PSysmonGui(wx.Frame):
         if(state):
             self.collectionPanel.Enable()
             self.collectionNodeInventoryPanel.Enable()
-            self.loggingPanel.Enable()
+            #self.loggingPanel.Enable()
         else:
             self.collectionPanel.Disable()
             self.collectionNodeInventoryPanel.Disable()
-            self.loggingPanel.Disable()
+            #self.loggingPanel.Disable()
 
         if mode == 'project':
             # Enable the project menu.
@@ -1116,19 +1114,30 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.processMap = {}
 
         # The general logging area.
-        self.status = wx.TextCtrl(self, -1, '',
-                                    wx.DefaultPosition, wx.Size(200,100),
-                                    wx.NO_BORDER 
-                                    | wx.TE_MULTILINE
-                                    | wx.HSCROLL)
+        #self.status = wx.TextCtrl(self, -1, '',
+        #                            wx.DefaultPosition, wx.Size(200,100),
+        #                            wx.NO_BORDER 
+        #                            | wx.TE_MULTILINE
+        #                            | wx.HSCROLL
+        #                            | wx.TE_RICH2)
+
+        self.status = wx.ListCtrl(self, id = wx.ID_ANY,
+                                      style=wx.LC_REPORT
+                                      | wx.BORDER_NONE
+                                      | wx.LC_SINGLE_SEL
+                                      | wx.LC_SORT_ASCENDING)
+        columns = {1: 'level', 2: 'message'}
+        for colNum, name in columns.iteritems():
+            self.status.InsertColumn(colNum, name)
+        self.status.SetColumnWidth(0, 100)
+        self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
         # The collection thread logging area.
         self.processes = wx.ListCtrl(self, id=wx.ID_ANY,
-                                      style=wx.LC_REPORT 
+                                      style=wx.LC_REPORT
                                       | wx.BORDER_NONE
                                       | wx.LC_SINGLE_SEL
-                                      | wx.LC_SORT_ASCENDING
-                                      )
+                                      | wx.LC_SORT_ASCENDING)
 
         columns = {1: 'start', 2: 'pid', 3: 'name', 4: 'status', 5: 'duration'}
 
@@ -1151,8 +1160,15 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
 
 
-    def log(self, msg):
-        self.status.AppendText(msg)
+    def log(self, msg, levelname = None):
+        item = self.status.InsertStringItem(0, levelname)
+        self.status.SetStringItem(0, 1, msg)
+        if levelname.lower() == 'warning':
+            self.status.SetItemBackgroundColour(item, wx.NamedColour('orange1'))
+        elif levelname.lower() == 'error' or levelname.lower() == 'critical':
+            self.status.SetItemBackgroundColour(item, wx.NamedColour('orangered1'))
+
+        self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
 
 
@@ -1212,6 +1228,13 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
     def onRemoveProcess(self, event):
         pass
+
+
+class LogStatusListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+    def __init__(self, parent, id, pos = wx.DefaultPosition,
+                 size = wx.DefaultSize, style = 0):
+        wx.ListCtrl.__init__(self, parent, id, pos, size, style)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
 
 
 class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):

@@ -57,7 +57,7 @@ class LoggingRedirectHandler(logging.Handler):
 
         def emit(self, record):
             msg = self.format(record)+'\n'
-            wx.CallAfter(self.logArea.log, msg)
+            wx.CallAfter(self.logArea.log, msg, record.levelname)
             #print "REDIRECT :: %s" % msg
 
 
@@ -89,10 +89,13 @@ def getLoggerFileHandler(filename=None, log_level = None):
     return ch
 
 
-def getLoggerWxRedirectHandler(window):
+def getLoggerWxRedirectHandler(window, log_level = None):
     ch = LoggingRedirectHandler(window)
-    ch.setLevel(logConfig['level'])
-    formatter = logging.Formatter("#LOG# - %(asctime)s - %(process)d - %(levelname)s - %(name)s: %(message)s")
+    if log_level is None:
+        log_level = logConfig['level']
+    ch.setLevel(log_level)
+    #formatter = logging.Formatter("#LOG# - %(asctime)s - %(process)d - %(levelname)s - %(name)s: %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(process)d - %(name)s: %(message)s")
     ch.setFormatter(formatter)
 
     # Only log messages from the main process to the console.

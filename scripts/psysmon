@@ -94,7 +94,7 @@ def run():
     app =psygui.PSysmonApp()
     psysmonMain = psygui.PSysmonGui(psyBase, None)
 
-    logger.addHandler(psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel))
+    logger.addHandler(psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel, log_level = 'INFO'))
 
     psysmonMain.Show()
 
