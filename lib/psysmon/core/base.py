@@ -45,6 +45,7 @@ import psysmon.core.json_util
 import psysmon.core.project_server
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.core.error import PsysmonError
+import psysmon.core.preferences_manager as pm
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import Pyro4 as pyro
@@ -130,6 +131,10 @@ class Base(object):
         # The pSysmon version.
         self.version = version
 
+        # The psysmon preferences.
+        self.pref_manager = pm.PreferencesManager()
+        self.create_preferences()
+
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self, 
                                                                     packageDirectories = self.packageDirectory)
@@ -194,6 +199,43 @@ class Base(object):
         cur_state = self._project_server_starting
         self.project_server_lock.release()
         return cur_state
+
+
+    def create_preferences(self):
+        ''' Create the psysmon preferences items.
+        '''
+        self.pref_manager.add_page('logging')
+
+        pref_item = pm.SingleChoicePrefItem(name = 'main_loglevel',
+                                            label = 'main log level',
+                                            limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
+                                            value = 'INFO',
+                                            group = 'log levels',
+                                            position = 1,
+                                            tool_tip = 'The level of the main logger.')
+        self.pref_manager.add_item(pagename = 'logging',
+                                   item = pref_item)
+
+
+        pref_item = pm.SingleChoicePrefItem(name = 'shell_loglevel',
+                                            label = 'shell log level',
+                                            limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
+                                            value = 'INFO',
+                                            group = 'log levels',
+                                            position = 2,
+                                            tool_tip = 'The level of the logger writing to the shell.')
+        self.pref_manager.add_item(pagename = 'logging',
+                                   item = pref_item)
+
+        pref_item = pm.SingleChoicePrefItem(name = 'gui_status_loglevel',
+                                            label = 'status log level',
+                                            limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
+                                            value = 'INFO',
+                                            group = 'log levels',
+                                            position = 3,
+                                            tool_tip = 'The level of the logger writing to the psysmon status logging area.')
+        self.pref_manager.add_item(pagename = 'logging',
+                                   item = pref_item)
 
 
     def start_project_server(self):
