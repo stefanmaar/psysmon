@@ -142,10 +142,10 @@ class PSysmonGui(wx.Frame):
             config_file = os.path.join(config_dir, 'psysmon.cfg')
             config = {}
             config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
-            #config['pref_manager'] = self.psyBase.pref_manager
+            config['pref_manager'] = self.psyBase.pref_manager
             try:
                 fp = open(config_file, mode = 'w')
-                json.dump(config, fp = fp)
+                json.dump(config, fp = fp, cls = psysmon.core.json_util.ConfigFileEncoder)
                 fp.close()
             except:
                 pass
