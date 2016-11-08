@@ -401,3 +401,177 @@ class ProjectFileDecoder(json.JSONDecoder):
         return inst
 
 
+
+
+
+class ConfigFileEncoder(json.JSONEncoder):
+    ''' A JSON encoder for the pSysmon project file.
+    '''
+    def __init__(self, **kwarg):
+        json.JSONEncoder.__init__(self, **kwarg)
+        self.indent = 4
+        self.sort_keys = True
+
+    def default(self, obj):
+        ''' Convert pSysmon project objects to a dictionary.
+        '''
+        obj_class = obj.__class__.__name__
+        base_class = [x.__name__ for x in obj.__class__.__bases__]
+
+        if obj_class == 'PreferencesManager':
+            d = self.convert_preferencesmanager(obj)
+        elif obj_class == 'CustomPrefItem':
+            d = self.convert_custom_preferenceitem(obj)
+        elif obj_class == 'type':
+            d = {}
+        elif 'PreferenceItem' in base_class:
+            d = self.convert_preferenceitem(obj)
+        elif obj_class == 'UTCDateTime':
+            d = self.convert_utcdatetime(obj)
+        else:
+            d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
+
+        # Add the class and module information to the dictionary.
+        tmp = {'__baseclass__': base_class,
+               '__class__': obj.__class__.__name__,
+               '__module__': obj.__module__}
+        d.update(tmp)
+
+        return d
+
+
+    def convert_preferencesmanager(self, obj):
+        attr = ['pages', ]
+        d = self.object_to_dict(obj, attr)
+        return d
+
+
+    def convert_custom_preferenceitem(self, obj):
+        import inspect
+
+        attr = ['name', 'value', 'label', 'default',
+                'group', 'limit']
+        d = self.object_to_dict(obj, attr)
+
+        # Find any additional arguments.
+        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getargspec(obj.__init__)
+
+        for cur_arg in arg.args:
+            if cur_arg not in base_arg.args and cur_arg in attr:
+                d[cur_arg] = getattr(obj, cur_arg)
+
+        return d
+
+
+    def convert_preferenceitem(self, obj):
+        import inspect
+
+        #attr = ['name', 'value', 'label', 'default', 
+        #        'group', 'limit', 'guiclass', 'gui_element']
+        attr = ['name', 'value', 'label', 'default',
+                'group', 'limit']
+        d = self.object_to_dict(obj, attr)
+
+        # Find any additional arguments.
+        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getargspec(obj.__init__)
+
+        for cur_arg in arg.args:
+            if cur_arg not in base_arg.args:
+                d[cur_arg] = getattr(obj, cur_arg)
+
+        return d
+
+
+    def convert_utcdatetime(self, obj):
+        return {'utcdatetime': obj.isoformat()}
+
+
+    def object_to_dict(self, obj, attr):
+        ''' Copy selceted attributes of object to a dictionary.
+        '''
+        def hint_tuples(item):
+            if isinstance(item, tuple):
+                return {'__tuple__': True, 'items': item}
+            if isinstance(item, list):
+                return [hint_tuples(e) for e in item]
+            else:
+                return item
+
+        d = {}
+        for cur_attr in attr:
+            d[cur_attr] = hint_tuples(getattr(obj, cur_attr))
+
+        return d
+
+
+class ConfigFileDecoder(json.JSONDecoder):
+
+    def __init__(self, **kwarg):
+        json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+    def convert_object(self, d):
+        #print "Converting dict: %s." % str(d)
+
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            module_name = d.pop('__module__')
+            base_class = d.pop('__baseclass__')
+
+            if class_name == 'PreferencesManager':
+                inst = self.convert_pref_manager(d)
+            elif class_name == 'CustomPrefItem':
+                inst = self.convert_custom_preferenceitem(d, class_name, module_name)
+            elif class_name == 'type':
+                inst = self.convert_class_object(d, class_name, module_name)
+            elif 'PreferenceItem' in base_class:
+                inst = self.convert_preferenceitem(d, class_name, module_name)
+            elif class_name == 'UTCDateTime':
+                inst = self.convert_utcdatetime(d)
+            else:
+                inst = {'ERROR': 'MISSING CONVERTER'}
+
+        else:
+            inst = d
+
+        return inst
+
+
+    def decode_hinted_tuple(self, item):
+        if isinstance(item, dict):
+            if '__tuple__' in item:
+                return tuple(item['items'])
+        elif isinstance(item, list):
+                return [self.decode_hinted_tuple(x) for x in item]
+        else:
+            return item
+
+
+    def convert_pref_manager(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
+        return inst
+
+
+    def convert_custom_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
+    def convert_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
+    def convert_utcdatetime(self, d):
+        inst = UTCDateTime(d['utcdatetime'])
+        return inst
