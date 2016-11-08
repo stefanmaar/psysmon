@@ -126,36 +126,31 @@ class PSysmonGui(wx.Frame):
 
         self.collectionNodeInventoryPanel.initNodeInventoryList()
 
-        self.load_config()
-
         # Load new colour names into the colour database.
         wx.lib.colourdb.updateColourDB()
 
 
-
-    def load_config(self):
-        # Load the configuration data from the config file.
-        import platform
+    def save_config(self):
+        ''' Save the configuration data to the config file.
+        '''
         import json
+        import platform
         if platform.system() == 'Linux':
             config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
+            if not os.path.exists(config_dir):
+                os.mkdir(config_dir)
             config_file = os.path.join(config_dir, 'psysmon.cfg')
-        elif platform.system() == 'Windows':
-            if 'APPDATA' in os.environ:
-                config_dir = os.path.join(os.environ['APPDATA'], 'psysmon')
-                config_file = os.path.join(config_dir, 'psysmon.cfg')
-            else:
-                raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
-        else:
-            raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+            config = {}
+            config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
+            #config['pref_manager'] = self.psyBase.pref_manager
+            try:
+                fp = open(config_file, mode = 'w')
+                json.dump(config, fp = fp)
+                fp.close()
+            except:
+                pass
 
-        if os.path.exists(config_file):
-            fp = open(config_file, 'r')
-            config = json.load(fp)
-            fp.close()
 
-            for cur_file in reversed(config['recent_files']):
-                self.filehistory.AddFileToHistory(cur_file)
 
 
     ## Define the PSysmonGui menus.  
@@ -451,21 +446,9 @@ class PSysmonGui(wx.Frame):
         for cur_handler in handler_list:
             if isinstance(cur_handler, psysmon.LoggingRedirectHandler):
                 self.logger.parent.removeHandler(cur_handler)
-        import json
-        import platform
-        if platform.system() == 'Linux':
-            config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
-            if not os.path.exists(config_dir):
-                os.mkdir(config_dir)
-            config_file = os.path.join(config_dir, 'psysmon.cfg')
-            config = {}
-            config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
-            try:
-                fp = open(config_file, mode = 'w')
-                json.dump(config, fp = fp)
-                fp.close()
-            except:
-                pass
+
+        # Save the configuration.
+        self.save_config()
 
         # deinitialize the frame manager
         self.mgr.UnInit()

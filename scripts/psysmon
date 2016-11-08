@@ -76,9 +76,23 @@ def run():
         >>> import psysmon.pSysmon as psysmon
         >>> psysmon.run
     '''
+    config = load_config()
+
+    if 'pref_manager' in config.keys():
+        pref_manager = config['pref_manager']
+        main_loglevel = pref_manager.get_value('main_loglevel')
+        shell_loglevel = pref_manager.get_value('shell_loglevel')
+        status_loglevel = pref_manager.get_value('gui_status_loglevel')
+    else:
+        pref_manager = None
+        main_loglevel = 'INFO'
+        shell_loglevel = 'INFO'
+        status_loglevel = 'INFO'
+
     logger = logging.getLogger('psysmon')
-    logger.setLevel(psysmon.logConfig['level'])
-    handler = psysmon.getLoggerHandler()
+    logger.setLevel(main_loglevel)
+
+    handler = psysmon.getLoggerHandler(log_level = shell_loglevel)
     handler.set_name('shell')
     logger.addHandler(handler)
 
@@ -87,7 +101,7 @@ def run():
     logger.debug("psyBaseDir: %s", psyBaseDir)
 
     # Initialize the pSysmon base object.
-    psyBase = psybase.Base(psyBaseDir)
+    psyBase = psybase.Base(psyBaseDir, pref_manager = pref_manager)
 
     # Scan for available pSysmon packages.
     #psyBase.initialize()
@@ -96,11 +110,14 @@ def run():
     app =psygui.PSysmonApp()
     psysmonMain = psygui.PSysmonGui(psyBase, None)
 
-    status_loglevel = psyBase.pref_manager.get_value('gui_status_loglevel')
     handler = psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel,
                                                  log_level = status_loglevel)
     handler.set_name('gui_status')
     logger.addHandler(handler)
+
+    if 'recent_files' in config.keys():
+        for cur_file in reversed(config['recent_files']):
+            psysmonMain.filehistory.AddFileToHistory(cur_file)
 
     psysmonMain.Show()
 
@@ -109,6 +126,38 @@ def run():
     # Stop the project server.
     psyBase.stop_project_server()
 
+
+def load_config():
+    ''' Load the configuration data from the config file.
+    '''
+    import platform
+    import json
+
+    config = {}
+
+    if platform.system() == 'Linux':
+        config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
+        config_file = os.path.join(config_dir, 'psysmon.cfg')
+    elif platform.system() == 'Windows':
+        if 'APPDATA' in os.environ:
+            config_dir = os.path.join(os.environ['APPDATA'], 'psysmon')
+            config_file = os.path.join(config_dir, 'psysmon.cfg')
+        else:
+            raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+    else:
+        raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+
+    if os.path.exists(config_file):
+        fp = open(config_file, 'r')
+        try:
+            config = json.load(fp)
+        except:
+            config = {}
+        finally:
+            fp.close()
+
+
+    return config
 
 if __name__ == '__main__':
     run()
