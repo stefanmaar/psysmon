@@ -173,7 +173,8 @@ class PSysmonGui(wx.Frame):
                  ("", "", "", True, False, None),
                  ("&Exit", "Exit pSysmon.", self.onClose, True, False, None)),
                 ("Edit",
-                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser, True, False, None)),
+                 ("Create DB user", "Create a new pSysmon database user.", self.onCreateNewDbUser, True, False, None),
+                 ("psysmon preferences", "The preferences of the psysmon program.", self.onPsysmonPreferences, True, False, None)),
                 ("Project",
                  ("Data sources", "Edit the data sources of the project.", self.onEditDataSources, False, False, None),
                  ("SCNL data sources", "Edit the data sources of the SCNLs in the inventory.", self.onEditScnlDataSources, False, False, None),
@@ -545,6 +546,38 @@ class PSysmonGui(wx.Frame):
         dlg = CreateNewDbUserDlg(parent=self, psyBase=self.psyBase)
         dlg.ShowModal()
         dlg.Destroy()
+
+
+    def onPsysmonPreferences(self, event):
+        ''' The psysmon preferences callback.
+
+        Parameters
+        ----------
+        event :
+            The event passed to the callback.
+        '''
+        dlg = ListbookPrefDialog(preferences = self.psyBase.pref_manager)
+        if dlg.ShowModal() == wx.ID_OK:
+            # Set the log levels of the loggers.
+            root_logger = logging.getLogger('psysmon')
+            handlers = root_logger.handlers
+
+            root_logger.setLevel(self.psyBase.pref_manager.get_value('main_loglevel'))
+
+            status_handler = [x for x in handlers if x.get_name() == 'gui_status']
+            for cur_handler in status_handler:
+                cur_handler.setLevel(self.psyBase.pref_manager.get_value('gui_status_loglevel'))
+
+            shell_handler = [x for x in handlers if x.get_name() == 'shell']
+            for cur_handler in shell_handler:
+                cur_handler.setLevel(self.psyBase.pref_manager.get_value('shell_loglevel'))
+
+        dlg.Destroy()
+
+        self.logger.error('Error test.')
+        self.logger.warn('Warning test.')
+        self.logger.info('Info test.')
+        self.logger.debug('Debug test.')
 
 
     def onEditDataSources(self, event):
