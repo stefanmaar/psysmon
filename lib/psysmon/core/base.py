@@ -87,7 +87,7 @@ class Base(object):
 
     '''
 
-    def __init__(self, baseDir, package_directory = None, project_server = None):
+    def __init__(self, baseDir, package_directory = None, project_server = None, pref_manager = None):
         '''The constructor.
 
         Create an instance of the Base class.
@@ -132,8 +132,11 @@ class Base(object):
         self.version = version
 
         # The psysmon preferences.
-        self.pref_manager = pm.PreferencesManager()
-        self.create_preferences()
+        if pref_manager is None:
+            self.pref_manager = pm.PreferencesManager()
+            self.create_preferences()
+        else:
+            self.pref_manager = pref_manager
 
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self, 
@@ -234,6 +237,17 @@ class Base(object):
                                             group = 'log levels',
                                             position = 3,
                                             tool_tip = 'The level of the logger writing to the psysmon status logging area.')
+        self.pref_manager.add_item(pagename = 'logging',
+                                   item = pref_item)
+
+
+        pref_item = pm.SingleChoicePrefItem(name = 'collection_loglevel',
+                                            label = 'collection log level',
+                                            limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
+                                            value = 'INFO',
+                                            group = 'log levels',
+                                            position = 4,
+                                            tool_tip = 'The level of the logger writing to a log file when executing a collection.')
         self.pref_manager.add_item(pagename = 'logging',
                                    item = pref_item)
 
