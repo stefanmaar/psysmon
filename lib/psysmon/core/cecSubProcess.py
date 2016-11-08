@@ -62,15 +62,17 @@ if __name__ == "__main__":
     collection = db['collection']
     waveclients = db['waveclient']
     project_server = db['project_server']
+    pref_manager = db['pref_manager']
     db.close()
 
     #logfileName = os.path.join(tempfile.gettempdir(), proc_name + '.log')
     logfileName = os.path.join(project.tmpDir, proc_name + '.log')
 
     logger = logging.getLogger('psysmon')
-    logger.setLevel(psysmon.logConfig['level'])
-    logger.addHandler(psysmon.getLoggerFileHandler(logfileName))
-    #logger.addHandler(psysmon.getLoggerHandler())
+    logger.setLevel(pref_manager.get_value('main_loglevel'))
+    file_handler = psysmon.getLoggerFileHandler(logfileName)
+    file_handler.setLevel(pref_manager.get_value('collection_loglevel'))
+    logger.addHandler(file_handler)
 
     logger.info('Starting process %s', proc_name)
     logger.info('Loading data from file %s', filename)
@@ -82,7 +84,9 @@ if __name__ == "__main__":
 
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
-    psyBase = psybase.Base(psyBaseDir, project_server = project_server)
+    psyBase = psybase.Base(psyBaseDir,
+                           project_server = project_server,
+                           pref_manager = pref_manager)
     psyBase.project = project
     psyBase.process_meta['name'] = proc_name
     psyBase.process_meta['pid'] = os.getpid()
