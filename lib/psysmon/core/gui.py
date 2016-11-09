@@ -806,7 +806,13 @@ class CollectionTreeCtrl(wx.TreeCtrl):
 
     def onShowContextMenu(self, event):
         try:
-            selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
+            if self.Parent.selectedNodeType in ['node', 'looper']:
+                selectedNode = self.GrandParent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
+            elif self.Parent.selectedNodeType == 'looper_child':
+                selectedLooper = self.GrandParent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
+                selectedNode = selectedLooper.children[self.Parent.selectedLooperChildNodeIndex]
+
+            #selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
             if(selectedNode.mode == 'execute only'):
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             else:
@@ -816,9 +822,10 @@ class CollectionTreeCtrl(wx.TreeCtrl):
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'disable node')
             else:
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'enable node')
-        except Exception:
+        except Exception as e:
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+            print e
 
         self.PopupMenu(self.contextMenu)
 
@@ -973,29 +980,6 @@ class CollectionPanel(wx.Panel):
                 self.collectionTreeCtrl.SetItemTextColour(self.collectionTreeCtrl.GetSelection(), wx.BLACK)
             else:
                 self.collectionTreeCtrl.SetItemTextColour(self.collectionTreeCtrl.GetSelection(), wx.TheColourDatabase.Find('GREY70'))
-
-    def onDisableNode(self, event):
-        if self.selectedNodeType in ['node', 'looper']:
-            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
-        elif self.selectedNodeType == 'looper_child':
-            selectedLooper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
-            selectedNode = selectedLooper.children[self.selectedLooperChildNodeIndex]
-
-        if selectedNode.mode != 'standalone':
-            selectedNode.enabled = False
-            self.collectionTreeCtrl.SetItemTextColour(self.collectionTreeCtrl.GetSelection(), wx.TheColourDatabase.Find('GREY70'))
-
-
-    def onEnableNode(self, event):
-        if self.selectedNodeType in ['node', 'looper']:
-            selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
-        elif self.selectedNodeType == 'looper_child':
-            selectedLooper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
-            selectedNode = selectedLooper.children[self.selectedLooperChildNodeIndex]
-
-        if selectedNode.mode != 'standalone':
-            selectedNode.enabled = True
-            self.collectionTreeCtrl.SetItemTextColour(self.collectionTreeCtrl.GetSelection(), wx.BLACK)
 
     ## Select node item callback.
     #
