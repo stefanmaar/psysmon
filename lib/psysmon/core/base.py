@@ -132,14 +132,13 @@ class Base(object):
         self.version = version
 
         # The psysmon preferences.
-        if pref_manager is None:
-            self.pref_manager = pm.PreferencesManager()
-            self.create_preferences()
-        else:
-            self.pref_manager = pref_manager
+        self.pref_manager = pm.PreferencesManager()
+        self.create_preferences()
+        if pref_manager is not None:
+            self.pref_manager.update(pref_manager)
 
         # The package manager handling the dynamically loaded packages.
-        self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self, 
+        self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self,
                                                                     packageDirectories = self.packageDirectory)
 
         # Load the psysmon packages.
@@ -251,6 +250,15 @@ class Base(object):
         self.pref_manager.add_item(pagename = 'logging',
                                    item = pref_item)
 
+        pref_item = pm.IntegerSpinPrefItem(name = 'n_status_messages',
+                                            label = '# status messages',
+                                            limit = (10,1000),
+                                            value = 100,
+                                            group = 'status',
+                                            position = 1,
+                                            tool_tip = 'The number of messages to show in the log area status.')
+        self.pref_manager.add_item(pagename = 'logging',
+                                   item = pref_item)
 
     def start_project_server(self):
         ''' Start the pyro project server.
