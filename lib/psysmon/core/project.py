@@ -1372,7 +1372,7 @@ class User:
             while procRunning:
                 #self.logger.debug("Waiting for message...")
 
-                procStatus = proc.poll()
+                procStatus = process.poll()
 
                 #self.logger.debug('procStatus: %s', procStatus)
 
@@ -1381,7 +1381,8 @@ class User:
                     #self.logger.debug('Process %d has stopped with return code %s.', proc.pid, procStatus)
                     msgTopic = 'state.collection.execution'
                     msg['state'] = 'stopped'
-                    msg['pid'] = proc.pid
+                    msg['pid'] = process.pid
+                    msg['returncode'] = process.returncode
                     msg['procName'] = procName
                     msg['curTime'] = datetime.now()
                     CallAfter(pub.sendMessage, msgTopic, msg = msg)
@@ -1390,7 +1391,8 @@ class User:
                     #self.logger.debug('Process %d is still running.', proc.pid)
                     msgTopic = 'state.collection.execution'
                     msg['state'] = 'running'
-                    msg['pid'] = proc.pid
+                    msg['pid'] = process.pid
+                    msg['returncode'] = process.returncode
                     msg['procName'] = procName
                     msg['curTime'] = datetime.now()
                     CallAfter(pub.sendMessage, msgTopic, msg = msg)
