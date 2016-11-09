@@ -121,6 +121,7 @@ def run():
             psysmonMain.filehistory.AddFileToHistory(cur_file)
 
     psysmonMain.Show()
+    psysmonMain.Maximize(True)
 
     app.MainLoop()
 
