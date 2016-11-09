@@ -58,7 +58,7 @@ import psysmon.core.gui_view
 from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
-from datetime import datetime
+import datetime
 import webbrowser
 #from wx.lib.mixins.inspection import InspectionMixin
 import wx.lib.mixins.inspection as wit
@@ -649,8 +649,8 @@ class Logger:
 
 
     def logGeneral(self, msg):
-        curTime = datetime.now()
-        timeStampString = datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
+        curTime = datetime.datetime.now()
+        timeStampString = datetime.datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
 
         if 'error' in msg.topic:
             modeString = '[ERR] '
@@ -666,8 +666,8 @@ class Logger:
 
 
     def logCollectionNode(self, msg):
-        curTime = datetime.now()
-        timeStampString = datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
+        curTime = datetime.datetime.now()
+        timeStampString = datetime.datetime.strftime(curTime, '%Y-%m-%d %H:%M:%S')
 
         if 'error' in msg.topic:
             modeString = '[ERR] '
@@ -1149,7 +1149,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
         # The collection thread logging area.
-        self.processes = wx.ListCtrl(self, id=wx.ID_ANY,
+        self.processes = LogProcessStatusListCtrl(self, id=wx.ID_ANY,
                                       style=wx.LC_REPORT
                                       | wx.BORDER_NONE
                                       | wx.LC_SINGLE_SEL
@@ -1192,21 +1192,23 @@ class LoggingPanel(wx.aui.AuiNotebook):
         #self.logger.debug('Received pubsub message: %s', msg)
 
         if 'started' in msg['state']:
-            self.addThread(msg)
+            wx.CallAfter(self.addThread, msg)
         elif 'running' in msg['state']:
-            self.updateThread(msg)
+            wx.CallAfter(self.updateThread, msg)
         elif 'stopped' in msg['state']:
-            self.updateThread(msg)
+            wx.CallAfter(self.updateThread, msg)
 
 
 
     def addThread(self, data):
         #index = self.threads.GetItemCount()
         index = 0
-        wx.CallAfter(self.processes.InsertStringItem,index, datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
-        wx.CallAfter(self.processes.SetStringItem, index, 1, str(data['pid']))
-        wx.CallAfter(self.processes.SetStringItem, index, 2, data['procName'])
-        wx.CallAfter(self.processes.SetStringItem, index, 3, data['state'])
+        self.processes.InsertStringItem(index, datetime.datetime.strftime(data['startTime'], '%Y-%m-%d %H:%M:%S'))
+        self.processes.SetStringItem(index, 1, str(data['pid']))
+        self.processes.SetStringItem(index, 2, data['procName'])
+        self.processes.SetStringItem(index, 3, data['state'])
+        self.processes.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.processes.SetColumnWidth(4, wx.LIST_AUTOSIZE)
 
         # The new process is added on top of the list. Add 1 to all
         # index values of the process map.
@@ -1217,12 +1219,20 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
     def updateThread(self, data):
         #self.logger.debug('updating process: %s', data['procName'])
+        error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error'}
         if data['procName'] in self.processMap.keys():
             curIndex = self.processMap[data['procName']]
             #self.logger.debug('process has index: %d', curIndex)
-            wx.CallAfter(self.processes.SetStringItem, curIndex, 3, data['state'])
+            self.processes.SetStringItem(curIndex, 3, data['state'])
             duration = data['curTime'] - data['startTime']
-            wx.CallAfter(self.processes.SetStringItem, curIndex, 4, str(duration))
+            duration -= datetime.timedelta(microseconds = duration.microseconds)
+            self.processes.SetStringItem(curIndex, 4, str(duration))
+            if data['state'].lower() == 'stopped' and data['returncode'] > 0:
+                self.processes.SetStringItem(curIndex, 3, 'error')
+                self.processes.SetItemTextColour(curIndex, wx.NamedColour('orangered1'))
+                self.logger.error("Error while executing process %s: %s.\nSee the log file of the process for more details.", data['procName'], error_code[data['returncode']].upper())
+            elif data['state'].lower() == 'stopped':
+                self.processes.SetItemTextColour(curIndex, wx.NamedColour('grey70'))
 
     def onShowContextMenu(self, event):
         self.PopupMenu(self.contextMenu)
@@ -1246,11 +1256,12 @@ class LoggingPanel(wx.aui.AuiNotebook):
         pass
 
 
-class LogStatusListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+class LogProcessStatusListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, parent, id, pos = wx.DefaultPosition,
                  size = wx.DefaultSize, style = 0):
         wx.ListCtrl.__init__(self, parent, id, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
+        self.setResizeColumn(3)
 
 
 class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
@@ -1394,6 +1405,9 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         self.updateNodeInvenotryList(nodeTemplates)
         listmix.ColumnSorterMixin.__init__(self, 4)
+        self.nodeListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.nodeListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.nodeListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
 
 
     def updateNodeInvenotryList(self, nodeTemplates):
