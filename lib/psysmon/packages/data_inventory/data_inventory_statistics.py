@@ -31,6 +31,7 @@ This module contains the classes of the editGeometry dialog window.
 '''
 
 import logging
+import psysmon.core.gui
 import psysmon.core.packageNodes as psy_packageNodes
 import psysmon.core.preferences_manager as psy_preferences_manager
 import wx
@@ -41,7 +42,7 @@ class DataInventoryStatistics(psy_packageNodes.CollectionNode):
 
     '''
     name = 'data inventory statistics'
-    mode = 'standalone'
+    mode = 'execute only'
     category = 'Data inventory'
     tags = ['stable']
 
@@ -64,8 +65,10 @@ class DataInventoryStatistics(psy_packageNodes.CollectionNode):
         ''' Execute the collection node.
 
         '''
+        app = psysmon.core.gui.PSysmonApp()
         dlg = DataInventoryStatisticsDlg(self, self.project)
         dlg.Show()
+        app.MainLoop()
 
 
 

@@ -337,7 +337,6 @@ class PSysmonGui(wx.Frame):
         fileNum = event.GetId() - wx.ID_FILE1
         path = self.filehistory.GetHistoryFile(fileNum)
         self.filehistory.AddFileToHistory(path)  # move up the list
-        print "Opening recent project: %s." % path
         self.loadProject(path)
 
 
@@ -717,9 +716,9 @@ class CollectionListBox(wx.SimpleHtmlListBox):
 
         try:
             selectedNode = self.Parent.psyBase.project.getNodeFromCollection(self.GetSelection())
-            if(selectedNode.mode == 'standalone'):
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'execute node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            if(selectedNode.mode == 'execute only'):
+                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'edit node')
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             elif(selectedNode.mode == 'uneditable'):
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(0).GetId(), 'uneditable')
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
@@ -809,10 +808,7 @@ class CollectionTreeCtrl(wx.TreeCtrl):
     def onShowContextMenu(self, event):
         try:
             selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
-            if(selectedNode.mode == 'standalone'):
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
-            elif(selectedNode.mode == 'uneditable'):
+            if(selectedNode.mode == 'execute only'):
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
             else:
@@ -1663,7 +1659,6 @@ class DataSourceDlg(wx.Dialog):
         selectedRow = self.wcListCtrl.GetFocusedItem()
         selectedItem = self.wcListCtrl.GetItemText(selectedRow)
         client2Edit = self.psyBase.project.waveclient[selectedItem]
-        print "Edit the waveclient: %s" % selectedItem
         dlg = EditWaveclientDlg(psyBase = self.psyBase,
                                 client = client2Edit)
         dlg.ShowModal()
@@ -2715,7 +2710,6 @@ class FoldPanelBar(scrolled.ScrolledPanel):
             # state. Do it explicitely.
             subPanel.minimizeButton._pressed = False
 
-        print 'hidePanel: buttonPressed = %s' % subPanel.minimizeButton.IsPressed()
 
 
     def showPanel(self, subPanel):
@@ -2808,7 +2802,6 @@ class FoldPanel(wx.Panel):
 
     def toggleMinimize(self):
         if self.contentPanel.IsShown():
-            print "hiding panel"
             #self.sizer.Detach(self.contentPanel)
             self.contentPanel.Hide()
             self.SetMinSize(self.GetBestSize())
@@ -2817,8 +2810,6 @@ class FoldPanel(wx.Panel):
             self.isMinimized = True
             self.minimizeButton.SetPressColor(wx.NamedColor('darkolivegreen4'))
         else:
-            print "showing panel"
-            print "contentPanel size: %s" % self.contentPanel.GetSize()
             #self.sizer.Add(self.contentPanel, 0, flag=wx.EXPAND|wx.ALL, border = 0)
             self.contentPanel.Show()
             self.SetMinSize(self.GetBestSize())
@@ -2826,7 +2817,6 @@ class FoldPanel(wx.Panel):
             self.sizer.Layout()
             self.isMinimized = False
             self.minimizeButton.SetPressColor(wx.NamedColor('peachpuff4'))
-            print "button pressed: %s" % self.minimizeButton.IsPressed()
 
 
 class FoldPanelBarSplitter(scrolled.ScrolledPanel):

@@ -33,6 +33,7 @@ This module contains the classes of the importWaveform dialog window.
 import os
 import fnmatch
 import logging
+import psysmon.core.gui
 from psysmon.core.gui import psyContextMenu
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
@@ -50,7 +51,7 @@ from operator import itemgetter
 class EditEventCatalogs(CollectionNode):
 
     name = 'edit event catalogs'
-    mode = 'standalone'
+    mode = 'execute only'
     category = 'Event'
     tags = ['stable',]
 
@@ -61,10 +62,13 @@ class EditEventCatalogs(CollectionNode):
         pass
 
     def execute(self, prevNodeOutput={}):
-
+        ''' Execute the node.
+        '''
+        app = psysmon.core.gui.PSysmonApp()
         dlg = EditEventCatalogsDlg(collection_node = self,
                                    project = self.project)
         dlg.Show()
+        app.MainLoop()
 
 
 

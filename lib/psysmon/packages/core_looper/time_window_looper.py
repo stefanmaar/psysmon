@@ -49,8 +49,8 @@ from psysmon.core.result import ResultBag
 class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
     name = 'time window looper'
-    mode = 'editable'
-    category = 'Looper'
+    mode = 'looper'
+    category = 'Batch processing'
     tags = ['stable', 'looper']
 
     def __init__(self, **args):

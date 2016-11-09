@@ -48,10 +48,10 @@ class CollectionNode(object):
     ----------
     mode : Sting
         Specify the behavior in the collection. Allowed values are:
-        
+
             - editable
                 The user can edit the node parameters.
-            - uneditable
+            - execute only
                 There are no parameters to edit.
             - standalone
                 The node is not included in the execution of the collection.

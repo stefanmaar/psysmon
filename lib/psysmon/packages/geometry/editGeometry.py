@@ -64,6 +64,7 @@ from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
+import psysmon.core.gui
 from psysmon.core.gui import psyContextMenu
 import psysmon.core.guiBricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
@@ -74,7 +75,7 @@ class EditGeometry(CollectionNode):
     The EditGeometry class.
     '''
     name = 'edit geometry'
-    mode = 'standalone'
+    mode = 'execute only'
     category = 'Geometry'
     tags = ['stable']
 
@@ -97,17 +98,13 @@ class EditGeometry(CollectionNode):
         pass
 
 
-    ## The execute method.
-    #
-    # Show the EditGeometry dialog window.
-    #
-    # @param self The object pointer.
-    # @param psyProject The current pSysmon project.
-    # @param prevNodeOutput The output of the previous collection node. 
-    # Not used in this method.
     def execute(self, prevNodeOutput={}):
+        ''' Execute the node.
+        '''
+        app = psysmon.core.gui.PSysmonApp()
         dlg = EditGeometryDlg(self, self.project)
         dlg.Show()
+        app.MainLoop()
 
 
 
@@ -2140,7 +2137,6 @@ class MapViewPanel(wx.Panel):
             sf = shapefile.Reader(cur_shapefile)
             shapes = sf.shapes()
             for cur_shape in shapes:
-                print cur_shape.points
                 lon = [x[0] for x in cur_shape.points]
                 lat = [x[1] for x in cur_shape.points]
 
