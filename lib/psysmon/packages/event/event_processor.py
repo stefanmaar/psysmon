@@ -44,7 +44,7 @@ from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from plugins_event_selector import EventListField
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.processingStack import ProcessingStack
-from psysmon.core.processingStack import ResultBag
+#from psysmon.core.processingStack import ResultBag
 import core as ev_core
 
 
