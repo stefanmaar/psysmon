@@ -1160,7 +1160,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
                   ("kill process", self.onKillProcess),
                   ("remove from display", self.onRemoveProcess))
         self.contextMenu = psyContextMenu(cmData)
-        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu, self.processes)
+        self.processes.Bind(wx.EVT_RIGHT_UP, self.onShowContextMenu)
 
         # Add the elements to the notebook.
         self.AddPage(self.status, "status")
@@ -1585,7 +1585,7 @@ class DataSourceDlg(wx.Dialog):
     psyBase : :class:`~psysmon.core.Base`
         The pSysmon base instance.
     '''
-    def __init__(self, psyBase, parent=None, size=(-1, -1)):
+    def __init__(self, psyBase, parent=None, size=(300, 100)):
         ''' The constructor.
 
         '''
@@ -1631,7 +1631,6 @@ class DataSourceDlg(wx.Dialog):
             self.wcListCtrl.InsertColumn(k, label)
 
         sizer.Add(self.wcListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
-
         sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
 
         btnSizer = wx.StdDialogButtonSizer()
@@ -1643,7 +1642,7 @@ class DataSourceDlg(wx.Dialog):
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
@@ -1653,6 +1652,8 @@ class DataSourceDlg(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onSetAsDefault, defaultButton)
 
         self.updateWcListCtrl()
+        sizer.Fit(self)
+        self.SetMinSize(self.GetBestSize())
 
 
     def onEdit(self, event):
@@ -1705,16 +1706,12 @@ class DataSourceDlg(wx.Dialog):
         selectedRow = self.wcListCtrl.GetFocusedItem()
         selectedItem = self.wcListCtrl.GetItemText(selectedRow)
 
-        if selectedItem != 'main client':
+        if selectedItem != 'db client':
             self.psyBase.project.removeWaveClient(selectedItem)
             self.updateWcListCtrl()
         else:
-            msg = "The main client can't be deleted"
-            dlg = wx.MessageDialog(None, msg, 
-                                   "pSysmon error",
-                                    wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-
+            msg = "The db client can't be deleted."
+            self.logger.error(msg)
 
 
     def updateWcListCtrl(self):
@@ -1826,7 +1823,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
@@ -1844,8 +1841,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.wfDirList = self.dbSession.query(self.wfDir).join(self.wfDirAlias,
                                                                self.wfDir.id==self.wfDirAlias.wf_id
                                                               ).filter(self.wfDirAlias.user==self.project.activeUser.name).all()
-
         self.updateWfListCtrl()
+        sizer.Fit(self)
 
 
 
@@ -2090,11 +2087,12 @@ class EditWaveclientDlg(wx.Dialog):
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
         self.Bind(wx.EVT_BUTTON, self.onCancel, cancelButton)
 
+        sizer.Fit(self)
 
 
     def getClientOptionsPanels(self):
