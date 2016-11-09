@@ -82,47 +82,58 @@ if __name__ == "__main__":
 
     logger.info('Executing collection %s of project %s.', collection, project)
 
-    psyBaseDir = os.path.abspath(psysmon.__file__)
-    psyBaseDir = os.path.dirname(psyBaseDir)
-    psyBase = psybase.Base(psyBaseDir,
-                           project_server = project_server,
-                           pref_manager = pref_manager)
-    psyBase.project = project
-    psyBase.process_meta['name'] = proc_name
-    psyBase.process_meta['pid'] = os.getpid()
-
-
-    # Reinitialize the project.
-    project.connect2Db()
-    project.loadDatabaseStructure(psyBase.packageMgr.packages)
-    project.load_geometry_inventory()
-
-    for curName, curMode, curAttributes in waveclients:
-        if curMode == 'PsysmonDbWaveClient':
-            waveclient = PsysmonDbWaveClient(curName, project)
-        elif curMode == 'EarthwormWaveclient':
-            waveclient = EarthwormWaveclient(curName, **curAttributes)
-        else:
-            waveclient = None
-
-        if waveclient != None:
-            project.addWaveClient(waveclient)
-
-    collection.set_project(project)
-    collection.createNodeLoggers()
-
-    project.psybase = psyBase
-    logger.debug('psyBase: %s', project.psybase)
-
-    collection.setDataShelfFile(filename)
     try:
-        collection.execute()
-        logger.info('Finished the execution. Cleaning up....')
-    except:
-        logger.exception("Failed to execute the collection successfully.")
-    finally:
-        logger.info('Unregistering the exported data from the project server.')
-        psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
-        logger.info('Deleting data file %s.', filename)
-        os.remove(filename)
+        psyBaseDir = os.path.abspath(psysmon.__file__)
+        psyBaseDir = os.path.dirname(psyBaseDir)
+        psyBase = psybase.Base(psyBaseDir,
+                               project_server = project_server,
+                               pref_manager = pref_manager)
+        psyBase.project = project
+        psyBase.process_meta['name'] = proc_name
+        psyBase.process_meta['pid'] = os.getpid()
 
+
+        # Reinitialize the project.
+        project.connect2Db()
+        project.loadDatabaseStructure(psyBase.packageMgr.packages)
+        project.load_geometry_inventory()
+
+        for curName, curMode, curAttributes in waveclients:
+            if curMode == 'PsysmonDbWaveClient':
+                waveclient = PsysmonDbWaveClient(curName, project)
+            elif curMode == 'EarthwormWaveclient':
+                waveclient = EarthwormWaveclient(curName, **curAttributes)
+            else:
+                waveclient = None
+
+            if waveclient != None:
+                project.addWaveClient(waveclient)
+
+        collection.set_project(project)
+        collection.createNodeLoggers()
+
+        project.psybase = psyBase
+        logger.debug('psyBase: %s', project.psybase)
+
+        returncode = 0
+        collection.setDataShelfFile(filename)
+        try:
+            collection.execute()
+            logger.info('Finished the execution. Cleaning up....')
+        except:
+            logger.exception("Failed to execute the collection successfully.")
+            # An error happened during the execution of the collection.
+            returncode = 2
+    except:
+        # An error happened while preparing the execution of the collection.
+        returncode = 3
+    finally:
+        try:
+            logger.info('Unregistering the exported data from the project server.')
+            psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
+            logger.info('Deleting data file %s.', filename)
+            os.remove(filename)
+        except:
+            # An error happened because basic variables couldn't be accessed.
+            returncode = 4
+        sys.exit(returncode)
