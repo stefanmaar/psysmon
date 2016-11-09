@@ -69,10 +69,8 @@ class ImportWaveform(CollectionNode):
         dlg.Show()
 
     def execute(self, prevNodeOutput={}):
-        print "Executing the node %s." % self.name
         dbData = []
         for curFile in self.pref_manager.get_value('input_files'):
-            print("Processing file " + curFile[1])
             if curFile[0] == 'not checked':
                 format = None
             else:
@@ -81,10 +79,8 @@ class ImportWaveform(CollectionNode):
                              format = format,
                              headonly=True)
 
-            print stream
 
             for curTrace in stream.traces:
-                print "Importing trace " + curTrace.getId()
                 cur_data = self.getDbData(curFile[1], format, curTrace)
                 if cur_data is not None:
                     dbData.append(cur_data)
@@ -109,7 +105,6 @@ class ImportWaveform(CollectionNode):
                 wfDirId = curWfDir.id
                 break
 
-        print wfDirId
 
         if wfDirId:
             # Remove the waveform directory from the file path.
@@ -130,7 +125,6 @@ class ImportWaveform(CollectionNode):
                             self.project.activeUser.agency_uri,
                             op_utcdatetime.UTCDateTime().isoformat())))
 
-            print header2Insert
 
             return Header(**header2Insert)
         else:
