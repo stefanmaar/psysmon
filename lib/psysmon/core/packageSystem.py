@@ -37,7 +37,7 @@ import weakref
 from sqlalchemy import MetaData
 
 
-def scan_module_for_plugins(package_name, plugin_modules):
+def scan_module_for_plugins(package_name, plugin_modules, logger = None):
     ''' Scan a module file for classes inherited from a plugin node class.
 
     This function checks the base classes of all classes contained in the 
@@ -85,7 +85,10 @@ def scan_module_for_plugins(package_name, plugin_modules):
                             plugin_templates.append(obj)
                             break
         except Exception, e:
-            print e
+            if logger:
+                logger.exception(e)
+            else:
+                print e
     return plugin_templates
 
 
@@ -112,7 +115,6 @@ def scan_module_for_collection_nodes(package_name, node_modules):
     node_templates = []
     for cur_node_module in node_modules:
         try:
-            print cur_node_module
             mod = importlib.import_module(package_name + '.' + cur_node_module)
             for name, obj in inspect.getmembers(mod):
                 if inspect.isclass(obj) and psysmon.core.packageNodes.CollectionNode in obj.__bases__:
@@ -392,7 +394,7 @@ class PackageManager:
         # Get the plugins provided by the package.
         if 'plugin_modules' in dir(pkgModule):
             self.logger.debug('Getting the plugins.')
-            plugin_templates = scan_module_for_plugins(pkgModule.__name__, pkgModule.plugin_modules)
+            plugin_templates = scan_module_for_plugins(pkgModule.__name__, pkgModule.plugin_modules, logger = self.logger)
             self.addPlugins(plugin_templates)
 
         # Get the processing nodes provided by the package.
