@@ -1165,7 +1165,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
                   ("kill process", self.onKillProcess),
                   ("remove from display", self.onRemoveProcess))
         self.contextMenu = psyContextMenu(cmData)
-        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu, self.processes)
 
         # Add the elements to the notebook.
         self.AddPage(self.status, "status")
@@ -1185,7 +1185,11 @@ class LoggingPanel(wx.aui.AuiNotebook):
             self.status.SetItemBackgroundColour(item, wx.NamedColour('orangered1'))
 
         self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-
+        n_rows = self.status.GetItemCount()
+        row_limit = self.GetParent().psyBase.pref_manager.get_value('n_status_messages')
+        if n_rows > row_limit:
+            for k in range(row_limit, n_rows):
+                self.status.DeleteItem(k)
 
 
     def onCollectionExecutionMessage(self, msg):
