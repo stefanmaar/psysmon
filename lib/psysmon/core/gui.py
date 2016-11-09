@@ -557,11 +557,6 @@ class PSysmonGui(wx.Frame):
 
         dlg.Destroy()
 
-        self.logger.error('Error test.')
-        self.logger.warn('Warning test.')
-        self.logger.info('Info test.')
-        self.logger.debug('Debug test.')
-
 
     def onEditDataSources(self, event):
         ''' The edit wave clients callback.
