@@ -283,7 +283,6 @@ def drop_project_database_tables(project):
 
 
 def remove_project_filestructure(project):
-    print "Removing project folder %s.\n" % project.projectDir
     shutil.rmtree(project.projectDir)
 
 

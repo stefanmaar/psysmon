@@ -418,7 +418,6 @@ class Project(object):
 
         '''
         self.__dict__.update(d) # I *think* this is a safe way to do it
-        print dir(self)
 
         # Track some instance attribute changes.
         if not "logger" in dir(self):

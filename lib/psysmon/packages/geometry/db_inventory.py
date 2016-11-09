@@ -62,14 +62,12 @@ class DbInventory(Inventory):
     def __del__(self):
         ''' Clean up the database connection.
         '''
-        print "Deleting DbInventory - closing the session.\n"
         self.db_session.close()
 
 
     def close(self):
         ''' Close the inventory database connection.
         '''
-        print "Closing the session.\n"
         self.db_session.close()
 
 
