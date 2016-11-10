@@ -54,7 +54,7 @@ def db_table_migration(engine, table, prefix):
     else:
         # The table is missing in the schema, create it.
         logger.info('The table %s is not existing, create it.', table.__table__.name)
-        table.create()
+        table.__table__.create()
         table_updated = True
 
     return table_updated
