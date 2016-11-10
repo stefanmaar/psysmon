@@ -33,6 +33,7 @@ This module contains the classes of the importWaveform dialog window.
 import os
 import fnmatch
 import logging
+import psysmon
 from psysmon.core.gui import psyContextMenu
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
@@ -392,7 +393,8 @@ class ImportWaveformEditDlg(wx.Frame):
                            style=wx.DEFAULT_FRAME_STYLE|wx.RESIZE_BORDER)
 
         # Create the logger.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.collectionNode = collectionNode
@@ -519,7 +521,7 @@ class ImportWaveformEditDlg(wx.Frame):
             matches = []
 
             for filename in paths:
-                self.logger.info('Adding file %s', filename)
+                self.logger.debug('Adding file %s', filename)
                 fsize = os.path.getsize(filename);
                 fsize = fsize/(1024.0*1024.0)           # Convert to MB
 
@@ -595,10 +597,14 @@ class ImportWaveformEditDlg(wx.Frame):
             #                    )
             selected_paths = dlg.GetPaths()
             for cur_path in selected_paths:
-                # Fix the wrongly added 'Home Directory' in the path returned
-                # by the multidir dialog.
                 if cur_path.startswith('Home directory'):
+                    # Fix the wrongly added 'Home Directory' in the path returned
+                    # by the multidir dialog.
                     cur_path = cur_path.replace('Home directory', os.getenv('HOME'))
+                elif cur_path.startswith('//'):
+                    # The multidir dialog returns filesystem folders with
+                    # double slashes at the beginning. Remove one slash.
+                    cur_path = cur_path[1:]
 
                 matches = []
                 #count = 0
@@ -606,10 +612,10 @@ class ImportWaveformEditDlg(wx.Frame):
                 filter_pattern = self.collectionNode.pref_manager.get_value('filter_pattern')
                 for root, dirnames, filenames in os.walk(cur_path, topdown = True):
                     dirnames.sort()
-                    self.logger.info('Scanning directory: %s.', root)
+                    self.logger.debug('Scanning directory: %s.', root)
                     for cur_pattern in filter_pattern:
                         for filename in fnmatch.filter(filenames, cur_pattern):
-                            self.logger.info('Adding file %s', os.path.join(root, filename))
+                            self.logger.debug('Adding file %s', os.path.join(root, filename))
                             fsize = os.path.getsize(os.path.join(root, filename));
                             fsize = fsize/(1024.0 * 1024.0)
 
