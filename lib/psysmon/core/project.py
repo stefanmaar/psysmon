@@ -776,9 +776,16 @@ class Project(object):
                     curName = curTable.__table__.name
                     curTable.__table__.name = self.slug + "_" + curTable.__table__.name
                     try:
-                        if psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name]):
+                        # Check for changes in the database.
+                        if curPkg.name not in self.pkg_version.keys():
                             pkg_version_changed = True
-                            # Check for changes in the database.
+                            self.logger.info("%s - The current package didn't exist when the project was saved - an update is needed.",curPkg.name)
+                            update_success = db_util.db_table_migration(table = curTable,
+                                                                        engine = self.dbEngine,
+                                                                        prefix = self.slug + '_')
+
+                        elif psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name]):
+                            pkg_version_changed = True
                             self.logger.info('%s - The current package version %s is newer than the one used (%s) when the project was saved - an update is needed.',curPkg.name, curPkg.version, self.pkg_version[curPkg.name])
                             update_success = db_util.db_table_migration(table = curTable,
                                                                         engine = self.dbEngine,
