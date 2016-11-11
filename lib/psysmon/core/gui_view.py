@@ -179,6 +179,7 @@ class ContainerNode(wx.Panel):
         self.container_sizer = wx.BoxSizer(wx.VERTICAL)
 
         if annotation_area:
+            annotation_area.Reparent(self)
             self.sizer.Add(self.annotation_area, pos=(0,0), span=(2,1), flag=wx.ALL|wx.EXPAND, border=0)
             self.sizer.Add(self.container_sizer, pos = (0,1), flag=wx.ALL|wx.EXPAND, border = 0)
             self.sizer.AddGrowableCol(1)
@@ -323,6 +324,7 @@ class ViewContainerNode(wx.Panel):
         self.container_sizer = wx.BoxSizer(wx.VERTICAL)
 
         if annotation_area:
+            annotation_area.Reparent(self)
             self.sizer.Add(self.annotation_area, pos=(0,0), span=(2,1), flag=wx.ALL|wx.EXPAND, border=0)
             self.sizer.Add(self.container_sizer, pos = (0,1), flag=wx.ALL|wx.EXPAND, border = 0)
             self.sizer.AddGrowableCol(1)
@@ -472,6 +474,7 @@ class ViewNode(wx.Panel):
         self.sizer = wx.GridBagSizer(0,0)
 
         if annotation_area:
+            annotation_area.Reparent(self)
             self.sizer.Add(self.plot_panel, pos = (0,0), flag=wx.ALL|wx.EXPAND, border = 0)
             self.sizer.Add(self.annotation_area, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=1)
             self.sizer.AddGrowableCol(0)
