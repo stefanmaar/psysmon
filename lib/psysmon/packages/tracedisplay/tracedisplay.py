@@ -1221,6 +1221,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
             self.displayManager.createContainers() 
             #self.viewport.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
             self.displayManager.stationsChanged = False
+            self.logger.debug("Resetting stationsChanged to False.")
 
         # Update the viewport to show the changes.
         self.viewport.SetupScrolling()
@@ -1393,7 +1394,8 @@ class DisplayManager(object):
     def __init__(self, parent, inventory):
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         # The parent tracedisplay instance.
@@ -1461,6 +1463,7 @@ class DisplayManager(object):
                             curChannel.addView(curPlugin.name, view_class)
                 self.showStations.append(station2Add)
         self.stationsChanged = True
+        self.logger.debug("Setting stationsChanged to True.")
 
         self.sort_show_stations()
 
@@ -1599,7 +1602,10 @@ class DisplayManager(object):
 
         for curStation in stat2Remove:
             self.showStations.remove(curStation)
-            self.parent.viewPort.removeStation(curStation.getSNL())
+            #self.parent.viewport.removeStation(curStation.getSNL())
+            self.parent.viewport.remove_node(station = curStation.name,
+                                             network = curStation.network,
+                                             location = curStation.location)
 
 
 
@@ -1636,8 +1642,8 @@ class DisplayManager(object):
         stationContainer = self.createStationContainer(station2Show)
         for curChannel in station2Show.channels:
             curChanContainer = self.createChannelContainer(stationContainer, curChannel)
-            for curViewName, (curViewType, ) in curChannel.views.items():
-                self.createViewContainer(curChanContainer, curViewName, curViewType)
+            for cur_plugin in viewPlugins:
+                curChanContainer.create_plugin_view(cur_plugin)
 
         # Update the display
         #self.parent.viewport.sortStations(snl = self.getSNL(source='show'))
@@ -1689,11 +1695,11 @@ class DisplayManager(object):
         # station.
         if len(interactive_plugins) == 1:
             cur_plugin = interactive_plugins[0]
-            self.parent.view_port.registerEventCallbacks(cur_plugin.getHooks(),
+            self.parent.viewport.registerEventCallbacks(cur_plugin.getHooks(),
                                                          self.parent.dataManager,
                                                          self.parent.displayManager)
 
-        self.parent.viewPort.SetFocus()
+        self.parent.viewport.SetFocus()
 
 
     def showChannel(self, channel):
@@ -1724,9 +1730,17 @@ class DisplayManager(object):
                         if view_class is not None:
                             curChannel.addView(curPlugin.name, view_class)
 
+            # Create the necessary containers.
+            stationContainer = self.createStationContainer(curStation)
+            for curChannel in curStation.channels:
+                curChanContainer = self.createChannelContainer(stationContainer, curChannel)
+                for cur_plugin in viewPlugins:
+                    curChanContainer.create_plugin_view(cur_plugin)
+
         # TODO: Only update the data of the added channel.
         self.stationsChanged = True
-        self.parent.update_display() 
+        self.logger.debug("Setting stationsChanged to True.")
+        self.parent.update_display()
 
 
 
@@ -1740,7 +1754,17 @@ class DisplayManager(object):
         '''
         for curStation in self.showStations:
             removedSCNL = curStation.removeChannel([channel])
-            self.parent.viewPort.removeChannel(removedSCNL)
+            for cur_scnl in removedSCNL:
+                station_container = self.parent.viewport.get_node(group = 'station_container',
+                                                                  station = cur_scnl[0],
+                                                                  network = cur_scnl[2],
+                                                                  location = cur_scnl[3])
+
+                for cur_container in station_container:
+                    cur_container.remove_node(station = cur_scnl[0],
+                                              channel = cur_scnl[1],
+                                              network = cur_scnl[2],
+                                              location = cur_scnl[3])
 
         self.showChannels.remove(channel)
 
@@ -1878,6 +1902,7 @@ class DisplayManager(object):
             self.sort_show_stations()
 
         self.stationsChanged = True
+        self.logger.debug("Setting stationsChanged to True.")
 
 
     def sort_show_stations(self):
@@ -1898,8 +1923,8 @@ class DisplayManager(object):
             curStatContainer = self.createStationContainer(curStation)
             for curChannel in curStation.channels:
                 curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
-                for curViewName, (curViewType, ) in curChannel.views.items():
-                    self.createViewContainer(curChanContainer, curViewName, curViewType)
+                #for curViewName, (curViewType, ) in curChannel.views.items():
+                #    self.createViewContainer(curChanContainer, curViewName, curViewType)
 
 
 
@@ -1975,7 +2000,7 @@ class DisplayManager(object):
 
 
 
-    def createViewContainer(self, channelContainer, name, viewClass):
+    def OLD_createViewContainer(self, channelContainer, name, viewClass):
         '''
 
         '''
@@ -1983,12 +2008,9 @@ class DisplayManager(object):
         viewContainer = channelContainer.get_node(name = name)
 
         if not viewContainer:
-            annotation_area = container.TdViewAnnotationPanel(parent = channelContainer,
-                                                              color = 'grey80')
             viewContainer = viewClass(channelContainer,
                                       id = wx.ID_ANY,
                                       props = channelContainer.props,
-                                      annotation_area = annotation_area,
                                       name = name)
 
             channelContainer.add_node(viewContainer)

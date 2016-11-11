@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -36,6 +35,7 @@ import operator
 
 import wx
 import wx.lib.scrolledpanel
+import wx.lib.stattext
 
 import matplotlib as mpl
 try:
@@ -117,6 +117,19 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
                 ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
 
         return ret_nodes
+
+
+    def remove_node(self, name = None, group = None, **kwargs):
+        ''' Remove a container node.
+        '''
+        nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
+        for cur_node in nodes_to_remove:
+            self.node_list.remove(cur_node)
+            self.sizer.Remove(cur_node)
+            cur_node.Destroy()
+
+        self.rearrange_nodes()
+        self.sizer.Layout()
 
 
     def register_mpl_event_callbacks(self, hooks):
@@ -253,24 +266,20 @@ class ContainerNode(wx.Panel):
             self.container_sizer.Layout()
 
 
-    def remove_node(self, name):
-        ''' Remove a container.
-
-        Parameters
-        ----------
-        name : String
-            The name of the container to remove.
+    def remove_node(self, name = None, group = None, **kwargs):
+        ''' Remove a container node.
         '''
-        for cur_node in [x for x in self.node_list if x.name == name]:
+        nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
+        for cur_node in nodes_to_remove:
             self.node_list.remove(cur_node)
             self.container_sizer.Remove(cur_node)
             cur_node.Destroy()
 
-        self.rearrange_container()
+        self.rearrange_nodes()
         self.container_sizer.Layout()
 
 
-    def get_node(self, name = None, group = None, **kwargs):
+    def get_node(self, name = None, group = None, recursive = True, **kwargs):
         ''' Get a node instance.
 
         Parameters
@@ -288,14 +297,32 @@ class ContainerNode(wx.Panel):
             ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
-        for cur_node in self.node_list:
-            ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
+        if recursive:
+            for cur_node in self.node_list:
+                ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
 
         return ret_nodes
 
 
-    def rearrange_container(self):
-        pass
+    def rearrange_nodes(self):
+        ''' Rearrange the container nodes in the sizer.
+
+        Detach and reattach the container nodes to the sizer
+        according to the order in the node_list.
+        '''
+        for cur_node in self.node_list:
+            self.container_sizer.Hide(cur_node)
+            self.container_sizer.Detach(cur_node)
+
+        for cur_node in self.node_list:
+            self.container_sizer.Add(cur_node, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
+            cur_node.Show()
+
+        cur_size = self.GetSize()
+        child_size = self.container_sizer.GetSize()
+        if child_size[1] > cur_size[1]:
+            self.SetMinSize(child_size)
+            self.container_sizer.Layout()
 
 
     def register_mpl_event_callbacks(self, hooks, parent):
@@ -469,12 +496,43 @@ class ViewContainerNode(wx.Panel):
                 self.add_node(cur_view_node)
 
 
+class ViewAnnotationPanel(wx.Panel):
+    '''
+    The view annotation area.
+
+    This area can be used to plot anotations for the view. This might be 
+    some statistic values (e.g. min, max), the axes limits or some 
+    other custom info.
+    '''
+    def __init__(self, parent, size=(200,-1), color=None):
+        wx.Panel.__init__(self, parent, size=size)
+        self.SetBackgroundColour(color)
+        self.SetMinSize((200, -1))
+
+
+	# Create a test label.
+        self.label = wx.lib.stattext.GenStaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
+        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
+        self.label.SetFont(font)
+
+	# Add the label to the sizer.
+	sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
+	self.SetSizer(sizer)
+
+
+    def setLabel(self, text):
+        ''' Set the text of the annotation label.
+        '''
+        self.label.SetLabelText(text)
+        self.label.Refresh()
+
 
 class ViewNode(wx.Panel):
     ''' A view.
 
     '''
-    def __init__(self, name, group = None, parent=None, id=wx.ID_ANY, parent_viewport=None, props = None, annotation_area = None, color = 'green'):
+    def __init__(self, name, group = None, parent=None, id=wx.ID_ANY, parent_viewport=None, props = None, color = 'green'):
         wx.Panel.__init__(self, parent=parent, id=id)
 
         # The logging logger instance.
@@ -500,7 +558,8 @@ class ViewNode(wx.Panel):
         self.SetBackgroundColour(self.color)
 
         self.plot_panel = PlotPanel(self, color='violet')
-        self.annotation_area = annotation_area
+        self.annotation_area = ViewAnnotationPanel(parent = self,
+                                                   color = 'grey80')
 
         self.SetMinSize(self.plot_panel.GetMinSize())
 
@@ -511,9 +570,8 @@ class ViewNode(wx.Panel):
         # plot_panel and annotation_area.
         self.sizer = wx.GridBagSizer(0,0)
 
-        ipdb.set_trace() ############################## Breakpoint ##############################
-        if annotation_area:
-            annotation_area.Reparent(self)
+        # TODO: Add an attribute to show or hide the annotation area.
+        if self.annotation_area:
             self.sizer.Add(self.plot_panel, pos = (0,0), flag=wx.ALL|wx.EXPAND, border = 0)
             self.sizer.Add(self.annotation_area, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=1)
             self.sizer.AddGrowableCol(0)
@@ -562,12 +620,12 @@ class ViewNode(wx.Panel):
 
     def on_key_down(self, event):
         self.logger.debug("on_key_down in view %s. event: %s", self.name, event)
-        event.ResumePropagation(1)
+        event.ResumePropagation(2)
         event.Skip()
 
     def on_key_up(self, event):
         self.logger.debug("on_key_up in view %s. event: %s", self.name, event)
-        event.ResumePropagation(1)
+        event.ResumePropagation(2)
         event.Skip()
 
     def on_left_down(self, event):
