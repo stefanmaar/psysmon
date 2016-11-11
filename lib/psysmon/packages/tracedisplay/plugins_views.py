@@ -243,13 +243,13 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
     Display the data as a timeseries.
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0), **kwargs):
+    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
         ''' Initialize the instance.
         '''
         psysmon.core.gui_view.ViewNode.__init__(self,
                                                 parent=parent,
                                                 id=id,
-                                                parent_viewport = parentViewport,
+                                                parent_viewport = parent_viewport,
                                                 name=name,
                                                 **kwargs)
 
@@ -556,7 +556,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
 
 ############## DEMO PLUGIN FOR VIEWS ##########################################
 
-class DemoPlotter(psysmon.core.gui_view.ViewNode):
+class DemoPlotter(ViewPlugin):
     '''
 
     '''
@@ -607,7 +607,7 @@ class DemoPlotter(psysmon.core.gui_view.ViewNode):
                                                       channel = curChannel.name,
                                                       network = curChannel.parent.network,
                                                       location = curChannel.parent.location,
-                                                      name = self.name)
+                                                      name = self.rid)
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
@@ -640,8 +640,8 @@ class DemoView(psysmon.core.gui_view.ViewNode):
     Display the data as a timeseries.
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
+        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -847,7 +847,7 @@ class SpectrogramPlotter(ViewPlugin):
                                                       channel = curChannel.name,
                                                       network = curChannel.parent.network,
                                                       location = curChannel.parent.location,
-                                                      name = self.name)
+                                                      name = self.rid)
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
@@ -880,8 +880,8 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
     Display the data as a timeseries.
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, lineColor=(1,0,0)):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
+        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -998,7 +998,7 @@ class FrequencySpectrumPlotter(ViewPlugin):
                                                       channel = curChannel.name,
                                                       network = curChannel.parent.network,
                                                       location = curChannel.parent.location,
-                                                      name = self.name)
+                                                      name = self.rid)
             curStream = stream.select(station = curChannel.parent.name,
                                      channel = curChannel.name,
                                      network = curChannel.parent.network,
@@ -1033,8 +1033,8 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
     Display the data as a timeseries.
     '''
 
-    def __init__(self, parent=None, id=wx.ID_ANY, parentViewport=None, name=None, psdColor=(0, 0, 0), nhnmColor = (1, 0, 0), nlnmColor = (0, 1, 0)):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parentViewport=parentViewport, name=name)
+    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, psdColor=(0, 0, 0), nhnmColor = (1, 0, 0), nlnmColor = (0, 1, 0), **kwargs):
+        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
