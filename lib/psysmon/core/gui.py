@@ -2916,6 +2916,8 @@ class PsysmonDockingFrame(wx.Frame):
         # Initialize the ribbon bar aui manager pane.
         self.init_ribbon_pane()
 
+        #TODO: Add a status bar.
+
         # Create the plugins shared information bag, which holds all the
         # information, that's shared by the tracedisplay plugins.
         self.plugins_information_bag = psysmon.core.plugins.SharedInformationBag()
@@ -2936,6 +2938,8 @@ class PsysmonDockingFrame(wx.Frame):
         self.hook_manager.add_hook(name = 'shared_information_updated',
                                    description = 'Called after a shared information was added by a plugin.',
                                    passed_args = {'updated_info': 'The shared information instance which was updated.'})
+        self.hook_manager.add_hook(name = 'after_plot',
+                                   description = 'Called after the data was plotted in the views.')
         self.hook_manager.add_view_hook(name = 'button_press_event',
                                         description = 'The matplotlib button_press_event in the view axes.')
         self.hook_manager.add_view_hook(name = 'button_release_event',

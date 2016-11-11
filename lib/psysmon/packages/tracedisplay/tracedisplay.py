@@ -43,6 +43,8 @@ import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 import psysmon.core.plugins
 import psysmon.core.util
 import psysmon.packages.event.core as ev_core
+import psysmon.core.gui
+import psysmon.core.gui_view
 
 try:
     from agw import foldpanelbar as fpb
@@ -303,7 +305,7 @@ class TraceDisplayEditDlg(wx.Frame):
 
 
 
-class TraceDisplayDlg(wx.Frame):
+class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
     ''' The TraceDisplay main window.
 
 
@@ -320,13 +322,10 @@ class TraceDisplayDlg(wx.Frame):
         ''' The constructor.
 
         '''
-        wx.Frame.__init__(self,
-                          parent = parent,
-                          id = id,
-                          title = title,
-                          pos = wx.DefaultPosition,
-                          style = wx.DEFAULT_FRAME_STYLE)
-        self.SetMinSize(size)
+        psysmon.core.gui.PsysmonDockingFrame.__init__(self,
+                                                      parent = parent,
+                                                      id = id,
+                                                      title = title)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -344,6 +343,73 @@ class TraceDisplayDlg(wx.Frame):
         for curPlugin in self.plugins:
             curPlugin.parent = self
 
+        self.init_user_interface()
+
+        # Get the processing nodes from the project.
+        self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
+
+
+        # Create the display option.
+        self.displayManager = DisplayManager(parent = self,
+                                             inventory = project.geometry_inventory)
+
+        # Create the shortcut options.
+        self.shortcutManager = ShortcutManager()
+
+        # Create the dataManager.
+        self.dataManager = DataManager(self)
+
+        # Create the events library.
+        self.event_library = ev_core.Library(name = self.collection_node.rid)
+
+        # A temporary plugin register to swap two plugins.
+        self.plugin_to_restore = None
+
+        # Register the plugin shortcuts. This has to be done after the various
+        # manager instances were created.
+        for curPlugin in self.plugins:
+            curPlugin.register_keyboard_shortcuts()
+        self.initKeyEvents()
+
+        # Display the data.
+        self.updateDisplay()
+
+        # Show the frame. 
+        self.Show(True)
+
+
+    def OLD__init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay",
+                 plugins = None, size=(1000, 600)):
+        ''' The constructor.
+
+        '''
+        psysmon.core.gui.PsysmonDockingFrame.__init__(self,
+                                                      parent = parent,
+                                                      id = id,
+                                                      title = title)
+
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The parent collection node.
+        self.collection_node = collection_node
+
+        # The parent project.
+        self.project = project
+
+        # The available plugins of the collection node.
+        self.plugins = plugins
+        for curPlugin in self.plugins:
+            curPlugin.parent = self
+
+        self.init_user_interface()
+
+        # Show the frame. 
+        self.Show(True)
+
+        return
 
         # Get the processing nodes from the project.
         self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
@@ -411,7 +477,6 @@ class TraceDisplayDlg(wx.Frame):
 
         # Show the frame. 
         self.Show(True)
-
     @property
     def visible_data(self):
         ''' The currently visible data.
@@ -436,6 +501,34 @@ class TraceDisplayDlg(wx.Frame):
     def init_user_selection(self):
         if self.collectionNode.property['start_time']:
             pass
+
+
+    def init_user_interface(self):
+        ''' Create the graphical user interface.
+        '''
+        # Initialize the ribbon bar using the loaded plugins.
+        self.init_ribbon_bar()
+
+        # Add the datetime info to the viewport sizer.
+        # TODO: Add a method in the PsysmonDockingFrame class to insert
+        # elements into the viewport_sizer.
+        self.datetimeInfo = container.TdDatetimeInfo(parent=self.center_panel)
+        #self.viewport_sizer.SetItemPosition(self.viewport, wx.GBPosition(0,1))
+        self.viewport_sizer.Detach(self.viewport)
+        self.viewport_sizer.Add(self.datetimeInfo,
+                                pos=(0,0),
+                                flag=wx.EXPAND|wx.ALL,
+                                border=0)
+        self.viewport_sizer.Add(self.viewport,
+                                pos = (1,0),
+                                flag = wx.EXPAND|wx.ALL,
+                                border = 0)
+        self.viewport_sizer.RemoveGrowableRow(0)
+        self.viewport_sizer.AddGrowableRow(1)
+
+
+        # Tell the docking manager to commit all changes.
+        self.mgr.Update()
 
 
     def initUI(self):
@@ -476,6 +569,7 @@ class TraceDisplayDlg(wx.Frame):
         self.centerPanel = wx.Panel(parent=self, id=wx.ID_ANY)
         self.datetimeInfo = container.TdDatetimeInfo(parent=self.centerPanel)
         self.viewPort =  container.TdViewPort(parent = self.centerPanel)
+        #self.viewPort =  gui_view.Viewport(parent = self.centerPanel)
         self.viewportSizer.Add(self.datetimeInfo, 
                                pos=(0,0), 
                                flag=wx.EXPAND|wx.ALL, 
@@ -630,8 +724,8 @@ class TraceDisplayDlg(wx.Frame):
         self.pressed_keys = []
 
         self.logger.debug('Binding key events.')
-        self.viewPort.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
-        self.viewPort.Bind(wx.EVT_KEY_UP, self.onKeyUp)
+        self.viewport.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        self.viewport.Bind(wx.EVT_KEY_UP, self.onKeyUp)
 
         self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
         self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
@@ -1116,13 +1210,13 @@ class TraceDisplayDlg(wx.Frame):
         # TODO: Call these method only, if the displayed stations or
         if self.displayManager.stationsChanged:
             self.displayManager.createContainers() 
-            self.viewPort.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
+            #self.viewport.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
             self.displayManager.stationsChanged = False
 
         # Update the viewport to show the changes.
-        self.viewPort.SetupScrolling()
-        self.viewPort.Refresh()
-        self.viewPort.Update()
+        self.viewport.SetupScrolling()
+        self.viewport.Refresh()
+        self.viewport.Update()
 
         # TODO: Request the needed data from the wave client.
         self.dataManager.requestStream(startTime = self.displayManager.startTime,
