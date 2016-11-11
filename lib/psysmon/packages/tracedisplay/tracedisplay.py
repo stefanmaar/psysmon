@@ -359,6 +359,15 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         # Create the dataManager.
         self.dataManager = DataManager(self)
 
+        # Add some custom hooks.
+        self.hook_manager.add_hook(name = 'after_plot',
+                                   description = 'Called after the data was plotted in the views.')
+        self.hook_manager.add_hook(name = 'after_plot_station',
+                                   description = 'Called after the data of a station was plotted in the views.',
+                                   passed_args = {'station': 'The station, that was plotted.',})
+        self.hook_manager.add_hook(name = 'time_limit_changed',
+                                   description = 'Called after the time limit of the displayed time-span was changed.')
+
         # Create the events library.
         self.event_library = ev_core.Library(name = self.collection_node.rid)
 
@@ -888,7 +897,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
 
 
-    def activate_interactive_plugin(self, plugin):
+    def OLD_activate_interactive_plugin(self, plugin):
         ''' Activate an interactive plugin.
         '''
         plugin.activate()
@@ -1680,9 +1689,9 @@ class DisplayManager(object):
         # station.
         if len(interactive_plugins) == 1:
             cur_plugin = interactive_plugins[0]
-            self.parent.viewPort.registerEventCallbacks(cur_plugin.getHooks(),
-                                                        self.parent.dataManager,
-                                                        self.parent.displayManager)
+            self.parent.view_port.registerEventCallbacks(cur_plugin.getHooks(),
+                                                         self.parent.dataManager,
+                                                         self.parent.displayManager)
 
         self.parent.viewPort.SetFocus()
 
@@ -1974,9 +1983,12 @@ class DisplayManager(object):
         viewContainer = channelContainer.get_node(name = name)
 
         if not viewContainer:
+            annotation_area = container.TdViewAnnotationPanel(parent = channelContainer,
+                                                              color = 'grey80')
             viewContainer = viewClass(channelContainer,
                                       id = wx.ID_ANY,
                                       props = channelContainer.props,
+                                      annotation_area = annotation_area,
                                       name = name)
 
             channelContainer.add_node(viewContainer)

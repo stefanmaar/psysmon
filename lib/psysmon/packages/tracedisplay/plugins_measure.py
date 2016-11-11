@@ -103,12 +103,12 @@ class MeasurePoint(InteractivePlugin):
             # Skipt the right mouse button.
             return
         else:
-            if cur_view.name == 'plot seismogram':
+            if cur_view.name.endswith('plot_seismogram'):
                 self.measure_seismogram(event, dataManager, displayManager)
                 cid = cur_view.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.measure_seismogram : callback(evt, dataManager, displayManager))
                 self.cid = cid
             else:
-                self.logger.debug('Measuring a %s view is not supported.', cur_view.name)
+                self.logger.error('Measuring a %s view is not supported.', cur_view.name)
 
 
     def on_button_release(self, event, dataManager=None, displayManager=None):
@@ -127,7 +127,7 @@ class MeasurePoint(InteractivePlugin):
         if event.inaxes is None:
             return
 
-        cur_axes = self.view.dataAxes
+        cur_axes = self.view.axes
 
         seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
         if len(seismo_line) > 0:

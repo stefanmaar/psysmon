@@ -1,3 +1,4 @@
+import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -122,7 +123,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         ''' Set the event callback of the matplotlib canvas.
         '''
         for cur_node in self.node_list:
-            cur_node.set_mpl_event_callbacks(hooks, self)
+            cur_node.register_mpl_event_callbacks(hooks, self)
 
 
     def clear_mpl_event_callbacks(self):
@@ -301,7 +302,7 @@ class ContainerNode(wx.Panel):
         ''' Set the event callback of the matplotlib canvas in the views.
         '''
         for cur_node in self.node_list:
-            cur_node.set_mpl_event_callbacks(hooks, parent)
+            cur_node.register_mpl_event_callbacks(hooks, parent)
 
 
     def clear_mpl_event_callbacks(self):
@@ -510,6 +511,7 @@ class ViewNode(wx.Panel):
         # plot_panel and annotation_area.
         self.sizer = wx.GridBagSizer(0,0)
 
+        ipdb.set_trace() ############################## Breakpoint ##############################
         if annotation_area:
             annotation_area.Reparent(self)
             self.sizer.Add(self.plot_panel, pos = (0,0), flag=wx.ALL|wx.EXPAND, border = 0)
@@ -582,7 +584,7 @@ class ViewNode(wx.Panel):
 
     def clear_mpl_event_callbacks(self, cid_list = None):
         if cid_list is None:
-            cid_list = self.cids
+            cid_list = self.mpl_cids
 
         for cur_cid in cid_list:
             self.plot_panel.canvas.mpl_disconnect(cur_cid)

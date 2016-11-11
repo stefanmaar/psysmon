@@ -2938,8 +2938,6 @@ class PsysmonDockingFrame(wx.Frame):
         self.hook_manager.add_hook(name = 'shared_information_updated',
                                    description = 'Called after a shared information was added by a plugin.',
                                    passed_args = {'updated_info': 'The shared information instance which was updated.'})
-        self.hook_manager.add_hook(name = 'after_plot',
-                                   description = 'Called after the data was plotted in the views.')
         self.hook_manager.add_view_hook(name = 'button_press_event',
                                         description = 'The matplotlib button_press_event in the view axes.')
         self.hook_manager.add_view_hook(name = 'button_release_event',
@@ -3181,6 +3179,43 @@ class PsysmonDockingFrame(wx.Frame):
         item = menu.Append(wx.ID_ANY, "edit preferences")
         self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
         event.PopupMenu(menu)
+
+
+    def activate_interactive_plugin(self, plugin):
+        ''' Activate an interactive plugin.
+        '''
+        plugin.activate()
+        if plugin.active:
+            if plugin.cursor is not None:
+                if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
+                    image = plugin.cursor.GetImage()
+                    # since this image didn't come from a .cur file, tell it where the hotspot is
+                    img_size = image.GetSize()
+                    image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
+                    image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
+
+                    # make the image into a cursor
+                    self.viewport.SetCursor(wx.CursorFromImage(image))
+                else:
+                    try:
+                        self.viewport.SetCursor(wx.StockCursor(plugin.cursor))
+                    except:
+                        pass
+
+            self.logger.debug('Clicked the interactive tool: %s', plugin.name)
+
+            # Get the hooks and register the matplotlib hooks in the viewport.
+            hooks = plugin.getHooks()
+            allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
+
+            for cur_key in hooks.keys():
+                if cur_key not in allowed_matplotlib_hooks:
+                    hooks.pop(cur_key)
+
+            # Set the callbacks of the views.
+            self.viewport.clear_mpl_event_callbacks()
+            self.viewport.register_mpl_event_callbacks(hooks)
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
 
 
     def on_edit_tool_preferences(self, event, plugin):
