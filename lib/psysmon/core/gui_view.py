@@ -31,6 +31,7 @@ The view framework to visualize data.
 
 
 import logging
+import operator
 
 import wx
 import wx.lib.scrolledpanel
@@ -92,7 +93,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         self.SetupScrolling()
 
 
-    def get_node(self, name = None, group = None, **kwargs):
+    def get_node(self, name = None, group = None, recursive = True, **kwargs):
         ''' Get a node instance.
 
         Parameters
@@ -110,8 +111,9 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
             ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
-        for cur_node in self.node_list:
-            ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
+        if recursive:
+            for cur_node in self.node_list:
+                ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
 
         return ret_nodes
 
@@ -138,6 +140,37 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
                 cur_node.register_view_plugin(plugin)
             elif isinstance(cur_node, ViewContainerNode):
                 cur_node.create_plugin_view(plugin)
+
+
+    def sort_nodes(self, keys = None, order = None):
+        ''' Sort the containers nodes.
+        '''
+        if order:
+            sorted_nodes = []
+            for cur_order in order:
+                cur_node = self.get_node(recursive = False, **cur_order)
+                sorted_nodes.extend(cur_node)
+
+            self.node_list = sorted_nodes
+            self.rearrange_nodes()
+
+
+
+    def rearrange_nodes(self):
+        ''' Rearrange the container nodes in the sizer.
+
+        Detach and reattach the container nodes to the sizer
+        according to the order in the node_list.
+        '''
+        for cur_node in self.node_list:
+            self.sizer.Hide(cur_node)
+            self.sizer.Detach(cur_node)
+
+        for cur_node in self.node_list:
+            self.sizer.Add(cur_node, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
+            cur_node.Show()
+
+        self.SetupScrolling()
 
 
 

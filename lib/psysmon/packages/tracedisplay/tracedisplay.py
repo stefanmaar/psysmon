@@ -563,7 +563,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
         #self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "general")
 
-        # The station display area contains the datetimeInfo and the viewPort.
+        # The station display area contains the datetimeInfo and the viewport.
         # TODO: Maybe create a seperate class for this.
         self.viewportSizer = wx.GridBagSizer()
         self.centerPanel = wx.Panel(parent=self, id=wx.ID_ANY)
@@ -1631,10 +1631,12 @@ class DisplayManager(object):
                 self.createViewContainer(curChanContainer, curViewName, curViewType)
 
         # Update the display
-        self.parent.viewPort.sortStations(snl = self.getSNL(source='show'))
-        self.parent.viewPort.SetupScrolling()
-        self.parent.viewPort.Refresh()
-        self.parent.viewPort.Update()
+        #self.parent.viewport.sortStations(snl = self.getSNL(source='show'))
+        keys = ('station', 'network', 'location')
+        sort_order = [dict(zip(keys, x)) for x in self.getSNL(source = 'show')]
+        self.parent.viewport.sort_nodes(order = sort_order)
+        self.parent.viewport.Refresh()
+        self.parent.viewport.Update()
 
 
         # Request the data.
@@ -1899,12 +1901,12 @@ class DisplayManager(object):
         viewport = self.parent.viewport
 
         # Check if the container already exists in the viewport.
-        statContainer = viewport.get_node(name = station.name,
+        statContainer = viewport.get_node(station = station.name,
                                           network = station.network,
                                           location = station.location)
         if not statContainer:
             props = psysmon.core.util.AttribDict()
-            props.name = station.name
+            props.station = station.name
             props.network = station.network
             props.location = station.location
             annotation_area = container.StationAnnotationArea(viewport,
@@ -1932,7 +1934,7 @@ class DisplayManager(object):
 
         '''
         # Check if the container already exists in the station.
-        chanContainer = stationContainer.get_node(name = channel.name)
+        chanContainer = stationContainer.get_node(channel = channel.name)
 
         if not chanContainer:
             if self.channelColors.has_key(channel.name):
