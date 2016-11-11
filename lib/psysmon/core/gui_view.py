@@ -107,7 +107,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
         for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if getattr(x.props, cur_key) == cur_value]
+            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
         for cur_node in self.node_list:
@@ -251,7 +251,7 @@ class ContainerNode(wx.Panel):
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
         for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if getattr(x.props, cur_key) == cur_value]
+            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
         for cur_node in self.node_list:
@@ -396,7 +396,7 @@ class ViewContainerNode(wx.Panel):
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
         for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if getattr(x.props, cur_key) == cur_value]
+            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
 
         return ret_nodes
 
@@ -430,6 +430,7 @@ class ViewContainerNode(wx.Panel):
             if view_class is not None:
                 cur_view_node = view_class(parent = self,
                                            name = plugin.rid,
+                                           props = self.props,
                                            color = 'white')
                 self.add_node(cur_view_node)
 
