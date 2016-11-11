@@ -1756,13 +1756,17 @@ class DisplayManager(object):
         '''
         for curStation in self.showStations:
             for curChannel in curStation.channels:
-                channelContainers = self.parent.viewPort.getChannelContainer(station = curChannel.parent.name,
-                                                                               channel = curChannel.name,
-                                                                               network = curChannel.parent.network,
-                                                                               location = curChannel.parent.location)
+                # TODO: Add an option to get container or view nodes.
+                # TODO: Or use the group attribute to name the channel and
+                # station containers.
+                channelContainers = self.parent.viewport.get_node(station = curChannel.parent.name,
+                                                                  channel = curChannel.name,
+                                                                  network = curChannel.parent.network,
+                                                                  location = curChannel.parent.location,
+                                                                  group = 'channel_container')
                 curChannel.removeView(plugin.name, 'my View')
                 for curContainer in channelContainers:
-                    curContainer.removeView(plugin.name)
+                    curContainer.remove_node(plugin.rid)
 
 
 
@@ -1911,7 +1915,8 @@ class DisplayManager(object):
                                                                 name = ':'.join(station.getSNL()),
                                                                 props = props,
                                                                 annotation_area = annotation_area,
-                                                                color = 'white')
+                                                                color = 'white',
+                                                                group = 'station_container')
             viewport.add_node(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
@@ -1948,7 +1953,8 @@ class DisplayManager(object):
                                                                     name = channel.name,
                                                                     props = props,
                                                                     annotation_area = annotation_area,
-                                                                    color = 'white')
+                                                                    color = 'white',
+                                                                    group = 'channel_container')
             stationContainer.add_node(chanContainer)
             channel.container = chanContainer
         else:
