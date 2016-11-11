@@ -1892,20 +1892,27 @@ class DisplayManager(object):
         ''' Create the station container of the specified station.
 
         '''
-        viewport = self.parent.viewPort
+        viewport = self.parent.viewport
 
         # Check if the container already exists in the viewport.
-        statContainer = viewport.getStation(name = station.name,
-                                            network = station.network,
-                                            location = station.location)
+        statContainer = viewport.get_node(name = station.name,
+                                          network = station.network,
+                                          location = station.location)
         if not statContainer:
-            statContainer = container.StationContainer(parent = viewport,
-                                                id = wx.ID_ANY,
-                                                name = station.name,
-                                                network = station.network,
-                                                location = station.location,
-                                                color = 'white')
-            viewport.addStation(statContainer)
+            props = psysmon.core.util.AttribDict()
+            props.name = station.name
+            props.network = station.network
+            props.location = station.location
+            annotation_area = container.StationAnnotationArea(viewport,
+                                                              id = wx.ID_ANY,
+                                                              label = ':'.join(station.getSNL()),
+                                                              color = 'white')
+            statContainer = psysmon.core.gui_view.ContainerNode(parent = viewport,
+                                                                name = ':'.join(station.getSNL()),
+                                                                props = props,
+                                                                annotation_area = annotation_area,
+                                                                color = 'white')
+            viewport.add_node(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:
@@ -1920,7 +1927,7 @@ class DisplayManager(object):
 
         '''
         # Check if the container already exists in the station.
-        chanContainer = stationContainer.getChannel(name = channel.name)
+        chanContainer = stationContainer.get_node(name = channel.name)
 
         if not chanContainer:
             if self.channelColors.has_key(channel.name):
@@ -1928,11 +1935,14 @@ class DisplayManager(object):
             else:
                 curColor = (0, 0, 0)
 
-            chanContainer = container.ChannelContainer(stationContainer,
-                                                       id = wx.ID_ANY,
-                                                       name = channel.name,
-                                                       color=curColor)
-            stationContainer.addChannel(chanContainer)
+            annotation_area = container.ChannelAnnotationArea(parent = stationContainer,
+                                                              label = channel.name,
+                                                              color = curColor)
+            chanContainer = psysmon.core.gui_view.ViewContainerNode(parent = stationContainer,
+                                                                    name = channel.name,
+                                                                    annotation_area = annotation_area,
+                                                                    color = 'white')
+            stationContainer.add_node(chanContainer)
             channel.container = chanContainer
         else:
             chanContainer = chanContainer[0]
@@ -1946,14 +1956,14 @@ class DisplayManager(object):
 
         '''
         # Check if the container already exists in the channel.
-        viewContainer = channelContainer.getView(name = name)
+        viewContainer = channelContainer.get_node(name = name)
 
         if not viewContainer:
             viewContainer = viewClass(channelContainer,
                                       id = wx.ID_ANY,
                                       name = name)
 
-            channelContainer.addView(viewContainer)
+            channelContainer.add_node(viewContainer)
             channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             channelContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
 
