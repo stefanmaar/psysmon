@@ -440,7 +440,7 @@ class ViewNode(wx.Panel):
     ''' A view.
 
     '''
-    def __init__(self, name, parent=None, id=wx.ID_ANY, parent_viewport=None, props = None, annotation_area = None, color = 'green'):
+    def __init__(self, name, group = None, parent=None, id=wx.ID_ANY, parent_viewport=None, props = None, annotation_area = None, color = 'green'):
         wx.Panel.__init__(self, parent=parent, id=id)
 
         # The logging logger instance.
@@ -449,6 +449,9 @@ class ViewNode(wx.Panel):
 
         # The name of the container.
         self.name = name
+
+        # The group of the container.
+        self.group = group
 
         # The viewPort containing the channel.
         self.parent_viewport = parent_viewport
