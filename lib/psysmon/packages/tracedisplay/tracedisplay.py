@@ -372,7 +372,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.initKeyEvents()
 
         # Display the data.
-        self.updateDisplay()
+        self.update_display()
 
         # Show the frame. 
         self.Show(True)
@@ -473,7 +473,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.initKeyEvents()
 
         # Display the data.
-        self.updateDisplay()
+        self.update_display()
 
         # Show the frame. 
         self.Show(True)
@@ -753,7 +753,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTime(time_step = time_step)
-        self.updateDisplay()
+        self.update_display()
         if oldFocus is not None:
             oldFocus.SetFocus()
 
@@ -763,7 +763,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTimePercentage(step)
-        self.updateDisplay()
+        self.update_display()
         oldFocus.SetFocus()
 
 
@@ -772,7 +772,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         oldFocus = wx.Window.FindFocus()
         self.displayManager.decreaseTime()
-        self.updateDisplay()
+        self.update_display()
         oldFocus.SetFocus()
 
 
@@ -781,7 +781,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         oldFocus = wx.Window.FindFocus()
         self.displayManager.decreaseTimePercentage(step)
-        self.updateDisplay()
+        self.update_display()
         oldFocus.SetFocus()
 
 
@@ -789,14 +789,14 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         ''' Grow the time period by a given ratio.
         '''
         self.displayManager.growTimePeriod(ratio)
-        self.updateDisplay()
+        self.update_display()
 
 
     def shrinkTimePeriod(self, ratio = 50):
         ''' Grow the time period by a given ratio.
         '''
         self.displayManager.shrinkTimePeriod(ratio)
-        self.updateDisplay()
+        self.update_display()
 
 
     def swap_tool(self):
@@ -866,14 +866,14 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         ''' Set a new duration of the displayed time period.
         '''
         self.displayManager.setDuration(duration)
-        self.updateDisplay()
+        self.update_display()
 
 
     def setStartTime(self, startTime):
         ''' Set the new start time of the displayed time period.
         '''
         self.displayManager.setStartTime(startTime)
-        self.updateDisplay()
+        self.update_display()
 
 
 
@@ -1018,7 +1018,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
             self.displayManager.registerViewTool(plugin)
 
-        self.updateDisplay()
+        self.update_display()
 
 
 
@@ -1202,7 +1202,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
 
 
-    def updateDisplay(self):
+    def update_display(self):
         ''' Update the display.
 
         '''
@@ -1715,7 +1715,7 @@ class DisplayManager(object):
 
         # TODO: Only update the data of the added channel.
         self.stationsChanged = True
-        self.parent.updateDisplay() 
+        self.parent.update_display() 
 
 
 
@@ -1935,11 +1935,18 @@ class DisplayManager(object):
             else:
                 curColor = (0, 0, 0)
 
+            props = psysmon.core.util.AttribDict()
+            props.station = channel.parent.name
+            props.location = channel.parent.location
+            props.network = channel.parent.network
+            props.channel = channel.name
+            props.channel_color = curColor
             annotation_area = container.ChannelAnnotationArea(parent = stationContainer,
                                                               label = channel.name,
                                                               color = curColor)
             chanContainer = psysmon.core.gui_view.ViewContainerNode(parent = stationContainer,
                                                                     name = channel.name,
+                                                                    props = props,
                                                                     annotation_area = annotation_area,
                                                                     color = 'white')
             stationContainer.add_node(chanContainer)
@@ -1961,6 +1968,7 @@ class DisplayManager(object):
         if not viewContainer:
             viewContainer = viewClass(channelContainer,
                                       id = wx.ID_ANY,
+                                      props = channelContainer.props,
                                       name = name)
 
             channelContainer.add_node(viewContainer)
@@ -1976,11 +1984,11 @@ class DisplayManager(object):
         ''' Get the view container of the specified search terms.
 
         '''
-        return self.parent.viewPort.getViewContainer(station = station,
-                                                     channel = channel,
-                                                     network = network,
-                                                     location = location,
-                                                     name = name)
+        return self.parent.viewport.get_node(station = station,
+                                             channel = channel,
+                                             network = network,
+                                             location = location,
+                                             name = name)
 
 
 
