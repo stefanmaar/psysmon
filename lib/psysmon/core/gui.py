@@ -3167,6 +3167,7 @@ class PsysmonDockingFrame(wx.Frame):
             raise RuntimeError('Only one interactive tool can be active.')
         elif len(active_plugin) == 1:
             active_plugin = active_plugin[0]
+            # TODO: Create the deactivate_interactive_plugin in this class.
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
 
@@ -3259,11 +3260,11 @@ class PsysmonDockingFrame(wx.Frame):
         if plugin.active == True:
             plugin.deactivate()
             self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
-            self.displayManager.removeViewTool(plugin)
+            self.unregister_view_plugin(plugin)
         else:
             plugin.activate()
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
-            self.viewport.register_view_plugin(plugin)
+            self.register_view_plugin(plugin)
 
         self.viewport.Refresh()
         self.viewport.Update()
@@ -3336,3 +3337,21 @@ class PsysmonDockingFrame(wx.Frame):
             The name of the shared information
         '''
         return self.plugins_information_bag.get_info(**kwargs)
+
+
+    def register_view_plugin(self, plugin):
+        ''' Method to handle plugin requests.
+
+        Overwrite this method to react to special requirements needed by the plugin.
+        E.g. create virtual channels in the tracedisplay.
+        '''
+        self.viewport.register_view_plugin(plugin)
+
+
+    def unregister_view_plugin(self, plugin):
+        ''' Method to handle plugin requests.
+
+        Overwrite this method to react to special requirements needed by the plugin.
+        E.g. create virtual channels in the tracedisplay.
+        '''
+        self.viewport.remove_node(name = plugin.rid, recursive = True)

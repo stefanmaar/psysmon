@@ -119,7 +119,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         return ret_nodes
 
 
-    def remove_node(self, name = None, group = None, **kwargs):
+    def remove_node(self, name = None, group = None, recursive = False, **kwargs):
         ''' Remove a container node.
         '''
         nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
@@ -127,6 +127,13 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
             self.node_list.remove(cur_node)
             self.sizer.Remove(cur_node)
             cur_node.Destroy()
+
+        if recursive:
+            for cur_node in self.node_list:
+                cur_node.remove_node(recursive = recursive,
+                                     name = name,
+                                     group = group,
+                                     **kwargs)
 
         self.rearrange_nodes()
         self.sizer.Layout()
@@ -146,14 +153,15 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
             cur_node.clear_mpl_event_callbacks()
 
 
-    def register_view_plugin(self, plugin):
+    def register_view_plugin(self, plugin, limit_group = None):
         ''' Create the views needed by the plugin.
         '''
+
         for cur_node in self.node_list:
             if isinstance(cur_node, ContainerNode):
-                cur_node.register_view_plugin(plugin)
+                cur_node.register_view_plugin(plugin, limit_group = limit_group)
             elif isinstance(cur_node, ViewContainerNode):
-                cur_node.create_plugin_view(plugin)
+                cur_node.create_plugin_view(plugin, limit_group = limit_group)
 
 
     def sort_nodes(self, keys = None, order = None):
@@ -266,7 +274,7 @@ class ContainerNode(wx.Panel):
             self.container_sizer.Layout()
 
 
-    def remove_node(self, name = None, group = None, **kwargs):
+    def remove_node(self, name = None, group = None, recursive = False, **kwargs):
         ''' Remove a container node.
         '''
         nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
@@ -274,6 +282,10 @@ class ContainerNode(wx.Panel):
             self.node_list.remove(cur_node)
             self.container_sizer.Remove(cur_node)
             cur_node.Destroy()
+
+        if recursive:
+            for cur_node in self.node_list:
+                cur_node.remove_node(name = name)
 
         self.rearrange_nodes()
         self.container_sizer.Layout()
@@ -339,11 +351,14 @@ class ContainerNode(wx.Panel):
             cur_node.clear_mpl_event_callbacks()
 
 
-    def register_view_plugin(self, plugin):
+    def register_view_plugin(self, plugin, limit_group = None):
         ''' Create the views needed by the plugin.
         '''
         for cur_node in self.node_list:
-            cur_node.create_plugin_view(plugin)
+            if isinstance(cur_node, ContainerNode):
+                cur_node.register_view_plugin(plugin, limit_group = limit_group)
+            elif isinstance(cur_node, ViewContainerNode):
+                cur_node.create_plugin_view(plugin, limit_group = limit_group)
 
 
 
@@ -480,20 +495,24 @@ class ViewContainerNode(wx.Panel):
             cur_node.clear_mpl_event_callbacks()
 
 
-    def create_plugin_view(self, plugin):
+    def create_plugin_view(self, plugin, limit_group = None):
         ''' Create the views needed by the plugin.
         '''
+        if limit_group is None:
+            limit_group = []
+
         # Check if the view already exists.
         cur_view_node = self.get_node(name = plugin.rid)
 
         if not cur_view_node:
             view_class = plugin.getViewClass()
-            if view_class is not None:
-                cur_view_node = view_class(parent = self,
-                                           name = plugin.rid,
-                                           props = self.props,
-                                           color = 'white')
-                self.add_node(cur_view_node)
+            if len(limit_group) == 0 or self.group in limit_group:
+                if view_class is not None:
+                    cur_view_node = view_class(parent = self,
+                                               name = plugin.rid,
+                                               props = self.props,
+                                               color = 'white')
+                    self.add_node(cur_view_node)
 
 
 class ViewAnnotationPanel(wx.Panel):

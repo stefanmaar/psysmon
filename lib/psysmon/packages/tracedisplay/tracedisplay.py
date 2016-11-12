@@ -730,6 +730,26 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.logger.debug('Setting focus.')
 
 
+    def register_view_plugin(self, plugin):
+        ''' Handle special requests of view plugins.
+        '''
+        # Check if the plugin needs a virtual display channel.
+        if hasattr(plugin, 'required_data_channels'):
+            # Create the virtual display channel.
+            self.displayManager.show_virtual_channel(plugin)
+            self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid,])
+        else:
+            self.viewport.register_view_plugin(plugin, limit_group = ['channel_container',])
+
+
+    def unregister_view_plugin(self, plugin):
+        ''' Handle special requests of the view plugins.
+        '''
+        if hasattr(plugin, 'required_data_channels'):
+            self.displayManager.hide_virtual_channel(plugin)
+        self.viewport.remove_node(name = plugin.rid, recursive = True)
+        #self.displayManager.removeViewTool(plugin)
+
 
     def update_display(self):
         ''' Update the display.
@@ -900,6 +920,9 @@ class DisplayManager(object):
         # TODO: This should be selected by the user in the edit dialog.
         show_channels = self.pref_manager.get_value('show_channels')
         self.showChannels = [x for x in show_channels if x in self.availableChannels]
+
+        # The virtual channels currently shown.
+        self.show_virtual_channels = []
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
@@ -1080,7 +1103,8 @@ class DisplayManager(object):
             The station, network, location code of the station which should be hidden.
         '''
 
-        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
+        virtualViewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and hasattr(x, 'required_data_channels')]
         interactive_plugins = [x for x in self.parent.plugins if x.mode == 'interactive' and x.active]
 
         # Get the selected station and set all currently active
@@ -1094,18 +1118,28 @@ class DisplayManager(object):
                                                       location = snl[2])
         channel_names = [x.name for x in station_channels if x.name in self.showChannels]
         station2Show.addChannel(channel_names)
+
         for curChannel in station2Show.channels:
             for curPlugin in viewPlugins:
                 view_class = curPlugin.getViewClass()
                 if view_class is not None:
                     curChannel.addView(curPlugin.name, view_class)
 
-        # Create the necessary containers.
+        # Create the necessary channel containers.
         stationContainer = self.createStationContainer(station2Show)
         for curChannel in station2Show.channels:
             curChanContainer = self.createChannelContainer(stationContainer, curChannel)
             for cur_plugin in viewPlugins:
-                curChanContainer.create_plugin_view(cur_plugin)
+                curChanContainer.create_plugin_view(cur_plugin, limit_group = ['channel_container',])
+
+        # Create necessary virtual channel containers.
+        for cur_plugin in virtualViewPlugins:
+            self.show_virtual_channels.append(cur_plugin.name)
+            cur_channel = station2Show.add_virtual_channel(cur_plugin.name, cur_plugin)
+            cur_channel_container = self.createChannelContainer(stationContainer,
+                                                                cur_channel,
+                                                                group = cur_plugin.rid)
+            cur_channel_container.create_plugin_view(cur_plugin)
 
         # Update the display
         #self.parent.viewport.sortStations(snl = self.getSNL(source='show'))
@@ -1176,7 +1210,7 @@ class DisplayManager(object):
         if channel not in self.showChannels:
             self.showChannels.append(channel)
 
-        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
 
         for curStation in self.showStations:
             # Check if the station has the demanded channels.
@@ -1197,12 +1231,32 @@ class DisplayManager(object):
             for curChannel in curStation.channels:
                 curChanContainer = self.createChannelContainer(stationContainer, curChannel)
                 for cur_plugin in viewPlugins:
-                    curChanContainer.create_plugin_view(cur_plugin)
+                    curChanContainer.create_plugin_view(cur_plugin, limit_group = ['channel_container'])
 
         # TODO: Only update the data of the added channel.
         self.stationsChanged = True
         self.logger.debug("Setting stationsChanged to True.")
         self.parent.update_display()
+
+
+    def show_virtual_channel(self, plugin):
+        ''' Show a virtual channel in the display.
+
+        Parameters
+        ----------
+        plugin : ViewPlugin
+            The plugin requesting the virtual channel.
+        '''
+
+        if plugin.name not in self.show_virtual_channels:
+            self.show_virtual_channels.append(plugin.name)
+        for cur_station in self.showStations:
+            cur_channel = cur_station.add_virtual_channel(plugin.name, plugin)
+            station_container = self.createStationContainer(cur_station)
+            cur_channel_container = self.createChannelContainer(station_container,
+                                                                cur_channel,
+                                                                group = plugin.rid)
+            cur_channel_container.create_plugin_view(plugin)
 
 
 
@@ -1229,6 +1283,24 @@ class DisplayManager(object):
                                               location = cur_scnl[3])
 
         self.showChannels.remove(channel)
+
+
+    def hide_virtual_channel(self, plugin):
+        ''' Hide a virtual channel in the display.
+
+        '''
+        for cur_station in self.showStations:
+            removed_scnl = cur_station.remove_virtual_channel(plugin.name)
+            for cur_scnl in removed_scnl:
+                station_container = self.parent.viewport.get_node(group = 'station_container',
+                                                                  station = cur_scnl[0],
+                                                                  network = cur_scnl[2],
+                                                                  location = cur_scnl[3])
+
+                for cur_container in station_container:
+                    cur_container.remove_node(group = plugin.rid)
+                    #cur_container.remove_node(name = plugin.rid)
+
 
 
 
@@ -1356,7 +1428,7 @@ class DisplayManager(object):
                 #for curViewName, (curViewType, ) in curChannel.views.items():
                 #    self.createViewContainer(curChanContainer, curViewName, curViewType)
 
-            self.createMultichannelContainer(curStatContainer)
+            #self.createMultichannelContainer(curStatContainer)
 
 
 
@@ -1394,31 +1466,7 @@ class DisplayManager(object):
         return statContainer
 
 
-    def createMultichannelContainer(self, station_container):
-        ''' Create a view container node to hold views working with data from multiple channels.
-
-        '''
-        # Check if the container already exists in the station.
-        multi_chan_container = station_container.get_node(name = 'multi_channel_container')
-
-        if not multi_chan_container:
-            props = psysmon.core.util.AttribDict()
-            props.station = station_container.props.station
-            props.location = station_container.props.location
-            props.network = station_container.props.network
-            chanContainer = psysmon.core.gui_view.ViewContainerNode(parent = station_container,
-                                                                    name = 'multi',
-                                                                    props = props,
-                                                                    color = 'white',
-                                                                    group = 'multi_channel_container')
-            station_container.add_node(chanContainer)
-        else:
-            chanContainer = chanContainer[0]
-
-        return chanContainer
-
-
-    def createChannelContainer(self, stationContainer, channel):
+    def createChannelContainer(self, stationContainer, channel, group = 'channel_container'):
         '''
 
         '''
@@ -1445,7 +1493,7 @@ class DisplayManager(object):
                                                                     props = props,
                                                                     annotation_area = annotation_area,
                                                                     color = 'white',
-                                                                    group = 'channel_container')
+                                                                    group = group)
             stationContainer.add_node(chanContainer)
             channel.container = chanContainer
         else:
@@ -1487,6 +1535,21 @@ class DisplayManager(object):
                                              location = location,
                                              name = name)
 
+
+    def removeViewTool(self, plugin):
+        ''' Remove the views created by the plugin.
+
+        '''
+        for curStation in self.showStations:
+            for curChannel in curStation.channels:
+                channelContainers = self.parent.viewport.get_node(station = curChannel.parent.name,
+                                                                  channel = curChannel.name,
+                                                                  network = curChannel.parent.network,
+                                                                  location = curChannel.parent.location,
+                                                                  group = 'channel_container')
+                curChannel.removeView(plugin.name, 'my View')
+                for curContainer in channelContainers:
+                    curContainer.remove_node(plugin.rid)
 
 
 class DisplayStation(object):
@@ -1532,6 +1595,9 @@ class DisplayStation(object):
         # The channels contained in the station.
         self.channels = []
 
+        # The virtual channels contained in the station.
+        self.virtual_channels = []
+
     @property
     def label(self):
         return self.name + ':' + self.location
@@ -1563,6 +1629,14 @@ class DisplayStation(object):
                 self.channels.append(curChannel)
 
 
+    def add_virtual_channel(self, name, plugin):
+        ''' Add a virtual channel to the station.
+        '''
+        cur_channel = VirtualDisplayChannel(self, name, plugin)
+        self.virtual_channels.append(cur_channel)
+        return cur_channel
+
+
     def removeChannel(self, channelName):
         ''' Remove a channel from the station.
 
@@ -1591,6 +1665,18 @@ class DisplayStation(object):
         return removedSCNL
 
 
+    def remove_virtual_channel(self, name):
+        ''' Remove a virtual channel to the station.
+        '''
+        removedSCNL = []
+        channels_to_remove = [x for x in self.virtual_channels if x.name in name]
+        for cur_channel in channels_to_remove:
+            self.virtual_channels.remove(cur_channel)
+            removedSCNL.append((self.name, cur_channel.name, self.network, self.location))
+
+        return removedSCNL
+
+
 
     def getSCNL(self):
         ''' Get the SCNL code of the channels of the station.
@@ -1606,6 +1692,13 @@ class DisplayStation(object):
         scnl = []
         for curChannel in self.channels:
             scnl.append((self.name, curChannel.name, self.network, self.location))
+
+        for curChannel in self.virtual_channels:
+            cur_scnl_list = curChannel.getSCNL()
+            for cur_scnl in cur_scnl_list:
+                if cur_scnl not in scnl:
+                    scnl.append(cur_scnl)
+
         return scnl
 
 
@@ -1664,7 +1757,7 @@ class DisplayStation(object):
 
 
 
-class DisplayChannel():
+class DisplayChannel(object):
 
     def __init__(self, parent, name):
 
@@ -1687,9 +1780,37 @@ class DisplayChannel():
         if name in self.views.keys():
             self.views.pop(name)
 
-    
     def getSCNL(self):
         return (self.parent.name, self.name, self.parent.network, self.parent.location)
+
+
+
+class VirtualDisplayChannel(object):
+    ''' A virtual display channel.
+
+    A virtual dispay channel can be created by a view plugin. The virtual channel uses
+    data from multiple real channels (e.g. HHZ, HHN, HHE).
+    The virtual channel is directly linked to a view plugin and it is created when the 
+    plugin is activated. The view plugin has to provide a property that returns the
+    needed data channels.
+    '''
+
+    def __init__(self, parent, name, plugin):
+        ''' Initialize the instance.
+        '''
+        # The parent station holding the channel.
+        self.parent = parent
+
+        # The name of the channel.
+        self.name = name
+
+        # The plugin related to the virtual channel.
+        self.plugin = plugin
+
+
+    def getSCNL(self):
+        return [(self.parent.name, x, self.parent.network, self.parent.location) for x in self.plugin.required_data_channels]
+
 
 
 
