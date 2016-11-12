@@ -748,7 +748,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.viewport.Refresh()
         self.viewport.Update()
 
-        # TODO: Request the needed data from the wave client.
         self.dataManager.requestStream(startTime = self.displayManager.startTime,
                                        endTime = self.displayManager.endTime,
                                        scnl = self.displayManager.getSCNL('show'))
@@ -1230,44 +1229,6 @@ class DisplayManager(object):
                                               location = cur_scnl[3])
 
         self.showChannels.remove(channel)
-
-
-    def registerViewTool(self, plugin):
-        ''' Create the views needed by the plugin.
-        '''
-        for curStation in self.showStations:
-            for curChannel in curStation.channels:
-                view_class = plugin.getViewClass()
-                if view_class is not None:
-                    curChannel.addView(plugin.name, view_class)
-                    channelContainer = self.parent.viewPort.getChannelContainer(station = curChannel.parent.name,
-                                                                                channel = curChannel.name,
-                                                                                network = curChannel.parent.network,
-                                                                                location = curChannel.parent.location)
-                    for curChannelContainer in channelContainer:
-                        self.createViewContainer(curChannelContainer, plugin.name, view_class)
-
-
-    def removeViewTool(self, plugin):
-        ''' Remove the views created by the plugin.
-
-        '''
-        for curStation in self.showStations:
-            for curChannel in curStation.channels:
-                # TODO: Add an option to get container or view nodes.
-                # TODO: Or use the group attribute to name the channel and
-                # station containers.
-                channelContainers = self.parent.viewport.get_node(station = curChannel.parent.name,
-                                                                  channel = curChannel.name,
-                                                                  network = curChannel.parent.network,
-                                                                  location = curChannel.parent.location,
-                                                                  group = 'channel_container')
-                curChannel.removeView(plugin.name, 'my View')
-                for curContainer in channelContainers:
-                    curContainer.remove_node(plugin.rid)
-
-
-
 
 
 
