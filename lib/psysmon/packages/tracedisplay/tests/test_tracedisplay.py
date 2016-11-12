@@ -41,7 +41,7 @@ class TracedisplayTestCase(unittest.TestCase):
     def setUpClass(cls):
         # Configure the logger.
         logger = logging.getLogger('psysmon')
-        logger.setLevel('DEBUG')
+        logger.setLevel('INFO')
         logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
 
         drop_database_tables(db_dialect = 'mysql',
@@ -57,6 +57,7 @@ class TracedisplayTestCase(unittest.TestCase):
         create_full_project(cls.psybase)
         cls.project = cls.psybase.project
         cls.project.dbEngine.echo = False
+        logger.setLevel('DEBUG')
 
 
     @classmethod
@@ -80,7 +81,7 @@ class TracedisplayTestCase(unittest.TestCase):
 
         self.node.pref_manager.set_value('start_time', utcdatetime.UTCDateTime('2010-08-31T08:00:00'))
         self.node.pref_manager.set_value('duration', 60)
-        self.node.pref_manager.set_value('show_stations', ['GILA'])
+        self.node.pref_manager.set_value('show_stations', ['SITA:00'])
 
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__
