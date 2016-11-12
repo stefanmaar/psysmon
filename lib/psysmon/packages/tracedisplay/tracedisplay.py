@@ -387,105 +387,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.Show(True)
 
 
-    def OLD__init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay",
-                 plugins = None, size=(1000, 600)):
-        ''' The constructor.
-
-        '''
-        psysmon.core.gui.PsysmonDockingFrame.__init__(self,
-                                                      parent = parent,
-                                                      id = id,
-                                                      title = title)
-
-        # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        # The parent collection node.
-        self.collection_node = collection_node
-
-        # The parent project.
-        self.project = project
-
-        # The available plugins of the collection node.
-        self.plugins = plugins
-        for curPlugin in self.plugins:
-            curPlugin.parent = self
-
-        self.init_user_interface()
-
-        # Show the frame. 
-        self.Show(True)
-
-        return
-
-        # Get the processing nodes from the project.
-        self.processingNodes = self.project.getProcessingNodes(('common', 'TraceDisplay'))
-
-        # Create the display option.
-        self.displayManager = DisplayManager(parent = self,
-                                             inventory = project.geometry_inventory)
-
-        # Create the shortcut options.
-        self.shortcutManager = ShortcutManager()
-
-        # Create the dataManager.
-        self.dataManager = DataManager(self)
-
-        # Create the events library.
-        self.event_library = ev_core.Library(name = self.collection_node.rid)
-
-        # Create the plugins shared information bag, which holds all the
-        # information, that's shared by the tracedisplay plugins.
-        self.plugins_information_bag = psysmon.core.plugins.SharedInformationBag()
-
-        # A temporary plugin register to swap two plugins.
-        self.plugin_to_restore = None
-
-        # Create the hook manager and fill it with the allowed hooks.
-        self.hook_manager = psysmon.core.util.HookManager(self)
-        self.hook_manager.add_hook(name = 'after_plot',
-                                   description = 'Called after the data was plotted in the views.')
-        self.hook_manager.add_hook(name = 'after_plot_station',
-                                   description = 'Called after the data of a station was plotted in the views.',
-                                   passed_args = {'station': 'The station, that was plotted.',})
-        self.hook_manager.add_hook(name = 'time_limit_changed',
-                                   description = 'Called after the time limit of the displayed time-span was changed.')
-        self.hook_manager.add_hook(name = 'plugin_activated',
-                                   description = 'Called after a plugin was activated.',
-                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
-        self.hook_manager.add_hook(name = 'plugin_deactivated',
-                                   description = 'Called after a plugin was deactivated.',
-                                   passed_args = {'plugin_rid': 'The resource id of the plugin.',})
-        self.hook_manager.add_hook(name = 'shared_information_added',
-                                   description = 'Called after a shared information was added by a plugin.',
-                                   passed_args = {'origin_rid': 'The resource id of the source of the shared information.',
-                                                  'name': 'The name of the shared information.'})
-        self.hook_manager.add_hook(name = 'shared_information_updated',
-                                   description = 'Called after a shared information was added by a plugin.',
-                                   passed_args = {'updated_info': 'The shared information instance which was updated.'})
-        self.hook_manager.add_view_hook(name = 'button_press_event',
-                                        description = 'The matplotlib button_press_event in the view axes.')
-        self.hook_manager.add_view_hook(name = 'button_release_event',
-                                        description = 'The matplotlib button_release_event in the view axes.')
-        self.hook_manager.add_view_hook(name = 'motion_notify_event',
-                                        description = 'The matplotlib motion_notify_event in the view axes.')
-
-        # Register the plugin shortcuts. This has to be done after the various
-        # manager instances were created.
-        for curPlugin in self.plugins:
-            curPlugin.register_keyboard_shortcuts()
-
-        # Initialize the user interface.
-        self.initUI()
-        self.initKeyEvents()
-
-        # Display the data.
-        self.update_display()
-
-        # Show the frame. 
-        self.Show(True)
     @property
     def visible_data(self):
         ''' The currently visible data.
@@ -538,190 +439,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
         # Tell the docking manager to commit all changes.
         self.mgr.Update()
-
-
-    def initUI(self):
-        ''' Build the userinterface.
-
-        '''
-        self.logger.debug('Initializing the GUI')
-
-        self.mgr = wx.aui.AuiManager(self)
-
-        #self.toolPanels = fpb.FoldPanelBar(parent=self, 
-        #                                   id=wx.ID_ANY,
-        #                                   pos = wx.DefaultPosition,
-        #                                   size=wx.DefaultSize,
-        #                                   agwStyle=fpb.FPB_VERTICAL)
-
-        #self.foldPanelBar = psygui.FoldPanelBarSplitter(parent=self)
-        #self.foldPanelBar = psygui.FoldPanelBar(parent=self)
-
-        #self.foldPanelBar.SetBackgroundColour('white')
-
-        self.eventInfo = wx.Panel(parent=self, id=wx.ID_ANY)
-        self.eventInfo.SetBackgroundColour('khaki')
-
-        # Create the status bar.
-        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
-        self.statusbar.SetStatusWidths([-2, -3])
-        self.statusbar.SetStatusText("Ready, go go.", 0)
-        self.statusbar.SetStatusText("Tracedisplay", 1)
-
-        # Create the toolRibbonBar
-        self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
-        #self.home = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, "general")
-
-        # The station display area contains the datetimeInfo and the viewport.
-        # TODO: Maybe create a seperate class for this.
-        self.viewportSizer = wx.GridBagSizer()
-        self.centerPanel = wx.Panel(parent=self, id=wx.ID_ANY)
-        self.datetimeInfo = container.TdDatetimeInfo(parent=self.centerPanel)
-        self.viewPort =  container.TdViewPort(parent = self.centerPanel)
-        #self.viewPort =  gui_view.Viewport(parent = self.centerPanel)
-        self.viewportSizer.Add(self.datetimeInfo, 
-                               pos=(0,0), 
-                               flag=wx.EXPAND|wx.ALL, 
-                               border=0)
-        self.viewportSizer.Add(self.viewPort,
-                               pos=(1,0),
-                               flag = wx.EXPAND|wx.ALL, 
-                               border = 0)
-        self.viewportSizer.AddGrowableRow(1)
-        self.viewportSizer.AddGrowableCol(0)
-        self.centerPanel.SetSizer(self.viewportSizer)
-
-
-        self.mgr.AddPane(self.centerPanel, 
-                         wx.aui.AuiPaneInfo().Name('seismograms').
-                                              CenterPane())
-
-        self.mgr.AddPane(self.eventInfo,
-                         wx.aui.AuiPaneInfo().Top().
-                                              Name('event information').
-                                              Layer(0).
-                                              Row(0).
-                                              Position(0))
-
-
-        self.mgr.AddPane(self.ribbon,
-                         wx.aui.AuiPaneInfo().Top().
-                                              Name('palette').
-                                              Caption('palette').
-                                              Layer(1).
-                                              Row(0).
-                                              Position(0).
-                                              BestSize(wx.Size(-1,50)).
-                                              MinSize(wx.Size(-1,80)))
-
-
-        # Build the ribbon bar based on the plugins.
-        # First create all the pages according to the category.
-        self.ribbonPages = {}
-        self.ribbonPanels = {}
-        self.ribbonToolbars = {}
-        self.foldPanels = {}
-        for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = itemgetter(0,1)):
-            if curGroup not in self.ribbonPages.keys():
-                self.logger.debug('Creating page %s', curGroup)
-                self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
-
-            if curCategory not in self.ribbonPanels.keys():
-                self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.ribbonPages[curGroup],
-                                                                    wx.ID_ANY,
-                                                                    curCategory,
-                                                                    wx.NullBitmap,
-                                                                    wx.DefaultPosition,
-                                                                    wx.DefaultSize,
-                                                                    agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
-                # TODO: Find out what I wanted to do with these lines!?!
-                if curCategory == 'interactive':
-                    self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
-                else:
-                    self.ribbonToolbars[curCategory] = ribbon.RibbonToolBar(self.ribbonPanels[curCategory], 1)
-
-
-        # Fill the ribbon bar with the plugin buttons.
-        option_plugins = [x for x in self.plugins if x.mode == 'option']
-        command_plugins = [x for x in self.plugins if x.mode == 'command']
-        interactive_plugins = [x for x in self.plugins if x.mode == 'interactive']
-        view_plugins = [x for x in self.plugins if x.mode == 'view']
-        id_counter = 0
-
-        for curPlugin in sorted(option_plugins, key = attrgetter('position_pref', 'name')):
-                # Create a tool.
-                curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter, 
-                                                                          bitmap = curPlugin.icons['active'].GetBitmap(), 
-                                                                          help_string = curPlugin.name,
-                                                                          kind = ribbon.RIBBON_BUTTON_TOGGLE)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED, 
-                                                             lambda evt, curPlugin=curPlugin : self.onOptionToolClicked(evt, curPlugin), id=curTool.id)
-                id_counter += 1
-
-        for curPlugin in sorted(command_plugins, key = attrgetter('position_pref', 'name')):
-                # Create a HybridTool or a normal tool if no preference items
-                # are available. The dropdown menu allows to open
-                # the tool parameters in a foldpanel.
-                if len(curPlugin.pref_manager) == 0:
-                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
-                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                              help_string = curPlugin.name)
-                else:
-                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
-                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                                    help_string = curPlugin.name)
-                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                                 lambda evt, curPlugin=curPlugin: self.onCommandToolDropdownClicked(evt, curPlugin),
-                                                                 id=curTool.id)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onCommandToolClicked(evt, curPlugin),
-                                                             id=curTool.id)
-                id_counter += 1
-
-
-        for curPlugin in sorted(interactive_plugins, key = attrgetter('position_pref', 'name')):
-                # Create a HybridTool. The dropdown menu allows to open
-                # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
-                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                                help_string = curPlugin.name)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onInteractiveToolClicked(evt, curPlugin),
-                                                             id=curTool.id)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin: self.onInteractiveToolDropdownClicked(evt, curPlugin),
-                                                             id=curTool.id)
-                id_counter += 1
-
-        for curPlugin in sorted(view_plugins, key = attrgetter('position_pref', 'name')):
-                # Create a HybridTool or a normal tool if no preference items
-                # are available. The dropdown menu allows to open
-                # the tool parameters in a foldpanel.
-                if len(curPlugin.pref_manager) == 0:
-                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
-                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                              help_string = curPlugin.name)
-
-                else:
-                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
-                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                                    help_string = curPlugin.name)
-                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                                 lambda evt, curPlugin=curPlugin: self.onViewToolDropdownClicked(evt, curPlugin),
-                                                                 id=curTool.id)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin : self.onViewToolClicked(evt, curPlugin),
-                                                             id=curTool.id)
-                id_counter += 1
-
-
-        self.ribbon.Realize()
-
-        # Tell the manager to commit all the changes.
-        self.mgr.Update()
-
-        self.SetBackgroundColour('white')
-        self.viewPort.SetFocus()
 
 
     def initKeyEvents(self):
@@ -885,7 +602,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.update_display()
 
 
-
+    # TODO: Move the method to the psysmonDockingFrame class.
     def deactivate_interactive_plugin(self, plugin):
         ''' Deactivate an interactive plugin.
         '''
@@ -895,203 +612,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.viewPort.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
         plugin.deactivate()
         self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
-
-
-    def OLD_activate_interactive_plugin(self, plugin):
-        ''' Activate an interactive plugin.
-        '''
-        plugin.activate()
-        if plugin.active:
-            if plugin.cursor is not None:
-                if isinstance(plugin.cursor, wx.lib.embeddedimage.PyEmbeddedImage):
-                    image = plugin.cursor.GetImage()
-                    # since this image didn't come from a .cur file, tell it where the hotspot is
-                    img_size = image.GetSize()
-                    image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, img_size[0] * plugin.cursor_hotspot[0])
-                    image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, img_size[1] * plugin.cursor_hotspot[1])
-
-                    # make the image into a cursor
-                    self.viewPort.SetCursor(wx.CursorFromImage(image))
-                else:
-                    try:
-                        self.viewPort.SetCursor(wx.StockCursor(plugin.cursor))
-                    except:
-                        pass
-
-            self.logger.debug('Clicked the interactive tool: %s', plugin.name)
-
-            # Get the hooks and register the matplotlib hooks in the viewport.
-            hooks = plugin.getHooks()
-            allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
-
-            for cur_key in hooks.keys():
-                if cur_key not in allowed_matplotlib_hooks:
-                    hooks.pop(cur_key)
-
-            # Set the callbacks of the views.
-            self.viewPort.clearEventCallbacks()
-            self.viewPort.registerEventCallbacks(hooks, self.dataManager, self.displayManager)
-            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
-
-
-
-    def onOptionToolClicked(self, event, plugin):
-        ''' Handle the click of an option plugin toolbar button.
-
-        Show or hide the foldpanel of the plugin.
-        '''
-        self.logger.debug('Clicked the option tool: %s', plugin.name)
-
-        cur_toolbar = event.GetEventObject()
-        if cur_toolbar.GetToolState(event.GetId()) != ribbon.RIBBON_TOOLBAR_TOOL_TOGGLED:
-            if plugin.name not in self.foldPanels.keys():
-                # The panel of the option tool does't exist. Create it and add
-                # it to the panel manager.
-                curPanel = plugin.buildFoldPanel(self)
-                self.mgr.AddPane(curPanel,
-                                 wx.aui.AuiPaneInfo().Right().
-                                                      Name(plugin.name).
-                                                      Caption(plugin.name).
-                                                      Layer(2).
-                                                      Row(0).
-                                                      Position(0).
-                                                      BestSize(wx.Size(300,-1)).
-                                                      MinSize(wx.Size(200,100)).
-                                                      MinimizeButton(True).
-                                                      MaximizeButton(True).
-                                                      CloseButton(False))
-                # TODO: Add a onOptionToolPanelClose method to handle clicks of
-                # the CloseButton in the AUI pane of the option tools. If the
-                # pane is closed, the toggle state of the ribbonbar button has
-                # be changed. The according event is aui.EVT_AUI_PANE_CLOSE.
-                self.mgr.Update()
-                self.foldPanels[plugin.name] = curPanel
-            else:
-                if not self.foldPanels[plugin.name].IsShown():
-                    curPanel = self.foldPanels[plugin.name]
-                    self.mgr.GetPane(curPanel).Show()
-                    self.mgr.Update()
-            plugin.activate()
-            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
-        else:
-            if self.foldPanels[plugin.name].IsShown():
-                curPanel = self.foldPanels[plugin.name]
-                self.mgr.GetPane(curPanel).Hide()
-                self.mgr.Update()
-
-            plugin.deactivate()
-            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
-
-
-
-
-    def onCommandToolClicked(self, event, plugin):
-        ''' Handle the click of a command plugin toolbar button.
-
-        Activate the tool.
-        '''
-        self.logger.debug('Clicked the command tool: %s', plugin.name)
-        plugin.run()
-
-
-
-
-    def onInteractiveToolClicked(self, event, plugin):
-        ''' Handle the click of an interactive plugin toolbar button.
-
-        Activate the tool.
-        '''
-        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
-        if len(active_plugin) > 1:
-            raise RuntimeError('Only one interactive tool can be active.')
-        elif len(active_plugin) == 1:
-            active_plugin = active_plugin[0]
-            self.deactivate_interactive_plugin(active_plugin)
-        self.activate_interactive_plugin(plugin)
-
-
-
-    def onViewToolClicked(self, event, plugin):
-        ''' Handle the click of an view plugin toolbar button.
-
-        Activate the tool.
-        '''
-        self.logger.debug('Clicked the view tool: %s', plugin.name)
-
-        if plugin.active == True:
-            plugin.deactivate()
-            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
-            self.displayManager.removeViewTool(plugin)
-        else:
-            plugin.activate()
-            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
-            self.displayManager.registerViewTool(plugin)
-
-        self.update_display()
-
-
-
-    def onViewToolDropdownClicked(self, event, plugin):
-        ''' Handle the click on the dropdown button of an view plugin toolbar button.
-
-        '''
-        self.logger.debug('Clicked the view tool dropdown button: %s', plugin.name)
-        menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, "edit preferences")
-        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
-        event.PopupMenu(menu)
-
-
-    def onCommandToolDropdownClicked(self, event, plugin):
-        ''' Handle the click on the dropdown button of an command plugin toolbar button.
-
-        '''
-        menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, "edit preferences")
-        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
-        event.PopupMenu(menu)
-
-
-
-    def onInteractiveToolDropdownClicked(self, event, plugin):
-        ''' Handle the click on the dropdown button of an interactive plugin toolbar button.
-
-        '''
-        menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, "edit preferences")
-        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
-        event.PopupMenu(menu)
-
-
-    def onEditToolPreferences(self, event, plugin):
-        ''' Handle the edit preferences dropdown click.
-
-        '''
-        self.logger.debug('Dropdown clicked -> editing preferences.')
-
-        if plugin.name not in self.foldPanels.keys():
-            #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
-            #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
-
-            curPanel = plugin.buildFoldPanel(self)
-            self.mgr.AddPane(curPanel,
-                             wx.aui.AuiPaneInfo().Right().
-                                                  Name(plugin.name).
-                                                  Caption(plugin.name).
-                                                  Layer(2).
-                                                  Row(0).
-                                                  Position(0).
-                                                  BestSize(wx.Size(300,-1)).
-                                                  MinSize(wx.Size(200,100)).
-                                                  MinimizeButton(True).
-                                                  MaximizeButton(True))
-            self.mgr.Update()
-            self.foldPanels[plugin.name] = curPanel
-        else:
-            if not self.foldPanels[plugin.name].IsShown():
-                curPanel = self.foldPanels[plugin.name]
-                self.mgr.GetPane(curPanel).Show()
-                self.mgr.Update()
 
 
     def onKeyDown(self, event):
@@ -1263,63 +783,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
                                   self.displayManager.endTime, 
                                   None)
         self.datetimeInfo.Refresh()
-
-
-
-
-
-    def call_hook(self, hook_name, **kwargs):
-        ''' Call the hook of the plugins.
-        '''
-        active_plugins = [x for x in self.plugins if x.active]
-        self.hook_manager.call_hook(receivers = active_plugins,
-                                    hook_name = hook_name,
-                                    **kwargs)
-
-
-    def add_shared_info(self, origin_rid, name, value):
-        ''' Add a shared information.
-
-        Parameters
-        ----------
-        origin_rid : String
-            The resource ID of the origin of the information.
-
-        name : String
-            The name of the shared information
-
-        value : Dictionary
-            The value of the shared information
-        '''
-        self.plugins_information_bag.add_info(origin_rid = origin_rid,
-                                              name = name,
-                                              value = value)
-        self.call_hook('shared_information_added',
-                       origin_rid = origin_rid,
-                       name = name)
-
-
-    def notify_shared_info_change(self, updated_info):
-        ''' Notify tracedisplay, that a shared informtion was changed.
-        '''
-        self.call_hook('shared_information_updated',
-                       updated_info = updated_info)
-
-
-    def get_shared_info(self, **kwargs):
-        ''' Get a shared information.
-
-        Parameters
-        ----------
-        origin_rid : String
-            The resource ID of the origin of the information.
-
-        name : String
-            The name of the shared information
-        '''
-        return self.plugins_information_bag.get_info(**kwargs)
-
-
 
 
 class ShortcutManager:
@@ -1921,10 +1384,18 @@ class DisplayManager(object):
         '''
         for curStation in self.showStations:
             curStatContainer = self.createStationContainer(curStation)
+            # TODO: Create the station related view container node. This is
+            # used for views which use data which is not directly related to a
+            # single channel (e.g. polarization analysis). If the station-data
+            # view container is not used by a plugin, hide it. The station-data
+            # view container should be of the same size and layout as the
+            # channel-view container.
             for curChannel in curStation.channels:
                 curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
                 #for curViewName, (curViewType, ) in curChannel.views.items():
                 #    self.createViewContainer(curChanContainer, curViewName, curViewType)
+
+            self.createMultichannelContainer(curStatContainer)
 
 
 
@@ -1961,6 +1432,29 @@ class DisplayManager(object):
 
         return statContainer
 
+
+    def createMultichannelContainer(self, station_container):
+        ''' Create a view container node to hold views working with data from multiple channels.
+
+        '''
+        # Check if the container already exists in the station.
+        multi_chan_container = station_container.get_node(name = 'multi_channel_container')
+
+        if not multi_chan_container:
+            props = psysmon.core.util.AttribDict()
+            props.station = station_container.props.station
+            props.location = station_container.props.location
+            props.network = station_container.props.network
+            chanContainer = psysmon.core.gui_view.ViewContainerNode(parent = station_container,
+                                                                    name = 'multi',
+                                                                    props = props,
+                                                                    color = 'white',
+                                                                    group = 'multi_channel_container')
+            station_container.add_node(chanContainer)
+        else:
+            chanContainer = chanContainer[0]
+
+        return chanContainer
 
 
     def createChannelContainer(self, stationContainer, channel):
