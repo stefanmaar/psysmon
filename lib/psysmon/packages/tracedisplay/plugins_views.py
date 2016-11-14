@@ -29,7 +29,6 @@ from psysmon.core.plugins import ViewPlugin
 from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.gui_view
-from container import AnnotationArtist
 from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
 import obspy.signal
@@ -493,7 +492,10 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         if annotation_artist:
             annotation_artist = annotation_artist[0]
             line_artist = annotation_artist.line_artist[0]
-            label_artist = annotation_artist.text_artist[0]
+            if len(annotation_artist.text_artist) == 1:
+                label_artist = annotation_artist.text_artist[0]
+            else:
+                label_artist = None
             if line_artist:
                 line_artist.set_xdata(x)
             if label_artist:
@@ -506,11 +508,16 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
             else:
                 label_artist = None
 
-            annotation_artist = AnnotationArtist(mode = 'vline',
-                                                 parent_rid = parent_rid,
-                                                 key = key)
-            annotation_artist.add_artist([line_artist, label_artist])
+            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+                                                                       parent_rid = parent_rid,
+                                                                       key = key)
+            if label_artist is not None:
+                annotation_artist.add_artist([line_artist, label_artist])
+            else:
+                annotation_artist.add_artist([line_artist, ])
             self.annotation_artists.append(annotation_artist)
+
+        return (line_artist, label_artist)
 
 
 
@@ -546,9 +553,9 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
                                                   verticalalignment = 'top')
             else:
                 label_artist = None
-            annotation_artist = AnnotationArtist(mode = 'vspan',
-                                                 parent_rid = parent_rid,
-                                                 key = key)
+            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vspan',
+                                                                       parent_rid = parent_rid,
+                                                                       key = key)
             annotation_artist.add_artist([vspan_artist, label_artist])
             self.annotation_artists.append(annotation_artist)
 
@@ -746,9 +753,9 @@ class DemoView(psysmon.core.gui_view.ViewNode):
             else:
                 label_artist = None
 
-            annotation_artist = AnnotationArtist(mode = 'vline',
-                                                 parent_rid = parent_rid,
-                                                 key = key)
+            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+                                                                       parent_rid = parent_rid,
+                                                                       key = key)
             annotation_artist.add_artist([line_artist, label_artist])
             self.annotation_artists.append(annotation_artist)
 
@@ -786,9 +793,9 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                                                   verticalalignment = 'top')
             else:
                 label_artist = None
-            annotation_artist = AnnotationArtist(mode = 'vspan',
-                                                 parent_rid = parent_rid,
-                                                 key = key)
+            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vspan',
+                                                                       parent_rid = parent_rid,
+                                                                       key = key)
             annotation_artist.add_artist([vspan_artist, label_artist])
             self.annotation_artists.append(annotation_artist)
 
@@ -1115,7 +1122,7 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
             self.axes.tick_params(axis = 'y', pad = -40)
 
             annot_string = 'X-axis: frequency\nX-units: Hz\n\nY-axis: psd\nY-units: %s' % cur_unit_label
-            self.setAnnotation(annot_string)
+            self.set_annotation(annot_string)
             #self.axes.get_xaxis().set_visible(False)
             #self.axes.get_yaxis().set_visible(False)
 
