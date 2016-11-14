@@ -1480,7 +1480,7 @@ class DisplayManager(object):
                                                                     color = 'white',
                                                                     group = group)
             stationContainer.add_node(chanContainer)
-            channel.container = chanContainer
+            #channel.container = chanContainer
         else:
             chanContainer = chanContainer[0]
 
@@ -1753,7 +1753,7 @@ class DisplayChannel(object):
         self.views = {}
 
         # The display containers of the channel.
-        self.container = None
+        #self.container = None
 
 
     def addView(self, name, viewType):
