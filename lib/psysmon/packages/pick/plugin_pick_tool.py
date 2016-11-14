@@ -207,7 +207,7 @@ class PickTool(InteractivePlugin):
     def on_shared_information_added(self, origin_rid, name):
         ''' Hook that is called when a shared information was added by a plugin.
         '''
-        if origin_rid == '/plugin/tracedisplay/show_events' and name == 'selected_event':
+        if origin_rid == self.parent.collection_node.rid + '/plugin/show_events' and name == 'selected_event':
             self.load_picks()
             self.clear_pick_lines()
             self.add_pick_lines()
@@ -216,7 +216,7 @@ class PickTool(InteractivePlugin):
     def on_other_plugin_deactivated(self, plugin_rid):
         ''' Hook that is called when a plugin is deactivated in the tracedisplay.
         '''
-        if plugin_rid == '/plugin/tracedisplay/show_events':
+        if plugin_rid == self.parent.collection_node.rid + '/plugin/show_events':
             self.load_picks()
             self.clear_pick_lines()
             self.add_pick_lines()
@@ -477,7 +477,7 @@ class PickTool(InteractivePlugin):
 
         # Check if an event is selected. If one is selected, use the event
         # limits to load the picks.
-        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = '/plugin/tracedisplay/show_events',
+        selected_event_info = self.parent.plugins_information_bag.get_info(origin_rid = self.parent.collection_node.rid + '/plugin/show_events',
                                                                            name = 'selected_event')
         if selected_event_info:
             if len(selected_event_info) > 1:
