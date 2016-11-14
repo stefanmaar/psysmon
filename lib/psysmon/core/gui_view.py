@@ -206,6 +206,8 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
 
 
 
+
+
 class ContainerNode(wx.Panel):
     ''' A container holding another container.
 
@@ -380,6 +382,27 @@ class ContainerNode(wx.Panel):
                 cur_node.create_plugin_view(plugin, limit_group = limit_group)
 
 
+    def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in all children of this node.
+        '''
+        for cur_node in self.node_list:
+            cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
+                                           key = key, **kwargs)
+
+
+    def draw(self):
+        ''' Draw all child nodes.
+        '''
+        for cur_node in self.node_list:
+            cur_node.draw()
+
+
+    def clear_annotation_artist(self, **kwargs):
+        ''' Delete annotation artits all views of the channel.
+        '''
+        for cur_node in self.node_list:
+            cur_node.clear_annotation_artist(**kwargs)
+
 
 class ViewContainerNode(wx.Panel):
     ''' A container holding a ViewNode class.
@@ -543,36 +566,27 @@ class ViewContainerNode(wx.Panel):
                     self.add_node(cur_view_node)
 
 
-class ViewAnnotationPanel(wx.Panel):
-    '''
-    The view annotation area.
-
-    This area can be used to plot anotations for the view. This might be 
-    some statistic values (e.g. min, max), the axes limits or some 
-    other custom info.
-    '''
-    def __init__(self, parent, size=(200,-1), color=None):
-        wx.Panel.__init__(self, parent, size=size)
-        self.SetBackgroundColour(color)
-        self.SetMinSize((200, -1))
-
-
-	# Create a test label.
-        self.label = wx.lib.stattext.GenStaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
-        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
-        self.label.SetFont(font)
-
-	# Add the label to the sizer.
-	sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
-	self.SetSizer(sizer)
-
-
-    def setLabel(self, text):
-        ''' Set the text of the annotation label.
+    def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in all children of this node.
         '''
-        self.label.SetLabelText(text)
-        self.label.Refresh()
+        for cur_node in self.node_list:
+            cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
+                                           key = key, **kwargs)
+
+    def draw(self):
+        ''' Draw all child nodes.
+        '''
+        for cur_node in self.node_list:
+            cur_node.draw()
+
+
+    def clear_annotation_artist(self, **kwargs):
+        ''' Delete annotation artits all views of the channel.
+        '''
+        for cur_node in self.node_list:
+            cur_node.clear_annotation_artist(**kwargs)
+
+
 
 
 class ViewNode(wx.Panel):
@@ -865,6 +879,38 @@ class PlotPanel(wx.Panel):
         '''
         assert False, 'The update_display method must be defined!'
 
+
+
+class ViewAnnotationPanel(wx.Panel):
+    '''
+    The view annotation area.
+
+    This area can be used to plot anotations for the view. This might be 
+    some statistic values (e.g. min, max), the axes limits or some 
+    other custom info.
+    '''
+    def __init__(self, parent, size=(200,-1), color=None):
+        wx.Panel.__init__(self, parent, size=size)
+        self.SetBackgroundColour(color)
+        self.SetMinSize((200, -1))
+
+
+	# Create a test label.
+        self.label = wx.lib.stattext.GenStaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
+        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
+        self.label.SetFont(font)
+
+	# Add the label to the sizer.
+	sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
+	self.SetSizer(sizer)
+
+
+    def setLabel(self, text):
+        ''' Set the text of the annotation label.
+        '''
+        self.label.SetLabelText(text)
+        self.label.Refresh()
 
 
 class AnnotationArtist(object):
