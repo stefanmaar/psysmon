@@ -127,7 +127,7 @@ class ProcessingStack(OptionPlugin):
     def onRun(self, event):
         ''' Re-run the processing stack.
         '''
-        self.parent.updateDisplay()
+        self.parent.update_display()
 
 
     def onAdd(self, event):
