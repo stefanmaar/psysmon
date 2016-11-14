@@ -197,7 +197,7 @@ class SelectEvents(OptionPlugin):
             self.parent.displayManager.setTimeLimits(startTime = start_time,
                                                      endTime = end_time)
             self.clear_annotation()
-            self.parent.updateDisplay()
+            self.parent.update_display()
 
 
     def deactivate(self):
@@ -269,17 +269,15 @@ class SelectEvents(OptionPlugin):
     def add_event_marker_to_channel(self, channel = None):
         ''' Add the event markers to channel plots.
         '''
-        if channel:
-            for cur_plot_channel in channel:
-                scnl = cur_plot_channel.getSCNL()
-
-                cur_plot_channel.container.plot_annotation_vspan(x_start = self.selected_event['start_time'],
-                                                                 x_end = self.selected_event['end_time'],
-                                                                 label = self.selected_event['id'],
-                                                                 parent_rid = self.rid,
-                                                                 key = self.selected_event['id'],
-                                                                 color = self.colors['event_vspan'])
-                cur_plot_channel.container.draw()
+        station_nodes = self.parent.viewport.get_node(recursive = False)
+        for cur_node in station_nodes:
+            cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
+                                                             x_end = self.selected_event['end_time'],
+                                                             label = self.selected_event['id'],
+                                                             parent_rid = self.rid,
+                                                             key = self.selected_event['id'],
+                                                             color = self.colors['event_vspan'])
+            cur_node.draw()
 
 
 
@@ -360,17 +358,17 @@ class SelectEvents(OptionPlugin):
             self.parent.displayManager.setTimeLimits(startTime = start_time,
                                                      endTime = end_time)
             self.clear_annotation()
-            self.parent.updateDisplay()
+            self.parent.update_display()
 
 
     def clear_annotation(self):
         ''' Clear the annotation elements in the tracedisplay views.
         '''
-        views = self.parent.displayManager.getViewContainer()
-        for cur_view in views:
-            cur_view.clear_annotation_artist(mode = 'vspan',
+        node_list = self.parent.viewport.get_node(node_type = 'container')
+        for cur_node in node_list:
+            cur_node.clear_annotation_artist(mode = 'vspan',
                                              parent_rid = self.rid)
-            cur_view.draw()
+            cur_node.draw()
 
 
 
