@@ -269,15 +269,20 @@ class SelectEvents(OptionPlugin):
     def add_event_marker_to_channel(self, channel = None):
         ''' Add the event markers to channel plots.
         '''
-        station_nodes = self.parent.viewport.get_node(recursive = False)
-        for cur_node in station_nodes:
-            cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
-                                                             x_end = self.selected_event['end_time'],
-                                                             label = self.selected_event['id'],
-                                                             parent_rid = self.rid,
-                                                             key = self.selected_event['id'],
-                                                             color = self.colors['event_vspan'])
-            cur_node.draw()
+        for cur_channel in channel:
+            scnl = cur_channel.getSCNL()
+            channel_nodes = self.parent.viewport.get_node(station = scnl[0],
+                                                          channel = scnl[1],
+                                                          network = scnl[2],
+                                                          location = scnl[3])
+            for cur_node in channel_nodes:
+                cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
+                                                                 x_end = self.selected_event['end_time'],
+                                                                 label = self.selected_event['id'],
+                                                                 parent_rid = self.rid,
+                                                                 key = self.selected_event['id'],
+                                                                 color = self.colors['event_vspan'])
+                cur_node.draw()
 
 
 
