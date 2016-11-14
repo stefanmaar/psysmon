@@ -390,6 +390,16 @@ class ContainerNode(wx.Panel):
                                            key = key, **kwargs)
 
 
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in all children of this node.
+        '''
+        for cur_node in self.node_list:
+            cur_node.plot_annotation_vspan(x_start = x_start,
+                                           x_end = x_end,
+                                           parent_rid = parent_rid,
+                                           key = key,
+                                           **kwargs)
+
     def draw(self):
         ''' Draw all child nodes.
         '''
@@ -402,6 +412,7 @@ class ContainerNode(wx.Panel):
         '''
         for cur_node in self.node_list:
             cur_node.clear_annotation_artist(**kwargs)
+
 
 
 class ViewContainerNode(wx.Panel):
@@ -572,6 +583,17 @@ class ViewContainerNode(wx.Panel):
         for cur_node in self.node_list:
             cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                            key = key, **kwargs)
+
+
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in all children of this node.
+        '''
+        for cur_node in self.node_list:
+            cur_node.plot_annotation_vspan(x_start = x_start,
+                                           x_end = x_end,
+                                           parent_rid = parent_rid,
+                                           key = key,
+                                           **kwargs)
 
     def draw(self):
         ''' Draw all child nodes.
