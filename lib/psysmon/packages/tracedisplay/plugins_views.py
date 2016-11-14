@@ -63,7 +63,7 @@ class Refresh(CommandPlugin):
     def run(self):
         ''' Export the visible data to the project server.
         '''
-        self.parent.updateDisplay()
+        self.parent.update_display()
 
 
 
