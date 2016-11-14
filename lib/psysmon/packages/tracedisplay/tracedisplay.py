@@ -602,18 +602,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.update_display()
 
 
-    # TODO: Move the method to the psysmonDockingFrame class.
-    def deactivate_interactive_plugin(self, plugin):
-        ''' Deactivate an interactive plugin.
-        '''
-        if plugin.mode != 'interactive':
-            return
-        self.viewPort.clearEventCallbacks()
-        self.viewPort.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-        plugin.deactivate()
-        self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
-
-
     def onKeyDown(self, event):
         ''' Handle a key down event.
 
@@ -1191,10 +1179,7 @@ class DisplayManager(object):
         # station.
         if len(interactive_plugins) == 1:
             cur_plugin = interactive_plugins[0]
-            self.parent.viewport.registerEventCallbacks(cur_plugin.getHooks(),
-                                                         self.parent.dataManager,
-                                                         self.parent.displayManager)
-
+            self.parent.viewport.register_mpl_event_callbacks(cur_plugin.getHooks())
         self.parent.viewport.SetFocus()
 
 

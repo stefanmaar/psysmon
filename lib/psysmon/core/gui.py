@@ -3219,6 +3219,17 @@ class PsysmonDockingFrame(wx.Frame):
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
 
 
+    def deactivate_interactive_plugin(self, plugin):
+        ''' Deactivate an interactive plugin.
+        '''
+        if plugin.mode != 'interactive':
+            return
+        self.viewport.clear_mpl_event_callbacks()
+        self.viewport.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        plugin.deactivate()
+        self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
+
+
     def on_edit_tool_preferences(self, event, plugin):
         ''' Handle the edit preferences dropdown click.
 
