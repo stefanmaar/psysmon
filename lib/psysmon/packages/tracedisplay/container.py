@@ -48,7 +48,7 @@ import matplotlib as mpl
 
 
 
-class TdViewAnnotationPanel(wx.Panel):
+class OLD_TdViewAnnotationPanel(wx.Panel):
     '''
     The view annotation area.
 
@@ -81,7 +81,7 @@ class TdViewAnnotationPanel(wx.Panel):
         self.label.Refresh()
 
 
-class PlotPanel(wx.Panel):
+class OLD_PlotPanel(wx.Panel):
     """
     The PlotPanel
     """
@@ -161,7 +161,7 @@ class PlotPanel(wx.Panel):
 
 
 
-class View(wx.Panel):
+class OLD_View(wx.Panel):
     '''
     The tracedisplay view container.
     '''
@@ -346,7 +346,7 @@ class View(wx.Panel):
 
 
 
-class AnnotationArtist(object):
+class OLD_AnnotationArtist(object):
 
     def __init__(self, mode, parent_rid, key):
         self.mode = mode
@@ -463,7 +463,7 @@ class ChannelAnnotationArea(wx.Panel):
         gc.PopState()
 
 
-class ChannelContainer(wx.Panel):
+class OLD_ChannelContainer(wx.Panel):
     '''
     The channel panel.
 
@@ -641,7 +641,7 @@ class ChannelContainer(wx.Panel):
 
 
 
-class StationContainer(wx.Panel):
+class OLD_StationContainer(wx.Panel):
     '''
     The station panel.
 
@@ -1114,7 +1114,7 @@ class StationAnnotationArea(wx.Panel):
 
 
 
-class TdViewPort(scrolled.ScrolledPanel):
+class OLD_TdViewPort(scrolled.ScrolledPanel):
     '''
     The tracedisplay viewport.
 
