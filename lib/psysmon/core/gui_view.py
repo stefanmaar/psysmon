@@ -32,6 +32,7 @@ The view framework to visualize data.
 
 import logging
 import operator
+import warnings
 
 import wx
 import wx.lib.scrolledpanel
@@ -654,9 +655,13 @@ class ViewNode(wx.Panel):
 
     def set_mpl_event_callbacks(self, hooks, parent):
 
+        added_cids = []
         for cur_key, cur_callback in hooks.iteritems():
             cur_cid = self.plot_panel.canvas.mpl_connect(cur_key, lambda evt, parent = parent, callback = cur_callback: callback(evt, parent))
             self.mpl_cids.append(cur_cid)
+            added_cids.append(cur_cid)
+
+        return added_cids
 
 
     def clear_mpl_event_callbacks(self, cid_list = None):
@@ -666,6 +671,63 @@ class ViewNode(wx.Panel):
         for cur_cid in cid_list:
             self.plot_panel.canvas.mpl_disconnect(cur_cid)
 
+
+    def set_annotation(self, text):
+        ''' Set the text in the annotation area of the view.
+        '''
+        if self.annotation_area:
+            self.annotation_area.setLabel(text)
+
+
+
+    def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in the data axes.
+        '''
+        pass
+
+
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical span in the data axes.
+        '''
+        pass
+
+
+
+    def clear_annotation_artist(self, mode = None, parent_rid = None, key = None):
+        ''' Delete annotation artits from the view.
+        '''
+        artists_to_remove = self.get_annotation_artist(mode = mode,
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+        for cur_artist in artists_to_remove:
+            for cur_line_artist in cur_artist.line_artist:
+                self.dataAxes.lines.remove(cur_line_artist)
+
+            for cur_patch_artist in cur_artist.patch_artist:
+                self.dataAxes.patches.remove(cur_patch_artist)
+
+            for cur_text_artist in cur_artist.text_artist:
+                self.dataAxes.texts.remove(cur_text_artist)
+
+            self.annotation_artists.remove(cur_artist)
+
+
+
+
+    def get_annotation_artist(self, **kwargs):
+        ''' Get the annotation artist.
+        '''
+        ret_artist = self.annotation_artists
+
+        valid_keys = ['mode', 'parent_rid', 'key']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_artist = [x for x in ret_artist if getattr(x, cur_key) == cur_value or cur_value is None]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_artist
 
 
 class PlotPanel(wx.Panel):
@@ -762,3 +824,38 @@ class PlotPanel(wx.Panel):
 
         '''
         assert False, 'The update_display method must be defined!'
+
+
+
+class AnnotationArtist(object):
+    ''' Matplotlib instances used to annotate the data in the view axes.
+    '''
+
+    def __init__(self, mode, parent_rid, key):
+        self.mode = mode
+
+        self.parent_rid = parent_rid
+
+        self.key = key
+
+        self.line_artist = []
+
+        self.text_artist = []
+
+        self.patch_artist = []
+
+        self.image_artist = []
+
+
+    def add_artist(self, artist_list):
+        ''' Add an artist.
+        '''
+        for cur_artist in artist_list:
+            if isinstance(cur_artist, mpl.lines.Line2D):
+                self.line_artist.append(cur_artist)
+            elif isinstance(cur_artist, mpl.patches.Patch):
+                self.patch_artist.append(cur_artist)
+            elif isinstance(cur_artist, mpl.text.Text):
+                self.text_artist.append(cur_artist)
+            else:
+                raise RuntimeError('Unknown artist type.')
