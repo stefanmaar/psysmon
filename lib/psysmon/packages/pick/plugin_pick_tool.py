@@ -265,7 +265,15 @@ class PickTool(InteractivePlugin):
 
                 for cur_pick in picks:
                     # Create the pick line in all channels of the station.
-                    self.plot_pick_line(cur_pick, cur_plot_channel.container)
+                    cur_node_list = self.parent.viewport.get_node(station = scnl[0],
+                                                                  name = scnl[1],
+                                                                  network = scnl[2],
+                                                                  location = scnl[3],
+                                                                  node_type = 'container')
+                    # TODO: Change the plot_pick_line method to accept a list
+                    # of nodes.
+                    for cur_node in cur_node_list:
+                        self.plot_pick_line(cur_pick, cur_node)
 
 
     def pick_seismogram(self, event, data_manager, display_manager):
