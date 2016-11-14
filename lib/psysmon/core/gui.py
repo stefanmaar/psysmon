@@ -3178,7 +3178,7 @@ class PsysmonDockingFrame(wx.Frame):
         '''
         menu = wx.Menu()
         item = menu.Append(wx.ID_ANY, "edit preferences")
-        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.onEditToolPreferences(evt, plugin), item)
+        self.Bind(wx.EVT_MENU, lambda evt, plugin=plugin : self.on_edit_tool_preferences(evt, plugin), item)
         event.PopupMenu(menu)
 
 
