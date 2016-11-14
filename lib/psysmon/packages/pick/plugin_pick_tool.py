@@ -198,7 +198,7 @@ class PickTool(InteractivePlugin):
         else:
             if self.selected_catalog_name is None:
                 self.logger.info('You have to select a pick catalog first.')
-            elif cur_view.name == 'plot seismogram':
+            elif cur_view.name.endswith('plot_seismogram'):
                 self.pick_seismogram(event, dataManager, displayManager)
             else:
                 self.logger.info('Picking in a %s view is not supported.', cur_view.name)
@@ -267,13 +267,14 @@ class PickTool(InteractivePlugin):
                     # Create the pick line in all channels of the station.
                     self.plot_pick_line(cur_pick, cur_plot_channel.container)
 
+
     def pick_seismogram(self, event, data_manager, display_manager):
         ''' Create a pick in a seismogram view.
         '''
         if event.inaxes is None:
             return
 
-        cur_axes = self.view.dataAxes
+        cur_axes = self.view.axes
 
         # Find the seismogram line.
         seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
@@ -307,15 +308,16 @@ class PickTool(InteractivePlugin):
 
 
         # Get the channel of the pick.
-        scnl = self.view.GetParent().scnl
-        cur_channel = self.parent.project.geometry_inventory.get_channel(station = scnl[0],
-                                                                         name = scnl[1],
-                                                                         network = scnl[2],
-                                                                         location = scnl[3])
+        props = self.view.props
+        cur_channel = self.parent.project.geometry_inventory.get_channel(station = props.station,
+                                                                         name = props.channel,
+                                                                         network = props.network,
+                                                                         location = props.location)
         if not cur_channel:
-            self.logger.error('No channel for SCNL %s found in the inventory.', scnl)
+            scnl = (props.station, props.channel, props.network, props.location)
+            self.logger.error('No channel for SCNL %s found in the inventory.', ':'.join(scnl))
         elif len(cur_channel) > 1:
-            self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", scnl)
+            self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", ':'.join(scnl))
         else:
             # Create the pick and write it to the database.
             cur_catalog = self.library.catalogs[self.selected_catalog_name]
@@ -333,13 +335,13 @@ class PickTool(InteractivePlugin):
                 picks = cur_catalog.get_pick(start_time = search_win_start,
                                              end_time = search_win_end,
                                              label = self.pref_manager.get_value('label'),
-                                             station = scnl[0],
+                                             station = props.station,
                                              event_id = event_id)
             else:
                 picks = cur_catalog.get_pick(start_time = search_win_start,
                                              end_time = search_win_end,
                                              label = self.pref_manager.get_value('label'),
-                                             station = scnl[0])
+                                             station = props.station)
 
             if len(picks) == 0:
                 cur_channel = cur_channel[0]
@@ -372,6 +374,7 @@ class PickTool(InteractivePlugin):
             # Make the pick lines visible.
             self.view.GetGrandParent().draw()
 
+
     def plot_pick_line(self, pick, container):
         ''' Plot a pick line in the container.
         '''
@@ -395,7 +398,7 @@ class PickTool(InteractivePlugin):
         if event.inaxes is None:
             return
 
-        cur_axes = self.view.dataAxes
+        cur_axes = self.view.axes
 
         # Find the seismogram line.
         seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
@@ -410,15 +413,16 @@ class PickTool(InteractivePlugin):
         snap_x = xdata[ind_x]
 
         # Get the channel of the pick.
-        scnl = self.view.GetParent().scnl
-        cur_channel = self.parent.project.geometry_inventory.get_channel(station = scnl[0],
-                                                                         name = scnl[1],
-                                                                         network = scnl[2],
-                                                                         location = scnl[3])
+        props = self.view.props
+        cur_channel = self.parent.project.geometry_inventory.get_channel(station = props.station,
+                                                                         name = props.channel,
+                                                                         network = props.network,
+                                                                         location = props.location)
         if not cur_channel:
-            self.logger.error('No channel for SCNL %s found in the inventory.', scnl)
+            scnl = (props.station, props.channel, props.network, props.location)
+            self.logger.error('No channel for SCNL %s found in the inventory.', ':'.join(scnl))
         elif len(cur_channel) > 1:
-            self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", scnl)
+            self.logger.error("More than one channel returned from the inventory for SCNL %s. This shouldn't happen.", ':'.join(scnl))
         else:
             # Get the nearest pick and delete it.
             cur_catalog = self.library.catalogs[self.selected_catalog_name]
@@ -426,7 +430,7 @@ class PickTool(InteractivePlugin):
                                                 start_time = UTCDateTime(snap_x) - self.pref_manager.get_value('delete_snap_length'),
                                                 end_time = UTCDateTime(snap_x) + self.pref_manager.get_value('delete_snap_length'),
                                                 label = self.pref_manager.get_value('label'),
-                                                station = scnl[0])
+                                                station = props.station)
 
             if pick:
                 cur_catalog.delete_picks_from_db(project = self.parent.project,
@@ -495,11 +499,11 @@ class PickTool(InteractivePlugin):
     def clear_pick_lines(self):
         ''' Remove the pick lines from the views.
         '''
-        views = self.parent.displayManager.getViewContainer()
-        for cur_view in views:
-            cur_view.clear_annotation_artist(mode = 'vline',
+        node_list = self.parent.viewport.get_node(node_type = 'container')
+        for cur_node in node_list:
+            cur_node.clear_annotation_artist(mode = 'vline',
                                              parent_rid = self.rid)
-            cur_view.draw()
+            cur_node.draw()
 
 
 
