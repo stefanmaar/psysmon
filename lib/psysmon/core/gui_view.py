@@ -95,7 +95,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         self.SetupScrolling()
 
 
-    def get_node(self, name = None, group = None, recursive = True, **kwargs):
+    def get_node(self, name = None, group = None, node_type = None, recursive = True, **kwargs):
         ''' Get a node instance.
 
         Parameters
@@ -115,7 +115,13 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         # Add all child nodes.
         if recursive:
             for cur_node in self.node_list:
-                ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
+                ret_nodes.extend(cur_node.get_node(name = name, group = group, node_type = node_type, **kwargs))
+
+        if node_type is not None:
+            if node_type == 'view':
+                ret_nodes = [x for x in ret_nodes if isinstance(x, ViewNode)]
+            elif node_type == 'container':
+                ret_nodes = [x for x in ret_nodes if not isinstance(x, ViewNode)]
 
         return ret_nodes
 
@@ -143,15 +149,18 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
     def register_mpl_event_callbacks(self, hooks):
         ''' Set the event callback of the matplotlib canvas.
         '''
+        cid_list = []
         for cur_node in self.node_list:
-            cur_node.register_mpl_event_callbacks(hooks, self)
+            cur_cid = cur_node.register_mpl_event_callbacks(hooks, self)
+            cid_list.extend(cur_cid)
+        return cid_list
 
 
-    def clear_mpl_event_callbacks(self):
+    def clear_mpl_event_callbacks(self, event_name = None):
         ''' Clear the event callbacks of the matplotlib canvas in the views.
         '''
         for cur_node in self.node_list:
-            cur_node.clear_mpl_event_callbacks()
+            cur_node.clear_mpl_event_callbacks(event_name = event_name)
 
 
     def register_view_plugin(self, plugin, limit_group = None):
@@ -292,7 +301,7 @@ class ContainerNode(wx.Panel):
         self.container_sizer.Layout()
 
 
-    def get_node(self, name = None, group = None, recursive = True, **kwargs):
+    def get_node(self, name = None, group = None, node_type = None, recursive = True, **kwargs):
         ''' Get a node instance.
 
         Parameters
@@ -312,7 +321,13 @@ class ContainerNode(wx.Panel):
         # Add all child nodes.
         if recursive:
             for cur_node in self.node_list:
-                ret_nodes.extend(cur_node.get_node(name = name, group = group, **kwargs))
+                ret_nodes.extend(cur_node.get_node(name = name, group = group, node_type = node_type, **kwargs))
+
+        if node_type is not None:
+            if node_type == 'view':
+                ret_nodes = [x for x in ret_nodes if isinstance(x, ViewNode)]
+            elif node_type == 'container':
+                ret_nodes = [x for x in ret_nodes if not isinstance(x, ViewNode)]
 
         return ret_nodes
 
@@ -341,15 +356,18 @@ class ContainerNode(wx.Panel):
     def register_mpl_event_callbacks(self, hooks, parent):
         ''' Set the event callback of the matplotlib canvas in the views.
         '''
+        cid_list = []
         for cur_node in self.node_list:
-            cur_node.register_mpl_event_callbacks(hooks, parent)
+            cur_cid = cur_node.register_mpl_event_callbacks(hooks, parent)
+            cid_list.extend(cur_cid)
+        return cid_list
 
 
-    def clear_mpl_event_callbacks(self):
+    def clear_mpl_event_callbacks(self, event_name = None):
         ''' Clear the event callbacks of the matplotlib canvas in the views.
         '''
         for cur_node in self.node_list:
-            cur_node.clear_mpl_event_callbacks()
+            cur_node.clear_mpl_event_callbacks(event_name = event_name)
 
 
     def register_view_plugin(self, plugin, limit_group = None):
@@ -458,7 +476,7 @@ class ViewContainerNode(wx.Panel):
         self.container_sizer.Layout()
 
 
-    def get_node(self, name = None, group = None, **kwargs):
+    def get_node(self, name = None, group = None, node_type = None, **kwargs):
         ''' Get a node instance.
 
         Parameters
@@ -475,6 +493,12 @@ class ViewContainerNode(wx.Panel):
         for cur_key, cur_value in kwargs.iteritems():
             ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
 
+        if node_type is not None:
+            if node_type == 'view':
+                ret_nodes = [x for x in ret_nodes if isinstance(x, ViewNode)]
+            elif node_type == 'container':
+                ret_nodes = [x for x in ret_nodes if not isinstance(x, ViewNode)]
+
         return ret_nodes
 
 
@@ -485,15 +509,18 @@ class ViewContainerNode(wx.Panel):
     def register_mpl_event_callbacks(self, hooks, parent):
         ''' Set the event callback of the matplotlib canvas in the views.
         '''
+        cid_list = []
         for cur_node in self.node_list:
-            cur_node.set_mpl_event_callbacks(hooks, parent)
+            cur_cid = cur_node.set_mpl_event_callbacks(hooks, parent)
+            cid_list.extend(cur_cid)
+        return cid_list
 
 
-    def clear_mpl_event_callbacks(self):
+    def clear_mpl_event_callbacks(self, event_name = None):
         ''' Clear the event callbacks of the matplotlib canvas in the views.
         '''
         for cur_node in self.node_list:
-            cur_node.clear_mpl_event_callbacks()
+            cur_node.clear_mpl_event_callbacks(event_name = event_name)
 
 
     def create_plugin_view(self, plugin, limit_group = None):
@@ -574,6 +601,9 @@ class ViewNode(wx.Panel):
         else:
             self.props = psysmon.core.util.AttribDict()
 
+        # The annotation artists of the view.
+        self.annotation_artists = []
+
         self.color = color
         self.SetBackgroundColour(self.color)
 
@@ -583,8 +613,9 @@ class ViewNode(wx.Panel):
 
         self.SetMinSize(self.plot_panel.GetMinSize())
 
-        # A list of matplotlib event connection ids.
-        self.mpl_cids = []
+        # A list of matplotlib event connection ids. The key is the name of the
+        # event.
+        self.mpl_cids = {}
 
         # TODO: Enable the selection of vertical or horizontal stacking of the
         # plot_panel and annotation_area.
@@ -658,15 +689,24 @@ class ViewNode(wx.Panel):
         added_cids = []
         for cur_key, cur_callback in hooks.iteritems():
             cur_cid = self.plot_panel.canvas.mpl_connect(cur_key, lambda evt, parent = parent, callback = cur_callback: callback(evt, parent))
-            self.mpl_cids.append(cur_cid)
+            if cur_key in self.mpl_cids:
+                self.mpl_cids[cur_key].append(cur_cid)
+            else:
+                self.mpl_cids[cur_key] = [cur_cid,]
             added_cids.append(cur_cid)
 
         return added_cids
 
 
-    def clear_mpl_event_callbacks(self, cid_list = None):
-        if cid_list is None:
-            cid_list = self.mpl_cids
+    def clear_mpl_event_callbacks(self, event_name = None):
+
+        cid_list = []
+        if event_name is not None:
+            if event_name in self.mpl_cids.keys():
+                cid_list = self.mpl_cids[event_name]
+        else:
+            for cur_key, cur_cid_list in self.mpl_cids.iteritems():
+                cid_list.extend(cur_cid_list)
 
         for cur_cid in cid_list:
             self.plot_panel.canvas.mpl_disconnect(cur_cid)
@@ -701,13 +741,13 @@ class ViewNode(wx.Panel):
                                                        key = key)
         for cur_artist in artists_to_remove:
             for cur_line_artist in cur_artist.line_artist:
-                self.dataAxes.lines.remove(cur_line_artist)
+                self.axes.lines.remove(cur_line_artist)
 
             for cur_patch_artist in cur_artist.patch_artist:
-                self.dataAxes.patches.remove(cur_patch_artist)
+                self.axes.patches.remove(cur_patch_artist)
 
             for cur_text_artist in cur_artist.text_artist:
-                self.dataAxes.texts.remove(cur_text_artist)
+                self.axes.texts.remove(cur_text_artist)
 
             self.annotation_artists.remove(cur_artist)
 
