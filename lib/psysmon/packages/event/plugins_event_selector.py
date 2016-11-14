@@ -274,7 +274,8 @@ class SelectEvents(OptionPlugin):
             channel_nodes = self.parent.viewport.get_node(station = scnl[0],
                                                           channel = scnl[1],
                                                           network = scnl[2],
-                                                          location = scnl[3])
+                                                          location = scnl[3],
+                                                          node_type = 'container')
             for cur_node in channel_nodes:
                 cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
                                                                  x_end = self.selected_event['end_time'],
@@ -282,8 +283,6 @@ class SelectEvents(OptionPlugin):
                                                                  parent_rid = self.rid,
                                                                  key = self.selected_event['id'],
                                                                  color = self.colors['event_vspan'])
-                cur_node.draw()
-
 
 
     def on_load_events(self, event):
