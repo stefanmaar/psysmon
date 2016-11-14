@@ -89,7 +89,7 @@ class MeasurePoint(InteractivePlugin):
         return hooks
 
 
-    def on_button_press(self, event, dataManager=None, displayManager=None):
+    def on_button_press(self, event, parent = None):
         if event.inaxes is None:
             return
 
@@ -104,24 +104,26 @@ class MeasurePoint(InteractivePlugin):
             return
         else:
             if cur_view.name.endswith('plot_seismogram'):
-                self.measure_seismogram(event, dataManager, displayManager)
-                cid = cur_view.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.measure_seismogram : callback(evt, dataManager, displayManager))
-                self.cid = cid
+                self.measure_seismogram(event, parent)
+                hook = {}
+                hook['motion_notify_event'] = self.measure_seismogram
+                cid_list = cur_view.set_mpl_event_callbacks(hook, parent = parent)
+                self.cid = cid_list[0]
             else:
                 self.logger.error('Measuring a %s view is not supported.', cur_view.name)
 
 
-    def on_button_release(self, event, dataManager=None, displayManager=None):
+    def on_button_release(self, event, parent):
         ''' Handle the mouse button release event.
         '''
         # Clear the motion notify callbacks.
         if self.cid is not None:
-            self.view.clearEventCallbacks(cid_list = [self.cid,])
+            self.view.clear_mpl_event_callbacks(cid_list = [self.cid,])
 
         self.desaturate_crosshair()
 
 
-    def measure_seismogram(self, event, data_manager, display_manager):
+    def measure_seismogram(self, event, parent):
         ''' Measure the seismogram line in the seismogram view.
         '''
         if event.inaxes is None:
@@ -160,7 +162,7 @@ class MeasurePoint(InteractivePlugin):
             snap_y = snap_y[0]
         measure_string = 'time: {0:s}\nampl.: {1:g}\n'.format(date_string.isoformat(),
                                                               snap_y)
-        self.view.setAnnotation(measure_string)
+        self.view.set_annotation(measure_string)
 
         self.view.draw()
 
