@@ -63,10 +63,7 @@ class CreateEvent(InteractivePlugin):
         self.selected_catalog_name = None
 
 
-        self.begin_line = {}
-        self.end_line = {}
         self.bg = {}
-        self.motion_notify_cid = []
         self.startTime = None
         self.endTime = None
 
@@ -189,7 +186,7 @@ class CreateEvent(InteractivePlugin):
         self.pref_manager.set_limit('event_catalog', cur_limit)
 
 
-    def on_button_press(self, event, dataManager=None, displayManager=None):
+    def on_button_press(self, event, parent = None):
         if event.button == 2:
             # Skip the middle mouse button.
             return
@@ -204,55 +201,88 @@ class CreateEvent(InteractivePlugin):
         self.startTime = event.xdata
         self.endTime = event.xdata
 
-        viewport = displayManager.parent.viewPort
-        for curStation in viewport.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
-                    #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
-                    #curView.plotCanvas.canvas.restore_region(bg)
+        viewport = self.parent.viewport
+        hooks = {'motion_notify_event': self.on_mouse_motion}
+        viewport.register_mpl_event_callbacks(hooks)
 
-                    if curView in self.end_line.keys():
-                        self.end_line[curView].set_visible(False)
-                        curView.dataAxes.draw_artist(self.end_line[curView])
+        station_nodes = viewport.get_node(recursive = False)
+        for cur_node in station_nodes:
+            cur_node.plot_annotation_vline(x = event.xdata,
+                                           parent_rid = self.rid,
+                                           key = 'begin_line')
+            cur_node.draw()
+
+        #for curStation in viewport.stations:
+        #    for curChannel in curStation.channels.values():
+        #        for curView in curChannel.views.values():
+        #            #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
+        #            #curView.plotCanvas.canvas.restore_region(bg)
+        #
+        #            if curView in self.end_line.keys():
+        #                self.end_line[curView].set_visible(False)
+        #                curView.dataAxes.draw_artist(self.end_line[curView])
+        #
+        #
+        #           if curView in self.begin_line.keys():
+        #               self.begin_line[curView].set_xdata(event.xdata)
+        #           else:
+        #               self.begin_line[curView] = curView.dataAxes.axvline(x=event.xdata)
+        #
+        #           curView.plotCanvas.canvas.draw()
+        #
+        #          cid = curView.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.on_mouse_motion : callback(evt, dataManager, displayManager))
+        #         self.motion_notify_cid.append((curView.plotCanvas.canvas, cid))
 
 
-                    if curView in self.begin_line.keys():
-                        self.begin_line[curView].set_xdata(event.xdata)
-                    else:
-                        self.begin_line[curView] = curView.dataAxes.axvline(x=event.xdata)
-
-                    curView.plotCanvas.canvas.draw()
-
-                    cid = curView.plotCanvas.canvas.mpl_connect('motion_notify_event', lambda evt, dataManager=dataManager, displayManager=displayManager, callback=self.on_mouse_motion : callback(evt, dataManager, displayManager))
-                    self.motion_notify_cid.append((curView.plotCanvas.canvas, cid))
-
-
-    def on_mouse_motion(self, event, dataManger=None, displayManager=None):
+    def on_mouse_motion(self, event, parent = None):
         if event.inaxes is not None:
             self.endTime = event.xdata
 
-        viewport = displayManager.parent.viewPort
-        for curStation in viewport.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
-                    if event.inaxes is None:
-                        inv = curView.dataAxes.transData.inverted()
-                        tmp = inv.transform((event.x, event.y))
-                        self.logger.debug('xTrans: %f', tmp[0])
-                        event.xdata = tmp[0]
-                    canvas = curView.plotCanvas.canvas
-                    if curView not in self.bg.keys():
-                        self.bg[curView] = canvas.copy_from_bbox(curView.dataAxes.bbox)
-                    canvas.restore_region(self.bg[curView])
+        viewport = self.parent.viewport
 
-                    if curView not in self.end_line.keys():
-                        self.end_line[curView] = curView.dataAxes.axvline(x=event.xdata, animated=True)
-                    else:
-                        self.end_line[curView].set_xdata(event.xdata)
-                        self.end_line[curView].set_visible(True)
+        channel_container = viewport.get_node(group = 'channel_container', node_type = 'container')
 
-                    curView.dataAxes.draw_artist(self.end_line[curView])
-                    canvas.blit()
+        for cur_container in channel_container:
+            view_nodes = cur_container.get_node(node_type = 'view')
+            for cur_view in view_nodes:
+                if event.inaxes is None:
+                    inv = cur_view.axes.transData.inverted()
+                    tmp = inv.transform((event.x, event.y))
+                    event.xdata = tmp[0]
+                if cur_view not in self.bg.keys():
+                    self.bg[cur_view] = cur_view.plot_panel.canvas.copy_from_bbox(cur_view.axes.bbox)
+                cur_view.plot_panel.canvas.restore_region(self.bg[cur_view])
+
+                line_artist, label_artist = cur_view.plot_annotation_vline(x = event.xdata,
+                                                                           parent_rid = self.rid,
+                                                                           key = 'end_line',
+                                                                           animated = True)
+
+                cur_view.axes.draw_artist(line_artist)
+                cur_view.plot_panel.canvas.blit()
+
+
+#        for curStation in viewport.stations:
+#            for curChannel in curStation.channels.values():
+#                for curView in curChannel.views.values():
+#                    if event.inaxes is None:
+#                        inv = curView.dataAxes.transData.inverted()
+#                        tmp = inv.transform((event.x, event.y))
+#                        self.logger.debug('xTrans: %f', tmp[0])
+#                        event.xdata = tmp[0]
+#                    canvas = curView.plotCanvas.canvas
+#                    if curView not in self.bg.keys():
+#                        self.bg[curView] = canvas.copy_from_bbox(curView.dataAxes.bbox)
+#                    canvas.restore_region(self.bg[curView])
+#
+#                    if curView not in self.end_line.keys():
+#                        self.end_line[curView] = curView.dataAxes.axvline(x=event.xdata, animated=True)
+#                    else:
+#                        self.end_line[curView].set_xdata(event.xdata)
+#                        self.end_line[curView].set_visible(True)
+#
+#                    curView.dataAxes.draw_artist(self.end_line[curView])
+#                    canvas.blit()
 
 
     def on_button_release(self, event, dataManager=None, displayManager=None):
@@ -288,23 +318,14 @@ class CreateEvent(InteractivePlugin):
     def cleanup(self):
         ''' Remove all elements added to the views.
         '''
-        # Clear the zoom lines.
-        for curView in self.begin_line.keys():
-            if curView in self.begin_line.keys():
-                curView.dataAxes.lines.remove(self.begin_line[curView])
-            if curView in self.end_line.keys():
-                curView.dataAxes.lines.remove(self.end_line[curView])
-            curView.draw()
-
-        self.begin_line = {}
-        self.end_line = {}
-
+        station_nodes = self.parent.viewport.get_node(recursive = False)
+        for cur_node in station_nodes:
+            cur_node.clear_annotation_artist(parent_rid = self.rid)
+            cur_node.draw()
 
         # Clear the motion notify callbacks.
-        for canvas, cid in self.motion_notify_cid:
-            canvas.mpl_disconnect(cid)
+        self.parent.viewport.clear_mpl_event_callbacks(event_name = 'motion_notify_event')
 
-        self.motion_notify_cid = []
         self.bg = {}
 
 
