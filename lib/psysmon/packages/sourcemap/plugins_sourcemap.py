@@ -57,7 +57,7 @@ class PublishVisible(plugins.CommandPlugin):
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.icons['active'] = icons.iconsBlack16.export_icon_16
+        self.icons['active'] = icons.iconsBlack16.globe_2_icon_16
 
         item = preferences_manager.FloatSpinPrefItem(name = 'alpha',
                                                      value = 1.61,
