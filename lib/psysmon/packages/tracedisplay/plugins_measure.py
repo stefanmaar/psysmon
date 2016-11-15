@@ -55,7 +55,6 @@ class MeasurePoint(InteractivePlugin):
         self.end_time = None
         self.view = None
         self.crosshair = {}
-        self.cid = None
 
 
     def deactivate(self):
@@ -107,8 +106,7 @@ class MeasurePoint(InteractivePlugin):
                 self.measure_seismogram(event, parent)
                 hook = {}
                 hook['motion_notify_event'] = self.measure_seismogram
-                cid_list = cur_view.set_mpl_event_callbacks(hook, parent = parent)
-                self.cid = cid_list[0]
+                cur_view.set_mpl_event_callbacks(hook, parent = parent)
             else:
                 self.logger.error('Measuring a %s view is not supported.', cur_view.name)
 
@@ -117,9 +115,7 @@ class MeasurePoint(InteractivePlugin):
         ''' Handle the mouse button release event.
         '''
         # Clear the motion notify callbacks.
-        if self.cid is not None:
-            self.view.clear_mpl_event_callbacks(cid_list = [self.cid,])
-
+        self.view.clear_mpl_event_callbacks('motion_notify_event')
         self.desaturate_crosshair()
 
 
