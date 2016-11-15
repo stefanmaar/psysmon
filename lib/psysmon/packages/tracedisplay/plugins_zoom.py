@@ -70,12 +70,47 @@ class Zoom(InteractivePlugin):
         return hooks
 
 
+    def activate(self):
+        ''' Activate the plugin.
+        '''
+        InteractivePlugin.activate(self)
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('"-"',),
+                                                  action = self.parent.growTimePeriod)
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('WXK_SHIFT', '"-"'),
+                                                  action = self.parent.growTimePeriod,
+                                                  action_kwargs = {'ratio': 25})
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('WXK_COMMAND', '"-"'),
+                                                  action = self.parent.growTimePeriod,
+                                                  action_kwargs = {'ratio': 10})
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('WXK_ALT', '"-"'),
+                                                  action = self.parent.growTimePeriod,
+                                                  action_kwargs = {'ratio': 1})
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('"+"',),
+                                                  action = self.parent.shrinkTimePeriod)
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('WXK_SHIFT', '"+"'),
+                                                  action = self.parent.shrinkTimePeriod,
+                                                  action_kwargs = {'ratio': 25})
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('WXK_COMMAND', '"+"'),
+                                                  action = self.parent.shrinkTimePeriod,
+                                                  action_kwargs = {'ratio': 10})
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('WXK_ALT', '"+"'),
+                                                  action = self.parent.shrinkTimePeriod,
+                                                  action_kwargs = {'ratio': 1})
+
+
     def deactivate(self):
         ''' Deactivate the plugin.
         '''
         self.cleanup()
-        self.active = False
-
+        InteractivePlugin.deactivate(self)
 
 
     def cleanup(self):
