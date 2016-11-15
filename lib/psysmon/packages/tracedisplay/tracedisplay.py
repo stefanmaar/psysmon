@@ -353,9 +353,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.displayManager = DisplayManager(parent = self,
                                              inventory = project.geometry_inventory)
 
-        # Create the shortcut options.
-        self.shortcutManager = ShortcutManager()
-
         # Create the dataManager.
         self.dataManager = DataManager(self)
 
@@ -376,8 +373,12 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
         # Register the plugin shortcuts. This has to be done after the various
         # manager instances were created.
+        # TODO: register the keyboard shortcuts when the plugin is actevated.
+        # TODO: unregister the shortcuts when deactivating the plugin.
         for curPlugin in self.plugins:
             curPlugin.register_keyboard_shortcuts()
+
+
         self.initKeyEvents()
 
         # Display the data.
@@ -449,29 +450,24 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.modifier_key_up = None
         self.pressed_keys = []
 
-        self.logger.debug('Binding key events.')
-        self.viewport.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
-        self.viewport.Bind(wx.EVT_KEY_UP, self.onKeyUp)
+        #self.logger.debug('Binding key events.')
+        #self.viewport.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        #self.viewport.Bind(wx.EVT_KEY_UP, self.onKeyUp)
 
-        self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
-        self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
-        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_RIGHT',), self.advanceTimePercentage, step = 10)
-        self.shortcutManager.addAction(('WXK_ALT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 1)
-        self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
-        self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 25)
-        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_LEFT',), self.decreaseTimePercentage, step = 10)
-        self.shortcutManager.addAction(('WXK_ALT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 1)
-        self.shortcutManager.addAction(('"-"',), self.growTimePeriod)
-        self.shortcutManager.addAction(('WXK_SHIFT', '"-"',), self.growTimePeriod, ratio = 25)
-        self.shortcutManager.addAction(('WXK_COMMAND', '"-"',), self.growTimePeriod, ratio = 10)
-        self.shortcutManager.addAction(('WXK_ALT', '"-"',), self.growTimePeriod, ratio = 1)
-        self.shortcutManager.addAction(('"+"',), self.shrinkTimePeriod)
-        self.shortcutManager.addAction(('WXK_SHIFT', '"+"',), self.shrinkTimePeriod, ratio = 25)
-        self.shortcutManager.addAction(('WXK_COMMAND', '"+"',), self.shrinkTimePeriod, ratio = 10)
-        self.shortcutManager.addAction(('WXK_ALT', '"+"',), self.shrinkTimePeriod, ratio = 1)
-        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.swap_tool)
-        self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.restore_tool, kind = 'up')
-        self.shortcutManager.addAction(('WXK_ESCAPE',), self.deactivate_tool)
+        #self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
+        #self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
+        #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_RIGHT',), self.advanceTimePercentage, step = 10)
+        #self.shortcutManager.addAction(('WXK_ALT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 1)
+        #self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
+        #self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 25)
+        #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_LEFT',), self.decreaseTimePercentage, step = 10)
+        #self.shortcutManager.addAction(('WXK_ALT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 1)
+
+        #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.swap_tool)
+        #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.restore_tool, kind = 'up')
+        self.shortcut_manager.add_shortcut(origin_rid = self.collection_node.rid,
+                                           key_combination = ('WXK_ESCAPE',),
+                                           action = self.deactivate_tool)
 
 
     def advanceTime(self, time_step = None):
@@ -646,12 +642,13 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         #print "pressed key: %s." % pressedKey
         #print "self.pressed_keys: %s." % self.pressed_keys
         self.logger.debug('pressed key: %s - %s', keyCode, pressedKey)
-        action, kwargs = self.shortcutManager.getAction(tuple(pressedKey))
+        shortcuts = self.shortcut_manager.get_shortcut(key_combination = tuple(pressedKey), kind = 'down')
 
-        if action and kwargs:
-            action(**kwargs)
-        elif action:
-            action()
+        for cur_shortcut in shortcuts:
+            if cur_shortcut.action_kwargs is None:
+                cur_shortcut.action()
+            else:
+                cur_shortcut.action(**cur_shortcut.action_kwargs)
 
 
     def onKeyUp(self, event):
@@ -703,12 +700,14 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         #print "released key: %s." % pressedKey
         #print "self.pressed_keys: %s." % self.pressed_keys
         self.logger.debug('Released key: %s - %s', keyCode, pressedKey)
-        action, kwargs = self.shortcutManager.getAction(tuple(pressedKey), kind = 'up')
 
-        if action and kwargs:
-            action(**kwargs)
-        elif action:
-            action()
+        shortcuts = self.shortcut_manager.get_shortcut(key_combination = tuple(pressedKey), kind = 'up')
+
+        for cur_shortcut in shortcuts:
+            if cur_shortcut.action_kwargs is None:
+                cur_shortcut.action()
+            else:
+                cur_shortcut.action(**cur_shortcut.action_kwargs)
 
 
     def onSetFocus(self, event):
@@ -792,69 +791,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.datetimeInfo.Refresh()
 
 
-class ShortcutManager:
-
-
-    def __init__(self):
-        ''' The constructor
-
-        '''
-        # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        # A dictionary holding the actions bound to a certain key combination.
-        # The key of the dictionary is a tuple of none or more modifiers keys 
-        # and the pressed key.
-        self.actions = {}
-
-        self.kwargs = {}
-
-
-    def addAction(self, keyCombination, action, kind = 'down', **kwargs):
-        ''' Add an action to the shortcut options.
-
-        Parameters
-        ----------
-        keyCombination : tuple of Strings
-            The key combination to which the action is bound to.
-            E.g.: ('WXK_LEFT'), ('CTRL', 'P'), ('CTRL', 'ALT', 'P')
-
-        action : Method
-            The method which should be executed when the key is pressed.
-
-        kind : String
-            The kind of mouse event (up, down).
-
-        '''
-        self.actions[(kind, keyCombination)] = action
-        self.kwargs[(kind, keyCombination)] = kwargs
-
-
-    def getAction(self, keyCombination, kind = 'down'):
-        ''' Get the action bound to the keyCombination.
-
-        Paramters
-        ---------
-        keyCombination : tuple of Strings
-            The key combination to which the action is bound to.
-            E.g.: ('WXK_LEFT'), ('CTRL', 'P'), ('CTRL', 'ALT', 'P')
-
-        kind : String
-            The kind of mouse event (up, down).
-
-        Returns
-        -------
-        action : Method
-            The method which should be executed when the key is pressed.
-            None if no action is found.
-        '''
-        self.logger.debug("Searching for: %s", keyCombination)
-        self.logger.debug("Available actions: %s", self.actions)
-        action = self.actions.get((kind, keyCombination), None)
-        kwargs = self.kwargs.get((kind, keyCombination), None)
-
-        return (action, kwargs)
 
 
 
