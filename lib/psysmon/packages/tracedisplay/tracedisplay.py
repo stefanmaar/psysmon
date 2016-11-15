@@ -450,21 +450,9 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         self.modifier_key_up = None
         self.pressed_keys = []
 
-        #self.logger.debug('Binding key events.')
-        #self.viewport.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
-        #self.viewport.Bind(wx.EVT_KEY_UP, self.onKeyUp)
-
-        #self.shortcutManager.addAction(('WXK_RIGHT',), self.advanceTime)
-        #self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 25)
-        #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_RIGHT',), self.advanceTimePercentage, step = 10)
-        #self.shortcutManager.addAction(('WXK_ALT', 'WXK_RIGHT',), self.advanceTimePercentage, step = 1)
-        #self.shortcutManager.addAction(('WXK_LEFT',), self.decreaseTime)
-        #self.shortcutManager.addAction(('WXK_SHIFT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 25)
-        #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_LEFT',), self.decreaseTimePercentage, step = 10)
-        #self.shortcutManager.addAction(('WXK_ALT', 'WXK_LEFT',), self.decreaseTimePercentage, step = 1)
-
         #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.swap_tool)
         #self.shortcutManager.addAction(('WXK_COMMAND', 'WXK_SPACE'), self.restore_tool, kind = 'up')
+
         self.shortcut_manager.add_shortcut(origin_rid = self.collection_node.rid,
                                            key_combination = ('WXK_ESCAPE',),
                                            action = self.deactivate_tool)
