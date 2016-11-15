@@ -1432,17 +1432,13 @@ class DisplayManager(object):
         return viewContainer
 
 
-    def getViewContainer(self, station = None,
-                         channel = None, network = None,
-                         location = None, name = None):
+    def getViewContainer(self, **kwargs):
         ''' Get the view container of the specified search terms.
 
         '''
-        return self.parent.viewport.get_node(station = station,
-                                             channel = channel,
-                                             network = network,
-                                             location = location,
-                                             name = name)
+        # TODO: Remove this method by replacing the getViewContainer calls with
+        # the viewport.get_node call.
+        return self.parent.viewport.get_node(**kwargs)
 
 
     def removeViewTool(self, plugin):
