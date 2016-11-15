@@ -42,7 +42,7 @@ class ExportVisible(plugins.CommandPlugin):
 
         '''
         plugins.CommandPlugin.__init__(self,
-                                       name = 'export',
+                                       name = 'export to file',
                                        category = 'export',
                                        tags = ['export']
                                        )
@@ -52,7 +52,7 @@ class ExportVisible(plugins.CommandPlugin):
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.icons['active'] = icons.iconsBlack16.export_icon_16
+        self.icons['active'] = icons.iconsBlack16.download_icon_16
 
 
         # Add the plugin preferences.
