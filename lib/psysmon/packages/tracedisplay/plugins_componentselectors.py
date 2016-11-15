@@ -53,9 +53,9 @@ class SelectStation(OptionPlugin):
     def register_keyboard_shortcuts(self):
         ''' Register the keyboard shortcuts.
         '''
-        self.parent.shortcutManager.addAction(('WXK_DOWN',), self.next_station)
-        self.parent.shortcutManager.addAction(('WXK_UP', ), self.prev_station)
-
+        #self.parent.shortcutManager.addAction(('WXK_DOWN',), self.next_station)
+        #self.parent.shortcutManager.addAction(('WXK_UP', ), self.prev_station)
+        pass
 
     def buildFoldPanel(self, parent):
         self.logger.debug('Building the fold panel.')
