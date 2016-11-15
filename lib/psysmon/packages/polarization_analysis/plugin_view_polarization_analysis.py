@@ -23,6 +23,7 @@ import wx
 import numpy as np
 import scipy
 import scipy.signal
+import obspy.core
 from matplotlib.patches import Rectangle
 import psysmon
 from psysmon.core.plugins import ViewPlugin
@@ -56,13 +57,18 @@ class PolarizationAnalysis(ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.glasses_icon_16
 
+        self.channel_map = {'z': 'HHZ', 'ns':'HHN', 'ew':'HHE'}
+
+        # TODO: Add the possibility to define an azimuth offset from north.
+        # TODO: Add the possibility to define an inclination offset.
+
 
     @property
     def required_data_channels(self):
         ''' This plugin needs to create a virtual channel.
         '''
         # TODO: Get the needed channels from preference items.
-        return ('HHZ', 'HHN', 'HHE')
+        return self.channel_map.values()
 
 
 
@@ -77,16 +83,29 @@ class PolarizationAnalysis(ViewPlugin):
         ''' Plot one or more stations.
 
         '''
-        for curStation in station:
-            self.plotChannel(displayManager, dataManager, curStation.channels)
-
-
-
-    def plotChannel(self, displayManager, dataManager, channels):
-        ''' Plot one or more channels.
-
-        '''
+        self.logger.debug('Plotting station of polarization analysis.')
         stream = dataManager.procStream
+
+        for cur_station in station:
+            views = self.parent.viewport.get_node(station = cur_station.name,
+                                                  network = cur_station.network,
+                                                  location = cur_station.location,
+                                                  name = self.rid)
+            cur_stream = obspy.core.Stream()
+            for cur_channel in self.required_data_channels:
+                cur_stream += stream.select(station = cur_station.name,
+                                            channel = cur_channel,
+                                            network = cur_station.network,
+                                            location = cur_station.location)
+
+            for cur_view in views:
+                if cur_stream:
+                    cur_view.plot(cur_stream, self.channel_map)
+
+                cur_view.setXLimits(left = displayManager.startTime.timestamp,
+                                    right = displayManager.endTime.timestamp)
+                cur_view.draw()
+
 
 
     def getViewClass(self):
@@ -125,16 +144,41 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
 	self.lineColor = [x/255.0 for x in lineColor]
 
+        self.lines = {'z': None, 'ns': None, 'ew': None}
+
         self.axes.set_frame_on(False)
         self.axes.get_xaxis().set_visible(False)
         self.axes.get_yaxis().set_visible(False)
 
 
 
-    def plot(self, stream, color, duration, end_time, show_wiggle_trace = True, show_envelope = False,
-             envelope_style = 'top', minmax_limit = 20, limit_scale = 10, y_lim = None):
+    def plot(self, stream, channel_map):
         ''' Plot the polarization analysis
         '''
+
+        for component, channel_name in channel_map.iteritems():
+            cur_stream = stream.select(channel = channel_name)
+
+            for cur_trace in cur_stream:
+                time_array = np.arange(0, cur_trace.stats.npts)
+                time_array = time_array * 1/cur_trace.stats.sampling_rate
+                time_array = time_array + cur_trace.stats.starttime.timestamp
+
+                # Check if the data is a ma.maskedarray
+                if np.ma.count_masked(cur_trace.data):
+                    time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+
+                if self.lines[component] is None:
+                    self.lines[component], = self.axes.plot(time_array, cur_trace.data)
+                else:
+                    self.lines[component].set_xdata(time_array)
+                    self.lines[component].set_ydata(cur_trace.data)
+
+                self.axes.set_frame_on(False)
+                self.axes.get_xaxis().set_visible(False)
+                self.axes.get_yaxis().set_visible(False)
+                yLim = np.max(np.abs(cur_trace.data))
+                self.axes.set_ylim(bottom = -yLim, top = yLim)
 
 
     def setYLimits(self, bottom, top):
