@@ -2918,6 +2918,10 @@ class PsysmonDockingFrame(wx.Frame):
         self.init_ribbon_pane()
 
         #TODO: Add a status bar.
+        self.statusbar = DockingFrameStatusBar(self)
+        self.statusbar.set_error_log_msg("Last error message.")
+        self.SetStatusBar(self.statusbar)
+
 
         # Create the shortcut manager.
         self.shortcut_manager = ShortcutManager()
@@ -3054,14 +3058,19 @@ class PsysmonDockingFrame(wx.Frame):
         for curPlugin in sorted(interactive_plugins, key = attrgetter('position_pref', 'name')):
                 # Create a HybridTool. The dropdown menu allows to open
                 # the tool parameters in a foldpanel.
-                curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
-                                                                                bitmap = curPlugin.icons['active'].GetBitmap(),
-                                                                                help_string = curPlugin.name)
+                if len(curPlugin.pref_manager) == 0:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddTool(tool_id = id_counter,
+                                                                              bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                              help_string = curPlugin.name)
+                else:
+                    curTool = self.ribbonToolbars[curPlugin.category].AddHybridTool(tool_id = id_counter,
+                                                                                    bitmap = curPlugin.icons['active'].GetBitmap(),
+                                                                                    help_string = curPlugin.name)
+                    self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
+                                                                 lambda evt, curPlugin=curPlugin: self.on_interactive_tool_dropdown_clicked(evt, curPlugin),
+                                                                 id=curTool.id)
                 self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_CLICKED,
                                                              lambda evt, curPlugin=curPlugin : self.on_interactive_tool_clicked(evt, curPlugin),
-                                                             id=curTool.id)
-                self.ribbonToolbars[curPlugin.category].Bind(ribbon.EVT_RIBBONTOOLBAR_DROPDOWN_CLICKED,
-                                                             lambda evt, curPlugin=curPlugin: self.on_interactive_tool_dropdown_clicked(evt, curPlugin),
                                                              id=curTool.id)
                 id_counter += 1
 
@@ -3220,6 +3229,11 @@ class PsysmonDockingFrame(wx.Frame):
             self.viewport.clear_mpl_event_callbacks()
             self.viewport.register_mpl_event_callbacks(hooks)
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
+            self.statusbar.set_interactive_tool_msg(plugin.name)
+            shortcuts = self.shortcut_manager.get_shortcut(origin_rid = plugin.rid)
+            status_msg = ','.join(['+'.join(x.key_combination) for x in shortcuts])
+            status_msg = 'tool shortcuts: ' + status_msg
+            self.statusbar.set_shortcut_tips_msg(status_msg)
 
 
     def deactivate_interactive_plugin(self, plugin):
@@ -3232,6 +3246,8 @@ class PsysmonDockingFrame(wx.Frame):
         plugin.deactivate()
         self.shortcut_manager.remove_shortcut(origin_rid = plugin.rid)
         self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
+        self.statusbar.set_interactive_tool_msg("no tool active")
+        self.statusbar.set_shortcut_tips_msg('')
 
 
     def on_edit_tool_preferences(self, event, plugin):
@@ -3487,4 +3503,48 @@ class Shortcut(object):
         self.kind = kind
 
         self.action_kwargs = action_kwargs
+
+
+
+class DockingFrameStatusBar(wx.StatusBar):
+
+    def __init__(self, parent):
+        wx.StatusBar.__init__(self, parent, -1)
+
+
+        # This status bar has three fields
+        self.SetFieldsCount(3)
+        # Sets the three fields to be relative widths to each other.
+        self.SetStatusWidths([-3, -3, -1])
+        # Create sunken fields.
+        wx.SB_SUNKEN = 3
+        self.SetStatusStyles([wx.SB_SUNKEN, wx.SB_SUNKEN, wx.SB_SUNKEN])
+
+        self.error_log_pos = 0
+        self.shortcut_tips_pos = 1
+        self.interactive_tool_pos = 2
+
+
+    def set_error_log_msg(self, msg):
+        ''' Set the message of the error log tool area.
+        '''
+        self.SetStatusText(msg, self.error_log_pos)
+
+
+    def set_shortcut_tips_msg(self, msg):
+        ''' Set the message of the shortcut tips area.
+        '''
+        self.SetStatusText(msg, self.shortcut_tips_pos)
+
+
+    def set_interactive_tool_msg(self, msg):
+        ''' Set the message of the interactive tool area.
+        '''
+        self.SetStatusText(msg, self.interactive_tool_pos)
+
+
+
+
+
+
 
