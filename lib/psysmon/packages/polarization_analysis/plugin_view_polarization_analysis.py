@@ -30,6 +30,7 @@ from psysmon.core.plugins import ViewPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.gui_view
 import psysmon.core.preferences_manager as preferences_manager
+import psysmon.packages.polarization_analysis.core
 
 
 
@@ -58,6 +59,12 @@ class PolarizationAnalysis(ViewPlugin):
         self.icons['active'] = icons.glasses_icon_16
 
         self.channel_map = {'z': 'HHZ', 'ns':'HHN', 'ew':'HHE'}
+
+        # TODO: Somehow make it possible to add multiple views to the virtual
+        # channel. Each view should contain a certain polarization feature. The
+        # features can change depending on the selected computation method. The
+        # created views therefore have to be created dynamically. Maybe use the
+        # shared information for that?
 
         # TODO: Add the possibility to define an azimuth offset from north.
         # TODO: Add the possibility to define an inclination offset.
@@ -100,10 +107,11 @@ class PolarizationAnalysis(ViewPlugin):
 
             for cur_view in views:
                 if cur_stream:
-                    cur_view.plot(cur_stream, self.channel_map)
+                    cur_view.plot(cur_stream, self.channel_map, window_length = 0.2, overlap = 0.5)
 
                 cur_view.setXLimits(left = displayManager.startTime.timestamp,
                                     right = displayManager.endTime.timestamp)
+                cur_view.setYLimits(bottom = 0, top = 1)
                 cur_view.draw()
 
 
@@ -144,7 +152,8 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
 	self.lineColor = [x/255.0 for x in lineColor]
 
-        self.lines = {'z': None, 'ns': None, 'ew': None}
+        #self.lines = {'z': None, 'ns': None, 'ew': None}
+        self.lines = {'linearity': None, 'planarity': None}
 
         self.axes.set_frame_on(False)
         self.axes.get_xaxis().set_visible(False)
@@ -152,33 +161,75 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
 
 
-    def plot(self, stream, channel_map):
+    def plot(self, stream, channel_map, window_length, overlap, method = 'covariance_matrix'):
         ''' Plot the polarization analysis
         '''
-
+        component_data = {}
+        sps = []
+        # Get the data of the three components.
         for component, channel_name in channel_map.iteritems():
             cur_stream = stream.select(channel = channel_name)
+            cur_trace = cur_stream.traces[0]
+            sps.append(cur_trace.stats.sampling_rate)
 
-            for cur_trace in cur_stream:
-                time_array = np.arange(0, cur_trace.stats.npts)
-                time_array = time_array * 1/cur_trace.stats.sampling_rate
-                time_array = time_array + cur_trace.stats.starttime.timestamp
+            time_array = np.arange(0, cur_trace.stats.npts)
+            time_array = time_array * 1/cur_trace.stats.sampling_rate
+            time_array = time_array + cur_trace.stats.starttime.timestamp
 
-                # Check if the data is a ma.maskedarray
-                if np.ma.count_masked(cur_trace.data):
-                    time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+            # Check if the data is a ma.maskedarray
+            if np.ma.count_masked(cur_trace.data):
+                time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
 
-                if self.lines[component] is None:
-                    self.lines[component], = self.axes.plot(time_array, cur_trace.data)
+            component_data[component] = (time_array, cur_trace.data)
+
+
+        # Convert the window length from seconds to samples.
+        # TODO: Add a check for equal sps.
+        sps = list(set(sps))
+        if len(sps) > 1:
+            self.logger.error("The three components don't have equal sampling rates.")
+            return
+        window_length_smp = window_length * sps[0]
+
+        # Compute the polarization analysis using the selected method.
+        features = psysmon.packages.polarization_analysis.core.compute_covariance_matrix(component_data, window_length_smp, overlap)
+
+        time_array = features.pop('time')
+        for cur_feature, cur_data in features.iteritems():
+            if self.lines[cur_feature] is None:
+                if cur_feature == 'linearity':
+                    marker = 'x'
                 else:
-                    self.lines[component].set_xdata(time_array)
-                    self.lines[component].set_ydata(cur_trace.data)
+                    marker = 'o'
+                self.lines[cur_feature], = self.axes.plot(time_array, cur_data, marker)
+            else:
+                self.lines[cur_feature].set_xdata(time_array)
+                self.lines[cur_feature].set_ydata(cur_data)
 
-                self.axes.set_frame_on(False)
-                self.axes.get_xaxis().set_visible(False)
-                self.axes.get_yaxis().set_visible(False)
-                yLim = np.max(np.abs(cur_trace.data))
-                self.axes.set_ylim(bottom = -yLim, top = yLim)
+
+#        for component, channel_name in channel_map.iteritems():
+#            cur_stream = stream.select(channel = channel_name)
+#
+#            for cur_trace in cur_stream:
+#                time_array = np.arange(0, cur_trace.stats.npts)
+#                time_array = time_array * 1/cur_trace.stats.sampling_rate
+#                time_array = time_array + cur_trace.stats.starttime.timestamp
+#
+#                # Check if the data is a ma.maskedarray
+#                if np.ma.count_masked(cur_trace.data):
+#                    time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+#
+#                if self.lines[component] is None:
+#                    self.lines[component], = self.axes.plot(time_array, cur_trace.data)
+#                else:
+#                    self.lines[component].set_xdata(time_array)
+#                    self.lines[component].set_ydata(cur_trace.data)
+#
+#                self.axes.set_frame_on(False)
+#                self.axes.get_xaxis().set_visible(False)
+#                self.axes.get_yaxis().set_visible(False)
+#                yLim = np.max(np.abs(cur_trace.data))
+#                self.axes.set_ylim(bottom = -yLim, top = yLim)
 
 
     def setYLimits(self, bottom, top):
