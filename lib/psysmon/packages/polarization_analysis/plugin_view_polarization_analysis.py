@@ -58,7 +58,7 @@ class PolarizationAnalysis(ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.glasses_icon_16
 
-        self.channel_map = {'z': 'HHZ', 'ns':'HHN', 'ew':'HHE'}
+        self.channel_map = {'z': 'HHZ', 'y':'HHN', 'x':'HHE'}
 
         # TODO: Somehow make it possible to add multiple views to the virtual
         # channel. Each view should contain a certain polarization feature. The
@@ -107,11 +107,11 @@ class PolarizationAnalysis(ViewPlugin):
 
             for cur_view in views:
                 if cur_stream:
-                    cur_view.plot(cur_stream, self.channel_map, window_length = 0.2, overlap = 0.5)
+                    cur_view.plot(cur_stream, self.channel_map, window_length = 0.3, overlap = 0.9)
 
                 cur_view.setXLimits(left = displayManager.startTime.timestamp,
                                     right = displayManager.endTime.timestamp)
-                cur_view.setYLimits(bottom = 0, top = 1)
+                #cur_view.setYLimits(bottom = 0, top = 1)
                 cur_view.draw()
 
 
@@ -150,14 +150,19 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        # Create multiple axes.
+        self.set_n_axes(4)
+
 	self.lineColor = [x/255.0 for x in lineColor]
 
         #self.lines = {'z': None, 'ns': None, 'ew': None}
-        self.lines = {'linearity': None, 'planarity': None}
+        #self.lines = {'linearity': None, 'planarity': None}
+        self.lines = {}
 
-        self.axes.set_frame_on(False)
-        self.axes.get_xaxis().set_visible(False)
-        self.axes.get_yaxis().set_visible(False)
+        for cur_ax in self.axes:
+            cur_ax.set_frame_on(True)
+            cur_ax.get_xaxis().set_visible(False)
+            cur_ax.get_yaxis().set_visible(False)
 
 
 
@@ -180,7 +185,9 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
             if np.ma.count_masked(cur_trace.data):
                 time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
 
-            component_data[component] = (time_array, cur_trace.data)
+            if component == 'z':
+                component_data['time'] = time_array
+            component_data[component] = cur_trace.data
 
 
         # Convert the window length from seconds to samples.
@@ -192,19 +199,27 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         window_length_smp = window_length * sps[0]
 
         # Compute the polarization analysis using the selected method.
-        features = psysmon.packages.polarization_analysis.core.compute_covariance_matrix(component_data, window_length_smp, overlap)
+        features = psysmon.packages.polarization_analysis.core.compute_complex_covariance_matrix_windowed(component_data, window_length_smp, overlap)
 
         time_array = features.pop('time')
-        for cur_feature, cur_data in features.iteritems():
-            if self.lines[cur_feature] is None:
-                if cur_feature == 'linearity':
-                    marker = 'x'
-                else:
-                    marker = 'o'
-                self.lines[cur_feature], = self.axes.plot(time_array, cur_data, marker)
-            else:
-                self.lines[cur_feature].set_xdata(time_array)
-                self.lines[cur_feature].set_ydata(cur_data)
+        plot_features = ['incidence', 'azimuth', 'ellipticity', 'pol_strength']
+        axes_limits = [(0, np.pi/2.), (-np.pi/2., np.pi/2.), (0 ,1), (0, 1)]
+        for k, cur_feature_name in enumerate(plot_features):
+            if cur_feature_name in self.lines.keys():
+                self.axes[k].collections.remove(self.lines[cur_feature_name])
+            cur_data = features[cur_feature_name]
+            self.lines[cur_feature_name] = self.axes[k].fill_between(x = time_array,
+                                                                     y1 = cur_data,
+                                                                     color = 'lightgrey',
+                                                                     edgecolor = 'lightgrey',
+                                                                     label = cur_feature_name)
+
+            self.axes[k].set_ylim(axes_limits[k])
+
+        msg = '\n'.join(plot_features[::-1])
+        self.set_annotation(msg)
+
+
 
 
 #        for component, channel_name in channel_map.iteritems():
@@ -235,14 +250,16 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
     def setYLimits(self, bottom, top):
         ''' Set the limits of the y-axes.
         '''
-        self.axes.set_ylim(bottom = bottom, top = top)
+        for cur_ax in self.axes:
+            cur_ax.set_ylim(bottom = bottom, top = top)
 
 
     def setXLimits(self, left, right):
         ''' Set the limits of the x-axes.
         '''
         #self.logger.debug('Set limits: %f, %f', left, right)
-        self.axes.set_xlim(left = left, right = right)
+        for cur_ax in self.axes:
+            cur_ax.set_xlim(left = left, right = right)
 
         # Adjust the scale bar.
 
