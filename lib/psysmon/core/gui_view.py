@@ -615,7 +615,7 @@ class ViewNode(wx.Panel):
     ''' A view.
 
     '''
-    def __init__(self, name, group = None, parent=None, id=wx.ID_ANY, parent_viewport=None, props = None, color = 'green'):
+    def __init__(self, name, group = None, parent=None, id=wx.ID_ANY, parent_viewport=None, props = None, color = 'green', n_axes = 1):
         wx.Panel.__init__(self, parent=parent, id=id)
 
         # The logging logger instance.
@@ -643,7 +643,7 @@ class ViewNode(wx.Panel):
         self.color = color
         self.SetBackgroundColour(self.color)
 
-        self.plot_panel = PlotPanel(self, color='violet')
+        self.plot_panel = PlotPanel(self, color='violet', n_axes = n_axes)
         self.annotation_area = ViewAnnotationPanel(parent = self,
                                                    color = 'grey80')
 
@@ -806,11 +806,18 @@ class ViewNode(wx.Panel):
         return ret_artist
 
 
+
+    def set_n_axes(self, n_axes):
+        ''' Set the number of axes created in the view.
+        '''
+        self.plot_panel.set_n_axes(n_axes)
+
+
 class PlotPanel(wx.Panel):
     """
     The PlotPanel
     """
-    def __init__( self, parent, name = None, color=None, dpi=None, **kwargs ):
+    def __init__( self, parent, name = None, color=None, dpi=None, n_axes = 1, **kwargs ):
         # initialize Panel
         if 'id' not in kwargs.keys():
             kwargs['id'] = wx.ID_ANY
@@ -829,7 +836,12 @@ class PlotPanel(wx.Panel):
         # initialize matplotlib stuff
         self.figure = mpl.figure.Figure(None, dpi=dpi, facecolor='white')
         self.canvas = FigureCanvas(self, -1, self.figure)
-        self.axes = self.figure.add_axes([0,0,1,1])
+
+        # TODO: Create multiple axes on request.
+        self._axes = []
+        axes_height = 1 / float(n_axes)
+        for k in range(n_axes):
+            self._axes.append(self.figure.add_axes([0, k * axes_height, 1, axes_height]))
         self.canvas.SetMinSize((30, 10))
         self.SetBackgroundColour('white')
 
@@ -846,6 +858,18 @@ class PlotPanel(wx.Panel):
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
         self.canvas.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
+
+
+    @property
+    def axes(self):
+        ''' The axes of the panel.
+
+        If only one axis is present, return the axes, otherwise return a list of axes.
+        '''
+        if len(self._axes) == 1:
+            return self._axes[0]
+        else:
+            return self._axes
 
 
     def on_wx_xlick(self, event):
@@ -887,6 +911,21 @@ class PlotPanel(wx.Panel):
         self.figure.set_edgecolor( clr )
         self.canvas.SetBackgroundColour( wx.Colour( *rgbtuple ) )
         self.canvas.Refresh()
+
+
+    def set_n_axes(self, n_axes):
+        ''' Set the number of axes provided by the plot panel.
+        '''
+        # Delete the existing axes.
+        for cur_ax in self._axes:
+            self.figure.delaxes(cur_ax)
+        self._axes = []
+
+        # Create the new number of axes.
+        axes_height = 1 / float(n_axes)
+        for k in range(n_axes):
+            self._axes.append(self.figure.add_axes([0, k * axes_height, 1, axes_height]))
+
 
 
     def draw(self):
