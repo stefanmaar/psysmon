@@ -49,10 +49,10 @@ class ComputationMethods(unittest.TestCase):
         t = np.arange(0,5, 1/sps)
         win = psysmon.core.signal.tukey(len(t), 0.3)
         x_linear = np.sin(2 * np.pi * f * t) * win
-        y_linear = x_linear.copy()
+        y_linear = np.zeros(len(x_linear))
         z_linear = x_linear.copy()
 
-        x_circ = np.sin(2 * np.pi * f * t) * np.sin(2*np.pi*3*t) * win
+        x_circ = np.sin(2 * np.pi * f * t) * win
         y_circ = np.zeros(x_circ.shape)
         z_circ = np.sin(2 * np.pi * f * t + np.pi/2.) * win
 
@@ -80,13 +80,13 @@ class ComputationMethods(unittest.TestCase):
         cls.signal_z = np.hstack((z_linear, z_circ, z_ellip, z_toro, z_rand))
         cls.time = np.arange(0, len(cls.signal_x) / sps, 1/sps)
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection = '3d')
-        ax.plot(x_circ, y_circ, z_circ)
-        ax.set_xlim(-1,1)
-        ax.set_ylim(-1,1)
-        ax.set_zlim(-1,1)
-        plt.show()
+        #fig = plt.figure()
+        #ax = fig.add_subplot(111, projection = '3d')
+        #ax.plot(x_circ, y_circ, z_circ)
+        #ax.set_xlim(-1,1)
+        #ax.set_ylim(-1,1)
+        #ax.set_zlim(-1,1)
+        #plt.show()
 
 
     def setUp(self):
@@ -96,7 +96,7 @@ class ComputationMethods(unittest.TestCase):
         print "Es war sehr schoen - auf Wiederseh'n.\n"
 
 
-    def draft_test_covariance_matrix(self):
+    def test_covariance_matrix(self):
         ''' Test the covariance matrix method.
         '''
         component_data = {}
@@ -104,26 +104,38 @@ class ComputationMethods(unittest.TestCase):
         component_data['y'] = self.signal_y
         component_data['z'] = self.signal_z
         component_data['time'] = self.time
-        features = core.compute_covariance_matrix(component_data, 21, 0)
+        features = core.compute_covariance_matrix(component_data, 30, 0.9)
 
         fig = plt.figure()
-        ax = fig.add_subplot(5,1,1)
+        ax = fig.add_subplot(7,1,1)
         ax.plot(self.time, self.signal_x)
         ax.plot(self.time, self.signal_y)
         ax.plot(self.time, self.signal_z)
-        ax = fig.add_subplot(5,1,2)
+
+        ax = fig.add_subplot(7,1,2)
         ax.plot(features['time'], features['linearity'])
         ax.set_ylabel('linearity')
-        ax = fig.add_subplot(5,1,3)
+
+        ax = fig.add_subplot(7,1,3)
         ax.plot(features['time'], features['planarity'])
         ax.set_ylabel('planarity')
-        ax = fig.add_subplot(5,1,4)
+
+        ax = fig.add_subplot(7,1,4)
         ax.plot(features['time'], features['pol_strength'])
         ax.set_ylabel('pol_strength')
-        ax = fig.add_subplot(5,1,5)
+
+        ax = fig.add_subplot(7,1,5)
+        ax.plot(features['time'], features['azimuth'], 'x')
+        ax.set_ylabel('azimuth')
+
+        ax = fig.add_subplot(7,1,6)
+        ax.plot(features['time'], features['incidence'], 'x')
+        ax.set_ylabel('incidence')
+
+        ax = fig.add_subplot(7,1,7)
         ax.plot(features['time'], features['eigenval'][:,0], 'kx-')
-        ax.plot(features['time'], features['eigenval'][:,1], 'rx-')
-        ax.plot(features['time'], features['eigenval'][:,2], 'gx-')
+        ax.plot(features['time'], features['eigenval'][:,1], 'ro-')
+        ax.plot(features['time'], features['eigenval'][:,2], 'gs-')
         ax.set_ylabel('eigenval')
         plt.show()
 
@@ -136,20 +148,32 @@ class ComputationMethods(unittest.TestCase):
         component_data['y'] = self.signal_y
         component_data['z'] = self.signal_z
         component_data['time'] = self.time
-        features = core.compute_complex_covariance_matrix_windowed(component_data, 21, 0)
+        features = core.compute_complex_covariance_matrix_windowed(component_data, 30, 0.9)
 
         fig = plt.figure()
-        ax = fig.add_subplot(4,1,1)
+        ax = fig.add_subplot(6,1,1)
         ax.plot(self.time, self.signal_x)
         ax.plot(self.time, self.signal_y)
         ax.plot(self.time, self.signal_z)
-        ax = fig.add_subplot(4,1,2)
+
+        ax = fig.add_subplot(6,1,2)
         ax.plot(features['time'], features['ellipticity'])
         ax.set_ylabel('ellipticity')
-        ax = fig.add_subplot(4,1,3)
+
+        ax = fig.add_subplot(6,1,3)
         ax.plot(features['time'], features['pol_strength'])
         ax.set_ylabel('pol_strength')
-        ax = fig.add_subplot(4,1,4)
+
+        ax = fig.add_subplot(6,1,4)
+        ax.plot(features['time'], features['azimuth'], 'x')
+        ax.set_ylabel('azimuth')
+
+        ax = fig.add_subplot(6,1,5)
+        ax.plot(features['time'], features['incidence'], 'x')
+        ax.set_ylabel('incidence')
+        ax.set_ylim([0, np.pi/2.])
+
+        ax = fig.add_subplot(6,1,6)
         ax.plot(features['time'], features['eigenval'][:,0], 'kx-')
         ax.plot(features['time'], features['eigenval'][:,1], 'ro-')
         ax.plot(features['time'], features['eigenval'][:,2], 'gs-')
