@@ -43,6 +43,8 @@ def compute_covariance_matrix(component_data, window_length, overlap):
     features['linearity'] = []
     features['planarity'] = []
     features['pol_strength'] = []
+    features['azimuth'] = []
+    features['incidence'] = []
     features['eigenval'] = []
     for k in np.arange(n_win + 1):
         start_ind = int(k * win_step)
@@ -61,7 +63,14 @@ def compute_covariance_matrix(component_data, window_length, overlap):
         # Compute the singular values using the singular value decomposition.
         # The columns of U are the eigenvectors.
         # The eigenvalues are sorted in descending order.
-        U, s, V = np.linalg.svd(M)
+        #U, s, V = np.linalg.svd(M)
+
+        # M is a hermitian matrix. User eigh to compute eigenvalues. The
+        # eigenvalues are returned in ascending order.
+        sv, s_vec = np.linalg.eigh(M)
+        sort_ind = np.flipud(np.argsort(sv))
+        sv = sv[sort_ind]
+        s_vec = s_vec[:, sort_ind]
 
         #################################################################
         # Compute the polarization features.
@@ -76,7 +85,7 @@ def compute_covariance_matrix(component_data, window_length, overlap):
         #                                        nor planary polarized.
         # Vidale:        L=1-(ev2+ev3)/ev1       bad: could be negative!
         # -->Using definition by Hearn (=Flinn 1965)
-        cur_linearity = 1 - s[1] / s[0]
+        cur_linearity = 1 - sv[1] / sv[0]
 
         # Compute the planarity
         # Kennett2002:   P=1-2*ev3/(ev1+ev2)     would give 1 for a linear
@@ -86,22 +95,33 @@ def compute_covariance_matrix(component_data, window_length, overlap):
         #                                        possibely this definition is
         #                                        confusing -->bad!
         # -->Using definition by Kennett
-        cur_planarity = 1 - 2 * s[2] / (s[0] + s[1])
+        cur_planarity = 1 - 2 * sv[2] / (sv[0] + sv[1])
 
 
         # Compute the polarization strength.
         # Vidale:       Ps = 1 - (ev2 + ev3) / ev1
-        cur_pol_strength = 1 - (s[1] + s[2]) / s[0]
+        cur_pol_strength = 1 - (sv[1] + sv[2]) / sv[0]
+
+        # Compute the apparent azimuth. Clockwise from the y-axis.
+        s_vec_max = s_vec[:, 0]
+        cur_azimuth = np.arctan(np.real(s_vec_max[0]) / np.real(s_vec_max[1]))
+
+        # Compute the apparent incidence angle. Measured from the z-axis.
+        cur_incidence = np.arccos(np.abs(s_vec_max[2]) / np.linalg.norm(s_vec_max))
 
         features['linearity'].append(cur_linearity)
         features['planarity'].append(cur_planarity)
         features['pol_strength'].append(cur_pol_strength)
-        features['eigenval'].append(s)
+        features['azimuth'].append(cur_azimuth)
+        features['incidence'].append(cur_incidence)
+        features['eigenval'].append(sv)
 
     features['time'] = np.array(features['time'])
     features['linearity'] = np.array(features['linearity'])
     features['planarity'] = np.array(features['planarity'])
     features['pol_strength'] = np.array(features['pol_strength'])
+    features['eigenval'] = np.array(features['eigenval'])
+    features['azimuth'] = np.array(features['azimuth'])
     features['eigenval'] = np.array(features['eigenval'])
     return features
 
@@ -125,6 +145,8 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length, ov
     features['ellipticity'] = []
     features['pol_strength'] = []
     features['eigenval'] = []
+    features['azimuth'] = []
+    features['incidence'] = []
 
     # Compute the analytical data.
     x_data_comp = scipy.signal.hilbert(x_data)
@@ -139,7 +161,7 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length, ov
         cur_y_data = y_data_comp[start_ind:end_ind]
         cur_z_data = z_data_comp[start_ind:end_ind]
 
-        features['time'].append(time_array[np.floor((start_ind + end_ind)/2.)])
+        features['time'].append(time_array[int(np.floor((start_ind + end_ind)/2.))])
 
         D = np.vstack((cur_x_data, cur_y_data, cur_z_data))
         M = np.cov(D)
@@ -152,10 +174,10 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length, ov
         s_vec = s_vec[:, sort_ind]
 
         # Compute the phase rotation.
-        epsilon = 0.01
+        epsilon = 1e-6
         psi0 = 0.5 * np.angle( 0.5 * np.sum(s_vec[:,0]**2) + epsilon * 0.5 * sum(s_vec[:,0]**2))
 
-        # Compute the major and minor semiaxis.
+        # Compute the major and minor semiaxis of the polarization ellipse.
         major = np.real(np.exp(-1j*psi0) * s_vec[:,0])
         minor = np.real(np.exp(-1j*(psi0 + np.pi/2.)) * s_vec[:,0])
 
@@ -163,16 +185,29 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length, ov
         # Use the ellipticity definition from Morozov.
         cur_pol_strength = 1 - (sv[1] + sv[2]) / sv[0]
         cur_ellipticity = np.linalg.norm(minor) / np.linalg.norm(major)
+
+        # Compute the apparent azimuth.
+        cur_azimuth = np.arctan(np.real(major[0]) / np.real(major[1]))
+        #print "major: %s" % major
+        #print "azimuth: %f" % np.rad2deg(cur_azimuth)
+
+        # Compute the apparent incidence angle.
+        cur_incidence = np.arccos(np.abs(major[2]) / np.linalg.norm(major))
+
         #X = np.linalg.norm(major)
         #pe = np.sqrt(1 - X**2) / X
         features['ellipticity'].append(cur_ellipticity)
         features['pol_strength'].append(cur_pol_strength)
         features['eigenval'].append(sv)
+        features['azimuth'].append(cur_azimuth)
+        features['incidence'].append(cur_incidence)
 
     features['time'] = np.array(features['time'])
     features['ellipticity'] = np.array(features['ellipticity'])
     features['pol_strength'] = np.array(features['pol_strength'])
     features['eigenval'] = np.array(features['eigenval'])
+    features['azimuth'] = np.array(features['azimuth'])
+    features['incidence'] = np.array(features['incidence'])
     return features
 
 
