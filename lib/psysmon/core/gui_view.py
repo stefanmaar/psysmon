@@ -813,6 +813,12 @@ class ViewNode(wx.Panel):
         self.plot_panel.set_n_axes(n_axes)
 
 
+    def measure(self, event):
+        ''' Create a measurement of the data plotted in the view.
+        '''
+        return None
+
+
 class PlotPanel(wx.Panel):
     """
     The PlotPanel
