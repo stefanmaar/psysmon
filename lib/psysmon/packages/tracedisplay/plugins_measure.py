@@ -129,30 +129,35 @@ class MeasurePoint(InteractivePlugin):
         ''' Measure the seismogram line in the seismogram view.
         '''
         measurement = self.view.measure(event)
+        if measurement is None:
+            return
 
-        cur_axes = self.view.axes
+        if isinstance(measurement, dict):
+            measurement = [measurement,]
 
-        xy = measurement['xy']
-        if self.view not in self.crosshair.keys():
-            ml_x = cur_axes.axvline(x = xy[0],
-                                     color = 'k')
-            ml_y = cur_axes.axhline(y = xy[1],
-                                     color = 'k')
-            self.crosshair[self.view] = (ml_x, ml_y)
+        measure_string = ''
+        for cur_measurement in measurement:
+            cur_axes = cur_measurement['axes']
 
-        cur_crosshair = self.crosshair[self.view]
+            xy = cur_measurement['xy']
+            if (self.view, cur_axes) not in self.crosshair.keys():
+                ml_x = cur_axes.axvline(x = xy[0])
+                ml_y = cur_axes.axhline(y = xy[1])
+                self.crosshair[(self.view, cur_axes)] = (ml_x, ml_y)
 
-        for cur_line in cur_crosshair:
-            cur_line.set_color('k')
+            cur_crosshair = self.crosshair[(self.view, cur_axes)]
 
-        cur_crosshair[0].set_xdata(xy[0])
-        cur_crosshair[1].set_ydata(xy[1])
+            for cur_line in cur_crosshair:
+                cur_line.set_color('r')
 
-        date_string = utcdatetime.UTCDateTime(xy[0])
-        measure_string = 'time: {0:s}\nampl.: {1:g}\n'.format(date_string.isoformat(),
-                                                              xy[1])
+            cur_crosshair[0].set_xdata(xy[0])
+            cur_crosshair[1].set_ydata(xy[1])
+
+            date_string = utcdatetime.UTCDateTime(xy[0])
+            measure_string += 'time: {0:s}\n{1:s}: {2:g}\n\n'.format(date_string.isoformat(),
+                                                                  cur_measurement['label'],
+                                                                  xy[1])
         self.view.set_annotation(measure_string)
-
         self.view.draw()
 
 
@@ -162,11 +167,13 @@ class MeasurePoint(InteractivePlugin):
         if view is None:
             view = self.view
 
-        if view not in self.crosshair.keys():
+        view_crosshairs = [x for x in self.crosshair.keys() if x[0] == view]
+        if len(view_crosshairs) == 0:
             return
 
-        for cur_line in self.crosshair[view]:
-            cur_line.set_color('0.75')
+        for cur_crosshair_keys in view_crosshairs:
+            for cur_line in self.crosshair[cur_crosshair_keys]:
+                cur_line.set_color('0.75')
 
         view.draw()
 

@@ -583,6 +583,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         measurement['label'] = 'seismogram'
         measurement['xy'] = (snap_x, snap_y)
         measurement['units'] = '???'
+        measurement['axes'] = self.axes
 
         return measurement
 

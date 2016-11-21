@@ -263,3 +263,33 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
         # Adjust the scale bar.
 
+
+    def measure(self, event):
+        ''' Measure the polrization attributes.
+        '''
+        selected_axes = event.inaxes
+        if selected_axes is None:
+            self.logger.debug("###############Event not in axes.")
+            return
+
+        measurements = []
+        for cur_axes in self.axes[::-1]:
+            cur_path = cur_axes.collections[0].get_paths()[0]
+            xdata = cur_path.vertices[:,0]
+            ydata = cur_path.vertices[:,1]
+            ind_x = np.searchsorted(xdata, [event.xdata])[0]
+            snap_x = xdata[ind_x]
+            snap_y = ydata[ind_x]
+
+            if isinstance(snap_y, np.ma.MaskedArray):
+                snap_y = snap_y[0]
+
+            cur_measurement = {}
+            cur_measurement['label'] = cur_axes.collections[0].get_label()
+            cur_measurement['xy'] = (snap_x, snap_y)
+            cur_measurement['units'] = '???'
+            cur_measurement['axes'] = cur_axes
+            measurements.append(cur_measurement)
+
+        return measurements
+
