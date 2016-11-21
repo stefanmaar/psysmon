@@ -102,11 +102,17 @@ class MeasurePoint(InteractivePlugin):
             # Skipt the right mouse button.
             return
         else:
-            if cur_view.name.endswith('plot_seismogram'):
-                self.measure_seismogram(event, parent)
+            measurement = self.view.measure(event)
+            if measurement is not None:
+                self.measure_view(event, parent)
                 hook = {}
-                hook['motion_notify_event'] = self.measure_seismogram
+                hook['motion_notify_event'] = self.measure_view
                 cur_view.set_mpl_event_callbacks(hook, parent = parent)
+            #if cur_view.name.endswith('plot_seismogram'):
+            #    self.measure_seismogram(event, parent)
+            #    hook = {}
+            #    hook['motion_notify_event'] = self.measure_seismogram
+            #    cur_view.set_mpl_event_callbacks(hook, parent = parent)
             else:
                 self.logger.error('Measuring a %s view is not supported.', cur_view.name)
 
@@ -119,29 +125,18 @@ class MeasurePoint(InteractivePlugin):
         self.desaturate_crosshair()
 
 
-    def measure_seismogram(self, event, parent):
+    def measure_view(self, event, parent):
         ''' Measure the seismogram line in the seismogram view.
         '''
-        if event.inaxes is None:
-            return
+        measurement = self.view.measure(event)
 
         cur_axes = self.view.axes
 
-        seismo_line = [x for x in cur_axes.lines if x.get_label() == 'seismogram']
-        if len(seismo_line) > 0:
-            seismo_line = seismo_line[0]
-        else:
-            raise RuntimeError('No seismogram line found.')
-        xdata = seismo_line.get_xdata()
-        ydata = seismo_line.get_ydata()
-        ind_x = np.searchsorted(xdata, [event.xdata])[0]
-        snap_x = xdata[ind_x]
-        snap_y = ydata[ind_x]
-
+        xy = measurement['xy']
         if self.view not in self.crosshair.keys():
-            ml_x = cur_axes.axvline(x = snap_x,
+            ml_x = cur_axes.axvline(x = xy[0],
                                      color = 'k')
-            ml_y = cur_axes.axhline(y = snap_y,
+            ml_y = cur_axes.axhline(y = xy[1],
                                      color = 'k')
             self.crosshair[self.view] = (ml_x, ml_y)
 
@@ -150,14 +145,12 @@ class MeasurePoint(InteractivePlugin):
         for cur_line in cur_crosshair:
             cur_line.set_color('k')
 
-        cur_crosshair[0].set_xdata(snap_x)
-        cur_crosshair[1].set_ydata(snap_y)
+        cur_crosshair[0].set_xdata(xy[0])
+        cur_crosshair[1].set_ydata(xy[1])
 
-        date_string = utcdatetime.UTCDateTime(snap_x)
-        if isinstance(snap_y, np.ma.MaskedArray):
-            snap_y = snap_y[0]
+        date_string = utcdatetime.UTCDateTime(xy[0])
         measure_string = 'time: {0:s}\nampl.: {1:g}\n'.format(date_string.isoformat(),
-                                                              snap_y)
+                                                              xy[1])
         self.view.set_annotation(measure_string)
 
         self.view.draw()

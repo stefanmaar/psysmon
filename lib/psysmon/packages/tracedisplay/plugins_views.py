@@ -561,6 +561,32 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
 
 
 
+    def measure(self, event):
+        ''' Measure the seismogram line.
+        '''
+        if event.inaxes is None:
+            return
+
+        if self.line is None:
+            return
+
+        xdata = self.line.get_xdata()
+        ydata = self.line.get_ydata()
+        ind_x = np.searchsorted(xdata, [event.xdata])[0]
+        snap_x = xdata[ind_x]
+        snap_y = ydata[ind_x]
+
+        if isinstance(snap_y, np.ma.MaskedArray):
+            snap_y = snap_y[0]
+
+        measurement = {}
+        measurement['label'] = 'seismogram'
+        measurement['xy'] = (snap_x, snap_y)
+        measurement['units'] = '???'
+
+        return measurement
+
+
 ############## DEMO PLUGIN FOR VIEWS ##########################################
 
 class DemoPlotter(ViewPlugin):
