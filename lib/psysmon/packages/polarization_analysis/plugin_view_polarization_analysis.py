@@ -69,6 +69,22 @@ class PolarizationAnalysis(ViewPlugin):
         # TODO: Add the possibility to define an azimuth offset from north.
         # TODO: Add the possibility to define an inclination offset.
 
+        # The window length.
+        item = preferences_manager.FloatSpinPrefItem(name = 'window_length',
+                                                     label = 'window length [s]',
+                                                     value = 0.5,
+                                                     limit = (0, 3600))
+        self.pref_manager.add_item(item = item)
+
+
+        # The window overlap.
+        item = preferences_manager.FloatSpinPrefItem(name = 'window_overlap',
+                                                     label = 'window overlap',
+                                                     value = 0.5,
+                                                     limit = (0, 0.99),
+                                                     spin_format = '%f')
+        self.pref_manager.add_item(item = item)
+
 
     @property
     def required_data_channels(self):
@@ -93,6 +109,9 @@ class PolarizationAnalysis(ViewPlugin):
         self.logger.debug('Plotting station of polarization analysis.')
         stream = dataManager.procStream
 
+        window_length = self.pref_manager.get_value('window_length')
+        overlap = self.pref_manager.get_value('window_overlap')
+
         for cur_station in station:
             views = self.parent.viewport.get_node(station = cur_station.name,
                                                   network = cur_station.network,
@@ -107,7 +126,9 @@ class PolarizationAnalysis(ViewPlugin):
 
             for cur_view in views:
                 if cur_stream:
-                    cur_view.plot(cur_stream, self.channel_map, window_length = 0.3, overlap = 0.9)
+                    cur_view.plot(cur_stream, self.channel_map,
+                                  window_length = window_length,
+                                  overlap = overlap)
 
                 cur_view.setXLimits(left = displayManager.startTime.timestamp,
                                     right = displayManager.endTime.timestamp)
