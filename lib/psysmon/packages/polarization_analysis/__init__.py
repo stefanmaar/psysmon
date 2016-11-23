@@ -30,7 +30,8 @@ collection_node_modules = []
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugin_view_polarization_analysis',
-                  'plugin_view_hodogram']
+                  'plugin_view_hodogram',
+                  'plugin_particle_motion']
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
