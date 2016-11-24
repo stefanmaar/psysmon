@@ -484,7 +484,6 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in the data axes.
         '''
-        self.logger.info('Plotting a annotation line %s, %s.', parent_rid, key)
         annotation_artist = self.get_annotation_artist(mode = 'vline',
                                             parent_rid = parent_rid,
                                             key = key)
@@ -503,7 +502,6 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
             if 'label' in kwargs.keys():
-                ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
                 label_artist = None
@@ -524,7 +522,6 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
     def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
         ''' Plot a vertical span in the data axes.
         '''
-        self.logger.info('Plotting a annotation vspan %s, %s.', parent_rid, key)
         annotation_artist = self.get_annotation_artist(mode = 'vspan',
                                                        parent_rid = parent_rid,
                                                        key = key)
@@ -759,7 +756,6 @@ class DemoView(psysmon.core.gui_view.ViewNode):
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in the data axes.
         '''
-        self.logger.info('Plotting a annotation line %s, %s.', parent_rid, key)
         annotation_artist = self.get_annotation_artist(mode = 'vline',
                                                        parent_rid = parent_rid,
                                                        key = key)
@@ -791,7 +787,6 @@ class DemoView(psysmon.core.gui_view.ViewNode):
     def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
         ''' Plot a vertical span in the data axes.
         '''
-        self.logger.info('Plotting a annotation vspan %s, %s.', parent_rid, key)
         annotation_artist = self.get_annotation_artist(mode = 'vspan',
                                                        parent_rid = parent_rid,
                                                        key = key)
