@@ -385,9 +385,12 @@ class ContainerNode(wx.Panel):
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in all children of this node.
         '''
+        artists = []
         for cur_node in self.node_list:
-            cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
-                                           key = key, **kwargs)
+            cur_artist = cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
+                                                        key = key, **kwargs)
+            artists.extend(cur_artist)
+        return artists
 
 
     def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
@@ -412,6 +415,34 @@ class ContainerNode(wx.Panel):
         '''
         for cur_node in self.node_list:
             cur_node.clear_annotation_artist(**kwargs)
+
+
+    def save_blit_background(self):
+        ''' Save the axes background for blit animation.
+        '''
+        for cur_node in self.node_list:
+            cur_node.save_blit_background()
+
+
+    def restore_blit_background(self):
+        ''' Restore the axes background for blit animation.
+        '''
+        for cur_node in self.node_list:
+            cur_node.restore_blit_background()
+
+
+    def draw_blit_artists(self, **kwargs):
+        ''' Draw the specified artist.
+        '''
+        for cur_node in self.node_list:
+            cur_node.draw_blit_artists(**kwargs)
+
+
+    def blit(self):
+        ''' Draw blit animation.
+        '''
+        for cur_node in self.node_list:
+            cur_node.blit()
 
 
 
@@ -580,9 +611,12 @@ class ViewContainerNode(wx.Panel):
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in all children of this node.
         '''
+        artists = []
         for cur_node in self.node_list:
-            cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
-                                           key = key, **kwargs)
+            cur_artist = cur_node.plot_annotation_vline(x = x, parent_rid = parent_rid,
+                                                        key = key, **kwargs)
+            artists.append(cur_artist)
+        return artists
 
 
     def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
@@ -609,6 +643,32 @@ class ViewContainerNode(wx.Panel):
             cur_node.clear_annotation_artist(**kwargs)
 
 
+    def save_blit_background(self):
+        ''' Get the background of the axes.
+        '''
+        for cur_node in self.node_list:
+            cur_node.save_blit_background()
+
+
+    def restore_blit_background(self):
+        ''' Restore the axes background for blit animation.
+        '''
+        for cur_node in self.node_list:
+            cur_node.restore_blit_background()
+
+
+    def draw_blit_artists(self, **kwargs):
+        ''' Draw the specified artist.
+        '''
+        for cur_node in self.node_list:
+            cur_node.draw_blit_artists(**kwargs)
+
+
+    def blit(self):
+        ''' Draw blit animation.
+        '''
+        for cur_node in self.node_list:
+            cur_node.blit()
 
 
 class ViewNode(wx.Panel):
@@ -813,6 +873,33 @@ class ViewNode(wx.Panel):
         self.plot_panel.set_n_axes(n_axes)
 
 
+    def save_blit_background(self):
+        ''' Get the background of the axes.
+        '''
+        self.plot_panel.save_blit_background()
+
+
+    def restore_blit_background(self):
+        ''' Restore the axes background for blit animation.
+        '''
+        self.plot_panel.restore_blit_background()
+
+
+    def draw_blit_artists(self, **kwargs):
+        ''' Draw the specified artist.
+        '''
+        artists = self.get_annotation_artist(**kwargs)
+        for cur_artis in artists:
+            self.plot_panel.draw_blit_artists(artists)
+
+
+    def blit(self):
+        ''' Draw blit animation.
+        '''
+        self.plot_panel.canvas.blit()
+        self.plot_panel.canvas.Update()
+
+
     def measure(self, event):
         ''' Create a measurement of the data plotted in the view.
         '''
@@ -843,13 +930,16 @@ class PlotPanel(wx.Panel):
         self.figure = mpl.figure.Figure(None, dpi=dpi, facecolor='white')
         self.canvas = FigureCanvas(self, -1, self.figure)
 
-        # TODO: Create multiple axes on request.
+        # The axes.
         self._axes = []
         axes_height = 1 / float(n_axes)
         for k in range(n_axes):
             self._axes.append(self.figure.add_axes([0, k * axes_height, 1, axes_height]))
         self.canvas.SetMinSize((30, 10))
         self.SetBackgroundColour('white')
+
+        # The axes backgrounds for blit animation.
+        self.blit_backgrounds = []
 
 	# Add the canvas to the sizer.
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -938,6 +1028,32 @@ class PlotPanel(wx.Panel):
         ''' Draw the canvas to make the changes visible.
         '''
         self.canvas.draw()
+
+
+    def save_blit_background(self):
+        ''' Save the axes background for animation.
+        '''
+        self.blit_backgrounds = []
+        for cur_axes in self._axes:
+            self.blit_backgrounds.append(self.canvas.copy_from_bbox(cur_axes.bbox))
+
+
+    def restore_blit_background(self):
+        ''' Restore the axes background for animation.
+        '''
+        for k, cur_bg in enumerate(self.blit_backgrounds):
+            self.canvas.restore_region(cur_bg, bbox = self._axes[k].bbox)
+
+
+    def draw_blit_artists(self, artists):
+        ''' Draw the artist for animation.
+        '''
+        for cur_artist in artists:
+            for cur_line_artist in cur_artist.line_artist:
+                cur_line_artist.axes.draw_artist(cur_line_artist)
+
+            for cur_text_artist in cur_artist.text_artist:
+                cur_text_artist.axes.draw_artist(cur_text_artist)
 
 
     def update_display(self):
