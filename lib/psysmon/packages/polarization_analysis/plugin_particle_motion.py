@@ -89,12 +89,10 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
 
 
 
-
     def activate(self):
         ''' Activate the plugin.
         '''
         psysmon.core.plugins.InteractivePlugin.activate(self)
-        self.initialize_preferences()
         # Create a frame holding the plot panel. A simple figure is not
         # working.
         self.frame = ParticleMotionFrame()

@@ -377,6 +377,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         # TODO: unregister the shortcuts when deactivating the plugin.
         for curPlugin in self.plugins:
             curPlugin.register_keyboard_shortcuts()
+            curPlugin.initialize_preferences()
 
 
         self.initKeyEvents()
