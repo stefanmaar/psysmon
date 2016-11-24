@@ -202,6 +202,12 @@ class PluginNode:
         return None
 
 
+    def initialize_preferences(self):
+        ''' Initialize runtime dependent preference items.
+        '''
+        pass
+
+
 
 
 class OptionPlugin(PluginNode):
