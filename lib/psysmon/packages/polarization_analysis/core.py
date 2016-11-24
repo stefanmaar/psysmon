@@ -127,7 +127,7 @@ def compute_covariance_matrix(component_data, window_length, overlap):
 
 
 
-def compute_complex_covariance_matrix_windowed(component_data, window_length, overlap):
+def compute_complex_covariance_matrix_windowed(component_data, window_length = None, overlap = 0.):
     ''' Compute the polarization features using the complex covariance method.
 
     '''
@@ -136,7 +136,9 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length, ov
     y_data = np.array(component_data['y'])
     z_data = np.array(component_data['z'])
 
-    sample_win = psysmon.core.signal.tukey(window_length, 0.01)
+    if window_length is None:
+        window_length = len(x_data)
+
     win_step = np.floor(window_length - (window_length * overlap))
     n_win = np.floor( (len(z_data) - window_length) / win_step)
 
