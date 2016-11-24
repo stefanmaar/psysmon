@@ -28,6 +28,7 @@ try:
     from matplotlib.backends.backend_wxagg import FigureCanvas
 except:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+import mpl_toolkits.axes_grid1 as axesgrid
 
 
 
@@ -60,31 +61,93 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
         self.frame = None
         self.start_time = None
         self.end_time = None
+        self.start_new_measurement = True
 
-        # TODO: Make this a preference.
-        self.channel_map = {'z': 'HHZ', 'y':'HHN', 'x':'HHE'}
+        item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_x',
+                                          label = 'x',
+                                          group = 'channel map',
+                                          value = '',
+                                          limit = ['HHE', 'HHN', 'HHZ'],
+                                          tool_tip = 'Select the x component channel.')
+        self.pref_manager.add_item(item = item)
+
+        item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_y',
+                                          label = 'y',
+                                          group = 'channel map',
+                                          value = '',
+                                          limit = ['HHE', 'HHN', 'HHZ'],
+                                          tool_tip = 'Select the y component channel.')
+        self.pref_manager.add_item(item = item)
+
+        item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_z',
+                                          label = 'z',
+                                          group = 'channel map',
+                                          value = '',
+                                          limit = ['HHE', 'HHN', 'HHZ'],
+                                          tool_tip = 'Select the z component channel.')
+        self.pref_manager.add_item(item = item)
+
+
 
 
     def activate(self):
         ''' Activate the plugin.
         '''
         psysmon.core.plugins.InteractivePlugin.activate(self)
+        self.initialize_preferences()
         # Create a frame holding the plot panel. A simple figure is not
         # working.
         self.frame = ParticleMotionFrame()
         self.frame.Show()
 
+
     def deactivate(self):
         ''' Deactivate the plugin.
         '''
-        psysmon.core.plugins.InteractivePlugin.deactivate(self)
         self.cleanup()
+        psysmon.core.plugins.InteractivePlugin.deactivate(self)
+
+
+    def initialize_preferences(self):
+        ''' Intitialize the preferences depending on runtime variables.
+        '''
+        # Set the limits of the event_catalog field.
+        channels = sorted(self.parent.displayManager.availableChannels)
+        self.pref_manager.set_limit('channel_map_x', channels)
+        self.pref_manager.set_limit('channel_map_y', channels)
+        self.pref_manager.set_limit('channel_map_z', channels)
+
+        east_channels = [x for x in channels if x.lower().endswith('e')]
+        north_channels = [x for x in channels if x.lower().endswith('n')]
+        vertical_channels = [x for x in channels if x.lower().endswith('z')]
+        if 'HHE' in channels:
+            self.pref_manager.set_value('channel_map_x', 'HHE')
+        elif len(east_channels) > 0:
+            self.pref_manager.set_value('channel_map_x', east_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_x', channels[0])
+
+        if 'HHN' in channels:
+            self.pref_manager.set_value('channel_map_y', 'HHN')
+        elif len(north_channels) > 0:
+            self.pref_manager.set_value('channel_map_y', north_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_y', channels[0])
+
+        if 'HHZ' in channels:
+            self.pref_manager.set_value('channel_map_z', 'HHZ')
+        elif len(vertical_channels) > 0:
+            self.pref_manager.set_value('channel_map_z', vertical_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_z', channels[0])
 
 
     def cleanup(self):
         ''' Remove all elements added to the views.
         '''
         self.frame.Destroy()
+        self.station_container.clear_annotation_artist(parent_rid = self.rid)
+        self.station_container.draw()
 
 
     def getHooks(self):
@@ -114,7 +177,8 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
             # Skipt the right mouse button.
             return
         else:
-            # Check for the required 3-component traces.
+            # TODO: Check for the required 3-component traces.
+
 
             # Initialize the time window.
             self.start_time = obspy.core.utcdatetime.UTCDateTime(event.xdata)
@@ -123,8 +187,24 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
             # Clear the particle motion plot.
             self.frame.clear_axes()
 
-            # Call the plot_particle_motion method.
-            self.plot_start_points(event, parent)
+            # Plot the time window start line in all channel views of the
+            # station.
+            self.station_container = self.parent.viewport.get_node(station = cur_view.props.station,
+                                                                   network = cur_view.props.network,
+                                                                   location = cur_view.props.location,
+                                                                   recursive = False)
+            if len(self.station_container) > 0:
+                self.station_container = self.station_container[0]
+
+            # Clear all annotation lines.
+            self.station_container.clear_annotation_artist(parent_rid = self.rid)
+
+            # Plot the time window start lines.
+            self.station_container.plot_annotation_vline(x = event.xdata, parent_rid = self.rid, key = 'begin_line')
+            self.station_container.draw()
+
+            # Save the axes backgrounds for blit animation.
+            self.station_container.save_blit_background()
 
             # Register the motion_notify_event.
             hook = {}
@@ -132,35 +212,39 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
             cur_view.set_mpl_event_callbacks(hook, parent = parent)
 
 
+
     def on_button_release(self, event, parent):
         ''' Handle the mouse button release event.
         '''
         # Clear the motion notify callbacks.
         self.view.clear_mpl_event_callbacks('motion_notify_event')
-
-
-    def plot_start_points(self, event, parent = None):
-        ''' Plot the start point markers.
-        '''
-        pass
+        self.start_new_measurement = True
 
 
     def plot_particle_motion(self, event, parent = None):
         ''' Update the particle motion plot.
         '''
+        # Draw the time window endline first for smooth animation.
+        self.station_container.restore_blit_background()
+        self.station_container.plot_annotation_vline(x = event.xdata, parent_rid = self.rid, key = 'end_line')
+        self.station_container.draw_blit_artists(parent_rid = self.rid, key = 'end_line')
+        self.station_container.blit()
+
+
+        # Now compute draw the particle motion.
         self.end_time = obspy.core.utcdatetime.UTCDateTime(event.xdata)
         props = self.view.props
         proc_stream = self.parent.visible_data
         x_stream = proc_stream.select(station = props.station,
-                                      channel = self.channel_map['x'],
+                                      channel = self.pref_manager.get_value('channel_map_x'),
                                       network = props.network,
                                       location = props.location)
         y_stream = proc_stream.select(station = props.station,
-                                      channel = self.channel_map['y'],
+                                      channel = self.pref_manager.get_value('channel_map_y'),
                                       network = props.network,
                                       location = props.location)
         z_stream = proc_stream.select(station = props.station,
-                                      channel = self.channel_map['z'],
+                                      channel = self.pref_manager.get_value('channel_map_z'),
                                       network = props.network,
                                       location = props.location)
 
@@ -168,15 +252,32 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
         y_stream = y_stream.slice(starttime = self.start_time, endtime = self.end_time)
         z_stream = z_stream.slice(starttime = self.start_time, endtime = self.end_time)
 
-        self.frame.plot_xy(x_stream.traces[0].data, y_stream.traces[0].data)
-        self.frame.plot_xz(x_stream.traces[0].data, z_stream.traces[0].data)
-        self.frame.plot_yz(y_stream.traces[0].data, z_stream.traces[0].data)
+
+        self.frame.plot_xy(x_stream.traces[0].data, y_stream.traces[0].data, self.start_new_measurement)
+        self.frame.plot_xz(x_stream.traces[0].data, z_stream.traces[0].data, self.start_new_measurement)
+        self.frame.plot_yz(y_stream.traces[0].data, z_stream.traces[0].data, self.start_new_measurement)
+        self.start_new_measurement = False
 
         self.frame.set_axes_limits()
 
+        # Compute the polarization features.
+        component_data = {}
+        time_array = np.arange(0, x_stream.traces[0].stats.npts)
+        time_array = time_array * 1/x_stream.traces[0].stats.sampling_rate
+        time_array = time_array + x_stream.traces[0].stats.starttime.timestamp
+        component_data['time'] = time_array
+        component_data['x'] = x_stream.traces[0].data
+        component_data['y'] = y_stream.traces[0].data
+        component_data['z'] = z_stream.traces[0].data
+        features = psysmon.packages.polarization_analysis.core.compute_complex_covariance_matrix_windowed(component_data)
+        self.frame.set_feature_annotation(features)
+
+        # Update the frame display.
+        # TODO: Make it a blit animation.
         self.frame.canvas.draw()
         self.frame.Refresh()
         self.frame.Update()
+
 
 
 class ParticleMotionFrame(wx.Frame):
@@ -199,10 +300,17 @@ class ParticleMotionFrame(wx.Frame):
         self.figure = mpl.figure.Figure(None, dpi=dpi, facecolor='white')
         self.canvas = FigureCanvas(self, -1, self.figure)
 
+        #self.grid = axesgrid.AxesGrid(self.figure, 111,
+        #                              nrows_ncols = (2, 2),
+        #                              axes_pad = 0,
+        #                              label_mode = "1")
+
         self.axes = {}
-        self.axes['xy'] = self.figure.add_subplot(2, 2, 1)
-        self.axes['xz'] = self.figure.add_subplot(2, 2, 3)
-        self.axes['yz'] = self.figure.add_subplot(2, 2, 4)
+        self.axes['xy'] = self.figure.add_subplot(111)
+        self.axes['xy'].set_aspect('equal')
+        self.divider = axesgrid.make_axes_locatable(self.axes['xy'])
+        self.axes['yz'] = self.divider.append_axes("right", size = "100%", pad = 0, sharey = self.axes['xy'])
+        self.axes['xz'] = self.divider.append_axes("bottom", size = "100%", pad = 0, sharex = self.axes['xy'])
         self.annotate_axes()
 
         self.canvas.SetMinSize((30, 10))
@@ -219,21 +327,33 @@ class ParticleMotionFrame(wx.Frame):
         self.lines['xz'] = None
         self.lines['yz'] = None
 
+        # The particle motion start markers.
+        self.start_markers = {}
+        self.start_markers['xy'] = None
+        self.start_markers['xz'] = None
+        self.start_markers['yz'] = None
+
+        # The feature annotation.
+        self.feature_text = None
+
 
     def annotate_axes(self):
         ''' Annotate the axes.
         '''
         self.axes['xy'].set_xlabel('x')
         self.axes['xy'].set_ylabel('y')
+        self.axes['xy'].xaxis.set_label_position('top')
+        self.axes['xy'].xaxis.set_tick_params(labeltop = False, labelbottom = False)
 
         self.axes['xz'].set_xlabel('x')
         self.axes['xz'].set_ylabel('z')
 
-        self.axes['yz'].set_xlabel('y')
-        self.axes['yz'].set_ylabel('z')
-
-        for cur_axes in self.axes.itervalues():
-            cur_axes.set_aspect('equal', adjustable = 'box')
+        self.axes['yz'].set_xlabel('z')
+        self.axes['yz'].set_ylabel('y')
+        self.axes['yz'].get_xaxis().set_label_position('top')
+        self.axes['yz'].get_yaxis().set_label_position('right')
+        self.axes['yz'].xaxis.set_tick_params(labeltop = False, labelbottom = False)
+        self.axes['yz'].yaxis.set_tick_params(labelleft = False, labelright = True)
 
 
     def clear_axes(self):
@@ -245,26 +365,33 @@ class ParticleMotionFrame(wx.Frame):
                 del self.lines[cur_key]
                 self.lines[cur_key] = None
 
+            if self.start_markers[cur_key] is not None:
+                cur_axes.lines.remove(self.start_markers[cur_key])
+                del self.start_markers[cur_key]
+                self.start_markers[cur_key] = None
 
-    def plot_xy(self, x_data, y_data):
+
+
+
+    def plot_xy(self, x_data, y_data, start_marker = False):
         ''' Plot the xy particle motion.
         '''
-        self.plot(x = x_data, y = y_data, mode = 'xy')
+        self.plot(x = x_data, y = y_data, mode = 'xy', start_marker = start_marker)
 
 
-    def plot_xz(self, x_data, z_data):
+    def plot_xz(self, x_data, z_data, start_marker = False):
         ''' Plot the xy particle motion.
         '''
-        self.plot(x = x_data, y = z_data, mode = 'xz')
+        self.plot(x = x_data, y = z_data, mode = 'xz', start_marker = start_marker)
 
 
-    def plot_yz(self, y_data, z_data):
+    def plot_yz(self, y_data, z_data, start_marker = False):
         ''' Plot the xy particle motion.
         '''
-        self.plot(x = y_data, y = z_data, mode = 'yz')
+        self.plot(x = z_data, y = y_data, mode = 'yz', start_marker = start_marker)
 
 
-    def plot(self, x, y, mode):
+    def plot(self, x, y, mode, start_marker = False):
         ''' Plot data in the corresponding axes.
 
         '''
@@ -277,6 +404,35 @@ class ParticleMotionFrame(wx.Frame):
             cur_line.set_xdata(x)
             cur_line.set_ydata(y)
 
+        if start_marker:
+            cur_lines = cur_axes.plot(x[0], y[0], 'ro')
+            self.start_markers[mode] = cur_lines[0]
+
+
+
+
+
+    def set_feature_annotation(self, features):
+        '''
+        '''
+        if self.feature_text is not None:
+            self.axes['xz'].texts.remove(self.feature_text)
+
+
+        azimuth = np.rad2deg(features['azimuth'])
+        if azimuth < 0:
+            azimuth = azimuth + 180
+
+        msg = "Polarization features:\n\n"
+        msg += "polarization strength: %f" % features['pol_strength'] + '\n'
+        msg += "ellipticity: %f" % features['ellipticity'] + '\n'
+        msg += "apparent azimuth: %f / %f" % (azimuth, azimuth + 180) + "\n"
+        msg += "apparent incidence: %f" % np.rad2deg(features['incidence']) + "\n"
+        self.feature_text = self.axes['xz'].text(1.1, 0.95, msg,
+                                                 verticalalignment = 'top',
+                                                 horizontalalignment = 'left',
+                                                 transform = self.axes['xz'].transAxes,
+                                                 size = 10)
 
     def set_axes_limits(self):
         ''' Adjust the axes limits.
