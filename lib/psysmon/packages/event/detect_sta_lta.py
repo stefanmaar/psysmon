@@ -209,7 +209,6 @@ class StaLtaDetectionNode(CollectionNode):
                         channels = self.pref_manager.get_value('channels'))
 
 
- 
 
 class StaLtaDetector(object):
 
@@ -390,103 +389,6 @@ class StaLtaDetector(object):
         return data_sources
 
 
-    def compute_cf(self, data):
-        ''' Compute the characteristic function.
-        '''
-
-        if self.cf_type == 'abs':
-            return np.abs(data)
-        elif self.cf_type == 'square':
-            return data**2
-        else:
-            return data
-
-
-    def compute_thrf(self, cf, sps, mode = 'valid'):
-        ''' Compute the THRF, STA and LTA function.
-
-        Parameters
-        ----------
-        cf : NumpyArray
-            The characteristic function computed from the timeseries.
-
-        sps : float
-            The samples per second of the characteristic function.
-
-        mode : String (valid, full)
-            How to return the computed time series.
-                valid: Return only the valid values without the LTA buildup effect.
-                full: Return the full length of the computed time series.
-        '''
-        clib_signal = lib_signal.clib_signal
-
-        n_sta = int(self.sta_len * sps)
-        n_lta = int(self.lta_len * sps)
-
-        # The old version using np.correlate. This was way too slow. Switched
-        # to the implementation of the moving average in C. Keep this part of
-        # the code for future reference.
-        #sta_filt_op = np.ones(n_sta) / float(n_sta)
-        #lta_filt_op = np.ones(n_lta) / float(n_lta)
-        #sta_corr = np.correlate(cf, sta_filt_op, 'valid')
-        #lta_corr = np.correlate(cf, lta_filt_op, 'valid')
-        #sta_corr = np.concatenate([np.zeros(n_sta - 1), sta_corr])
-        #lta_corr = np.concatenate([np.zeros(n_lta - 1), lta_corr])
-
-        n_cf = len(cf)
-        cf = np.ascontiguousarray(cf, dtype = np.float64)
-        sta = np.empty(n_cf, dtype = np.float64)
-        ret_val = clib_signal.moving_average(n_cf, n_sta, cf, sta)
-        lta = np.empty(n_cf, dtype = np.float64)
-        ret_val = clib_signal.moving_average(n_cf, n_lta, cf, lta)
-
-
-        #sta[0:n_lta] = 0
-        #lta[0:n_lta] = 1
-        thrf = sta / lta
-
-        if mode == 'valid':
-            thrf = thrf[n_lta:]
-            sta = sta[n_lta:]
-            lta = lta[n_lta:]
-
-        return (thrf, sta, lta)
-
-
-    def compute_event_limits(self, data, thrf, sta, lta, stop_delay = 10):
-        ''' Compute the event start and end times based on the detection functions.
-
-        '''
-        event_marker = []
-
-        # Find the event begins indicated by exceeding the threshold value.
-        event_on = np.zeros(thrf.shape)
-        event_on[thrf >= self.thr] = 1
-        event_start = np.zeros(thrf.shape)
-        event_start[1:] = np.diff(event_on)
-
-        # Find the event ends.
-        event_start_ind = np.flatnonzero(event_start == 1)
-        stop_values = sta[np.flatnonzero(event_start == 1) - stop_delay]
-
-        for k, cur_event_start in enumerate(event_start_ind):
-            try:
-                next_end_ind = np.flatnonzero(sta[cur_event_start:] < stop_values[k])[0]
-                cur_event_end = cur_event_start + next_end_ind
-            except:
-                cur_event_end = len(thrf)-1
-            event_marker.append((cur_event_start, cur_event_end))
-
-#        plt.plot(sta, 'r')
-#        plt.plot(self.thr * lta, 'g')
-#        plt.plot(data, 'k')
-#        for event_begin, event_end in event_marker:
-#            plt.axvline(event_begin, color = 'm')
-#            plt.axvline(event_end, color = 'b')
-#        plt.show()
-
-
-        return event_marker
 
 
 
