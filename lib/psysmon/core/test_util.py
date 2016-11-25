@@ -25,6 +25,11 @@ import os.path
 import glob
 import shutil
 import copy
+
+import scipy
+import scipy.signal
+import numpy as np
+
 import psysmon
 import psysmon.core.base
 import psysmon.core.gui as psygui
@@ -352,3 +357,44 @@ def prepare_project(test_case):
         # Create the node logger. This is usually done in the collection.
         loggerName = __name__ + "." + test_case.node.__class__.__name__
         test_case.node.logger = logging.getLogger(loggerName)
+
+
+
+def compute_synthetic_seismogram(length, sps, wavelet_offset, amp = 1., snr = None):
+    ''' Compute a synthetic seismogram.
+    '''
+    wavelet = compute_wavelet(amp = 1., sps = sps)
+    seismo = np.zeros(length * sps)
+    offset_smp = int(wavelet_offset * sps)
+    seismo[offset_smp] = 1.
+    seismo = scipy.convolve(seismo, wavelet, 'full')
+    seismo = seismo[:length * sps]
+
+    if snr is not None and snr > 0:
+        noise = np.random.normal(size = len(seismo)) / float(snr)
+        seismo = seismo + noise
+
+    seismo = seismo * amp
+
+    return seismo
+
+
+
+def compute_wavelet(amp, sps):
+    ''' Compute a minimum phase wavelet.
+    '''
+    # Create a test wavelet.
+    fc = 10.
+    fn = fc / (sps/2)
+
+    # Create a butterworth filter. The butterworth wavelet is minimum-phase.
+    b,a = scipy.signal.butter(4, fn)
+    # Create an impulse signal.
+    impulse = np.zeros(1000)
+    impulse[0] = 1
+    # Compute the impulse response of the filter.
+    data = scipy.signal.lfilter(b, a, impulse)
+    data = data / np.max(np.abs(data))
+    data = data * amp
+
+    return data
