@@ -235,7 +235,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                 if cur_feature == 'cf':
                     cur_time = time_array
                 else:
-                    cur_time = time_array[detector.n_lta:]
+                    cur_time = time_array[detector.n_lta:-detector.n_sta]
 
                 if cur_feature == 'lta * thr':
                     cur_data = detector.lta * detector.thr
