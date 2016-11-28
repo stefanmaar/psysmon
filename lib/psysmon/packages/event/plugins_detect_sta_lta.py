@@ -80,6 +80,17 @@ class DetectStaLta(ViewPlugin):
         self.pref_manager.add_item(item = item)
 
 
+        # The CF type.
+        item = preferences_manager.SingleChoicePrefItem(name = 'cf_type',
+                                                        label = 'cf type',
+                                                        limit = ('abs', 'square', 'envelope', 'envelope^2'),
+                                                        value = 'square',
+                                                        tool_tip = 'The type of the characteristic function.'
+                                                       )
+        self.pref_manager.add_item(item = item)
+
+
+
 
     def plot(self, display_manager, data_manager):
         ''' Plot all available stations.
@@ -105,6 +116,7 @@ class DetectStaLta(ViewPlugin):
         sta_len = self.pref_manager.get_value('sta_length')
         lta_len = self.pref_manager.get_value('lta_length')
         thr = self.pref_manager.get_value('thr')
+        cf_type = self.pref_manager.get_value('cf_type')
 
 
         for cur_channel in channels:
@@ -131,7 +143,8 @@ class DetectStaLta(ViewPlugin):
                     cur_view.plot(cur_stream,
                                   sta_len = sta_len,
                                   lta_len = lta_len,
-                                  thr = thr)
+                                  thr = thr,
+                                  cf_type = cf_type)
 
                 cur_view.setXLimits(left = display_manager.startTime.timestamp,
                                     right = display_manager.endTime.timestamp)
@@ -189,13 +202,13 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
 
 
-    def plot(self, stream, sta_len, lta_len, thr):
+    def plot(self, stream, sta_len, lta_len, thr, cf_type):
         ''' Plot the STA/LTA features.
         '''
         plot_detection_marker = True
         plot_features = ['sta', 'lta * thr']
 
-        detector = detect.StaLtaDetector(thr = thr)
+        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type)
 
         for cur_trace in stream:
             time_array = np.arange(0, cur_trace.stats.npts)

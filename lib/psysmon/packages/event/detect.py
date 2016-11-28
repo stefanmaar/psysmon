@@ -30,6 +30,7 @@
 '''
 import logging
 import numpy as np
+import scipy.signal
 
 import psysmon
 import psysmon.core.lib_signal as lib_signal
@@ -50,7 +51,7 @@ class StaLtaDetector:
         self.logger = logging.getLogger(loggerName)
 
         # The type of the characteristic function.
-        self.allowed_cf_type = ['abs', 'square']
+        self.allowed_cf_type = ['abs', 'square', 'envelope', 'envelope^2']
         if cf_type not in self.allowed_cf_type:
             raise ValueError("Wrong value for cf_type. Allowed are: %s." % self.allowed_cf_type)
         self.cf_type = cf_type
@@ -100,6 +101,13 @@ class StaLtaDetector:
             self.cf = np.abs(self.data)
         elif self.cf_type == 'square':
             self.cf = self.data**2
+        elif self.cf_type == 'envelope':
+            data_comp = scipy.signal.hilbert(self.data)
+            self.cf = np.sqrt(np.real(data_comp)**2 + np.imag(data_comp)**2)
+        elif self.cf_type == 'envelope^2':
+            data_comp = scipy.signal.hilbert(self.data)
+            self.cf = np.sqrt(np.real(data_comp)**2 + np.imag(data_comp)**2)
+            self.cf = self.cf ** 2
 
 
     def compute_thrf(self, mode = 'valid'):
