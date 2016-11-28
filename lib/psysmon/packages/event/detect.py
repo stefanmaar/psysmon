@@ -182,6 +182,13 @@ class StaLtaDetector:
         # Don't immediately stop the event but use some stop-wait criteria like
         # Allen does with the counting of the zero-crossings (S) and peaks (L).
 
+        # TODO: Exclude the timespans already declared as events from the LTA
+        # used for detecting new event starts. This could help to detect
+        # consecutive events where the second event is not detected because the
+        # LTA is still influenced by the prior event.
+        # This would require a recomputation of the thrf, the event_on and
+        # event_start arrays each time, a event is declared as finished.
+
         # Find the event end values.
         go_on = True
         self.logger.debug("Computing the event limits.")
