@@ -142,6 +142,16 @@ class StaLtaDetector:
         self.lta = np.empty(n_cf, dtype = np.float64)
         ret_val = clib_signal.moving_average(n_cf, self.n_lta, cf, self.lta)
 
+        # Use non-overlapping STA and LTA windows. The LTA is computed using
+        # samples prior to the STA window.
+        self.lta[self.n_sta:] = self.lta[:-self.n_sta]
+
+        # Trim the sta and lta arrays to the valid length. The last n_sta
+        # values are not valid because no shifted LTA is available.
+        self.sta = self.sta[:-self.n_sta]
+        self.lta = self.lta[:-self.n_sta]
+
+        # Compute the threshold function.
         self.thrf = self.sta / self.lta
 
         if mode == 'valid':
@@ -166,28 +176,46 @@ class StaLtaDetector:
         event_start_ind = np.flatnonzero(event_start == 1)
         stop_values = self.sta[np.flatnonzero(event_start == 1) - stop_delay]
 
+        # TODO: Implement Allen's event stop criteria computation.
+        # Slightly increase the stop value with time when searching for the
+        # STA below the stop value.
+        # Don't immediately stop the event but use some stop-wait criteria like
+        # Allen does with the counting of the zero-crossings (S) and peaks (L).
+
         # Find the event end values.
         go_on = True
+        self.logger.debug("Computing the event limits.")
         #for k, cur_event_start in enumerate(event_start_ind):
-        if len(event_start_ind) >0:
+        if len(event_start_ind) > 0:
             while go_on:
                 cur_event_start = event_start_ind[0]
                 cur_stop_value = stop_values[0]
+                if self.sta[cur_event_start] <= cur_stop_value:
+                    cur_stop_value = self.sta[cur_event_start]
                 try:
                     next_end_ind = np.flatnonzero(self.sta[cur_event_start:] < cur_stop_value)[0]
                     cur_event_end = cur_event_start + next_end_ind
                     # Remove all start indices which are larger than the currend
                     # event end.
-                    new_ind = np.argwhere(event_start_ind >= cur_event_end).flatten()
+                    new_ind = np.argwhere(event_start_ind > cur_event_end).flatten()
                     if len(new_ind) > 0:
                         new_ind = new_ind[0]
+                        self.logger.debug("new_ind: %d", new_ind)
+                        if new_ind == 0:
+                            self.logger.error("The current event start STA is lower than the stop value. Using the next event_start to avoid infinite loop.")
+                            new_ind = 1
+
                         event_start_ind = event_start_ind[new_ind:]
                         stop_values = stop_values[new_ind:]
+                        self.logger.debug("event_start_ind[0]: %d", event_start_ind[0])
                     else:
+                        self.logger.debug("len(new_ind): %d", len(new_ind))
                         go_on = False
                 except:
+                    self.logger.debug("in exception")
                     cur_event_end = len(self.thrf)-1
                     go_on = False
                 event_marker.append((cur_event_start, cur_event_end))
 
+        self.logger.debug("Finished the event limits computation.")
         return event_marker
