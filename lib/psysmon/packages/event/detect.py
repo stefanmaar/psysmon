@@ -186,8 +186,11 @@ class StaLtaDetector:
         # used for detecting new event starts. This could help to detect
         # consecutive events where the second event is not detected because the
         # LTA is still influenced by the prior event.
-        # This would require a recomputation of the thrf, the event_on and
-        # event_start arrays each time, a event is declared as finished.
+        # This would require a recomputation of the LTA and STA after each
+        # detected event. The sample in the timeseries between the event limits
+        # would have to be resed to the general noise level.
+        # Another way would be to compute the cumulative LTA value of the event
+        # and substract it from the LTA time window after the event.
 
         # Find the event end values.
         go_on = True
@@ -222,6 +225,24 @@ class StaLtaDetector:
                     self.logger.debug("in exception")
                     cur_event_end = len(self.thrf)-1
                     go_on = False
+
+
+                # Compute the cumulative LTA value created by the event and
+                # substract it from the LTA window influenced by the event.
+                # TODO: Compute the lta moving average for the time window influenced by the
+                # event timespan and substract it from the LTA. Teh cumulative
+                # LTA is not working well.
+                cum_lta = self.lta[cur_event_end] - self.lta[cur_event_start]
+                lta_replace_start = cur_event_start
+                lta_replace_end = cur_event_end
+                if lta_replace_end - lta_replace_start < self.n_lta:
+                    lta_replace_end = lta_replace_start + +self.n_sta + self.n_lta
+                #self.lta[lta_replace_start:lta_replace_end] -= self.lta[lta_replace_start:lta_replace_end] - self.lta[lta_replace_start]
+                lta_mod = self.lta[lta_replace_start:lta_replace_end] - cum_lta
+                lta_mod[lta_mod < self.lta[cur_event_start]] = self.lta[cur_event_start]
+                #self.lta[lta_replace_start:lta_replace_end] = lta_mod
+
+
                 event_marker.append((cur_event_start, cur_event_end))
 
         self.logger.debug("Finished the event limits computation.")
