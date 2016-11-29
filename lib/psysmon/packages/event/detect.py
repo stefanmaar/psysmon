@@ -37,6 +37,7 @@ import psysmon.core.lib_signal as lib_signal
 
 
 
+
 class StaLtaDetector:
     ''' Run a standard STA/LTA Detection.
     '''
@@ -164,7 +165,9 @@ class StaLtaDetector:
         ''' Compute the event start and end times based on the detection functions.
 
         '''
+        self.replace_limits = []
         event_marker = []
+        self.lta_orig = self.lta.copy()
 
         # Find the event begins indicated by exceeding the threshold value.
         event_on = np.zeros(self.thrf.shape)
@@ -227,22 +230,47 @@ class StaLtaDetector:
                     go_on = False
 
 
-                # Compute the cumulative LTA value created by the event and
-                # substract it from the LTA window influenced by the event.
-                # TODO: Compute the lta moving average for the time window influenced by the
-                # event timespan and substract it from the LTA. Teh cumulative
-                # LTA is not working well.
-                cum_lta = self.lta[cur_event_end] - self.lta[cur_event_start]
-                lta_replace_start = cur_event_start
-                lta_replace_end = cur_event_end
-                if lta_replace_end - lta_replace_start < self.n_lta:
-                    lta_replace_end = lta_replace_start + +self.n_sta + self.n_lta
-                #self.lta[lta_replace_start:lta_replace_end] -= self.lta[lta_replace_start:lta_replace_end] - self.lta[lta_replace_start]
-                lta_mod = self.lta[lta_replace_start:lta_replace_end] - cum_lta
-                lta_mod[lta_mod < self.lta[cur_event_start]] = self.lta[cur_event_start]
-                #self.lta[lta_replace_start:lta_replace_end] = lta_mod
 
+                # Remove the influence of the detected event from the LTA
+                # timeseries.
+                # Compute the LTA moving average of the event cf only.
+                event_length = cur_event_end - cur_event_start
+                event_cf = np.zeros(2*self.n_lta + event_length)
+                event_cf[self.n_lta:self.n_lta + event_length] = self.cf[cur_event_start + self.n_lta:cur_event_end + self.n_lta]
+                c_event_cf = np.ascontiguousarray(event_cf, dtype = np.float64)
+                n_event_cf = len(event_cf)
+                event_lta = np.empty(n_event_cf, dtype = np.float64)
+                ret_val = lib_signal.clib_signal.moving_average(n_event_cf, self.n_lta, c_event_cf, event_lta)
+                noise_cf = np.zeros(event_cf.shape)
+                noise_cf[self.n_lta:self.n_lta + event_length] = self.lta[cur_event_start]
+                c_noise_cf = np.ascontiguousarray(noise_cf, dtype = np.float64)
+                n_noise_cf = len(noise_cf)
+                noise_lta = np.empty(n_event_cf, dtype = np.float64)
+                ret_val = lib_signal.clib_signal.moving_average(n_noise_cf, self.n_lta, c_noise_cf, noise_lta)
+                event_lta = event_lta[self.n_lta:] - noise_lta[self.n_lta:]
 
+                # Remove the event lta from the LTA timeseries.
+                lta_replace_start = cur_event_start + self.n_sta
+                lta_replace_end = lta_replace_start + event_length + self.n_lta
+                if lta_replace_end > len(self.lta):
+                    lta_replace_end = len(self.lta)
+                    event_lta = event_lta[:lta_replace_end - lta_replace_start]
+                self.lta[lta_replace_start:lta_replace_end] -= event_lta
+                self.replace_limits.append((lta_replace_start, lta_replace_end))
+
+                # Recompute the event start indices.
+                self.thrf = self.sta/self.lta
+                crop_thrf = self.thrf[cur_event_end:]
+                event_on = np.zeros(crop_thrf.shape)
+                event_on[crop_thrf >= self.thr] = 1
+                event_start = np.zeros(crop_thrf.shape)
+                event_start[1:] = np.diff(event_on)
+
+                # Recompute the stop values from the sta function.
+                event_start_ind = cur_event_end + np.flatnonzero(event_start == 1)
+                stop_values = self.sta[event_start_ind - stop_delay]
+
+                # Add the event marker.
                 event_marker.append((cur_event_start, cur_event_end))
 
         self.logger.debug("Finished the event limits computation.")
