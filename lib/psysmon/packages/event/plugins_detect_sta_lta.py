@@ -197,6 +197,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
         self.lines['lta'] = None
         self.lines['thrf'] = None
         self.lines['lta * thr'] = None
+        self.lines['lta_orig'] = None
+        self.lines['lta_orig * thr'] = None
 
         self.marker_lines = []
 
@@ -206,7 +208,9 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
         ''' Plot the STA/LTA features.
         '''
         plot_detection_marker = True
-        plot_features = ['sta', 'lta * thr']
+        plot_lta_replace_marker = False
+        #plot_features = ['sta', 'lta * thr']
+        plot_features = ['sta', 'lta * thr', 'lta_orig * thr']
 
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type)
 
@@ -240,9 +244,14 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                 if cur_feature == 'lta * thr':
                     cur_data = detector.lta * detector.thr
                     cur_max_data = np.max(cur_data)
+                elif cur_feature == 'lta_orig * thr':
+                    cur_data = detector.lta_orig * detector.thr
+                    cur_max_data = np.max(cur_data)
                 else:
                     cur_data = getattr(detector, cur_feature)
                     cur_max_data = np.max(getattr(detector, cur_feature))
+
+
                 y_lim.append(cur_max_data)
 
                 if not cur_line:
@@ -266,8 +275,6 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
             if plot_detection_marker:
                 for det_start_ind, det_end_ind in detection_markers:
-                    print det_start_ind
-                    print det_end_ind
                     det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
                     det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_trace.stats.sampling_rate
 
@@ -276,6 +283,15 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                     cur_line = self.axes.axvline(x = det_end_time.timestamp, color = 'b')
                     self.marker_lines.append(cur_line)
 
+            if plot_lta_replace_marker:
+                for det_start_ind, det_end_ind in detector.replace_limits:
+                    det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
+                    det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_trace.stats.sampling_rate
+
+                    cur_line = self.axes.axvline(x = det_start_time.timestamp, color = 'y')
+                    self.marker_lines.append(cur_line)
+                    cur_line = self.axes.axvline(x = det_end_time.timestamp, color = 'm')
+                    self.marker_lines.append(cur_line)
 
 
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
