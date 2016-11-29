@@ -221,11 +221,8 @@ class StaLtaDetector:
                         event_start_ind = event_start_ind[new_ind:]
                         stop_values = stop_values[new_ind:]
                         self.logger.debug("event_start_ind[0]: %d", event_start_ind[0])
-                    else:
-                        self.logger.debug("len(new_ind): %d", len(new_ind))
-                        go_on = False
                 except:
-                    self.logger.debug("in exception")
+                    self.logger.warning("There is no STA value below the current stop value before the end of the data. Use the end of the data as the event end.")
                     cur_event_end = len(self.thrf)-1
                     go_on = False
 
@@ -252,11 +249,14 @@ class StaLtaDetector:
                 # Remove the event lta from the LTA timeseries.
                 lta_replace_start = cur_event_start + self.n_sta
                 lta_replace_end = lta_replace_start + event_length + self.n_lta
-                if lta_replace_end > len(self.lta):
-                    lta_replace_end = len(self.lta)
-                    event_lta = event_lta[:lta_replace_end - lta_replace_start]
-                self.lta[lta_replace_start:lta_replace_end] -= event_lta
-                self.replace_limits.append((lta_replace_start, lta_replace_end))
+                if lta_replace_start < len(self.lta):
+                    if lta_replace_end > len(self.lta):
+                        lta_replace_end = len(self.lta)
+                        event_lta = event_lta[:lta_replace_end - lta_replace_start]
+                    self.lta[lta_replace_start:lta_replace_end] -= event_lta
+                    self.replace_limits.append((lta_replace_start, lta_replace_end))
+                else:
+                    self.logger.warning("The LTA replacement start is after the trace length. Didn't change the LTA.")
 
                 # Recompute the event start indices.
                 self.thrf = self.sta/self.lta
@@ -269,9 +269,15 @@ class StaLtaDetector:
                 # Recompute the stop values from the sta function.
                 event_start_ind = cur_event_end + np.flatnonzero(event_start == 1)
                 stop_values = self.sta[event_start_ind - stop_delay]
+                self.logger.debug("event_start_ind: %s", event_start_ind)
 
                 # Add the event marker.
                 event_marker.append((cur_event_start, cur_event_end))
+
+                # Check for the while look exit criterium.
+                if len(event_start_ind) == 0:
+                    self.logger.debug("No more event starts found. Exit loop.")
+                    go_on = False
 
         self.logger.debug("Finished the event limits computation.")
         return event_marker
