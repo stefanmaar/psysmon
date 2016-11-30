@@ -199,6 +199,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
         self.lines['lta * thr'] = None
         self.lines['lta_orig'] = None
         self.lines['lta_orig * thr'] = None
+        self.lines['stop_crit'] = None
 
         self.marker_lines = []
 
@@ -210,7 +211,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
         plot_detection_marker = True
         plot_lta_replace_marker = False
         #plot_features = ['sta', 'lta * thr']
-        plot_features = ['sta', 'lta * thr', 'lta_orig * thr']
+        plot_features = ['sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
 
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type)
 
