@@ -165,6 +165,7 @@ class StaLtaDetector:
         ''' Compute the event start and end times based on the detection functions.
 
         '''
+        self.stop_crit = np.zeros(self.sta.shape)
         self.replace_limits = []
         event_marker = []
         self.lta_orig = self.lta.copy()
@@ -185,16 +186,6 @@ class StaLtaDetector:
         # Don't immediately stop the event but use some stop-wait criteria like
         # Allen does with the counting of the zero-crossings (S) and peaks (L).
 
-        # TODO: Exclude the timespans already declared as events from the LTA
-        # used for detecting new event starts. This could help to detect
-        # consecutive events where the second event is not detected because the
-        # LTA is still influenced by the prior event.
-        # This would require a recomputation of the LTA and STA after each
-        # detected event. The sample in the timeseries between the event limits
-        # would have to be resed to the general noise level.
-        # Another way would be to compute the cumulative LTA value of the event
-        # and substract it from the LTA time window after the event.
-
         # Find the event end values.
         go_on = True
         self.logger.debug("Computing the event limits.")
@@ -205,27 +196,50 @@ class StaLtaDetector:
                 cur_stop_value = stop_values[0]
                 if self.sta[cur_event_start] <= cur_stop_value:
                     cur_stop_value = self.sta[cur_event_start]
-                try:
-                    next_end_ind = np.flatnonzero(self.sta[cur_event_start:] < cur_stop_value)[0]
-                    cur_event_end = cur_event_start + next_end_ind
-                    # Remove all start indices which are larger than the currend
-                    # event end.
-                    new_ind = np.argwhere(event_start_ind > cur_event_end).flatten()
-                    if len(new_ind) > 0:
-                        new_ind = new_ind[0]
-                        self.logger.debug("new_ind: %d", new_ind)
-                        if new_ind == 0:
-                            self.logger.error("The current event start STA is lower than the stop value. Using the next event_start to avoid infinite loop.")
-                            new_ind = 1
 
-                        event_start_ind = event_start_ind[new_ind:]
-                        stop_values = stop_values[new_ind:]
-                        self.logger.debug("event_start_ind[0]: %d", event_start_ind[0])
-                except:
+                # Compute the stop criterium.
+                stop_crit = np.ones(self.sta[cur_event_start:].shape) * cur_stop_value
+                # Find the points where the sta is below the lta.
+                sta_below_lta = np.flatnonzero(self.sta[cur_event_start:] < (self.lta[cur_event_start:] * self.thr))
+                # Increase the stop criterium from the time when the sta falls
+                # below the lta.
+                if len(sta_below_lta) > 0:
+                    start_grow = sta_below_lta[0]
+                    stop_crit[start_grow:] += np.arange(len(stop_crit) - start_grow) * (cur_stop_value * 0.001)
+
+
+                # Find the event end.
+                below_stop = np.flatnonzero(self.sta[cur_event_start:] < stop_crit)
+                if len(below_stop) == 0:
                     self.logger.warning("There is no STA value below the current stop value before the end of the data. Use the end of the data as the event end.")
-                    cur_event_end = len(self.thrf)-1
+                    cur_event_end = len(self.thrf)
+                    next_end_ind = len(stop_crit)
                     go_on = False
+                else:
+                    next_end_ind = below_stop[0]
+                    try:
+                        cur_event_end = cur_event_start + next_end_ind
+                        # Remove all start indices which are larger than the currend
+                        # event end.
+                        new_ind = np.argwhere(event_start_ind > cur_event_end).flatten()
+                        if len(new_ind) > 0:
+                            new_ind = new_ind[0]
+                            self.logger.debug("new_ind: %d", new_ind)
+                            if new_ind == 0:
+                                self.logger.error("The current event start STA is lower than the stop value. Using the next event_start to avoid infinite loop.")
+                                new_ind = 1
 
+                            event_start_ind = event_start_ind[new_ind:]
+                            stop_values = stop_values[new_ind:]
+                            self.logger.debug("event_start_ind[0]: %d", event_start_ind[0])
+                    except:
+                        self.logger.exception("There is no STA value below the current stop value before the end of the data. Use the end of the data as the event end.")
+                        go_on = False
+                        break
+
+
+                # Copy the event stop criterium to the overall stop criterium array.
+                self.stop_crit[cur_event_start:cur_event_end] = stop_crit[:next_end_ind]
 
                 # Remove the influence of the detected event from the LTA
                 # timeseries.
