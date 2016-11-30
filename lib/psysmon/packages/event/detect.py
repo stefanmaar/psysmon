@@ -227,49 +227,12 @@ class StaLtaDetector:
                     go_on = False
 
 
-
                 # Remove the influence of the detected event from the LTA
                 # timeseries.
-                # Compute the LTA moving average of the event cf only.
-                event_length = cur_event_end - cur_event_start
-                event_cf = np.zeros(2*self.n_lta + event_length)
-                event_cf[self.n_lta:self.n_lta + event_length] = self.cf[cur_event_start + self.n_lta:cur_event_end + self.n_lta]
-                c_event_cf = np.ascontiguousarray(event_cf, dtype = np.float64)
-                n_event_cf = len(event_cf)
-                event_lta = np.empty(n_event_cf, dtype = np.float64)
-                ret_val = lib_signal.clib_signal.moving_average(n_event_cf, self.n_lta, c_event_cf, event_lta)
-                noise_cf = np.zeros(event_cf.shape)
-                noise_cf[self.n_lta:self.n_lta + event_length] = self.lta[cur_event_start]
-                c_noise_cf = np.ascontiguousarray(noise_cf, dtype = np.float64)
-                n_noise_cf = len(noise_cf)
-                noise_lta = np.empty(n_event_cf, dtype = np.float64)
-                ret_val = lib_signal.clib_signal.moving_average(n_noise_cf, self.n_lta, c_noise_cf, noise_lta)
-                event_lta = event_lta[self.n_lta:] - noise_lta[self.n_lta:]
-
-                # Remove the event lta from the LTA timeseries.
-                lta_replace_start = cur_event_start + self.n_sta
-                lta_replace_end = lta_replace_start + event_length + self.n_lta
-                if lta_replace_start < len(self.lta):
-                    if lta_replace_end > len(self.lta):
-                        lta_replace_end = len(self.lta)
-                        event_lta = event_lta[:lta_replace_end - lta_replace_start]
-                    self.lta[lta_replace_start:lta_replace_end] -= event_lta
-                    self.replace_limits.append((lta_replace_start, lta_replace_end))
-                else:
-                    self.logger.warning("The LTA replacement start is after the trace length. Didn't change the LTA.")
+                self.remove_event_influence(cur_event_start, cur_event_end)
 
                 # Recompute the event start indices.
-                self.thrf = self.sta/self.lta
-                crop_thrf = self.thrf[cur_event_end:]
-                event_on = np.zeros(crop_thrf.shape)
-                event_on[crop_thrf >= self.thr] = 1
-                event_start = np.zeros(crop_thrf.shape)
-                event_start[1:] = np.diff(event_on)
-
-                # Recompute the stop values from the sta function.
-                event_start_ind = cur_event_end + np.flatnonzero(event_start == 1)
-                stop_values = self.sta[event_start_ind - stop_delay]
-                self.logger.debug("event_start_ind: %s", event_start_ind)
+                event_start_ind, stop_values = self.compute_start_stop_values(cur_event_end, stop_delay)
 
                 # Add the event marker.
                 event_marker.append((cur_event_start, cur_event_end))
@@ -281,3 +244,65 @@ class StaLtaDetector:
 
         self.logger.debug("Finished the event limits computation.")
         return event_marker
+
+
+    def remove_event_influence(self, event_start, event_end):
+        ''' Remove the influence of the detected event from the LTA.
+        '''
+        event_lta = self.compute_replace_lta(event_start, event_end)
+
+        # Remove the event lta from the LTA timeseries.
+        event_length = event_end - event_start
+        lta_replace_start = event_start + self.n_sta
+        lta_replace_end = lta_replace_start + event_length + self.n_lta
+        if lta_replace_start < len(self.lta):
+            if lta_replace_end > len(self.lta):
+                lta_replace_end = len(self.lta)
+                event_lta = event_lta[:lta_replace_end - lta_replace_start]
+            self.lta[lta_replace_start:lta_replace_end] -= event_lta
+            self.replace_limits.append((lta_replace_start, lta_replace_end))
+        else:
+            self.logger.warning("The LTA replacement start is after the trace length. Didn't change the LTA.")
+
+
+    def compute_replace_lta(self, event_start, event_end):
+        ''' Compute the moving average used to remove the event influence on the LTA.
+        '''
+        # Compute the LTA moving average of the event cf only.
+        event_length = event_end - event_start
+        event_cf = np.zeros(2*self.n_lta + event_length)
+        event_cf[self.n_lta:self.n_lta + event_length] = self.cf[event_start + self.n_lta:event_end + self.n_lta]
+        c_event_cf = np.ascontiguousarray(event_cf, dtype = np.float64)
+        n_event_cf = len(event_cf)
+        event_lta = np.empty(n_event_cf, dtype = np.float64)
+        ret_val = lib_signal.clib_signal.moving_average(n_event_cf, self.n_lta, c_event_cf, event_lta)
+        noise_cf = np.zeros(event_cf.shape)
+        noise_cf[self.n_lta:self.n_lta + event_length] = self.lta[event_start]
+        c_noise_cf = np.ascontiguousarray(noise_cf, dtype = np.float64)
+        n_noise_cf = len(noise_cf)
+        noise_lta = np.empty(n_event_cf, dtype = np.float64)
+        ret_val = lib_signal.clib_signal.moving_average(n_noise_cf, self.n_lta, c_noise_cf, noise_lta)
+        event_lta = event_lta[self.n_lta:] - noise_lta[self.n_lta:]
+
+        return event_lta
+
+
+    def compute_start_stop_values(self, event_end, stop_delay):
+        ''' Compute the event start indices and the stop values.
+        '''
+        self.thrf = self.sta/self.lta
+        crop_thrf = self.thrf[event_end:]
+        event_on = np.zeros(crop_thrf.shape)
+        event_on[crop_thrf >= self.thr] = 1
+        event_start = np.zeros(crop_thrf.shape)
+        event_start[1:] = np.diff(event_on)
+
+        # Recompute the stop values from the sta function.
+        event_start_ind = event_end + np.flatnonzero(event_start == 1)
+        stop_values = self.sta[event_start_ind - stop_delay]
+        self.logger.debug("event_start_ind: %s", event_start_ind)
+
+        return event_start_ind, stop_values
+
+
+
