@@ -192,6 +192,7 @@ class StaLtaDetector:
         #for k, cur_event_start in enumerate(event_start_ind):
         if len(event_start_ind) > 0:
             while go_on:
+                self.logger.debug("Processing the next event. event_start_ind: %s", event_start_ind)
                 cur_event_start = event_start_ind[0]
                 cur_stop_value = stop_values[0]
                 if self.sta[cur_event_start] <= cur_stop_value:
@@ -200,23 +201,50 @@ class StaLtaDetector:
                 # Compute the stop criterium.
                 stop_crit = np.ones(self.sta[cur_event_start:].shape) * cur_stop_value
                 # Find the points where the sta is below the lta.
-                sta_below_lta = np.flatnonzero(self.sta[cur_event_start:] < (self.lta[cur_event_start:] * self.thr))
+                #sta_below_lta = np.flatnonzero(self.sta[cur_event_start:] < (self.lta[cur_event_start:] * self.thr))
+                sta_below_required = 10
+                sta_below_lta_mask = self.sta[cur_event_start:] < (self.lta[cur_event_start:] * self.thr)
+                sta_below_lta = np.zeros(sta_below_lta_mask.shape)
+                sta_below_lta[sta_below_lta_mask] = 1
+                sta_below_limits = np.zeros(sta_below_lta.shape)
+                sta_below_limits[1:] = np.diff(sta_below_lta)
+                sta_below_start_ind = np.flatnonzero(sta_below_limits == 1)
+                sta_below_end_ind = np.flatnonzero(sta_below_limits == -1)
+                if len(sta_below_end_ind) < len(sta_below_start_ind):
+                    sta_below_end_ind = np.hstack((sta_below_end_ind, [len(sta_below_lta)]))
+                sta_below_duration = sta_below_end_ind - sta_below_start_ind
+                sta_below_lta_long_enough = np.flatnonzero(sta_below_duration > sta_below_required)
+                sta_below_lta_long_enough = sta_below_start_ind[sta_below_lta_long_enough]
+
                 # Increase the stop criterium from the time when the sta falls
-                # below the lta.
-                if len(sta_below_lta) > 0:
-                    start_grow = sta_below_lta[0]
+                # the last time before the prelim_event_end below the lta.
+                if len(sta_below_lta_long_enough) > 0:
+                    start_grow = sta_below_lta_long_enough[0]
                     stop_crit[start_grow:] += np.arange(len(stop_crit) - start_grow) * (cur_stop_value * 0.001)
 
 
                 # Find the event end.
-                below_stop = np.flatnonzero(self.sta[cur_event_start:] < stop_crit)
-                if len(below_stop) == 0:
+                sta_below_required = 100
+                sta_below_stop_mask = self.sta[cur_event_start:] < stop_crit
+                sta_below_stop = np.zeros(sta_below_stop_mask.shape)
+                sta_below_stop[sta_below_stop_mask] = 1
+                sta_below_limits = np.zeros(sta_below_stop.shape)
+                sta_below_limits[1:] = np.diff(sta_below_stop)
+                sta_below_start_ind = np.flatnonzero(sta_below_limits == 1)
+                sta_below_end_ind = np.flatnonzero(sta_below_limits == -1)
+                if len(sta_below_end_ind) < len(sta_below_start_ind):
+                    sta_below_end_ind = np.hstack((sta_below_end_ind, [len(sta_below_stop)]))
+                sta_below_duration = sta_below_end_ind - sta_below_start_ind
+                sta_below_stop_long_enough = np.flatnonzero(sta_below_duration > sta_below_required)
+                sta_below_stop_long_enough = sta_below_start_ind[sta_below_stop_long_enough]
+
+                if len(sta_below_stop_long_enough) == 0:
                     self.logger.warning("There is no STA value below the current stop value before the end of the data. Use the end of the data as the event end.")
                     cur_event_end = len(self.thrf)
                     next_end_ind = len(stop_crit)
                     go_on = False
                 else:
-                    next_end_ind = below_stop[0]
+                    next_end_ind = sta_below_stop_long_enough[0]
                     try:
                         cur_event_end = cur_event_start + next_end_ind
                         # Remove all start indices which are larger than the currend
