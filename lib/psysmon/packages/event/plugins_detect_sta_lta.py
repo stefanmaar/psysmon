@@ -79,6 +79,15 @@ class DetectStaLta(ViewPlugin):
                                                      limit = (0, 100))
         self.pref_manager.add_item(item = item)
 
+        # Stop criterium delay.
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
+                                                     label = 'Stop delay [s]',
+                                                     value = 0.1,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
+        self.pref_manager.add_item(item = item)
+
+
 
         # The CF type.
         item = preferences_manager.SingleChoicePrefItem(name = 'cf_type',
@@ -117,6 +126,7 @@ class DetectStaLta(ViewPlugin):
         lta_len = self.pref_manager.get_value('lta_length')
         thr = self.pref_manager.get_value('thr')
         cf_type = self.pref_manager.get_value('cf_type')
+        stop_delay = self.pref_manager.get_value('stop_delay')
 
 
         for cur_channel in channels:
@@ -144,7 +154,8 @@ class DetectStaLta(ViewPlugin):
                                   sta_len = sta_len,
                                   lta_len = lta_len,
                                   thr = thr,
-                                  cf_type = cf_type)
+                                  cf_type = cf_type,
+                                  stop_delay = stop_delay)
 
                 cur_view.setXLimits(left = display_manager.startTime.timestamp,
                                     right = display_manager.endTime.timestamp)
@@ -205,7 +216,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
 
 
-    def plot(self, stream, sta_len, lta_len, thr, cf_type):
+    def plot(self, stream, sta_len, lta_len, thr, cf_type, stop_delay):
         ''' Plot the STA/LTA features.
         '''
         plot_detection_marker = True
@@ -226,13 +237,14 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
+            stop_delay_smp = int(stop_delay * cur_trace.stats.sampling_rate)
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
             detector.set_data(cur_trace.data)
             detector.compute_cf()
             detector.compute_thrf()
-            detection_markers = detector.compute_event_limits()
+            detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
 
             y_lim = []
             for cur_feature in plot_features:
@@ -267,6 +279,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                     cur_line.set_ydata(cur_data)
 
             y_lim = np.max(y_lim)
+            self.axes.set_yscale('log')
             self.axes.set_ylim(bottom = 0, top = y_lim)
 
             # Clear the marker lines.
