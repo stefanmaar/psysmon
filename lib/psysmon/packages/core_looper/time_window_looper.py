@@ -284,8 +284,15 @@ class SlidingWindowProcessor(object):
                                                                             name = cur_channel))
         scnl = [x.scnl for x in channels]
 
+        # Get the pre- and post timewindow time required by the looper
+        # children. The pre- and post timewindow times could be needed because
+        # of effects due to filter buildup.
+        pre_stream_length = [x.pre_stream_length for x in looper_nodes]
+        post_stream_length = [x.post_stream_length for x in looper_nodes]
+        pre_stream_length = max(pre_stream_length)
+        post_stream_length = max(post_stream_length)
 
-        # TODO: Compute the start times of the sliding windows.
+        # Compute the start times of the sliding windows.
         windowlist_start = [start_time, ]
         n_windows = (end_time - start_time) / (window_length * overlap)
         windowlist_start = [start_time + x * (window_length * overlap) for x in range(0, int(n_windows))]
@@ -296,8 +303,8 @@ class SlidingWindowProcessor(object):
 
                 self.logger.info("Initial stream request for time-span: %s to %s.", cur_window_start.isoformat(),
                                                                                     (cur_window_start + window_length).isoformat())
-                stream = self.request_stream(start_time = cur_window_start,
-                                             end_time = cur_window_start + window_length,
+                stream = self.request_stream(start_time = cur_window_start - pre_stream_length,
+                                             end_time = cur_window_start + window_length + post_stream_length,
                                              scnl = scnl)
 
                 # Execute the looper nodes.
