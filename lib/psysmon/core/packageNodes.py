@@ -158,7 +158,6 @@ class CollectionNode(object):
         #
         self.parentCollection = None
 
-
         # If the node is executed in a collection thread a thread ID is
         # assigned.
         self.procName = None
@@ -381,6 +380,22 @@ class LooperCollectionChildNode(CollectionNode):
 
 
     @property
+    def pre_stream_length(self):
+        ''' The time-span needed for correct processing prior to the start time
+        of the stream passed to the execute method [s].
+        '''
+        return 0.
+
+
+    @property
+    def post_stream_length(self):
+        ''' The time-span needed for correct processing after the end time
+        of the stream passed to the execute method [s].
+        '''
+        return 0.
+
+
+    @property
     def parent(self):
         '''
         '''
@@ -431,3 +446,20 @@ class LooperCollectionChildNode(CollectionNode):
             logger_prefix = psysmon.logConfig['package_prefix']
             loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
             self.logger = logging.getLogger(loggerName)
+
+
+    def execute(self, stream, process_limits = None, origin_resource = None):
+        ''' Execute the looper child.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+
+        process_limits : List of UTCDateTime or None
+            The time limits of the window to process.
+
+        origin_resource : String
+            The resource ID of the looper executing the node.
+        '''
+        assert False, 'execute must be defined'
