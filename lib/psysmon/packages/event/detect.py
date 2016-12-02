@@ -28,6 +28,8 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from profilehooks import profile
+
 import logging
 import numpy as np
 import scipy.signal
@@ -75,7 +77,6 @@ class StaLtaDetector:
 
         # The computed STA/LTA data.
         self.cf = np.empty((0,0))
-        self.thrf = np.empty((0,0))
         self.sta = np.empty((0,0))
         self.lta = np.empty((0,0))
 
@@ -86,7 +87,6 @@ class StaLtaDetector:
         self.data = data
 
         self.cf = np.empty((0,0))
-        self.thrf = np.empty((0,0))
         self.sta = np.empty((0,0))
         self.lta = np.empty((0,0))
 
@@ -152,15 +152,12 @@ class StaLtaDetector:
         self.sta = self.sta[:-self.n_sta]
         self.lta = self.lta[:-self.n_sta]
 
-        # Compute the threshold function.
-        self.thrf = self.sta / self.lta
-
         if mode == 'valid':
-            self.thrf = self.thrf[self.n_lta:]
             self.sta = self.sta[self.n_lta:]
             self.lta = self.lta[self.n_lta:]
 
 
+    @profile
     def compute_event_limits(self, stop_delay = 10):
         ''' Compute the event start and end times based on the detection functions.
 
@@ -171,14 +168,7 @@ class StaLtaDetector:
         self.lta_orig = self.lta.copy()
 
         # Find the event begins indicated by exceeding the threshold value.
-        event_on = np.zeros(self.thrf.shape)
-        event_on[self.thrf >= self.thr] = 1
-        event_start = np.zeros(self.thrf.shape)
-        event_start[1:] = np.diff(event_on)
-
-        # Get the stop values from the sta function.
-        event_start_ind = np.flatnonzero(event_start == 1)
-        stop_values = self.sta[np.flatnonzero(event_start == 1) - stop_delay]
+        event_start_ind, stop_values = self.compute_start_stop_values(0, stop_delay)
 
         # TODO: Implement Allen's event stop criteria computation.
         # Slightly increase the stop value with time when searching for the
@@ -198,7 +188,8 @@ class StaLtaDetector:
                 if self.sta[cur_event_start] <= cur_stop_value:
                     cur_stop_value = self.sta[cur_event_start]
 
-                # Compute the stop criterium.
+                # Compute the stop criterium. Use only the data between the
+                # current and the next event start to make the code faster.
                 stop_crit = np.ones(self.sta[cur_event_start:].shape) * cur_stop_value
                 # Find the points where the sta is below the lta.
                 #sta_below_lta = np.flatnonzero(self.sta[cur_event_start:] < (self.lta[cur_event_start:] * self.thr))
@@ -240,7 +231,7 @@ class StaLtaDetector:
 
                 if len(sta_below_stop_long_enough) == 0:
                     self.logger.warning("There is no STA value below the current stop value before the end of the data. Use the end of the data as the event end.")
-                    cur_event_end = len(self.thrf)
+                    cur_event_end = len(self.sta)
                     next_end_ind = len(stop_crit)
                     go_on = False
                 else:
@@ -332,11 +323,10 @@ class StaLtaDetector:
     def compute_start_stop_values(self, event_end, stop_delay):
         ''' Compute the event start indices and the stop values.
         '''
-        self.thrf = self.sta/self.lta
-        crop_thrf = self.thrf[event_end:]
-        event_on = np.zeros(crop_thrf.shape)
-        event_on[crop_thrf >= self.thr] = 1
-        event_start = np.zeros(crop_thrf.shape)
+        thrf = self.sta[event_end:]/self.lta[event_end:]
+        event_on = np.zeros(thrf.shape)
+        event_on[thrf >= self.thr] = 1
+        event_start = np.zeros(thrf.shape)
         event_start[1:] = np.diff(event_on)
 
         # Recompute the stop values from the sta function.
