@@ -246,7 +246,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             detector.compute_thrf()
             detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
 
-            y_lim = []
+            y_lim_min = []
+            y_lim_max = []
             for cur_feature in plot_features:
                 cur_line = self.lines[cur_feature]
                 if cur_feature == 'cf':
@@ -256,16 +257,18 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
                 if cur_feature == 'lta * thr':
                     cur_data = detector.lta * detector.thr
-                    cur_max_data = np.max(cur_data)
                 elif cur_feature == 'lta_orig * thr':
                     cur_data = detector.lta_orig * detector.thr
-                    cur_max_data = np.max(cur_data)
                 else:
                     cur_data = getattr(detector, cur_feature)
-                    cur_max_data = np.max(getattr(detector, cur_feature))
+
+                if cur_feature != 'stop_crit':
+                    cur_min_data = np.min(cur_data)
+                    cur_max_data = np.max(cur_data)
 
 
-                y_lim.append(cur_max_data)
+                y_lim_min.append(cur_min_data)
+                y_lim_max.append(cur_max_data)
 
                 if not cur_line:
                     if cur_feature == 'lta * thr':
@@ -278,9 +281,10 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                     cur_line.set_xdata(cur_time)
                     cur_line.set_ydata(cur_data)
 
-            y_lim = np.max(y_lim)
+            y_lim = [np.min(y_lim_min), np.max(y_lim_max)]
+            print y_lim
+            self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
             self.axes.set_yscale('log')
-            self.axes.set_ylim(bottom = 0, top = y_lim)
 
             # Clear the marker lines.
             for cur_line in self.marker_lines:

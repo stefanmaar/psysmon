@@ -160,6 +160,13 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('rt_130_py',
                          sources = files)
 
+    # LIBDETECT
+    path = os.path.join(root_dir, 'packages', 'event', 'src')
+    files = [os.path.join(path, 'detect_sta_lta.c'),]
+    printRaw(files)
+    config.add_extension(get_lib_name('detect_sta_lta'),
+                         sources = files)
+
     return config
 
 #distutils.log.set_verbosity(1)
