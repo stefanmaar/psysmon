@@ -178,11 +178,8 @@ class StaLtaDetector:
             cur_stop_crit = np.empty(n_cur_sta, dtype = np.float64)
             next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit)
             self.logger.debug("next_end_ind: %d", next_end_ind)
-            # Compute the stop criterium. 
-            #stop_crit = self.compute_stop_criterium(cur_search_start, stop_value)
 
             # Compute the event end.
-            #next_end_ind = self.compute_event_end(cur_search_start, stop_crit)
             if next_end_ind == -1:
                 cur_event_end = np.nan
                 self.stop_crit[cur_search_start:] = cur_stop_crit
@@ -212,67 +209,6 @@ class StaLtaDetector:
         self.logger.debug("Finished the event limits computation.")
 
         return event_marker
-
-
-    def compute_stop_criterium(self, event_start, stop_value):
-        ''' Compute the stop criterium.
-        '''
-        # Use the detection function from the current event start on.
-        cur_sta = self.sta[event_start:]
-        cur_lta = self.lta[event_start:]
-        stop_crit = np.ones(cur_sta.shape) * stop_value
-
-        # Find the points where the sta is below the lta.
-        sta_below_required = 10
-        sta_below_lta_mask = cur_sta < (cur_lta * self.thr)
-        sta_below_lta = np.zeros(sta_below_lta_mask.shape)
-        sta_below_lta[sta_below_lta_mask] = 1
-        sta_below_limits = np.zeros(sta_below_lta.shape)
-        sta_below_limits[1:] = np.diff(sta_below_lta)
-        sta_below_start_ind = np.flatnonzero(sta_below_limits == 1)
-        sta_below_end_ind = np.flatnonzero(sta_below_limits == -1)
-        if len(sta_below_end_ind) < len(sta_below_start_ind):
-            sta_below_end_ind = np.hstack((sta_below_end_ind, [len(sta_below_lta)]))
-        sta_below_duration = sta_below_end_ind - sta_below_start_ind
-        sta_below_lta_long_enough = np.flatnonzero(sta_below_duration > sta_below_required)
-        sta_below_lta_long_enough = sta_below_start_ind[sta_below_lta_long_enough]
-
-        # Increase the stop criterium from the time when the sta falls
-        # the last time before the prelim_event_end below the lta.
-        if len(sta_below_lta_long_enough) > 0:
-            start_grow = sta_below_lta_long_enough[0]
-            stop_crit[start_grow:] += np.arange(len(stop_crit) - start_grow) * (stop_value * 0.001)
-
-        return stop_crit
-
-
-    def compute_event_end(self, event_start, stop_crit):
-        ''' Compute the event end.
-        '''
-        cur_sta = self.sta[event_start:]
-
-        sta_below_required = 100
-        sta_below_stop_mask = cur_sta < stop_crit
-        sta_below_stop = np.zeros(sta_below_stop_mask.shape)
-        sta_below_stop[sta_below_stop_mask] = 1
-        sta_below_limits = np.zeros(sta_below_stop.shape)
-        sta_below_limits[0] = sta_below_stop[0]
-        sta_below_limits[1:] = np.diff(sta_below_stop)
-        sta_below_start_ind = np.flatnonzero(sta_below_limits == 1)
-        sta_below_end_ind = np.flatnonzero(sta_below_limits == -1)
-        if len(sta_below_end_ind) < len(sta_below_start_ind):
-            sta_below_end_ind = np.hstack((sta_below_end_ind, [len(sta_below_stop)]))
-        sta_below_duration = sta_below_end_ind - sta_below_start_ind
-        sta_below_stop_long_enough = np.flatnonzero(sta_below_duration > sta_below_required)
-        sta_below_stop_long_enough = sta_below_start_ind[sta_below_stop_long_enough]
-
-        if len(sta_below_stop_long_enough) == 0:
-            self.logger.warning("There is no STA value below the current stop value before the end of the data. Use the end of the data as the event end.")
-            next_end_ind = len(stop_crit)
-        else:
-            next_end_ind = sta_below_stop_long_enough[0]
-
-        return next_end_ind
 
 
     def remove_event_influence(self, event_start, event_end):
