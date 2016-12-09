@@ -23,35 +23,10 @@
 #include <math.h>
 
 
-int detect(const long n_sta, const long n_lta, const float thr, const long n_data, const double *data, double *sta, double *lta, double stop_crit)
-{
-    int k;
-
-    if (n_data == 0) {
-        return 0;
-    }
-    
-    sta[0] = data[0] / n_sta;
-    lta[0] = data[0] / n_lta;
-    
-    for (k = 1; k < n_lta; i++) 
-    {
-        sta[k] = sta[k - 1] + data[k] / n_sta;
-        lta[k] = lta[k - 1] + data[k] / n_lta;
-    }
-
-    for (k = n_lta; k < n_data; k++)
-    {
-        sta[k] = (sta[k] - data[k - n_sta]) / n_sta + sta[k - 1];
-        lta[k] = (lta[k] - data[k - n_lta]) / n_lta + lta[k - 1];
-    }
-}
-
-
 int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit)
 {
     int k;
-    int event_end = n_sta;
+    int event_end = -1;
     int end_triggered = 0;
     int sta_below_lta_required = 10;
     int sta_below_stop_required = 100;
@@ -95,7 +70,7 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
         else if (sta[k] > stop_value)
         {
             end_triggered = 0;
-            event_end = 0;
+            event_end = -1;
             cnt_sta_below_stop = 0;
         }
     }
