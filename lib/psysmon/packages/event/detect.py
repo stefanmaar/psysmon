@@ -79,6 +79,7 @@ class StaLtaDetector:
         self.cf = np.empty((0,0))
         self.sta = np.empty((0,0))
         self.lta = np.empty((0,0))
+        self.valid_ind = None
 
 
     def set_data(self, data):
@@ -142,11 +143,10 @@ class StaLtaDetector:
         # Use non-overlapping STA and LTA windows. The LTA is computed using
         # samples prior to the STA window.
         self.lta[self.n_sta:] = self.lta[:-self.n_sta]
+        self.lta[:self.n_sta] = 0.
 
-        # Trim the sta and lta arrays to the valid length. The last n_sta
-        # values are not valid because no shifted LTA is available.
-        #self.sta = self.sta[self.n_lta:-self.n_sta]
-        #self.lta = self.lta[self.n_lta:-self.n_sta]
+        # Set the index from which on the STA/LTA is valid.
+        self.valid_ind = self.n_lta + self.n_sta
 
 
     @profile
@@ -161,7 +161,7 @@ class StaLtaDetector:
 
         # Find the event begins indicated by exceeding the threshold value.
         # Start after n_lta samples to avoid effects of the filter buildup.
-        event_start, stop_value = self.compute_start_stop_values(self.n_lta, stop_delay)
+        event_start, stop_value = self.compute_start_stop_values(self.valid_ind, stop_delay)
 
         # Find the event end values.
         self.logger.debug("Computing the event limits.")
@@ -225,7 +225,7 @@ class StaLtaDetector:
                 event_start, stop_value = self.compute_start_stop_values(cur_event_end, stop_delay)
 
         self.logger.debug("Finished the event limits computation.")
-        print event_marker
+
         return event_marker
 
 
