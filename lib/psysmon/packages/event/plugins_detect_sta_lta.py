@@ -263,8 +263,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                     cur_data = getattr(detector, cur_feature)
 
                 if cur_feature != 'stop_crit':
-                    cur_min_data = np.min(cur_data)
-                    cur_max_data = np.max(cur_data)
+                    cur_min_data = np.min(cur_data[detector.valid_ind:])
+                    cur_max_data = np.max(cur_data[detector.valid_ind:])
 
 
                 y_lim_min.append(cur_min_data)
