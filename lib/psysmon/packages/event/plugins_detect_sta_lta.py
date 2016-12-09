@@ -250,10 +250,10 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             y_lim_max = []
             for cur_feature in plot_features:
                 cur_line = self.lines[cur_feature]
-                if cur_feature == 'cf':
-                    cur_time = time_array
-                else:
-                    cur_time = time_array[detector.n_lta:-detector.n_sta]
+                #if cur_feature == 'cf':
+                cur_time = time_array
+                #else:
+                #    cur_time = time_array[detector.n_lta:-detector.n_sta]
 
                 if cur_feature == 'lta * thr':
                     cur_data = detector.lta * detector.thr
@@ -293,7 +293,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
             if plot_detection_marker:
                 for det_start_ind, det_end_ind in detection_markers:
-                    det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
+                    #det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
+                    det_start_time = cur_trace.stats.starttime + det_start_ind / cur_trace.stats.sampling_rate
                     det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_trace.stats.sampling_rate
 
                     cur_line = self.axes.axvline(x = det_start_time.timestamp, color = 'r')
@@ -303,7 +304,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
             if plot_lta_replace_marker:
                 for det_start_ind, det_end_ind in detector.replace_limits:
-                    det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
+                    #det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
+                    det_start_time = cur_trace.stats.starttime + det_start_ind / cur_trace.stats.sampling_rate
                     det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_trace.stats.sampling_rate
 
                     cur_line = self.axes.axvline(x = det_start_time.timestamp, color = 'y')
