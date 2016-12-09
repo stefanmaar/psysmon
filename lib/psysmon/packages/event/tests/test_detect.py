@@ -83,7 +83,7 @@ class DetectTestCase(unittest.TestCase):
         np_test.assert_array_equal(detector.cf, data**2)
 
 
-    def test_compute_thrf(self):
+    def test_compute_sta_lta(self):
         ''' Test the computation of the threshold function.
         '''
         seismo = psysmon.core.test_util.compute_synthetic_seismogram(length = 5,
@@ -91,7 +91,7 @@ class DetectTestCase(unittest.TestCase):
                                                                      wavelet_offset = 2)
         detector = detect.StaLtaDetector(data = seismo)
         detector.compute_cf()
-        detector.compute_thrf()
+        detector.compute_sta_lta()
 
 
 

@@ -243,7 +243,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             detector.n_lta = n_lta
             detector.set_data(cur_trace.data)
             detector.compute_cf()
-            detector.compute_thrf()
+            detector.compute_sta_lta()
             detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
 
             y_lim_min = []

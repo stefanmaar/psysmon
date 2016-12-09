@@ -112,26 +112,11 @@ class StaLtaDetector:
             self.cf = self.cf ** 2
 
 
-    def compute_thrf(self):
-        ''' Compute the THRF, STA and LTA function.
-
-        Parameters
-        ----------
-        cf : NumpyArray
-            The characteristic function computed from the timeseries.
+    def compute_sta_lta(self):
+        ''' Compute the STA and LTA function.
 
         '''
         clib_signal = lib_signal.clib_signal
-
-        # The old version using np.correlate. This was way too slow. Switched
-        # to the implementation of the moving average in C. Keep this part of
-        # the code for future reference.
-        #sta_filt_op = np.ones(n_sta) / float(n_sta)
-        #lta_filt_op = np.ones(n_lta) / float(n_lta)
-        #sta_corr = np.correlate(cf, sta_filt_op, 'valid')
-        #lta_corr = np.correlate(cf, lta_filt_op, 'valid')
-        #sta_corr = np.concatenate([np.zeros(n_sta - 1), sta_corr])
-        #lta_corr = np.concatenate([np.zeros(n_lta - 1), lta_corr])
 
         n_cf = len(self.cf)
         cf = np.ascontiguousarray(self.cf, dtype = np.float64)
