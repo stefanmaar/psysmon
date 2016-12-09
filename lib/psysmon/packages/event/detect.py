@@ -45,7 +45,8 @@ class StaLtaDetector:
     '''
 
     def __init__(self, data = None, cf_type = 'square', n_sta = 2,
-                 n_lta = 10, thr = 3):
+                 n_lta = 10, thr = 3, fine_thr = None, turn_limit = 0.05,
+                 stop_growth = 0.001):
         ''' Initialize the instance.
         '''
         # The logging logger instance.
@@ -68,6 +69,21 @@ class StaLtaDetector:
         # The threshold of the STA/LTA ratio when to declare the begin of an
         # event.
         self.thr = thr
+
+        # The fine threshold of the STA/LTA ratio used to refine an already
+        # detected event start.
+        if fine_thr is None:
+            self.fine_thr = self.thr
+        else:
+            self.fine_thr = fine_thr
+
+        # The turning limit when to stop the event begin refinement if the fine_thr is
+        # not reached.
+        self.turn_limit = turn_limit
+
+        # The ratio with which the stop_value is grown to ensure the reaching
+        # of the stop criterium.
+        self.stop_growth = stop_growth
 
         # The data array.
         if data is None:
@@ -135,7 +151,7 @@ class StaLtaDetector:
 
 
     @profile
-    def compute_event_limits(self, stop_delay = 10):
+    def compute_event_limits(self, stop_delay = 0):
         ''' Compute the event start and end times based on the detection functions.
 
         '''
@@ -176,7 +192,7 @@ class StaLtaDetector:
             n_cur_sta = len(cur_sta)
             n_cur_lta = len(cur_lta)
             cur_stop_crit = np.empty(n_cur_sta, dtype = np.float64)
-            next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit)
+            next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit, self.stop_growth)
             self.logger.debug("next_end_ind: %d", next_end_ind)
 
             # Compute the event end.
@@ -258,7 +274,7 @@ class StaLtaDetector:
         clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
 
         thrf = np.ascontiguousarray(self.sta[crop_start:]/self.lta[crop_start:], dtype = np.float64)
-        event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr)
+        event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr, self.fine_thr, self.turn_limit)
 
         event_start_ind = crop_start + event_start
 

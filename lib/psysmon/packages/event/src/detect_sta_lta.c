@@ -20,10 +20,11 @@
 
 // copyright: Stefan Mertl
 
+#include <stdio.h>
 #include <math.h>
 
 
-int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit)
+int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit, const double stop_growth)
 {
     int k;
     int event_end = -1;
@@ -48,7 +49,7 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
 
         if (cnt_sta_below_lta > sta_below_lta_required)
         {
-            stop_value += stop_value_orig * 0.001;
+            stop_value += stop_value_orig * stop_growth;
         }
 
         stop_crit[k] = stop_value;
@@ -79,13 +80,16 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
 }
 
 
-int compute_event_start(const long n_thrf, const double *thrf, const double thr)
+int compute_event_start(const long n_thrf, const double *thrf, const double thr, const double fine_thr, const double turn_limit)
 {
     int k;
     long event_start = 0;
     int load_trigger = 0;
     int min_length = 2;
     int cnt_above_thr = 0;
+    int up_trigger = 0;
+    int turn_flag = 0;
+    double turn_value = 0;
 
     for (k = 0; k < n_thrf; k++)
     {
@@ -95,7 +99,7 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr)
             load_trigger = 1;
             cnt_above_thr = 0;
         }
-        
+
         if (load_trigger == 1)
         {
             if (thrf[k] > thr)
@@ -107,6 +111,56 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr)
         if (cnt_above_thr > min_length)
         {
             event_start = event_start - min_length;
+            break;
+        }
+    }
+
+    // Refine the event start using a lower thr.
+    //printf("event_start before refinement: %ld\n", event_start);
+    for (k = event_start; k > 0; k--)
+    {
+        if (thrf[k] < fine_thr)
+        {
+            // The thrf falls below the fine thr.
+            //printf("k: %d; thrf below fine_thr. break.\n", k);
+            event_start = k;
+            break;
+        }
+
+        if (up_trigger == 0)
+        {
+            if (thrf[k] > thrf[k + 1])
+            {
+                //printf("k: %d; set up_trigger.\n", k);
+                up_trigger = 1;
+                if (turn_flag == 0)
+                {
+                    turn_value = thrf[k];
+                    turn_flag = 1;
+                    //printf("k: %d; initialized the turn_value: %f\n", k, turn_value);
+                }
+                else if (thrf[k] < turn_value)
+                {
+                    turn_value = thrf[k];
+                    //printf("k: %d; changed turn_value: %f\n", k, turn_value);
+                }
+            }
+        }
+        else
+        {
+            if (thrf[k] < thrf[k + 1])
+            {
+                //printf("k: %d; clear up_trigger.\n", k);
+                up_trigger = 0;
+            }
+
+        }
+
+        //printf("k: %d; thrf[k]: %f; turn_value: %f\n", k, thrf[k], turn_value);
+        if ((turn_flag == 1) && (thrf[k] - turn_value) > turn_limit)
+        {
+            //printf("turn_value limit reached.\n");
+            event_start = k;
             break;
         }
     }

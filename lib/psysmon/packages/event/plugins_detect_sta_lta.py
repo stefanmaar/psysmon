@@ -79,6 +79,28 @@ class DetectStaLta(ViewPlugin):
                                                      limit = (0, 100))
         self.pref_manager.add_item(item = item)
 
+        # Fine threshold value
+        item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr',
+                                                     label = 'Fine threshold',
+                                                     value = 2,
+                                                     limit = (0, 100))
+        self.pref_manager.add_item(item = item)
+
+        # Turn limit.
+        item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
+                                                     label = 'turn limit',
+                                                     value = 0.05,
+                                                     limit = (0, 10))
+        self.pref_manager.add_item(item = item)
+
+        # stop growth
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
+                                                     label = 'stop grow ratio',
+                                                     value = 0.001,
+                                                     digits = 5,
+                                                     limit = (0, 0.1))
+        self.pref_manager.add_item(item = item)
+
         # Stop criterium delay.
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
                                                      label = 'Stop delay [s]',
@@ -125,8 +147,11 @@ class DetectStaLta(ViewPlugin):
         sta_len = self.pref_manager.get_value('sta_length')
         lta_len = self.pref_manager.get_value('lta_length')
         thr = self.pref_manager.get_value('thr')
+        fine_thr = self.pref_manager.get_value('fine_thr')
+        turn_limit = self.pref_manager.get_value('turn_limit')
         cf_type = self.pref_manager.get_value('cf_type')
         stop_delay = self.pref_manager.get_value('stop_delay')
+        stop_growth = self.pref_manager.get_value('stop_growth')
 
 
         for cur_channel in channels:
@@ -154,8 +179,11 @@ class DetectStaLta(ViewPlugin):
                                   sta_len = sta_len,
                                   lta_len = lta_len,
                                   thr = thr,
+                                  fine_thr = fine_thr,
+                                  turn_limit = turn_limit,
                                   cf_type = cf_type,
-                                  stop_delay = stop_delay)
+                                  stop_delay = stop_delay,
+                                  stop_growth = stop_growth)
 
                 cur_view.setXLimits(left = display_manager.startTime.timestamp,
                                     right = display_manager.endTime.timestamp)
@@ -216,15 +244,17 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
 
 
-    def plot(self, stream, sta_len, lta_len, thr, cf_type, stop_delay):
+    def plot(self, stream, sta_len, lta_len, thr, fine_thr, turn_limit, cf_type, stop_delay, stop_growth):
         ''' Plot the STA/LTA features.
         '''
         plot_detection_marker = True
         plot_lta_replace_marker = False
         #plot_features = ['sta', 'lta * thr']
         plot_features = ['sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
+        #plot_features = ['thrf']
 
-        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type)
+        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
+                                         turn_limit = turn_limit, stop_growth = stop_growth)
 
         for cur_trace in stream:
             time_array = np.arange(0, cur_trace.stats.npts)
@@ -259,6 +289,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                     cur_data = detector.lta * detector.thr
                 elif cur_feature == 'lta_orig * thr':
                     cur_data = detector.lta_orig * detector.thr
+                elif cur_feature == 'thrf':
+                    cur_data = detector.sta / detector.lta
                 else:
                     cur_data = getattr(detector, cur_feature)
 
@@ -284,6 +316,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             y_lim = [np.min(y_lim_min), np.max(y_lim_max)]
             print y_lim
             self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
+            #self.axes.set_ylim(bottom = 0, top = detector.thr)
             self.axes.set_yscale('log')
 
             # Clear the marker lines.
