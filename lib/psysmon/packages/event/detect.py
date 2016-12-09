@@ -111,7 +111,7 @@ class StaLtaDetector:
             self.cf = self.cf ** 2
 
 
-    def compute_thrf(self, mode = 'valid'):
+    def compute_thrf(self):
         ''' Compute the THRF, STA and LTA function.
 
         Parameters
@@ -119,10 +119,6 @@ class StaLtaDetector:
         cf : NumpyArray
             The characteristic function computed from the timeseries.
 
-        mode : String (valid, full)
-            How to return the computed time series.
-                valid: Return only the valid values without the LTA buildup effect.
-                full: Return the full length of the computed time series.
         '''
         clib_signal = lib_signal.clib_signal
 
@@ -149,12 +145,8 @@ class StaLtaDetector:
 
         # Trim the sta and lta arrays to the valid length. The last n_sta
         # values are not valid because no shifted LTA is available.
-        self.sta = self.sta[:-self.n_sta]
-        self.lta = self.lta[:-self.n_sta]
-
-        if mode == 'valid':
-            self.sta = self.sta[self.n_lta:]
-            self.lta = self.lta[self.n_lta:]
+        #self.sta = self.sta[self.n_lta:-self.n_sta]
+        #self.lta = self.lta[self.n_lta:-self.n_sta]
 
 
     @profile
@@ -168,7 +160,8 @@ class StaLtaDetector:
         self.lta_orig = self.lta.copy()
 
         # Find the event begins indicated by exceeding the threshold value.
-        event_start, stop_value = self.compute_start_stop_values(0, stop_delay)
+        # Start after n_lta samples to avoid effects of the filter buildup.
+        event_start, stop_value = self.compute_start_stop_values(self.n_lta, stop_delay)
 
         # Find the event end values.
         self.logger.debug("Computing the event limits.")
@@ -199,33 +192,24 @@ class StaLtaDetector:
             n_cur_lta = len(cur_lta)
             cur_stop_crit = np.empty(n_cur_sta, dtype = np.float64)
             next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit)
-
+            self.logger.debug("next_end_ind: %d", next_end_ind)
             # Compute the stop criterium. 
             #stop_crit = self.compute_stop_criterium(cur_search_start, stop_value)
 
             # Compute the event end.
             #next_end_ind = self.compute_event_end(cur_search_start, stop_crit)
-            cur_event_end = cur_search_start + next_end_ind
+            if next_end_ind == -1:
+                cur_event_end = np.nan
+                self.stop_crit[cur_search_start:] = cur_stop_crit
+            else:
+                cur_event_end = cur_search_start + next_end_ind
 
-            # Remove all start indices which are smaller than the currend
-            # event end.
-            #new_ind = np.argwhere(event_start_ind > cur_event_end).flatten()
-            #if len(new_ind) > 0:
-            #    new_ind = new_ind[0]
-            #    self.logger.debug("new_ind: %d", new_ind)
-            #    if new_ind == 0:
-            #        raise RuntimeError("The current event start STA is lower than the stop value. Using the next event_start to avoid infinite loop.")
-            #
-            #    event_start_ind = event_start_ind[new_ind:]
-            #    stop_values = stop_values[new_ind:]
-            #    self.logger.debug("event_start_ind[0]: %d", event_start_ind[0])
+                # Copy the event stop criterium to the overall stop criterium array.
+                self.stop_crit[cur_search_start:cur_event_end] = cur_stop_crit[:next_end_ind]
 
-            # Copy the event stop criterium to the overall stop criterium array.
-            self.stop_crit[cur_search_start:cur_event_end] = cur_stop_crit[:next_end_ind]
-
-            # Remove the influence of the detected event from the LTA
-            # timeseries.
-            self.remove_event_influence(event_start - 50, cur_event_end)
+                # Remove the influence of the detected event from the LTA
+                # timeseries.
+                self.remove_event_influence(event_start, cur_event_end)
 
             # Add the event marker.
             # TODO: add the lta length to the event limits. Adapt the
@@ -233,9 +217,15 @@ class StaLtaDetector:
             event_marker.append((event_start, cur_event_end))
 
             # Recompute the next event start indices.
-            event_start, stop_value = self.compute_start_stop_values(cur_event_end, stop_delay)
+            if np.isnan(cur_event_end):
+                # There is no event end before the end of the data. Stop the
+                # loop.
+                break
+            else:
+                event_start, stop_value = self.compute_start_stop_values(cur_event_end, stop_delay)
 
         self.logger.debug("Finished the event limits computation.")
+        print event_marker
         return event_marker
 
 
@@ -325,7 +315,7 @@ class StaLtaDetector:
         # Compute the LTA moving average of the event cf only.
         event_length = event_end - event_start
         event_cf = np.zeros(2*self.n_lta + event_length)
-        event_cf[self.n_lta:self.n_lta + event_length] = self.cf[event_start + self.n_lta:event_end + self.n_lta]
+        event_cf[self.n_lta:self.n_lta + event_length] = self.cf[event_start:event_end]
         c_event_cf = np.ascontiguousarray(event_cf, dtype = np.float64)
         n_event_cf = len(event_cf)
         event_lta = np.empty(n_event_cf, dtype = np.float64)
@@ -350,7 +340,14 @@ class StaLtaDetector:
         event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr)
 
         event_start_ind = crop_start + event_start
+
+        # Use a sta value stop_delay samples prior to the event start to take
+        # the delayed reaction of the detector into account.
         stop_value = self.sta[event_start_ind - stop_delay]
+
+        # Reset stop values larger than the STA value of the event start.
+        if stop_value > self.sta[event_start_ind]:
+            stop_value = self.sta[event_start_ind]
 
         return event_start_ind, stop_value
 
