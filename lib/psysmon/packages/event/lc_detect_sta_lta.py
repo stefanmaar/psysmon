@@ -41,6 +41,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         '''
         package_nodes.LooperCollectionChildNode.__init__(self, **args)
 
+        # The available detection catalogs.
+        self.catalogs = []
+
         self.create_preferences()
 
     @property
@@ -96,10 +99,29 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         self.pref_manager.add_item(item = item)
 
 
+        # The target detection catalog.
+        item = preferences_manager.SingleChoicePrefItem(name = 'detection_catalog',
+                                                        label = 'detection catalog',
+                                                        limit = [],
+                                                        value = None,
+                                                        tool_tip = 'The detection catalog to which the detections are written.'
+                                                       )
+        self.pref_manager.add_item(item = item)
+
+
 
     def edit(self):
         ''' Create the preferences edit dialog.
         '''
+        # Initialize the detection_catalog preference item.
+        self.load_catalogs()
+        catalog_names = [x.name for x in self.catalogs]
+        self.pref_manager.set_limit('detection_catalog', catalog_names)
+        if catalog_names:
+            if self.pref_manager.get_value('detection_catalog') not in catalog_names:
+                self.pref_manager.set_value('detection_catalog', catalog_names[0])
+
+
         # Create the edit dialog.
         dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
 
@@ -149,11 +171,30 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             detector.n_lta = n_lta
             detector.set_data(cur_trace.data)
             detector.compute_cf()
-            detector.compute_thrf()
+            detector.compute_sta_lta()
             detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
 
-        # Write the detections to the database.
+            # Write the detections to the database.
 
         # Store the current state of the detector in the node for the next time
         # window.
         # Most important store an eventually unfinished event in the node.
+
+
+    def load_catalogs(self):
+        ''' Load the detection catalogs from the database.
+
+        '''
+        db_session = self.project.getDbSession()
+        try:
+            cat_table = self.project.dbTables['detection_catalog'];
+            query = db_session.query(cat_table.id,
+                                     cat_table.name,
+                                     cat_table.description,
+                                     cat_table.agency_uri,
+                                     cat_table.author_uri,
+                                     cat_table.creation_time)
+            self.catalogs = query.all()
+        finally:
+            db_session.close()
+
