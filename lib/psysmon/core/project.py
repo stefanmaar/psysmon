@@ -1193,6 +1193,10 @@ class User:
         if not isinstance(self.collection, dict):
             self.collection = {}
 
+        if name in self.collection.keys():
+            self.logger.error("The collection already exists.")
+            return
+
         self.collection[name] = psysmon.core.base.Collection(name, tmpDir = project.tmpDir, project = project)
         self.setActiveCollection(name)
 
