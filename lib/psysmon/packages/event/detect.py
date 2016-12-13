@@ -106,6 +106,7 @@ class StaLtaDetector:
         self.cf = np.empty((0,0))
         self.sta = np.empty((0,0))
         self.lta = np.empty((0,0))
+        self.valid_ind = None
 
 
 
@@ -150,7 +151,7 @@ class StaLtaDetector:
         self.valid_ind = self.n_lta + self.n_sta
 
 
-    @profile
+    #@profile
     def compute_event_limits(self, stop_delay = 0):
         ''' Compute the event start and end times based on the detection functions.
 
@@ -163,14 +164,10 @@ class StaLtaDetector:
         # Find the event begins indicated by exceeding the threshold value.
         # Start after n_lta samples to avoid effects of the filter buildup.
         event_start, stop_value = self.compute_start_stop_values(self.valid_ind, stop_delay)
+        self.logger.debug("First event_start: %d.", event_start)
 
         # Find the event end values.
         self.logger.debug("Computing the event limits.")
-        #for k, cur_event_start in enumerate(event_start_ind):
-
-        # TODO: Put the whole detection into a c function. This prevents using
-        # multiple loops through the data and the complicated removal of the
-        # event influence onto the LTA.
 
         while event_start < (len(self.sta) - 1):
             self.logger.debug("Processing the next event. event_start_ind: %d", event_start)
