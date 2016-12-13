@@ -148,7 +148,7 @@ class WaveClient(object):
 
         '''
         self.stock_lock.acquire()
-        self.stock += stream
+        self.stock = self.stock + stream.copy()
         self.stock.merge(stream)
         self.stock_lock.release()
 
