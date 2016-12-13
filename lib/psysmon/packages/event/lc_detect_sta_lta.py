@@ -20,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import obspy.core.utcdatetime as utcdatetime
 
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as preferences_manager
@@ -44,6 +45,12 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         # The available detection catalogs.
         self.catalogs = []
 
+        # Override the lta_length preference.
+        self._pre_stream_length = None
+
+        # The start times of events with no end found before the trace end.
+        self.open_end_start = {}
+
         self.create_preferences()
 
     @property
@@ -51,7 +58,10 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         ''' The time-span needed for correct processing prior to the start time
         of the stream passed to the execute method [s].
         '''
-        return self.pref_manager.get_value('lta_length')
+        if self._pre_stream_length is not None:
+            return self._pre_stream_length
+        else:
+            return self.pref_manager.get_value('lta_length')
 
 
     def create_preferences(self):
@@ -79,6 +89,28 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                      limit = (0, 100))
         self.pref_manager.add_item(item = item)
 
+        # Fine threshold value
+        item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr',
+                                                     label = 'Fine threshold',
+                                                     value = 2,
+                                                     limit = (0, 100))
+        self.pref_manager.add_item(item = item)
+
+        # Turn limit.
+        item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
+                                                     label = 'turn limit',
+                                                     value = 0.05,
+                                                     limit = (0, 10))
+        self.pref_manager.add_item(item = item)
+
+        # stop growth
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
+                                                     label = 'stop grow ratio',
+                                                     value = 0.001,
+                                                     digits = 5,
+                                                     limit = (0, 0.1))
+        self.pref_manager.add_item(item = item)
+
         # Stop criterium delay.
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
                                                      label = 'Stop delay [s]',
@@ -97,7 +129,6 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                         tool_tip = 'The type of the characteristic function.'
                                                        )
         self.pref_manager.add_item(item = item)
-
 
         # The target detection catalog.
         item = preferences_manager.SingleChoicePrefItem(name = 'detection_catalog',
@@ -147,14 +178,29 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         sta_len = self.pref_manager.get_value('sta_length')
         lta_len = self.pref_manager.get_value('lta_length')
         thr = self.pref_manager.get_value('thr')
+        fine_thr = self.pref_manager.get_value('fine_thr')
+        turn_limit = self.pref_manager.get_value('turn_limit')
         cf_type = self.pref_manager.get_value('cf_type')
         stop_delay = self.pref_manager.get_value('stop_delay')
+        stop_growth = self.pref_manager.get_value('stop_growth')
 
         # Initialize the detector.
-        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type)
+        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
+                                         turn_limit = turn_limit, stop_growth = stop_growth)
 
         # Detect the events using the STA/LTA detector.
         for cur_trace in stream:
+            # Check for open_end events and slice the data to the stored event
+            # start. If no open_end event is found. slice the trace to the
+            # original pre_stream_length.
+            if cur_trace.id in self.open_end_start.keys():
+                cur_oe_start = self.open_end_start.pop(cur_trace.id)
+                cur_trace = cur_trace.slice(starttime = cur_oe_start)
+                self.logger.debug("Sliced the cur_trace to the open_end start. cur_trace: %s.", cur_trace)
+            else:
+                cur_trace = cur_trace.slice(starttime = process_limits[0] - lta_len)
+                self.logger.debug("Sliced the cur_trace to the original pre_stream_length. cur_trace: %s.", cur_trace)
+
             time_array = np.arange(0, cur_trace.stats.npts)
             time_array = time_array * 1/cur_trace.stats.sampling_rate
             time_array = time_array + cur_trace.stats.starttime.timestamp
@@ -173,12 +219,32 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             detector.compute_cf()
             detector.compute_sta_lta()
             detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
+            self.logger.debug("detection_markers: %s", detection_markers)
+
+            # Check if the last event has no end. Change the pre_stream_length
+            # to request more data for the next time window loop.
+            last_marker = []
+            if len(detection_markers) > 0 and np.isnan(detection_markers[-1][1]):
+                # Handle a detected event with no end.
+                last_marker = detection_markers.pop(-1)
+                slice_marker = last_marker[0] - detector.n_lta - detector.n_sta - 1
+                if slice_marker < 0:
+                    slice_marker = 0
+                cur_pre_length = (len(detector.data) - slice_marker) * cur_trace.stats.delta
+
+                self.open_end_start[cur_trace.id] = utcdatetime.UTCDateTime(time_array[slice_marker])
+
+                if self._pre_stream_length is None:
+                    self._pre_stream_length = cur_pre_length
+                elif cur_pre_length > self._pre_stream_length:
+                    self._pre_stream_length = cur_pre_length
 
             # Write the detections to the database.
 
-        # Store the current state of the detector in the node for the next time
-        # window.
-        # Most important store an eventually unfinished event in the node.
+
+        if len(self.open_end_start) == 0:
+            self._pre_stream_length = None
+
 
 
     def load_catalogs(self):
