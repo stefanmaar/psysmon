@@ -91,11 +91,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         processor = SlidingWindowProcessor(project = self.project,
                                            output_dir = output_dir,
                                            parent_rid = self.rid)
-        # TODO: Loop through the children nodes and execute each node. Maybe do
-        # this in a separate class. Take the Sliding Window Processor. The
-        # processed stream has to be passed from one node to the other like in
-        # the processing stack. The input parameters of the execute node should
-        # be the same as for the current processing nodes.
+
         processor.process(looper_nodes = self.children,
                           start_time = self.pref_manager.get_value('start_time'),
                           end_time = self.pref_manager.get_value('end_time'),
@@ -284,13 +280,6 @@ class SlidingWindowProcessor(object):
                                                                             name = cur_channel))
         scnl = [x.scnl for x in channels]
 
-        # Get the pre- and post timewindow time required by the looper
-        # children. The pre- and post timewindow times could be needed because
-        # of effects due to filter buildup.
-        pre_stream_length = [x.pre_stream_length for x in looper_nodes]
-        post_stream_length = [x.post_stream_length for x in looper_nodes]
-        pre_stream_length = max(pre_stream_length)
-        post_stream_length = max(post_stream_length)
 
         # Compute the start times of the sliding windows.
         windowlist_start = [start_time, ]
@@ -299,6 +288,14 @@ class SlidingWindowProcessor(object):
 
         try:
             for k, cur_window_start in enumerate(windowlist_start):
+                # Get the pre- and post timewindow time required by the looper
+                # children. The pre- and post timewindow times could be needed because
+                # of effects due to filter buildup.
+                pre_stream_length = [x.pre_stream_length for x in looper_nodes]
+                post_stream_length = [x.post_stream_length for x in looper_nodes]
+                pre_stream_length = max(pre_stream_length)
+                post_stream_length = max(post_stream_length)
+
                 self.logger.info("Processing sliding window %d/%d.", k, n_windows)
 
                 self.logger.info("Initial stream request for time-span: %s to %s.", cur_window_start.isoformat(),
