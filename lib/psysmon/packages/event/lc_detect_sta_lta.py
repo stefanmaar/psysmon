@@ -184,9 +184,23 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         stop_delay = self.pref_manager.get_value('stop_delay')
         stop_growth = self.pref_manager.get_value('stop_growth')
 
+        # Get the selected catalog id.
+        catalog_name = self.pref_manager.get_value('detection_catalog')
+        self.load_catalogs()
+        selected_catalog = [x for x in self.catalogs if x.name == catalog_name]
+        if len(selected_catalog) == 0:
+            raise RuntimeError("No detection datalog found with name %s in the database.", catalog_name)
+        elif len(selected_catalog) > 1:
+            raise RuntimeError("Multiple detection catalogs found with name %s: %s.", catalog_name, selected_catalog)
+        else:
+            selected_catalog = selected_catalog[0]
+
         # Initialize the detector.
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
                                          turn_limit = turn_limit, stop_growth = stop_growth)
+
+        # The list to store the data to be inserted into the database.
+        db_data = []
 
         # Detect the events using the STA/LTA detector.
         for cur_trace in stream:
@@ -239,8 +253,39 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                 elif cur_pre_length > self._pre_stream_length:
                     self._pre_stream_length = cur_pre_length
 
-            # Write the detections to the database.
+            # Get the database recorder stream id.
+            try:
+                cur_channel = self.project.geometry_inventory.get_channel(station = cur_trace.stats.station,
+                                                                          name = cur_trace.stats.channel,
+                                                                          network = cur_trace.stats.network,
+                                                                          location = cur_trace.stats.location)[0]
+                cur_timebox = cur_channel.get_stream(start_time = process_limits[0], end_time = process_limits[0])[0]
+                cur_stream_id = cur_timebox.item.id
+            except:
+                cur_stream_id = None
 
+            # Write the detections to the database.
+            detection_table = self.project.dbTables['detection']
+            for det_start_ind, det_end_ind in detection_markers:
+                det_start_time = time_array[det_start_ind]
+                det_end_time = time_array[det_end_ind]
+                cur_orm = detection_table(catalog_id = selected_catalog.id,
+                                          rec_stream_id = cur_stream_id,
+                                          start_time = det_start_time,
+                                          end_time = det_end_time,
+                                          method = self.name_slug,
+                                          agency_uri = self.project.activeUser.agency_uri,
+                                          author_uri = self.project.activeUser.author_uri,
+                                          creation_time = utcdatetime.UTCDateTime().isoformat())
+                db_data.append(cur_orm)
+
+        if db_data:
+            try:
+                db_session = self.project.getDbSession()
+                db_session.add_all(db_data)
+                db_session.commit()
+            finally:
+                db_session.close()
 
         if len(self.open_end_start) == 0:
             self._pre_stream_length = None
