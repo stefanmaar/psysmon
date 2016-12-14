@@ -163,10 +163,18 @@ class CollectionNode(object):
         self.procName = None
 
     @property
+    def name_slug(self):
+        ''' A clean representation of the name.
+        '''
+        name_slug = self.name.replace(' ', '_').replace('/','_')
+        name_slug = name_slug.lower()
+        return name_slug
+
+    @property
     def rid(self):
         ''' The resource ID of the collection node.
         '''
-        name_slug = self.name.replace(' ', '_')
+        name_slug = self.name.replace(' ', '_').replace('/','_')
         if self.parentCollection is not None:
             rid = self.parentCollection.rid + '/' + name_slug
         else:
@@ -419,6 +427,15 @@ class LooperCollectionChildNode(CollectionNode):
         settings = {}
         settings[self.name] = self.pref_manager.settings
         return settings
+
+    @property
+    def parentCollection(self):
+        ''' The collection containing the node.
+        '''
+        if self.parent:
+            return self.parent.parentCollection
+        else:
+            return None
 
 
     def __getstate__(self):
