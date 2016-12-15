@@ -62,10 +62,12 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
     def create_archive_prefs(self):
         ''' Create the archive input preference items.
         '''
-        archive_page = self.pref_manager.add_page('archive')
+        archive_page = self.pref_manager.add_page('scan archive')
         archive_group = archive_page.add_group('archive')
-        tr_group = archive_page.add_group('time range')
-        us_group = archive_page.add_group('unit selection')
+
+        select_page = self.pref_manager.add_page('select')
+        tr_group = select_page.add_group('time range')
+        us_group = select_page.add_group('unit selection')
 
         # The archive directory
         pref_item = psy_pm.DirBrowsePrefItem(name = 'archive_dir',
@@ -115,17 +117,14 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
     def create_output_prefs(self):
         ''' Create the output preference items.
         '''
-        pagename = '2 output'
-        self.pref_manager.add_page(pagename)
+        out_page = self.pref_manager.add_page('output')
+        out_group = out_page.add_group('output')
 
         item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
                                         label = 'output directory',
-                                        group = 'output',
                                         value = '',
-                                        tool_tip = 'Specify a directory where to save the MiniSeed files.'
-                                       )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = item)
+                                        tool_tip = 'Specify a directory where to save the MiniSeed files.')
+        out_group.add_item(item)
 
 
     def edit(self):
