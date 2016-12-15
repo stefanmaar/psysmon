@@ -37,25 +37,25 @@ class PreferencesManagerTestCase(unittest.TestCase):
         ''' Test the add_item method.
         '''
         # The logging verbose level.
-        item = PreferenceItem(name = 'verbose', 
+        item = PreferenceItem(name = 'verbose',
                               value = 'DEBUG',
                               mode = 'single_choice',
                               limit = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
                              )
-        self.pref.add_item(item)     
-        self.assertEqual(len(self.pref.pages['preferences']), 1)  
-        self.assertTrue(self.pref.pages['preferences'][0].guiclass, SingleChoiceField)                           
+        self.pref.add_item(item)
+        self.assertEqual(len(self.pref.pages['preferences']), 1)
+        self.assertTrue(self.pref.pages['preferences'][0].guiclass, SingleChoiceField)
         self.assertEqual(self.pref.pages['preferences'][0].name, 'verbose')
 
 
-        item = PreferenceItem(name = 'pref2', 
+        item = PreferenceItem(name = 'pref2',
                               value = 'value2',
                               mode = 'custom'
                              )
-        self.pref.add_item(item)     
-        self.assertEqual(len(self.pref.pages['preferences']), 2)                             
+        self.pref.add_item(item)
+        self.assertEqual(len(self.pref.pages['preferences']), 2)
         self.assertEqual(self.pref.pages['preferences'][0].name, 'verbose')
-        self.assertTrue(self.pref.pages['preferences'][0].guiclass, None)                           
+        self.assertTrue(self.pref.pages['preferences'][0].guiclass, None)
         self.assertEqual(self.pref.pages['preferences'][1].name, 'pref2')
 
         self.pref.add_page('Testpage')

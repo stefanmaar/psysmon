@@ -68,12 +68,16 @@ class PolarizationAnalysis(ViewPlugin):
         # TODO: Add the possibility to define an azimuth offset from north.
         # TODO: Add the possibility to define an inclination offset.
 
+        # Create the preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        win_group = pref_page.add_group('window')
+
         # The window length.
         item = preferences_manager.FloatSpinPrefItem(name = 'window_length',
                                                      label = 'window length [s]',
                                                      value = 0.5,
                                                      limit = (0, 3600))
-        self.pref_manager.add_item(item = item)
+        win_group.add_item(item)
 
 
         # The window overlap.
@@ -82,7 +86,7 @@ class PolarizationAnalysis(ViewPlugin):
                                                      value = 0.5,
                                                      limit = (0, 0.99),
                                                      spin_format = '%f')
-        self.pref_manager.add_item(item = item)
+        win_group.add_item(item)
 
 
     @property

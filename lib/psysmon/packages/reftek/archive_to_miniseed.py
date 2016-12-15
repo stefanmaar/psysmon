@@ -62,46 +62,44 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
     def create_archive_prefs(self):
         ''' Create the archive input preference items.
         '''
-        pagename = '1 archive'
-        self.pref_manager.add_page(pagename)
+        archive_page = self.pref_manager.add_page('archive')
+        archive_group = archive_page.add_group('archive')
+        tr_group = archive_page.add_group('time range')
+        us_group = archive_page.add_group('unit selection')
 
         # The archive directory
         pref_item = psy_pm.DirBrowsePrefItem(name = 'archive_dir',
                                              label = 'archive directory',
-                                             group = 'archive',
                                              value = '',
                                              hooks = {'on_value_change': self.on_archive_dir_changed},
                                              tool_tip = 'The root directory of the Reftek raw data archive.'
                                             )
-        self.pref_manager.add_item(pagename = pagename, item = pref_item)
+        archive_group.add_item(pref_item)
 
         # Scan archive button.
-        item = psy_pm.ActionItem(name = 'acan_archive',
-                                 label = 'scan archive',
-                                 group = 'archive',
-                                 mode = 'button',
-                                 action = self.on_scan_archive,
-                                 tool_tip = 'Scan the reftek raw data archive.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = item)
+        pref_item = psy_pm.ActionItem(name = 'acan_archive',
+                                      label = 'scan archive',
+                                      mode = 'button',
+                                      action = self.on_scan_archive,
+                                      tool_tip = 'Scan the reftek raw data archive.')
+        archive_group.add_item(pref_item)
+
+
 
         # The start time
         pref_item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                                       label = 'start time',
                                                       value = utcdatetime.UTCDateTime('2012-07-09T00:00:00'),
-                                                      group = 'time range',
                                                       tool_tip = 'The start time of the interval to process.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        tr_group.add_item(pref_item)
 
         # The end time
         pref_item = psy_pm.DateTimeEditPrefItem(name = 'end_time',
                                                       label = 'end time',
                                                       value = utcdatetime.UTCDateTime('2012-07-09T00:00:00'),
-                                                      group = 'time range',
                                                       tool_tip = 'The end time of the interval to process.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        tr_group.add_item(pref_item)
+
 
         # The SCNL list
         pref_item = psy_pm.ListCtrlEditPrefItem(name = 'unit_list',
@@ -109,11 +107,9 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
                                            value = [],
                                            column_labels = ['unit id', 'stream', 'first data', 'last data'],
                                            limit = [],
-                                           group = 'unit selection',
                                            tool_tip = 'Select the units to process.'
                                           )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        us_group.add_item(pref_item)
 
 
     def create_output_prefs(self):

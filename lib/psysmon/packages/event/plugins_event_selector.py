@@ -61,96 +61,93 @@ class SelectEvents(OptionPlugin):
         self.colors = {}
         self.colors['event_vspan'] = '0.9'
 
-        # Setup the pages of the preference manager.
-        self.pref_manager.add_page('Select')
-        self.pref_manager.add_page('Display')
+        # Create the preferences.
+        self.create_select_preferences()
+        self.create_display_preferences()
+
+
+    def create_select_preferences(self):
+        ''' Create the select preferences.
+        '''
+        select_page = self.pref_manager.add_page('Select')
+        dts_group = select_page.add_group('detection time span')
+        es_group = select_page.add_group('event selection')
 
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                            label = 'start time',
-                                           group = 'detection time span',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
                                            tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        dts_group.add_item(item)
 
 
         item = psy_pm.FloatSpinPrefItem(name = 'window_length',
                                         label = 'window length [s]',
-                                        group = 'detection time span',
                                         value = 3600,
                                         limit = (0, 3153600000),
                                         digits = 1,
                                         tool_tip = 'The length of the time window for which events should be loaded.')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        dts_group.add_item(item)
+
+
 
         item = psy_pm.SingleChoicePrefItem(name = 'event_catalog',
                                           label = 'event catalog',
-                                          group = 'event selection',
                                           value = '',
                                           limit = [],
                                           tool_tip = 'Select an event catalog for which to load the events.')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        es_group.add_item(item)
+
+        item = psy_pm.ActionItem(name = 'load_events',
+                                 label = 'load events',
+                                 mode = 'button',
+                                 action = self.on_load_events)
+        es_group.add_item(item)
 
 
-#        item = psy_pm.CustomPrefItem(name = 'events',
-#                                     label = 'events',
-#                                     group = 'event selection',
-#                                     value = [],
-#                                     gui_class = EventListField,
-#                                     tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
         column_labels = ['db_id', 'start_time', 'length', 'public_id',
                          'description', 'agency_uri', 'author_uri',
                          'comment']
         item = psy_pm.ListCtrlEditPrefItem(name = 'events',
                                            label = 'events',
-                                           group = 'event selection',
                                            value = [],
                                            column_labels = column_labels,
                                            limit = [],
                                            hooks = {'on_value_change': self.on_event_selected},
                                            tool_tip = 'The available events.')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        es_group.add_item(item)
 
 
-        item = psy_pm.ActionItem(name = 'load_events',
-                                 label = 'load events',
-                                 group = 'detection time span',
-                                 mode = 'button',
-                                 action = self.on_load_events)
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
 
+    def create_display_preferences(self):
+        ''' Create the display preferences.
+        '''
+
+        display_page = self.pref_manager.add_page('Display')
+        dr_group = display_page.add_group('display range')
+        m_group = display_page.add_group('marker')
 
         item = psy_pm.FloatSpinPrefItem(name = 'pre_et',
                                         label = 'pre event time [s]',
-                                        group = 'display range',
                                         value = 5,
                                         limit = (0, 86400),
                                         digits = 1,
                                         tool_tip = 'The length of the time window to show before the event start.')
-        self.pref_manager.add_item(pagename = 'Display',
-                                   item = item)
+        dr_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'post_et',
                                         label = 'post event time [s]',
-                                        group = 'display range',
                                         value = 10,
                                         limit = (0, 86400),
                                         digits = 1,
                                         tool_tip = 'The length of the time window to show after the event end.')
-        self.pref_manager.add_item(pagename = 'Display',
-                                   item = item)
+        dr_group.add_item(item)
 
         item = psy_pm.CheckBoxPrefItem(name = 'show_event_limits',
                                        label = 'show event limits',
                                        value = True,
                                        hooks = {'on_value_change': self.on_show_event_limits_changed},
                                        tool_tip = 'Show the limits of the selected event in the views.')
-        self.pref_manager.add_item(pagename = 'Display',
-                                   item = item)
+        m_group.add_item(item)
 
 
 

@@ -92,48 +92,48 @@ class SeismogramPlotter(ViewPlugin):
         self.icons['active'] = icons.waveform_icon_16
 
         # Add the plugin preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        style_group = pref_page.add_group('style')
+        scale_group = pref_page.add_group('scaling')
+        disp_group = pref_page.add_group('display')
+
         # Show or hide the seismogram envelope.
         item = preferences_manager.CheckBoxPrefItem(name = 'show_wiggle_trace',
                                                     label = 'show wiggle trace',
                                                     value = True,
-                                                    tool_tip = 'Show the seismogram wiggle trace.'
-                                                   )
-        self.pref_manager.add_item(item = item)
+                                                    tool_tip = 'Show the seismogram wiggle trace.')
+        style_group.add_item(item)
 
         # Show or hide the seismogram envelope.
         item = preferences_manager.CheckBoxPrefItem(name = 'show_envelope',
                                                     label = 'show envelope',
                                                     value = False,
-                                                    tool_tip = 'Show the seismogram envelope.'
-                                                   )
-        self.pref_manager.add_item(item = item)
+                                                    tool_tip = 'Show the seismogram envelope.')
+        style_group.add_item(item)
 
         # The envelope style.
         item = preferences_manager.SingleChoicePrefItem(name = 'envelope_style',
                                                         label = 'envelope style',
                                                         limit = ('top', 'bottom', 'top-bottom', 'filled'),
                                                         value = 'top',
-                                                        tool_tip = 'The style of the envelope.'
-                                                       )
-        self.pref_manager.add_item(item = item)
+                                                        tool_tip = 'The style of the envelope.')
+        style_group.add_item(item)
 
         # Set the scaling mode.
         item = preferences_manager.SingleChoicePrefItem(name = 'scaling_mode',
                                                         label = 'scaling',
                                                         limit = ('channel', 'station', 'window', 'manual'),
                                                         value = 'channel',
-                                                        tool_tip = 'Set the scaling mode.'
-                                                       )
-        self.pref_manager.add_item(item = item)
+                                                        tool_tip = 'Set the scaling mode.')
+        scale_group.add_item(item)
 
         # Set the manual scaling value.
         item = preferences_manager.FloatSpinPrefItem(name = 'manual_y_lim',
                                                      label = 'manual y limit',
                                                      value = 10,
                                                      limit = (0, None),
-                                                     spin_format = '%e'
-                                                    )
-        self.pref_manager.add_item(item = item)
+                                                     spin_format = '%e')
+        scale_group.add_item(item)
 
         # Set the limit when the display changes to the min-max method.
         item = preferences_manager.FloatSpinPrefItem(name = 'minmax_limit',
@@ -141,9 +141,9 @@ class SeismogramPlotter(ViewPlugin):
                                                      value = 20.,
                                                      limit = (0, None),
                                                      digits = 1,
-                                                     increment = 1
-                                                    )
-        self.pref_manager.add_item(item = item)
+                                                     increment = 1,
+                                                     tool_tip = 'For windows larger than the min-max limit, not all samples are shown. The plotted samples are reduced using a min-max algorithm.')
+        disp_group.add_item(item)
 
 
 

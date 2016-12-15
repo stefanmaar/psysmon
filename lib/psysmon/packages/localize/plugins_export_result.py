@@ -64,13 +64,14 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
         self.icons['active'] = psysmon.artwork.icons.iconsBlack16.export_icon_16
 
         # Add the plugin preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        out_group = pref_page.add_group('output')
         item = preferences_manager.DirBrowsePrefItem(name = 'output_dir',
                                                      label = 'output directory',
                                                      value = '',
                                                      tool_tip = 'Specify a directory where the PSD data files are located.'
                                                     )
-        self.pref_manager.add_item(item = item)
-
+        out_group.add_item(item)
 
 
     def run(self):

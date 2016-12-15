@@ -106,108 +106,89 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         ''' Create the preference items of the component selection section.
 
         '''
-        self.pref_manager.add_page('components')
+        components_page = self.pref_manager.add_page('components')
+        comp_to_process_group = components_page.add_group('components to process')
+        process_time_span_group = components_page.add_group('process time span')
 
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                            label = 'start time',
-                                           group = 'process time span',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
-                                           tool_tip = 'The start time of the selection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).',
-                                           position = 1)
-        self.pref_manager.add_item(pagename = 'components',
-                                   item = item)
+                                           tool_tip = 'The start time of the selection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
+        process_time_span_group.add_item(item)
 
         item = psy_pm.DateTimeEditPrefItem(name = 'end_time',
                                            label = 'end time',
-                                           group = 'process time span',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
-                                           tool_tip = 'The end time of the selection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).',
-                                           position = 2)
-        self.pref_manager.add_item(pagename = 'components',
-                                   item = item)
+                                           tool_tip = 'The end time of the selection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
+        process_time_span_group.add_item(item)
 
         item = psy_pm.IntegerSpinPrefItem(name = 'window_length',
                                           label = 'window length [s]',
-                                          group = 'process time span',
                                           value = 300,
                                           limit = [0, 86400],
-                                          tool_tip = 'The sliding window length in seconds.',
-                                          position = 3)
-        self.pref_manager.add_item(pagename = 'components',
-                                   item = item)
+                                          tool_tip = 'The sliding window length in seconds.')
+        process_time_span_group.add_item(item)
 
         item = psy_pm.IntegerSpinPrefItem(name = 'window_overlap',
                                           label = 'window overlap [%]',
-                                          group = 'process time span',
                                           value = 50,
                                           limit = [0, 99],
-                                          tool_tip = 'The overlap of two successive sliding windows in percent.',
-                                          position = 4)
-        self.pref_manager.add_item(pagename = 'components',
-                                   item = item)
+                                          tool_tip = 'The overlap of two successive sliding windows in percent.')
+        process_time_span_group.add_item(item)
 
 
         # The stations to process.
         item = psy_pm.MultiChoicePrefItem(name = 'stations',
                                           label = 'stations',
-                                          group = 'components to process',
                                           limit = (),
                                           value = [],
-                                          tool_tip = 'The stations which should be used for the processing.',
-                                          position = 1)
-        self.pref_manager.add_item(pagename = 'components',
-                                   item = item)
+                                          tool_tip = 'The stations which should be used for the processing.')
+        comp_to_process_group.add_item(item)
 
         # The channels to process.
         item = psy_pm.MultiChoicePrefItem(name = 'channels',
                                           label = 'channels',
-                                          group = 'components to process',
                                           limit = (),
                                           value = [],
-                                          tool_tip = 'The channels which should be used for the processing.',
-                                          position = 2)
-        self.pref_manager.add_item(pagename = 'components',
-                                   item = item)
+                                          tool_tip = 'The channels which should be used for the processing.')
+        comp_to_process_group.add_item(item)
 
 
     def create_processing_stack_preferences(self):
         ''' Create the preference items of the processing stack section.
         '''
-        self.pref_manager.add_page('processing stack')
+        ps_page = self.pref_manager.add_page('processing stack')
+        tw_group = ps_page.add_group('time window processing')
 
         item = psy_pm.CustomPrefItem(name = 'processing_stack',
                                      label = 'processing stack',
-                                     group = 'time window processing',
                                      value = None,
                                      gui_class = PStackEditField,
                                      tool_tip = 'Edit the processing stack nodes.')
-        self.pref_manager.add_item(pagename = 'processing stack',
-                                   item = item)
+        tw_group.add_item(item)
 
 
     def create_output_preferences(self):
         ''' Create the preference items of the output section.
 
         '''
-        self.pref_manager.add_page('output')
+        output_page = self.pref_manager.add_page('output')
+        output_group = output_page.add_group('output')
 
         item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
                                         label = 'output directory',
-                                        group = 'output',
                                         value = '',
                                         tool_tip = 'Specify a directory where to save the processing results.'
                                        )
-        self.pref_manager.add_item(pagename = 'output',
-                                   item = item)
+        output_group.add_item(item)
+
 
         item = psy_pm.SingleChoicePrefItem(name = 'output_interval',
                                           label = 'output interval',
-                                          group = 'output',
                                           limit = ('daily', 'weekly', 'monthly'),
                                           value = 'monthly',
                                           tool_tip = 'The interval for which to save the results.')
-        self.pref_manager.add_item(pagename = 'output',
-                                   item = item)
+        output_group.add_item(item)
 
 
 

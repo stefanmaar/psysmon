@@ -67,58 +67,13 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
     def create_preferences(self):
         ''' Create the collection node preferences.
         '''
-        # STA length
-        item = preferences_manager.FloatSpinPrefItem(name = 'sta_length',
-                                                     label = 'STA length [s]',
-                                                     value = 1,
-                                                     limit = (0, 3600))
-        self.pref_manager.add_item(item = item)
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('general')
+        thr_group = pref_page.add_group('threshold')
+        sc_group = pref_page.add_group('stop criterium')
 
-
-        # LTA length
-        item = preferences_manager.FloatSpinPrefItem(name = 'lta_length',
-                                                     label = 'LTA length [s]',
-                                                     value = 5,
-                                                     limit = (0, 3600))
-        self.pref_manager.add_item(item = item)
-
-        # Threshold value
-        item = preferences_manager.FloatSpinPrefItem(name = 'thr',
-                                                     label = 'Threshold',
-                                                     value = 3,
-                                                     limit = (0, 100))
-        self.pref_manager.add_item(item = item)
-
-        # Fine threshold value
-        item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr',
-                                                     label = 'Fine threshold',
-                                                     value = 2,
-                                                     limit = (0, 100))
-        self.pref_manager.add_item(item = item)
-
-        # Turn limit.
-        item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
-                                                     label = 'turn limit',
-                                                     value = 0.05,
-                                                     limit = (0, 10))
-        self.pref_manager.add_item(item = item)
-
-        # stop growth
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
-                                                     label = 'stop grow ratio',
-                                                     value = 0.001,
-                                                     digits = 5,
-                                                     limit = (0, 0.1))
-        self.pref_manager.add_item(item = item)
-
-        # Stop criterium delay.
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
-                                                     label = 'Stop delay [s]',
-                                                     value = 0.1,
-                                                     limit = (0, 100),
-                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
-        self.pref_manager.add_item(item = item)
-
+        out_page = self.pref_manager.add_page('Output')
+        cat_group = out_page.add_group('catalog')
 
 
         # The CF type.
@@ -128,7 +83,63 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                         value = 'square',
                                                         tool_tip = 'The type of the characteristic function.'
                                                        )
-        self.pref_manager.add_item(item = item)
+        gen_group.add_item(item)
+
+
+        # STA length
+        item = preferences_manager.FloatSpinPrefItem(name = 'sta_length',
+                                                     label = 'STA length [s]',
+                                                     value = 1,
+                                                     limit = (0, 3600))
+        gen_group.add_item(item)
+
+
+        # LTA length
+        item = preferences_manager.FloatSpinPrefItem(name = 'lta_length',
+                                                     label = 'LTA length [s]',
+                                                     value = 5,
+                                                     limit = (0, 3600))
+        gen_group.add_item(item)
+
+
+        # Threshold value
+        item = preferences_manager.FloatSpinPrefItem(name = 'thr',
+                                                     label = 'Threshold',
+                                                     value = 3,
+                                                     limit = (0, 100))
+        thr_group.add_item(item)
+
+        # Fine threshold value
+        item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr',
+                                                     label = 'Fine threshold',
+                                                     value = 2,
+                                                     limit = (0, 100))
+        thr_group.add_item(item)
+
+        # Turn limit.
+        item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
+                                                     label = 'turn limit',
+                                                     value = 0.05,
+                                                     limit = (0, 10))
+        thr_group.add_item(item)
+
+
+        # stop growth
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
+                                                     label = 'stop grow ratio',
+                                                     value = 0.001,
+                                                     digits = 5,
+                                                     limit = (0, 0.1))
+        sc_group.add_item(item)
+
+        # Stop criterium delay.
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
+                                                     label = 'Stop delay [s]',
+                                                     value = 0.1,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
+        sc_group.add_item(item)
+
 
         # The target detection catalog.
         item = preferences_manager.SingleChoicePrefItem(name = 'detection_catalog',
@@ -137,8 +148,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                         value = None,
                                                         tool_tip = 'The detection catalog to which the detections are written.'
                                                        )
-        self.pref_manager.add_item(item = item)
-
+        cat_group.add_item(item)
 
 
     def edit(self):

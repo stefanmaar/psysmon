@@ -63,29 +63,30 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
         self.end_time = None
         self.start_new_measurement = True
 
+        # Create the preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        cm_group = pref_page.add_group('channel map')
+
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_x',
                                           label = 'x',
-                                          group = 'channel map',
                                           value = '',
                                           limit = ['HHE', 'HHN', 'HHZ'],
                                           tool_tip = 'Select the x component channel.')
-        self.pref_manager.add_item(item = item)
+        cm_group.add_item(item)
 
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_y',
                                           label = 'y',
-                                          group = 'channel map',
                                           value = '',
                                           limit = ['HHE', 'HHN', 'HHZ'],
                                           tool_tip = 'Select the y component channel.')
-        self.pref_manager.add_item(item = item)
+        cm_group.add_item(item)
 
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_z',
                                           label = 'z',
-                                          group = 'channel map',
                                           value = '',
                                           limit = ['HHE', 'HHN', 'HHZ'],
                                           tool_tip = 'Select the z component channel.')
-        self.pref_manager.add_item(item = item)
+        cm_group.add_item(item)
 
 
 

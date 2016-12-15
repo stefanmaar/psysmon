@@ -88,13 +88,10 @@ class ProcessingStackLooperChild(package_nodes.LooperCollectionChildNode):
     def create_processing_stack_preferences(self):
         ''' Create the preference items of the processing stack section.
         '''
-        self.pref_manager.add_page('processing stack')
-
+        ps_page = self.pref_manager.add_page('processing stack')
+        ep_group = ps_page.add_group('processing stack')
         item = plugins_processingstack.ProcessingStackPrefItem(name = 'processing_stack',
                                                            label = 'processing stack',
-                                                           group = 'event processing',
                                                            value = None,
                                                            tool_tip = 'Edit the processing stack nodes.')
-        self.pref_manager.add_item(pagename = 'processing stack',
-                                   item = item)
-
+        ep_group.add_item(item)

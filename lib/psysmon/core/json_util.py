@@ -64,6 +64,10 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_looper_collection_child_node(obj)
         elif obj_class == 'PreferencesManager':
             d = self.convert_preferencesmanager(obj)
+        elif obj_class == 'Page':
+            d = self.convert_page(obj)
+        elif obj_class == 'Group':
+            d = self.convert_group(obj)
         elif obj_class == 'CustomPrefItem':
             d = self.convert_custom_preferenceitem(obj)
         elif obj_class == 'type':
@@ -146,11 +150,23 @@ class ProjectFileEncoder(json.JSONEncoder):
         return d
 
 
+    def convert_page(self, obj):
+        attr = ['name', 'groups']
+        d =self.object_to_dict(obj, attr)
+        return d
+
+
+    def convert_group(self, obj):
+        attr = ['name', 'items']
+        d =self.object_to_dict(obj, attr)
+        return d
+
+
     def convert_custom_preferenceitem(self, obj):
         import inspect
 
         attr = ['name', 'value', 'label', 'default',
-                'group', 'limit']
+                'limit']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
@@ -170,7 +186,7 @@ class ProjectFileEncoder(json.JSONEncoder):
         #attr = ['name', 'value', 'label', 'default', 
         #        'group', 'limit', 'guiclass', 'gui_element']
         attr = ['name', 'value', 'label', 'default',
-                'group', 'limit']
+                'limit']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
@@ -233,6 +249,10 @@ class ProjectFileDecoder(json.JSONDecoder):
                 inst = self.convert_collection(d)
             elif class_name == 'PreferencesManager':
                 inst = self.convert_pref_manager(d)
+            elif class_name == 'Page':
+                inst = self.convert_page(d)
+            elif class_name == 'Group':
+                inst = self.convert_group(d)
             elif class_name == 'CustomPrefItem':
                 inst = self.convert_custom_preferenceitem(d, class_name, module_name)
             elif class_name == 'type':
@@ -313,8 +333,22 @@ class ProjectFileDecoder(json.JSONDecoder):
 
     def convert_pref_manager(self, d):
         import psysmon.core.preferences_manager
+
         inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
         return inst
+
+
+    def convert_page(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Page(name = d['name'], groups = d['groups'])
+        return inst
+
+
+    def convert_group(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Group(name = d['name'], items = d['items'])
+        return inst
+
 
     def convert_collection(self, d):
         import psysmon.core.preferences_manager
@@ -379,6 +413,11 @@ class ProjectFileDecoder(json.JSONDecoder):
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+
+        # 2016-12-15: Handle the change of the preference_manager classes.
+        if 'group' in args.keys():
+            del args['group']
+
         inst = class_(**args)
         return inst
 
@@ -388,6 +427,11 @@ class ProjectFileDecoder(json.JSONDecoder):
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+
+        # 2016-12-15: Handle the change of the preference_manager classes.
+        if 'group' in args.keys():
+            del args['group']
+
         inst = class_(**args)
         return inst
 
@@ -420,6 +464,10 @@ class ConfigFileEncoder(json.JSONEncoder):
 
         if obj_class == 'PreferencesManager':
             d = self.convert_preferencesmanager(obj)
+        elif obj_class == 'Page':
+            d = self.convert_page(obj)
+        elif obj_class == 'Group':
+            d = self.convert_group(obj)
         elif obj_class == 'CustomPrefItem':
             d = self.convert_custom_preferenceitem(obj)
         elif obj_class == 'type':
@@ -446,11 +494,23 @@ class ConfigFileEncoder(json.JSONEncoder):
         return d
 
 
+    def convert_page(self, obj):
+        attr = ['name', 'groups']
+        d =self.object_to_dict(obj, attr)
+        return d
+
+
+    def convert_group(self, obj):
+        attr = ['name', 'items']
+        d =self.object_to_dict(obj, attr)
+        return d
+
+
     def convert_custom_preferenceitem(self, obj):
         import inspect
 
         attr = ['name', 'value', 'label', 'default',
-                'group', 'limit']
+                'limit']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
@@ -470,7 +530,7 @@ class ConfigFileEncoder(json.JSONEncoder):
         #attr = ['name', 'value', 'label', 'default', 
         #        'group', 'limit', 'guiclass', 'gui_element']
         attr = ['name', 'value', 'label', 'default',
-                'group', 'limit']
+                'limit']
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
@@ -521,6 +581,10 @@ class ConfigFileDecoder(json.JSONDecoder):
 
             if class_name == 'PreferencesManager':
                 inst = self.convert_pref_manager(d)
+            elif class_name == 'Page':
+                inst = self.convert_page(d)
+            elif class_name == 'Group':
+                inst = self.convert_group(d)
             elif class_name == 'CustomPrefItem':
                 inst = self.convert_custom_preferenceitem(d, class_name, module_name)
             elif class_name == 'type':
@@ -551,6 +615,18 @@ class ConfigFileDecoder(json.JSONDecoder):
     def convert_pref_manager(self, d):
         import psysmon.core.preferences_manager
         inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
+        return inst
+
+
+    def convert_page(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Page(name = d['name'], groups = d['groups'])
+        return inst
+
+
+    def convert_group(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Group(name = d['name'], items = d['items'])
         return inst
 
 

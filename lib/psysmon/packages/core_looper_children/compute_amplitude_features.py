@@ -41,6 +41,9 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
         '''
         package_nodes.LooperCollectionChildNode.__init__(self, **args)
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        w_group = pref_page.add_group('window')
+
         # Add an float_spin field.
         item = FloatSpinPrefItem(name = 'noise_window_length',
                               label = 'noise window length',
@@ -48,7 +51,7 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                               limit = (0, 1000),
                               tool_tip = 'The length of the time-span used to compute the noise parameters [s].'
                              )
-        self.pref_manager.add_item(item = item)
+        w_group.add_item(item)
 
 
     def edit(self):

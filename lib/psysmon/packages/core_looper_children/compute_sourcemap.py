@@ -46,23 +46,26 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         '''
         package_nodes.LooperCollectionChildNode.__init__(self, **args)
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        mo_group = pref_page.add_group('map options')
+
         item = pm.FloatSpinPrefItem(name = 'alpha',
                                     value = 1.61,
                                     limit = (0,100))
-        self.pref_manager.add_item(item = item)
+        mo_group.add_item(item)
 
         item = pm.FileBrowsePrefItem(name = 'corr_filename',
                                     value = '',
                                     filemask = 'comma separated version (*.csv)|*.csv|' \
                                                 'all files (*)|*',
                                     tool_tip = 'Specify the CSV file holding the station correction values.')
-        self.pref_manager.add_item(item = item)
+        mo_group.add_item(item)
 
         item = pm.SingleChoicePrefItem(name = 'method',
                                        value = 'min',
                                        limit = ['min', 'std', 'quart'],
                                        tool_tip = 'Select the sourcemap computation method.')
-        self.pref_manager.add_item(item = item)
+        mo_group.add_item(item)
 
 
     def edit(self):

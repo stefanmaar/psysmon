@@ -57,94 +57,78 @@ class ComputePpsdNode(psysmon.core.packageNodes.CollectionNode):
     def create_time_and_component_prefs(self):
         ''' Create the preference items of the collection node.
         '''
-        pagename = '1 time and components'
-        self.pref_manager.add_page(pagename)
+        tac_page = self.pref_manager.add_page('time and components')
+        tr_group = tac_page.add_group('time range')
+        cs_group = tac_page.add_group('component selection')
 
         # The start time
         pref_item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                                       label = 'start time',
                                                       value = UTCDateTime('2012-07-09T00:00:00'),
-                                                      group = 'time range',
                                                       tool_tip = 'The start time of the interval to process.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        tr_group.add_item(pref_item)
 
         # The end time
         pref_item = psy_pm.DateTimeEditPrefItem(name = 'end_time',
                                                       label = 'end time',
                                                       value = UTCDateTime('2012-07-09T00:00:00'),
-                                                      group = 'time range',
                                                       tool_tip = 'The end time of the interval to process.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        tr_group.add_item(pref_item)
 
         # The SCNL list
         pref_item = psy_pm.ListCtrlEditPrefItem(name = 'scnl_list',
                                            label = 'SCNL',
                                            value = [],
                                            column_labels = ['station', 'channel', 'network', 'location'],
-                                           group = 'component selection',
                                            tool_tip = 'Select the components to process.'
                                           )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        cs_group.add_item(pref_item)
 
 
     def create_parameters_prefs(self):
         ''' Create the preference items of the parameters section.
         '''
-        pagename = '2 parameters'
-        self.pref_manager.add_page(pagename)
+        par_page = self.pref_manager.add_page('parameters')
+        ppsd_group = par_page.add_group('ppsd')
 
         pref_item = psy_pm.FloatSpinPrefItem(name = 'ppsd_length',
                                              label = 'ppsd length [s]',
-                                             group = 'PPSD',
                                              value = 3600,
                                              limit = [0, 1e10],
                                              increment = 1,
                                              digits = 3,
-                                             tool_tip = 'Length of data segments passed to psd [s].'
-                                             )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+                                             tool_tip = 'Length of data segments passed to psd [s].')
+        ppsd_group.add_item(pref_item)
 
 
         pref_item = psy_pm.IntegerSpinPrefItem(name = 'ppsd_overlap',
                                              label = 'ppsd overlap [%]',
-                                             group = 'PPSD',
                                              value = 50,
                                              limit = [0, 99],
-                                             tool_tip = 'Overlap of segments passed to psd [%].'
-                                             )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+                                             tool_tip = 'Overlap of segments passed to psd [%].')
+        ppsd_group.add_item(pref_item)
 
 
         pref_item = psy_pm.SingleChoicePrefItem(name = 'plot_interval',
                                                 label = 'plot interval',
-                                                group = 'PPSD',
                                                 limit = ('day', 'week', 'complete'),
                                                 value = 'week',
                                                 tool_tip = 'The length of the PPSD plots.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        ppsd_group.add_item(pref_item)
 
 
     def create_output_prefs(self):
         ''' Create the output preference items.
         '''
-        pagename = '4 output'
-        self.pref_manager.add_page(pagename)
+        out_page = self.pref_manager.add_page('output')
+        out_group = out_page.add_group('output')
 
         item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
                                         label = 'output directory',
-                                        group = 'output',
                                         value = '',
                                         tool_tip = 'Specify a directory where to save the PPSD files.'
                                        )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = item)
-
+        out_group.add_item(item)
 
 
 

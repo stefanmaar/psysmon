@@ -60,44 +60,37 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         self.selected_catalog_name = None
 
         # Setup the pages of the preference manager.
-        self.pref_manager.add_page('select')
+        select_page = self.pref_manager.add_page('select')
+        cat_group = select_page.add_group('catalog')
+        ap_group = select_page.add_group('available picks')
 
-        # Setup the order of the groups.
-        self.pref_manager.group_order = ['catalog', 'available picks']
         # Add the plugin preferences.
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'catalog_mode',
                                           label = 'mode',
-                                          group = 'catalog',
                                           value = 'time',
                                           limit = ['time',],
                                           tool_tip = 'Select a pick catalog to work on.')
-        self.pref_manager.add_item(pagename = 'select',
-                                   item = item)
+        cat_group.add_item(item)
 
         item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'pick_catalog',
                                           label = 'pick catalog',
-                                          group = 'catalog',
                                           value = '',
                                           limit = [],
                                           tool_tip = 'Select a pick catalog to work on.',
                                           hooks = {'on_value_change': self.on_select_catalog})
-        self.pref_manager.add_item(pagename = 'select',
-                                   item = item)
+        cat_group.add_item(item)
 
 
         column_labels = ['db_id', 'scnl', 'label', 'time',
                          'agency_uri', 'author_uri']
-
         item = psysmon.core.preferences_manager.ListCtrlEditPrefItem(name = 'picks',
                                                                      label = 'picks',
-                                                                     group = 'available picks',
                                                                      value = [],
                                                                      column_labels = column_labels,
                                                                      limit = [],
                                                                      hooks = {'on_value_change': self.on_pick_selected},
                                                                      tool_tip = 'The available picks for the selected event.')
-        self.pref_manager.add_item(pagename = 'select',
-                                   item = item)
+        ap_group.add_item(item)
 
 
 

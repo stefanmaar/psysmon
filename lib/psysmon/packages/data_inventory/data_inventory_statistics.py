@@ -48,10 +48,7 @@ class DataInventoryStatistics(psy_packageNodes.CollectionNode):
 
     def __init__(self, **args):
         psy_packageNodes.CollectionNode.__init__(self, **args)
-        pref_item = psy_preferences_manager.TextEditPrefItem(name = 'projection_coordinate_system', label = 'proj. coord. sys.', value = '')
-        self.pref_manager.add_item(item = pref_item)
-        pref_item = psy_preferences_manager.FileBrowsePrefItem(name = 'shape_file', label = 'shape file', value = '')
-        self.pref_manager.add_item(item = pref_item)
+
 
     def edit(self):
         ''' The edit method.
@@ -139,12 +136,18 @@ class DataInventoryStatisticsDlg(wx.Frame):
         db_session = self.project.getDbSession()
 
         overview_stats = self.stats['overview']
+        min_begin = db_session.query(sqlalchemy.func.min(self.project.dbTables['traceheader'].begin_time)).scalar()
+        max_begin = db_session.query(sqlalchemy.func.max(self.project.dbTables['traceheader'].begin_time)).scalar()
 
-        overview_stats['first_data'] = udt.UTCDateTime(db_session.query(sqlalchemy.func.min(self.project.dbTables['traceheader'].begin_time)).scalar())
-        last_begin_time = udt.UTCDateTime(db_session.query(sqlalchemy.func.max(self.project.dbTables['traceheader'].begin_time)).scalar())
-        tmp = db_session.query(self.project.dbTables['traceheader']).filter_by(begin_time = last_begin_time.timestamp).all()
-        end_time = [x.begin_time + (x.numsamp-1)/float(x.sps) for x in tmp]
-        overview_stats['last_data'] = udt.UTCDateTime(max(end_time))
+        if min_begin is None or max_begin is None:
+            overview_stats['first_data'] = None
+            overview_stats['last_data'] = None
+        else:
+            overview_stats['first_data'] = udt.UTCDateTime(min_begin)
+            last_begin_time = udt.UTCDateTime(max_begin)
+            tmp = db_session.query(self.project.dbTables['traceheader']).filter_by(begin_time = last_begin_time.timestamp).all()
+            end_time = [x.begin_time + (x.numsamp-1)/float(x.sps) for x in tmp]
+            overview_stats['last_data'] = udt.UTCDateTime(max(end_time))
 
         db_session.close()
 

@@ -54,11 +54,13 @@ class Zoom(InteractivePlugin):
         self.endTime = None
 
         # Add the plugin preferences.
-        item = preferences_manager.IntegerSpinPrefItem(name = 'zoom ratio', 
+        pref_page = self.pref_manager.add_page('Preferences')
+        resp_group = pref_page.add_group('response')
+
+        item = preferences_manager.IntegerSpinPrefItem(name = 'zoom ratio',
                                                        value = 20,
-                                                       limit = (1, 99)
-                                                      )
-        self.pref_manager.add_item(item = item)
+                                                       limit = (1, 99))
+        resp_group.add_item(item)
 
 
     def getHooks(self):

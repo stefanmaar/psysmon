@@ -53,17 +53,24 @@ class ImportBulletin(CollectionNode):
 
     def __init__(self, **args):
         CollectionNode.__init__(self, **args)
+
+        pref_page = self.pref_manager.add_page('Preferences')
+        bulletin_group = pref_page.add_group('bulletin')
+
         pref_item = psy_pm.SingleChoicePrefItem(name = 'bulletin_format',
                                                 label = 'bulletin format',
                                                 limit = ['IMS1.0', 'CSV'],
                                                 value = 'IMS1.0')
-        self.pref_manager.add_item(item = pref_item)
+        bulletin_group.add_item(pref_item)
+
         pref_item = CustomPrefItem(name = 'input_files', value = [])
-        self.pref_manager.add_item(item = pref_item)
+        bulletin_group.add_item(pref_item)
+
         pref_item = CustomPrefItem(name = 'last_dir', value = [])
-        self.pref_manager.add_item(item = pref_item)
+        bulletin_group.add_item(pref_item)
+
         pref_item = CustomPrefItem(name = 'filter_pattern', value = ['*.txt',])
-        self.pref_manager.add_item(item = pref_item)
+        bulletin_group.add_item(pref_item)
 
     def edit(self):
         dlg = ImportBulletinEditDlg(self, self.project, None)

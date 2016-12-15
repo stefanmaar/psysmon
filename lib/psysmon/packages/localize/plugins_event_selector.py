@@ -65,35 +65,40 @@ class SelectEvents(OptionPlugin):
         self.colors = {}
 
         # Setup the pages of the preference manager.
-        self.pref_manager.add_page('Select')
+        select_page = self.pref_manager.add_page('Select')
+        dts_group = select_page.add_group('detection time span')
+        es_group = select_page.add_group('event selection')
 
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                            label = 'start time',
-                                           group = 'detection time span',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
                                            tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        dts_group.add_item(item)
 
 
         item = psy_pm.FloatSpinPrefItem(name = 'window_length',
                                         label = 'window length [s]',
-                                        group = 'detection time span',
                                         value = 3600,
                                         limit = (0, 86400),
                                         digits = 1,
                                         tool_tip = 'The length of the time window for which events should be loaded.')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        dts_group.add_item(item)
+
+
 
         item = psy_pm.SingleChoicePrefItem(name = 'event_catalog',
                                           label = 'event catalog',
-                                          group = 'event selection',
                                           value = '',
                                           limit = [],
                                           tool_tip = 'Select an event catalog for which to load the events.')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        es_group.add_item(item)
+
+
+        item = psy_pm.ActionItem(name = 'load_events',
+                                 label = 'load events',
+                                 mode = 'button',
+                                 action = self.on_load_events)
+        es_group.add_item(item)
 
 
         column_labels = ['db_id', 'start_time', 'length', 'public_id',
@@ -101,23 +106,13 @@ class SelectEvents(OptionPlugin):
                          'comment']
         item = psy_pm.ListCtrlEditPrefItem(name = 'events',
                                            label = 'events',
-                                           group = 'event selection',
                                            value = [],
                                            column_labels = column_labels,
                                            limit = [],
                                            hooks = {'on_value_change': self.on_event_selected},
                                            tool_tip = 'The available events.')
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
+        es_group.add_item(item)
 
-
-        item = psy_pm.ActionItem(name = 'load_events',
-                                 label = 'load events',
-                                 group = 'detection time span',
-                                 mode = 'button',
-                                 action = self.on_load_events)
-        self.pref_manager.add_item(pagename = 'Select',
-                                   item = item)
 
 
     def buildFoldPanel(self, panelBar):

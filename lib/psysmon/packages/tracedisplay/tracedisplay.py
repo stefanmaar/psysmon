@@ -208,43 +208,39 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
     def __init__(self, **args):
         psysmon.core.packageNodes.CollectionNode.__init__(self, **args)
 
+
+        pref_page = self.pref_manager.add_page('Preferences')
+        time_group = pref_page.add_group('time range')
+        comp_group = pref_page.add_group('component selection')
+
         pref_item = pref_manager.DateTimeEditPrefItem(name = 'start_time',
                                     label = 'start time',
-                                    value = UTCDateTime('2012-07-09T00:00:00'),
-                                    group = 'time range')
-        self.pref_manager.add_item(item = pref_item)
+                                    value = UTCDateTime('2012-07-09T00:00:00'))
+        time_group.add_item(pref_item)
 
         pref_item = pref_manager.FloatSpinPrefItem(name = 'duration',
                                     label = 'duration',
                                     value = 300.,
-                                    limit = (0, 86400),
-                                    group = 'time range')
-        self.pref_manager.add_item(item = pref_item)
+                                    limit = (0, 86400))
+        time_group.add_item(pref_item)
 
-        # TODO: Set the limit of the multichoice preference based on the
-        # available channels.
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
                                                      label = 'channels',
                                                      limit = ('HHZ', 'HHN', 'HHE'),
-                                                     value = ['HHZ',],
-                                                     group = 'component selection')
-        self.pref_manager.add_item(item = pref_item)
+                                                     value = ['HHZ',])
+        comp_group.add_item(pref_item)
 
-        # TODO: Set the limit of the multichoice preference based on the
-        # available stations.
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_stations',
                                                      label = 'stations',
                                                      limit = ('ALBA', 'BISA', 'SITA'),
-                                                     value = ['ALBA'],
-                                                     group = 'component selection')
-        self.pref_manager.add_item(item = pref_item)
+                                                     value = ['ALBA'])
+        comp_group.add_item(pref_item)
 
         pref_item = pref_manager.SingleChoicePrefItem(name = 'sort_stations',
                                                       label = 'sort stations',
                                                       limit = ('by name',),
-                                                      value = 'by name',
-                                                      group = 'component selection')
-        self.pref_manager.add_item(item = pref_item)
+                                                      value = 'by name')
+        comp_group.add_item(pref_item)
 
 
     def edit(self):

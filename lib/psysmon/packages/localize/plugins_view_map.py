@@ -55,15 +55,6 @@ class MapPlotter(psysmon.core.plugins.ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.iconsBlack16.globe_1_icon_16
 
-        # Add the plugin preferences.
-        # Show or hide the seismogram envelope.
-        #item = preferences_manager.CheckBoxPrefItem(name = 'show_envelope',
-        #                                            label = 'show envelope',
-        #                                            value = False
-        #                                           )
-        #self.pref_manager.add_item(item = item)
-
-
 
     def plot(self):
         ''' Plot available map plotter views.

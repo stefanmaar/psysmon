@@ -206,59 +206,54 @@ class Base(object):
     def create_preferences(self):
         ''' Create the psysmon preferences items.
         '''
-        self.pref_manager.add_page('logging')
+        logging_page = self.pref_manager.add_page('logging')
+        log_levels_group = logging_page.add_group('log levels')
+        status_group = logging_page.add_group('status')
 
+
+        # The log levels group items.
         pref_item = pm.SingleChoicePrefItem(name = 'main_loglevel',
                                             label = 'main log level',
                                             limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
                                             value = 'INFO',
-                                            group = 'log levels',
-                                            position = 1,
                                             tool_tip = 'The level of the main logger.')
-        self.pref_manager.add_item(pagename = 'logging',
-                                   item = pref_item)
+        log_levels_group.add_item(item = pref_item)
 
 
         pref_item = pm.SingleChoicePrefItem(name = 'shell_loglevel',
                                             label = 'shell log level',
                                             limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
                                             value = 'INFO',
-                                            group = 'log levels',
-                                            position = 2,
                                             tool_tip = 'The level of the logger writing to the shell.')
-        self.pref_manager.add_item(pagename = 'logging',
-                                   item = pref_item)
+        log_levels_group.add_item(item = pref_item)
+
 
         pref_item = pm.SingleChoicePrefItem(name = 'gui_status_loglevel',
                                             label = 'status log level',
                                             limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
                                             value = 'INFO',
-                                            group = 'log levels',
-                                            position = 3,
                                             tool_tip = 'The level of the logger writing to the psysmon status logging area.')
-        self.pref_manager.add_item(pagename = 'logging',
-                                   item = pref_item)
+        log_levels_group.add_item(item = pref_item)
 
 
         pref_item = pm.SingleChoicePrefItem(name = 'collection_loglevel',
                                             label = 'collection log level',
                                             limit = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
                                             value = 'INFO',
-                                            group = 'log levels',
-                                            position = 4,
                                             tool_tip = 'The level of the logger writing to a log file when executing a collection.')
-        self.pref_manager.add_item(pagename = 'logging',
-                                   item = pref_item)
+        log_levels_group.add_item(item = pref_item)
 
+
+
+        # The status group items.
         pref_item = pm.IntegerSpinPrefItem(name = 'n_status_messages',
                                             label = '# status messages',
                                             limit = (10,1000),
                                             value = 100,
-                                            group = 'status',
-                                            position = 1,
                                             tool_tip = 'The number of messages to show in the log area status.')
-        self.pref_manager.add_item(pagename = 'logging',
-                                   item = pref_item)
+        status_group.add_item(item = pref_item)
+
+
 
     def start_project_server(self):
         ''' Start the pyro project server.
@@ -752,6 +747,7 @@ class Collection(object):
         cur_node = self.nodes[position]
         if isinstance(cur_node, psysmon.core.packageNodes.LooperCollectionNode):
             # Add the node to the looper node.
+            node.parentCollection = self
             cur_node.add_child(node)
         else:
             raise PsysmonError('The selected collection node is not a looper node.')

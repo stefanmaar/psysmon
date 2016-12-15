@@ -59,116 +59,119 @@ class StaLtaDetectionNode(CollectionNode):
         CollectionNode.__init__(self, **args)
 
         # Setup the pages of the preference manager.
-        self.pref_manager.add_page('General')
-        self.pref_manager.add_page('STA/LTA')
-        self.pref_manager.add_page('Processing')
+        self.create_general_prefs()
+        self.create_sta_lta_prefs()
+        self.create_processing_prefs()
+
+    def create_general_prefs(self):
+        ''' Create the general preferences.
+        '''
+        general_page = self.pref_manager.add_page('General')
+        dts_group = general_page.add_group('detection time span')
+        ctp_group = general_page.add_group('components to process')
 
         # The start_time.
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                            label = 'start time',
-                                           group = 'detection time span',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
                                            tool_tip = 'The start time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
-        self.pref_manager.add_item(pagename = 'General',
-                                   item = item)
+        dts_group.add_item(item)
 
         # The end time.
         item = psy_pm.DateTimeEditPrefItem(name = 'end_time',
                                            label = 'end time',
-                                           group = 'detection time span',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
                                            tool_tip = 'The end time of the detection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
-        self.pref_manager.add_item(pagename = 'General',
-                                   item = item)
+        dts_group.add_item(item)
+
+
 
         # The stations to process.
         item = psy_pm.MultiChoicePrefItem(name = 'stations',
                                           label = 'stations',
-                                          group = 'components to process',
                                           limit = ('value 1', 'value 2', 'value 3', 'value 4', 'value 5'),
                                           value = [],
                                           tool_tip = 'The stations which should be used for the detection.')
-        self.pref_manager.add_item(pagename = 'General',
-                                   item = item)
+        ctp_group.add_item(item)
 
         # The channels to process.
         item = psy_pm.MultiChoicePrefItem(name = 'channels',
                                           label = 'channels',
-                                          group = 'components to process',
                                           limit = ('value 1', 'value 2', 'value 3', 'value 4', 'value 5'),
                                           value = [],
                                           tool_tip = 'The channels which should be used for the detection.')
-        self.pref_manager.add_item(pagename = 'General',
-                                   item = item)
+        ctp_group.add_item(item)
+
+
+
+    def create_sta_lta_page(self):
+        ''' Create the sta/lta preferences.
+        '''
+        sta_lta_page = self.pref_manager.add_page('STA/LTA')
+        det_group = sta_lta_page.add_group('detection')
+
+
 
         # The STA/LTA parameters
         item = psy_pm.SingleChoicePrefItem(name = 'cf_type',
                                            label = 'characteristic function',
-                                           group = 'detection',
                                            limit = ('abs', 'square'),
                                            value = 'square',
                                            tool_tip = 'The type of the characteristic function used to compute the STA and LTA.')
-        self.pref_manager.add_item(pagename = 'STA/LTA',
-                                   item = item)
+        det_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'sta_len',
                                         label = 'STA length [s]',
-                                        group = 'detection',
                                         value = 1,
                                         limit = (0, 1000),
                                         digits = 1,
                                         tool_tip = 'The length of the STA in seconds.')
-        self.pref_manager.add_item(pagename = 'STA/LTA',
-                                   item = item)
+        det_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'lta_len',
                                         label = 'LTA length [s]',
-                                        group = 'detection',
                                         value = 10,
                                         limit = (0, 1000),
                                         digits = 1,
                                         tool_tip = 'The length of the LTA in seconds.')
-        self.pref_manager.add_item(pagename = 'STA/LTA',
-                                   item = item)
+        det_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'thr',
                                         label = 'threshold',
-                                        group = 'detection',
                                         value = 3,
                                         limit = (0, 1000),
                                         digits = 1,
                                         tool_tip = 'The threshold of STA/LTA when to trigger an event.')
-        self.pref_manager.add_item(pagename = 'STA/LTA',
-                                   item = item)
+        det_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'pre_et',
                                         label = 'pre-event time [s]',
-                                        group = 'detection',
                                         value = 1,
                                         limit = (0, 1000),
                                         digits = 1,
                                         tool_tip = 'The time window to add before the detected event start [s].')
-        self.pref_manager.add_item(pagename = 'STA/LTA',
-                                   item = item)
+        det_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'post_et',
                                         label = 'post-event time [s]',
-                                        group = 'detection',
                                         value = 1,
                                         limit = (0, 1000),
                                         digits = 1,
                                         tool_tip = 'The time window to add after the detected event end [s].')
-        self.pref_manager.add_item(pagename = 'STA/LTA',
-                                   item = item)
+        det_group.add_item(item)
 
+
+    def create_processing_preferences(self):
+        ''' Create the processing preferences.
+        '''
+        proc_page = self.pref_manager.add_page('Processing')
+        ps_group = proc_page.add_group('processing stack')
         item = psy_pm.CustomPrefItem(name = 'processing_stack',
                                      label = 'processing stack',
-                                     group = 'signal processing',
                                      value = None,
                                      gui_class = PStackEditField,
                                      tool_tip = 'Edit the processing stack nodes.')
-        self.pref_manager.add_item(pagename = 'Processing',
-                                   item = item)
+        ps_group.add_item(item)
 
 
     def edit(self):

@@ -66,53 +66,46 @@ class PickTool(InteractivePlugin):
         self.pick_lines = {}
 
         # Add the pages to the preferences manager.
-        self.pref_manager.add_page('tool options')
+        to_page = self.pref_manager.add_page('tool options')
+        cat_group = to_page.add_group('catalog')
+        po_group = to_page.add_group('pick options')
 
         # Add the plugin preferences.
         item = psy_pm.SingleChoicePrefItem(name = 'catalog_mode',
                                           label = 'mode',
-                                          group = 'catalog',
                                           value = 'time',
                                           limit = ['time',],
                                           tool_tip = 'Select a pick catalog to work on.')
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        cat_group.add_item(item)
 
         item = psy_pm.SingleChoicePrefItem(name = 'pick_catalog',
                                           label = 'pick catalog',
-                                          group = 'catalog',
                                           value = '',
                                           limit = [],
                                           tool_tip = 'Select a pick catalog to work on.',
                                           hooks = {'on_value_change': self.on_select_catalog})
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        cat_group.add_item(item)
 
         item = psy_pm.ActionItem(name = 'create_new_catalog',
                                  label = 'create new catalog',
-                                 group = 'catalog',
                                  mode = 'button',
                                  action = self.on_create_new_catalog)
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        cat_group.add_item(item)
+
 
 
         item = psy_pm.TextEditPrefItem(name = 'label',
                                        label = 'label',
-                                       group = 'pick options',
                                        value = 'P',
                                        tool_tip = 'The label of the pick.')
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        po_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'delete_snap_length',
                                        label = 'delete snap [s]',
-                                       group = 'pick options',
                                        value = 0.1,
                                        limit = (0, 1000),
                                        tool_tip = 'The snap length used when deleting picks.')
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        po_group.add_item(item)
 
 
     def buildFoldPanel(self, panelBar):

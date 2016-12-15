@@ -57,12 +57,15 @@ class ImportWaveform(CollectionNode):
 
     def __init__(self, **args):
         CollectionNode.__init__(self, **args)
+
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         pref_item = CustomPrefItem(name = 'input_files', value = [])
-        self.pref_manager.add_item(item = pref_item)
+        gen_group.add_item(pref_item)
         pref_item = CustomPrefItem(name = 'last_dir', value = [])
-        self.pref_manager.add_item(item = pref_item)
+        gen_group.add_item(pref_item)
         pref_item = CustomPrefItem(name = 'filter_pattern', value = ['*.msd', '*.mseed', '*.MSEED'])
-        self.pref_manager.add_item(item = pref_item)
+        gen_group.add_item(pref_item)
 
 
     def edit(self):

@@ -47,13 +47,13 @@ class Detrend(ProcessingNode):
                                 **kwargs
                                )
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         # Add a single_choice field.
         item = SingleChoicePrefItem(name = 'detrend method',
                               limit = ('simple', 'linear', 'constant'),
-                              value = 'constant',
-                             )
-        self.pref_manager.add_item(item = item)
-
+                              value = 'constant')
+        gen_group.add_item(item)
 
     def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
@@ -88,13 +88,13 @@ class MedianFilter(ProcessingNode):
                                 **kwargs
                                )
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         # Add an float_spin field.
         item = IntegerSpinPrefItem(name = 'samples', 
                               value = 3,
-                              limit = (3, 100)
-                             )
-        self.pref_manager.add_item(item = item)
-
+                              limit = (3, 100))
+        gen_group.add_item(item)
 
     def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the stack node.
@@ -128,41 +128,37 @@ class FilterBandPass(ProcessingNode):
                                 **kwargs
                                )
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         # Add an float_spin field.
         item = FloatSpinPrefItem(name = 'min. frequ.', 
                               value = 1,
                               limit = (0, None),
                               digits = 1,
-                              increment = 1
-                             )
-        self.pref_manager.add_item(item = item)
+                              increment = 1)
+        gen_group.add_item(item)
 
         # Add an float_spin field.
         item = FloatSpinPrefItem(name = 'max. frequ.', 
                               value = 15,
                               limit = (0, None),
                               digits = 1,
-                              increment = 1
-                             )
-        self.pref_manager.add_item(item = item)
+                              increment = 1)
+        gen_group.add_item(item)
 
         # Add an float_spin field.
         item = IntegerSpinPrefItem(name = 'corners', 
                               value = 4,
-                              limit = (1, 30)
-                             )
-        self.pref_manager.add_item(item = item)
+                              limit = (1, 30))
+        gen_group.add_item(item)
 
         # Zero phase checkbox.
         item = CheckBoxPrefItem(name = 'zero_phase',
                                 label = 'zero phase',
                                 value = False,
                                 tool_tip = 'Use a zero phase filtering.')
-        self.pref_manager.add_item(item = item)
+        gen_group.add_item(item)
 
-        # Create the logging logger instance.
-        #loggerName = __name__ + "." + self.__class__.__name__
-        #self.logger = logging.getLogger(loggerName)
 
 
 
@@ -203,32 +199,28 @@ class FilterLowPass(ProcessingNode):
                                 **kwargs
                                )
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         # Add an float_spin field.
         item = FloatSpinPrefItem(name = 'frequ.', 
                               value = 1,
                               limit = (0, None),
                               digits = 1,
-                              increment = 1
-                             )
-        self.pref_manager.add_item(item = item)
+                              increment = 1)
+        gen_group.add_item(item)
 
         # Add an float_spin field.
         item = IntegerSpinPrefItem(name = 'corners', 
                               value = 4,
-                              limit = (1, 30)
-                             )
-        self.pref_manager.add_item(item = item)
+                              limit = (1, 30))
+        gen_group.add_item(item)
 
         # Zero phase checkbox.
         item = CheckBoxPrefItem(name = 'zero_phase',
                                 label = 'zero phase',
                                 value = False,
                                 tool_tip = 'Use a zero phase filtering.')
-        self.pref_manager.add_item(item = item)
-
-        # Create the logging logger instance.
-        #loggerName = __name__ + "." + self.__class__.__name__
-        #self.logger = logging.getLogger(loggerName)
+        gen_group.add_item(item)
 
 
 
@@ -270,31 +262,29 @@ class FilterHighPass(ProcessingNode):
                                 **kwargs
                                )
 
+
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         # Add an float_spin field.
-        item = FloatSpinPrefItem(name = 'frequ.', 
+        item = FloatSpinPrefItem(name = 'frequ.',
                               value = 1,
                               limit = (0, None),
                               digits = 1,
-                              increment = 1
-                             )
-        self.pref_manager.add_item(item = item)
+                              increment = 1)
+        gen_group.add_item(item)
 
         # Add an float_spin field.
-        item = IntegerSpinPrefItem(name = 'corners', 
+        item = IntegerSpinPrefItem(name = 'corners',
                               value = 4,
-                              limit = (1, 30)
-                             )
-        self.pref_manager.add_item(item = item)
+                              limit = (1, 30))
+        gen_group.add_item(item)
 
         # Zero phase checkbox.
         item = CheckBoxPrefItem(name = 'zero_phase',
                                 label = 'zero phase',
                                 value = False,
                                 tool_tip = 'Use a zero phase filtering.')
-        self.pref_manager.add_item(item = item)
-        # Create the logging logger instance.
-        #loggerName = __name__ + "." + self.__class__.__name__
-        #self.logger = logging.getLogger(loggerName)
+        gen_group.add_item(item)
 
 
     def execute(self, stream, process_limits = None, origin_resource = None):

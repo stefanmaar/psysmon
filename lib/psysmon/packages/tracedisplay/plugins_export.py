@@ -56,12 +56,15 @@ class ExportVisible(plugins.CommandPlugin):
 
 
         # Add the plugin preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        exp_group = pref_page.add_group('export')
+
         item = preferences_manager.SingleChoicePrefItem(name = 'source',
                                                         label = 'source',
                                                         value = 'visible',
                                                         limit = ['original', 'visible'],
                                                         tool_tip = 'The data to export.')
-        self.pref_manager.add_item(item = item)
+        exp_group.add_item(item)
 
         obspy_export_formats = ['GSE2', 'MSEED', 'PICKLE', 'Q',
                                 'SAC', 'SACXY', 'SEGY', 'SH_ASC', 'SLIST',
@@ -82,14 +85,14 @@ class ExportVisible(plugins.CommandPlugin):
                                                         value = 'TSPAIR',
                                                         limit = obspy_export_formats,
                                                         tool_tip = 'The available export file formats. See the obspy documentation for further details on specific formats.')
-        self.pref_manager.add_item(item = item)
+        exp_group.add_item(item)
 
 
         item = preferences_manager.DirBrowsePrefItem(name = 'export_dir',
                                                      label = 'export directory',
                                                      value = '',
                                                      tool_tip = 'The directory where to save the exported files.')
-        self.pref_manager.add_item(item = item)
+        exp_group.add_item(item)
 
 
     def run(self):

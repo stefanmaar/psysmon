@@ -34,8 +34,6 @@ class PreferencesManager:
     ''' The preferences of the project.
 
     The PreferencesManager holds and organizes all project preferences.
-    The preference items can be added to groups of the preferences manager.
-
     '''
 
     def __init__(self, pages = None):
@@ -44,12 +42,9 @@ class PreferencesManager:
         '''
         # The pages (categories) of the project preferences.
         if pages is None:
-            self.pages = {}
-            self.pages['preferences'] = []
+            self.pages = []
         else:
             self.pages = pages
-
-        self.group_order = []
 
 
     @property
@@ -71,19 +66,30 @@ class PreferencesManager:
 
         '''
         out = ''
-        for cur_name, cur_page in self.pages.items():
-            for cur_item in cur_page:
-                out += str(cur_item) + '\n'
+        for cur_page in self.pages:
+            out += str(cur_page) + '\n'
 
         return out
 
     def __len__(self):
-        ''' The number of preference items.
+        ''' The number of preference groups.
         '''
         n_items = 0
-        for cur_page in self.pages.itervalues():
+        for cur_page in self.pages:
             n_items += len(cur_page)
         return n_items
+
+
+    def get_page(self, name):
+        ''' Get a page.
+        '''
+        cur_page = [x for x in self.pages if x.name == name]
+        if len(cur_page) > 1:
+            raise RuntimeError("More than one page with name %s found. This shouldn't happen.", name)
+        elif len(cur_page) == 1:
+            cur_page = cur_page[0]
+
+        return cur_page
 
 
     def add_page(self, name):
@@ -91,28 +97,21 @@ class PreferencesManager:
 
         Parameters
         ----------
-        name : String 
+        name : String
             The name of the new page.
+
+        Returns
+        -------
+        page : Page
+            The created page or if the page already exists the existing page.
         '''
-        if name not in self.pages.keys():
-            self.pages[name] = []
+        cur_page = self.get_page(name = name)
+        if len(cur_page) == 0:
+            cur_page = Page(name)
+            self.pages.append(cur_page)
 
+        return cur_page
 
-    def add_item(self, item, pagename = 'preferences'):
-        ''' Add a preference item to a page of the manager.
-
-        Parameters
-        ----------
-        pagename : String
-            The name of the page to which the item should be added.
-
-        item : :class:`~PreferenceItem`
-            The item to be added to the page.
-        '''
-        if pagename in self.pages.keys():
-            item.parent_page = pagename
-
-            self.pages[pagename].append(item)
 
 
     def get_item(self, name, pagename = None):
@@ -127,13 +126,15 @@ class PreferencesManager:
         '''
         found_items = []
         if pagename is not None:
-            if pagename in self.pages.keys():
-                found_items = [x for x in self.pages[pagename] if x.name == name]
-
+            cur_page = self.get_page(name = pagename)
+            if cur_page:
+                search_pages = [cur_page, ]
         else:
-            for cur_page in self.pages.values():
-                tmp = [x for x in cur_page if x.name == name]
-                found_items.extend(tmp)
+            search_pages = self.pages
+
+        for cur_page in search_pages:
+            tmp = cur_page.get_item(name = name)
+            found_items.extend(tmp)
 
         return found_items
 
@@ -231,13 +232,15 @@ class PreferencesManager:
         '''
         found_items = []
         if pagename is not None:
-            if pagename in self.pages.keys():
-                found_items = [x.name for x in self.pages[pagename]]
-
+            cur_page = self.get_page(name = pagename)
+            if cur_page:
+                search_pages = [cur_page, ]
         else:
-            for cur_page in self.pages.values():
-                tmp = [x.name for x in cur_page]
-                found_items.extend(tmp)
+            search_pages = self.pages
+
+        for cur_page in search_pages:
+            for cur_group in cur_page.groups:
+                found_items.extend([x.name for x in cur_group.items])
 
         return found_items
 
@@ -246,14 +249,140 @@ class PreferencesManager:
         ''' Update the values of the preferences manager.
         '''
         attr_to_update = ['value', 'limit']
-        for cur_key in pref_manager.pages.keys():
-            if cur_key in self.pages.keys():
-                for cur_item in pref_manager.pages[cur_key]:
-                    update_item = self.get_item(cur_item.name, cur_key)
-                    for cur_update_item in update_item:
-                        for cur_attr in attr_to_update:
-                            if cur_attr in cur_update_item.__dict__.keys():
-                                setattr(cur_update_item, cur_attr, getattr(cur_item, cur_attr))
+
+        # 2016-12-15: Handle the change of the prefence_manager classes.
+        if isinstance(pref_manager.pages, dict):
+            # The preferences manager was saved using an old class.
+            for cur_key in pref_manager.pages.keys():
+                page_names = [x.name.lower() for x in self.pages]
+                ext_pagename = cur_key.lower()
+                if ext_pagename in page_names:
+                    for cur_item in pref_manager.pages[cur_key]:
+                        update_item = self.get_item(cur_item.name)
+                        for cur_update_item in update_item:
+                            for cur_attr in attr_to_update:
+                                if cur_attr in cur_update_item.__dict__.keys():
+                                    setattr(cur_update_item, cur_attr, getattr(cur_item, cur_attr))
+        else:
+            # Us the uptodate version of the preference manager.
+            for cur_ext_page in pref_manager.pages:
+                page_names = [x.name for x in self.pages]
+                if cur_ext_page.name in page_names:
+                    for cur_ext_group in cur_ext_page.groups:
+                        for cur_ext_item in cur_ext_group.items:
+                            update_item = self.get_item(cur_ext_item.name, cur_ext_page.name)
+                            for cur_update_item in update_item:
+                                for cur_attr in attr_to_update:
+                                    if cur_attr in cur_update_item.__dict__.keys():
+                                        setattr(cur_update_item, cur_attr, getattr(cur_ext_item, cur_attr))
+
+
+
+class Page(object):
+    ''' A page of the preference manager.
+    '''
+
+    def __init__(self, name, groups = None):
+        ''' Initialize the instance.
+        '''
+        # The name of the page.
+        self.name = name
+
+        # The groups of the page.
+        if groups is None:
+            self.groups = []
+        else:
+            self.groups = groups
+
+
+    def __len__(self):
+        ''' The number of groups.
+        '''
+        return len(self.groups)
+
+
+    def __str__(self):
+        ''' The string representation of the page.
+        '''
+        out = ''
+        for cur_group in self.groups:
+            out += str(cur_group) + '\n'
+
+        return out
+
+
+    def get_group(self, name):
+        ''' Get a group.
+        '''
+        cur_group = [x for x in self.groups if x.name == name]
+        if len(cur_group) > 1:
+            raise RuntimeError("More than one group with name %s found. This shouldn't happen.", name)
+        elif len(cur_group) == 1:
+            cur_group = cur_group[0]
+
+        return cur_group
+
+
+    def add_group(self, name):
+        ''' Add a group to the page.
+        '''
+        cur_group = self.get_group(name = name)
+
+        if len(cur_group) == 0:
+            cur_group = Group(name = name)
+            self.groups.append(cur_group)
+
+        return cur_group
+
+
+    def get_item(self, name):
+        ''' Get items from the page.
+        '''
+        found_items = []
+        for cur_group in self.groups:
+            found_items.extend(cur_group.get_item(name = name))
+
+        return found_items
+
+
+
+class Group(object):
+    ''' A group of a page in the preference manager.
+    '''
+
+    def __init__(self, name, items = None):
+        ''' Initialize the instance.
+        '''
+        # The name of the group.
+        self.name = name
+
+        # The preference items of the group.
+        if items is None:
+            self.items = []
+        else:
+            self.items = items
+
+
+    def __str__(self):
+        ''' The string representation of the group.
+        '''
+        out = ''
+        for cur_item in self.items:
+            out += str(cur_item) + '\n'
+
+        return out
+
+
+    def add_item(self, item):
+        ''' Add a preference item to the group.
+        '''
+        self.items.append(item)
+
+
+    def get_item(self, name):
+        ''' Get an item from the group.
+        '''
+        return [x for x in self.items if x.name == name]
 
 
 
@@ -263,9 +392,9 @@ class PreferenceItem(object):
     '''
 
     def __init__(self, name, value, mode, label = None,
-                 group = None, limit = None, parent_page = None,
+                 limit = None, parent_page = None,
                  default = None, gui_element = None,
-                 tool_tip = None, position = None, hooks = None):
+                 tool_tip = None, hooks = None):
         ''' Initialization of the instance.
 
         '''
@@ -291,9 +420,6 @@ class PreferenceItem(object):
         # The mode of the item.
         self.mode = mode
 
-        # The group of the item.
-        self.group = group
-
         # The limits restricting the item value.
         self.limit = limit
 
@@ -304,9 +430,6 @@ class PreferenceItem(object):
         if gui_element is None:
             gui_element = []
         self.gui_element = gui_element
-
-        # The position of the preference item within a group.
-        self.position = position
 
         # Function hooks to be called in methods of the gui elements.
         if hooks is None:
@@ -553,13 +676,11 @@ class CustomPrefItem(PreferenceItem):
 class ActionItem(object):
     '''
     '''
-    def __init__(self, name, label, group, mode, action, tool_tip = None):
+    def __init__(self, name, label, mode, action, tool_tip = None):
 
         self.name = name
 
         self.label = label
-
-        self.group = group
 
         self.mode = mode
 

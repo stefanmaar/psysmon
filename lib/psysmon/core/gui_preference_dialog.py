@@ -83,15 +83,15 @@ class ListbookPrefDialog(wx.Dialog):
         ''' Build the listbook based on the project preferences.
 
         '''
-        # Create pages only for pages with preference items.
-        pagenames = sorted([x[0] for x in self.pref.pages.iteritems() if x[1]])
+        # Create pages only for pages with groups
+        pages = [x for x in self.pref.pages if len(x) > 0]
 
-        for cur_pagename in pagenames:
+        for cur_page in pages:
             panel = PrefPagePanel(parent = self,
                                   id = wx.ID_ANY,
-                                  items = self.pref.pages[cur_pagename]
+                                  page = cur_page
                                  )
-            self.listbook.AddPage(panel, cur_pagename)
+            self.listbook.AddPage(panel, cur_page.name)
 
 
 

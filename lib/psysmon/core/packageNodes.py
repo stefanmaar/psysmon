@@ -428,15 +428,6 @@ class LooperCollectionChildNode(CollectionNode):
         settings[self.name] = self.pref_manager.settings
         return settings
 
-    @property
-    def parentCollection(self):
-        ''' The collection containing the node.
-        '''
-        if self.parent:
-            return self.parent.parentCollection
-        else:
-            return None
-
 
     def __getstate__(self):
         ''' Remove instances that can't be pickled.

@@ -174,15 +174,10 @@ class PrefPagePanel(wx.Panel):
     ''' A panel representing a page of the preference manager.
 
     '''
-    def __init__(self, parent = None, id = wx.ID_ANY, items = None, group_order = None):
+    def __init__(self, parent = None, id = wx.ID_ANY, page = None):
         wx.Panel.__init__(self, parent = parent, id = id)
 
-        self.items = items
-
-        if group_order:
-            self.group_order = group_order
-        else:
-            self.group_order = []
+        self.page = page
 
         self.init_ui()
 
@@ -192,56 +187,35 @@ class PrefPagePanel(wx.Panel):
 
         '''
         sizer = wx.GridBagSizer(0,0)
-        # Find all groups.
-        groups = list(set([x.group for x in self.items]))
 
-        sorted_groups = []
-        # Get all groups for which a sort order is defined.
-        for cur_group in self.group_order:
-            if cur_group in groups:
-                sorted_groups.append(cur_group)
-                groups.remove(cur_group)
-        # Sort the rest alphabetically.
-        sorted_groups.extend(sorted(groups))
-
-
-        for k, cur_group in enumerate(sorted_groups):
+        for k, cur_group in enumerate(self.page.groups):
             # Create a static box container for the group.
-            if cur_group is None:
-                container_label = ''
-            else:
-                container_label = cur_group
             cur_container = StaticBoxContainer(parent = self,
-                                label = container_label)
+                                label = cur_group.name)
 
-            # First add the preference items.
-            groupitems = [x for x in self.items if x.group == cur_group and not isinstance(x, psy_pm.ActionItem)]
-            for cur_item in groupitems:
-                if cur_item.mode in gui_elements.keys():
-                    guiclass = gui_elements[cur_item.mode]
+            for cur_item in cur_group.items:
+                if isinstance(cur_item, psy_pm.ActionItem):
+                    gui_element = wx.Button(parent = cur_container,
+                                            id = wx.ID_ANY,
+                                            label = cur_item.label)
+                    if cur_item.tool_tip is not None:
+                        gui_element.SetToolTipString(cur_item.tool_tip)
+                    gui_element.Bind(wx.EVT_BUTTON, cur_item.action)
+                    cur_item.set_gui_element(gui_element)
+                    cur_container.addActionField(gui_element)
                 else:
-                    guiclass = cur_item.gui_class
+                    if cur_item.mode in gui_elements.keys():
+                        guiclass = gui_elements[cur_item.mode]
+                    else:
+                        guiclass = cur_item.gui_class
 
-                gui_element = guiclass(name = cur_item.label,
-                                       pref_item = cur_item,
-                                       size = (100, -1),
-                                       parent = cur_container
-                                      )
-                cur_item.set_gui_element(gui_element)
-                cur_container.addField(gui_element)
-
-            # Add the action item buttons on bottom.
-            groupitems = [x for x in self.items if x.group == cur_group and isinstance(x, psy_pm.ActionItem)]
-            for cur_item in groupitems:
-                gui_element = wx.Button(parent = cur_container,
-                                        id = wx.ID_ANY,
-                                        label = cur_item.label)
-                if cur_item.tool_tip is not None:
-                    gui_element.SetToolTipString(cur_item.tool_tip)
-                gui_element.Bind(wx.EVT_BUTTON, cur_item.action)
-                cur_item.set_gui_element(gui_element)
-                cur_container.addActionField(gui_element)
-
+                    gui_element = guiclass(name = cur_item.label,
+                                           pref_item = cur_item,
+                                           size = (100, -1),
+                                           parent = cur_container
+                                          )
+                    cur_item.set_gui_element(gui_element)
+                    cur_container.addField(gui_element)
 
             if k == 0:
                 sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.TOP | wx.EXPAND, border = 10)
@@ -299,16 +273,12 @@ class PrefEditPanel(wx.Panel):
         ''' Build the notebook based on the project preferences.
 
         '''
-        pagenames = sorted(self.pref.pages.keys())
 
-        for cur_pagename in pagenames:
-            if self.pref.pages[cur_pagename]:
-                panel = PrefPagePanel(parent = self.notebook,
-                                      id = wx.ID_ANY,
-                                      items = self.pref.pages[cur_pagename],
-                                      group_order = self.pref.group_order
-                                     )
-                self.notebook.AddPage(panel, cur_pagename)
+        for cur_page in self.pref.pages:
+            panel = PrefPagePanel(parent = self.notebook,
+                                  id = wx.ID_ANY,
+                                  page = cur_page)
+            self.notebook.AddPage(panel, cur_page.name)
 
 
 

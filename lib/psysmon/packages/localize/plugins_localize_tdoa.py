@@ -65,26 +65,26 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
 
         self.icons['active'] = psysmon.artwork.icons.iconsBlack16.localize_graphical_icon_16
 
-        # Setup the order of the groups.
-        self.pref_manager.group_order = ['phase selection', 'velocity model']
         # Add the plugin preferences.
-        item = preferences_manager.IntegerSpinPrefItem(name = 'p_velocity',
-                                                       label = 'P velocity [m/s]',
-                                                       group = 'velocity model',
-                                                       value = 5000,
-                                                       limit = (1, 100000),
-                                                       tool_tip = 'The P-wave velocity in m/s.'
-                                                      )
-        self.pref_manager.add_item(item = item)
+        pref_page = self.pref_managen.add_page('Preferences')
+        ps_group = pref_page.add_group('phase selection')
+        vm_group = pref_page.add_group('velocity model')
 
 
         item = psysmon.core.preferences_manager.MultiChoicePrefItem(name = 'phases',
                                           label = 'phases',
-                                          group = 'phase selection',
                                           value = [],
                                           limit = [],
                                           tool_tip = 'Select the phases to use for the localization.')
-        self.pref_manager.add_item(item = item)
+        ps_group.add_item(item)
+
+        item = preferences_manager.IntegerSpinPrefItem(name = 'p_velocity',
+                                                       label = 'P velocity [m/s]',
+                                                       value = 5000,
+                                                       limit = (1, 100000),
+                                                       tool_tip = 'The P-wave velocity in m/s.')
+        vm_group.add_item(item)
+
 
         # The plotted circles.
         self.circles = []

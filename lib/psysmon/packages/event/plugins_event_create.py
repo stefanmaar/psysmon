@@ -69,26 +69,23 @@ class CreateEvent(InteractivePlugin):
 
 
         # Add the pages to the preferences manager.
-        self.pref_manager.add_page('tool options')
+        options_page = self.pref_manager.add_page('tool options')
+        catalog_group = options_page.add_group('catalog')
 
         # Add the plugin preferences.
         item = psy_pm.SingleChoicePrefItem(name = 'event_catalog',
                                           label = 'event catalog',
-                                          group = 'catalog',
                                           value = '',
                                           limit = [],
                                           tool_tip = 'Select an event catalog to work on.',
                                           hooks = {'on_value_change': self.on_select_catalog})
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        catalog_group.add_item(item)
 
         item = psy_pm.ActionItem(name = 'create_new_catalog',
                                  label = 'create new catalog',
-                                 group = 'catalog',
                                  mode = 'button',
                                  action = self.on_create_new_catalog)
-        self.pref_manager.add_item(pagename = 'tool options',
-                                   item = item)
+        catalog_group.add_item(item)
 
 
 

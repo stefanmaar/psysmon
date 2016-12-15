@@ -81,10 +81,13 @@ class EditGeometry(CollectionNode):
 
     def __init__(self, **args):
         CollectionNode.__init__(self, **args)
+
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
         pref_item = pref_manager.TextEditPrefItem(name = 'projection_coordinate_system', label = 'proj. coord. sys.', value = '')
-        self.pref_manager.add_item(item = pref_item)
+        gen_group.add_item(pref_item)
         pref_item = pref_manager.FileBrowsePrefItem(name = 'shape_file', label = 'shape file', value = '')
-        self.pref_manager.add_item(item = pref_item)
+        gen_group.add_item(pref_item)
 
     def edit(self):
         '''
