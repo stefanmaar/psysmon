@@ -2155,11 +2155,11 @@ class Channel(object):
         '''
         ret_stream = self.streams
 
-        valid_keys = ['serial', 'model', 'producer', 'name']
+        valid_keys = ['serial', 'model', 'producer', 'name', 'id']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
-                ret_stream = [x for x in ret_stream if getattr(x.item, cur_key) == cur_value]
+                ret_stream = [x for x in ret_stream if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
