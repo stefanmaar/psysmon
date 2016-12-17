@@ -19,8 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import psysmon
+import warnings
+
 import obspy.core.utcdatetime as utcdatetime
+
+import psysmon
 import psysmon.packages.event.detect as detect
 
 class Event(object):
@@ -290,7 +293,39 @@ class Catalog(object):
         self.events.extend(events)
 
 
-    #TODO: Add a get_event method.
+    def get_events(self, start_time = None, end_time = None, **kwargs):
+        ''' Get events using search criteria passed as keywords.
+
+        Parameters
+        ----------
+        start_time : class:`~obspy.core.utcdatetime.UTCDateTime`
+            The minimum starttime of the detections.
+
+        end_time : class:`~obspy.core.utcdatetime.UTCDateTime`
+            The maximum end_time of the detections.
+
+        scnl : tuple of Strings
+            The scnl code of the channel (e.g. ('GILA, 'HHZ', 'XX', '00')).
+        '''
+        ret_events = self.events
+
+        valid_keys = ['db_id', 'public_id', 'event_type', 'changed']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_events = [x for x in ret_events if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        if start_time is not None:
+            ret_events = [x for x in ret_events if (x.end_time is None) or (x.end_time > start_time)]
+
+        if end_time is not None:
+            ret_events = [x for x in ret_events if x.start_time < end_time]
+
+        return ret_events
+
+
 
 
     def write_to_database(self, project, only_changed_events = True):
