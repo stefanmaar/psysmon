@@ -30,6 +30,8 @@
 '''
 import operator as op
 
+import obspy.core.utcdatetime as utcdatetime
+
 import psysmon.packages.event.core as ev_core
 
 
