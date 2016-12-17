@@ -298,10 +298,10 @@ class Catalog(object):
 
         Parameters
         ----------
-        start_time : class:`~obspy.core.utcdatetime.UTCDateTime`
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
             The minimum starttime of the detections.
 
-        end_time : class:`~obspy.core.utcdatetime.UTCDateTime`
+        end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
             The maximum end_time of the detections.
 
         scnl : tuple of Strings
