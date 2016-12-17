@@ -31,6 +31,7 @@
 import operator as op
 
 import obspy.core.utcdatetime as utcdatetime
+import obspy.geodetics as geodetics
 
 import psysmon.packages.event.core as ev_core
 
@@ -106,16 +107,36 @@ class EventBinder(object):
         return search_windows
 
 
-    def compute_search_windows(self, stations):
+    def compute_search_windows(self, stations, vel = 1000.):
         ''' Compute the search windows for the given stations.
+
+        The length of the search windows is computed using a simple
+        velocity model with constant velocity.
+        The computed search window is saved in the search_windows attribute.
+
+        Paramters
+        ---------
+        stations : List of :class:`~psysmon.packages.geometry.inventory.Station`
+            The stations for wich the search windows are computed.
+
+        vel : float
+            The velocity used to compute the search window [m/s].
+            For the distance the great circle distance between a station pair 
+            is used.
+
         '''
+        vel = float(vel)
         # Compute the search windows.
         for cur_station in stations:
-            snl_list = [x.snl for x in stations]
+            cur_search_win = {}
+            for cur_dst in stations:
+                src_lonlat = cur_station.get_lon_lat()
+                dst_lonlat = cur_dst.get_lon_lat()
+                dist, az1, az2 = geodetics.gps2dist_azimuth(src_lonlat[0], src_lonlat[1],
+                                                            dst_lonlat[0], src_lonlat[1])
+                cur_search_win[cur_dst.snl] = dist / vel
 
-            # TODO: Change this constant search window with the computation
-            # using a simple constant velocity model.
-            win_list = [4. for x  in stations]
-            self.search_windows[cur_station.snl] = dict(zip(snl_list, win_list))
+            self.search_windows[cur_station.snl] = cur_search_win
+
 
 
