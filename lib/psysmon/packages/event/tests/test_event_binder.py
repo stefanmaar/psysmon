@@ -7,6 +7,7 @@ Created on May 17, 2011
 import unittest
 import logging
 import os
+import operator as op
 
 import numpy as np
 import numpy.testing as np_test
@@ -125,6 +126,31 @@ class EventBindTestCase(unittest.TestCase):
 
         # Save the event catalog to the database.
         event_catalog.write_to_database(self.project)
+
+        # Load the events from the database and check for the correctly
+        # associated detections.
+        db_catalog_orm = self.project.dbTables['event_catalog']
+        db_session = self.project.getDbSession()
+        try:
+            result = db_session.query(db_catalog_orm).filter(db_catalog_orm.name == 'event_bind_test').all()
+            loaded_catalog = ev_core.Catalog.from_db_catalog(result[0], load_events = True)
+            for cur_event_start, cur_delay in events.iteritems():
+                cur_event_start = utcdatetime.UTCDateTime(cur_event_start)
+                selected_event = loaded_catalog.get_events(start_time = cur_event_start,
+                                                           end_time = cur_event_start + 10)
+                self.assertEqual(len(selected_event), 1)
+                selected_event = selected_event[0]
+                self.assertEqual(len(selected_event.detections), 4)
+                detections = sorted(selected_event.detections, key = op.attrgetter('start_time'))
+                cur_det_starts = [cur_event_start + x for x in sorted(cur_delay)]
+                self.assertEqual(detections[0].start_time, cur_det_starts[0])
+                self.assertEqual(detections[1].start_time, cur_det_starts[1])
+                self.assertEqual(detections[2].start_time, cur_det_starts[2])
+                self.assertEqual(detections[3].start_time, cur_det_starts[3])
+
+        finally:
+            db_session.close()
+
 
 
 
