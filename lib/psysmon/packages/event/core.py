@@ -21,13 +21,14 @@
 import logging
 import psysmon
 import obspy.core.utcdatetime as utcdatetime
+import psysmon.packages.event.detect as detect
 
 class Event(object):
 
     def __init__(self, start_time, end_time, db_id = None, public_id = None, event_type = None,
             event_type_certainty = None, description = None, comment = None,
             tags = [], agency_uri = None, author_uri = None, creation_time = None,
-            parent = None, changed = True):
+            parent = None, changed = True, detections = None):
         ''' Instance initialization
 
         '''
@@ -72,6 +73,12 @@ class Event(object):
 
         # The tags of the event.
         self.tags = tags
+
+        # The detections associated with the event.
+        if detections is None:
+            self.detections = []
+        else:
+            self.detections = detections
 
         # The agency_uri of the creator.
         self.agency_uri = agency_uri
@@ -145,13 +152,29 @@ class Event(object):
                                     description = self.description,
                                     agency_uri = self.agency_uri,
                                     author_uri = self.author_uri,
-                                    creation_time = creation_time
-                                   )
+                                    creation_time = creation_time)
+
+            # Commit the event to the database to get an id.
             db_session.add(db_event)
             db_session.commit()
             self.db_id = db_event.id
-            db_session.close()
 
+            # Add the detections to the event. Do this after the event got an
+            # id.
+            if len(self.detections) > 0 :
+                # Load the detection_orms from the database.
+                detection_table = project.dbTables['detection']
+                d2e_orm_class = project.dbTables['detection_to_event']
+                query = db_session.query(detection_table).\
+                        filter(detection_table.id.in_([x.db_id for x in self.detections]))
+                for cur_detection_orm in query:
+                    d2e_orm = d2e_orm_class(ev_id = self.db_id,
+                                            det_id = cur_detection_orm.id)
+                    db_event.detections.append(d2e_orm)
+            db_session.commit()
+
+            db_session.close()
+            self.changed = False
         else:
             # If the db_id is not None, update the existing event.
             db_session = project.getDbSession()
@@ -177,8 +200,13 @@ class Event(object):
                     db_event.creation_time = self.creation_time.isoformat()
                 else:
                     db_event.creation_time = None
+
+                # TODO: Add the handling of changed detections assigned to this
+                # event.
+
                 db_session.commit()
                 db_session.close()
+                self.changed = False
             else:
                 raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
 
@@ -202,6 +230,7 @@ class Event(object):
                     agency_uri = db_event.agency_uri,
                     author_uri = db_event.author_uri,
                     creation_time = db_event.creation_time,
+                    detections = [detect.Detection.from_db_detection(x.detection) for x in db_event.detections],
                     changed = False
                     )
         return event
