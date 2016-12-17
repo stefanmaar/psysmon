@@ -31,6 +31,9 @@
 from profilehooks import profile
 
 import logging
+import warnings
+
+
 import numpy as np
 import scipy.signal
 import obspy.core.utcdatetime as utcdatetime
@@ -124,6 +127,25 @@ class Detection(object):
         ''' The length of the detection in seconds.
         '''
         return self.end_time - self.start_time
+
+    @property
+    def scnl(self):
+        ''' The SCNL code of the related channel.
+        '''
+        if self.channel is None:
+            return None
+        else:
+            return self.channel.scnl
+
+
+    @property
+    def snl(self):
+        ''' The SCNL code of the related channel.
+        '''
+        if self.channel is None:
+            return None
+        else:
+            return (self.channel.scnl[0], self.channel.scnl[2], self.channel.scnl[3])
 
 
     def set_channel_from_inventory(self, inventory):
@@ -265,6 +287,54 @@ class Catalog(object):
         self.detections.extend(detections)
 
 
+    def get_detections(self, start_time = None, end_time = None, **kwargs):
+        ''' Get detections using search criteria passed as keywords.
+
+        Parameters
+        ----------
+        start_time : class:`~obspy.core.utcdatetime.UTCDateTime`
+            The minimum starttime of the detections.
+
+        end_time : class:`~obspy.core.utcdatetime.UTCDateTime`
+            The maximum end_time of the detections.
+
+        scnl : tuple of Strings
+            The scnl code of the channel (e.g. ('GILA, 'HHZ', 'XX', '00')).
+        '''
+        ret_detections = self.detections
+
+        valid_keys = ['scnl']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_detections = [x for x in ret_detections if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        if start_time is not None:
+            ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.end_time > start_time)]
+
+        if end_time is not None:
+            ret_detections = [x for x in ret_detections if x.start_time < end_time]
+
+        return ret_detections
+
+
+    def assign_channel(self, inventory):
+        ''' Set the channels according to the rec_stream_ids.
+        '''
+        # Get the unique stream ids.
+        id_list = [x.rec_stream_id for x in self.detections]
+        id_list = list(set(id_list))
+        # Get the channels for the ids.
+        channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
+        channels = [x[0] if len(x) == 1 else None for x in channels]
+        channels = dict(zip(id_list, channels))
+
+        for cur_detection in self.detections:
+            cur_detection.channel = channels[cur_detection.rec_stream_id]
+
+
     def load_detections(self, project, start_time = None, end_time = None,
                         min_detection_length = None):
         ''' Load detections from the database.
@@ -396,6 +466,9 @@ class Catalog(object):
                 cur_detection = Detection.from_db_detection(cur_detection_orm)
                 catalog.add_detections([cur_detection,])
         return catalog
+
+
+
 
 
 class StaLtaDetector:
@@ -643,35 +716,4 @@ class StaLtaDetector:
 
         return event_start_ind, stop_value
 
-
-
-
-class EventBinder(object):
-    ''' Bind detections on various stations to an event.
-    '''
-
-    def __init__(self):
-        ''' Initialize the instance.
-        '''
-
-        # The detection as a dictionary of lists of tuples with the detection
-        # id and the start time. The key is the channel SCNL code.
-        self.detections = {}
-
-        # A list of lists of tuples containing the detection tuples bound to an
-        # event.
-        self.events = []
-
-
-    def bind(self):
-        ''' Bind the detections to events.
-        '''
-        next_detections = [(key, value[0]) for key, value in self.detections.iteritems() if len(value) > 0]
-
-        while len(next_detections > 0):
-            scnl = [x[0] for x in next_detections]
-            det_id = [x[1][0] for x in next_detections]
-            start_time = [x[1][1] for x in next_detections]
-
-    
 
