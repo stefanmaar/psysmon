@@ -118,6 +118,8 @@ def databaseFactory(base):
         author_uri = Column(String(255), nullable = True)
         creation_time = Column(String(30), nullable = True)
 
+        detections = relationship('DetectionToEventDb')
+
 
         def __init__(self, ev_catalog_id, start_time, end_time,
                      agency_uri, author_uri, creation_time,
