@@ -19,6 +19,7 @@ from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 
 from psysmon.packages.event.core import Event
+import psysmon.packages.event.detect as detect
 
 
 
@@ -137,10 +138,46 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(tmp.creation_time, event.creation_time.isoformat())
 
 
+    def test_add_detection_to_event(self):
+        ''' Test the adding of detections.
+        '''
+        # Create a detection.
+        start_time = '2000-01-01T00:00:00'
+        end_time = '2000-01-01T01:00:00'
+        creation_time = UTCDateTime()
+        det = detect.Detection(start_time = start_time,
+                                 end_time = end_time,
+                                 creation_time = creation_time)
+        # Write the detection to the database. Only detections in a database
+        # can be associated with the event in the database.
+        det.write_to_database(self.project)
 
-#def suite():
-#    suite = unittest.makeSuite(EditGeometryDlgTestCase, 'test')
-#    return suite
+        # Create an event.
+        start_time = '2000-01-01T00:00:00'
+        end_time = '2000-01-01T01:00:00'
+        creation_time = UTCDateTime()
+        event = Event(start_time = start_time,
+                      end_time = end_time,
+                      creation_time = creation_time,
+                      detections = [det, ])
+
+        # Write the event to the database.
+        event.write_to_database(self.project)
+
+        # Now reload the event and check if the detections were linked
+        # correctly with the event.
+        db_event_orm = self.project.dbTables['event']
+        try:
+            db_session = self.project.getDbSession()
+            result = db_session.query(db_event_orm).all()
+            cur_event = Event.from_db_event(result[0])
+            self.assertEqual(len(cur_event.detections), 1)
+            self.assertEqual(cur_event.detections[0].start_time, det.start_time)
+            self.assertEqual(cur_event.detections[0].end_time, det.end_time)
+        finally:
+            db_session.close()
+
+
 
 def suite():
 #    tests = ['testXmlImport']
