@@ -498,7 +498,7 @@ class PreferenceItem(object):
 
         '''
         for cur_element in self.gui_element:
-            cur_element.controlElement.SetValue(self.value)
+            cur_element.setControlElementValue()
 
 
     def update_limit(self):
