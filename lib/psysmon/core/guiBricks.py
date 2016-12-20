@@ -325,6 +325,11 @@ class StaticBoxContainer(wx.Panel):
         # Create the sizer holding the static box.        
         self.SetSizer(self.b_sizer)
 
+    def __len__(self):
+        ''' The number of fields.
+        '''
+        return len(self.fieldList) + len(self.actionFieldList)
+
 
     ## Add a field to the container.
     #
@@ -335,7 +340,7 @@ class StaticBoxContainer(wx.Panel):
         #field.options = self.options
 
         #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
-        self.sizer.Add(field, pos = (len(self.fieldList), 0), flag=wx.EXPAND)
+        self.sizer.Add(field, pos = (len(self), 0), flag=wx.EXPAND)
 
         self.fieldList.append(field)
 
@@ -367,7 +372,7 @@ class StaticBoxContainer(wx.Panel):
         #field.options = self.options
 
         #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
-        self.sizer.Add(field, pos = (len(self.fieldList), 0), flag=wx.EXPAND)
+        self.sizer.Add(field, pos = (len(self), 0), flag=wx.EXPAND)
 
         self.actionFieldList.append(field)
 
