@@ -118,6 +118,17 @@ class CreateEvent(InteractivePlugin):
         return hooks
 
 
+    def activate(self):
+        ''' Extend the plugin activate method.
+        '''
+        InteractivePlugin.activate(self)
+
+        # Load the event catalog.
+        self.on_select_catalog()
+
+
+
+
     def deactivate(self):
         ''' Deactivate the plugin.
         '''
