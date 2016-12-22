@@ -571,7 +571,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
 
         xdata = self.line.get_xdata()
         ydata = self.line.get_ydata()
-        ind_x = np.searchsorted(xdata, [event.xdata])[0]
+        ind_x = np.argmin(np.abs(xdata - event.xdata))
         snap_x = xdata[ind_x]
         snap_y = ydata[ind_x]
 
