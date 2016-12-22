@@ -934,7 +934,8 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
             if self.axes.images:
                 self.axes.images.pop()
 
-
+            # TODO: Write a custom spectrogram method to better keep track of
+            # the frequency and time bins for measurement.
             spectrogram(trace.data, 
                         samp_rate = trace.stats.sampling_rate,
                         axes = self.axes)
@@ -965,6 +966,23 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         # Adjust the scale bar.
 
 
+    def measure(self, event):
+        ''' Measure the spectrogram line.
+        '''
+        if event.inaxes is None:
+            return
+
+        if len(self.axes.images) == 0:
+            return
+
+        measurement = {}
+        measurement['label'] = 'frequency'
+        measurement['xy'] = (event.xdata, event.ydata)
+        measurement['z'] = self.axes.images[0].get_cursor_data(event)
+        measurement['units'] = 'Hz'
+        measurement['axes'] = self.axes
+
+        return measurement
 
     #def getScalePixels(self):
     #    yLim = self.axes.get_xlim()
