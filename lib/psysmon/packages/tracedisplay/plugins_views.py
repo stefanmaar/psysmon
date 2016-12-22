@@ -23,16 +23,18 @@ import wx
 import numpy as np
 import scipy
 import scipy.signal
+import matplotlib as mpl
 from matplotlib.patches import Rectangle
 import psysmon
 from psysmon.core.plugins import ViewPlugin
 from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.gui_view
-from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
+import psysmon.core.signal
 import obspy.signal
-
+from obspy.imaging.spectrogram import spectrogram
+import obspy.imaging
 
 
 class Refresh(CommandPlugin):
@@ -920,8 +922,6 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
 
 
     def plot(self, stream, color):
-
-
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray * 1/trace.stats.sampling_rate
@@ -936,18 +936,73 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
 
             # TODO: Write a custom spectrogram method to better keep track of
             # the frequency and time bins for measurement.
-            spectrogram(trace.data, 
-                        samp_rate = trace.stats.sampling_rate,
-                        axes = self.axes)
+            #spectrogram(trace.data, 
+            #            samp_rate = trace.stats.sampling_rate,
+            #            axes = self.axes)
+            self.spectrogram(data = trace.data,
+                             samp_rate = trace.stats.sampling_rate,
+                             wlen = 5,
+                             start_time = trace.stats.starttime.timestamp,
+                             overlap = 0.5)
 
 
-            extent = self.axes.images[0].get_extent()
-            newExtent = (extent[0] + trace.stats.starttime.timestamp,
-                         extent[1] + trace.stats.starttime.timestamp,
-                         extent[2],
-                         extent[3])
-            self.axes.images[0].set_extent(newExtent)
+            #extent = self.axes.images[0].get_extent()
+            #newExtent = (extent[0] + trace.stats.starttime.timestamp,
+            #             extent[1] + trace.stats.starttime.timestamp,
+            #             extent[2],
+            #             extent[3])
+            #self.axes.images[0].set_extent(newExtent)
             self.axes.set_frame_on(False)
+
+
+    def spectrogram(self, data, samp_rate, wlen, overlap = 0.9, amp_mode = 'normal',
+                    dbscale=False, clip=[0.0, 1.0], start_time = 0):
+        samp_rate = float(samp_rate)
+        wlen = float(wlen)
+        overlap = float(overlap)
+
+        nfft = int(psysmon.core.signal.nearest_pow_2(wlen * samp_rate))
+
+        specgram, freq, time = mpl.mlab.specgram(data,
+                                                 Fs = samp_rate,
+                                                 NFFT = nfft,
+                                                 noverlap = nfft * overlap)
+
+        # Save the frequency and time array in the instance.
+        self.freq = freq
+        self.time = start_time + time
+
+        # calculate half bin width
+        halfbin_time = (time[1] - time[0]) / 2.0
+        halfbin_freq = (freq[1] - freq[0]) / 2.0
+
+        # Apply the amplitude mode and remove the frequency 0 bin.
+        if amp_mode == 'normal':
+            specgram = np.sqrt(specgram[1:, :])
+        elif amp_mode == 'log':
+            specgram = 10 * np.log10(specgram[1:, :])
+        elif amp_mode == 'square':
+            specgram = specgram
+        else:
+            raise ValueError("Value for amp_mode not allowed.")
+        self.freq = self.freq[1:]
+
+        # Center the time and frequency bins.
+        #self.time = self.time - halfbin_time
+        #self.freq = self.freq - halfbin_freq
+
+        # Compute the image extent.
+        extent = (self.time[0] - halfbin_time, self.time[-1] + halfbin_time,
+                  self.freq[0] - halfbin_freq, self.freq[-1] + halfbin_freq)
+
+        # Show the spectrogram as an image.
+        #cmap = obspy.imaging.cm.obspy_sequential
+        self.axes.imshow(specgram,
+                         interpolation = 'nearest',
+                         origin = 'lower',
+                         extent = extent)
+
+        self.axes.axis('tight')
 
 
 
@@ -975,10 +1030,17 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         if len(self.axes.images) == 0:
             return
 
+        ind_x = np.argmin(np.abs(self.time - event.xdata))
+        ind_y = np.argmin(np.abs(self.freq - event.ydata))
+        snap_x = self.time[ind_x]
+        snap_y = self.freq[ind_y]
+
+        specgram = self.axes.images[0].get_array()
+
         measurement = {}
         measurement['label'] = 'frequency'
-        measurement['xy'] = (event.xdata, event.ydata)
-        measurement['z'] = self.axes.images[0].get_cursor_data(event)
+        measurement['xy'] = (snap_x, snap_y)
+        measurement['z'] = specgram[ind_y,ind_x]
         measurement['units'] = 'Hz'
         measurement['axes'] = self.axes
 
