@@ -934,24 +934,13 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
             if self.axes.images:
                 self.axes.images.pop()
 
-            # TODO: Write a custom spectrogram method to better keep track of
-            # the frequency and time bins for measurement.
-            #spectrogram(trace.data, 
-            #            samp_rate = trace.stats.sampling_rate,
-            #            axes = self.axes)
+            # TODO: Add the spectrogram options to the view preferences.
             self.spectrogram(data = trace.data,
                              samp_rate = trace.stats.sampling_rate,
-                             wlen = 5,
+                             wlen = 2,
                              start_time = trace.stats.starttime.timestamp,
-                             overlap = 0.5)
+                             overlap = 0.8)
 
-
-            #extent = self.axes.images[0].get_extent()
-            #newExtent = (extent[0] + trace.stats.starttime.timestamp,
-            #             extent[1] + trace.stats.starttime.timestamp,
-            #             extent[2],
-            #             extent[3])
-            #self.axes.images[0].set_extent(newExtent)
             self.axes.set_frame_on(False)
 
 
@@ -966,7 +955,7 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         specgram, freq, time = mpl.mlab.specgram(data,
                                                  Fs = samp_rate,
                                                  NFFT = nfft,
-                                                 noverlap = nfft * overlap)
+                                                 noverlap = int(nfft *  overlap))
 
         # Save the frequency and time array in the instance.
         self.freq = freq
@@ -982,14 +971,10 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         elif amp_mode == 'log':
             specgram = 10 * np.log10(specgram[1:, :])
         elif amp_mode == 'square':
-            specgram = specgram
+            specgram = specgram[1:, :]
         else:
             raise ValueError("Value for amp_mode not allowed.")
         self.freq = self.freq[1:]
-
-        # Center the time and frequency bins.
-        #self.time = self.time - halfbin_time
-        #self.freq = self.freq - halfbin_freq
 
         # Compute the image extent.
         extent = (self.time[0] - halfbin_time, self.time[-1] + halfbin_time,
@@ -1000,9 +985,8 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         self.axes.imshow(specgram,
                          interpolation = 'nearest',
                          origin = 'lower',
-                         extent = extent)
-
-        self.axes.axis('tight')
+                         extent = extent,
+                         aspect = 'auto')
 
 
 
@@ -1040,7 +1024,7 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         measurement = {}
         measurement['label'] = 'frequency'
         measurement['xy'] = (snap_x, snap_y)
-        measurement['z'] = specgram[ind_y,ind_x]
+        #measurement['z'] = specgram[ind_y,ind_x]
         measurement['units'] = 'Hz'
         measurement['axes'] = self.axes
 
