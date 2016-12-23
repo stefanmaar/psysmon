@@ -869,9 +869,9 @@ class SpectrogramPlotter(ViewPlugin):
         item = preferences_manager.FloatSpinPrefItem(name = 'overlap',
                                                      label = 'overlap',
                                                      value = 0.5,
-                                                     limit = (0, 0.99),
-                                                     digits = 1,
-                                                     increment = 0.5,
+                                                     limit = (0, 0.95),
+                                                     digits = 2,
+                                                     increment = 0.1,
                                                      tool_tip = 'The overlap of the specgram time windows in a range of 0 (no overlap) to 0.99 (almost full overlap).')
         specgram_group.add_item(item)
 
@@ -950,11 +950,11 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
         psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
-        # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        # Create the logging logger instance with the correct name.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.t0 = None
 
 
     def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal'):
@@ -970,7 +970,6 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
             if self.axes.images:
                 self.axes.images.pop()
 
-            # TODO: Add the spectrogram options to the view preferences.
             self.spectrogram(data = trace.data,
                              samp_rate = trace.stats.sampling_rate,
                              start_time = trace.stats.starttime.timestamp,
@@ -1056,7 +1055,7 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         snap_x = self.time[ind_x]
         snap_y = self.freq[ind_y]
 
-        specgram = self.axes.images[0].get_array()
+        #specgram = self.axes.images[0].get_array()
 
         measurement = {}
         measurement['label'] = 'frequency'
@@ -1066,12 +1065,6 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         measurement['axes'] = self.axes
 
         return measurement
-
-    #def getScalePixels(self):
-    #    yLim = self.axes.get_xlim()
-    #    timeRange = yLim[1] - yLim[0]
-    #    width = self.axes.get_window_extent().width
-    #    return  width / float(timeRange)
 
 
 
