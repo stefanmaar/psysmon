@@ -854,6 +854,7 @@ class SpectrogramPlotter(ViewPlugin):
         # Add the plugin preferences.
         pref_page = self.pref_manager.add_page('Preferences')
         specgram_group = pref_page.add_group('specgram')
+        display_group = pref_page.add_group('display')
 
         # The specgram window length.
         item = preferences_manager.FloatSpinPrefItem(name = 'win_length',
@@ -883,6 +884,13 @@ class SpectrogramPlotter(ViewPlugin):
                                                         tool_tip = 'The mode of the amplitude scaling.')
         specgram_group.add_item(item)
 
+        # The colormap.
+        item = preferences_manager.SingleChoicePrefItem(name = 'cmap',
+                                                        label = 'colormap',
+                                                        limit = ('viridis', 'inferno', 'plasma', 'magma', 'gray'),
+                                                        value = 'viridis',
+                                                        tool_tip = 'The colormap used to color the spectrogram.')
+        display_group.add_item(item)
 
     def plot(self, displayManager, dataManager):
         ''' Plot all available stations.
@@ -923,7 +931,8 @@ class SpectrogramPlotter(ViewPlugin):
                     curView.plot(curStream,
                                  win_length = self.pref_manager.get_value('win_length'),
                                  overlap = self.pref_manager.get_value('overlap'),
-                                 amp_mode = self.pref_manager.get_value('amplitude_mode'))
+                                 amp_mode = self.pref_manager.get_value('amplitude_mode'),
+                                 cmap = self.pref_manager.get_value('cmap'))
 
                 curView.setXLimits(left = displayManager.startTime.timestamp,
                                    right = displayManager.endTime.timestamp)
@@ -957,7 +966,7 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
 
 
 
-    def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal'):
+    def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal', cmap = 'viridis'):
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray * 1/trace.stats.sampling_rate
@@ -975,13 +984,14 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
                              start_time = trace.stats.starttime.timestamp,
                              wlen = win_length,
                              overlap = overlap,
-                             amp_mode = amp_mode)
+                             amp_mode = amp_mode,
+                             cmap = cmap)
 
             self.axes.set_frame_on(False)
 
 
     def spectrogram(self, data, samp_rate, wlen, overlap = 0.9, amp_mode = 'normal',
-                    clip=[0.0, 1.0], start_time = 0):
+                    clip=[0.0, 1.0], start_time = 0, cmap = 'viridis'):
         samp_rate = float(samp_rate)
         wlen = float(wlen)
         overlap = float(overlap)
@@ -1022,7 +1032,8 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
                          interpolation = 'nearest',
                          origin = 'lower',
                          extent = extent,
-                         aspect = 'auto')
+                         aspect = 'auto',
+                         cmap = cmap)
 
 
 
