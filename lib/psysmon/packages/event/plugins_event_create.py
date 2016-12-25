@@ -62,7 +62,11 @@ class CreateEvent(InteractivePlugin):
         # The name of the selected catalog.
         self.selected_catalog_name = None
 
+        # The plot colors used by the plugin.
+        self.colors = {}
+        self.colors['event_vspan'] = '0.9'
 
+        # Animation stuff.
         self.bg = {}
         self.startTime = None
         self.endTime = None
@@ -112,6 +116,8 @@ class CreateEvent(InteractivePlugin):
     def getHooks(self):
         hooks = {}
 
+        hooks['after_plot'] = self.on_after_plot
+        hooks['after_plot_station'] = self.on_after_plot_station
         hooks['button_press_event'] = self.on_button_press
         hooks['button_release_event'] = self.on_button_release
 
@@ -127,13 +133,26 @@ class CreateEvent(InteractivePlugin):
         self.on_select_catalog()
 
 
-
-
     def deactivate(self):
         ''' Deactivate the plugin.
         '''
         self.cleanup()
         self.active = False
+
+
+    def on_after_plot(self):
+        ''' The hook called after the plotting in tracedisplay.
+        '''
+        # Load the picks.
+        self.load_events()
+
+        self.add_event_marker_to_station(station = self.parent.displayManager.showStations)
+
+
+    def on_after_plot_station(self, station):
+        ''' The hook called after the plotting of a station in tracedisplay.
+        '''
+        self.add_event_marker_to_station(station = station)
 
 
     def on_select_catalog(self):
@@ -163,6 +182,34 @@ class CreateEvent(InteractivePlugin):
         cur_catalog.load_events(project = self.parent.project,
                                 start_time = self.parent.displayManager.startTime,
                                 end_time = self.parent.displayManager.endTime)
+
+
+    def add_event_marker_to_station(self, station = None):
+        ''' Add the event markers to station plots.
+        '''
+        if station:
+            for cur_station in station:
+                self.add_event_marker_to_channel(cur_station.channels)
+
+
+    def add_event_marker_to_channel(self, channel = None):
+        ''' Add the event markers to channel plots.
+        '''
+        for cur_channel in channel:
+            scnl = cur_channel.getSCNL()
+            channel_nodes = self.parent.viewport.get_node(station = scnl[0],
+                                                          channel = scnl[1],
+                                                          network = scnl[2],
+                                                          location = scnl[3],
+                                                          node_type = 'container')
+            for cur_node in channel_nodes:
+                for cur_event in self.library.catalogs[self.selected_catalog_name].events:
+                    cur_node.plot_annotation_vspan(x_start = cur_event.start_time,
+                                                   x_end = cur_event.end_time,
+                                                   label = cur_event.db_id,
+                                                   parent_rid = self.rid,
+                                                   key = cur_event.db_id,
+                                                   color = self.colors['event_vspan'])
 
 
     def on_create_new_catalog(self, event):
