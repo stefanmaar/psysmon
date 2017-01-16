@@ -33,6 +33,9 @@ import matplotlib as mpl
 mpl.rcParams['backend'] = 'WXAgg'
 
 import sys
+import logging
+
+import psysmon
 from psysmon.core.test_util import remove_project
 
 def run():
@@ -47,6 +50,10 @@ def run():
         user_pwd = sys.argv[3]
     else:
         user_pwd = ''
+
+    logger = logging.getLogger('psysmon')
+    logger.setLevel(psysmon.logConfig['level'])
+    logger.addHandler(psysmon.getLoggerHandler())
 
     remove_project(project_file, user_name, user_pwd)
 

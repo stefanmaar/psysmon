@@ -31,6 +31,9 @@ This includes the file structure and the database tables.
 '''
 
 import sys
+import logging
+
+import psysmon
 from psysmon.core.test_util import create_psybase
 from psysmon.core.test_util import clear_project_database_tables
 
@@ -46,6 +49,10 @@ def run():
         user_pwd = sys.argv[3]
     else:
         user_pwd = ''
+
+    logger = logging.getLogger('psysmon')
+    logger.setLevel(psysmon.logConfig['level'])
+    logger.addHandler(psysmon.getLoggerHandler())
 
     psybase = create_psybase()
     userdata = {}
