@@ -435,7 +435,7 @@ class PsysmonDbWaveClient(WaveClient):
 
         if cur_channel:
             if len(cur_channel) > 1:
-                raise RuntimeError('More than 1 channel returned for SCNL: %s:%s:%s:%s. Checkk the geometry inventory for duplicate entries.' % (station, channel, network, location))
+                raise RuntimeError('More than 1 channel returned for SCNL: %s:%s:%s:%s. Check the geometry inventory for duplicate entries.' % (station, channel, network, location))
 
             cur_channel = cur_channel[0]
 
@@ -461,6 +461,10 @@ class PsysmonDbWaveClient(WaveClient):
             # time-span.
             assigned_streams = cur_channel.get_stream(start_time = start_time,
                                                       end_time = end_time)
+
+            if len(assigned_streams) == 0:
+                self.logger.warning("No assigned streams found for SCNL %s.", cur_channel.scnl_string)
+
             for cur_timebox in assigned_streams:
                 cur_rec_stream = cur_timebox.item
 
@@ -479,6 +483,13 @@ class PsysmonDbWaveClient(WaveClient):
                                            endtime = end_time,
                                            dtype = 'float64')
 
+                    # If multiple channels are combined in one file, the
+                    # read data stream might contain these channels. Select
+                    # only traces fitting the recorder serial and recorder
+                    # stream.
+                    rec_loc, rec_channel = cur_rec_stream.name.split(':')
+                    cur_data_stream = cur_data_stream.select(station = cur_rec_stream.serial, location = rec_loc, channel = rec_channel)
+
                     if not cur_data_stream:
                         continue
 
@@ -493,6 +504,8 @@ class PsysmonDbWaveClient(WaveClient):
                     data_stream += cur_data_stream
 
             dbSession.close()
+        else:
+            self.logger.warning("No channel found for SCNL %s:%s:%s:%s.", station, channel, network, location)
 
         return data_stream
 
