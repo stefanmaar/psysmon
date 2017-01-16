@@ -145,7 +145,8 @@ class CreateEvent(InteractivePlugin):
         self.library.load_catalog_from_db(project = self.parent.project,
                                           name = self.selected_catalog_name)
 
-        # Load the picks.
+        # TODO: Display all existing events.
+        # Load the events.
         self.load_events()
 
         # Clear existing pick lines.
@@ -319,6 +320,8 @@ class CreateEvent(InteractivePlugin):
                                  creation_time = UTCDateTime().isoformat())
         cur_catalog.add_events([event, ])
         event.write_to_database(self.parent.project)
+
+        # TODO: Show the new event in the views.
 
 
 
