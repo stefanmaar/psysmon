@@ -28,7 +28,7 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
-from profilehooks import profile
+#from profilehooks import profile
 
 import logging
 import warnings

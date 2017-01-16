@@ -30,7 +30,7 @@ The importWaveform module.
 This module contains the classes of the importWaveform dialog window.
 '''
 
-from profilehooks import profile
+#from profilehooks import profile
 
 import os
 import copy
