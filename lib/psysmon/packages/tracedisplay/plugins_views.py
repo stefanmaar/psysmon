@@ -23,16 +23,18 @@ import wx
 import numpy as np
 import scipy
 import scipy.signal
+import matplotlib as mpl
 from matplotlib.patches import Rectangle
 import psysmon
 from psysmon.core.plugins import ViewPlugin
 from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.gui_view
-from obspy.imaging.spectrogram import spectrogram
 import psysmon.core.preferences_manager as preferences_manager
+import psysmon.core.signal
 import obspy.signal
-
+from obspy.imaging.spectrogram import spectrogram
+import obspy.imaging
 
 
 class Refresh(CommandPlugin):
@@ -569,7 +571,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
 
         xdata = self.line.get_xdata()
         ydata = self.line.get_ydata()
-        ind_x = np.searchsorted(xdata, [event.xdata])[0]
+        ind_x = np.argmin(np.abs(xdata - event.xdata))
         snap_x = xdata[ind_x]
         snap_y = ydata[ind_x]
 
@@ -842,12 +844,53 @@ class SpectrogramPlotter(ViewPlugin):
                             )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         # Define the plugin icons.
         self.icons['active'] = icons._3x3_grid_2_icon_16
 
+        # Add the plugin preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        specgram_group = pref_page.add_group('specgram')
+        display_group = pref_page.add_group('display')
+
+        # The specgram window length.
+        item = preferences_manager.FloatSpinPrefItem(name = 'win_length',
+                                                     label = 'window length [s]',
+                                                     value = 1,
+                                                     limit = (0, None),
+                                                     digits = 1,
+                                                     increment = 1,
+                                                     tool_tip = 'The window length of the spectrogram in seconds. The window length is extended to the next power of two samples fitting best the specified window length.')
+        specgram_group.add_item(item)
+
+        # The window overlap
+        item = preferences_manager.FloatSpinPrefItem(name = 'overlap',
+                                                     label = 'overlap',
+                                                     value = 0.5,
+                                                     limit = (0, 0.95),
+                                                     digits = 2,
+                                                     increment = 0.1,
+                                                     tool_tip = 'The overlap of the specgram time windows in a range of 0 (no overlap) to 0.99 (almost full overlap).')
+        specgram_group.add_item(item)
+
+        # The amplitude mode.
+        item = preferences_manager.SingleChoicePrefItem(name = 'amplitude_mode',
+                                                        label = 'amplitude mode',
+                                                        limit = ('normal', 'dB', 'square'),
+                                                        value = 'dB',
+                                                        tool_tip = 'The mode of the amplitude scaling.')
+        specgram_group.add_item(item)
+
+        # The colormap.
+        item = preferences_manager.SingleChoicePrefItem(name = 'cmap',
+                                                        label = 'colormap',
+                                                        limit = ('viridis', 'inferno', 'plasma', 'magma', 'gray'),
+                                                        value = 'viridis',
+                                                        tool_tip = 'The colormap used to color the spectrogram.')
+        display_group.add_item(item)
 
     def plot(self, displayManager, dataManager):
         ''' Plot all available stations.
@@ -885,7 +928,11 @@ class SpectrogramPlotter(ViewPlugin):
             for curView in views:
                 if curStream:
                     #lineColor = [x/255.0 for x in curChannel.container.color]
-                    curView.plot(curStream, [0.3, 0, 0])
+                    curView.plot(curStream,
+                                 win_length = self.pref_manager.get_value('win_length'),
+                                 overlap = self.pref_manager.get_value('overlap'),
+                                 amp_mode = self.pref_manager.get_value('amplitude_mode'),
+                                 cmap = self.pref_manager.get_value('cmap'))
 
                 curView.setXLimits(left = displayManager.startTime.timestamp,
                                    right = displayManager.endTime.timestamp)
@@ -912,16 +959,14 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
         psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
-        # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        # Create the logging logger instance with the correct name.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.t0 = None
 
 
-    def plot(self, stream, color):
-
-
+    def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal', cmap = 'viridis'):
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray * 1/trace.stats.sampling_rate
@@ -934,19 +979,61 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
             if self.axes.images:
                 self.axes.images.pop()
 
+            self.spectrogram(data = trace.data,
+                             samp_rate = trace.stats.sampling_rate,
+                             start_time = trace.stats.starttime.timestamp,
+                             wlen = win_length,
+                             overlap = overlap,
+                             amp_mode = amp_mode,
+                             cmap = cmap)
 
-            spectrogram(trace.data, 
-                        samp_rate = trace.stats.sampling_rate,
-                        axes = self.axes)
-
-
-            extent = self.axes.images[0].get_extent()
-            newExtent = (extent[0] + trace.stats.starttime.timestamp,
-                         extent[1] + trace.stats.starttime.timestamp,
-                         extent[2],
-                         extent[3])
-            self.axes.images[0].set_extent(newExtent)
             self.axes.set_frame_on(False)
+
+
+    def spectrogram(self, data, samp_rate, wlen, overlap = 0.9, amp_mode = 'normal',
+                    clip=[0.0, 1.0], start_time = 0, cmap = 'viridis'):
+        samp_rate = float(samp_rate)
+        wlen = float(wlen)
+        overlap = float(overlap)
+
+        nfft = int(psysmon.core.signal.nearest_pow_2(wlen * samp_rate))
+
+        specgram, freq, time = mpl.mlab.specgram(data,
+                                                 Fs = samp_rate,
+                                                 NFFT = nfft,
+                                                 noverlap = int(nfft *  overlap))
+
+        # Save the frequency and time array in the instance.
+        self.freq = freq
+        self.time = start_time + time
+
+        # calculate half bin width
+        halfbin_time = (time[1] - time[0]) / 2.0
+        halfbin_freq = (freq[1] - freq[0]) / 2.0
+
+        # Apply the amplitude mode and remove the frequency 0 bin.
+        if amp_mode == 'normal':
+            specgram = np.sqrt(specgram[1:, :])
+        elif amp_mode == 'dB':
+            specgram = 10 * np.log10(specgram[1:, :])
+        elif amp_mode == 'square':
+            specgram = specgram[1:, :]
+        else:
+            raise ValueError("Value %s for amp_mode not allowed." % amp_mode)
+        self.freq = self.freq[1:]
+
+        # Compute the image extent.
+        extent = (self.time[0] - halfbin_time, self.time[-1] + halfbin_time,
+                  self.freq[0] - halfbin_freq, self.freq[-1] + halfbin_freq)
+
+        # Show the spectrogram as an image.
+        #cmap = obspy.imaging.cm.obspy_sequential
+        self.axes.imshow(specgram,
+                         interpolation = 'nearest',
+                         origin = 'lower',
+                         extent = extent,
+                         aspect = 'auto',
+                         cmap = cmap)
 
 
 
@@ -965,12 +1052,30 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         # Adjust the scale bar.
 
 
+    def measure(self, event):
+        ''' Measure the spectrogram line.
+        '''
+        if event.inaxes is None:
+            return
 
-    #def getScalePixels(self):
-    #    yLim = self.axes.get_xlim()
-    #    timeRange = yLim[1] - yLim[0]
-    #    width = self.axes.get_window_extent().width
-    #    return  width / float(timeRange)
+        if len(self.axes.images) == 0:
+            return
+
+        ind_x = np.argmin(np.abs(self.time - event.xdata))
+        ind_y = np.argmin(np.abs(self.freq - event.ydata))
+        snap_x = self.time[ind_x]
+        snap_y = self.freq[ind_y]
+
+        #specgram = self.axes.images[0].get_array()
+
+        measurement = {}
+        measurement['label'] = 'frequency'
+        measurement['xy'] = (snap_x, snap_y)
+        #measurement['z'] = specgram[ind_y,ind_x]
+        measurement['units'] = 'Hz'
+        measurement['axes'] = self.axes
+
+        return measurement
 
 
 
