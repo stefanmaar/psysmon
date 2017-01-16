@@ -184,10 +184,14 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         #self.lines = {'linearity': None, 'planarity': None}
         self.lines = {}
 
-        for cur_ax in self.axes:
+        ax_labels = ['in', 'az', 'el', 'ps']
+
+        for k, cur_ax in enumerate(self.axes):
             cur_ax.set_frame_on(True)
             cur_ax.get_xaxis().set_visible(False)
             cur_ax.get_yaxis().set_visible(False)
+            cur_ax.text(x = 0.01, y = 0.97, s = ax_labels[k],
+                        va = 'top', transform = cur_ax.transAxes)
 
 
 
