@@ -624,6 +624,9 @@ class Project(object):
         else:
             engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
+        # Set the character encoding of the database queries.
+        engineString = engineString + "?charset=latin1"
+
         self.dbEngine = create_engine(engineString)
         self.dbEngine.echo = False
         self.dbMetaData = MetaData(self.dbEngine)
