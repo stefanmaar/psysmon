@@ -181,7 +181,10 @@ class GridDataTable(wx.grid.PyGridTableBase):
         elif len(self.data) < row:
             return ''
         else:
-            return str(self.data[row][col])
+            if isinstance(self.data[row][col], (str, unicode)):
+                return self.data[row][col]
+            else:
+                return str(self.data[row][col])
 
     def SetValue(self, row, col, value):
         """Set the value of a cell"""
