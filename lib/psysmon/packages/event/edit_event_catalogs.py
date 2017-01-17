@@ -363,7 +363,14 @@ class EditDlg(wx.Dialog):
                                             style=curStyle)
 
             if curKey in self.data.keys():
-                self.edit[curKey].SetValue(str(self.data[curKey]))
+                if not isinstance(self.data[curKey], (str, unicode)):
+                    value_string = unicode(self.data[curKey], encoding = 'latin1')
+                elif isinstance(self.data[curKey], str):
+                    value_string = self.data[curKey].decode('latin1')
+                else:
+                    value_string = self.data[curKey]
+
+                self.edit[curKey].SetValue(value_string)
 
             fgSizer.Add(self.label[curKey], 0, wx.ALIGN_RIGHT)
             fgSizer.Add(self.edit[curKey], 0, wx.EXPAND)
