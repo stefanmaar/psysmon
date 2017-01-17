@@ -365,9 +365,9 @@ class EditDlg(wx.Dialog):
 
             if curKey in self.data.keys():
                 if not isinstance(self.data[curKey], (str, unicode)):
-                    value_string = unicode(self.data[curKey], encoding = 'latin1')
+                    value_string = unicode(self.data[curKey], encoding = 'utf8')
                 elif isinstance(self.data[curKey], str):
-                    value_string = self.data[curKey].decode('latin1')
+                    value_string = self.data[curKey].decode('utf8')
                 else:
                     value_string = self.data[curKey]
 
