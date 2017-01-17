@@ -625,7 +625,7 @@ class Project(object):
             engineString = dialectString + "://" + self.activeUser.name + "@" + self.dbHost + "/" + self.dbName
 
         # Set the character encoding of the database queries.
-        engineString = engineString + "?charset=latin1"
+        engineString = engineString + "?charset=utf8"
 
         self.dbEngine = create_engine(engineString)
         self.dbEngine.echo = False
@@ -1473,7 +1473,7 @@ class User:
             #tmpDir = tempfile.gettempdir()
             filename = os.path.join(project.tmpDir, col2Proc.procName + '.ced')  # ced for Collection Execution Data
 
-            db = shelve.open(filename, flag='n')
+            db = shelve.open(filename.encode('utf-8'), flag='n')
             db['project'] = project
             db['collection'] = col2Proc
             db['package_directories'] = project.psybase.packageMgr.packageDirectories

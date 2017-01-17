@@ -54,8 +54,11 @@ if __name__ == "__main__":
     filename = sys.argv[1]
     proc_name = sys.argv[2]
 
+    filename = filename.decode('utf8')
+    proc_name = proc_name.decode('utf8')
+
     # Get the execution parameters from the ced file.
-    db = shelve.open(filename)
+    db = shelve.open(filename.encode('utf8'))
     package_directories = db['package_directories']
     sys.path.extend(package_directories)
     project = db['project']

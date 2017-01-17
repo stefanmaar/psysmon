@@ -828,7 +828,7 @@ class Collection(object):
         # Create the collection's data file.
         #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
         content = {}
-        db = shelve.open(self.dataShelf)
+        db = shelve.open(self.dataShelf.encode('utf8'))
         db['nodeDataContent'] = content
         db.close()
 
