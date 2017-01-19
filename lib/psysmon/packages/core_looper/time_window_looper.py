@@ -335,6 +335,15 @@ class SlidingWindowProcessor(object):
             #result_bag.save(output_dir = cur_output_dir, scnl = scnl)
             pass
 
+        # Call the cleanup method for all nodes.
+        for cur_node in looper_nodes:
+            cur_node.cleanup(origin_resource = resource_id)
+
+            # Get the remaining results of the node and save them.
+            if cur_node.result_bag:
+                for cur_result in cur_node.result_bag.results:
+                    cur_result.save(output_dir = self.output_dir)
+
 
     def request_stream(self, start_time, end_time, scnl):
         ''' Request a data stream from the waveclient.
