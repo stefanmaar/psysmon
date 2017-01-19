@@ -506,6 +506,53 @@ class Grid2dResult(Result):
 
 
 
+class ShelveResult(Result):
+    ''' A shelve dictionary result.
+    '''
+    def __init__(self, db, **kwargs):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        db : Dictionary
+            The pickle-able instances.
+        '''
+        Result.__init__(self, **kwargs)
+
+        if not isinstance(db, dict):
+            raise ValueError("db has to be a dictionary.")
+        self.db = db
+
+
+    def save(self, output_dir):
+        ''' Save the result as a shelve file.
+        '''
+        import shelve
+
+        if not output_dir:
+            output_dir = ''
+
+        filename = self.rid.replace('/', '-')
+        if filename.startswith('-'):
+            filename = filename[1:]
+        if filename.endswith('-'):
+            filename = filename[:-1]
+
+        filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.db'
+
+        output_dir = os.path.join(output_dir, self.name)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        filename = os.path.join(output_dir, filename)
+
+        db = shelve.open(filename)
+        db.update(self.db)
+        db.close()
+
+
+
+
+
 
 
 
