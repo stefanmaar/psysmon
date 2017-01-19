@@ -471,3 +471,13 @@ class LooperCollectionChildNode(CollectionNode):
             The resource ID of the looper executing the node.
         '''
         assert False, 'execute must be defined'
+
+
+
+    def cleanup(self, origin_resource = None):
+        ''' Cleanup the node after the last cycle of the parent looper.
+
+        origin_resource : String
+            The resource ID of the looper executing the node.
+        '''
+        pass
