@@ -42,7 +42,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     name = 'compute PPSD'
     mode = 'looper child'
     category = 'Frequency analysis'
-    tags = ['development', 'probability power spectral density']
+    tags = ['stable', 'probability power spectral density']
 
     def __init__(self, **args):
         psysmon.core.packageNodes.LooperCollectionChildNode.__init__(self, **args)
