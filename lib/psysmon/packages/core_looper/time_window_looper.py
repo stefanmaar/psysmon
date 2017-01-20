@@ -183,14 +183,6 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         output_group.add_item(item)
 
 
-        item = psy_pm.SingleChoicePrefItem(name = 'output_interval',
-                                          label = 'output interval',
-                                          limit = ('daily', 'weekly', 'monthly'),
-                                          value = 'monthly',
-                                          tool_tip = 'The interval for which to save the results.')
-        output_group.add_item(item)
-
-
 
 class SlidingWindowProcessor(object):
 
@@ -300,8 +292,12 @@ class SlidingWindowProcessor(object):
                                      origin_resource = resource_id)
                     # Get the results of the node.
                     if cur_node.result_bag:
-                        for cur_result in cur_node.result_bag.results:
-                            cur_result.save(output_dir = self.output_dir)
+                        if len(cur_node.result_bag.results) > 0:
+                            for cur_result in cur_node.result_bag.results:
+                                cur_result.base_output_dir = self.output_dir
+                                cur_result.save()
+
+                            cur_node.result_bag.clear()
 
 
                 # Handle the results.
@@ -342,7 +338,10 @@ class SlidingWindowProcessor(object):
             # Get the remaining results of the node and save them.
             if cur_node.result_bag:
                 for cur_result in cur_node.result_bag.results:
-                    cur_result.save(output_dir = self.output_dir)
+                    cur_result.base_output_dir = self.output_dir
+                    cur_result.save()
+
+            cur_node.result_bag.clear()
 
 
     def request_stream(self, start_time, end_time, scnl):
