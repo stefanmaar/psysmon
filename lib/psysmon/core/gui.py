@@ -30,7 +30,7 @@ The pSysmon GUI module.
 This module contains the graphical user interface (GUI) of the pSysmon 
 main program.
 '''
-
+from __future__ import absolute_import      # Used for the signal import.
 
 import logging
 import warnings
