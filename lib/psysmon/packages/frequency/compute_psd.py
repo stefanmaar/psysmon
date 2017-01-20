@@ -28,6 +28,7 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+import os
 
 import psysmon.core.packageNodes
 import psysmon.core.result as result
@@ -153,8 +154,8 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 cur_psd = {}
                 cur_psd['frequ'] = frequ
                 cur_psd['P'] = P
-                #cur_psd['window_length'] = window_length
-                #cur_psd['window_overlap'] = window_overlap
+                cur_psd['window_length'] = self.parent.pref_manager.get_value('window_length')
+                cur_psd['window_overlap'] = self.parent.pref_manager.get_value('window_overlap')
                 cur_psd['psd_nfft'] = psd_nfft
                 cur_psd['psd_overlap'] = psd_overlap
                 cur_psd['scnl'] = cur_scnl
@@ -166,8 +167,8 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 cur_psd = {}
                 cur_psd['frequ'] = None
                 cur_psd['P'] = None
-                #cur_psd['window_length'] = window_length
-                #cur_psd['window_overlap'] = window_overlap
+                cur_psd['window_length'] = self.parent.pref_manager.get_value('window_length')
+                cur_psd['window_overlap'] = self.parent.pref_manager.get_value('window_overlap')
                 cur_psd['psd_nfft'] = psd_nfft
                 cur_psd['psd_overlap'] = psd_overlap
                 cur_psd['scnl'] = cur_scnl
@@ -189,6 +190,9 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         scnl = psd['scnl']
         start_time = psd['start_time']
 
+        # TODO: Make the save interval user selectable.
+        save_interval = 3600.
+
         if scnl not in self.psd_data.keys():
             self.psd_data[scnl] = {}
 
@@ -196,18 +200,14 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             self.save_day[scnl] = None
 
         if self.save_day[scnl] is None:
-            self.save_day[scnl] = UTCDateTime(year = start_time.year,
-                                              month = start_time.month,
-                                              day = start_time.day)
+            self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % save_interval)
+
         last_save_day = self.save_day[scnl]
 
-        # If the current window starts on a new day, save the old
-        # window_psd to a daily file.
-        if start_time - last_save_day > 86400:
+        # Create a result if the current start time extends the save interval.
+        if start_time - last_save_day >= save_interval:
             self.create_result(scnl, origin_resource = origin_resource)
-            self.save_day[scnl] = UTCDateTime(year = start_time.year,
-                                              month = start_time.month,
-                                              day = start_time.day)
+            self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % save_interval)
 
         self.psd_data[scnl][start_time.isoformat()] = psd
 
@@ -219,14 +219,17 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         export_data = self.psd_data[scnl]
 
         first_time = UTCDateTime(sorted(export_data.keys())[0])
-        last_key = sorted(export_data.keys())[-1]
-        last_time = export_data[last_key]['end_time']
+        last_time = UTCDateTime(sorted(export_data.keys())[-1])
+        #last_key = sorted(export_data.keys())[-1]
+        #last_time = export_data[last_key]['end_time']
 
         shelve_result = result.ShelveResult(name = 'psd',
                                             start_time = first_time,
                                             end_time = last_time,
                                             origin_name = self.name,
                                             origin_resource = origin_resource,
+                                            sub_directory = (scnl[0], scnl[1]),
+                                            postfix = '_'.join(scnl),
                                             db = export_data)
         self.result_bag.add(shelve_result)
         self.logger.info("Published the result for scnl %s (%s to %s).", scnl,
