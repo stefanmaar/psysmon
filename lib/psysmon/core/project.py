@@ -916,12 +916,12 @@ class Project(object):
         self.activeUser.addNode2Collection(node, position)
 
 
-    def addNode2Looper(self, nodeTemplate, position):
+    def addNode2Looper(self, nodeTemplate, position, looper_pos = 0):
         ''' Add a looper child node to a looper node.
         '''
         node = nodeTemplate()
         node.project = self
-        self.activeUser.addNode2Looper(node, position)
+        self.activeUser.addNode2Looper(node, position, looper_pos)
 
 
     def removeNodeFromCollection(self, position):
@@ -1245,11 +1245,11 @@ class User:
             raise PsysmonError('No active collection found!')
 
 
-    def addNode2Looper(self, node, position):
+    def addNode2Looper(self, node, position, looper_pos = 0):
         ''' Add a looper child node to a looper node.
         '''
         if self.activeCollection is not None:
-            self.activeCollection.addNode2Looper(node, position)
+            self.activeCollection.addNode2Looper(node, position, looper_pos)
         else:
             raise PsysmonError('No active collection found!')
 

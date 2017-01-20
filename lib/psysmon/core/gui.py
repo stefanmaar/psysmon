@@ -1360,7 +1360,9 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
             # Add the currend looper child node to the looper node.
             pos = self.collectionPanel.selectedCollectionNodeIndex
-            self.psyBase.project.addNode2Looper(self.selectedCollectionNodeTemplate, pos)
+            child_pos = self.collectionPanel.selectedLooperChildNodeIndex
+            self.psyBase.project.addNode2Looper(self.selectedCollectionNodeTemplate, pos,
+                                                looper_pos = child_pos)
             self.collectionPanel.refreshCollection()
         else:
             try:
