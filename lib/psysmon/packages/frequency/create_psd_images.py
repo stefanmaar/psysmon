@@ -64,91 +64,78 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
     def create_time_and_component_prefs(self):
         ''' Create the preference items of the collection node.
         '''
-        pagename = '1 time and components'
-        self.pref_manager.add_page(pagename)
+        tc_page = self.pref_manager.add_page('select input')
+        input_group = tc_page.add_group('input')
+        tr_group = tc_page.add_group('time range')
+        comp_group = tc_page.add_group('component selection')
+
+        # The input data directory.
+        pref_item = psy_pm.DirBrowsePrefItem(name = 'data_dir',
+                                             label = 'psd data directory',
+                                             value = '',
+                                             tool_tip = 'Specify a directory where the PSD data files are located.')
+        input_group.add_item(pref_item)
 
         # The start time
         pref_item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                                       label = 'start time',
                                                       value = UTCDateTime('2012-07-09T00:00:00'),
-                                                      group = 'time range',
                                                       tool_tip = 'The start time of the interval to process.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        tr_group.add_item(pref_item)
 
         # The end time
         pref_item = psy_pm.DateTimeEditPrefItem(name = 'end_time',
                                                       label = 'end time',
                                                       value = UTCDateTime('2012-07-09T00:00:00'),
-                                                      group = 'time range',
                                                       tool_tip = 'The end time of the interval to process.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        tr_group.add_item(pref_item)
 
         # The SCNL list
         pref_item = psy_pm.ListCtrlEditPrefItem(name = 'scnl_list',
                                            label = 'SCNL',
                                            value = [],
                                            column_labels = ['station', 'channel', 'network', 'location'],
-                                           group = 'component selection',
                                            tool_tip = 'Select the components to process.'
                                           )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        comp_group.add_item(pref_item)
 
 
     def create_parameters_prefs(self):
         ''' Create the preference items of the parameters section.
         '''
-        pagename = '2 parameters'
-        self.pref_manager.add_page(pagename)
-
-        self.pref_manager.add_page(pagename)
-
-        item = psy_pm.DirBrowsePrefItem(name = 'data_dir',
-                                        label = 'psd data directory',
-                                        group = 'parameters',
-                                        value = '',
-                                        tool_tip = 'Specify a directory where the PSD data files are located.'
-                                       )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = item)
+        par_page = self.pref_manager.add_page('plot parameters')
+        plot_group = par_page.add_group('plot')
 
 
         pref_item = psy_pm.IntegerSpinPrefItem(name = 'plot_length',
                                              label = 'plot length [days]',
-                                             group = 'parameters',
                                              value = 7,
                                              limit = [1, 365],
                                              tool_tip = 'The length of PSD plots [days].'
                                              )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = pref_item)
+        plot_group.add_item(pref_item)
+
+        pref_item = psy_pm.CheckBoxPrefItem(name = 'with_average_plot',
+                                       label = 'with average plot',
+                                       value = False,
+                                       tool_tip = 'Add the temporal average with noise models to the PSD plot.')
+        plot_group.add_item(pref_item)
 
 
 
     def create_output_prefs(self):
         ''' Create the output preference items.
         '''
-        pagename = '3 output'
-        self.pref_manager.add_page(pagename)
+        par_page = self.pref_manager.add_page('output')
+        files_group = par_page.add_group('files')
 
-        item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
-                                        label = 'output directory',
-                                        group = 'output',
-                                        value = '',
-                                        tool_tip = 'Specify a directory where to save the PSD images.'
-                                       )
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = item)
+        pref_item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
+                                             label = 'output directory',
+                                             value = '',
+                                             tool_tip = 'Specify a directory where to save the PSD images.'
+                                            )
+        files_group.add_item(pref_item)
 
-        item = psy_pm.CheckBoxPrefItem(name = 'with_average_plot',
-                                       label = 'with average plot',
-                                       group = 'output',
-                                       value = False,
-                                       tool_tip = 'Add the temporal average with noise models to the PSD plot.')
-        self.pref_manager.add_item(pagename = pagename,
-                                   item = item)
 
 
 
@@ -252,20 +239,20 @@ class PSDPlotter:
         '''
 	file_list = []
         for (path, dirs, files) in os.walk(self.data_dir):
-            namefilter = '*%s_%s_%s_%s.psd' % (self.station, self.channel, self.network, self.location)
+            namefilter = 'psd_*%s_%s_%s_%s.db' % (self.station, self.channel, self.network, self.location)
             files = fnmatch.filter(files, namefilter)
             files = sorted(files)
             for cur_file in files:
                 parts = re.split('_|\.', cur_file)
 
-                cur_year = int(parts[0][:4])
-                cur_month = int(parts[0][4:6])
-                cur_day = int(parts[0][6:8])
+                cur_year = int(parts[1][:4])
+                cur_month = int(parts[1][4:6])
+                cur_day = int(parts[1][6:8])
                 cur_date = UTCDateTime(year = cur_year, month = cur_month, day = cur_day)
-                cur_station = parts[1]
-                cur_channel = parts[2]
-                cur_location = parts[3]
-                cur_location = parts[4]
+                cur_station = parts[3]
+                cur_channel = parts[4]
+                cur_location = parts[5]
+                cur_location = parts[6]
 
                 if (cur_station.upper() == self.station.upper() and
                     cur_location == self.location and
@@ -293,9 +280,10 @@ class PSDPlotter:
         window_length = None
         window_overlap = None
         for cur_file in file_list:
+            cur_psd_data = {}
             self.logger.info('Reading file %s.', cur_file)
             db = shelve.open(cur_file)
-            cur_psd_data = db['psd_data']
+            cur_psd_data.update(db)
             db.close()
 
 
@@ -438,16 +426,16 @@ class PSDPlotter:
         ax_psd.set_xlim((0, (self.endtime - self.starttime)/3600.))
         amp_resp = 10 * np.log10(np.abs(psd_matrix))
         if unit == 'm/s':
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80, cmap = 'viridis')
             unit_label = '(m/s)^2/Hz'
         elif unit == 'm/s^2':
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80, cmap = 'viridis')
             unit_label = '(m/s^2)^2/Hz'
         elif unit == 'counts':
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, cmap = 'viridis')
             unit_label = 'counts^2/Hz'
         else:
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, cmap = 'viridis')
             unit_label = '???^2/Hz'
 
         if self.with_average_plot:
