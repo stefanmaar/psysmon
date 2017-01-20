@@ -63,6 +63,12 @@ class ResultBag(object):
         self.results.extend(results)
 
 
+    def clear(self):
+        ''' Remove all results from the bag.
+        '''
+        self.results = []
+
+
     def save(self, output_dir, scnl, group_by = 'result', format = 'csv'):
         ''' Save the results in the specified format.
 
@@ -163,7 +169,8 @@ class Result(object):
 
     def __init__(self, name, origin_name, origin_pos = None,
                  origin_resource = None, metadata = None,
-                 start_time = None, end_time = None):
+                 start_time = None, end_time = None, postfix = None,
+                 sub_directory = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -184,11 +191,27 @@ class Result(object):
         # The end time of the time window to which the result is associated.
         self.end_time = end_time
 
+
+        # The directory structure created for the result.
+        self.sub_directory = sub_directory
+
+        # The filename postfix.
+        self.postfix = postfix
+
+        # The default filename extension. Should be overwritten by the
+        # subclasses.
+        self.filename_ext = 'dat'
+
+        # The base output directory.
+        self.base_output_dir = ''
+
         # Additional values describing the result data.
         if metadata:
             self.metadata = metadata
         else:
             self.metadata = {}
+
+
 
 
     @property
@@ -198,6 +221,35 @@ class Result(object):
         name_slug = self.name.replace(' ', '_')
         origin_name_slug = self.origin_name.replace(' ', '_')
         return '/result/' + origin_name_slug + '/' + name_slug + '/' + self.start_time.isoformat().replace(':', '').replace('-', '') + '-' + self.end_time.isoformat().replace(':', '').replace('-', '')
+
+
+    @property
+    def filename(self):
+        ''' The filename of the result.
+        '''
+        filename = self.name.lower() + '_' \
+                   + self.start_time.isoformat().replace(':', '').replace('.', '').replace('-','') \
+                   + '_' \
+                   + self.end_time.isoformat().replace(':', '').replace('.', '').replace('-','')
+
+        if self.postfix:
+            filename += '_' + self.postfix
+
+        filename += '.' + self.filename_ext
+        return filename
+
+
+    @property
+    def output_dir(self):
+        ''' The output sub directory of the result.
+        '''
+        output_dir = self.base_output_dir
+        output_dir = os.path.join(output_dir, self.name)
+
+        if self.sub_directory:
+            output_dir = os.path.join(output_dir, *self.sub_directory)
+
+        return output_dir
 
 
     def get_as_list(self, scnl = None):
@@ -523,27 +575,33 @@ class ShelveResult(Result):
             raise ValueError("db has to be a dictionary.")
         self.db = db
 
+        self.filename_ext = 'db'
 
-    def save(self, output_dir):
+
+    def save(self):
         ''' Save the result as a shelve file.
         '''
         import shelve
 
-        if not output_dir:
-            output_dir = ''
+        #filename = self.rid.replace('/', '-')
+        #if filename.startswith('-'):
+        #    filename = filename[1:]
+        #if filename.endswith('-'):
+        #    filename = filename[:-1]
 
-        filename = self.rid.replace('/', '-')
-        if filename.startswith('-'):
-            filename = filename[1:]
-        if filename.endswith('-'):
-            filename = filename[:-1]
+        #filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.db'
 
-        filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.db'
+        #output_dir = os.path.join(output_dir, self.name)
 
-        output_dir = os.path.join(output_dir, self.name)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        filename = os.path.join(output_dir, filename)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        #if self.sub_directory:
+        #    output_dir = os.path.join(output_dir, *self.sub_directory)
+        #    os.makedirs(output_dir)
+        #filename = os.path.join(output_dir, self.filename)
+
+        filename = os.path.join(self.output_dir, self.filename)
 
         db = shelve.open(filename)
         db.update(self.db)
