@@ -1468,6 +1468,8 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         if isinstance(pyData, tuple):
             pyData = pyData[0]
 
+        old_inventory = self.Parent.selected_inventory
+
         if(pyData.__class__.__name__ == 'Station' or pyData.__class__.__name__ == 'DbStation'):
             self.Parent.selected_inventory = pyData.parent_inventory
             self.Parent.selected_network = pyData.parent_network
@@ -1571,6 +1573,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 self.Parent.selected_inventory = pyData
                 self.selected_item = 'inventory'
 
+
+        if self.Parent.inventoryViewNotebook.GetSelection() == 1:
+            if self.Parent.selected_inventory != old_inventory:
+                self.Parent.inventoryViewNotebook.updateMapView(self.Parent.selected_inventory)
 
     ## Update the inventory tree.
     #
@@ -1763,7 +1769,9 @@ class InventoryViewNotebook(wx.Notebook):
             #t.start()
 
             wx.BeginBusyCursor()
+            #try:
             self.mapViewPanel.initMap(inventory)
+            #finally:
             self.inventory = inventory
             wx.EndBusyCursor()
 
@@ -1956,11 +1964,22 @@ class MapViewPanel(wx.Panel):
         self.mapConfig = {}
         self.stations = []
 
+        # Clear the map.
+        self.mapAx.clear()
+        self.mapAx.set_xlim(0, 1)
+        self.mapAx.set_ylim(0, 1)
+
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks:
             lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
             self.stations.extend([stat for stat in curNet.stations])
+
+        if len(lonLat) == 0:
+            self.mapAx.text(1, 1.02, 'NO STATIONS AVAILABLE',
+                            ha = 'right', transform = self.mapAx.transAxes)
+            self.mapCanvas.draw()
+            return
 
         lonLatMin = np.min(lonLat, 0)
         lonLatMax = np.max(lonLat, 0)
@@ -1974,7 +1993,9 @@ class MapViewPanel(wx.Panel):
             self.mapConfig['hemisphere'] = 'south'
 
         map_extent = lonLatMax - lonLatMin
-        self.mapConfig['limits'] = np.hstack([lonLatMin - map_extent * 0.1, lonLatMax + map_extent * 0.1]) 
+        lower_left = lonLatMin - map_extent * 0.1
+        upper_right = lonLatMax + map_extent * 0.1
+        self.mapConfig['limits'] = np.hstack([lower_left, upper_right])
 
         lon = [x[0] for x in lonLat]
         lat = [x[1] for x in lonLat]
@@ -2005,7 +2026,20 @@ class MapViewPanel(wx.Panel):
         self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
             ha = 'right', transform = self.mapAx.transAxes)
 
+        # Set the map limits.
+        self.mapAx.autoscale(True)
+        #ll_x, ll_y = proj(lower_left[0], lower_left[1])
+        #ur_x, ur_y = proj(upper_right[0], upper_right[1])
+        #self.mapAx.set_xlim((ll_x, ur_x))
+        #self.mapAx.set_ylim((ll_y, ur_y))
+
+        # Change to plain tick label formatter.
+        #self.mapAx.ticklabel_format(style = 'plain')
+        self.mapAx.get_yaxis().get_major_formatter().set_useOffset(False)
+        self.mapAx.get_yaxis().get_major_formatter().set_scientific(False)
+
         self.mapCanvas.mpl_connect('pick_event', self.onPick)
+        self.mapCanvas.draw()
 
 
     def initMapBasemap(self, inventory):
