@@ -315,7 +315,7 @@ class PsysmonDbWaveClient(WaveClient):
         stream : :class:`obspy.core.Stream`
             The requested waveform data. All traces are packed into one stream.
         '''
-        self.logger.debug("Getting the waveform...")
+        self.logger.debug("Getting the waveform for SCNL: %s from %s to %s...", scnl, startTime.isoformat(), endTime.isoformat())
 
         new_data = False
         stream = Stream()
