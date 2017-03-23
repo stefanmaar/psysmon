@@ -30,6 +30,10 @@ The sourcemap module.
 
 import logging
 import numpy as np
+import obspy
+import obspy.geodetics
+import obspy.taup
+
 
 import psysmon
 import psysmon.packages.geometry.inventory as inventory
@@ -41,7 +45,7 @@ class Station(inventory.Station):
     ''' The sourcemap station.
 
     '''
-    def __init__(self, station, data_v = None, data_h1 = None, data_h2 = None, corr = 0):
+    def __init__(self, station, data_v = None, data_h1 = None, data_h2 = None, time = None, corr = 0):
         ''' Initialize the instance.
         '''
         inventory.Station.__init__(self,
@@ -65,13 +69,19 @@ class Station(inventory.Station):
         # The backprojection matrix.
         self.backprojection = None
 
-        # The weight matrix.
-        self.weight = None
+        # The travel time matrix.
+        self.tt_grid = {}
+
+        self.weight = []
+
+        # The amplitude representation of the data.
+        self.pseudo_amp = None
 
         # The station correction for the backprojection.
         self.corr = corr
 
         # The waveform data.
+        self.time = time
         self.data_v = data_v
         self.data_h1 = data_h1
         self.data_h2 = data_h2
@@ -86,6 +96,113 @@ class Station(inventory.Station):
         minmax_h1 = np.abs(np.min(self.data_h1)) + np.abs(np.max(self.data_h1))
         minmax_h2 = np.abs(np.min(self.data_h2)) + np.abs(np.max(self.data_h2))
         return np.sqrt(minmax_v**2 + minmax_h1**2 + minmax_h2**2)
+
+
+    def compute_pseudo_amp(self, method = 'weighted'):
+
+        if method == 'plain':
+            self.compute_plain_res()
+        elif method == 'weighted':
+            self.compute_weighted_res()
+        elif method == 'windowed_max':
+            self.compute_windowed_max_res()
+        else:
+            raise ValueError('Wrong value for attribute method.')
+
+
+    def compute_plain_res(self):
+        v_w = self.data_v[np.newaxis, np.newaxis, ...]
+        h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
+        h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+
+        res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
+
+        nx = self.epi_dist.shape[0]
+        ny = self.epi_dist.shape[1]
+        nz = len(self.data_v)
+        alt_res = np.broadcast_to(res, (nx, ny, nz))
+
+        alt_res = np.max(alt_res, axis = 2)
+
+        self.pseudo_amp = alt_res
+
+
+    def compute_weighted_res(self):
+        v_w = self.data_v[np.newaxis, np.newaxis, ...]
+        h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
+        h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+
+        alt_res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
+
+        nx = self.epi_dist.shape[0]
+        ny = self.epi_dist.shape[1]
+        nz = len(self.data_v)
+        alt_res = np.broadcast_to(alt_res, (nx, ny, nz))
+
+        alt_res = np.sum(alt_res * self.weight, axis = 2)
+
+        # Handle zero values. This will cause problems when using the log.
+        ind = np.argwhere(alt_res <= 0)
+        alt_res[ind[:, 0], ind[:, 1]] = np.min(alt_res[alt_res > 0])
+
+        self.pseudo_amp = alt_res
+
+
+    def compute_windowed_max_res(self):
+        v_w = self.data_v[np.newaxis, np.newaxis, ...]
+        h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
+        h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+
+        res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
+
+        nx = self.epi_dist.shape[0]
+        ny = self.epi_dist.shape[1]
+        nz = len(self.data_v)
+        alt_res = np.broadcast_to(res, (nx, ny, nz))
+        weight = self.weight.copy()
+        weight[weight > 0 ] = 1
+        alt_res = np.max(alt_res * weight, axis = 2)
+
+        # Handle zero values. This will cause problems when using the log.
+        ind = np.argwhere(alt_res <= 0)
+        alt_res[ind[:, 0], ind[:, 1]] = np.min(alt_res[alt_res > 0])
+
+        self.pseudo_amp = alt_res
+
+
+    def compute_amplitude_weight(self):
+        ''' Compute the amplitude weight for each grid point.
+        '''
+        # TODO: This matrix is too large for large networks and dense grid
+        # spacing. Make it more efficient.
+        nx = self.epi_dist.shape[0]
+        ny = self.epi_dist.shape[1]
+        nz = len(self.data_v)
+
+        weight = np.zeros((nx, ny, nz))
+        print "weight.shape: %s; %d total points; %d MB" % (str(weight.shape), weight.size, weight.nbytes / (1024 * 1024))
+
+        time = self.time[np.newaxis, np.newaxis,...]
+        time = np.broadcast_to(time, (nx, ny, nz))
+
+        tt_p = self.tt_grid['p'][..., np.newaxis]
+        tt_p = np.broadcast_to(tt_p, (nx, ny, nz))
+        weight[time >= tt_p] = 1
+
+        tt_s = self.tt_grid['s'][..., np.newaxis]
+        tt_s = np.broadcast_to(tt_s, (nx, ny, nz))
+        weight[time >= tt_s] = 2
+
+        tt_surf_max = self.tt_grid['surf_max'][..., np.newaxis]
+        tt_surf_max = np.broadcast_to(tt_surf_max, (nx, ny, nz))
+        weight[time >= tt_surf_max] = 0
+
+        weight_sum = np.sum(weight, axis = 2)
+        weight_sum[weight_sum == 0] = 1.
+        weight = weight / np.broadcast_to(weight_sum[..., np.newaxis], (weight.shape[0], weight.shape[1], weight.shape[2]))
+
+        self.weight = weight
+
 
 
 
@@ -105,8 +222,14 @@ class SourceMap(object):
         # The list of available stations.
         self.stations = stations
 
+        # The slowest surface wave velocity [m/s].
+        self.v_surf_min = 1500
+
         # The list of stations to use for the computation.
         self.compute_stations = self.stations
+
+        # The maximum station to station distance.
+        self.max_station_dist = None
 
         # The map grid spacings.
         self.map_dx = float(map_dx)
@@ -130,6 +253,16 @@ class SourceMap(object):
 
         # The resulting source map.
         self.result_map = []
+
+
+    @property
+    def window_length(self):
+        ''' The minimum analyse window length.
+        '''
+        if self.max_station_dist is not None:
+            return self.max_station_dist / self.v_surf_min
+        else:
+            return None
 
 
     def compute_map_configuration(self):
@@ -178,6 +311,9 @@ class SourceMap(object):
         self.map_config['x_lim'] = (x_min, x_max)
         self.map_config['y_lim'] = (y_min, y_max)
 
+        # Compute the maximum station to station distance.
+        self.compute_station_distance()
+
 
     def compute_map_grid(self):
         ''' Compute the map grid based on the available stations.
@@ -189,8 +325,36 @@ class SourceMap(object):
         self.result_map = np.zeros((len(self.map_x_coord), len(self.map_y_coord)))
 
 
-    def compute_backprojection(self):
-        ''' Compute the backprojection matrixes of the stations.
+    def compute_station_distance(self):
+        ''' Compute the maximum station to station distance.
+
+        '''
+        # Get the longitude and latidue coordinates of the stations.
+        lon_lat = [stat.get_lon_lat() for stat in self.stations]
+        lon = [x[0] for x in lon_lat]
+        lat = [x[1] for x in lon_lat]
+        proj = pyproj.Proj(init = self.map_config['epsg'])
+        x, y = proj(lon, lat)
+        x = np.reshape(x, (len(x), 1))
+        y = np.reshape(y, (len(y), 1))
+        x_mat = np.tile(np.array(x), (1, len(x)))
+        y_mat = np.tile(np.array(y), (1, len(y)))
+
+        rows, cols = np.ogrid[:x_mat.shape[0], :x_mat.shape[1]]
+        rows = rows - np.arange(x_mat.shape[0])
+        x_mat_roll = x_mat[rows, cols]
+
+        rows, cols = np.ogrid[:y_mat.shape[0], :y_mat.shape[1]]
+        rows = rows - np.arange(y_mat.shape[0])
+        y_mat_roll = y_mat[rows, cols]
+
+        # Compute the distances between all stations.
+        dist = np.sqrt((x_mat - x_mat_roll)**2 + (y_mat - y_mat_roll)**2)
+        self.max_station_dist = np.max(dist)
+
+
+    def compute_distance_grid(self):
+        ''' Compute the hypo- and epi-distance for all stations.
         '''
         x_grid, y_grid = np.meshgrid(self.map_x_coord, self.map_y_coord)
 
@@ -201,6 +365,101 @@ class SourceMap(object):
             stat_x, stat_y = proj(stat_lon_lat[0], stat_lon_lat[1])
             cur_station.epi_dist = np.sqrt((stat_x - x_grid)**2 + (stat_y - y_grid)**2)
             cur_station.hypo_dist = np.sqrt(cur_station.epi_dist**2 + self.hypo_depth**2)
+
+
+
+    def compute_traveltime_grid(self, hypo_depth = 1000, dist_step = None):
+        ''' Compute the grid of traveltimes for p, s and surface waves.
+
+        '''
+        model = obspy.taup.TauPyModel(model = 'iasp91')
+
+        # Use a 10th of the minimum map grid as the traveltime distance step.
+        if dist_step is None:
+            dist_step = min(self.map_dx, self.map_dy) / 10.
+
+        # Compute the traveltime curves for interpolation.
+        dist = np.arange(0, self.max_station_dist + 10 * dist_step, dist_step)
+        tt = {}
+        tt['p'] = []
+        tt['s'] = []
+        tt['surf_max'] = []
+        for cur_dist in dist:
+            cur_dist_deg = obspy.geodetics.base.kilometer2degrees(cur_dist / 1000)
+            p_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+                                                distance_in_degree = cur_dist_deg,
+                                                phase_list = ['ttp'])
+            tt['p'].append(p_arrivals[0].time)
+            s_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+                                                distance_in_degree = cur_dist_deg,
+                                                phase_list = ['tts'])
+            tt['s'].append(s_arrivals[0].time)
+            surf_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+                                                   distance_in_degree = cur_dist_deg,
+                                                   phase_list = ['1.5kmps'])
+            tt['surf_max'].append(surf_arrivals[0].time)
+
+        for cur_key in tt:
+            tt[cur_key] = np.array(tt[cur_key])
+
+
+        for cur_station in self.compute_stations:
+            cur_station.tt_grid['p'] = np.interp(cur_station.epi_dist, dist, tt['p'])
+            cur_station.tt_grid['s'] = np.interp(cur_station.epi_dist, dist, tt['s'])
+            cur_station.tt_grid['surf_max'] = np.interp(cur_station.epi_dist, dist, tt['surf_max'])
+
+            #epi_dist_deg = obspy.geodetics.base.kilometer2degrees(cur_station.epi_dist / 1000)
+            #tt_grid = {}
+            #tt_grid['p'] = np.zeros(epi_dist_deg.shape)
+            #tt_grid['s'] = np.zeros(epi_dist_deg.shape)
+            #tt_grid['surf_max'] = np.zeros(epi_dist_deg.shape)
+            #it = np.nditer(op = [epi_dist_deg,
+            #                     tt_grid['p'],
+            #                     tt_grid['s'],
+            #                     tt_grid['surf_max']],
+            #               flags = ['buffered'],
+            #               op_flags = [['readonly'],
+            #                           ['writeonly', 'allocate', 'no_broadcast'],
+            #                           ['writeonly', 'allocate', 'no_broadcast'],
+            #                           ['writeonly', 'allocate', 'no_broadcast']])
+            #for cur_epi_dist, cur_tt_p, cur_tt_s, cur_tt_surf in it:
+            #    p_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+            #                                        distance_in_degree = cur_epi_dist,
+            #                                        phase_list = ['ttp'])
+            #    s_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+            #                                        distance_in_degree = cur_epi_dist,
+            #                                        phase_list = ['tts'])
+            #    surf_slow_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+            #                                           distance_in_degree = cur_epi_dist,
+            #                                           phase_list = ['1.5kmps'])
+            #
+            #    cur_tt_p[...] = p_arrivals[0].time
+            #    cur_tt_s[...] = s_arrivals[0].time
+            #    cur_tt_surf[...] = surf_slow_arrivals[0].time
+
+
+    def compute_amplitude_weight(self):
+        ''' Compute the weight matrix based on seismic travel times.
+
+        '''
+        for cur_station in self.compute_stations:
+            cur_station.compute_amplitude_weight()
+
+
+    def compute_pseudo_amp(self, method = 'weighted'):
+        ''' Compute the weight matrix based on seismic travel times.
+
+        '''
+        for cur_station in self.compute_stations:
+            cur_station.compute_pseudo_amp(method = method)
+
+
+
+
+    def compute_backprojection(self):
+        ''' Compute the backprojection matrixes of the stations.
+        '''
+        for cur_station in self.compute_stations:
             cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist) + cur_station.corr
 
 
@@ -208,25 +467,30 @@ class SourceMap(object):
         ''' Compute the pseudo-magnitude.
         '''
         for cur_station in self.compute_stations:
-            cur_station.pseudo_mag = np.log10(cur_station.alt_resultant) + cur_station.backprojection
+            cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp) + cur_station.backprojection
+            #cur_station.pseudo_mag = np.log10(cur_station.alt_resultant) + cur_station.backprojection
             #cur_station.pseudo_mag = np.log10(np.abs(np.max(cur_station.data_v))) + cur_station.backprojection
 
 
-    def compute_sourcemap(self):
+    def compute_sourcemap(self, method = 'min'):
         ''' Compute the source map.
         '''
         pm_list = [x.pseudo_mag for x in self.compute_stations]
         pm_mat = np.dstack(pm_list)
-        if self.method == 'std':
+        if method == 'std':
             self.result_map = np.std(pm_mat, axis = 2)
-        elif self.method == 'min':
+        elif method == 'min':
             self.result_map = pm_mat.min(axis = 2)
-        elif self.method == 'quart':
+        elif method == 'quart':
             perc_25 = np.percentile(pm_mat, 25., axis = 2)
             perc_75 = np.percentile(pm_mat, 75., axis = 2)
             self.result_map = perc_75 - perc_25
+        elif method == 'minmax':
+            map_min = pm_mat.min(axis = 2)
+            map_max = pm_mat.max(axis = 2)
+            self.result_map = map_max - map_min
         else:
-            self.logging.error('Unknown computation method: %s.', self.method)
+            self.logging.error('Unknown computation method: %s.', method)
 
 
 
