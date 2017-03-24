@@ -3502,6 +3502,11 @@ class SensorsPanel(wx.Panel):
                 for curLine in lines:
                     curLine.remove()
 
+            # Remove the zero frequency.
+            mask = f != 0
+            f = f[mask]
+            h = h[mask]
+            phase = phase[mask]
             frequRange = [0.1,1,10,100,1000]
             self.tfMagAxis.plot(np.log10(f), 20*np.log10(abs(h)), color='k')
             self.tfMagAxis.set_xticks(np.log10(frequRange))
@@ -3554,6 +3559,9 @@ class SensorsPanel(wx.Panel):
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('name', 'name', 'editable', str))
         tableField.append(('description', 'description', 'editable', str))
+        tableField.append(('input_unit', 'input unit', 'editable', str))
+        tableField.append(('output_unit', 'output unit', 'editable', str))
+        tableField.append(('deliver_unit', 'deliver unit', 'editable', str))
         return tableField
 
 
@@ -3563,9 +3571,6 @@ class SensorsPanel(wx.Panel):
         tableField.append(('start_time', 'start', 'editable', self.time_string_converter))
         tableField.append(('end_time', 'end', 'editable', self.time_string_converter))
         tableField.append(('sensitivity', 'sensitivity', 'editable', float))
-        tableField.append(('input_units', 'input units', 'editable', str))
-	tableField.append(('output_units', 'output units', 'editable', str))
-	tableField.append(('deliver_units', 'deliver units', 'editable', str))
         tableField.append(('tf_normalization_factor', 'normalization factor', 'editable', float))
         tableField.append(('tf_normalization_frequency', 'normalization frequ.', 'editable', float))
         tableField.append(('tf_poles', 'poles', 'editable', self.tf_pz_converter))      # Poles is a list. Handle them seperately
