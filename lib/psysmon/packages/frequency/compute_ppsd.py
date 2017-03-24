@@ -34,6 +34,7 @@ import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 
+import matplotlib.pyplot as plt
 import obspy.core
 
 class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
@@ -176,7 +177,16 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             self.logger.info("Saving image to file %s.", image_filename)
             if not os.path.exists(os.path.dirname(image_filename)):
                 os.makedirs(os.path.dirname(image_filename))
-            ppsd.plot(filename = image_filename, period_lim = (1/250., 20))
+
+            # Set the viridis colomap 0 value to white.
+            cmap = plt.get_cmap('viridis')
+            cmap.colors[0] = [1, 1, 1]
+
+            # TODO: make the period limit user selectable
+            ppsd.plot(filename = image_filename,
+                      period_lim = (1/1000., 10),
+                      xaxis_frequency = True,
+                      cmap = cmap)
 
             self.logger.info("Saving ppsd object to %s.", pkl_filename)
             if not os.path.exists(os.path.dirname(pkl_filename)):
