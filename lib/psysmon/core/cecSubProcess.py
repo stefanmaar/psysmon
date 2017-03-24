@@ -124,7 +124,7 @@ if __name__ == "__main__":
             collection.execute()
             logger.info('Finished the execution. Cleaning up....')
         except:
-            logger.exception("Failed to execute the collection successfully.")
+            logger.exception("Failed to execute the collection.")
             # An error happened during the execution of the collection.
             returncode = 2
     except:
