@@ -234,6 +234,11 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 os.makedirs(os.path.dirname(image_filename))
             fig.savefig(image_filename, dpi = dpi)
 
+            # Delete the figure.
+            fig.clear()
+            plt.close(fig)
+            del fig
+
 
             self.logger.info("Saving ppsd object to %s.", npz_filename)
             if not os.path.exists(os.path.dirname(npz_filename)):
