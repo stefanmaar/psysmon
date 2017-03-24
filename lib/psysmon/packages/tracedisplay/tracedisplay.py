@@ -244,7 +244,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
 
 
     def edit(self):
-        stations = sorted([x.name + ':' + x.location for x in self.project.geometry_inventory.get_station()])
+        stations = sorted([x.name + ':' + x.network + ':' + x.location for x in self.project.geometry_inventory.get_station()])
         self.pref_manager.set_limit('show_stations', stations)
 
         channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
@@ -1502,7 +1502,7 @@ class DisplayStation(object):
 
     @property
     def label(self):
-        return self.name + ':' + self.location
+        return self.name + ':' + self.network + ':' + self.location
 
     @property
     def snl(self):
