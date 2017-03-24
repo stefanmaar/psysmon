@@ -63,9 +63,8 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
     def edit(self):
         # Initialize the components.
-        # TODO: Make the station selection SNL coded.
         if self.project.geometry_inventory:
-            stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
+            stations = sorted([x.name + ':' + x.network + ':' + x.location for x in self.project.geometry_inventory.get_station()])
             self.pref_manager.set_limit('stations', stations)
 
             channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
@@ -240,24 +239,39 @@ class SlidingWindowProcessor(object):
         '''
         self.logger.info("Processing timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
 
+
         window_length = float(window_length)
-        overlap = 1 - float(overlap) / 100.
+        overlap = float(overlap)
+
+        # Check for correct argument values:
+        if end_time <= start_time:
+            self.logger.error("The end_time %s is smaller than the start_time %s.", end_time.isoformat(), start_time.isoformat())
+            raise ValueError("The end_time %s is smaller than the start_time %s." % (end_time.isoformat(), start_time.isoformat()))
+
+        if overlap >= 100:
+            self.logger.error("Overlap %f is larger or equal to 100.", overlap)
+            raise ValueError("Overlap %f is larger or equal to 100." % overlap)
+
+        window_step = 1 - overlap / 100.
 
         result_bag = ResultBag()
 
         # Get the channels to process.
         channels = []
         for cur_station in station_names:
+            cur_name, cur_net, cur_loc = cur_station.split(':')
             for cur_channel in channel_names:
-                channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
+                channels.extend(self.project.geometry_inventory.get_channel(station = cur_name,
+                                                                            network = cur_net,
+                                                                            location = cur_loc,
                                                                             name = cur_channel))
         scnl = [x.scnl for x in channels]
 
 
         # Compute the start times of the sliding windows.
         windowlist_start = [start_time, ]
-        n_windows = (end_time - start_time) / (window_length * overlap)
-        windowlist_start = [start_time + x * (window_length * overlap) for x in range(0, int(n_windows))]
+        n_windows = (end_time - start_time) / (window_length * window_step)
+        windowlist_start = [start_time + x * (window_length * window_step) for x in range(0, int(n_windows))]
 
         try:
             for k, cur_window_start in enumerate(windowlist_start):
@@ -269,10 +283,11 @@ class SlidingWindowProcessor(object):
                 pre_stream_length = max(pre_stream_length)
                 post_stream_length = max(post_stream_length)
 
-                self.logger.info("Processing sliding window %d/%d.", k, n_windows)
+                self.logger.info("Processing sliding window %d/%d.", k+1, n_windows)
 
-                self.logger.info("Initial stream request for time-span: %s to %s.", cur_window_start.isoformat(),
-                                                                                    (cur_window_start + window_length).isoformat())
+                self.logger.info("Initial stream request for time-span: %s to %s for scnl: %s.", cur_window_start.isoformat(),
+                                                                                    (cur_window_start + window_length).isoformat(),
+                                                                                     str(scnl))
                 stream = self.request_stream(start_time = cur_window_start - pre_stream_length,
                                              end_time = cur_window_start + window_length + post_stream_length,
                                              scnl = scnl)
