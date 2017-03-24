@@ -124,7 +124,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         item = psy_pm.IntegerSpinPrefItem(name = 'window_length',
                                           label = 'window length [s]',
                                           value = 300,
-                                          limit = [0, 86400],
+                                          limit = [0, 1209600],
                                           tool_tip = 'The sliding window length in seconds.')
         process_time_span_group.add_item(item)
 
