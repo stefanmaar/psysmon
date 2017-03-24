@@ -1557,6 +1557,12 @@ class SensorComponentParameter(object):
         except:
             self.sensitivity = None
 
+
+        # TODO: The parameters tf_type and tf_units seem to make no sense
+        # anylonger. They have been replaced by the units of the sensor itself.
+        # Think about these values and eventually remove them. Removing will
+        # the values will also affect the database. So it's no trivial change.
+
         ## The transfer function type.
         # - displacement
         # - velocity
