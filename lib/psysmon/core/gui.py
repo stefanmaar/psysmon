@@ -820,11 +820,11 @@ class CollectionTreeCtrl(wx.TreeCtrl):
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
 
             if selectedNode.enabled:
-                print "###### Node enabled."
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'disable node')
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
             else:
-                print "###### Node disabled."
                 self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'enable node')
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
         except Exception as e:
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
