@@ -248,7 +248,8 @@ class PreferencesManager:
     def update(self, pref_manager):
         ''' Update the values of the preferences manager.
         '''
-        attr_to_update = ['value', 'limit']
+        #attr_to_update = ['value', 'limit']
+        attr_to_update = ['value',]
 
         # 2016-12-15: Handle the change of the prefence_manager classes.
         if isinstance(pref_manager.pages, dict):
@@ -264,7 +265,7 @@ class PreferencesManager:
                                 if cur_attr in cur_update_item.__dict__.keys():
                                     setattr(cur_update_item, cur_attr, getattr(cur_item, cur_attr))
         else:
-            # Us the uptodate version of the preference manager.
+            # Use the uptodate version of the preference manager.
             for cur_ext_page in pref_manager.pages:
                 page_names = [x.name for x in self.pages]
                 if cur_ext_page.name in page_names:
