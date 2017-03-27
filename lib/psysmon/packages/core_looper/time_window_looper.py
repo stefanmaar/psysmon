@@ -33,6 +33,8 @@ This module contains the classes of the importWaveform dialog window.
 import os
 import copy
 import logging
+
+import numpy as np
 import psysmon
 import psysmon.core.packageNodes as package_nodes
 import obspy.core
@@ -59,6 +61,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         #self.create_selector_preferences()
         self.create_component_selector_preferences()
         self.create_output_preferences()
+        self.create_processing_preferences()
 
 
     def edit(self):
@@ -69,6 +72,10 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
             channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
             self.pref_manager.set_limit('channels', channels)
+
+        # Update the preference item gui elements based on the current
+        # selections.
+        self.on_window_mode_selected()
 
         # Create the edit dialog.
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
@@ -91,13 +98,34 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                            output_dir = output_dir,
                                            parent_rid = self.rid)
 
+        window_mode = self.pref_manager.get_value('window_mode')
+        if window_mode == 'free':
+            window_length = self.pref_manager.get_value('window_length')
+            overlap = self.pref_manager.get_value('window_overlap')
+        elif window_mode == 'daily':
+            start_time = self.pref_manager.get_value('start_time')
+            end_time = self.pref_manager.get_value('end_time')
+            start_time = UTCDateTime(start_time.year, start_time.month, start_time.day)
+            end_time = UTCDateTime(end_time.year, end_time.month, end_time.day)
+            window_length = 86400.
+            overlap = 0.
+        elif window_mode == 'weekly':
+            start_time = self.pref_manager.get_value('start_time')
+            end_time = self.pref_manager.get_value('end_time')
+            start_time = UTCDateTime(start_time.year, start_time.month, start_time.day) - start_time.weekday * 86400
+            end_time = UTCDateTime(end_time.year, end_time.month, end_time.day) +  (7 - end_time.weekday) * 86400
+            window_length = 86400. * 7
+            overlap = 0.
+
         processor.process(looper_nodes = self.children,
-                          start_time = self.pref_manager.get_value('start_time'),
-                          end_time = self.pref_manager.get_value('end_time'),
+                          start_time = start_time,
+                          end_time = end_time,
                           station_names = self.pref_manager.get_value('stations'),
                           channel_names = self.pref_manager.get_value('channels'),
-                          window_length = self.pref_manager.get_value('window_length'),
-                          overlap = self.pref_manager.get_value('window_overlap'))
+                          window_length = window_length,
+                          overlap = overlap,
+                          chunked = self.pref_manager.get_value('process_chunked'),
+                          chunk_window_length = self.pref_manager.get_value('chunk_win_length'))
 
 
 
@@ -119,6 +147,14 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                            label = 'end time',
                                            value = UTCDateTime('2015-01-01T00:00:00'),
                                            tool_tip = 'The end time of the selection time span (UTCDateTime string format YYYY-MM-DDTHH:MM:SS).')
+        process_time_span_group.add_item(item)
+
+        item = psy_pm.SingleChoicePrefItem(name = 'window_mode',
+                                           label = 'window mode',
+                                           limit = ('free', 'daily', 'weekly'),
+                                           value = 'free',
+                                           hooks = {'on_value_change': self.on_window_mode_selected},
+                                           tool_tip = 'The mode of the window computation.')
         process_time_span_group.add_item(item)
 
         item = psy_pm.IntegerSpinPrefItem(name = 'window_length',
@@ -153,18 +189,25 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         comp_to_process_group.add_item(item)
 
 
-    def create_processing_stack_preferences(self):
+    def create_processing_preferences(self):
         ''' Create the preference items of the processing stack section.
         '''
-        ps_page = self.pref_manager.add_page('processing stack')
-        tw_group = ps_page.add_group('time window processing')
+        ps_page = self.pref_manager.add_page('processing')
+        ch_group = ps_page.add_group('chunked')
 
-        item = psy_pm.CustomPrefItem(name = 'processing_stack',
-                                     label = 'processing stack',
-                                     value = None,
-                                     gui_class = PStackEditField,
-                                     tool_tip = 'Edit the processing stack nodes.')
-        tw_group.add_item(item)
+        item = psy_pm.CheckBoxPrefItem(name = 'process_chunked',
+                                       label = 'use chunked processing',
+                                       value = False,
+                                       tool_tip = 'For large time windows splitting the time window into smaller chunks is more memory efficient. Not all looper child nodes support chunked processing.')
+        ch_group.add_item(item)
+
+        item = psy_pm.IntegerSpinPrefItem(name = 'chunk_win_length',
+                                          label = 'chunk window length [s]',
+                                          value = 3600,
+                                          limit = [0, 1209600],
+                                          tool_tip = 'The length of the chunked window.')
+        ch_group.add_item(item)
+
 
 
     def create_output_preferences(self):
@@ -180,6 +223,19 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                         tool_tip = 'Specify a directory where to save the processing results.'
                                        )
         output_group.add_item(item)
+
+
+    def on_window_mode_selected(self):
+        '''
+        '''
+        if self.pref_manager.get_value('window_mode') == 'free':
+            self.pref_manager.get_item('window_length')[0].enable_gui_element()
+        elif self.pref_manager.get_value('window_mode') == 'daily':
+            item = self.pref_manager.get_item('window_length')[0]
+            item.disable_gui_element()
+        elif self.pref_manager.get_value('window_mode') == 'weekly':
+            item = self.pref_manager.get_item('window_length')[0]
+            item.disable_gui_element()
 
 
 
@@ -211,7 +267,8 @@ class SlidingWindowProcessor(object):
 
 
     #@profile(immediate=True)
-    def process(self, looper_nodes, start_time, end_time, station_names, channel_names, window_length, overlap):
+    def process(self, looper_nodes, start_time, end_time, station_names, channel_names, window_length, overlap,
+                chunked = False, chunk_window_length = None):
         ''' Start the processing.
 
         Parameters
@@ -254,7 +311,126 @@ class SlidingWindowProcessor(object):
 
         window_step = 1 - overlap / 100.
 
-        result_bag = ResultBag()
+        # Compute the start times of the sliding windows.
+        windowlist_start = [start_time, ]
+        n_windows = np.floor(end_time - start_time) / (window_length * window_step)
+        windowlist_start = [start_time + x * (window_length * window_step) for x in range(0, int(n_windows))]
+
+        try:
+            if chunked:
+                self.process_chunked(looper_nodes, windowlist_start, station_names,
+                                     channel_names, window_length, chunk_window_length)
+            else:
+                self.process_whole(looper_nodes, windowlist_start, station_names, channel_names, window_length)
+        finally:
+            pass
+
+
+
+    def process_chunked(self, looper_nodes, windowlist_start, station_names, channel_names, window_length, chunk_length):
+        ''' Start the processing.
+
+        Parameters
+        ----------
+        looper_nodes : list of
+            The looper nodes to execute.
+
+        windowlist_start: list of :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The start times of the windows to process.
+
+        station_names : list of Strings
+            The names of the stations to process.
+
+        channel_names : list of Strings
+            The names of the channels to process.
+
+        window_length : float
+            The length of the sliding windwow in seconds.
+
+        chunk_length : float
+            The lenght of the chunk window in seconds.
+        '''
+
+        # Get the channels to process.
+        channels = []
+        for cur_station in station_names:
+            cur_name, cur_net, cur_loc = cur_station.split(':')
+            for cur_channel in channel_names:
+                channels.extend(self.project.geometry_inventory.get_channel(station = cur_name,
+                                                                            network = cur_net,
+                                                                            location = cur_loc,
+                                                                            name = cur_channel))
+
+        n_chunk_windows =  np.ceil(window_length / chunk_length)
+
+        pre_stream_length = [x.pre_stream_length for x in looper_nodes]
+        post_stream_length = [x.post_stream_length for x in looper_nodes]
+        pre_stream_length = max(pre_stream_length)
+        post_stream_length = max(post_stream_length)
+
+        for cur_channel in channels:
+            for k, cur_window_start in enumerate(windowlist_start):
+                self.logger.info("Processing time window from %s to %s", cur_window_start, cur_window_start + window_length)
+                chunk_windowlist = [cur_window_start, ]
+                chunk_windowlist = [cur_window_start + x * chunk_length for x in range(0, int(n_chunk_windows))]
+
+                for m, cur_chunk_start in enumerate(chunk_windowlist):
+                    cur_chunk_end = cur_chunk_start + chunk_length
+                    if cur_chunk_end > (cur_window_start + window_length):
+                        cur_chunk_end = cur_window_start + window_length
+                    self.logger.info("Processing chunk for %s from %s to %s.", cur_channel.scnl_string, cur_chunk_start, cur_chunk_end)
+
+                    stream = self.request_stream(start_time = cur_chunk_start - pre_stream_length,
+                                                 end_time = cur_chunk_end + post_stream_length,
+                                                 scnl = [cur_channel.scnl,])
+
+                    # Execute the looper nodes.
+                    resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
+                    process_limits = (cur_chunk_start, cur_chunk_end)
+                    for cur_node in looper_nodes:
+                        if k == 0:
+                            # TODO: Call the reset method of the node.
+                            try:
+                                cur_node.sculpture_layer = None
+                            except:
+                                pass
+                        cur_node.execute_chunked(chunk_count = m + 1,
+                                                 total_chunks = len(chunk_windowlist),
+                                                 stream = stream,
+                                                 process_limits = process_limits,
+                                                 origin_resource = resource_id)
+                        # Get the results of the node.
+                        if cur_node.result_bag:
+                            if len(cur_node.result_bag.results) > 0:
+                                for cur_result in cur_node.result_bag.results:
+                                    cur_result.base_output_dir = self.output_dir
+                                    cur_result.save()
+
+                                cur_node.result_bag.clear()
+
+
+
+    def process_whole(self, looper_nodes, windowlist_start, station_names, channel_names, window_length):
+        ''' Start the processing.
+
+        Parameters
+        ----------
+        looper_nodes : list of
+            The looper nodes to execute.
+
+        windowlist_start: list of :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The start times of the windows to process.
+
+        station_names : list of Strings
+            The names of the stations to process.
+
+        channel_names : list of Strings
+            The names of the channels to process.
+
+        window_length : float
+            The length of the sliding windwow in seconds.
+        '''
+        n_windows = len(windowlist_start)
 
         # Get the channels to process.
         channels = []
@@ -266,13 +442,6 @@ class SlidingWindowProcessor(object):
                                                                             location = cur_loc,
                                                                             name = cur_channel))
         scnl = [x.scnl for x in channels]
-
-
-        # Compute the start times of the sliding windows.
-        windowlist_start = [start_time, ]
-        n_windows = (end_time - start_time) / (window_length * window_step)
-        windowlist_start = [start_time + x * (window_length * window_step) for x in range(0, int(n_windows))]
-
         try:
             for k, cur_window_start in enumerate(windowlist_start):
                 # Get the pre- and post timewindow time required by the looper
