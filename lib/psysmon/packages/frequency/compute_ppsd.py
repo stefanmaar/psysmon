@@ -54,6 +54,24 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         self.create_parameters_prefs()
         self.create_output_prefs()
 
+        # The PPSD object.
+        self.ppsd = None
+
+        # The start and end times of the overall timespan used for the chunk
+        # execution.
+        self.overall_start_time = None
+        self.overall_end_time = None
+
+
+    @property
+    def post_stream_length(self):
+        ''' The time-span needed for correct processing prior to the start time
+        of the stream passed to the execute method [s].
+        '''
+        ppsd_length = self.pref_manager.get_value('ppsd_length')
+        overlap = self.pref_manager.get_value('ppsd_overlap')
+        return ppsd_length * (overlap / 100.)
+
 
     def create_parameters_prefs(self):
         ''' Create the preference items of the parameters section.
@@ -132,9 +150,6 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     def execute(self, stream, process_limits = None, origin_resource = None):
         '''
         '''
-        ppsd_length = self.pref_manager.get_value('ppsd_length')
-        ppsd_overlap = self.pref_manager.get_value('ppsd_overlap') / 100.
-
         start_time = process_limits[0]
         end_time = process_limits[1]
 
@@ -145,105 +160,167 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         for cur_trace in stream:
             self.logger.info('Processing trace with id %s.', cur_trace.id)
 
-            # Get the channel instance from the inventory.
-            cur_channel = self.project.geometry_inventory.get_channel(station = cur_trace.stats.station,
-                                                                      name = cur_trace.stats.channel,
-                                                                      network = cur_trace.stats.network,
-                                                                      location = cur_trace.stats.location)
+            self.overall_start_time = start_time
+            self.overall_end_time = end_time
 
-            if len(cur_channel) == 0:
-                self.logger.error("No channel found for trace %s", cur_trace.id)
-                continue
-            elif len(cur_channel) > 1:
-                self.logger.error("Multiple channels found for trace %s; channels: %s", cur_trace.id, cur_channel)
-            else:
-                cur_channel = cur_channel[0]
-
-            # Get the recorder and sensor parameters.
-            rec_stream_tb = cur_channel.get_stream(start_time = start_time,
-                                                   end_time = end_time)
-
-            rec_stream_param = []
-            comp_param = []
-            for cur_rec_stream_tb in rec_stream_tb:
-                cur_rec_stream = cur_rec_stream_tb.item
-                cur_rec_stream_param = cur_rec_stream.get_parameter(start_time = start_time,
-                                                                    end_time = end_time)
-                rec_stream_param.extend(cur_rec_stream_param)
-
-                comp_tb = cur_rec_stream.get_component(start_time = start_time,
-                                                       end_time = end_time)
-                for cur_comp_tb in comp_tb:
-                    cur_comp = cur_comp_tb.item
-                    cur_comp_param = cur_comp.get_parameter(start_time = start_time,
-                                                            end_time = end_time)
-                    comp_param.extend(cur_comp_param)
-
-            if len(rec_stream_param) > 1 or len(comp_param) > 1:
-                raise ValueError('There are more than one parameters for this component. This is not yet supported.')
-            else:
-                rec_stream_param = rec_stream_param[0]
-                comp_param = comp_param[0]
-
-            # Create the obspy PAZ dictionary.
-            paz = {}
-            paz['gain'] = 1
-            paz['sensitivity'] = (rec_stream_param.gain * comp_param.sensitivity) / rec_stream_param.bitweight
-            paz['poles'] = comp_param.tf_poles
-            paz['zeros'] = comp_param.tf_zeros
-
-            # Create the ppsd instance and add the stream.
-            stats = cur_trace.stats
-
-            # Monkey patch the PPSD plot method.
-            obspy.signal.PPSD.plot = ppsd_plot
-
-            ppsd = obspy.signal.PPSD(stats,
-                                     paz = paz,
-                                     ppsd_length = ppsd_length,
-                                     overlap = ppsd_overlap);
+            self.initialize_ppsd(cur_trace, start_time, end_time)
 
             self.logger.info("Adding the trace to the ppsd.")
-            ppsd.add(cur_trace)
+            self.ppsd.add(cur_trace)
+            self.logger.info("Time limits of PPSD used times: %s to %s.", self.ppsd.current_times_used[0].isoformat(),
+                                                                          self.ppsd.current_times_used[-1].isoformat())
 
-            ppsd_id = ppsd.id.replace('.','_')
-            output_dir = self.pref_manager.get_value('output_dir')
-            image_filename = os.path.join(output_dir, 'images', 'ppsd_%s_%s_%s.png' % (ppsd_id, start_time.isoformat().replace(':',''), end_time.isoformat().replace(':','')))
-            npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, start_time.isoformat().replace(':',''), end_time.isoformat().replace(':','')))
-
-
-            # Set the viridis colomap 0 value to white.
-            cmap = plt.get_cmap('viridis')
-            cmap.colors[0] = [1, 1, 1]
+            self.save_ppsd()
 
 
-            # TODO: make the period limit user selectable
-            width = self.pref_manager.get_value('img_width') / 2.54
-            height = self.pref_manager.get_value('img_height') / 2.54
-            dpi = self.pref_manager.get_value('img_resolution')
-            fig = plt.figure(figsize = (width, height), dpi = dpi)
-            fig = ppsd.plot(period_lim = (1/1000., 10),
-                            xaxis_frequency = True,
-                            cmap = cmap,
-                            show = False,
-                            show_coverage = True,
-                            fig = fig)
 
-            self.logger.info("Saving image to file %s.", image_filename)
-            if not os.path.exists(os.path.dirname(image_filename)):
-                os.makedirs(os.path.dirname(image_filename))
-            fig.savefig(image_filename, dpi = dpi)
-
-            # Delete the figure.
-            fig.clear()
-            plt.close(fig)
-            del fig
+    def execute_chunked(self, chunk_count, total_chunks, stream, process_limits = None, origin_resource = None):
+        '''
+        '''
+        start_time = process_limits[0]
+        end_time = process_limits[1]
 
 
-            self.logger.info("Saving ppsd object to %s.", npz_filename)
-            if not os.path.exists(os.path.dirname(npz_filename)):
-                os.makedirs(os.path.dirname(npz_filename))
-            ppsd.save_npz(npz_filename)
+        self.logger.info('Processing chunk %d/%d with time interval: %s to %s.', chunk_count, total_chunks,
+                                                                                 start_time.isoformat(),
+                                                                                 end_time.isoformat())
+
+        for cur_trace in stream:
+            self.logger.info('Processing trace with id %s.', cur_trace.id)
+
+            if chunk_count == 1:
+                # Initialize the PPSD.
+                self.initialize_ppsd(cur_trace, start_time, end_time)
+                self.overall_start_time = start_time
+            if chunk_count == total_chunks:
+                # Don't use the data past the intended end time.
+                cur_trace = cur_trace.trim(starttime = start_time,
+                                           endtime = end_time)
+                self.overall_end_time = end_time
+
+            self.logger.info("Adding the trace to the ppsd.")
+            self.ppsd.add(cur_trace)
+            self.logger.info("Time limits of PPSD used times: %s to %s.", self.ppsd.current_times_used[0].isoformat(),
+                                                                          self.ppsd.current_times_used[-1].isoformat())
+
+            if chunk_count == total_chunks:
+                self.save_ppsd()
+
+
+
+    def initialize_ppsd(self, trace, start_time, end_time):
+        ''' Initialize the PPSD.
+        '''
+        ppsd_length = self.pref_manager.get_value('ppsd_length')
+        ppsd_overlap = self.pref_manager.get_value('ppsd_overlap') / 100.
+
+        # Get the channel instance from the inventory.
+        cur_channel = self.project.geometry_inventory.get_channel(station = trace.stats.station,
+                                                                  name = trace.stats.channel,
+                                                                  network = trace.stats.network,
+                                                                  location = trace.stats.location)
+
+        if len(cur_channel) == 0:
+            self.logger.error("No channel found for trace %s. Can't initialize the PPSD object.", trace.id)
+            raise RuntimeError("No channel found for trace %s. Can't initialize the PPSD object." & trace.id)
+        elif len(cur_channel) > 1:
+            self.logger.error("Multiple channels found for trace %s; channels: %s", trace.id, cur_channel)
+            raise RuntimeError("Multiple channels found for trace %s; channels: %s. Can't initialize the PPSD object." % (trace.id, cur_channel))
+        else:
+            cur_channel = cur_channel[0]
+
+        # Get the recorder and sensor parameters.
+        rec_stream_tb = cur_channel.get_stream(start_time = start_time,
+                                               end_time = end_time)
+
+        rec_stream_param = []
+        comp_param = []
+        for cur_rec_stream_tb in rec_stream_tb:
+            cur_rec_stream = cur_rec_stream_tb.item
+            cur_rec_stream_param = cur_rec_stream.get_parameter(start_time = start_time,
+                                                                end_time = end_time)
+            rec_stream_param.extend(cur_rec_stream_param)
+
+            comp_tb = cur_rec_stream.get_component(start_time = start_time,
+                                                   end_time = end_time)
+            for cur_comp_tb in comp_tb:
+                cur_comp = cur_comp_tb.item
+                cur_comp_param = cur_comp.get_parameter(start_time = start_time,
+                                                        end_time = end_time)
+                comp_param.extend(cur_comp_param)
+
+        if len(rec_stream_param) > 1 or len(comp_param) > 1:
+            raise ValueError('There are more than one parameters for this component. This is not yet supported.')
+        else:
+            rec_stream_param = rec_stream_param[0]
+            comp_param = comp_param[0]
+
+        # Create the obspy PAZ dictionary.
+        paz = {}
+        paz['gain'] = 1
+        paz['sensitivity'] = (rec_stream_param.gain * comp_param.sensitivity) / rec_stream_param.bitweight
+        paz['poles'] = comp_param.tf_poles
+        paz['zeros'] = comp_param.tf_zeros
+
+        # Create the ppsd instance and add the stream.
+        stats = trace.stats
+
+        # Monkey patch the PPSD plot method.
+        obspy.signal.PPSD.plot = ppsd_plot
+
+        self.ppsd = obspy.signal.PPSD(stats,
+                                      paz = paz,
+                                      ppsd_length = ppsd_length,
+                                      overlap = ppsd_overlap);
+
+
+    def save_ppsd(self):
+        '''
+        '''
+        ppsd_id = self.ppsd.id.replace('.','_')
+        output_dir = self.pref_manager.get_value('output_dir')
+        image_filename = os.path.join(output_dir, 'images', 'ppsd_%s_%s_%s.png' % (ppsd_id, self.overall_start_time.isoformat().replace(':',''), self.overall_end_time.isoformat().replace(':','')))
+        npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, self.overall_start_time.isoformat().replace(':',''), self.overall_end_time.isoformat().replace(':','')))
+
+
+        # Set the viridis colomap 0 value to white.
+        cmap = plt.get_cmap('viridis')
+        cmap.colors[0] = [1, 1, 1]
+
+
+        # TODO: make the period limit user selectable
+        width = self.pref_manager.get_value('img_width') / 2.54
+        height = self.pref_manager.get_value('img_height') / 2.54
+        dpi = self.pref_manager.get_value('img_resolution')
+        fig = plt.figure(figsize = (width, height), dpi = dpi)
+        fig = self.ppsd.plot(period_lim = (1/1000., 10),
+                             xaxis_frequency = True,
+                             cmap = cmap,
+                             show = False,
+                             show_coverage = True,
+                             fig = fig)
+
+        self.logger.info("Saving image to file %s.", image_filename)
+        if not os.path.exists(os.path.dirname(image_filename)):
+            os.makedirs(os.path.dirname(image_filename))
+        fig.savefig(image_filename, dpi = dpi)
+
+        self.logger.info("Saving ppsd object to %s.", npz_filename)
+        if not os.path.exists(os.path.dirname(npz_filename)):
+            os.makedirs(os.path.dirname(npz_filename))
+        self.ppsd.save_npz(npz_filename)
+
+        # Delete the figure.
+        fig.clear()
+        plt.close(fig)
+        del fig
+
+        # Clear the ppsd object.
+        self.ppsd = None
+
+        # Reset the chunked window limits.
+        self.overall_start_time = None
+        self.overall_end_time = None
 
 
 
