@@ -148,8 +148,11 @@ class WaveClient(object):
 
         '''
         self.stock_lock.acquire()
+        self.logger.debug("stockstream: %s", self.stock)
+        self.logger.debug("add stream: %s", stream) 
         self.stock = self.stock + stream.copy()
         self.stock.merge(stream)
+        self.logger.debug("stockstream: %s", self.stock)
         self.stock_lock.release()
 
 
@@ -394,11 +397,11 @@ class PsysmonDbWaveClient(WaveClient):
                                                     end_time = endTime)
 
                     stream += curStream
-                    new_data = True
+                    #new_data = True
 
                 stream.merge()
-        if new_data:
-            self.add_to_stock(stream)
+        #if new_data:
+        #    self.add_to_stock(stream)
             #self.trim_stock(start_time = startTime, end_time = endTime)
 
         self.logger.debug("....finished getting the waveform.")
@@ -477,16 +480,22 @@ class PsysmonDbWaveClient(WaveClient):
                 for curHeader in cur_query:
                     filename = os.path.join(curHeader.alias, curHeader.filename)
                     self.logger.debug("Loading file: %s", filename)
+                    #cur_data_stream = read(pathname_or_url = filename,
+                    #                       format = curHeader.file_type,
+                    #                       starttime = start_time,
+                    #                       endtime = end_time,
+                    #                       dtype = 'float64')
                     cur_data_stream = read(pathname_or_url = filename,
                                            format = curHeader.file_type,
-                                           starttime = start_time,
-                                           endtime = end_time,
                                            dtype = 'float64')
 
                     # If multiple channels are combined in one file, the
                     # read data stream might contain these channels. Select
                     # only traces fitting the recorder serial and recorder
                     # stream.
+                    # TODO: Don't drop this loaded data but add it to the stock
+                    # stream. The correct station geometry has to be assigned
+                    # before for the other channels.
                     rec_loc, rec_channel = cur_rec_stream.name.split(':')
                     cur_data_stream = cur_data_stream.select(station = cur_rec_stream.serial, location = rec_loc, channel = rec_channel)
 
@@ -501,7 +510,11 @@ class PsysmonDbWaveClient(WaveClient):
                         curTrace.stats.channel = channel
                         curTrace.stats.unit = 'counts'
 
-                    data_stream += cur_data_stream
+                    # Add the stream to the stock.
+                    self.add_to_stock(cur_data_stream)
+
+                    data_stream += cur_data_stream.trim(starttime = start_time,
+                                                        endtime = end_time)
 
             dbSession.close()
         else:
