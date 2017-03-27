@@ -184,11 +184,10 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         self.logger.info('Processing chunk %d/%d with time interval: %s to %s.', chunk_count, total_chunks,
                                                                                  start_time.isoformat(),
                                                                                  end_time.isoformat())
-
         for cur_trace in stream:
             self.logger.info('Processing trace with id %s.', cur_trace.id)
 
-            if chunk_count == 1:
+            if self.ppsd == None:
                 # Initialize the PPSD.
                 self.initialize_ppsd(cur_trace, start_time, end_time)
                 self.overall_start_time = start_time
@@ -200,8 +199,11 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
             self.logger.info("Adding the trace to the ppsd.")
             self.ppsd.add(cur_trace)
-            self.logger.info("Time limits of PPSD used times: %s to %s.", self.ppsd.current_times_used[0].isoformat(),
-                                                                          self.ppsd.current_times_used[-1].isoformat())
+            try:
+                self.logger.info("Time limits of PPSD used times: %s to %s.", self.ppsd.current_times_used[0].isoformat(),
+                                                                               self.ppsd.current_times_used[-1].isoformat())
+            except:
+                self.logger.warning("No PPSD data accumulated.")
 
             if chunk_count == total_chunks:
                 self.save_ppsd()
@@ -293,17 +295,22 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         height = self.pref_manager.get_value('img_height') / 2.54
         dpi = self.pref_manager.get_value('img_resolution')
         fig = plt.figure(figsize = (width, height), dpi = dpi)
-        fig = self.ppsd.plot(period_lim = (1/1000., 10),
-                             xaxis_frequency = True,
-                             cmap = cmap,
-                             show = False,
-                             show_coverage = True,
-                             fig = fig)
+        try:
+            fig = self.ppsd.plot(period_lim = (1/1000., 10),
+                                 xaxis_frequency = True,
+                                 cmap = cmap,
+                                 show = False,
+                                 show_coverage = True,
+                                 fig = fig)
 
-        self.logger.info("Saving image to file %s.", image_filename)
-        if not os.path.exists(os.path.dirname(image_filename)):
-            os.makedirs(os.path.dirname(image_filename))
-        fig.savefig(image_filename, dpi = dpi)
+            self.logger.info("Saving image to file %s.", image_filename)
+        except:
+            self.logger.error("Couldn't save the PPSD. Maybe there was no data accumulated.")
+        finally:
+            if not os.path.exists(os.path.dirname(image_filename)):
+                os.makedirs(os.path.dirname(image_filename))
+            fig.savefig(image_filename, dpi = dpi)
+
 
         self.logger.info("Saving ppsd object to %s.", npz_filename)
         if not os.path.exists(os.path.dirname(npz_filename)):
