@@ -381,9 +381,10 @@ class PsysmonDbWaveClient(WaveClient):
 
                     if isinstance(stock_stream.traces[0].data, np.ma.masked_array):
                         # Try to fill the data gaps.
-                        self.logger.debug('There are gaps in the stock stream. Try to fill them...')
                         stock_stream = stock_stream.split()
                         gaps = stock_stream.getGaps()
+                        if len(gaps) > 0:
+                            self.logger.debug('There are gaps in the stock stream. Try to fill them...')
                         for cur_gap in gaps:
                             if cur_gap in self.stock_data_gaps:
                                 self.logger.debug("The gap %s is part of a miniseed file. Don't reload the data.", cur_gap)
