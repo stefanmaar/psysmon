@@ -71,6 +71,10 @@ class WaveClient(object):
         self.stock = Stream()
 
 
+        # The trace data gaps present in data files.
+        self.stock_data_gaps = []
+
+
         # The threading lock object for the stock stream.
         self.stock_lock = threading.Lock()
 
@@ -147,11 +151,16 @@ class WaveClient(object):
         ''' Add the passed stream to the stock data.
 
         '''
+        # Merge and split the stream to handle overlapping data.
+        stream.merge()
+        stream = stream.split()
+        self.stock_data_gaps.extend(stream.get_gaps())
+
         self.stock_lock.acquire()
         self.logger.debug("stockstream: %s", self.stock)
-        self.logger.debug("add stream: %s", stream) 
+        self.logger.debug("add stream: %s", stream)
         self.stock = self.stock + stream.copy()
-        self.stock.merge(stream)
+        self.stock.merge()
         self.logger.debug("stockstream: %s", self.stock)
         self.stock_lock.release()
 
@@ -163,6 +172,10 @@ class WaveClient(object):
         self.stock_lock.acquire()
         self.stock.trim(starttime = start_time - self.stock_window, endtime = end_time + self.stock_window)
         self.stock_lock.release()
+        remove_gaps = [x for x in self.stock_data_gaps if (x[4] > end_time + self.stock_window) or (x[5] < start_time - self.stock_window)]
+        for cur_gap in remove_gaps:
+            self.stock_data_gaps.remove(cur_gap)
+        self.logger.debug('Removed gaps: %s', remove_gaps)
         self.logger.debug('Trimmed stock stream to %s - %s.', start_time - self.stock_window, end_time + self.stock_window)
         self.logger.debug('stock: %s', self.stock)
 
@@ -320,7 +333,6 @@ class PsysmonDbWaveClient(WaveClient):
         '''
         self.logger.debug("Getting the waveform for SCNL: %s from %s to %s...", scnl, startTime.isoformat(), endTime.isoformat())
 
-        new_data = False
         stream = Stream()
 
         # Trim the stock stream to new limits.
@@ -355,7 +367,6 @@ class PsysmonDbWaveClient(WaveClient):
                                                         start_time = startTime,
                                                         end_time = cur_start_time)
                         stream += curStream
-                        new_data = True
 
                     if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
                         self.logger.debug('Get missing data in back...')
@@ -367,7 +378,6 @@ class PsysmonDbWaveClient(WaveClient):
                                                         start_time = cur_end_time,
                                                         end_time = endTime)
                         stream += curStream
-                        new_data = True
 
                     if isinstance(stock_stream.traces[0].data, np.ma.masked_array):
                         # Try to fill the data gaps.
@@ -375,15 +385,17 @@ class PsysmonDbWaveClient(WaveClient):
                         stock_stream = stock_stream.split()
                         gaps = stock_stream.getGaps()
                         for cur_gap in gaps:
-                            self.logger.debug('Loading data for gap %s.', cur_gap)
-                            curStream = self.load_from_file(station = stat,
-                                                            channel = chan,
-                                                            network = net,
-                                                            location = loc,
-                                                            start_time = cur_gap[4],
-                                                            end_time = cur_gap[5])
-                            stream += curStream
-                            new_data = True
+                            if cur_gap in self.stock_data_gaps:
+                                self.logger.debug("The gap %s is part of a miniseed file. Don't reload the data.", cur_gap)
+                            else:
+                                self.logger.debug('Loading data for gap %s.', cur_gap)
+                                curStream = self.load_from_file(station = stat,
+                                                                channel = chan,
+                                                                network = net,
+                                                                location = loc,
+                                                                start_time = cur_gap[4],
+                                                                end_time = cur_gap[5])
+                                stream += curStream
 
 
                 else:
@@ -397,12 +409,8 @@ class PsysmonDbWaveClient(WaveClient):
                                                     end_time = endTime)
 
                     stream += curStream
-                    #new_data = True
 
                 stream.merge()
-        #if new_data:
-        #    self.add_to_stock(stream)
-            #self.trim_stock(start_time = startTime, end_time = endTime)
 
         self.logger.debug("....finished getting the waveform.")
 
@@ -475,6 +483,9 @@ class PsysmonDbWaveClient(WaveClient):
                 # name.
                 cur_query = query.filter(self.traceheader.recorder_serial == cur_rec_stream.serial).\
                                   filter(self.traceheader.stream == cur_rec_stream.name)
+
+                # Ignore duplicate filenames.
+                cur_query = cur_query.distinct(self.traceheader.filename)
 
                 # Process the results of the query.
                 for curHeader in cur_query:
