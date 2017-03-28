@@ -277,19 +277,19 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
 
 
     def plot(self, stream, color, duration, end_time, show_wiggle_trace = True, show_envelope = False,
-             envelope_style = 'top', minmax_limit = 20, limit_scale = 10, y_lim = None):
+             envelope_style = 'top', minmax_limit = 20, limit_scale = 1, y_lim = None):
         ''' Plot the seismogram.
         '''
         #display_size = wx.GetDisplaySize()
         axes_width = self.axes.get_window_extent().width
-        data_plot_limit = axes_width * 0.75 * limit_scale
+        data_plot_limit = axes_width * limit_scale
         self.logger.debug('data_plot_limit: %f', data_plot_limit)
         #data_plot_limit = 1e20
         for trace in stream:
             if trace.stats.npts > data_plot_limit and (len(trace) / trace.stats.sampling_rate) > minmax_limit:
                 # Plot minmax values
                 self.logger.info('Plotting in minmax mode.')
-                sample_step = np.ceil(len(trace.data) / data_plot_limit)
+                sample_step = 2 * np.ceil(len(trace.data) / data_plot_limit)
                 self.logger.debug("len(trace.data): %f", len(trace.data))
                 self.logger.debug('sample_step: %f', sample_step)
                 trace_data = self.compute_minmax_data(trace.data, sample_step)
