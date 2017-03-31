@@ -51,7 +51,8 @@ class Detrend(ProcessingNode):
         gen_group = pref_page.add_group('General')
         # Add a single_choice field.
         item = SingleChoicePrefItem(name = 'detrend method',
-                              limit = ('simple', 'linear', 'constant'),
+                              #limit = ('simple', 'linear', 'constant'),
+                              limit = ('constant'),
                               value = 'constant')
         gen_group.add_item(item)
 
@@ -64,9 +65,14 @@ class Detrend(ProcessingNode):
             The data to process.
         '''
         #self.logger.debug('Executing the processing node.')
-        stream = stream.split()
-        stream.detrend(type = self.pref_manager.get_value('detrend method'))
-        stream = stream.merge()
+        #stream = stream.split()
+        #stream.detrend(type = self.pref_manager.get_value('detrend method'))
+        #stream = stream.merge()
+
+        for cur_trace in stream:
+            cur_trace.data = cur_trace.data - np.nanmean(cur_trace.data)
+        print id(stream)
+        print "mean: %f" % np.mean(stream[0].data)
 
 
 
