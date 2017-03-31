@@ -201,7 +201,7 @@ class ProjectFileEncoder(json.JSONEncoder):
 
 
     def convert_waveclient(self, obj):
-        ignore_attr = ['project', 'logger', 'stock', 'stock_lock', 'preload_threads', 'waveformDirList', 'client']
+        ignore_attr = ['project', 'logger', 'stock', 'stock_lock', 'stock_data_gaps', 'preload_threads', 'waveformDirList', 'client']
         attr = [x for x in obj.__dict__.keys() if x not in ignore_attr]
         d = self.object_to_dict(obj, attr)
         return d
