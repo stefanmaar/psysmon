@@ -254,6 +254,15 @@ class SourceMap(object):
         # The resulting source map.
         self.result_map = []
 
+        # The location map.
+        self.location_map = []
+
+        # The maximum peak-ground velocity map.
+        self.max_pgv_map = []
+
+        # The maximum Modified Mercalli intensity map.
+        self.max_mmi_map = []
+
 
     @property
     def window_length(self):
@@ -456,18 +465,22 @@ class SourceMap(object):
 
 
 
-    def compute_backprojection(self):
+    def compute_backprojection(self, use_station_corr = True):
         ''' Compute the backprojection matrixes of the stations.
         '''
         for cur_station in self.compute_stations:
-            cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist) + cur_station.corr
+            if use_station_corr:
+                cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist) + cur_station.corr
+            else:
+                cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist)
 
 
     def compute_pseudomag(self):
         ''' Compute the pseudo-magnitude.
         '''
         for cur_station in self.compute_stations:
-            cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp) + cur_station.backprojection
+            #cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp) + cur_station.backprojection
+            cur_station.pseudo_mag = np.log10(2 * np.pi * cur_station.pseudo_amp) + cur_station.backprojection
             #cur_station.pseudo_mag = np.log10(cur_station.alt_resultant) + cur_station.backprojection
             #cur_station.pseudo_mag = np.log10(np.abs(np.max(cur_station.data_v))) + cur_station.backprojection
 
@@ -491,8 +504,30 @@ class SourceMap(object):
             self.result_map = map_max - map_min
         else:
             self.logging.error('Unknown computation method: %s.', method)
+        self.location_map = np.std(pm_mat, axis = 2)
 
 
+    def compute_max_pgv_map(self, hypo_depth = None):
+        ''' Compute the map of the maximal peag-ground-velocities.
+        '''
+        if hypo_depth is None:
+            hypo_depth = self.hypo_depth
+        m = np.reshape(self.result_map, (1, 1, -1))
+        m = np.broadcast_to(m, (self.result_map.shape[0], self.result_map.shape[1], m.shape[2]))
+        x_grid, y_grid, z_grid = np.meshgrid(self.map_x_coord, self.map_y_coord, np.arange(m.shape[2]))
+        m_x = np.reshape(x_grid[:,:,0], (1, 1, -1))
+        m_x = np.broadcast_to(m_x, (self.result_map.shape[0], self.result_map.shape[1], m.shape[2]))
+        m_y = np.reshape(y_grid[:,:,0], (1, 1, -1))
+        m_y = np.broadcast_to(m_y, (self.result_map.shape[0], self.result_map.shape[1], m.shape[2]))
+        dist = np.sqrt((m_x - x_grid)**2 + (m_y - y_grid)**2 + hypo_depth**2)
+        pgv = 10**m / (2*np.pi) * (dist**-self.alpha)
+        self.max_pgv_map = np.max(pgv, axis = 2)
+
+        # Compute the Modified Mercalli intensity using the mapping laws from Wald (1999).
+        self.max_mmi_map = 2.10 * np.log10(self.max_pgv_map * 100) + 3.4
+        mask = self.max_pgv_map > 0.080
+        self.max_mmi_map[mask] = 3.47 * np.log10(self.max_pgv_map[mask] * 100) + 2.35
+        self.max_mmi_map[self.max_mmi_map < 0] = 0.
 
 
 
