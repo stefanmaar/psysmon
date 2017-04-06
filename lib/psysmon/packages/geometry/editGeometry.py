@@ -2019,7 +2019,7 @@ class MapViewPanel(wx.Panel):
         x,y = proj(lon, lat)
         self.mapAx.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
         for cur_station, cur_x, cur_y in zip(self.stations, x, y):
-            self.mapAx.text(cur_x, cur_y, cur_station.name)
+            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
 
 
         # Add some map annotation.
