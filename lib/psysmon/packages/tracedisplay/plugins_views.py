@@ -263,6 +263,9 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
 	self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
+        self.scale_bar_text = None
+        self.scale_bar_amp = None
+        self.scale_bar_amp_text = []
 
         self.line = None
 
@@ -408,10 +411,84 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         self.axes.set_frame_on(False)
         self.axes.get_xaxis().set_visible(False)
         self.axes.get_yaxis().set_visible(False)
-        self.add_time_scalebar(duration = duration, end_time = end_time)
+        scale_length = self.add_time_scalebar(duration = duration)
+        self.add_amplitude_scalebar(scale_length = scale_length, unit = trace.stats.unit)
 
 
-    def add_time_scalebar(self, duration, end_time):
+    def add_time_scalebar(self, duration):
+        ''' Add a time scalebar to the axes.
+        '''
+        if duration > 1:
+            order = len(str(int(np.floor(duration)))) - 1
+            scale_length = 1 * 10**(order-1)
+        elif duration == 1:
+            scale_length = 0.1
+        else:
+            order = len(str(int(np.floor(1/duration)))) - 1
+            scale_length = 1 * (10.** ((order+1) * -1))
+
+        if self.scaleBar:
+            self.scaleBar.remove()
+
+        if self.scale_bar_text:
+            self.scale_bar_text.remove()
+
+        self.scaleBar = self.axes.axvspan(self.t0.timestamp,
+                                          self.t0.timestamp + scale_length,
+                                          color = '0.75')
+
+        ylim = self.axes.get_ylim()
+        self.scale_bar_text = self.axes.text(x = self.t0.timestamp + scale_length,
+                                             y = ylim[1],
+                                             s = '%g s' % scale_length,
+                                             verticalalignment = 'top')
+
+        return scale_length
+
+
+    def add_amplitude_scalebar(self, scale_length, unit):
+        ''' Add an amplitude scalebar to the axes.
+        '''
+        ylim = self.axes.get_ylim()
+        scale_max = np.max(np.abs(ylim))
+
+        scale_max = scale_max / 2.
+
+        if self.scale_bar_amp:
+            self.scale_bar_amp.remove()
+
+        for cur_text in self.scale_bar_amp_text:
+            cur_text.remove()
+        self.scale_bar_amp_text = []
+
+        self.scale_bar_amp = Rectangle((self.t0, -scale_max),
+                                  width = scale_length,
+                                  height = 2 * scale_max,
+                                  edgecolor = 'none',
+                                  facecolor = '0.9',
+                                  transform = self.axes.transData)
+        self.axes.add_patch(self.scale_bar_amp)
+
+        self.scale_bar_amp_text.append(self.axes.text(x = self.t0.timestamp + scale_length,
+                                                 y = scale_max,
+                                                 s = '%g %s' % (scale_max, unit),
+                                                 verticalalignment = 'center',
+                                                 horizontalalignment = 'left',
+                                                 rotation = 'horizontal',
+                                                 #bbox=dict(facecolor = 'white', edgecolor = 'white')
+                                                 ))
+
+        self.scale_bar_amp_text.append(self.axes.text(x = self.t0.timestamp + scale_length,
+                                                 y = -scale_max,
+                                                 s = '%g %s' % (-scale_max, unit),
+                                                 verticalalignment = 'center',
+                                                 horizontalalignment = 'left',
+                                                 rotation = 'horizontal',
+                                                 #bbox=dict(facecolor = 'white', edgecolor = 'white')
+                                                 ))
+
+
+    def add_time_scalebar_old(self, duration, end_time):
         ''' Add a time scalebar to the axes.
         '''
         y_lim = self.axes.get_ylim()
@@ -964,6 +1041,9 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
+        self.axes.set_frame_on(False)
+        self.axes.get_xaxis().set_visible(False)
+        self.axes.get_yaxis().set_visible(False)
 
 
     def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal', cmap = 'viridis'):
@@ -987,7 +1067,9 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
                              amp_mode = amp_mode,
                              cmap = cmap)
 
-            self.axes.set_frame_on(False)
+        self.axes.set_frame_on(False)
+        self.axes.get_xaxis().set_visible(False)
+        self.axes.get_yaxis().set_visible(False)
 
 
     def spectrogram(self, data, samp_rate, wlen, overlap = 0.9, amp_mode = 'normal',
