@@ -173,6 +173,9 @@ class SeismogramPlotter(ViewPlugin):
         scaling_mode = self.pref_manager.get_value('scaling_mode')
         y_lim = None
 
+        # TODO: Do the scaling of the axes limits after the data was plotted.
+        # The plot method has to return the max data value which is used to
+        # compute the axes limits. At the end, the y-limits of the axes ar set.
         if scaling_mode == 'window':
             abs_values = [np.max(np.abs(x)) for x in stream.traces]
             y_lim = np.max(abs_values)
