@@ -99,19 +99,17 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                            parent_rid = self.rid)
 
         window_mode = self.pref_manager.get_value('window_mode')
+        start_time = self.pref_manager.get_value('start_time')
+        end_time = self.pref_manager.get_value('end_time')
         if window_mode == 'free':
             window_length = self.pref_manager.get_value('window_length')
             overlap = self.pref_manager.get_value('window_overlap')
         elif window_mode == 'daily':
-            start_time = self.pref_manager.get_value('start_time')
-            end_time = self.pref_manager.get_value('end_time')
             start_time = UTCDateTime(start_time.year, start_time.month, start_time.day)
             end_time = UTCDateTime(end_time.year, end_time.month, end_time.day)
             window_length = 86400.
             overlap = 0.
         elif window_mode == 'weekly':
-            start_time = self.pref_manager.get_value('start_time')
-            end_time = self.pref_manager.get_value('end_time')
             start_time = UTCDateTime(start_time.year, start_time.month, start_time.day) - start_time.weekday * 86400
             end_time = UTCDateTime(end_time.year, end_time.month, end_time.day) +  (7 - end_time.weekday) * 86400
             window_length = 86400. * 7
