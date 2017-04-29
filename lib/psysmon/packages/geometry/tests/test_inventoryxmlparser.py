@@ -39,8 +39,8 @@ class InventoryXmlParserTestCase(unittest.TestCase):
 
         # Configure the logger.
         cls.logger = logging.getLogger('psysmon')
-        cls.logger.setLevel('DEBUG')
-        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
+        cls.logger.setLevel('INFO')
+        cls.logger.addHandler(psysmon.getLoggerHandler(log_level = 'INFO'))
 
     @classmethod
     def tearDownClass(cls):
@@ -304,6 +304,21 @@ class InventoryXmlParserTestCase(unittest.TestCase):
         self.assertEqual(inventory.networks[0].stations[1].location, '01')
         self.assertEqual(len(inventory.networks[0].stations[0].channels), 3)
         self.assertEqual(len(inventory.networks[0].stations[1].channels), 3)
+
+
+    def test_parse_array_inventory(self):
+        '''
+        '''
+        xml_file = os.path.join(self.data_path, 'inventory_array.xml')
+        xml_parser = InventoryXmlParser()
+        inventory = xml_parser.parse(xml_file)
+
+        self.assertIsInstance(inventory, Inventory)
+        self.assertEqual(inventory.name, 'ARRAY')
+
+        self.assertEqual(len(inventory.arrays), 2)
+        self.assertEqual(len(inventory.arrays[0].stations), 3)
+        self.assertEqual(len(inventory.arrays[1].stations), 3)
 
 
 
