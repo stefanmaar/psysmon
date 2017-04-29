@@ -35,6 +35,7 @@ from lxml import etree
 
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
+from psysmon.packages.geometry.inventory import Array
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Recorder
@@ -71,6 +72,8 @@ class InventoryXmlParser:
         self.required_attributes['location'] = ('name', )
         self.required_attributes['channel'] = ('name', )
         self.required_attributes['assigned_stream'] = ()
+        self.required_attributes['array'] = ('name', )
+        self.required_attributes['array_station'] = ()
 
         # The required tags which have to be present in the inventory.
         self.required_tags = {}
@@ -99,6 +102,9 @@ class InventoryXmlParser:
         self.required_tags['assigned_stream'] = ('recorder_serial', 'recorder_model',
                                                  'recorder_producer','stream_name',
                                                  'start_time', 'end_time')
+        self.required_tags['array'] = ()
+        self.required_tags['array_station'] = ('network', 'name', 'location',
+                                               'start_time', 'end_time')
 
 
 
@@ -127,6 +133,7 @@ class InventoryXmlParser:
         sensor_list = tree.findall('sensor_list')
         recorder_list = tree.findall('recorder_list')
         networks = tree.findall('network')
+        arrays = tree.findall('array')
 
         # Process the sensors first.
         for cur_sensor_list in sensor_list:
@@ -138,8 +145,12 @@ class InventoryXmlParser:
             recorders = cur_recorder_list.findall('recorder')
             self.process_recorders(inventory, recorders)
 
-        # And last process the networks which might depend on recorders.
+        # Now process the networks which might depend on recorders.
         self.process_networks(inventory, networks)
+
+        # Finally process the arrays which require all elements already added
+        # to the inventory.
+        self.process_arrays(inventory, arrays)
 
         self.logger.debug("Success reading the XML file.")
 
@@ -676,7 +687,7 @@ class InventoryXmlParser:
 
 
     def process_networks(self, inventory, networks):
-        ''' Process the extraced network nodes.
+        ''' Process the extracted network nodes.
 
         Parameters
         ----------
@@ -704,6 +715,45 @@ class InventoryXmlParser:
 
             stations = cur_network.findall('station')
             self.process_stations(net_to_add, stations)
+
+
+    def process_arrays(self, inventory, arrays):
+        ''' Process the extracted array nodes.
+
+        Parameters
+        ----------
+        inventory : :class:`~psysmon.packages.geometry.inventory.Inventory`
+            The inventory to which to add the parsed sensors.
+
+        arrays : xml array nodes
+            The xml array nodes parsed using the findall method.
+        '''
+        self.logger.debug("Processing the networks.")
+
+        for cur_array in arrays:
+            content = self.parse_node(cur_array)
+            self.check_completeness(cur_array, content, 'array')
+
+            if 'station' in content.keys():
+                content.pop('station')
+
+            # Create the Array instance and add it to the inventory.
+            array_to_add = Array(name = cur_array.attrib['name'], **content)
+            inventory.add_array(array_to_add)
+
+            # Process the stations to be added to the array.
+            stations = cur_array.findall('station')
+            for cur_station in stations:
+                stat_content = self.parse_node(cur_station)
+                self.check_completeness(cur_station, stat_content, 'array_station')
+                station_to_add = inventory.get_station(network = stat_content['network'],
+                                                       name = stat_content['name'],
+                                                       location = stat_content['location'])
+                if len(station_to_add) == 1:
+                    station_to_add = station_to_add[0]
+                    array_to_add.add_station(station_to_add,
+                                             start_time = stat_content['start_time'],
+                                             end_time = stat_content['end_time'])
 
 
 
@@ -835,8 +885,8 @@ class InventoryXmlParser:
                 self.logger.debug("%s", content)
                 return True
             else:
-                self.logger.debug("Not all required fields present!\nMissing Keys:\n")
-                self.logger.debug("%s", missing_keys)
-                self.logger.debug("%s", missing_attrib)
-                return False
+                self.logger.error("Not all required fields present!\nMissing Keys:\n")
+                self.logger.error("%s", missing_keys)
+                self.logger.error("%s", missing_attrib)
+                raise RuntimeError("Not all required fieds for node %s present." % node_type)
 
