@@ -1,0 +1,898 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<inventory name="ARRAY">
+
+    <sensor_list>
+        <!-- ******************************************************************* -->
+        <!--                           GS-11D sensors                            -->
+        <!-- ******************************************************************* -->
+		<sensor serial="171966-010">
+            <model>GS-11D 3C borehole</model>
+            <producer>Geosono</producer>
+            <description>4.5Hz Geophone</description>
+
+            <component name="vertical">
+                <description>The vertical component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="north">
+                <description>The northwards pointing component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <component_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="east">
+                <description>The eastwards component of the sensor.</description>
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <component_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="171966-008">
+            <model>GS-11D 3C borehole</model>
+            <producer>Geosono</producer>
+            <description>4.5Hz Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="north">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The northwards pointing component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+
+            <component name="east">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The eastwards component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="142839-002">
+            <model>GS-11D</model>
+            <producer>Geospace</producer>
+            <description>4.5Hz vertical Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="142839-003">
+            <model>GS-11D</model>
+            <producer>Geospace</producer>
+            <description>4.5Hz vertical Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="142839-004">
+            <model>GS-11D</model>
+            <producer>Geospace</producer>
+            <description>4.5Hz vertical Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="142839-006">
+            <model>GS-11D</model>
+            <producer>Geospace</producer>
+            <description>4.5Hz vertical Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="142839-005">
+            <model>GS-11D</model>
+            <producer>Geospace</producer>
+            <description>4.5Hz vertical Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+        <sensor serial="142839-001">
+            <model>GS-11D</model>
+            <producer>Geospace</producer>
+            <description>4.5Hz vertical Geophone</description>
+
+            <component name="vertical">
+                <input_unit>m</input_unit>
+                <output_unit>m/s</output_unit>
+                <deliver_unit>V</deliver_unit>
+                <description>The vertical component of the sensor.</description>
+                <component_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <sensitivity>81</sensitivity>
+                </component_parameter>            
+            </component>
+        </sensor>
+
+		<sensor serial="142839-007">
+			<model>GS-11D</model>
+			<producer>Geospace</producer>
+			<description>4.5Hz vertical Geophone</description>
+			
+			<component name="vertical">
+				<input_unit>m</input_unit>
+				<output_unit>m/s</output_unit>
+				<deliver_unit>V</deliver_unit>
+				<description>The vertical component of the sensor.</description>
+				<component_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+					<end_time/>
+					<sensitivity>81</sensitivity>
+				</component_parameter>            
+			</component>
+		</sensor>
+   
+		<sensor serial="142839-008">
+			<model>GS-11D</model>
+			<producer>Geospace</producer>
+			<description>4.5Hz vertical Geophone</description>
+			
+			<component name="vertical">
+				<input_unit>m</input_unit>
+				<output_unit>m/s</output_unit>
+				<deliver_unit>V</deliver_unit>
+				<description>The vertical component of the sensor.</description>
+				<component_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+					<end_time/>
+					<sensitivity>81</sensitivity>
+				</component_parameter>            
+			</component>
+		</sensor>
+		
+		<sensor serial="142839-009">
+			<model>GS-11D</model>
+			<producer>Geospace</producer>
+			<description>4.5Hz vertical Geophone</description>
+			
+			<component name="vertical">
+				<input_unit>m</input_unit>
+				<output_unit>m/s</output_unit>
+				<deliver_unit>V</deliver_unit>
+				<description>The vertical component of the sensor.</description>
+				<component_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+					<end_time/>
+					<sensitivity>81</sensitivity>
+				</component_parameter>            
+			</component>
+		</sensor>
+       
+    </sensor_list>
+
+
+    <recorder_list>
+        <!-- ******************************************************************* -->
+        <!--                        RUWAI RECORDERS                              -->
+        <!-- ******************************************************************* -->
+        <recorder serial="00006">
+            <model>Ruwai</model>
+            <producer>SeisRock</producer>
+            <description>Recorder description.</description>
+
+            <stream name="00:001">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>171966-010</sensor_serial>
+                    <sensor_model>GS-11D 3C borehole</sensor_model>
+                    <sensor_producer>Geosono</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:002">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>171966-010</sensor_serial>
+                    <sensor_model>GS-11D 3C borehole</sensor_model>
+                    <sensor_producer>Geosono</sensor_producer>
+                    <component_name>north</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:003">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>171966-010</sensor_serial>
+                    <sensor_model>GS-11D 3C borehole</sensor_model>
+                    <sensor_producer>Geosono</sensor_producer>
+                    <component_name>east</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+        </recorder>
+
+        <recorder serial="00004">
+            <model>Ruwai</model>
+            <producer>SeisRock</producer>
+            <description>Recorder description.</description>
+
+            <stream name="00:001">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>171966-008</sensor_serial>
+                    <sensor_model>GS-11D 3C borehole</sensor_model>
+                    <sensor_producer>Geosono</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:002">
+                <label>HHN</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>171966-008</sensor_serial>
+                    <sensor_model>GS-11D 3C borehole</sensor_model>
+                    <sensor_producer>Geosono</sensor_producer>
+                    <component_name>north</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:003">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>171966-008</sensor_serial>
+                    <sensor_model>GS-11D 3C borehole</sensor_model>
+                    <sensor_producer>Geosono</sensor_producer>
+                    <component_name>east</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+        </recorder>
+
+        <recorder serial="0000B">
+            <model>Ruwai</model>
+            <producer>SeisRock</producer>
+            <description>Recorder description.</description>
+
+            <stream name="00:001">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142839-002</sensor_serial>
+                    <sensor_model>GS-11D</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:002">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142839-003</sensor_serial>
+                    <sensor_model>GS-11D</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:003">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142839-004</sensor_serial>
+                    <sensor_model>GS-11D</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+        </recorder>
+
+        <recorder serial="00009">
+            <model>Ruwai</model>
+            <producer>SeisRock</producer>
+            <description>Recorder description.</description>
+
+            <stream name="00:001">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142839-006</sensor_serial>
+                    <sensor_model>GS-11D</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:002">
+                <label>HHZ</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142839-005</sensor_serial>
+                    <sensor_model>GS-11D</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+
+            <stream name="00:003">
+                <label>HHE</label>
+                <stream_parameter>
+                    <start_time>2016-01-01T00:00:00Z</start_time>
+                    <end_time/>
+                    <gain>32</gain>
+                    <bitweight>1.59e-6</bitweight>
+                </stream_parameter>
+                <assigned_component>
+                    <sensor_serial>142839-001</sensor_serial>
+                    <sensor_model>GS-11D</sensor_model>
+                    <sensor_producer>Geospace</sensor_producer>
+                    <component_name>vertical</component_name>
+                    <start_time>2016-01-01T00:00:00.000000Z</start_time>
+                    <end_time/>
+                </assigned_component>
+            </stream>
+        </recorder>
+		
+		<recorder serial="00008">
+			<model>Ruwai</model>
+			<producer>SeisRock</producer>
+			<description>Recorder description.</description>
+			
+			<stream name="00:001">
+				<label>HHZ</label>
+				<stream_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+					<end_time/>
+					<gain>32</gain>
+					<bitweight>1.59e-6</bitweight>
+				</stream_parameter>
+				<assigned_component>
+					<sensor_serial>142839-007</sensor_serial>
+					<sensor_model>GS-11D</sensor_model>
+					<sensor_producer>Geospace</sensor_producer>
+					<component_name>vertical</component_name>
+					<start_time>2016-01-01T00:00:00.000000Z</start_time>
+					<end_time/>
+				</assigned_component>
+			</stream>
+			
+			<stream name="00:002">
+				<label>HHZ</label>
+				<stream_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+					<end_time/>
+					<gain>32</gain>
+					<bitweight>1.59e-6</bitweight>
+				</stream_parameter>
+				<assigned_component>
+					<sensor_serial>142839-008</sensor_serial>
+					<sensor_model>GS-11D</sensor_model>
+					<sensor_producer>Geospace</sensor_producer>
+					<component_name>vertical</component_name>
+					<start_time>2016-01-01T00:00:00.000000Z</start_time>
+					<end_time/>
+				</assigned_component>
+			</stream>
+			
+			<stream name="00:003">
+				<label>HHE</label>
+				<stream_parameter>
+					<start_time>2016-01-01T00:00:00Z</start_time>
+					<end_time/>
+					<gain>32</gain>
+					<bitweight>1.59e-6</bitweight>
+				</stream_parameter>
+				<assigned_component>
+					<sensor_serial>142839-009</sensor_serial>
+					<sensor_model>GS-11D</sensor_model>
+					<sensor_producer>Geospace</sensor_producer>
+					<component_name>vertical</component_name>
+					<start_time>2016-01-01T00:00:00.000000Z</start_time>
+					<end_time/>
+				</assigned_component>
+			</stream>
+		</recorder>
+    </recorder_list>
+
+
+    <network name="XX">
+        <description>Network to monitor the rockfall activity of the Sonnblick north-face.</description>
+        <type>temporary</type>
+
+        <station name="OBS">
+            <location name="00">
+                <x>421494</x>
+                <y>212850</y>
+                <z>3106</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00006</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:001</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description>Northwards pointing channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00006</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:002</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description>Eastwards pointing channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00006</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:003</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="STO">
+            <location name="00">
+                <x>423368</x>
+                <y>214345</y>
+                <z>1650</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00004</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:001</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHN">
+                    <description>Northwards pointing channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00004</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:002</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+
+                <channel name="HHE">
+                    <description>Eastwards pointing channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00004</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:003</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="PIL">
+            <location name="A">
+                <x>421342.493726</x>
+                <y>214086.650948</y>
+                <z>2260.132568</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>0000B</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:001</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="B">
+                <x>421380.983215</x>
+                <y>214097.136588</y>
+                <z>2253.750244</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>0000B</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:002</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="C">
+                <x>421406.858971717</x>
+                <y>214121.680835173</y>
+                <z>2263.6457784381</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>0000B</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:003</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="MOR">
+            <location name="A">
+                <x>421719.066215791</x>
+                <y>213702.514886349</y>
+                <z>2251.0694725178</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00009</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:001</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="B">
+                <x>421781.143263849</x>
+                <y>213704.049750428</y>
+                <z>2247.5470297588</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00009</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:002</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="C">
+                <x>421755.694464795</x>
+                <y>213717.099291538</y>
+                <z>2256.6715236632</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00009</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:003</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+
+        <station name="MIT">
+            <location name="A">
+                <x>422586.186337578</x>
+                <y>213734.685641031</y>
+                <z>2054.0803914089</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00008</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:001</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="B">
+                <x>422586.186337578</x>
+                <y>213734.685641031</y>
+                <z>2054.0803914089</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00008</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:002</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+
+            <location name="C">
+                <x>422586.186337578</x>
+                <y>213734.685641031</y>
+                <z>2054.0803914089</z>
+                <coord_system>epsg:31258</coord_system>
+                <description></description>
+
+                <channel name="HHZ">
+                    <description>Vertical channel.</description>
+                    <assigned_stream>
+                        <recorder_serial>00008</recorder_serial>
+                        <recorder_model>Ruwai</recorder_model>
+                        <recorder_producer>SeisRock</recorder_producer>
+                        <stream_name>00:003</stream_name>
+                        <start_time>2016-01-01T00:00:00Z</start_time>
+                        <end_time/>
+                    </assigned_stream>
+                </channel>
+            </location>
+        </station>
+    </network>
+
+    <array name = "MOR">
+        <station>
+            <network>XX</network>
+            <name>MOR</name>
+            <location>A</location>
+            <start_time>2016-01-01T00:00:00Z</start_time>
+            <end_time/>
+        </station>
+
+        <station>
+            <network>XX</network>
+            <name>MOR</name>
+            <location>B</location>
+            <start_time>2016-01-01T00:00:00Z</start_time>
+            <end_time/>
+        </station>
+
+        <station>
+            <network>XX</network>
+            <name>MOR</name>
+            <location>C</location>
+            <start_time>2016-01-01T00:00:00Z</start_time>
+            <end_time/>
+        </station>
+    </array>
+
+    <array name = "PIL">
+        <station>
+            <network>XX</network>
+            <name>PIL</name>
+            <location>A</location>
+            <start_time>2016-01-01T00:00:00Z</start_time>
+            <end_time/>
+        </station>
+
+        <station>
+            <network>XX</network>
+            <name>PIL</name>
+            <location>B</location>
+            <start_time>2016-01-01T00:00:00Z</start_time>
+            <end_time/>
+        </station>
+
+        <station>
+            <network>XX</network>
+            <name>PIL</name>
+            <location>C</location>
+            <start_time>2016-01-01T00:00:00Z</start_time>
+            <end_time/>
+        </station>
+    </array>
+
+</inventory>
