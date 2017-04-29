@@ -33,6 +33,7 @@ inventory.
 
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
+from psysmon.packages.geometry.inventory import Array
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Recorder
@@ -138,6 +139,24 @@ class DbInventory(Inventory):
             self.db_session.expunge(removed_network.orm)
 
         return removed_network
+
+
+    def add_array(self, array):
+        ''' Add a new array to the database inventory.
+
+        Parameters
+        ----------
+        array : :class:`psysmon.packages.geometry.inventory.Array`
+            The array to add to the database inventory.
+        '''
+        if array.__class__ is Array:
+            array = DbArray.from_inventory_instance(self, array)
+
+        added_array =  Inventory.add_array(self, array)
+        if added_array is not None:
+            self.db_session.add(added_array.orm)
+
+        return added_array
 
 
     def load_networks(self):
@@ -346,6 +365,122 @@ class DbNetwork(Network):
         return removed_station
 
 
+
+
+class DbArray(Array):
+
+    def __init__(self, orm = None, **kwargs):
+        Array.__init__(self, **kwargs)
+
+        if orm is None:
+            # Create a new database array instance.
+            orm_class = self.parent_inventory.project.dbTables['geom_array']
+            self.orm = orm_class(name = self.name,
+                                 description = self.description,
+                                 agency_uri = self.agency_uri,
+                                 author_uri = self.author_uri,
+                                 creation_time = self.creation_time)
+        else:
+            self.orm = orm
+
+
+    @classmethod
+    def from_sqlalchemy_orm(cls, parent_inventory, orm):
+        array = cls(parent_inventory = parent_inventory,
+                    name = orm.name,
+                    description = orm.description,
+                    author_uri = orm.author_uri,
+                    agency_uri = orm.agency_uri,
+                    creation_time = orm.creation_time,
+                    orm = orm)
+
+        for cur_station in orm.stations:
+            array.add_station(parent_inventory.get_station(network = cur_station.network,
+                                                           name = cur_station.name,
+                                                           location = cur_station.location))
+
+        return array
+
+    @classmethod
+    def from_inventory_instance(cls, parent_inventory, instance):
+        array = cls(parent_inventory = parent_inventory,
+                    name = instance.name,
+                    description = instance.description,
+                    author_uri = instance.author_uri,
+                    agency_uri = instance.agency_uri,
+                    creation_time = instance.creation_time)
+
+        for cur_station in instance.stations:
+            array.add_station(cur_station)
+
+        return array
+
+
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        Array.__setattr__(self, attr, value)
+        attr_map = {};
+        attr_map['name'] = 'name'
+        attr_map['description'] = 'description'
+        attr_map['author_uri'] = 'author_uri'
+        attr_map['agency_uri'] = 'agency_uri'
+        attr_map['creation_time'] = 'creation_time'
+
+        if attr in attr_map.keys():
+            if 'orm' in self.__dict__:
+                setattr(self.orm, attr_map[attr], value)
+
+
+    def add_station(self, station, start_time, end_time):
+        ''' Add a station to the array.
+
+        Parameters
+        ----------
+        station : :class:`DbStation`
+            The station instance to add to the network.
+        '''
+        if station.__class__ is Station:
+            station = DbStation.from_inventory_instance(station.parent_network, station)
+
+        added_station = Array.add_station(self,
+                                          station = station,
+                                          start_time = start_time,
+                                          end_time = end_time)
+        if added_station is not None:
+            if start_time is not None:
+                start_time_timestamp = start_time.timestamp
+            else:
+                start_time_timestamp = None
+
+            if end_time is not None:
+                end_time_timestamp = end_time.timestamp
+            else:
+                end_time_timestamp = None
+
+            orm_class = self.parent_inventory.project.dbTables['geom_stat_to_array']
+            stat_to_array_orm = orm_class(self.name,
+                                          added_station.id,
+                                          start_time_timestamp,
+                                          end_time_timestamp)
+            stat_to_array_orm.station = added_station.orm
+            self.orm.stations.append(stat_to_array_orm)
+
+        return added_station
+
+
+    def remove_station(self, start_time = None, end_time = None, **kwargs):
+        ''' Remove a station from the array.
+        '''
+        removed_stations = Array.remove_station(self,
+                                               start_time = start_time,
+                                               end_time = end_time,
+                                               **kwargs)
+        for cur_stat in removed_stations:
+            self.orm.stations.remove(cur_stat.orm)
+            self.parent_inventory.db_session.expunge(cur_stat.orm)
+
+        return removed_stations
 
 
 class DbStation(Station):
