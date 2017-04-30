@@ -301,6 +301,24 @@ class InventoryXmlParser:
                    'type':'type'}
         net_converter = {}
 
+        # array
+        array_attributes = ['name',]
+        array_tags = ['description',]
+        array_map = {'name': 'name',
+                     'description': 'description'}
+        array_converter = {}
+
+        # array_station
+        array_stat_attributes = []
+        array_stat_tags = ['network', 'name', 'location',
+                           'start_time', 'end_time']
+        array_stat_map = {'network': 'network',
+                          'name': 'name',
+                          'location': 'location',
+                          'start_time': 'start_time',
+                          'end_time': 'end_time'}
+        array_stat_converter = {}
+
         # station
         stat_attributes = ['name',]
         stat_tags = []
@@ -461,6 +479,26 @@ class InventoryXmlParser:
                                                  attr_map = chan_stream_map,
                                                  converter = chan_stream_converter)
 
+
+        # Export the arrays
+        for cur_array in inventory.arrays:
+            array_element = self.instance_to_xml(instance = cur_array,
+                                                 root = root,
+                                                 name = 'array',
+                                                 attributes = array_attributes,
+                                                 tags = array_tags,
+                                                 attr_map = array_map,
+                                                 converter = array_converter)
+
+            for cur_station_tb in cur_array.stations:
+                # Create the station element.
+                stat_element = self.instance_to_xml(instance = cur_station_tb,
+                                                    root = array_element,
+                                                    name = 'station',
+                                                    attributes = array_stat_attributes,
+                                                    tags = array_stat_tags,
+                                                    attr_map = array_stat_map,
+                                                    converter = array_stat_converter)
 
 
         # Write the xml string to a file.
