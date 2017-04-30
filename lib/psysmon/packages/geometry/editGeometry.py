@@ -68,6 +68,9 @@ import psysmon.core.gui
 from psysmon.core.gui import psyContextMenu
 import psysmon.core.guiBricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
+import seaborn as sns
+sns.set_style('whitegrid')
+
 
 
 class EditGeometry(CollectionNode):
@@ -1474,6 +1477,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             pyData = pyData[0]
 
         old_inventory = self.Parent.selected_inventory
+        if self.selected_item == 'array':
+            old_array = self.Parent.selected_array
+        else:
+            old_array = None
 
         if(pyData.__class__.__name__ == 'Station' or pyData.__class__.__name__ == 'DbStation'):
             self.Parent.selected_inventory = pyData.parent_inventory
@@ -1594,8 +1601,13 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
 
         if self.Parent.inventoryViewNotebook.GetSelection() == 1:
-            if self.Parent.selected_inventory != old_inventory:
-                self.Parent.inventoryViewNotebook.updateMapView(self.Parent.selected_inventory)
+            if self.selected_item == 'array':
+                selected_array = self.Parent.selected_array
+            else:
+                selected_array = None
+
+            if self.Parent.selected_inventory != old_inventory or selected_array != old_array:
+                self.Parent.inventoryViewNotebook.updateMapView(self.Parent.selected_inventory, array = selected_array)
 
     ## Update the inventory tree.
     #
@@ -1737,6 +1749,7 @@ class InventoryViewNotebook(wx.Notebook):
         self.logger = self.GetParent().logger
 
         self.inventory = None
+        self.array = None
 
         self.listViewPanel = ListViewPanel(self)
         self.AddPage(self.listViewPanel, "list view")
@@ -1793,7 +1806,7 @@ class InventoryViewNotebook(wx.Notebook):
         self.listViewPanel.showControlPanel('sensor')
 
 
-    def updateMapView(self, inventory):
+    def updateMapView(self, inventory, array = None):
         '''
         Initialize the map view panel with the selected inventory.
         '''
@@ -1805,16 +1818,17 @@ class InventoryViewNotebook(wx.Notebook):
             panel.inventory = cur_inventory
             panel.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
 
-        if inventory != self.inventory:
+        if inventory != self.inventory or array != self.array:
             #t = Thread(target = init_map, args = (self, inventory))
             #t.setDaemon(True)
             #t.start()
 
             wx.BeginBusyCursor()
             #try:
-            self.mapViewPanel.initMap(inventory)
+            self.mapViewPanel.initMap(inventory = inventory, array = array)
             #finally:
             self.inventory = inventory
+            self.array = array
             wx.EndBusyCursor()
 
     def onPageChanged(self, event):
@@ -1997,7 +2011,7 @@ class MapViewPanel(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
 
-    def initMap(self, inventory):
+    def initMap(self, inventory, array = None):
         '''
         Initialize the map parameters.
 
@@ -2012,6 +2026,30 @@ class MapViewPanel(wx.Panel):
         self.mapAx.set_xlim(0, 1)
         self.mapAx.set_ylim(0, 1)
 
+        if array is None:
+            self.plot_networks(inventory = inventory)
+        else:
+            self.plot_array(array = array)
+
+        # Set the map limits.
+        self.mapAx.autoscale(True)
+        #ll_x, ll_y = proj(lower_left[0], lower_left[1])
+        #ur_x, ur_y = proj(upper_right[0], upper_right[1])
+        #self.mapAx.set_xlim((ll_x, ur_x))
+        #self.mapAx.set_ylim((ll_y, ur_y))
+
+        # Change to plain tick label formatter.
+        #self.mapAx.ticklabel_format(style = 'plain')
+        self.mapAx.get_yaxis().get_major_formatter().set_useOffset(False)
+        self.mapAx.get_yaxis().get_major_formatter().set_scientific(False)
+
+        self.mapCanvas.mpl_connect('pick_event', self.onPick)
+        self.mapCanvas.draw()
+
+
+    def plot_networks(self, inventory):
+        ''' Plot the stations of all networks in the inventory.
+        '''
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks:
@@ -2058,31 +2096,84 @@ class MapViewPanel(wx.Panel):
         #self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
         proj = pyproj.Proj(init = 'epsg:'+code[0][0])
 
-        # Plot the stations.
-        x,y = proj(lon, lat)
-        self.mapAx.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
-        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
-            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
 
+        # Plot the stations.
+        station_palette = sns.color_palette(n_colors = len(inventory.arrays) + 1)
+        x,y = proj(lon, lat)
+        stat_color = []
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            cur_color = station_palette[0]
+            for k, cur_array in enumerate(inventory.arrays):
+                if cur_array.get_station(snl = cur_station.snl):
+                    cur_color = station_palette[k + 1]
+                    break
+            stat_color.append(cur_color)
+            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
+        self.mapAx.scatter(x, y, s=100, c = stat_color, marker='^', picker=5, zorder = 3)
 
         # Add some map annotation.
         self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
             ha = 'right', transform = self.mapAx.transAxes)
 
-        # Set the map limits.
-        self.mapAx.autoscale(True)
-        #ll_x, ll_y = proj(lower_left[0], lower_left[1])
-        #ur_x, ur_y = proj(upper_right[0], upper_right[1])
-        #self.mapAx.set_xlim((ll_x, ur_x))
-        #self.mapAx.set_ylim((ll_y, ur_y))
 
-        # Change to plain tick label formatter.
-        #self.mapAx.ticklabel_format(style = 'plain')
-        self.mapAx.get_yaxis().get_major_formatter().set_useOffset(False)
-        self.mapAx.get_yaxis().get_major_formatter().set_scientific(False)
+    def plot_array(self, array):
+        ''' Plot the stations of a single array.
+        '''
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        lonLat.extend([stat.get_lon_lat() for stat in array.stations])
+        self.stations.extend([stat for stat in array.stations])
 
-        self.mapCanvas.mpl_connect('pick_event', self.onPick)
-        self.mapCanvas.draw()
+        if len(lonLat) == 0:
+            self.mapAx.text(1, 1.02, 'NO STATIONS AVAILABLE',
+                            ha = 'right', transform = self.mapAx.transAxes)
+            self.mapCanvas.draw()
+            return
+
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0)
+        self.mapConfig['utmZone'] = geom_util.lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        self.mapConfig['ellips'] = 'wgs84'
+        self.mapConfig['lon_0'] = geom_util.zone2UtmCentralMeridian(self.mapConfig['utmZone'])
+        self.mapConfig['lat_0'] = 0
+        if np.mean([lonLatMin[1], lonLatMax[1]]) >= 0:
+            self.mapConfig['hemisphere'] = 'north'
+        else:
+            self.mapConfig['hemisphere'] = 'south'
+
+        map_extent = lonLatMax - lonLatMin
+        lower_left = lonLatMin - map_extent * 0.1
+        upper_right = lonLatMax + map_extent * 0.1
+        self.mapConfig['limits'] = np.hstack([lower_left, upper_right])
+
+        lon = [x[0] for x in lonLat]
+        lat = [x[1] for x in lonLat]
+
+        # Get the epsg code of the UTM projection.
+        search_dict = {'projection': 'utm', 'ellps': self.mapConfig['ellips'].upper(), 'zone': self.mapConfig['utmZone'], 'no_defs': True, 'units': 'm'}
+        if self.mapConfig['hemisphere'] == 'south':
+            search_dict['south'] = True
+
+        epsg_dict = geom_util.get_epsg_dict()
+        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+
+        # Setup the pyproj projection.projection
+        #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
+
+        #TODO The call in the next line prevents the creation of the map.
+        #self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
+        proj = pyproj.Proj(init = 'epsg:'+code[0][0])
+
+
+        # Plot the stations.
+        x,y = proj(lon, lat)
+        for cur_station, cur_x, cur_y in zip(array.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
+        self.mapAx.scatter(x, y, s=100, marker='^', picker=5, zorder = 3)
+
+        # Add some map annotation.
+        self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
+            ha = 'right', transform = self.mapAx.transAxes)
 
 
     def initMapBasemap(self, inventory):
