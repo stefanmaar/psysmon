@@ -410,8 +410,13 @@ class DbArray(Array):
                     agency_uri = instance.agency_uri,
                     creation_time = instance.creation_time)
 
-        for cur_station in instance.stations:
-            array.add_station(cur_station)
+        for cur_station_tb in instance.stations:
+            db_station = parent_inventory.get_station(name = cur_station_tb.name,
+                                                      network = cur_station_tb.network,
+                                                      location = cur_station_tb.location)[0]
+            array.add_station(station = db_station,
+                              start_time = cur_station_tb.start_time,
+                              end_time = cur_station_tb.end_time)
 
         return array
 
@@ -440,9 +445,6 @@ class DbArray(Array):
         station : :class:`DbStation`
             The station instance to add to the network.
         '''
-        if station.__class__ is Station:
-            station = DbStation.from_inventory_instance(station.parent_network, station)
-
         added_station = Array.add_station(self,
                                           station = station,
                                           start_time = start_time,
