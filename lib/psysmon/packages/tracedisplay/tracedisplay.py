@@ -224,17 +224,34 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                     limit = (0, 86400))
         time_group.add_item(pref_item)
 
-        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
-                                                     label = 'channels',
-                                                     limit = ('HHZ', 'HHN', 'HHE'),
-                                                     value = ['HHZ',])
+        pref_item = pref_manager.SingleChoicePrefItem(name = 'display_mode',
+                                                      label = 'display mode',
+                                                      limit = ('network', 'array'),
+                                                      value = 'network',
+                                                      hooks = {'on_value_change': self.on_display_mode_changed})
         comp_group.add_item(pref_item)
+
 
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_stations',
                                                      label = 'stations',
                                                      limit = ('ALBA', 'BISA', 'SITA'),
                                                      value = ['ALBA'])
         comp_group.add_item(pref_item)
+
+
+        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_arrays',
+                                                     label = 'arrays',
+                                                     limit = ('array_name', ),
+                                                     value = ['array_name'])
+        comp_group.add_item(pref_item)
+
+
+        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
+                                                     label = 'channels',
+                                                     limit = ('HHZ', 'HHN', 'HHE'),
+                                                     value = ['HHZ',])
+        comp_group.add_item(pref_item)
+
 
         pref_item = pref_manager.SingleChoicePrefItem(name = 'sort_stations',
                                                       label = 'sort stations',
@@ -243,14 +260,33 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         comp_group.add_item(pref_item)
 
 
+    def on_display_mode_changed(self):
+        '''
+        '''
+        if self.pref_manager.get_value('display_mode') == 'network':
+            item = self.pref_manager.get_item('show_stations')[0]
+            item.enable_gui_element()
+            item = self.pref_manager.get_item('show_arrays')[0]
+            item.disable_gui_element()
+        elif self.pref_manager.get_value('display_mode') == 'array':
+            item = self.pref_manager.get_item('show_stations')[0]
+            item.disable_gui_element()
+            item = self.pref_manager.get_item('show_arrays')[0]
+            item.enable_gui_element()
+
     def edit(self):
         stations = sorted([x.name + ':' + x.network + ':' + x.location for x in self.project.geometry_inventory.get_station()])
         self.pref_manager.set_limit('show_stations', stations)
 
+        arrays = sorted([x.name for x in self.project.geometry_inventory.arrays])
+        self.pref_manager.set_limit('show_arrays', arrays)
+
         channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
         self.pref_manager.set_limit('show_channels', channels)
 
+
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
+        self.on_display_mode_changed()
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -804,7 +840,7 @@ class DisplayManager(object):
 
 
         # The display mode (network, array).
-        self.display_mode = 'array'
+        self.display_mode = self.pref_manager.get_value('display_mode')
 
 
         # All arrays contained in the inventory.
@@ -826,22 +862,22 @@ class DisplayManager(object):
         # Indicates if the station configuration has changed.
         self.stationsChanged = False
 
-        # Fill the available- and current station lists.
-        for curNetwork in self.inventory.networks:
-            for curStation in curNetwork.stations:
-                self.availableStations.append(DisplayStation(curStation))
+        if self.display_mode == 'network':
+            # Fill the available- and current station lists.
+            for curNetwork in self.inventory.networks:
+                for curStation in curNetwork.stations:
+                    self.availableStations.append(DisplayStation(curStation))
 
-                for curChannel in curStation.channels:
-                    if curChannel.name not in self.availableChannels:
-                        self.availableChannels.append(curChannel.name)
-
-
-        # Fill the available arrays list.
-        for cur_array in self.inventory.arrays:
-            array_snl = [x.snl for x in cur_array.stations]
-            array_stations = [x for x in self.availableStations if x.snl in array_snl]
-            self.availableArrays.append(DisplayArray(array = cur_array,
-                                                     stations = array_stations))
+                    for curChannel in curStation.channels:
+                        if curChannel.name not in self.availableChannels:
+                            self.availableChannels.append(curChannel.name)
+        elif self.display_mode == 'array':
+            # Fill the available arrays list.
+            for cur_array in self.inventory.arrays:
+                array_snl = [x.snl for x in cur_array.stations]
+                array_stations = [x for x in self.availableStations if x.snl in array_snl]
+                self.availableArrays.append(DisplayArray(array = cur_array,
+                                                         stations = array_stations))
 
 
         # The channels currently shown.
