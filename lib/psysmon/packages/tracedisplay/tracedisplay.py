@@ -802,14 +802,25 @@ class DisplayManager(object):
         self.endTime = self.startTime + self.pref_manager.get_value('duration')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
+
+        # The display mode (network, array).
+        self.display_mode = 'array'
+
+
+        # All arrays contained in the inventory.
+        self.availableArrays = []
+
         # All stations that are contained in the inventory.
         self.availableStations = []
 
         # All unique channels contained in the available stations.
         self.availableChannels = []
 
-        # The currently shown stations.
-        # This is a list of DisplayStations instances.
+
+        # The currently shown arrays (list of DisplayArray instances).
+        self.showArrays = []
+
+        # The currently shown stations (list of DisplayStation instances).
         self.showStations = []
 
         # Indicates if the station configuration has changed.
@@ -825,8 +836,15 @@ class DisplayManager(object):
                         self.availableChannels.append(curChannel.name)
 
 
+        # Fill the available arrays list.
+        for cur_array in self.inventory.arrays:
+            array_snl = [x.snl for x in cur_array.stations]
+            array_stations = [x for x in self.availableStations if x.snl in array_snl]
+            self.availableArrays.append(DisplayArray(array = cur_array,
+                                                     stations = array_stations))
+
+
         # The channels currently shown.
-        # TODO: This should be selected by the user in the edit dialog.
         show_channels = self.pref_manager.get_value('show_channels')
         self.showChannels = [x for x in show_channels if x in self.availableChannels]
 
@@ -841,10 +859,6 @@ class DisplayManager(object):
 
 
         # Limit the stations to show.
-        # TODO: This should be selected by the user in the edit dialog.
-        #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
-        #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
-        #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
         show_stations = self.pref_manager.get_value('show_stations')
         for curStation in self.availableStations:
             if curStation.label in show_stations:
@@ -860,6 +874,26 @@ class DisplayManager(object):
         self.logger.debug("Setting stationsChanged to True.")
 
         self.sort_show_stations()
+
+
+        # Select the arrays to show.
+        # TODO: Make this a user preference.
+        show_arrays = ['array 1']
+        for cur_array in self.availableArrays:
+            if cur_array.name in show_arrays:
+                self.showArrays.append(cur_array)
+
+                for cur_station in cur_array.stations:
+                    cur_station.addChannel(self.showChannels)
+                    for cur_channel in cur_station.channels:
+                        for cur_plugin in viewPlugins:
+                            view_class = curPlugin.getViewClass()
+                            if view_class is not None:
+                                cur_channel.addView(cur_plugin.name, view_class)
+
+                    if cur_station not in self.showStations:
+                        self.showStations.append(cur_station)
+                        self.stationsChanged = True
 
 
         # The trace color settings.
@@ -1321,24 +1355,67 @@ class DisplayManager(object):
         ''' Create all display elements needed to plot the shown stations.
 
         '''
-        for curStation in self.showStations:
-            curStatContainer = self.createStationContainer(curStation)
-            # TODO: Create the station related view container node. This is
-            # used for views which use data which is not directly related to a
-            # single channel (e.g. polarization analysis). If the station-data
-            # view container is not used by a plugin, hide it. The station-data
-            # view container should be of the same size and layout as the
-            # channel-view container.
-            for curChannel in curStation.channels:
-                curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
-                #for curViewName, (curViewType, ) in curChannel.views.items():
-                #    self.createViewContainer(curChanContainer, curViewName, curViewType)
+        if self.display_mode == 'network':
+            for curStation in self.showStations:
+                curStatContainer = self.createStationContainer(curStation)
+                # TODO: Create the station related view container node. This is
+                # used for views which use data which is not directly related to a
+                # single channel (e.g. polarization analysis). If the station-data
+                # view container is not used by a plugin, hide it. The station-data
+                # view container should be of the same size and layout as the
+                # channel-view container.
+                for curChannel in curStation.channels:
+                    curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
+                    #for curViewName, (curViewType, ) in curChannel.views.items():
+                    #    self.createViewContainer(curChanContainer, curViewName, curViewType)
 
-            #self.createMultichannelContainer(curStatContainer)
+                #self.createMultichannelContainer(curStatContainer)
+        elif self.display_mode == 'array':
+            for cur_array in self.showArrays:
+                cur_array_container = self.createArrayContainer(cur_array)
+                for cur_station in cur_array.stations:
+                    cur_stat_container = self.createStationContainer(cur_station,
+                                                                     parent_container = cur_array_container)
+                    for cur_channel in cur_station.channels:
+                        cur_chan_container = self.createChannelContainer(cur_stat_container,
+                                                                         cur_channel)
 
 
 
-    def createStationContainer(self, station):
+
+    def createArrayContainer(self, array):
+        ''' Create a container for an array.
+        '''
+        viewport = self.parent.viewport
+
+        # Check if the container already exists in the viewport.
+        array_container = viewport.get_node(array = array.name)
+
+        if not array_container:
+            props = psysmon.core.util.AttribDict()
+            props.array = array.name
+
+            annotation_area = container.StationAnnotationArea(viewport,
+                                                              id = wx.ID_ANY,
+                                                              label = array.name,
+                                                              color = 'white')
+
+            array_container = psysmon.core.gui_view.ContainerNode(parent = viewport,
+                                                                  name = array.name,
+                                                                  props = props,
+                                                                  annotation_area = annotation_area,
+                                                                  color = 'white',
+                                                                  group = 'array_container')
+            viewport.add_node(array_container)
+            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyUp)
+        else:
+            array_container = array_container[0]
+
+        return array_container
+
+
+    def createStationContainer(self, station, parent_container = None):
         ''' Create the station container of the specified station.
 
         '''
@@ -1363,7 +1440,10 @@ class DisplayManager(object):
                                                                 annotation_area = annotation_area,
                                                                 color = 'white',
                                                                 group = 'station_container')
-            viewport.add_node(statContainer)
+            if parent_container:
+                parent_container.add_node(statContainer)
+            else:
+                viewport.add_node(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:
@@ -1452,6 +1532,35 @@ class DisplayManager(object):
                 curChannel.removeView(plugin.name, 'my View')
                 for curContainer in channelContainers:
                     curContainer.remove_node(plugin.rid)
+
+
+
+class DisplayArray(object):
+    ''' Handling the arrays used in tracedisplay array mode.
+    '''
+
+    def __init__(self, array, stations):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        array : 'class':`~psysmon.packages.geometry.inventory.Array`
+            The parent inventory array.
+
+        stations : list of 'class':`~DisplayStation`
+            The stations contained in the array.
+
+        '''
+        # The parent array.
+        self.array = array
+
+        # The stations contained in the array.
+        self.stations = stations
+
+    @property
+    def name(self):
+        return self.array.name
+
 
 
 class DisplayStation(object):
