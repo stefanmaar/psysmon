@@ -919,7 +919,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.icons['recorder_stream_parameter_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['recorder_assigned_components_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['network'] = il.Add(icons.network_icon_16.GetBitmap())
-        self.icons['array'] = il.Add(icons.network_icon_16.GetBitmap())
+        self.icons['array'] = il.Add(icons._2x2_grid_icon_16.GetBitmap())
         self.icons['station'] = il.Add(icons.pin_map_icon_16.GetBitmap())
         self.icons['channel'] = il.Add(icons.pin_sq_right_icon_16.GetBitmap())
         self.icons['channel_stream'] = il.Add(icons.cassette_icon_16.GetBitmap())
