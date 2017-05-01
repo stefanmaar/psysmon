@@ -741,8 +741,13 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
     def register_view_plugin(self, plugin):
         ''' Handle special requests of view plugins.
         '''
-        # Check if the plugin needs a virtual display channel.
-        if hasattr(plugin, 'required_data_channels'):
+        if plugin.get_virtual_stations():
+            # Check if the plugin needs a virtual display channel.
+            for cur_name in plugin.get_virtual_stations():
+                self.displayManager.show_virtual_station(name = cur_name,
+                                                         plugin = plugin)
+        elif hasattr(plugin, 'required_data_channels'):
+            # Check if the plugin needs a virtual display channel.
             # Create the virtual display channel.
             self.displayManager.show_virtual_channel(plugin)
             self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid,])
@@ -753,7 +758,11 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
     def unregister_view_plugin(self, plugin):
         ''' Handle special requests of the view plugins.
         '''
-        if hasattr(plugin, 'required_data_channels'):
+        if plugin.get_virtual_stations():
+            for cur_name in plugin.get_virtual_stations():
+                self.displayManager.hide_virtual_station(name = cur_name,
+                                                         plugin = plugin)
+        elif hasattr(plugin, 'required_data_channels'):
             self.displayManager.hide_virtual_channel(plugin)
         self.viewport.remove_node(name = plugin.rid, recursive = True)
         #self.displayManager.removeViewTool(plugin)
@@ -1276,6 +1285,37 @@ class DisplayManager(object):
         self.parent.update_display()
 
 
+    def show_virtual_station(self, name, plugin):
+        ''' Show a virtual station in the display.
+
+        Parameters
+        ----------
+        name : String
+            The name of the virtual station to show.
+        '''
+        #if name not in self.show_virtual_stations:
+        #    self.show_virtual_stations.append(name)
+
+        for cur_array in self.showArrays:
+            cur_station = cur_array.add_virtual_station(name)
+            array_container = self.createArrayContainer(cur_array)
+            cur_station_container = self.createStationContainer(station = cur_station,
+                                                                parent_container = array_container,
+                                                                group = plugin.rid)
+
+
+    def hide_virtual_station(self, name, plugin):
+        ''' Hide a virtual station in the display.
+
+        '''
+        for cur_array in self.showArrays:
+            cur_array.remove_virtual_station(name)
+            array_container = self.parent.viewport.get_node(array = cur_array.name)
+
+            for cur_container in array_container:
+                cur_container.remove_node(group = plugin.rid)
+
+
     def show_virtual_channel(self, plugin):
         ''' Show a virtual channel in the display.
 
@@ -1512,7 +1552,7 @@ class DisplayManager(object):
         return array_container
 
 
-    def createStationContainer(self, station, parent_container = None):
+    def createStationContainer(self, station, parent_container = None, group = 'station_container'):
         ''' Create the station container of the specified station.
 
         '''
@@ -1536,7 +1576,7 @@ class DisplayManager(object):
                                                                 props = props,
                                                                 annotation_area = annotation_area,
                                                                 color = 'white',
-                                                                group = 'station_container')
+                                                                group = group)
             if parent_container:
                 parent_container.add_node(statContainer)
             else:
@@ -1654,9 +1694,29 @@ class DisplayArray(object):
         # The stations contained in the array.
         self.stations = stations
 
+        # The virtual stations of the array.
+        self.virtual_stations = []
+
     @property
     def name(self):
         return self.array.name
+
+
+    def add_virtual_station(self, name):
+        ''' Add a virtual station to the array.
+        '''
+        cur_station = VirtualDisplayStation(parent = self,
+                                            name = name)
+        self.virtual_stations.append(cur_station)
+        return cur_station
+
+
+    def remove_virtual_station(self, name):
+        ''' Remove a virtual station from the array.
+        '''
+        stations_to_remove = [x for x in self.virtual_stations if x.name in name]
+        for cur_station in stations_to_remove:
+            self.virtual_stations.remove(cur_station)
 
 
 
@@ -1862,6 +1922,44 @@ class DisplayStation(object):
     # Use the obspy_location property to translate the standard location string 
     # to the obspy version.
     obspy_location = property(get_obspy_location)
+
+
+class VirtualDisplayStation(object):
+    ''' A virtual display station.
+
+    The virtual display station uses data from multiple real stations within a
+    display group like an array. View plugins can request virtual channels
+    within the virtual station.
+    '''
+
+    def __init__(self, parent, name, network = 'VV', location = '00'):
+        ''' Initialize the instance.
+        '''
+        # The parent group object.
+        self.parent = parent
+
+        # The network of the virtual station.
+        self.network = network
+
+        # The location of the virtual station.
+        self.location = location
+
+        # The name of the virtual station.
+        self.name = name
+
+
+    def getSNL(self):
+        ''' The the SNL code of the station.
+
+        To easily identify a station, the station, network, location (SNL) code 
+        can be used.
+
+        Returns
+        -------
+        snl : Tuple
+            The SNL code of the station (station, network, location).
+        '''
+        return (self.name, self.network, self.location)
 
 
 
