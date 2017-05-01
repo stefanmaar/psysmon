@@ -185,6 +185,8 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
 
             self.node_list = sorted_nodes
             self.rearrange_nodes()
+            sorted_nodes = []
+
 
 
 
@@ -450,6 +452,18 @@ class ContainerNode(wx.Panel):
         for cur_node in self.node_list:
             cur_node.blit()
 
+
+    def sort_nodes(self, keys = None, order = None):
+        ''' Sort the containers nodes.
+        '''
+        if order:
+            sorted_nodes = []
+            for cur_order in order:
+                cur_node = self.get_node(recursive = False, **cur_order)
+                sorted_nodes.extend(cur_node)
+
+            self.node_list = sorted_nodes
+            self.rearrange_nodes()
 
 
 class ViewContainerNode(wx.Panel):
