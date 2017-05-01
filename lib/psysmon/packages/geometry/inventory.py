@@ -2134,7 +2134,7 @@ class Channel(object):
                 # The stream is already assigned to the station for this
                 # time-span.
                 if start_time is not None:
-                    start_string = end_time.isoformat
+                    start_string = start_time.isoformat
                 else:
                     start_string = 'big bang'
 
@@ -2461,7 +2461,7 @@ class Array(object):
                 # The station is already assigned to the array for this
                 # time-span.
                 if start_time is not None:
-                    start_string = end_time.isoformat
+                    start_string = start_time.isoformat
                 else:
                     start_string = 'big bang'
 
