@@ -862,22 +862,21 @@ class DisplayManager(object):
         # Indicates if the station configuration has changed.
         self.stationsChanged = False
 
-        if self.display_mode == 'network':
-            # Fill the available- and current station lists.
-            for curNetwork in self.inventory.networks:
-                for curStation in curNetwork.stations:
-                    self.availableStations.append(DisplayStation(curStation))
+        # Fill the available- and current station lists.
+        for curNetwork in self.inventory.networks:
+            for curStation in curNetwork.stations:
+                self.availableStations.append(DisplayStation(curStation))
 
-                    for curChannel in curStation.channels:
-                        if curChannel.name not in self.availableChannels:
-                            self.availableChannels.append(curChannel.name)
-        elif self.display_mode == 'array':
-            # Fill the available arrays list.
-            for cur_array in self.inventory.arrays:
-                array_snl = [x.snl for x in cur_array.stations]
-                array_stations = [x for x in self.availableStations if x.snl in array_snl]
-                self.availableArrays.append(DisplayArray(array = cur_array,
-                                                         stations = array_stations))
+                for curChannel in curStation.channels:
+                    if curChannel.name not in self.availableChannels:
+                        self.availableChannels.append(curChannel.name)
+
+        # Fill the available arrays list.
+        for cur_array in self.inventory.arrays:
+            array_snl = [x.snl for x in cur_array.stations]
+            array_stations = [x for x in self.availableStations if x.snl in array_snl]
+            self.availableArrays.append(DisplayArray(array = cur_array,
+                                                     stations = array_stations))
 
 
         # The channels currently shown.
@@ -894,42 +893,42 @@ class DisplayManager(object):
         viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
 
 
-        # Limit the stations to show.
-        show_stations = self.pref_manager.get_value('show_stations')
-        for curStation in self.availableStations:
-            if curStation.label in show_stations:
-                station2Add = curStation
-                station2Add.addChannel(self.showChannels)
-                for curChannel in station2Add.channels:
-                    for curPlugin in viewPlugins:
-                        view_class = curPlugin.getViewClass()
-                        if view_class is not None:
-                            curChannel.addView(curPlugin.name, view_class)
-                self.showStations.append(station2Add)
-        self.stationsChanged = True
-        self.logger.debug("Setting stationsChanged to True.")
-
-        self.sort_show_stations()
-
-
-        # Select the arrays to show.
-        # TODO: Make this a user preference.
-        show_arrays = ['array 1']
-        for cur_array in self.availableArrays:
-            if cur_array.name in show_arrays:
-                self.showArrays.append(cur_array)
-
-                for cur_station in cur_array.stations:
-                    cur_station.addChannel(self.showChannels)
-                    for cur_channel in cur_station.channels:
-                        for cur_plugin in viewPlugins:
+        if self.display_mode == 'network':
+            # Select the stations to show.
+            show_stations = self.pref_manager.get_value('show_stations')
+            for curStation in self.availableStations:
+                if curStation.label in show_stations:
+                    station2Add = curStation
+                    station2Add.addChannel(self.showChannels)
+                    for curChannel in station2Add.channels:
+                        for curPlugin in viewPlugins:
                             view_class = curPlugin.getViewClass()
                             if view_class is not None:
-                                cur_channel.addView(cur_plugin.name, view_class)
+                                curChannel.addView(curPlugin.name, view_class)
+                    self.showStations.append(station2Add)
+            self.stationsChanged = True
+            self.logger.debug("Setting stationsChanged to True.")
 
-                    if cur_station not in self.showStations:
-                        self.showStations.append(cur_station)
-                        self.stationsChanged = True
+            self.sort_show_stations()
+        elif self.display_mode == 'array':
+            # Select the arrays to show.
+            # TODO: Make this a user preference.
+            show_arrays = self.pref_manager.get_value('show_arrays')
+            for cur_array in self.availableArrays:
+                if cur_array.name in show_arrays:
+                    self.showArrays.append(cur_array)
+
+                    for cur_station in cur_array.stations:
+                        cur_station.addChannel(self.showChannels)
+                        for cur_channel in cur_station.channels:
+                            for cur_plugin in viewPlugins:
+                                view_class = curPlugin.getViewClass()
+                                if view_class is not None:
+                                    cur_channel.addView(cur_plugin.name, view_class)
+
+                        if cur_station not in self.showStations:
+                            self.showStations.append(cur_station)
+                            self.stationsChanged = True
 
 
         # The trace color settings.
@@ -1054,8 +1053,48 @@ class DisplayManager(object):
 
 
 
+    def hideArray(self, name):
+        ''' Remove the specified array from the shown arrays.
+
+        Parameters
+        ----------
+        name : String
+            The name of the array which should be hidden.
+        '''
+        array_to_remove = [x for x in self.showArrays if name == x.name]
+
+        for cur_array in array_to_remove:
+            for cur_station in cur_array.stations:
+                self.hideStation(cur_station.snl)
+            self.showArrays.remove(cur_array)
+            self.parent.viewport.remove_node(array = cur_array.name)
+
+
+    def showArray(self, name):
+        ''' Show the specified array.
+
+        Parameters
+        ----------
+        name : String
+            The name of the array which should be hidden.
+        '''
+        array_to_show = [x for x in self.availableArrays if name == x.name]
+
+        for cur_array in array_to_show:
+            self.showArrays.append(cur_array)
+
+            # Create the array containers.
+            cur_array_container = self.createArrayContainer(cur_array)
+            for cur_station in cur_array.stations:
+                self.showStationInContainer(snl = cur_station.snl, parent_container = cur_array_container)
+
+
+        self.parent.viewport.Refresh()
+        self.parent.viewport.Update()
+
+
     def hideStation(self, snl):
-        ''' Remove the specified station from the showed stations.
+        ''' Remove the specified station from the shown stations.
 
         Parameters
         ----------
@@ -1066,10 +1105,10 @@ class DisplayManager(object):
 
         for curStation in stat2Remove:
             self.showStations.remove(curStation)
-            #self.parent.viewport.removeStation(curStation.getSNL())
             self.parent.viewport.remove_node(station = curStation.name,
                                              network = curStation.network,
-                                             location = curStation.location)
+                                             location = curStation.location,
+                                             recursive = True)
 
 
 
@@ -1080,6 +1119,29 @@ class DisplayManager(object):
         ----------
         snl : tuple (String, String, String)
             The station, network, location code of the station which should be hidden.
+        '''
+
+        # Check if the station is part of one or more arrays that are currently
+        # shown.
+        parent_container = []
+        for cur_array in self.availableArrays:
+            if snl in [x.snl for x in cur_array.stations]:
+                cur_container = self.createArrayContainer(array = cur_array)
+                parent_container.append(cur_container)
+
+        if not parent_container:
+            parent_container.append(self.parent.viewport)
+
+        for cur_container in parent_container:
+            self.showStationInContainer(snl = snl,
+                                        parent_container = cur_container)
+
+        self.parent.viewport.Refresh()
+        self.parent.viewport.Update()
+
+
+    def showStationInContainer(self, snl, parent_container):
+        ''' Show the station in the selected container.
         '''
 
         viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
@@ -1105,7 +1167,7 @@ class DisplayManager(object):
                     curChannel.addView(curPlugin.name, view_class)
 
         # Create the necessary channel containers.
-        stationContainer = self.createStationContainer(station2Show)
+        stationContainer = self.createStationContainer(station2Show, parent_container = parent_container)
         for curChannel in station2Show.channels:
             curChanContainer = self.createChannelContainer(stationContainer, curChannel)
             for cur_plugin in viewPlugins:
@@ -1120,13 +1182,12 @@ class DisplayManager(object):
                                                                 group = cur_plugin.rid)
             cur_channel_container.create_plugin_view(cur_plugin)
 
-        # Update the display
-        #self.parent.viewport.sortStations(snl = self.getSNL(source='show'))
-        keys = ('station', 'network', 'location')
-        sort_order = [dict(zip(keys, x)) for x in self.getSNL(source = 'show')]
-        self.parent.viewport.sort_nodes(order = sort_order)
-        self.parent.viewport.Refresh()
-        self.parent.viewport.Update()
+        # Sort the nodes in the viewport.
+        # TODO: Sorting doesn't work when using the arry display. Nodes which
+        # don't fit one of the sort_keys are lost in the viewport.
+        #keys = ('station', 'network', 'location')
+        #sort_order = [dict(zip(keys, x)) for x in self.getSNL(source = 'show')]
+        #parent_container.sort_nodes(order = sort_order)
 
 
         # Request the data.
