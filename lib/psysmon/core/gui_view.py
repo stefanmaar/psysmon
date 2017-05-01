@@ -297,7 +297,13 @@ class ContainerNode(wx.Panel):
 
         if recursive:
             for cur_node in self.node_list:
-                cur_node.remove_node(name = name)
+                if isinstance(cur_node, ContainerNode):
+                    cur_node.remove_node(name = name,
+                                         recursive = recursive,
+                                         group = group,
+                                         **kwargs)
+                else:
+                    cur_node.remove_node(name = name)
 
         self.rearrange_nodes()
         self.container_sizer.Layout()
