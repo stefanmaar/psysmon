@@ -203,12 +203,22 @@ class DbInventory(Inventory):
             self.recorders.append(db_recorder)
 
 
+    def load_arrays(self):
+        ''' Load the arrays from the database.
+        '''
+        array_table = self.project.dbTables['geom_array']
+        for cur_geom_array in self.db_session.query(array_table).order_by(array_table.name):
+            db_array = DbArray.from_sqlalchemy_orm(self, cur_geom_array)
+            self.arrays.append(db_array)
+
+
     def load(self):
         ''' Load the inventory from the database.
         '''
         self.load_sensors()
         self.load_recorders()
         self.load_networks()
+        self.load_arrays()
 
 
     def commit(self):
@@ -229,6 +239,9 @@ class DbInventory(Inventory):
         for cur_network in inventory.networks:
             db_inventory.add_network(cur_network)
 
+        for cur_array in inventory.arrays:
+            db_inventory.add_array(cur_array)
+
         return db_inventory
 
 
@@ -238,6 +251,7 @@ class DbInventory(Inventory):
         db_inventory.load_sensors()
         db_inventory.load_recorders()
         db_inventory.load_networks()
+        db_inventory.load_arrays()
         db_inventory.close()
 
         return db_inventory
@@ -394,10 +408,14 @@ class DbArray(Array):
                     creation_time = orm.creation_time,
                     orm = orm)
 
-        for cur_station in orm.stations:
-            array.add_station(parent_inventory.get_station(network = cur_station.network,
-                                                           name = cur_station.name,
-                                                           location = cur_station.location))
+        for cur_stat_to_array in orm.stations:
+            cur_station = cur_stat_to_array.station
+            db_station = parent_inventory.get_station(network = cur_station.network,
+                                                      name = cur_station.name,
+                                                      location = cur_station.location)[0]
+            array.add_station(station = db_station,
+                              start_time = cur_stat_to_array.start_time,
+                              end_time = cur_stat_to_array.end_time)
 
         return array
 
@@ -451,12 +469,18 @@ class DbArray(Array):
                                           end_time = end_time)
         if added_station is not None:
             if start_time is not None:
-                start_time_timestamp = start_time.timestamp
+                try:
+                    start_time_timestamp = UTCDateTime(start_time).timestamp
+                except:
+                    start_time_timestamp = None
             else:
                 start_time_timestamp = None
 
             if end_time is not None:
-                end_time_timestamp = end_time.timestamp
+                try:
+                    end_time_timestamp = UTCDateTime(end_time).timestamp
+                except:
+                    end_time_timestamp = None
             else:
                 end_time_timestamp = None
 
