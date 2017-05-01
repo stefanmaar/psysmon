@@ -426,6 +426,7 @@ class EditGeometryDlg(wx.Frame):
         '''
         if self.selected_inventory:
             self.selected_inventory.networks = []
+            self.selected_inventory.arrays = []
             self.selected_inventory.recorders = []
             self.selected_inventory.sensors = []
             self.inventoryTree.updateInventoryData()
@@ -816,6 +817,9 @@ class EditGeometryDlg(wx.Frame):
 
                 for cur_network in self.selected_inventory.networks:
                     self.db_inventory.add_network(cur_network)
+
+                for cur_array in self.selected_inventory.arrays:
+                    self.db_inventory.add_array(cur_array)
 
                 self.db_inventory.commit()
         else:
