@@ -1416,13 +1416,16 @@ class ArrayDemoPlotter(ViewPlugin):
         self.icons['active'] = icons.burst_icon_16
 
     def get_virtual_stations(self):
-        return ['DEMO']
+        return {'DEMO': ['CH1', 'CH2']}
+
+
 
     def plot(self, displayManager, dataManager):
-        ''' Plot all available stations.
+        ''' Plot all available virtual stations.
 
         '''
-        self.plotStation(displayManager, dataManager, displayManager.showStations)
+        # Process the virtual stations only.
+        self.plotStation(displayManager, dataManager, displayManager.show_virtual_stations)
 
 
     def plotStation(self, displayManager, dataManager, station):
@@ -1430,7 +1433,7 @@ class ArrayDemoPlotter(ViewPlugin):
 
         '''
         for curStation in station:
-            self.plotChannel(displayManager, dataManager, curStation.channels)
+            self.plotChannel(displayManager, dataManager, curStation.virtual_channels)
 
 
 
@@ -1441,20 +1444,25 @@ class ArrayDemoPlotter(ViewPlugin):
         stream = dataManager.procStream
 
         for curChannel in channels:
-            views = displayManager.getViewContainer(station = curChannel.parent.name,
-                                                      channel = curChannel.name,
-                                                      network = curChannel.parent.network,
-                                                      location = curChannel.parent.location,
-                                                      name = self.rid)
-            curStream = stream.select(station = curChannel.parent.name,
-                                     channel = curChannel.name,
-                                     network = curChannel.parent.network,
-                                     location = curChannel.parent.obspy_location)
+            views = self.parent.viewport.get_node(name = self.rid,
+                                                  channel = curChannel.name,
+                                                  station = curChannel.parent.name,
+                                                  network = curChannel.parent.network,
+                                                  location = curChannel.parent.location)
+
+            # Get the data of all stations shown in the array.
+            array = curChannel.parent.parent
+            cur_stream = obspy.core.Stream()
+            request_channel = 'HHZ'
+            for cur_station in array.stations:
+                cur_stream += stream.select(station = cur_station.name,
+                                            channel = request_channel,
+                                            network = cur_station.network,
+                                            location = cur_station.location)
 
             for curView in views:
-                if curStream:
-                    #lineColor = [x/255.0 for x in curChannel.container.color]
-                    curView.plot(curStream, [0.3, 0, 0])
+                if cur_stream:
+                    curView.plot(cur_stream)
 
                 curView.setXLimits(left = displayManager.startTime.timestamp,
                                    right = displayManager.endTime.timestamp)
@@ -1467,11 +1475,11 @@ class ArrayDemoPlotter(ViewPlugin):
         ''' Get a class object of the view.
 
         '''
-        return DemoView
+        return ArrayDemoView
 
 
 
-class DemoView(psysmon.core.gui_view.ViewNode):
+class ArrayDemoView(psysmon.core.gui_view.ViewNode):
     '''
     A standard seismogram view.
 
@@ -1490,12 +1498,17 @@ class DemoView(psysmon.core.gui_view.ViewNode):
 
         self.scaleBar = None
 
-        self.line = None
+        self.lines = []
 
 
 
-    def plot(self, stream, color):
-
+    def plot(self, stream):
+        ''' Plot all normalized traces of the stream.
+        '''
+        for cur_line in self.lines:
+            self.axes.lines.remove(cur_line)
+        self.lines = []
+        self.axes.set_color_cycle(None)
 
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
@@ -1507,34 +1520,17 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                 timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
 
 
-            if not self.line:
-                self.line, = self.axes.plot(timeArray, trace.data * -1, color = color)
-            else:
-                self.line.set_xdata(timeArray)
-                #self.line.set_ydata(trace.data * -1)
-                self.line.set_ydata(trace.data / np.log10(np.abs(trace.data)))
+            cur_max = np.max(np.abs(trace.data))
+
+            cur_line = self.axes.plot(timeArray, trace.data / cur_max)
+            self.lines.extend(cur_line)
 
             self.axes.set_frame_on(False)
             self.axes.get_xaxis().set_visible(False)
             self.axes.get_yaxis().set_visible(False)
-            yLim = np.max(np.abs(trace.data))
-            self.axes.set_ylim(bottom = -yLim, top = yLim)
 
+        self.axes.set_ylim(bottom = -1, top = 1)
 
-        # Add the scale bar.
-        scaleLength = 10
-        unitsPerPixel = (2*yLim) / self.axes.get_window_extent().height
-        scaleHeight = 3 * unitsPerPixel
-        if self.scaleBar:
-            self.scaleBar.remove()
-        self.scaleBar = Rectangle((timeArray[-1] - scaleLength,
-                                  -yLim+scaleHeight/2.0),
-                                  width=scaleLength,
-                                  height=scaleHeight,
-                                  edgecolor = 'none',
-                                  facecolor = '0.75')
-        self.axes.add_patch(self.scaleBar)
-        #self.axes.axvspan(timeArray[0], timeArray[0] + 10, facecolor='0.5', alpha=0.5)
 
 
     def setYLimits(self, bottom, top):
