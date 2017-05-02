@@ -743,9 +743,10 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         if plugin.get_virtual_stations():
             # Check if the plugin needs a virtual display channel.
-            for cur_name in plugin.get_virtual_stations():
+            for cur_name, cur_channels in plugin.get_virtual_stations().iteritems():
                 self.displayManager.show_virtual_station(name = cur_name,
-                                                         plugin = plugin)
+                                                         plugin = plugin,
+                                                         channels = cur_channels)
         elif hasattr(plugin, 'required_data_channels'):
             # Check if the plugin needs a virtual display channel.
             # Create the virtual display channel.
@@ -797,6 +798,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
         # Plot the data using the view tools.
         viewPlugins = [x for x in self.plugins if x.mode == 'view' and x.active]
+
         for curPlugin in viewPlugins:
             curPlugin.plot(self.displayManager, self.dataManager)
 
@@ -868,6 +870,10 @@ class DisplayManager(object):
         # The currently shown stations (list of DisplayStation instances).
         self.showStations = []
 
+        # The virtual stations currently shown (list of VirtualDisplayStation
+        # instances).
+        self.show_virtual_stations = []
+
         # Indicates if the station configuration has changed.
         self.stationsChanged = False
 
@@ -894,6 +900,7 @@ class DisplayManager(object):
 
         # The virtual channels currently shown.
         self.show_virtual_channels = []
+
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
@@ -1153,8 +1160,12 @@ class DisplayManager(object):
         ''' Show the station in the selected container.
         '''
 
-        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
-        virtualViewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and hasattr(x, 'required_data_channels')]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active
+                       and not hasattr(x, 'required_data_channels')
+                       and not x.get_virtual_stations()]
+        virtualViewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active
+                              and hasattr(x, 'required_data_channels')
+                              and not x.get_virtual_stations()]
         interactive_plugins = [x for x in self.parent.plugins if x.mode == 'interactive' and x.active]
 
         # Get the selected station and set all currently active
@@ -1256,7 +1267,9 @@ class DisplayManager(object):
         if channel not in self.showChannels:
             self.showChannels.append(channel)
 
-        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active
+                       and not hasattr(x, 'required_data_channels')
+                       and not x.get_virtual_stations()]
 
         for curStation in self.showStations:
             # Check if the station has the demanded channels.
@@ -1285,16 +1298,20 @@ class DisplayManager(object):
         self.parent.update_display()
 
 
-    def show_virtual_station(self, name, plugin):
+    def show_virtual_station(self, name, plugin, channels):
         ''' Show a virtual station in the display.
 
         Parameters
         ----------
         name : String
             The name of the virtual station to show.
+
+        plugin : ViewPlugin
+            The plugin requesting the virtual station.
+
+        channels : List of String
+            The virtual channels of the station.
         '''
-        #if name not in self.show_virtual_stations:
-        #    self.show_virtual_stations.append(name)
 
         for cur_array in self.showArrays:
             cur_station = cur_array.add_virtual_station(name)
@@ -1302,6 +1319,16 @@ class DisplayManager(object):
             cur_station_container = self.createStationContainer(station = cur_station,
                                                                 parent_container = array_container,
                                                                 group = plugin.rid)
+            for cur_channel_name in channels:
+                cur_channel = cur_station.add_virtual_channel(cur_channel_name, plugin)
+                cur_channel_container = self.createChannelContainer(cur_station_container,
+                                                                    cur_channel,
+                                                                    group = plugin.rid)
+                # TODO: Create the view of the channel.
+                cur_channel_container.create_plugin_view(plugin)
+
+            self.show_virtual_stations.append(cur_station)
+
 
 
     def hide_virtual_station(self, name, plugin):
@@ -1314,6 +1341,10 @@ class DisplayManager(object):
 
             for cur_container in array_container:
                 cur_container.remove_node(group = plugin.rid)
+
+        stat_to_remove = [x for x in self.show_virtual_stations if name == x.name]
+        for cur_station in stat_to_remove:
+            self.show_virtual_stations.remove(cur_station)
 
 
     def show_virtual_channel(self, plugin):
@@ -1947,6 +1978,30 @@ class VirtualDisplayStation(object):
         # The name of the virtual station.
         self.name = name
 
+        # The virtual channels of the station.
+        self.virtual_channels = []
+
+    @property
+    def obspy_location(self):
+        ''' Translate the '--' location into None.
+
+        Obspy uses the None value for the '--' location identifiere. It's 
+        convenient to keep the '--' location string for exporting data, 
+        requesting data from remote servers and so on. This method can be 
+        used when the obspy styled location is needed.
+
+        Use the obspy_location attribute of the class.
+
+        Returns
+        -------
+        obspy_location : String
+            The translation of the location string into a version, that 
+            obspy can work with.
+        '''
+        if self.location == '--':
+            return None
+        else:
+            return self.location
 
     def getSNL(self):
         ''' The the SNL code of the station.
@@ -1960,6 +2015,14 @@ class VirtualDisplayStation(object):
             The SNL code of the station (station, network, location).
         '''
         return (self.name, self.network, self.location)
+
+
+    def add_virtual_channel(self, name, plugin):
+        ''' Add a virtual channel to the station.
+        '''
+        cur_channel = VirtualDisplayChannel(self, name, plugin)
+        self.virtual_channels.append(cur_channel)
+        return cur_channel
 
 
 
