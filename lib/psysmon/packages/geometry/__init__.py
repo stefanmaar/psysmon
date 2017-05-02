@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "geometry"
-version = "0.0.3"
+version = "0.0.4"
 author = "Stefan Mertl"
 minPsysmonVersion = "0.0.1"
 description = "The geometry package."
@@ -29,6 +29,10 @@ website = "http://www.stefanmertl.com"
 collection_node_modules = ['editGeometry',]
 
 ''' Database change history
+version 0.0.4 - 2017-05-02
+Added the geom_array table.
+Added the geom_stat_to_array table.
+
 version 0.0.3 - 2016-04-28
 Changed the primary key of geom_component_to_stream:
     stream_id, component_id, start_time
