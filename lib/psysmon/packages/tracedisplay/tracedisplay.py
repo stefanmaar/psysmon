@@ -1587,31 +1587,29 @@ class DisplayManager(object):
         ''' Create the station container of the specified station.
 
         '''
-        viewport = self.parent.viewport
+        if parent_container is None:
+            parent_container = self.parent.viewport
 
-        # Check if the container already exists in the viewport.
-        statContainer = viewport.get_node(station = station.name,
-                                          network = station.network,
-                                          location = station.location)
+        # Check if the container already exists in the parent container.
+        statContainer = parent_container.get_node(station = station.name,
+                                                  network = station.network,
+                                                  location = station.location)
         if not statContainer:
             props = psysmon.core.util.AttribDict()
             props.station = station.name
             props.network = station.network
             props.location = station.location
-            annotation_area = container.StationAnnotationArea(viewport,
+            annotation_area = container.StationAnnotationArea(self.parent.viewport,
                                                               id = wx.ID_ANY,
                                                               label = ':'.join(station.getSNL()),
                                                               color = 'white')
-            statContainer = psysmon.core.gui_view.ContainerNode(parent = viewport,
+            statContainer = psysmon.core.gui_view.ContainerNode(parent = self.parent.viewport,
                                                                 name = ':'.join(station.getSNL()),
                                                                 props = props,
                                                                 annotation_area = annotation_area,
                                                                 color = 'white',
                                                                 group = group)
-            if parent_container:
-                parent_container.add_node(statContainer)
-            else:
-                viewport.add_node(statContainer)
+            parent_container.add_node(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:
