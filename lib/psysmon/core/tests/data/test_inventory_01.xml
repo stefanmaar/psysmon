@@ -602,5 +602,23 @@
 
     </network>
 
+    <array name = "array 1">
+        <station>
+            <network>ALPAACT</network>
+            <name>GILA</name>
+            <location>00</location>
+            <start_time>2010-01-01T00:00:00.000000Z</start_time>
+            <end_time/>
+        </station>
+
+        <station>
+            <network>ALPAACT</network>
+            <name>G_NAWA</name>
+            <location>00</location>
+            <start_time>2010-01-01T00:00:00.000000Z</start_time>
+            <end_time/>
+        </station>
+    </array>
+
 </inventory>
 
