@@ -1444,14 +1444,15 @@ class ArrayDemoPlotter(ViewPlugin):
         stream = dataManager.procStream
 
         for curChannel in channels:
-            views = self.parent.viewport.get_node(name = self.rid,
-                                                  channel = curChannel.name,
-                                                  station = curChannel.parent.name,
-                                                  network = curChannel.parent.network,
-                                                  location = curChannel.parent.location)
+            array = curChannel.parent.parent
+            array_node = self.parent.viewport.get_node(array = array.name)[0]
+            views = array_node.get_node(name = self.rid,
+                                        channel = curChannel.name,
+                                        station = curChannel.parent.name,
+                                        network = curChannel.parent.network,
+                                        location = curChannel.parent.location)
 
             # Get the data of all stations shown in the array.
-            array = curChannel.parent.parent
             cur_stream = obspy.core.Stream()
             request_channel = 'HHZ'
             for cur_station in array.stations:
