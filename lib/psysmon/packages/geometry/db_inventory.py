@@ -415,7 +415,8 @@ class DbArray(Array):
                                                       location = cur_station.location)[0]
             array.add_station(station = db_station,
                               start_time = cur_stat_to_array.start_time,
-                              end_time = cur_stat_to_array.end_time)
+                              end_time = cur_stat_to_array.end_time,
+                              ignore_orm = True)
 
         return array
 
@@ -455,42 +456,55 @@ class DbArray(Array):
                 setattr(self.orm, attr_map[attr], value)
 
 
-    def add_station(self, station, start_time, end_time):
+    def add_station(self, station, start_time, end_time, ignore_orm = False):
         ''' Add a station to the array.
 
         Parameters
         ----------
         station : :class:`DbStation`
             The station instance to add to the network.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the sensor has been operating at the station.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the sensor has been operating at the station. "None" if the station is still running.
+
+        ignore_orm : Boolean
+            Control if the component assignment is added to the orm or not. This is usefull
+            when creating an instance from a orm mapper using the from_sqlalchemy_orm
+            class method.
         '''
         added_station = Array.add_station(self,
                                           station = station,
                                           start_time = start_time,
                                           end_time = end_time)
-        if added_station is not None:
-            if start_time is not None:
-                try:
-                    start_time_timestamp = UTCDateTime(start_time).timestamp
-                except:
+
+        if ignore_orm is False:
+            if added_station is not None:
+                if start_time is not None:
+                    try:
+                        start_time_timestamp = UTCDateTime(start_time).timestamp
+                    except:
+                        start_time_timestamp = None
+                else:
                     start_time_timestamp = None
-            else:
-                start_time_timestamp = None
 
-            if end_time is not None:
-                try:
-                    end_time_timestamp = UTCDateTime(end_time).timestamp
-                except:
+                if end_time is not None:
+                    try:
+                        end_time_timestamp = UTCDateTime(end_time).timestamp
+                    except:
+                        end_time_timestamp = None
+                else:
                     end_time_timestamp = None
-            else:
-                end_time_timestamp = None
 
-            orm_class = self.parent_inventory.project.dbTables['geom_stat_to_array']
-            stat_to_array_orm = orm_class(self.name,
-                                          added_station.id,
-                                          start_time_timestamp,
-                                          end_time_timestamp)
-            stat_to_array_orm.station = added_station.orm
-            self.orm.stations.append(stat_to_array_orm)
+                orm_class = self.parent_inventory.project.dbTables['geom_stat_to_array']
+                stat_to_array_orm = orm_class(self.name,
+                                              added_station.id,
+                                              start_time_timestamp,
+                                              end_time_timestamp)
+                stat_to_array_orm.station = added_station.orm
+                self.orm.stations.append(stat_to_array_orm)
 
         return added_station
 
