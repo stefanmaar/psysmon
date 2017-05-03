@@ -2038,6 +2038,10 @@ class DisplayChannel(object):
         #self.container = None
 
 
+    @property
+    def scnl(self):
+        return (self.parent.name, self.name, self.parent.network, self.parent.location)
+
     def addView(self, name, viewType):
         if name not in self.views.keys():
             self.views[name] = (viewType, )
@@ -2047,6 +2051,7 @@ class DisplayChannel(object):
         if name in self.views.keys():
             self.views.pop(name)
 
+    #TODO: Replace all getSCNL calls with the scnl attribute.
     def getSCNL(self):
         return (self.parent.name, self.name, self.parent.network, self.parent.location)
 
