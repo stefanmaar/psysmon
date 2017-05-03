@@ -334,14 +334,20 @@ class LooperCollectionNode(CollectionNode):
                 self.add_child(cur_child)
 
 
-    def add_child(self, child_node, position = -1):
+    def add_child(self, child_node, position = None):
         ''' Add a child node to the looper.
         '''
+        if position is not None:
+            if position >= len(self.children):
+                position = None
+            elif position < 0:
+                position = 0
+
         child_node.parent = self
-        if position == -1:
-            self.children.insert(0, child_node)
+        if position is None:
+            self.children.append(child_node)
         else:
-            self.children.insert(position + 1, child_node)
+            self.children.insert(position, child_node)
 
 
     def remove_child(self, position):
