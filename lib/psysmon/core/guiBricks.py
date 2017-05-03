@@ -677,8 +677,9 @@ class SingleChoiceField(Field):
 
 
     def setControlElementValue(self):
-        pos = self.controlElement.FindString(self.pref_item.value)
-        self.controlElement.SetSelection(pos)
+        if self.pref_item.value:
+            pos = self.controlElement.FindString(self.pref_item.value)
+            self.controlElement.SetSelection(pos)
 
 
     def updateLimit(self):
