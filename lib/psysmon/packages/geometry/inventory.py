@@ -80,6 +80,9 @@ class Inventory(object):
         ## The networks contained in the inventory.
         self.networks = []
 
+        ## The arrays contained in the inventory.
+        self.arrays = []
+
 
     def __str__(self):
         ''' Print the string representation of the inventory.
@@ -101,7 +104,7 @@ class Inventory(object):
 
     def __eq__(self, other):
         if type(self) is type(other):
-            compare_attributes = ['name', 'type', 'recorders', 'networks'] 
+            compare_attributes = ['name', 'type', 'recorders', 'networks', 'arrays']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
                     return False
@@ -267,6 +270,21 @@ class Inventory(object):
             self.logger.error('Found more than one network with the name %s.', name)
 
         return removed_network
+
+
+    def add_array(self, array):
+        ''' Add a new array to the inventory.
+        '''
+        added_array = None
+
+        if not self.get_array(name = array.name):
+            self.arrays.append(array)
+            array.parent_inventory = self
+            added_array = array
+        else:
+            self.logger.error('The array %s already exists in the inventory.', array.name)
+
+        return added_array
 
 
     def has_changed(self):
@@ -525,11 +543,6 @@ class Inventory(object):
         return ret_channel
 
 
-
-
-
-
-
     def get_network(self, **kwargs):
         ''' Get a network from the inventory.
 
@@ -551,6 +564,26 @@ class Inventory(object):
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_network
+
+
+    def get_array(self, **kwargs):
+        ''' Get an array from the inventory.
+
+        Parameters
+        ----------
+        name : String
+            The name of the array.
+        '''
+        ret_array = self.arrays
+
+        valid_keys = ['name']
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_array = [x for x in ret_array if getattr(x, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        return ret_array
 
 
     @classmethod
@@ -2068,7 +2101,7 @@ class Channel(object):
             The time up to which the stream has been operating at the channel. "None" if the channel is still running.
         '''
         if self.parent_inventory is None:
-            raise RuntimeError('The stream needs to be part of an inventory before a sensor can be added.')
+            raise RuntimeError('The channel needs to be part of an inventory before a sensor can be added.')
 
         added_stream = None
         cur_stream = self.parent_inventory.get_stream(serial = serial,
@@ -2101,7 +2134,7 @@ class Channel(object):
                 # The stream is already assigned to the station for this
                 # time-span.
                 if start_time is not None:
-                    start_string = end_time.isoformat
+                    start_string = start_time.isoformat
                 else:
                     start_string = 'big bang'
 
@@ -2333,6 +2366,193 @@ class Network(object):
 
         return ret_station
 
+
+
+class Array(object):
+    ''' An array holding multiple stations.
+    '''
+
+    def __init__(self, name, description = None, author_uri = None,
+                 agency_uri = None, creation_time = None, parent_inventory = None):
+        ''' Initialization of the instance.
+        '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The unique name of the array.
+        self.name = name
+
+        # The description of the array.
+        self.description = description
+
+        ## The stations contained in the array.
+        self.stations = []
+
+        # Indicates if the attributes have been changed.
+        self.has_changed = False
+
+        # The author.
+        self.author_uri = author_uri
+
+        # The agency of the author.
+        self.agency_uri = agency_uri
+
+        # The datetime of the creation.
+        if creation_time == None:
+            self.creation_time = UTCDateTime();
+        else:
+            self.creation_time = UTCDateTime(creation_time);
+
+        # The parent recorder holding the stream.
+        self.parent_inventory = parent_inventory
+
+
+    def __setattr__(self, attr, value):
+        ''' Control the attribute assignements.
+        '''
+        self.__dict__[attr] = value
+
+        self.__dict__['has_changed'] = True
+
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            compare_attributes = ['name', 'description', 'has_changed', 'stations']
+            for cur_attribute in compare_attributes:
+                if getattr(self, cur_attribute) != getattr(other, cur_attribute):
+                    return False
+
+            return True
+        else:
+            return False
+
+
+    def add_station(self, station, start_time, end_time):
+        ''' Add a station to the array.
+
+        Parameters
+        ----------
+        station : :class:`Station`
+            The station instance to add to the network.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the stream has been operating at the channel.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the stream has been operating at the channel. "None" if the channel is still running.
+        '''
+        if self.parent_inventory != station.parent_inventory:
+            raise RuntimeError('The station and the array have to be in the same inventory.')
+
+        added_station = None
+        try:
+            start_time = UTCDateTime(start_time)
+        except:
+            start_time = None
+
+        try:
+            end_time = UTCDateTime(end_time)
+        except:
+            end_time = None
+
+        if self.get_station(snl = station.snl):
+                # The station is already assigned to the array for this
+                # time-span.
+                if start_time is not None:
+                    start_string = start_time.isoformat
+                else:
+                    start_string = 'big bang'
+
+                if end_time is not None:
+                    end_string = end_time.isoformat
+                else:
+                    end_string = 'running'
+
+                self.logger.error('The station %s is already deployed during the specified timespan from %s to %s.', station.snl_string, start_string, end_string)
+        else:
+            self.stations.append(TimeBox(item = station,
+                                         start_time = start_time,
+                                         end_time = end_time,
+                                         parent = self))
+            self.has_changed = True
+            added_station = station
+
+        return added_station
+
+
+    def remove_station_by_instance(self, station_timebox):
+        ''' Remove a station timebox instance.
+        '''
+        self.stations.remove(station_timebox)
+
+
+    def remove_station(self, start_time = None, end_time = None, **kwargs):
+        ''' Remove a station from the array.
+
+        Parameters
+        ----------
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the stream has been operating at the channel.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the stream has been operating at the channel. "None" if the channel is still running.
+        '''
+        stat_to_remove = self.get_station(start_time = start_time,
+                                             end_time = end_time,
+                                             **kwargs)
+        for cur_stat in stat_to_remove:
+            self.stations.remove(cur_stat)
+
+        return stat_to_remove
+
+
+
+    def get_station(self, start_time = None, end_time = None, **kwargs):
+        ''' Get a station from the network.
+
+        Parameters
+        ----------
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time from which on the stream has been operating at the channel.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The time up to which the stream has been operating at the channel. "None" if the channel is still running.
+
+        name : String
+            The name (code) of the station.
+
+        location : String
+            The location code of the station.
+
+        id : Integer
+            The database id of the station.
+
+        snl : Tuple (station, network, location)
+            The SNL tuple of the station.
+
+        snl_string : String
+            The SNL string in the format 'station:network:location'.
+        '''
+        ret_station = self.stations
+
+        valid_keys = ['name', 'network', 'location', 'id', 'snl', 'snl_string']
+
+        for cur_key, cur_value in kwargs.iteritems():
+            if cur_key in valid_keys:
+                ret_station = [x for x in ret_station if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
+            else:
+                warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
+
+        if start_time is not None:
+            ret_station = [x for x in ret_station if (x.end_time is None) or (x.end_time >= start_time)]
+
+        if end_time is not None:
+            ret_station = [x for x in ret_station if x.start_time <= end_time]
+
+
+        return ret_station
 
 
 

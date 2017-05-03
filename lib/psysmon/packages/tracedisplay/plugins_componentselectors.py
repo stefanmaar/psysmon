@@ -19,10 +19,77 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import wx
+
+import psysmon
 from psysmon.core.plugins import OptionPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
+import wx
 
+
+
+
+class SelectArray(OptionPlugin):
+    '''
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
+        ''' Initialize the instance.
+        '''
+        OptionPlugin.__init__(self,
+                              name = 'select array',
+                              category = 'view',
+                              tags = ['array', 'view', 'select']
+                             )
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.icons['active'] = icons._2x2_grid_icon_16
+
+        self.lb = None
+
+
+    def buildFoldPanel(self, parent):
+        ''' Build the custom fold panel.
+        '''
+        fold_panel = wx.Panel(parent = parent, id = wx.ID_ANY)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.array_list = [x.name for x in sorted(self.parent.displayManager.availableArrays)]
+
+        lb = wx.CheckListBox(parent = fold_panel,
+                             id = wx.ID_ANY,
+                             choices = self.array_list)
+
+        shown_array_names = [x.name for x in self.parent.displayManager.showArrays]
+        ind = [m for m,x in enumerate(self.array_list) if x in shown_array_names]
+        lb.SetChecked(ind)
+
+        # Bind the events.
+        lb.Bind(wx.EVT_CHECKLISTBOX, self.on_box_checked, lb)
+
+        sizer.Add(lb, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        fold_panel.SetSizer(sizer)
+
+        # Save the listbox as a class attribute.
+        self.lb = lb
+
+        fold_panel.SetMinSize(lb.GetBestSize())
+
+        return fold_panel
+
+
+    def on_box_checked(self, event):
+        index = event.GetSelection()
+
+        # Show the selected arrays and remove the unselected ones.
+        if not self.lb.IsChecked(index):
+            self.parent.displayManager.hideArray(self.array_list[index])
+        else:
+            self.parent.displayManager.showArray(self.array_list[index])
 
 
 class SelectStation(OptionPlugin):
@@ -31,7 +98,7 @@ class SelectStation(OptionPlugin):
     '''
     nodeClass = 'TraceDisplay'
 
-    def __init__(self): 
+    def __init__(self):
         ''' The constructor
 
         '''

@@ -27,6 +27,7 @@ import os
 import psysmon
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
+from psysmon.packages.geometry.inventory import Array
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Recorder
 from psysmon.packages.geometry.inventory import Channel
@@ -612,6 +613,81 @@ class InventoryTestCase(unittest.TestCase):
         channel1.remove_stream('rec1_serial', 'stream1_name')
         self.assertEqual(len(channel1.streams), 0)
         self.assertEqual(len(stream1.assigned_channels), 0)
+
+
+    def test_add_array_to_inventory(self):
+        inventory = Inventory('inventory_name')
+
+        array_1 = Array(name = 'array_1')
+        array_2 = Array(name = 'array_2')
+
+        inventory.add_array(array_1)
+        inventory.add_array(array_2)
+
+        self.assertEqual(len(inventory.arrays), 2)
+        self.assertTrue(array_1 in inventory.arrays)
+        self.assertTrue(array_2 in inventory.arrays)
+
+
+    def test_handle_station_in_array(self):
+        inventory = Inventory('inventory_name')
+
+        # First create a network and add some stations.
+        network_1 = Network(name = 'XX')
+
+        station_1 = Station(name = 'station_1_name',
+                            location = 'station_1_location',
+                            x = 10,
+                            y = 20,
+                            z = 30)
+
+        station_2 = Station(name = 'station_2_name',
+                            location = 'station_2_location',
+                            x = 10,
+                            y = 20,
+                            z = 30)
+
+        station_3 = Station(name = 'station_3_name',
+                            location = 'station_3_location',
+                            x = 10,
+                            y = 20,
+                            z = 30)
+
+        network_1.add_station(station_1)
+        network_1.add_station(station_2)
+        network_1.add_station(station_3)
+        inventory.add_network(network_1)
+
+
+        # Create two arrays and add them to the inventory.
+        array_1 = Array(name = 'array_1')
+        array_2 = Array(name = 'array_2')
+
+        inventory.add_array(array_1)
+        inventory.add_array(array_2)
+
+
+        # Add some stations to the first array.
+        start_time = UTCDateTime('2017-04-29')
+        array_1.add_station(station_1, start_time = start_time, end_time = None)
+        array_1.add_station(station_2, start_time = start_time, end_time = None)
+        array_1.add_station(station_3, start_time = start_time, end_time = None)
+
+        # Test for correct values.
+        self.assertEqual(len(array_1.stations), 3)
+        self.assertEqual(array_1.stations[0].item, station_1)
+        self.assertEqual(array_1.stations[1].item, station_2)
+        self.assertEqual(array_1.stations[2].item, station_3)
+
+
+        # Remove one station.
+        array_1.remove_station(name = 'station_2_name')
+
+        # Test for correct values.
+        self.assertEqual(len(array_1.stations), 2)
+        self.assertEqual(array_1.stations[0].item, station_1)
+        self.assertEqual(array_1.stations[1].item, station_3)
+
 
 
 

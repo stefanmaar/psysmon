@@ -1390,3 +1390,240 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
     #
     #    # Adjust the scale bar.
 
+
+
+
+############## DEMO PLUGIN FOR ARRAY VIEWS ##########################################
+
+class ArrayDemoPlotter(ViewPlugin):
+    '''
+
+    '''
+    nodeClass = 'TraceDisplay'
+
+    def __init__(self):
+        ''' The constructor.
+
+        '''
+        ViewPlugin.__init__(self,
+                             name = 'array_demo plotter',
+                             category = 'visualize',
+                             tags = None
+                            )
+
+        # Create the logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # Define the plugin icons.
+        self.icons['active'] = icons.burst_icon_16
+
+    def get_virtual_stations(self):
+        return {'DEMO': ['CH1', 'CH2']}
+
+
+
+    def plot(self, displayManager, dataManager):
+        ''' Plot all available virtual stations.
+
+        '''
+        # Process the virtual stations only.
+        self.plotStation(displayManager, dataManager, displayManager.show_virtual_stations)
+
+
+    def plotStation(self, displayManager, dataManager, station):
+        ''' Plot one or more stations.
+
+        '''
+        for curStation in station:
+            self.plotChannel(displayManager, dataManager, curStation.virtual_channels)
+
+
+
+    def plotChannel(self, displayManager, dataManager, channels):
+        ''' Plot one or more channels.
+
+        '''
+        stream = dataManager.procStream
+
+        for curChannel in channels:
+            array = curChannel.parent.parent
+            array_node = self.parent.viewport.get_node(array = array.name)[0]
+            views = array_node.get_node(name = self.rid,
+                                        channel = curChannel.name,
+                                        station = curChannel.parent.name,
+                                        network = curChannel.parent.network,
+                                        location = curChannel.parent.location)
+
+            # Get the data of all stations shown in the array.
+            cur_stream = obspy.core.Stream()
+            request_channel = 'HHZ'
+            for cur_station in array.stations:
+                cur_stream += stream.select(station = cur_station.name,
+                                            channel = request_channel,
+                                            network = cur_station.network,
+                                            location = cur_station.location)
+
+            for curView in views:
+                if cur_stream:
+                    curView.plot(cur_stream)
+
+                curView.setXLimits(left = displayManager.startTime.timestamp,
+                                   right = displayManager.endTime.timestamp)
+                curView.draw()
+
+
+
+
+    def getViewClass(self):
+        ''' Get a class object of the view.
+
+        '''
+        return ArrayDemoView
+
+
+
+class ArrayDemoView(psysmon.core.gui_view.ViewNode):
+    '''
+    A standard seismogram view.
+
+    Display the data as a timeseries.
+    '''
+
+    def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
+        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
+
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        self.t0 = None
+	self.lineColor = [x/255.0 for x in lineColor]
+
+        self.scaleBar = None
+
+        self.lines = []
+
+
+
+    def plot(self, stream):
+        ''' Plot all normalized traces of the stream.
+        '''
+        for cur_line in self.lines:
+            self.axes.lines.remove(cur_line)
+        self.lines = []
+        self.axes.set_color_cycle(None)
+
+        for trace in stream:
+            timeArray = np.arange(0, trace.stats.npts)
+            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = timeArray + trace.stats.starttime.timestamp
+
+            # Check if the data is a ma.maskedarray
+            if np.ma.count_masked(trace.data):
+                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+
+
+            cur_max = np.max(np.abs(trace.data))
+
+            cur_line = self.axes.plot(timeArray, trace.data / cur_max)
+            self.lines.extend(cur_line)
+
+            self.axes.set_frame_on(False)
+            self.axes.get_xaxis().set_visible(False)
+            self.axes.get_yaxis().set_visible(False)
+
+        self.axes.set_ylim(bottom = -1, top = 1)
+
+
+
+    def setYLimits(self, bottom, top):
+        ''' Set the limits of the y-axes.
+        '''
+        self.axes.set_ylim(bottom = bottom, top = top)
+
+
+    def setXLimits(self, left, right):
+        ''' Set the limits of the x-axes.
+        '''
+        self.logger.debug('Set limits: %f, %f', left, right)
+        self.axes.set_xlim(left = left, right = right)
+
+        # Adjust the scale bar.
+
+
+
+    def getScalePixels(self):
+        yLim = self.axes.get_xlim()
+        timeRange = yLim[1] - yLim[0]
+        width = self.axes.get_window_extent().width
+        return  width / float(timeRange)
+
+
+    def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
+        ''' Plot a vertical line in the data axes.
+        '''
+        annotation_artist = self.get_annotation_artist(mode = 'vline',
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+
+        if annotation_artist:
+            annotation_artist = annotation_artist[0]
+            line_artist = annotation_artist.line_artist[0]
+            label_artist = annotation_artist.text_artist[0]
+            if line_artist:
+                line_artist.set_xdata(x)
+            if label_artist:
+                label_artist.set_position((x, 0))
+        else:
+            line_artist = self.axes.axvline(x = x, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.axes.get_ylim()
+                label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
+            else:
+                label_artist = None
+
+            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+                                                                       parent_rid = parent_rid,
+                                                                       key = key)
+            annotation_artist.add_artist([line_artist, label_artist])
+            self.annotation_artists.append(annotation_artist)
+
+
+
+    def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
+        ''' Plot a vertical span in the data axes.
+        '''
+        annotation_artist = self.get_annotation_artist(mode = 'vspan',
+                                                       parent_rid = parent_rid,
+                                                       key = key)
+
+        if annotation_artist:
+            annotation_artist = annotation_artist[0]
+            patch_artist = annotation_artist.patch_artist[0]
+            label_artist = annotation_artist.text_artist[0]
+            if patch_artist:
+                polygon = []
+                polygon.append([x_start, 0])
+                polygon.append([x_start, 1])
+                polygon.append([x_end, 1])
+                polygon.append([x_end, 0])
+                polygon.append([x_start, 0])
+                patch_artist.set_xy(polygon)
+            if label_artist:
+                ylim = self.axes.get_ylim()
+                label_artist.set_position((x_start, ylim[1]))
+        else:
+            vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
+            if 'label' in kwargs.keys():
+                ylim = self.axes.get_ylim()
+                label_artist = self.axes.text(x = x_start, y = ylim[1],
+                                                  s = kwargs['label'],
+                                                  verticalalignment = 'top')
+            else:
+                label_artist = None
+            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vspan',
+                                                                       parent_rid = parent_rid,
+                                                                       key = key)
+            annotation_artist.add_artist([vspan_artist, label_artist])
+            self.annotation_artists.append(annotation_artist)

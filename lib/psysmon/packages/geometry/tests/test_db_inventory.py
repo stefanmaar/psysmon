@@ -37,6 +37,7 @@ from psysmon.core.test_util import remove_project_filestructure
 
 from psysmon.packages.geometry.db_inventory import DbInventory
 from psysmon.packages.geometry.db_inventory import DbNetwork
+from psysmon.packages.geometry.db_inventory import DbArray
 from psysmon.packages.geometry.db_inventory import DbStation
 from psysmon.packages.geometry.db_inventory import DbChannel
 from psysmon.packages.geometry.db_inventory import DbRecorder
@@ -46,6 +47,7 @@ from psysmon.packages.geometry.db_inventory import DbSensorComponent
 from psysmon.packages.geometry.db_inventory import DbSensorComponentParameter
 
 from psysmon.packages.geometry.inventory import Network
+from psysmon.packages.geometry.inventory import Array
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Recorder
@@ -197,7 +199,6 @@ class DbInventoryTestCase(unittest.TestCase):
             self.assertEqual(added_network1.stations[0].channels[0].name, 'channel1_name')
             self.assertEqual(added_network1.stations[1].channels[0].name, 'channel2_name')
 
-            
             db_inventory.commit()
         finally:
             db_inventory.close()
@@ -1334,6 +1335,78 @@ class DbInventoryTestCase(unittest.TestCase):
         self.assertEqual(cur_stream.name, '103')
         self.assertEqual(cur_stream.label, 'Stream-103')
 
+
+
+    def test_add_empty_array_to_inventory(self):
+        db_inventory = DbInventory(self.project)
+
+        try:
+            # Add an array to the db_inventory.
+            array_1 = Array(name = 'array_1',
+                            description = 'Description of array_1.')
+            added_array_1 = db_inventory.add_array(array_1)
+
+            self.assertIsInstance(added_array_1, DbArray)
+            self.assertEqual(len(db_inventory.arrays), 1)
+            self.assertIs(db_inventory.arrays[0], added_array_1)
+
+            db_inventory.commit()
+        finally:
+            db_inventory.close()
+
+
+    def test_add_array_to_inventory(self):
+        db_inventory = DbInventory(self.project)
+
+        try:
+            # First create a network and add some stations.
+            network_1 = Network(name = 'XX')
+
+            station_1 = Station(name = 'station_1_name',
+                                location = 'station_1_location',
+                                x = 10,
+                                y = 20,
+                                z = 30,
+                                coord_system = 'epsg:4326')
+
+            station_2 = Station(name = 'station_2_name',
+                                location = 'station_2_location',
+                                x = 10,
+                                y = 20,
+                                z = 30,
+                                coord_system = 'epsg:4326')
+
+            station_3 = Station(name = 'station_3_name',
+                                location = 'station_3_location',
+                                x = 10,
+                                y = 20,
+                                z = 30,
+                                coord_system = 'epsg:4326')
+
+            network_1.add_station(station_1)
+            network_1.add_station(station_2)
+            network_1.add_station(station_3)
+            added_network_1 = db_inventory.add_network(network_1)
+
+            # Create an array and add it to the inventory.
+            # The array has to be added to the inventory before adding stations
+            # to the array. The stations added to the array have to be part of
+            # the same inventory.
+            array_1 = Array(name = 'array_1',
+                            description = 'Description of array_1.')
+            added_array_1 = db_inventory.add_array(array_1)
+
+            start_time = UTCDateTime('2017-04-29')
+            db_station_1 = added_network_1.get_station(name = 'station_1_name')[0]
+            db_station_2 = added_network_1.get_station(name = 'station_2_name')[0]
+            db_station_3 = added_network_1.get_station(name = 'station_3_name')[0]
+            added_array_1.add_station(db_station_1, start_time = start_time, end_time = None)
+            added_array_1.add_station(db_station_2, start_time = start_time, end_time = None)
+            added_array_1.add_station(db_station_3, start_time = start_time, end_time = None)
+
+            db_inventory.commit()
+        finally:
+            db_inventory.close()
 
 
 def suite():

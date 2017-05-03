@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "geometry"
-version = "0.0.3"
+version = "0.0.4"
 author = "Stefan Mertl"
 minPsysmonVersion = "0.0.1"
 description = "The geometry package."
@@ -29,6 +29,10 @@ website = "http://www.stefanmertl.com"
 collection_node_modules = ['editGeometry',]
 
 ''' Database change history
+version 0.0.4 - 2017-05-02
+Added the geom_array table.
+Added the geom_stat_to_array table.
+
 version 0.0.3 - 2016-04-28
 Changed the primary key of geom_component_to_stream:
     stream_id, component_id, start_time
@@ -376,6 +380,7 @@ def databaseFactory(base):
         creation_time = Column(String(30))
 
         channels = relationship('GeomChannel')
+        arrays = relationship('GeomStatToArray')
 
 
         def __init__(self, name, location, x, y, z, coord_system,
@@ -449,6 +454,55 @@ def databaseFactory(base):
 
 
     tables.append(GeomStreamToChannel)
+
+
+    class GeomArray(base):
+        __tablename__ = 'geom_array'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        name = Column(String(50), primary_key=True, nullable=False)
+        description = Column(String(255))
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        stations = relationship('GeomStatToArray')
+
+        def __init__(self, name, description,
+                agency_uri, author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+    tables.append(GeomArray)
+
+
+    class GeomStatToArray(base):
+        __tablename__ = 'geom_stat_to_array'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+
+        array_name = Column(String(50),
+                            ForeignKey('geom_array.name', onupdate = 'cascade'),
+                            primary_key = True,
+                            nullable = False)
+        station_id = Column(Integer,
+                            ForeignKey('geom_station.id', onupdate = 'cascade'),
+                            primary_key = True,
+                            nullable = False)
+        start_time = Column(Float(53), nullable=False)
+        end_time = Column(Float(53))
+
+        station = relationship('GeomStation')
+
+        def __init__(self, array_name, station_id, start_time, end_time):
+            self.array_name = array_name
+            self.station_id = station_id
+            self.start_time = start_time
+            self.end_time = end_time
+
+    tables.append(GeomStatToArray)
 
 
     return tables

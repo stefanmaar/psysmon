@@ -81,7 +81,9 @@ class TracedisplayTestCase(unittest.TestCase):
 
         self.node.pref_manager.set_value('start_time', utcdatetime.UTCDateTime('2010-08-31T08:00:00'))
         self.node.pref_manager.set_value('duration', 60)
-        self.node.pref_manager.set_value('show_stations', ['SITA:00'])
+        self.node.pref_manager.set_value('show_stations', ['SITA:ALPAACT:00'])
+        self.node.pref_manager.set_value('show_arrays', ['array 1'])
+        self.node.pref_manager.set_value('display_mode', 'array')
 
         # Create a logger for the node.
         loggerName = __name__+ "." + self.node.__class__.__name__

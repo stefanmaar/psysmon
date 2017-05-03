@@ -208,6 +208,17 @@ class PluginNode:
         pass
 
 
+    def get_virtual_stations(self):
+        ''' Return the required virtual stations in a display group.
+
+        Returns
+        -------
+        stations : list of strings
+            The names of the required stations.
+        '''
+        return []
+
+
 
 
 class OptionPlugin(PluginNode):

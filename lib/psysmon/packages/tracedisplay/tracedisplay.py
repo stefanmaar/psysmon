@@ -224,17 +224,34 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                     limit = (0, 86400))
         time_group.add_item(pref_item)
 
-        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
-                                                     label = 'channels',
-                                                     limit = ('HHZ', 'HHN', 'HHE'),
-                                                     value = ['HHZ',])
+        pref_item = pref_manager.SingleChoicePrefItem(name = 'display_mode',
+                                                      label = 'display mode',
+                                                      limit = ('network', 'array'),
+                                                      value = 'network',
+                                                      hooks = {'on_value_change': self.on_display_mode_changed})
         comp_group.add_item(pref_item)
+
 
         pref_item = pref_manager.MultiChoicePrefItem(name = 'show_stations',
                                                      label = 'stations',
                                                      limit = ('ALBA', 'BISA', 'SITA'),
                                                      value = ['ALBA'])
         comp_group.add_item(pref_item)
+
+
+        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_arrays',
+                                                     label = 'arrays',
+                                                     limit = ('array_name', ),
+                                                     value = ['array_name'])
+        comp_group.add_item(pref_item)
+
+
+        pref_item = pref_manager.MultiChoicePrefItem(name = 'show_channels',
+                                                     label = 'channels',
+                                                     limit = ('HHZ', 'HHN', 'HHE'),
+                                                     value = ['HHZ',])
+        comp_group.add_item(pref_item)
+
 
         pref_item = pref_manager.SingleChoicePrefItem(name = 'sort_stations',
                                                       label = 'sort stations',
@@ -243,14 +260,33 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         comp_group.add_item(pref_item)
 
 
+    def on_display_mode_changed(self):
+        '''
+        '''
+        if self.pref_manager.get_value('display_mode') == 'network':
+            item = self.pref_manager.get_item('show_stations')[0]
+            item.enable_gui_element()
+            item = self.pref_manager.get_item('show_arrays')[0]
+            item.disable_gui_element()
+        elif self.pref_manager.get_value('display_mode') == 'array':
+            item = self.pref_manager.get_item('show_stations')[0]
+            item.disable_gui_element()
+            item = self.pref_manager.get_item('show_arrays')[0]
+            item.enable_gui_element()
+
     def edit(self):
         stations = sorted([x.name + ':' + x.network + ':' + x.location for x in self.project.geometry_inventory.get_station()])
         self.pref_manager.set_limit('show_stations', stations)
 
+        arrays = sorted([x.name for x in self.project.geometry_inventory.arrays])
+        self.pref_manager.set_limit('show_arrays', arrays)
+
         channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
         self.pref_manager.set_limit('show_channels', channels)
 
+
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
+        self.on_display_mode_changed()
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -705,8 +741,14 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
     def register_view_plugin(self, plugin):
         ''' Handle special requests of view plugins.
         '''
-        # Check if the plugin needs a virtual display channel.
-        if hasattr(plugin, 'required_data_channels'):
+        if plugin.get_virtual_stations():
+            # Check if the plugin needs a virtual display channel.
+            for cur_name, cur_channels in plugin.get_virtual_stations().iteritems():
+                self.displayManager.show_virtual_station(name = cur_name,
+                                                         plugin = plugin,
+                                                         channels = cur_channels)
+        elif hasattr(plugin, 'required_data_channels'):
+            # Check if the plugin needs a virtual display channel.
             # Create the virtual display channel.
             self.displayManager.show_virtual_channel(plugin)
             self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid,])
@@ -717,7 +759,11 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
     def unregister_view_plugin(self, plugin):
         ''' Handle special requests of the view plugins.
         '''
-        if hasattr(plugin, 'required_data_channels'):
+        if plugin.get_virtual_stations():
+            for cur_name in plugin.get_virtual_stations():
+                self.displayManager.hide_virtual_station(name = cur_name,
+                                                         plugin = plugin)
+        elif hasattr(plugin, 'required_data_channels'):
             self.displayManager.hide_virtual_channel(plugin)
         self.viewport.remove_node(name = plugin.rid, recursive = True)
         #self.displayManager.removeViewTool(plugin)
@@ -752,6 +798,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
         # Plot the data using the view tools.
         viewPlugins = [x for x in self.plugins if x.mode == 'view' and x.active]
+
         for curPlugin in viewPlugins:
             curPlugin.plot(self.displayManager, self.dataManager)
 
@@ -802,15 +849,30 @@ class DisplayManager(object):
         self.endTime = self.startTime + self.pref_manager.get_value('duration')
         #self.endTime = UTCDateTime('2010-08-31 08:05:00')
 
+
+        # The display mode (network, array).
+        self.display_mode = self.pref_manager.get_value('display_mode')
+
+
+        # All arrays contained in the inventory.
+        self.availableArrays = []
+
         # All stations that are contained in the inventory.
         self.availableStations = []
 
         # All unique channels contained in the available stations.
         self.availableChannels = []
 
-        # The currently shown stations.
-        # This is a list of DisplayStations instances.
+
+        # The currently shown arrays (list of DisplayArray instances).
+        self.showArrays = []
+
+        # The currently shown stations (list of DisplayStation instances).
         self.showStations = []
+
+        # The virtual stations currently shown (list of VirtualDisplayStation
+        # instances).
+        self.show_virtual_stations = []
 
         # Indicates if the station configuration has changed.
         self.stationsChanged = False
@@ -824,14 +886,21 @@ class DisplayManager(object):
                     if curChannel.name not in self.availableChannels:
                         self.availableChannels.append(curChannel.name)
 
+        # Fill the available arrays list.
+        for cur_array in self.inventory.arrays:
+            array_snl = [x.snl for x in cur_array.stations]
+            array_stations = [x for x in self.availableStations if x.snl in array_snl]
+            self.availableArrays.append(DisplayArray(array = cur_array,
+                                                     stations = array_stations))
+
 
         # The channels currently shown.
-        # TODO: This should be selected by the user in the edit dialog.
         show_channels = self.pref_manager.get_value('show_channels')
         self.showChannels = [x for x in show_channels if x in self.availableChannels]
 
         # The virtual channels currently shown.
         self.show_virtual_channels = []
+
 
         # The views currently shown. (viewName, viewType)
         # TODO: This should be selected by the user in the edit dialog.
@@ -840,26 +909,42 @@ class DisplayManager(object):
         viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active]
 
 
-        # Limit the stations to show.
-        # TODO: This should be selected by the user in the edit dialog.
-        #self.showStations = [('GILA', 'HHZ', 'ALPAACT', '00'),
-        #                     ('SITA', 'HHZ', 'ALPAACT', '00'),
-        #                     ('GUWA', 'HHZ', 'ALPAACT', '00')]
-        show_stations = self.pref_manager.get_value('show_stations')
-        for curStation in self.availableStations:
-            if curStation.label in show_stations:
-                station2Add = curStation
-                station2Add.addChannel(self.showChannels)
-                for curChannel in station2Add.channels:
-                    for curPlugin in viewPlugins:
-                        view_class = curPlugin.getViewClass()
-                        if view_class is not None:
-                            curChannel.addView(curPlugin.name, view_class)
-                self.showStations.append(station2Add)
-        self.stationsChanged = True
-        self.logger.debug("Setting stationsChanged to True.")
+        if self.display_mode == 'network':
+            # Select the stations to show.
+            show_stations = self.pref_manager.get_value('show_stations')
+            for curStation in self.availableStations:
+                if curStation.label in show_stations:
+                    station2Add = curStation
+                    station2Add.addChannel(self.showChannels)
+                    for curChannel in station2Add.channels:
+                        for curPlugin in viewPlugins:
+                            view_class = curPlugin.getViewClass()
+                            if view_class is not None:
+                                curChannel.addView(curPlugin.name, view_class)
+                    self.showStations.append(station2Add)
+            self.stationsChanged = True
+            self.logger.debug("Setting stationsChanged to True.")
 
-        self.sort_show_stations()
+            self.sort_show_stations()
+        elif self.display_mode == 'array':
+            # Select the arrays to show.
+            # TODO: Make this a user preference.
+            show_arrays = self.pref_manager.get_value('show_arrays')
+            for cur_array in self.availableArrays:
+                if cur_array.name in show_arrays:
+                    self.showArrays.append(cur_array)
+
+                    for cur_station in cur_array.stations:
+                        cur_station.addChannel(self.showChannels)
+                        for cur_channel in cur_station.channels:
+                            for cur_plugin in viewPlugins:
+                                view_class = curPlugin.getViewClass()
+                                if view_class is not None:
+                                    cur_channel.addView(cur_plugin.name, view_class)
+
+                        if cur_station not in self.showStations:
+                            self.showStations.append(cur_station)
+                            self.stationsChanged = True
 
 
         # The trace color settings.
@@ -984,8 +1069,48 @@ class DisplayManager(object):
 
 
 
+    def hideArray(self, name):
+        ''' Remove the specified array from the shown arrays.
+
+        Parameters
+        ----------
+        name : String
+            The name of the array which should be hidden.
+        '''
+        array_to_remove = [x for x in self.showArrays if name == x.name]
+
+        for cur_array in array_to_remove:
+            for cur_station in cur_array.stations:
+                self.hideStation(cur_station.snl)
+            self.showArrays.remove(cur_array)
+            self.parent.viewport.remove_node(array = cur_array.name)
+
+
+    def showArray(self, name):
+        ''' Show the specified array.
+
+        Parameters
+        ----------
+        name : String
+            The name of the array which should be hidden.
+        '''
+        array_to_show = [x for x in self.availableArrays if name == x.name]
+
+        for cur_array in array_to_show:
+            self.showArrays.append(cur_array)
+
+            # Create the array containers.
+            cur_array_container = self.createArrayContainer(cur_array)
+            for cur_station in cur_array.stations:
+                self.showStationInContainer(snl = cur_station.snl, parent_container = cur_array_container)
+
+
+        self.parent.viewport.Refresh()
+        self.parent.viewport.Update()
+
+
     def hideStation(self, snl):
-        ''' Remove the specified station from the showed stations.
+        ''' Remove the specified station from the shown stations.
 
         Parameters
         ----------
@@ -996,10 +1121,10 @@ class DisplayManager(object):
 
         for curStation in stat2Remove:
             self.showStations.remove(curStation)
-            #self.parent.viewport.removeStation(curStation.getSNL())
             self.parent.viewport.remove_node(station = curStation.name,
                                              network = curStation.network,
-                                             location = curStation.location)
+                                             location = curStation.location,
+                                             recursive = True)
 
 
 
@@ -1012,8 +1137,35 @@ class DisplayManager(object):
             The station, network, location code of the station which should be hidden.
         '''
 
-        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
-        virtualViewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and hasattr(x, 'required_data_channels')]
+        # Check if the station is part of one or more arrays that are currently
+        # shown.
+        parent_container = []
+        for cur_array in self.availableArrays:
+            if snl in [x.snl for x in cur_array.stations]:
+                cur_container = self.createArrayContainer(array = cur_array)
+                parent_container.append(cur_container)
+
+        if not parent_container:
+            parent_container.append(self.parent.viewport)
+
+        for cur_container in parent_container:
+            self.showStationInContainer(snl = snl,
+                                        parent_container = cur_container)
+
+        self.parent.viewport.Refresh()
+        self.parent.viewport.Update()
+
+
+    def showStationInContainer(self, snl, parent_container):
+        ''' Show the station in the selected container.
+        '''
+
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active
+                       and not hasattr(x, 'required_data_channels')
+                       and not x.get_virtual_stations()]
+        virtualViewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active
+                              and hasattr(x, 'required_data_channels')
+                              and not x.get_virtual_stations()]
         interactive_plugins = [x for x in self.parent.plugins if x.mode == 'interactive' and x.active]
 
         # Get the selected station and set all currently active
@@ -1035,7 +1187,7 @@ class DisplayManager(object):
                     curChannel.addView(curPlugin.name, view_class)
 
         # Create the necessary channel containers.
-        stationContainer = self.createStationContainer(station2Show)
+        stationContainer = self.createStationContainer(station2Show, parent_container = parent_container)
         for curChannel in station2Show.channels:
             curChanContainer = self.createChannelContainer(stationContainer, curChannel)
             for cur_plugin in viewPlugins:
@@ -1050,13 +1202,12 @@ class DisplayManager(object):
                                                                 group = cur_plugin.rid)
             cur_channel_container.create_plugin_view(cur_plugin)
 
-        # Update the display
-        #self.parent.viewport.sortStations(snl = self.getSNL(source='show'))
-        keys = ('station', 'network', 'location')
-        sort_order = [dict(zip(keys, x)) for x in self.getSNL(source = 'show')]
-        self.parent.viewport.sort_nodes(order = sort_order)
-        self.parent.viewport.Refresh()
-        self.parent.viewport.Update()
+        # Sort the nodes in the viewport.
+        # TODO: Sorting doesn't work when using the arry display. Nodes which
+        # don't fit one of the sort_keys are lost in the viewport.
+        #keys = ('station', 'network', 'location')
+        #sort_order = [dict(zip(keys, x)) for x in self.getSNL(source = 'show')]
+        #parent_container.sort_nodes(order = sort_order)
 
 
         # Request the data.
@@ -1116,7 +1267,9 @@ class DisplayManager(object):
         if channel not in self.showChannels:
             self.showChannels.append(channel)
 
-        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active and not hasattr(x, 'required_data_channels')]
+        viewPlugins = [x for x in self.parent.plugins if x.mode == 'view' and x.active
+                       and not hasattr(x, 'required_data_channels')
+                       and not x.get_virtual_stations()]
 
         for curStation in self.showStations:
             # Check if the station has the demanded channels.
@@ -1143,6 +1296,55 @@ class DisplayManager(object):
         self.stationsChanged = True
         self.logger.debug("Setting stationsChanged to True.")
         self.parent.update_display()
+
+
+    def show_virtual_station(self, name, plugin, channels):
+        ''' Show a virtual station in the display.
+
+        Parameters
+        ----------
+        name : String
+            The name of the virtual station to show.
+
+        plugin : ViewPlugin
+            The plugin requesting the virtual station.
+
+        channels : List of String
+            The virtual channels of the station.
+        '''
+
+        for cur_array in self.showArrays:
+            cur_station = cur_array.add_virtual_station(name)
+            array_container = self.createArrayContainer(cur_array)
+            cur_station_container = self.createStationContainer(station = cur_station,
+                                                                parent_container = array_container,
+                                                                group = plugin.rid)
+            for cur_channel_name in channels:
+                cur_channel = cur_station.add_virtual_channel(cur_channel_name, plugin)
+                cur_channel_container = self.createChannelContainer(cur_station_container,
+                                                                    cur_channel,
+                                                                    group = plugin.rid)
+                # TODO: Create the view of the channel.
+                cur_channel_container.create_plugin_view(plugin)
+
+            self.show_virtual_stations.append(cur_station)
+
+
+
+    def hide_virtual_station(self, name, plugin):
+        ''' Hide a virtual station in the display.
+
+        '''
+        for cur_array in self.showArrays:
+            cur_array.remove_virtual_station(name)
+            array_container = self.parent.viewport.get_node(array = cur_array.name)
+
+            for cur_container in array_container:
+                cur_container.remove_node(group = plugin.rid)
+
+        stat_to_remove = [x for x in self.show_virtual_stations if name == x.name]
+        for cur_station in stat_to_remove:
+            self.show_virtual_stations.remove(cur_station)
 
 
     def show_virtual_channel(self, plugin):
@@ -1321,49 +1523,93 @@ class DisplayManager(object):
         ''' Create all display elements needed to plot the shown stations.
 
         '''
-        for curStation in self.showStations:
-            curStatContainer = self.createStationContainer(curStation)
-            # TODO: Create the station related view container node. This is
-            # used for views which use data which is not directly related to a
-            # single channel (e.g. polarization analysis). If the station-data
-            # view container is not used by a plugin, hide it. The station-data
-            # view container should be of the same size and layout as the
-            # channel-view container.
-            for curChannel in curStation.channels:
-                curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
-                #for curViewName, (curViewType, ) in curChannel.views.items():
-                #    self.createViewContainer(curChanContainer, curViewName, curViewType)
+        if self.display_mode == 'network':
+            for curStation in self.showStations:
+                curStatContainer = self.createStationContainer(curStation)
+                # TODO: Create the station related view container node. This is
+                # used for views which use data which is not directly related to a
+                # single channel (e.g. polarization analysis). If the station-data
+                # view container is not used by a plugin, hide it. The station-data
+                # view container should be of the same size and layout as the
+                # channel-view container.
+                for curChannel in curStation.channels:
+                    curChanContainer = self.createChannelContainer(curStatContainer, curChannel)
+                    #for curViewName, (curViewType, ) in curChannel.views.items():
+                    #    self.createViewContainer(curChanContainer, curViewName, curViewType)
 
-            #self.createMultichannelContainer(curStatContainer)
+                #self.createMultichannelContainer(curStatContainer)
+        elif self.display_mode == 'array':
+            for cur_array in self.showArrays:
+                cur_array_container = self.createArrayContainer(cur_array)
+                for cur_station in cur_array.stations:
+                    cur_stat_container = self.createStationContainer(cur_station,
+                                                                     parent_container = cur_array_container)
+                    for cur_channel in cur_station.channels:
+                        cur_chan_container = self.createChannelContainer(cur_stat_container,
+                                                                         cur_channel)
 
 
 
-    def createStationContainer(self, station):
-        ''' Create the station container of the specified station.
 
+    def createArrayContainer(self, array):
+        ''' Create a container for an array.
         '''
         viewport = self.parent.viewport
 
         # Check if the container already exists in the viewport.
-        statContainer = viewport.get_node(station = station.name,
-                                          network = station.network,
-                                          location = station.location)
+        array_container = viewport.get_node(array = array.name)
+
+        if not array_container:
+            props = psysmon.core.util.AttribDict()
+            props.array = array.name
+
+            annotation_area = container.StationAnnotationArea(viewport,
+                                                              id = wx.ID_ANY,
+                                                              label = array.name,
+                                                              color = 'white')
+
+            array_container = psysmon.core.gui_view.ContainerNode(parent = viewport,
+                                                                  name = array.name,
+                                                                  props = props,
+                                                                  annotation_area = annotation_area,
+                                                                  color = 'white',
+                                                                  group = 'array_container')
+            viewport.add_node(array_container)
+            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyUp)
+        else:
+            array_container = array_container[0]
+
+        return array_container
+
+
+    def createStationContainer(self, station, parent_container = None, group = 'station_container'):
+        ''' Create the station container of the specified station.
+
+        '''
+        if parent_container is None:
+            parent_container = self.parent.viewport
+
+        # Check if the container already exists in the parent container.
+        statContainer = parent_container.get_node(station = station.name,
+                                                  network = station.network,
+                                                  location = station.location)
         if not statContainer:
             props = psysmon.core.util.AttribDict()
             props.station = station.name
             props.network = station.network
             props.location = station.location
-            annotation_area = container.StationAnnotationArea(viewport,
+            annotation_area = container.StationAnnotationArea(self.parent.viewport,
                                                               id = wx.ID_ANY,
                                                               label = ':'.join(station.getSNL()),
                                                               color = 'white')
-            statContainer = psysmon.core.gui_view.ContainerNode(parent = viewport,
+            statContainer = psysmon.core.gui_view.ContainerNode(parent = self.parent.viewport,
                                                                 name = ':'.join(station.getSNL()),
                                                                 props = props,
                                                                 annotation_area = annotation_area,
                                                                 color = 'white',
-                                                                group = 'station_container')
-            viewport.add_node(statContainer)
+                                                                group = group)
+            parent_container.add_node(statContainer)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:
@@ -1452,6 +1698,55 @@ class DisplayManager(object):
                 curChannel.removeView(plugin.name, 'my View')
                 for curContainer in channelContainers:
                     curContainer.remove_node(plugin.rid)
+
+
+
+class DisplayArray(object):
+    ''' Handling the arrays used in tracedisplay array mode.
+    '''
+
+    def __init__(self, array, stations):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        array : 'class':`~psysmon.packages.geometry.inventory.Array`
+            The parent inventory array.
+
+        stations : list of 'class':`~DisplayStation`
+            The stations contained in the array.
+
+        '''
+        # The parent array.
+        self.array = array
+
+        # The stations contained in the array.
+        self.stations = stations
+
+        # The virtual stations of the array.
+        self.virtual_stations = []
+
+    @property
+    def name(self):
+        return self.array.name
+
+
+    def add_virtual_station(self, name):
+        ''' Add a virtual station to the array.
+        '''
+        cur_station = VirtualDisplayStation(parent = self,
+                                            name = name)
+        self.virtual_stations.append(cur_station)
+        return cur_station
+
+
+    def remove_virtual_station(self, name):
+        ''' Remove a virtual station from the array.
+        '''
+        stations_to_remove = [x for x in self.virtual_stations if x.name in name]
+        for cur_station in stations_to_remove:
+            self.virtual_stations.remove(cur_station)
+
 
 
 class DisplayStation(object):
@@ -1656,6 +1951,76 @@ class DisplayStation(object):
     # Use the obspy_location property to translate the standard location string 
     # to the obspy version.
     obspy_location = property(get_obspy_location)
+
+
+class VirtualDisplayStation(object):
+    ''' A virtual display station.
+
+    The virtual display station uses data from multiple real stations within a
+    display group like an array. View plugins can request virtual channels
+    within the virtual station.
+    '''
+
+    def __init__(self, parent, name, network = 'VV', location = '00'):
+        ''' Initialize the instance.
+        '''
+        # The parent group object.
+        self.parent = parent
+
+        # The network of the virtual station.
+        self.network = network
+
+        # The location of the virtual station.
+        self.location = location
+
+        # The name of the virtual station.
+        self.name = name
+
+        # The virtual channels of the station.
+        self.virtual_channels = []
+
+    @property
+    def obspy_location(self):
+        ''' Translate the '--' location into None.
+
+        Obspy uses the None value for the '--' location identifiere. It's 
+        convenient to keep the '--' location string for exporting data, 
+        requesting data from remote servers and so on. This method can be 
+        used when the obspy styled location is needed.
+
+        Use the obspy_location attribute of the class.
+
+        Returns
+        -------
+        obspy_location : String
+            The translation of the location string into a version, that 
+            obspy can work with.
+        '''
+        if self.location == '--':
+            return None
+        else:
+            return self.location
+
+    def getSNL(self):
+        ''' The the SNL code of the station.
+
+        To easily identify a station, the station, network, location (SNL) code 
+        can be used.
+
+        Returns
+        -------
+        snl : Tuple
+            The SNL code of the station (station, network, location).
+        '''
+        return (self.name, self.network, self.location)
+
+
+    def add_virtual_channel(self, name, plugin):
+        ''' Add a virtual channel to the station.
+        '''
+        cur_channel = VirtualDisplayChannel(self, name, plugin)
+        self.virtual_channels.append(cur_channel)
+        return cur_channel
 
 
 

@@ -68,6 +68,9 @@ import psysmon.core.gui
 from psysmon.core.gui import psyContextMenu
 import psysmon.core.guiBricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
+import seaborn as sns
+sns.set_style('whitegrid')
+
 
 
 class EditGeometry(CollectionNode):
@@ -153,6 +156,9 @@ class EditGeometryDlg(wx.Frame):
 
         # The network currently selected by the user.
         self.selected_network = None
+
+        # The array currently selected by the user.
+        self.selected_array = None
 
         # The recorder currently selected by the user.
         self.selected_recorder = None
@@ -420,6 +426,7 @@ class EditGeometryDlg(wx.Frame):
         '''
         if self.selected_inventory:
             self.selected_inventory.networks = []
+            self.selected_inventory.arrays = []
             self.selected_inventory.recorders = []
             self.selected_inventory.sensors = []
             self.inventoryTree.updateInventoryData()
@@ -811,6 +818,9 @@ class EditGeometryDlg(wx.Frame):
                 for cur_network in self.selected_inventory.networks:
                     self.db_inventory.add_network(cur_network)
 
+                for cur_array in self.selected_inventory.arrays:
+                    self.db_inventory.add_array(cur_array)
+
                 self.db_inventory.commit()
         else:
             self.logger.debug("Updating the existing project inventory database.")
@@ -899,15 +909,17 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
         il = wx.ImageList(16, 16)
         self.icons = {}
-        self.icons['xmlInventory'] = il.Add(icons.db_icon_16.GetBitmap()) 
+        self.icons['xmlInventory'] = il.Add(icons.db_icon_16.GetBitmap())
         self.icons['recorderList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['stationList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['sensorList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['networkList'] = il.Add(icons.notepad_icon_16.GetBitmap())
+        self.icons['arrayList'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['recorder_stream_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['recorder_stream_parameter_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['recorder_assigned_components_list'] = il.Add(icons.notepad_icon_16.GetBitmap())
         self.icons['network'] = il.Add(icons.network_icon_16.GetBitmap())
+        self.icons['array'] = il.Add(icons._2x2_grid_icon_16.GetBitmap())
         self.icons['station'] = il.Add(icons.pin_map_icon_16.GetBitmap())
         self.icons['channel'] = il.Add(icons.pin_sq_right_icon_16.GetBitmap())
         self.icons['channel_stream'] = il.Add(icons.cassette_icon_16.GetBitmap())
@@ -1469,6 +1481,10 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             pyData = pyData[0]
 
         old_inventory = self.Parent.selected_inventory
+        if self.selected_item == 'array':
+            old_array = self.Parent.selected_array
+        else:
+            old_array = None
 
         if(pyData.__class__.__name__ == 'Station' or pyData.__class__.__name__ == 'DbStation'):
             self.Parent.selected_inventory = pyData.parent_inventory
@@ -1544,6 +1560,15 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 self.Parent.selected_channel_assigned_recorder_stream = pyData
                 self.selected_item = 'channel_assigned_recorder_stream'
                 self.Parent.inventoryViewNotebook.updateStationListView()
+            elif(pyData.item.__class__.__name__ == 'Station' or pyData.item.__class__.__name__ == 'DbStation'):
+                self.Parent.selected_inventory = pyData.parent.parent_inventory
+                self.Parent.selected_station = pyData.item
+                if self.Parent.selected_station.channels:
+                    self.Parent.selected_channel = pyData.channels[0]
+                    if self.Parent.selected_channel.streams:
+                        self.Parent.selected_channel_assigned_recorder_stream = self.Parent.selected_channel.streams[0]
+                self.selected_item = 'station'
+                self.Parent.inventoryViewNotebook.updateStationListView()
 
         elif(pyData.__class__.__name__ == 'RecorderStreamParameter' or pyData.__class__.__name__ == 'DbRecorderStreamParameter'):
             self.Parent.selected_inventory = pyData.parent_inventory
@@ -1557,6 +1582,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.Parent.selected_network = pyData
             self.selected_item = 'network'
             self.Parent.inventoryViewNotebook.updateNetworkListView(pyData)
+        elif(pyData.__class__.__name__ == 'Array' or pyData.__class__.__name__ == 'DbArray'):
+            self.Parent.selected_inventory = pyData.parent_inventory
+            self.Parent.selected_array = pyData
+            self.selected_item = 'array'
+            self.Parent.inventoryViewNotebook.updateArrayListView(pyData)
         elif(pyData.__class__.__name__ == 'Inventory' or pyData.__class__.__name__ == 'DbInventory'):
             # Check if on of the list items was selected.
             if(self.GetItemText(evt.GetItem()) == 'Networks'):
@@ -1575,8 +1605,13 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
 
         if self.Parent.inventoryViewNotebook.GetSelection() == 1:
-            if self.Parent.selected_inventory != old_inventory:
-                self.Parent.inventoryViewNotebook.updateMapView(self.Parent.selected_inventory)
+            if self.selected_item == 'array':
+                selected_array = self.Parent.selected_array
+            else:
+                selected_array = None
+
+            if self.Parent.selected_inventory != old_inventory or selected_array != old_array:
+                self.Parent.inventoryViewNotebook.updateMapView(self.Parent.selected_inventory, array = selected_array)
 
     ## Update the inventory tree.
     #
@@ -1606,6 +1641,11 @@ class InventoryTreeCtrl(wx.TreeCtrl):
             self.SetItemPyData(networkListItem, curInventory)
             self.SetItemBold(networkListItem, True)
             self.SetItemImage(networkListItem, self.icons['networkList'], wx.TreeItemIcon_Normal)
+
+            arrayListItem = self.AppendItem(inventoryItem, 'Arrays')
+            self.SetItemPyData(arrayListItem, curInventory)
+            self.SetItemBold(arrayListItem, True)
+            self.SetItemImage(arrayListItem, self.icons['arrayList'], wx.TreeItemIcon_Normal)
 
             # Fill the sensors
             for curSensor in sorted(curInventory.sensors, key = attrgetter('serial')):
@@ -1684,6 +1724,18 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                             self.SetItemPyData(item, curTimebox)
                             self.SetItemImage(item, self.icons['channel_stream'], wx.TreeItemIcon_Normal)
 
+            # Fill the arrays.
+            for curArray in curInventory.arrays:
+                curArrayItem = self.AppendItem(arrayListItem, curArray.name)
+                self.SetItemPyData(curArrayItem, curArray)
+                self.SetItemImage(curArrayItem, self.icons['array'], wx.TreeItemIcon_Normal)
+
+                for curStationTb in sorted(curArray.stations, key = attrgetter('name')):
+                    curStationItem = self.AppendItem(curArrayItem, curStationTb.network + ':' + curStationTb.name + ':' + curStationTb.location_string)
+                    print curStationTb.item
+                    self.SetItemPyData(curStationItem, curStationTb)
+                    self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
+
             self.ExpandAllChildren(inventoryItem)
 
 
@@ -1701,6 +1753,7 @@ class InventoryViewNotebook(wx.Notebook):
         self.logger = self.GetParent().logger
 
         self.inventory = None
+        self.array = None
 
         self.listViewPanel = ListViewPanel(self)
         self.AddPage(self.listViewPanel, "list view")
@@ -1731,6 +1784,12 @@ class InventoryViewNotebook(wx.Notebook):
         self.listViewPanel.showControlPanel('network')
 
 
+    def updateArrayListView(self, network):
+        ''' Show the array data in the list view.
+        '''
+        self.logger.debug("updating the array listview")
+        self.listViewPanel.showControlPanel('array')
+
     def updateRecorderListView(self):
         ''' Show the recorder data in the list view.
         '''
@@ -1751,7 +1810,7 @@ class InventoryViewNotebook(wx.Notebook):
         self.listViewPanel.showControlPanel('sensor')
 
 
-    def updateMapView(self, inventory):
+    def updateMapView(self, inventory, array = None):
         '''
         Initialize the map view panel with the selected inventory.
         '''
@@ -1763,16 +1822,17 @@ class InventoryViewNotebook(wx.Notebook):
             panel.inventory = cur_inventory
             panel.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
 
-        if inventory != self.inventory:
+        if inventory != self.inventory or array != self.array:
             #t = Thread(target = init_map, args = (self, inventory))
             #t.setDaemon(True)
             #t.start()
 
             wx.BeginBusyCursor()
             #try:
-            self.mapViewPanel.initMap(inventory)
+            self.mapViewPanel.initMap(inventory = inventory, array = array)
             #finally:
             self.inventory = inventory
+            self.array = array
             wx.EndBusyCursor()
 
     def onPageChanged(self, event):
@@ -1803,6 +1863,7 @@ class ListViewPanel(wx.Panel):
         #self.controlPanels['sensor'].SetBackgroundColour('orchid')
         self.controlPanels['recorder'] = RecorderPanel(self, wx.ID_ANY)
         self.controlPanels['network'] = NetworkPanel(self, wx.ID_ANY)
+        self.controlPanels['array'] = ArrayPanel(self, wx.ID_ANY)
 
         for cur_panel in self.controlPanels.values():
             cur_panel.Hide()
@@ -1954,7 +2015,7 @@ class MapViewPanel(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
 
-    def initMap(self, inventory):
+    def initMap(self, inventory, array = None):
         '''
         Initialize the map parameters.
 
@@ -1969,6 +2030,30 @@ class MapViewPanel(wx.Panel):
         self.mapAx.set_xlim(0, 1)
         self.mapAx.set_ylim(0, 1)
 
+        if array is None:
+            self.plot_networks(inventory = inventory)
+        else:
+            self.plot_array(array = array)
+
+        # Set the map limits.
+        self.mapAx.autoscale(True)
+        #ll_x, ll_y = proj(lower_left[0], lower_left[1])
+        #ur_x, ur_y = proj(upper_right[0], upper_right[1])
+        #self.mapAx.set_xlim((ll_x, ur_x))
+        #self.mapAx.set_ylim((ll_y, ur_y))
+
+        # Change to plain tick label formatter.
+        #self.mapAx.ticklabel_format(style = 'plain')
+        self.mapAx.get_yaxis().get_major_formatter().set_useOffset(False)
+        self.mapAx.get_yaxis().get_major_formatter().set_scientific(False)
+
+        self.mapCanvas.mpl_connect('pick_event', self.onPick)
+        self.mapCanvas.draw()
+
+
+    def plot_networks(self, inventory):
+        ''' Plot the stations of all networks in the inventory.
+        '''
         # Get the lon/lat limits of the inventory.
         lonLat = []
         for curNet in inventory.networks:
@@ -2015,31 +2100,84 @@ class MapViewPanel(wx.Panel):
         #self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
         proj = pyproj.Proj(init = 'epsg:'+code[0][0])
 
-        # Plot the stations.
-        x,y = proj(lon, lat)
-        self.mapAx.scatter(x, y, s=100, marker='^', color='r', picker=5, zorder = 3)
-        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
-            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
 
+        # Plot the stations.
+        station_palette = sns.color_palette(n_colors = len(inventory.arrays) + 1)
+        x,y = proj(lon, lat)
+        stat_color = []
+        for cur_station, cur_x, cur_y in zip(self.stations, x, y):
+            cur_color = station_palette[0]
+            for k, cur_array in enumerate(inventory.arrays):
+                if cur_array.get_station(snl = cur_station.snl):
+                    cur_color = station_palette[k + 1]
+                    break
+            stat_color.append(cur_color)
+            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
+        self.mapAx.scatter(x, y, s=100, c = stat_color, marker='^', picker=5, zorder = 3)
 
         # Add some map annotation.
         self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
             ha = 'right', transform = self.mapAx.transAxes)
 
-        # Set the map limits.
-        self.mapAx.autoscale(True)
-        #ll_x, ll_y = proj(lower_left[0], lower_left[1])
-        #ur_x, ur_y = proj(upper_right[0], upper_right[1])
-        #self.mapAx.set_xlim((ll_x, ur_x))
-        #self.mapAx.set_ylim((ll_y, ur_y))
 
-        # Change to plain tick label formatter.
-        #self.mapAx.ticklabel_format(style = 'plain')
-        self.mapAx.get_yaxis().get_major_formatter().set_useOffset(False)
-        self.mapAx.get_yaxis().get_major_formatter().set_scientific(False)
+    def plot_array(self, array):
+        ''' Plot the stations of a single array.
+        '''
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        lonLat.extend([stat.get_lon_lat() for stat in array.stations])
+        self.stations.extend([stat for stat in array.stations])
 
-        self.mapCanvas.mpl_connect('pick_event', self.onPick)
-        self.mapCanvas.draw()
+        if len(lonLat) == 0:
+            self.mapAx.text(1, 1.02, 'NO STATIONS AVAILABLE',
+                            ha = 'right', transform = self.mapAx.transAxes)
+            self.mapCanvas.draw()
+            return
+
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0)
+        self.mapConfig['utmZone'] = geom_util.lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        self.mapConfig['ellips'] = 'wgs84'
+        self.mapConfig['lon_0'] = geom_util.zone2UtmCentralMeridian(self.mapConfig['utmZone'])
+        self.mapConfig['lat_0'] = 0
+        if np.mean([lonLatMin[1], lonLatMax[1]]) >= 0:
+            self.mapConfig['hemisphere'] = 'north'
+        else:
+            self.mapConfig['hemisphere'] = 'south'
+
+        map_extent = lonLatMax - lonLatMin
+        lower_left = lonLatMin - map_extent * 0.1
+        upper_right = lonLatMax + map_extent * 0.1
+        self.mapConfig['limits'] = np.hstack([lower_left, upper_right])
+
+        lon = [x[0] for x in lonLat]
+        lat = [x[1] for x in lonLat]
+
+        # Get the epsg code of the UTM projection.
+        search_dict = {'projection': 'utm', 'ellps': self.mapConfig['ellips'].upper(), 'zone': self.mapConfig['utmZone'], 'no_defs': True, 'units': 'm'}
+        if self.mapConfig['hemisphere'] == 'south':
+            search_dict['south'] = True
+
+        epsg_dict = geom_util.get_epsg_dict()
+        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+
+        # Setup the pyproj projection.projection
+        #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
+
+        #TODO The call in the next line prevents the creation of the map.
+        #self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
+        proj = pyproj.Proj(init = 'epsg:'+code[0][0])
+
+
+        # Plot the stations.
+        x,y = proj(lon, lat)
+        for cur_station, cur_x, cur_y in zip(array.stations, x, y):
+            self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
+        self.mapAx.scatter(x, y, s=100, marker='^', picker=5, zorder = 3)
+
+        # Add some map annotation.
+        self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
+            ha = 'right', transform = self.mapAx.transAxes)
 
 
     def initMapBasemap(self, inventory):
@@ -2345,6 +2483,153 @@ class NetworkPanel(wx.Panel):
 
             setattr(self.selected_network, fieldName, converter(self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
             self.GetTopLevelParent().inventoryTree.updateInventoryData()
+
+
+
+class ArrayPanel(wx.Panel):
+
+    def __init__(self, parent, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent, id)
+
+        self.logger = self.GetParent().logger
+
+        self.mgr = wx.aui.AuiManager(self)
+
+        roAttr = wx.grid.GridCellAttr()
+        roAttr.SetReadOnly(True)
+
+        # Create the array grid.
+        fields = self.getArrayFields()
+        self.array_grid = wx.grid.Grid(self)
+        self.array_grid.CreateGrid(1, len(fields))
+
+        # Bind the array_grid events.
+        self.array_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onArrayCellChange)
+
+        # Set the column attributes.
+        for k, (name, label, attr, converter)  in enumerate(fields):
+            self.array_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.array_grid.SetColAttr(k, roAttr)
+
+        self.array_grid.AutoSizeColumns()
+
+        self.mgr.AddPane(self.array_grid, wx.aui.AuiPaneInfo().Name('array').
+                         CentrePane().Layer(0).Position(0).MinSize(wx.Size(200, 100)))
+
+        # Create the station grid.
+        fields = self.getStationFields()
+        self.station_grid = wx.grid.Grid(self)
+        self.station_grid.CreateGrid(5, len(fields))
+
+        # Bind the stationGrid events.
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+
+        # Set the column attributes.
+        for k, (name, label, attr, converter) in enumerate(fields):
+            self.station_grid.SetColLabelValue(k, label)
+            if(attr == 'readonly'):
+                self.station_grid.SetColAttr(k, roAttr)
+
+        self.mgr.AddPane(self.station_grid, wx.aui.AuiPaneInfo().Name('stations').
+                         Caption('stations assigned to the array').Bottom().Row(1).Position(0).Layer(0).
+                         CloseButton(False).CaptionVisible().
+                         MinimizeButton().MaximizeButton().MinSize(wx.Size(200, 300)))
+
+        self.mgr.Update()
+
+
+    @property
+    def selected_array(self):
+        if self.GetTopLevelParent() is not None:
+            return self.GetTopLevelParent().selected_array
+        else:
+            return None
+
+
+    def getArrayFields(self):
+        ''' The array grid columns.
+        '''
+        tableField = []
+        tableField.append(('name', 'name', 'editable', str))
+        tableField.append(('description', 'description', 'editable', str))
+        return tableField
+
+
+    def getStationFields(self):
+        tableField = []
+        tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('name', 'name', 'readonly', str))
+        tableField.append(('location', 'location', 'readonly', str))
+        tableField.append(('network', 'network', 'readonly',str))
+        tableField.append(('start_time', 'start time', 'readonly', str))
+        tableField.append(('end_time', 'end time', 'readonly', str))
+        tableField.append(('x', 'x', 'readonly', float))
+        tableField.append(('y', 'y', 'readonly', float))
+        tableField.append(('z', 'z', 'readonly', float))
+        tableField.append(('coord_system', 'coord. system', 'readonly', str))
+        tableField.append(('description', 'description', 'readonly', str))
+        tableField.append(('available_channels_string', 'channels', 'readonly', str))
+        tableField.append(('assigned_recorders_string', 'recorders', 'readonly', str))
+        return tableField
+
+
+    def updateData(self):
+        ''' Update the displayed data.
+        '''
+        # Update the sensor grid fields.
+        self.setGridValues(self.selected_array, self.array_grid, self.getArrayFields(), 0)
+        self.array_grid.AutoSizeColumns()
+
+
+        # Resize the grid rows.
+        if self.station_grid.GetNumberRows() > 0:
+            self.station_grid.DeleteRows(0, self.station_grid.GetNumberRows())
+        self.station_grid.AppendRows(len(self.selected_array.stations))
+
+        # Update the station grid fields.
+        for k, cur_station in enumerate(self.selected_array.stations):
+            self.setGridValues(cur_station,
+                                      self.station_grid,
+                                      self.getStationFields(),
+                                      k)
+        self.station_grid.AutoSizeColumns()
+
+
+    def setGridValues(self, object, grid, fields, rowNumber):
+        ''' Set the grid values of the specified grid.
+        '''
+        for pos, (field, label, attr, converter) in enumerate(fields):
+            if field is not None and getattr(object, field) is not None:
+                #if field in ['start_time', 'end_time']:
+                #    continue
+                try:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                except:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field).encode("utf8")))
+            else:
+                grid.SetCellValue(rowNumber, pos, '')
+
+            grid.AutoSizeColumns()
+
+
+
+    def onArrayCellChange(self, evt):
+        ''' The array_grid cell edit callback.
+        '''
+        selectedParameter = self.array_grid.GetColLabelValue(evt.GetCol())
+        grid_fields = self.getNetworkFields();
+        colLabels = [x[1] for x in grid_fields]
+
+        if selectedParameter in colLabels:
+            ind = colLabels.index(selectedParameter)
+            fieldName = grid_fields[ind][0]
+            converter = grid_fields[ind][3]
+
+            setattr(self.selected_network, fieldName, converter(self.network_grid.GetCellValue(evt.GetRow(), evt.GetCol())))
+            self.GetTopLevelParent().inventoryTree.updateInventoryData()
+
+
 
 
 class RecorderPanel(wx.Panel):
