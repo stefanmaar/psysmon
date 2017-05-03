@@ -469,6 +469,111 @@ class Catalog(object):
 
 
 
+class Library(object):
+    ''' Manage detection catalogs.
+    '''
+
+    def __init__(self, name):
+        ''' Initialize the instance.
+        '''
+        # The name of the library.
+        self.name = name
+
+        # The catalogs of the library.
+        self.catalogs = {}
+
+
+    def add_catalog(self, catalog):
+        ''' Add one or more catalogs to the library.
+
+        Parameters
+        ----------
+        catalog : :class:`Catalog` or list of :class:`Catalog`
+            The catalog(s) to add to the library.
+        '''
+
+        if isinstance(catalog, list):
+            for cur_catalog in catalog:
+                self.add_catalog(cur_catalog)
+        else:
+            self.catalogs[catalog.name] = catalog
+
+
+    def remove_catalog(self, name):
+        ''' Remove a catalog from the library.
+
+        Parameters
+        ----------
+        name : String
+            The name of the catalog to remove.
+
+        Returns
+        -------
+        removed_catalog : :class:`Catalog`
+            The removed catalog. None if no catalog was removed.
+        '''
+        if name in self.catalogs.keys():
+            return self.catalogs.pop(name)
+        else:
+            return None
+
+
+    def clear(self):
+        ''' Remove all catalogs.
+        '''
+        self.catalogs = {}
+
+
+    def get_catalogs_in_db(self, project):
+        ''' Query the available catalogs in the database.
+
+        Parameters
+        ----------
+        project : :class:`psysmon.core.project.Project`
+            The project managing the database.
+
+        Returns
+        -------
+        catalog_names : List of Strings
+            The available catalog names in the database.
+        '''
+        catalog_names = []
+        db_session = project.getDbSession()
+        try:
+            db_catalog_orm = project.dbTables['detection_catalog']
+            query = db_session.query(db_catalog_orm)
+            if db_session.query(query.exists()):
+                catalog_names = [x.name for x in query.order_by(db_catalog_orm.name)]
+        finally:
+            db_session.close()
+
+        return catalog_names
+
+
+    def load_catalog_from_db(self, project, name, load_detections = False):
+        ''' Load catalogs from the database.
+
+        Parameters
+        ----------
+        project : :class:`psysmon.core.project.Project`
+            The project managing the database.
+
+        name : String or list of Strings
+            The name of the catalog to load from the database.
+        '''
+        if isinstance(name, basestring):
+            name = [name, ]
+
+        db_session = project.getDbSession()
+        try:
+            db_catalog_orm = project.dbTables['detection_catalog']
+            query = db_session.query(db_catalog_orm).filter(db_catalog_orm.name.in_(name))
+            if db_session.query(query.exists()):
+                for cur_db_catalog in query:
+                    cur_catalog = Catalog.from_db_catalog(cur_db_catalog, load_detections)
+                    self.add_catalog(cur_catalog)
+        finally:
+            db_session.close()
 
 
 class StaLtaDetector:
