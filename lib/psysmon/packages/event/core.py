@@ -35,6 +35,11 @@ class Event(object):
         ''' Instance initialization
 
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         # Check for correct input arguments.
         # Check for None values in the event limits.
         if start_time is None or end_time is None:
@@ -141,42 +146,54 @@ class Event(object):
             else:
                 catalog_id = None
 
-            db_session = project.getDbSession()
-            db_event_orm = project.dbTables['event']
-            db_event = db_event_orm(ev_catalog_id = catalog_id,
-                                    start_time = self.start_time.timestamp,
-                                    end_time = self.end_time.timestamp,
-                                    public_id = self.public_id,
-                                    pref_origin_id = None,
-                                    pref_magnitude_id = None,
-                                    pref_focmec_id = None,
-                                    ev_type_id = None,
-                                    ev_type_certainty = self.event_type_certainty,
-                                    description = self.description,
-                                    agency_uri = self.agency_uri,
-                                    author_uri = self.author_uri,
-                                    creation_time = creation_time)
+            try:
+                db_session = project.getDbSession()
+                db_event_orm = project.dbTables['event']
+                db_event = db_event_orm(ev_catalog_id = catalog_id,
+                                        start_time = self.start_time.timestamp,
+                                        end_time = self.end_time.timestamp,
+                                        public_id = self.public_id,
+                                        pref_origin_id = None,
+                                        pref_magnitude_id = None,
+                                        pref_focmec_id = None,
+                                        ev_type_certainty = self.event_type_certainty,
+                                        description = self.description,
+                                        agency_uri = self.agency_uri,
+                                        author_uri = self.author_uri,
+                                        creation_time = creation_time)
 
-            # Commit the event to the database to get an id.
-            db_session.add(db_event)
-            db_session.commit()
-            self.db_id = db_event.id
+                # Commit the event to the database to get an id.
+                db_session.add(db_event)
+                db_session.commit()
+                self.db_id = db_event.id
 
-            # Add the detections to the event. Do this after the event got an
-            # id.
-            if len(self.detections) > 0 :
-                # Load the detection_orms from the database.
-                detection_table = project.dbTables['detection']
-                d2e_orm_class = project.dbTables['detection_to_event']
-                query = db_session.query(detection_table).\
-                        filter(detection_table.id.in_([x.db_id for x in self.detections]))
-                for cur_detection_orm in query:
-                    d2e_orm = d2e_orm_class(ev_id = self.db_id,
-                                            det_id = cur_detection_orm.id)
-                    db_event.detections.append(d2e_orm)
-            db_session.commit()
+                # Assign the event type.
+                if self.event_type:
+                    et_orm_class = project.dbTables['event_type']
+                    query = db_session.query(et_orm_class).\
+                            filter(et_orm_class.name == self.event_type.name)
+                    if db_session.query(query.exists()):
+                        db_event_type = query.scalar()
+                        if not db_event_type:
+                            self.logger.error("The requested event type '%s' doesn't exist in the database.", self.event_type.name)
+                        db_event.event_type = db_event_type
 
-            db_session.close()
+                # Add the detections to the event. Do this after the event got an
+                # id.
+                if len(self.detections) > 0 :
+                    # Load the detection_orms from the database.
+                    detection_table = project.dbTables['detection']
+                    d2e_orm_class = project.dbTables['detection_to_event']
+                    query = db_session.query(detection_table).\
+                            filter(detection_table.id.in_([x.db_id for x in self.detections]))
+                    for cur_detection_orm in query:
+                        d2e_orm = d2e_orm_class(ev_id = self.db_id,
+                                                det_id = cur_detection_orm.id)
+                        db_event.detections.append(d2e_orm)
+                db_session.commit()
+            finally:
+                db_session.close()
+
             self.changed = False
         else:
             # If the db_id is not None, update the existing event.
@@ -226,7 +243,7 @@ class Event(object):
                     end_time = db_event.end_time,
                     db_id = db_event.id,
                     public_id = db_event.public_id,
-                    event_type = None,
+                    event_type = EventType.from_db_event_type(db_event.event_type),
                     event_type_certainty = db_event.ev_type_certainty,
                     description = db_event.description,
                     tags = db_event.tags,
@@ -238,6 +255,117 @@ class Event(object):
                     )
         return event
 
+
+
+class EventType(object):
+
+    def __init__(self, name, description, db_id = None, changed = True,
+                 agency_uri = None, author_uri = None, creation_time = None):
+        ''' Initialize the instance.
+        '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The unique database ID.
+        self.db_id = db_id
+
+        # The name of the catalog.
+        self.name = name
+
+        # The description of the catalog.
+        self.description = description
+
+        # The agency_uri of the creator.
+        self.agency_uri = agency_uri
+
+        # The author_uri of the creator.
+        self.author_uri = author_uri
+
+        # The time of creation of this event.
+        if creation_time is None:
+            self.creation_time = utcdatetime.UTCDateTime();
+        else:
+            self.creation_time = utcdatetime.UTCDateTime(creation_time);
+
+        # Flag to indicate a change of the event attributes.
+        self.changed = changed
+
+    @property
+    def rid(self):
+        ''' The resource ID of the event.
+        '''
+        return '/event_type/' + str(self.db_id)
+
+
+    def write_to_database(self, project):
+        ''' Write the event_type to the pSysmon database.
+        '''
+        if self.db_id is None:
+            # If the db_id is None, insert a new event.
+            if self.creation_time is not None:
+                creation_time = self.creation_time.isoformat()
+            else:
+                creation_time = None
+
+            try:
+                db_session = project.getDbSession()
+                db_event_type_orm = project.dbTables['event_type']
+                db_event_type = db_event_type_orm(name = self.name,
+                                                  description = self.description,
+                                                  agency_uri = self.agency_uri,
+                                                  author_uri = self.author_uri,
+                                                  creation_time = creation_time)
+
+                # Commit the event to the database to get an id.
+                db_session.add(db_event_type)
+                db_session.commit()
+                self.db_id = db_event_type.id
+            finally:
+                db_session.close()
+
+            self.changed = False
+        else:
+            # If the db_id is not None, update the existing event.
+            db_session = project.getDbSession()
+            db_event_type_orm = project.dbTables['event_type']
+            query = db_session.query(db_event_type_orm).filter(db_event_type_orm.id == self.db_id)
+            if db_session.query(query.exists()):
+                db_event_type = query.scalar()
+                db_event_type.name = self.name
+                db_event_type.description = self.description
+                db_event_type.agency_uri = self.agency_uri
+                db_event_type.author_uri = self.author_uri
+
+                db_session.commit()
+                db_session.close()
+                self.changed = False
+            else:
+                raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
+
+
+    @classmethod
+    def from_db_event_type(cls, db_event_type):
+        ''' Convert a database orm mapper event_type to an EventType instance.
+
+        Parameters
+        ----------
+        db_event : SQLAlchemy ORM
+            The ORM of the events database table.
+        '''
+        if db_event_type is not None:
+            event_type = cls(db_id = db_event_type.id,
+                             name = db_event_type.name,
+                             description = db_event_type.description,
+                             agency_uri = db_event_type.agency_uri,
+                             author_uri = db_event_type.author_uri,
+                             creation_time = db_event_type.creation_time,
+                             changed = False)
+        else:
+            event_type = None
+
+        return event_type
 
 
 
