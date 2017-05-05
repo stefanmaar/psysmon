@@ -16,12 +16,12 @@ import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
 import psysmon.packages.event.detect as detect
-import psysmon.packages.event.event_binding as binding
+import psysmon.packages.event.bind as bind
 import psysmon.packages.event.core as ev_core
 import psysmon.core.test_util as test_util
 
 
-class EventBindTestCase(unittest.TestCase):
+class DetectionBinderTestCase(unittest.TestCase):
     """
     """
     @classmethod
@@ -118,11 +118,16 @@ class EventBindTestCase(unittest.TestCase):
 
 
         # Bind the detections to events.
-        binder = binding.EventBinder(event_catalog = event_catalog,
-                                    author_uri = 'tester',
-                                    agency_uri = 'uot')
+        binder = bind.DetectionBinder(event_catalog = event_catalog,
+                                      author_uri = 'tester',
+                                      agency_uri = 'uot')
         binder.compute_search_windows(self.project.geometry_inventory.get_station())
-        binder.bind(catalog, channels)
+        catalog_list = [catalog, ]
+        binder.bind(catalog_list, channels)
+
+
+    def test_database_detection_association(self):
+        # TODO: Implement this test.
 
         # Save the event catalog to the database.
         event_catalog.write_to_database(self.project)
@@ -156,7 +161,7 @@ class EventBindTestCase(unittest.TestCase):
 
 
 def suite():
-    return unittest.makeSuite(EventBindTestCase, 'test')
+    return unittest.makeSuite(DetectionBinderTestCase, 'test')
 
 
 if __name__ == '__main__':
