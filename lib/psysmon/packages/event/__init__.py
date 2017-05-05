@@ -110,7 +110,11 @@ def databaseFactory(base):
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
         tags = Column(String(255), nullable = True)
-        ev_type_id = Column(Integer, nullable = True)
+        ev_type_id = Column(Integer,
+                            ForeignKey('event_type.id',
+                                       onupdate = 'cascade',
+                                       ondelete = 'set null'),
+                            nullable = True)
         ev_type_certainty = Column(String(50), nullable = True)
         pref_origin_id = Column(Integer, nullable = True)
         pref_magnitude_id = Column(Integer, nullable = True)
@@ -120,6 +124,7 @@ def databaseFactory(base):
         creation_time = Column(String(30), nullable = True)
 
         detections = relationship('DetectionToEventDb')
+        event_type = relationship('EventTypeDb')
 
 
         def __init__(self, ev_catalog_id, start_time, end_time,
@@ -147,6 +152,7 @@ def databaseFactory(base):
     tables.append(EventDb)
 
 
+
     ###########################################################################
     # DETECTION_TO_EVENT table mapper class
     class DetectionToEventDb(base):
@@ -171,6 +177,36 @@ def databaseFactory(base):
             self.det_id = det_id
 
     tables.append(DetectionToEventDb)
+
+
+
+    ###########################################################################
+    # EVENT_TYPE table mapper class
+    class EventTypeDb(base):
+        __tablename__  = 'event_type'
+        __table_args__ = (
+                          UniqueConstraint('name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        id = Column(Integer, primary_key = True, autoincrement = True)
+        name = Column(String(255), nullable = False)
+        description = Column(Text, nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
+        creation_time = Column(String(30), nullable = True)
+
+
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+    tables.append(EventTypeDb)
+
 
 
     ###########################################################################
