@@ -37,8 +37,8 @@ import psysmon.packages.event.core as ev_core
 
 
 
-class EventBinder(object):
-    ''' Bind detections on various stations to an event.
+class DetectionBinder(object):
+    ''' Bind detections on various stations/channels to an event.
     '''
 
     def __init__(self, event_catalog, author_uri = None, agency_uri = None):
@@ -55,14 +55,30 @@ class EventBinder(object):
 
         self.agency_uri = agency_uri
 
-    def bind(self, catalog, channel_scnl):
+
+    def bind(self, catalogs, channel_scnl, event_type = None, tags = None):
         ''' Bind the detections to events.
+
+        Parameters
+        ----------
+        catalogs : List of :class:`~psysmon.packages.event.detect.Catalog`
+            The detection catalogs containing the detections to bind.
+
+        channel_scnl : List of tuple.
+            The SCNL tuples of the channels used for the detection binding.
+
+        event_type : String
+            The type of the events created by the binder.
+
+        tags : List of Strings
+            The tags assigned to the created events.
         '''
         # Get the detections of the channels and sort them according to time.
         detections = {}
         for cur_scnl in channel_scnl:
-            detections[cur_scnl] = catalog.get_detections(scnl = cur_scnl)
-            detections[cur_scnl] = sorted(detections[cur_scnl], key = op.attrgetter('start_time'))
+            for cur_catalog in catalogs:
+                detections[cur_scnl] = cur_catalog.get_detections(scnl = cur_scnl)
+                detections[cur_scnl] = sorted(detections[cur_scnl], key = op.attrgetter('start_time'))
 
         # Get the earlies detection of each channel. Remove these detections
         # from the detections list.
