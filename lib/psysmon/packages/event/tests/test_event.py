@@ -19,6 +19,7 @@ from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 
 from psysmon.packages.event.core import Event
+import psysmon.packages.event.core as core
 import psysmon.packages.event.detect as detect
 
 
@@ -77,9 +78,6 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(event.end_time, UTCDateTime(end_time))
         self.assertTrue(event.changed)
 
-        # Test the access to obspy event parameters.
-        event.event_type = 'landslide'
-        self.assertEqual(event.event_type, 'landslide')
 
 
     def test_write_event_to_database(self):
@@ -176,6 +174,50 @@ class EventTestCase(unittest.TestCase):
             self.assertEqual(cur_event.detections[0].end_time, det.end_time)
         finally:
             db_session.close()
+
+
+    def test_event_type(self):
+        ''' Test the event type creation.
+        '''
+        event_type = core.EventType(name = 'type 1',
+                                    description = 'type 1 description')
+
+        # Write the event type to the database.
+        event_type.write_to_database(self.project)
+
+        db_event_type_orm_class = self.project.dbTables['event_type']
+        try:
+            db_session = self.project.getDbSession()
+            result = db_session.query(db_event_type_orm_class).all()
+            cur_event_type = core.EventType.from_db_event_type(result[0])
+
+            self.assertIsInstance(cur_event_type, core.EventType)
+            self.assertEqual(cur_event_type.name, 'type 1')
+            self.assertEqual(cur_event_type.description, 'type 1 description')
+        finally:
+            db_session.close()
+
+
+    def test_assign_type_to_event(self):
+        ''' Test the assignment of events to event types.
+        '''
+        # Create an event.
+        start_time = '2000-01-01T00:00:00'
+        end_time = '2000-01-01T01:00:00'
+        creation_time = UTCDateTime()
+        event = Event(start_time = start_time,
+                      end_time = end_time,
+                      creation_time = creation_time)
+
+        event_type = core.EventType(name = 'type 1',
+                                    description = 'type 1 description')
+
+        # Write the event type to the database. The event type has to exist in
+        # the database before it can be linked by an event in the database.
+        event_type.write_to_database(self.project)
+
+        event.event_type = event_type
+        event.write_to_database(self.project)
 
 
 
