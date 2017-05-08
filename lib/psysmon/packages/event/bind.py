@@ -56,7 +56,8 @@ class DetectionBinder(object):
         self.agency_uri = agency_uri
 
 
-    def bind(self, catalogs, channel_scnl, event_type = None, tags = None):
+    def bind(self, catalogs, channel_scnl, event_type = None, tags = None, arrays = None,
+             start_time = None, end_time = None, additional_detections = None):
         ''' Bind the detections to events.
 
         Parameters
@@ -67,18 +68,45 @@ class DetectionBinder(object):
         channel_scnl : List of tuple.
             The SCNL tuples of the channels used for the detection binding.
 
-        event_type : String
+        event_type : :class:`~psysmon.packages.event.core.EventType`
             The type of the events created by the binder.
 
         tags : List of Strings
             The tags assigned to the created events.
+
+        arrays : List of :class:`~psysmon.packages.geometry.inventory.Array`
+            The arrays to which the created events are assigned to.
+
+        start_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The start of the detection time span.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The end of the detection time span.
+
+        additional_detections : dictionary of :class:`~psysmon.packages.event.detect.Detection`
+            Detections which should be added to the detections loaded from the passed
+            catalogs. This can be used to pass formerly unbound detections to the binder.
+
+        Returns
+        -------
+        detections : List of :class:`~psysmon.packages.event.detect.Detection`
+            The detection which were not bound because the search window extended the
+            time of the given detection time span.
+
         '''
+        if additional_detections:
+            detections = additional_detections
+        else:
+            detections = {}
+
         # Get the detections of the channels and sort them according to time.
-        detections = {}
         for cur_scnl in channel_scnl:
+            detections[cur_scnl] = []
             for cur_catalog in catalogs:
-                detections[cur_scnl] = cur_catalog.get_detections(scnl = cur_scnl)
-                detections[cur_scnl] = sorted(detections[cur_scnl], key = op.attrgetter('start_time'))
+                detections[cur_scnl].extend(cur_catalog.get_detections(scnl = cur_scnl,
+                                                                  start_time = start_time,
+                                                                  end_time = end_time))
+            detections[cur_scnl] = sorted(detections[cur_scnl], key = op.attrgetter('start_time'))
 
         # Get the earlies detection of each channel. Remove these detections
         # from the detections list.
@@ -91,6 +119,13 @@ class DetectionBinder(object):
             # Get the search windows for the detection combinations.
             search_windows = self.get_search_window(first_detection, next_detections)
 
+            # Check if the search window extends the end time of the detection
+            # time span. If so, break the loop and return the non-bound
+            # detections.
+            last_search_time = max([first_detection.start_time + x for x in search_windows])
+            if end_time and last_search_time > end_time:
+                break
+
             # Get the detections matching the search window.
             match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k]]
             match_detections.append(first_detection)
@@ -101,7 +136,10 @@ class DetectionBinder(object):
                                   author_uri = self.author_uri,
                                   agency_uri = self.agency_uri,
                                   creation_time = utcdatetime.UTCDateTime(),
-                                  detections = match_detections)
+                                  detections = match_detections,
+                                  arrays = arrays,
+                                  event_type = event_type,
+                                  tags = tags)
             self.event_catalog.add_events([event, ])
 
             # Remove the matching detections from the detections list.
@@ -110,6 +148,8 @@ class DetectionBinder(object):
 
             # Get the next earliest detection of each channel.
             next_detections = [x[0] for x in detections.values() if len(x) > 0]
+
+        return detections
 
 
     def get_search_window(self, master, slaves):
@@ -123,7 +163,7 @@ class DetectionBinder(object):
         return search_windows
 
 
-    def compute_search_windows(self, stations, vel = 1000.):
+    def compute_search_windows(self, stations, vel = 330,):
         ''' Compute the search windows for the given stations.
 
         The length of the search windows is computed using a simple
@@ -142,6 +182,7 @@ class DetectionBinder(object):
 
         '''
         vel = float(vel)
+
         # Compute the search windows.
         for cur_station in stations:
             cur_search_win = {}
