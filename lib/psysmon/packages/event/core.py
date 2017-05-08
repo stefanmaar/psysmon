@@ -31,7 +31,7 @@ class Event(object):
     def __init__(self, start_time, end_time, db_id = None, public_id = None, event_type = None,
             event_type_certainty = None, description = None, comment = None,
             tags = [], agency_uri = None, author_uri = None, creation_time = None,
-            parent = None, changed = True, detections = None):
+            parent = None, changed = True, detections = None, arrays = None):
         ''' Instance initialization
 
         '''
@@ -87,6 +87,12 @@ class Event(object):
             self.detections = []
         else:
             self.detections = detections
+
+        # The arrays associated with the event.
+        if arrays is None:
+            self.arrays = []
+        else:
+            self.arrays = arrays
 
         # The agency_uri of the creator.
         self.agency_uri = agency_uri
@@ -171,11 +177,11 @@ class Event(object):
                 if self.event_type:
                     et_orm_class = project.dbTables['event_type']
                     query = db_session.query(et_orm_class).\
-                            filter(et_orm_class.name == self.event_type.name)
+                            filter(et_orm_class.id == self.event_type.db_id)
                     if db_session.query(query.exists()):
                         db_event_type = query.scalar()
                         if not db_event_type:
-                            self.logger.error("The requested event type '%s' doesn't exist in the database.", self.event_type.name)
+                            self.logger.error("The requested event type '%s' doesn't exist in the database. Creating it.", self.event_type.name)
                         db_event.event_type = db_event_type
 
                 # Add the detections to the event. Do this after the event got an
@@ -190,6 +196,21 @@ class Event(object):
                         d2e_orm = d2e_orm_class(ev_id = self.db_id,
                                                 det_id = cur_detection_orm.id)
                         db_event.detections.append(d2e_orm)
+
+
+                # Add the arrays to the event. Do this after the event got an
+                # id.
+                if len(self.arrays) > 0:
+                    # load the array orms from the database.
+                    array_table = project.dbTables['geom_array']
+                    e2a_orm_class = project.dbTables['event_to_array']
+                    query = db_session.query(array_table).\
+                            filter(array_table.name.in_([x.name for x in self.arrays]))
+                    for cur_array_orm in query:
+                        e2a_orm = e2a_orm_class(array_name = cur_array_orm.name,
+                                                event_id = self.db_id)
+                        db_event.arrays.append(e2a_orm)
+
                 db_session.commit()
             finally:
                 db_session.close()
@@ -251,8 +272,10 @@ class Event(object):
                     author_uri = db_event.author_uri,
                     creation_time = db_event.creation_time,
                     detections = [detect.Detection.from_db_detection(x.detection) for x in db_event.detections],
+                    arrays = [x.array_name for x in db_event.arrays],
                     changed = False
                     )
+
         return event
 
 
