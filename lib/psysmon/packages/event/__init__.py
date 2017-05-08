@@ -19,11 +19,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "events"                                 # The package name.
-version = "0.0.1"                               # The package version.
+version = "0.0.2"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
 description = "The events core package"            # The package description.
 website = "http://www.stefanmertl.com"          # The package website.
+
+''' Database change history
+version 0.0.2 - 2017-05-08
+Added the event_type database.
+Added the event_to_array database.
+Added the arrays relationship to the event orm.
+
+'''
 
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = ['import_bulletin',
@@ -31,7 +39,8 @@ collection_node_modules = ['import_bulletin',
                            'edit_event_catalogs',
                            'event_processor',
                            'lc_detect_sta_lta',
-                           'edit_detection_catalogs']
+                           'edit_detection_catalogs',
+                           'bind_array_detections']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugins_event_selector',
@@ -125,6 +134,7 @@ def databaseFactory(base):
 
         detections = relationship('DetectionToEventDb')
         event_type = relationship('EventTypeDb')
+        arrays = relationship('EventToArrayDb')
 
 
         def __init__(self, ev_catalog_id, start_time, end_time,
@@ -172,11 +182,37 @@ def databaseFactory(base):
 
         detection = relationship('DetectionDb')
 
-        def __init(self, ev_id, det_id):
+        def __init__(self, ev_id, det_id):
             self.ev_id = ev_id
             self.det_id = det_id
 
     tables.append(DetectionToEventDb)
+
+
+    ###########################################################################
+    # EVENT_TO_ARRAY table mapper class
+    class EventToArrayDb(base):
+        __tablename__ = 'event_to_array'
+        __table_args__ = (
+                          {'mysql_engine': 'InnoDB'}
+                         )
+
+        array_name = Column(String(50),
+                        ForeignKey('geom_array.name', onupdate = 'cascade'),
+                        primary_key=True,
+                        nullable=False)
+        event_id = Column(Integer,
+                       ForeignKey('event.id', onupdate = 'cascade'),
+                       primary_key = True,
+                       nullable = False)
+
+        event = relationship('EventDb')
+
+        def __init__(self, array_name, event_id):
+            self.array_name = array_name,
+            self.event_id = event_id
+
+    tables.append(EventToArrayDb)
 
 
 
