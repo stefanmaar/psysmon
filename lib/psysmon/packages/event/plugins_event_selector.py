@@ -105,7 +105,7 @@ class SelectEvents(OptionPlugin):
         es_group.add_item(item)
 
 
-        column_labels = ['db_id', 'start_time', 'length', 'arrays', 'public_id',
+        column_labels = ['db_id', 'start_time', 'length', 'arrays', 'detections', 'public_id',
                          'description', 'agency_uri', 'author_uri',
                          'comment']
         item = psy_pm.ListCtrlEditPrefItem(name = 'events',
@@ -385,7 +385,7 @@ class SelectEvents(OptionPlugin):
         ''' Convert a list of event objects to a list suitable for the GUI element.
         '''
         list_fields = ['db_id', 'start_time_string', 'length', 'arrays',
-                'public_id', 'description', 'agency_uri', 'author_uri',
+                'detections', 'public_id', 'description', 'agency_uri', 'author_uri',
                 'comment']
 
         event_list = []
@@ -394,6 +394,8 @@ class SelectEvents(OptionPlugin):
             for cur_name in list_fields:
                 if cur_name == 'arrays':
                     cur_row.append(','.join(cur_event.arrays))
+                elif cur_name == 'detections':
+                    cur_row.append(len(cur_event.detections))
                 else:
                     cur_row.append(str(getattr(cur_event, cur_name)))
             event_list.append(cur_row)
