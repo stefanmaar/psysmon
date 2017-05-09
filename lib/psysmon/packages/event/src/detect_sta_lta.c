@@ -27,12 +27,29 @@
 int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit, const double stop_growth)
 {
     int k;
+
+    // The detected index of the event end.
     int event_end = -1;
+
+    // A flag indicating, that an event end was triggered.
     int end_triggered = 0;
+
+    // The number of samples of the sta below the lta which are required to
+    // start the growth of the stop criterium. 
     int sta_below_lta_required = 10;
+
+    // The number of samples of the sta below the stop value which are
+    // required to confirm the triggered event end.
     int sta_below_stop_required = 100;
+
+    // A counter counting the number of samples of the sta below the lta.
     int cnt_sta_below_lta = 0;
+
+    // A counter counting the number of samples of the sta below the stop
+    // value.
     int cnt_sta_below_stop = 0;
+
+    // The stop value.
     double stop_value_orig = stop_value;
 
     for (k = 0; k < n_sta; k++)
@@ -47,29 +64,48 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
             stop_value = stop_value_orig;
         }
 
+        // If the STA was below the LTA for a certain amount of samples start
+        // to grow the stop value. This is done to ensure, that the stop value
+        // exceeds the STA at some time.
         if (cnt_sta_below_lta > sta_below_lta_required)
         {
             stop_value += stop_value_orig * stop_growth;
         }
 
+        // Store the current stop value in the array for later use as a python
+        // array.
         stop_crit[k] = stop_value;
 
 
-        if ((sta[k] < stop_value) && (cnt_sta_below_stop <= sta_below_stop_required))
+
+        if ((sta[k] < stop_value) && (end_triggered == 0))
         {
-            if (end_triggered == 0)
-            {
-                event_end = k;
-            }
+            // The first time that the STA drops below the stop_value and no
+            // event end has been triggered yet.
+            // Set the index of the event end and set the state to the
+            // end_triggered mode.
+            event_end = k;
             end_triggered = 1;
+        }
+        else if ((end_triggered == 1) && (sta[k] < stop_value) && (cnt_sta_below_stop <= sta_below_stop_required))
+        {
+            // An event end has been triggered. Wait the
+            // sta_below_stop_required samples to confirm the correct event
+            // end. During this time, another increase of the STA above the
+            // stop value resets the end_triggered state. 
+            // Increase the STA below the stop value counter.
             cnt_sta_below_stop++;
         }
         else if ((sta[k] < stop_value) && (cnt_sta_below_stop > sta_below_stop_required))
         {
+            // The triggered end was confirmed by exceeding the
+            // sta_below_stop_required threshold. Leave the loop.
             break;
         }
-        else if (sta[k] > stop_value)
+        else if ((end_triggered == 1) && (sta[k] > stop_value))
         {
+            // The STA raises again above the stop value. Reset the
+            // end_triggered state.
             end_triggered = 0;
             event_end = -1;
             cnt_sta_below_stop = 0;
@@ -83,8 +119,13 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
 int compute_event_start(const long n_thrf, const double *thrf, const double thr, const double fine_thr, const double turn_limit)
 {
     int k;
+    
+    // The index of the detected event start. 
     long event_start = 0;
-    int load_trigger = 0;
+
+    // The active state of the trigger.
+    int trigger_active = 0;
+
     int min_length = 2;
     int cnt_above_thr = 0;
     int up_trigger = 0;
@@ -94,13 +135,17 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
     for (k = 0; k < n_thrf; k++)
     {
         event_start = k;
+
+        // It may happen, that the thrf is above the thr at the start of the
+        // loop. Activate the trigger, when the thrf falls below the thr for
+        // the first time.
         if (thrf[k] < thr)
         {
-            load_trigger = 1;
+            trigger_active = 1;
             cnt_above_thr = 0;
         }
 
-        if (load_trigger == 1)
+        if (trigger_active == 1)
         {
             if (thrf[k] > thr)
             {
