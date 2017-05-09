@@ -121,43 +121,105 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
     int k;
     
     // The index of the detected event start. 
-    long event_start = 0;
+    long event_start = -1;
 
     // The active state of the trigger.
     int trigger_active = 0;
 
-    int min_length = 2;
+    // An event start was detected.
+    int start_detected = 0;
+
+    // The start is likely to be noise.
+    int noise_suspect = 0;
+
+    // The number of samples to wait until a noise suspect is confirmed as
+    // noise.
+    int noise_confirm_length = 160;
+
+    int min_length = 80;
     int cnt_above_thr = 0;
+    int cnt_noise_below_thr = 0;
     int up_trigger = 0;
     int turn_flag = 0;
     double turn_value = 0;
 
     for (k = 0; k < n_thrf; k++)
     {
-        event_start = k;
 
-        // It may happen, that the thrf is above the thr at the start of the
-        // loop. Activate the trigger, when the thrf falls below the thr for
-        // the first time.
-        if (thrf[k] < thr)
+        if ((trigger_active == 0) && (thrf[k] < thr))
         {
+            // It may happen, that the thrf is above the thr at the start of the
+            // loop. Activate the trigger, when the thrf falls below the thr for
+            // the first time.
             trigger_active = 1;
             cnt_above_thr = 0;
         }
-
+        
         if (trigger_active == 1)
         {
-            if (thrf[k] > thr)
+            // The trigger was activated. Start to search for the event start.
+            if ((start_detected == 0) && (thrf[k] > thr))
             {
-                cnt_above_thr++;
+                // An event start is triggered.
+                start_detected = 1;
+                event_start = k;
             }
-        }
+            else if ((noise_suspect == 0) && (start_detected == 1))
+            {
+                if ((thrf[k] > thr) && (cnt_above_thr < min_length))
+                {
+                    // An event start was detected. See if the thrf stays above the
+                    // thr for a certain amount of time
+                    cnt_above_thr++;
+                }
+                else if ((cnt_above_thr < min_length) && (thrf[k] < thr))
+                {
+                    // The thrf drops below the thr too early. This could be noise.
+                    // Set the noise suspect flag.
+                    noise_suspect = 1;
+                    cnt_above_thr = 0;
+                    cnt_noise_below_thr = 0;
+                }
+                else if (cnt_above_thr >= min_length)
+                {
+                    // The detected start was confirmed as an real event start.
+                    // Exit the loop.
+                    break;
+                }
+            }
+            else if ((noise_suspect == 1) && (start_detected == 1))
+            {
+                // This is a short detection. It's likely to be noise. Wait
+                // some time to see if the thrf raises again above the thr. If
+                // not, skip this event start.
+                if ((cnt_noise_below_thr < noise_confirm_length) && (thrf[k] < thr))
+                {
+                    cnt_noise_below_thr++;
+                }
+                else if ((cnt_noise_below_thr < noise_confirm_length) && (thrf[k] > thr))
+                {
+                    noise_suspect = 0;
+                    cnt_noise_below_thr = 0;
+                    cnt_above_thr = 0;
+                }
+                else if ((cnt_noise_below_thr >= noise_confirm_length))
+                {
+                    start_detected = 0;
+                    event_start = -1;
+                    noise_suspect = 0;
+                    cnt_noise_below_thr = 0;
+                    cnt_above_thr = 0;
+                }
+            }
 
-        if (cnt_above_thr > min_length)
-        {
-            event_start = event_start - min_length;
-            break;
         }
+    }
+
+    // If no event start was found at all, set the event start to the end of
+    // the array.
+    if (event_start == -1)
+    {
+        event_start = n_thrf - 1;
     }
 
     // Refine the event start using a lower thr.
