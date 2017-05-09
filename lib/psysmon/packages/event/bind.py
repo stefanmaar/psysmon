@@ -29,6 +29,7 @@
 
 '''
 import operator as op
+import itertools
 
 import obspy.core.utcdatetime as utcdatetime
 import obspy.geodetics as geodetics
@@ -108,6 +109,10 @@ class DetectionBinder(object):
                                                                   end_time = end_time))
             detections[cur_scnl] = sorted(detections[cur_scnl], key = op.attrgetter('start_time'))
 
+
+        # Get the maximum search window.
+        max_search_window = max(list(itertools.chain.from_iterable([x.values() for x in self.search_windows.values()])))
+
         # Get the earlies detection of each channel. Remove these detections
         # from the detections list.
         next_detections = [x[0] for x in detections.values() if len(x) > 0]
@@ -122,7 +127,8 @@ class DetectionBinder(object):
             # Check if the search window extends the end time of the detection
             # time span. If so, break the loop and return the non-bound
             # detections.
-            last_search_time = max([first_detection.start_time + x for x in search_windows])
+            #last_search_time = max([first_detection.start_time + x for x in search_windows])
+            last_search_time = first_detection.start_time + max_search_window
             if end_time and last_search_time > end_time:
                 break
 
