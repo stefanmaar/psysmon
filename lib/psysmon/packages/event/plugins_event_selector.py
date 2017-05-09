@@ -60,6 +60,7 @@ class SelectEvents(OptionPlugin):
         # The plot colors used by the plugin.
         self.colors = {}
         self.colors['event_vspan'] = '0.9'
+        self.colors['detection_hline'] = '0.7'
 
         # Create the preferences.
         self.create_select_preferences()
@@ -104,7 +105,7 @@ class SelectEvents(OptionPlugin):
         es_group.add_item(item)
 
 
-        column_labels = ['db_id', 'start_time', 'length', 'public_id',
+        column_labels = ['db_id', 'start_time', 'length', 'arrays', 'public_id',
                          'description', 'agency_uri', 'author_uri',
                          'comment']
         item = psy_pm.ListCtrlEditPrefItem(name = 'events',
@@ -149,6 +150,12 @@ class SelectEvents(OptionPlugin):
                                        tool_tip = 'Show the limits of the selected event in the views.')
         m_group.add_item(item)
 
+        item = psy_pm.CheckBoxPrefItem(name = 'show_detections',
+                                       label = 'show detections',
+                                       value = True,
+                                       hooks = {'on_value_change': self.on_show_detections_changed},
+                                       tool_tip = 'Show the detections associated with the event.')
+        m_group.add_item(item)
 
 
     def buildFoldPanel(self, panelBar):
@@ -216,6 +223,15 @@ class SelectEvents(OptionPlugin):
             self.on_after_plot()
 
 
+    def on_show_detections_changed(self):
+        ''' The on_value_changed callback of the show_detections item.
+        '''
+        if not self.pref_manager.get_value('show_detections'):
+            self.clear_annotation()
+        else:
+            self.on_after_plot()
+
+
     def getHooks(self):
         ''' The callback hooks.
         '''
@@ -234,12 +250,18 @@ class SelectEvents(OptionPlugin):
         if self.pref_manager.get_value('show_event_limits'):
             self.add_event_marker_to_station(station = self.parent.displayManager.showStations)
 
+        if self.pref_manager.get_value('show_detections'):
+            self.add_detection_marker_to_station(station = self.parent.displayManager.showStations)
+
 
     def on_after_plot_station(self, station):
         ''' The hook called after the plotting of a station in tracedisplay.
         '''
         if self.pref_manager.get_value('show_event_limits'):
             self.add_event_marker_to_station(station = station)
+
+        if self.pref_manager.get_value('show_detections'):
+            self.add_detection_marker_to_station(station = station)
 
 
     def on_shared_information_updated(self, updated_info):
@@ -258,6 +280,7 @@ class SelectEvents(OptionPlugin):
     def add_event_marker_to_station(self, station = None):
         ''' Add the event markers to station plots.
         '''
+        print "Adding event marker to station."
         if station:
             for cur_station in station:
                 self.add_event_marker_to_channel(cur_station.channels)
@@ -275,12 +298,56 @@ class SelectEvents(OptionPlugin):
                                                           node_type = 'container')
             for cur_node in channel_nodes:
                 cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
-                                                                 x_end = self.selected_event['end_time'],
-                                                                 label = self.selected_event['id'],
-                                                                 parent_rid = self.rid,
-                                                                 key = self.selected_event['id'],
-                                                                 color = self.colors['event_vspan'])
+                                               x_end = self.selected_event['end_time'],
+                                               label = self.selected_event['id'],
+                                               parent_rid = self.rid,
+                                               key = self.selected_event['id'],
+                                               color = self.colors['event_vspan'])
 
+
+    def add_detection_marker_to_station(self, station = None):
+        ''' Add the event markers to station plots.
+        '''
+        print "Adding detection marker to station."
+        if station:
+            for cur_station in station:
+                self.add_detection_marker_to_channel(cur_station.channels)
+
+
+    def add_detection_marker_to_channel(self, channel = None):
+        ''' Add the event markers to channel plots.
+        '''
+        cur_catalog = self.parent.event_library.catalogs[self.selected_event['catalog_name']]
+        cur_event = cur_catalog.get_events(db_id = self.selected_event['id'])
+        if cur_event:
+            cur_event = cur_event[0]
+
+        for cur_channel in channel:
+            cur_scnl = cur_channel.getSCNL()
+            cur_detection_list = [x for x in cur_event.detections if x.scnl == cur_scnl]
+            channel_nodes = self.parent.viewport.get_node(station = cur_scnl[0],
+                                                          channel = cur_scnl[1],
+                                                          network = cur_scnl[2],
+                                                          location = cur_scnl[3],
+                                                          node_type = 'container')
+            for cur_detection in cur_detection_list:
+                for cur_node in channel_nodes:
+                    #cur_node.plot_annotation_vspan(x_start = cur_detection.start_time,
+                    #                               x_end = cur_detection.end_time,
+                    #                               label = cur_detection.db_id,
+                    #                               parent_rid = self.rid,
+                    #                               key = cur_detection.db_id,
+                    #                               color = self.colors['detection_vspan'])
+                    cur_node.plot_annotation_vline(x = cur_detection.start_time,
+                                                   parent_rid = self.rid,
+                                                   key = 'detect_start_' + str(cur_detection.db_id),
+                                                   label = cur_detection.db_id,
+                                                   color = self.colors['detection_hline'])
+
+                    cur_node.plot_annotation_vline(x = cur_detection.end_time,
+                                                   parent_rid = self.rid,
+                                                   key = 'detect_end_' + str(cur_detection.db_id),
+                                                   color = self.colors['detection_hline'])
 
     def on_load_events(self, event):
         '''
@@ -306,6 +373,10 @@ class SelectEvents(OptionPlugin):
                                 start_time = start_time,
                                 end_time = start_time + duration)
 
+        for cur_event in cur_catalog.events:
+            for cur_detection in cur_event.detections:
+                cur_detection.set_channel_from_inventory(self.parent.project.geometry_inventory)
+
         event_list = self.convert_events_to_list(cur_catalog.events)
         self.pref_manager.set_limit('events', event_list)
 
@@ -313,22 +384,18 @@ class SelectEvents(OptionPlugin):
     def convert_events_to_list(self, events):
         ''' Convert a list of event objects to a list suitable for the GUI element.
         '''
-        list_fields = []
-        list_fields.append(('db_id', 'id', int))
-        list_fields.append(('start_time_string', 'start time', str))
-        list_fields.append(('length', 'length', float))
-        list_fields.append(('public_id', 'public id', str))
-        list_fields.append(('description', 'description', str))
-        list_fields.append(('agency_uri', 'agency', str))
-        list_fields.append(('author_uri', 'author', str))
-        list_fields.append(('comment', 'comment', str))
+        list_fields = ['db_id', 'start_time_string', 'length', 'arrays',
+                'public_id', 'description', 'agency_uri', 'author_uri',
+                'comment']
 
         event_list = []
         for cur_event in events:
             cur_row = []
-            for cur_field in list_fields:
-                cur_name = cur_field[0]
-                cur_row.append(str(getattr(cur_event, cur_name)))
+            for cur_name in list_fields:
+                if cur_name == 'arrays':
+                    cur_row.append(','.join(cur_event.arrays))
+                else:
+                    cur_row.append(str(getattr(cur_event, cur_name)))
             event_list.append(cur_row)
 
         return event_list
@@ -368,6 +435,8 @@ class SelectEvents(OptionPlugin):
         node_list = self.parent.viewport.get_node(node_type = 'container')
         for cur_node in node_list:
             cur_node.clear_annotation_artist(mode = 'vspan',
+                                             parent_rid = self.rid)
+            cur_node.clear_annotation_artist(mode = 'vline',
                                              parent_rid = self.rid)
             cur_node.draw()
 
@@ -426,6 +495,7 @@ class EventListField(wx.Panel, listmix.ColumnSorterMixin):
 
         # Methods for derived values.
         self.get_method = {'length': self.get_length}
+        self.get_method = {'arrays': self.get_arrays}
 
         # Methods for values which should not be converted using the default
         # str function.
