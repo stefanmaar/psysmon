@@ -151,8 +151,16 @@ class Detection(object):
     def set_channel_from_inventory(self, inventory):
         ''' Set the channel matching the recorder stream.
         '''
-        self.channel = inventory.get_channel_from_stream(start_time = self.start_time,
-                                                         end_time = self.end_time)
+        cur_channel = inventory.get_channel_from_stream(start_time = self.start_time,
+                                                        end_time = self.end_time,
+                                                        id = self.rec_stream_id)
+
+        if len(cur_channel) == 1:
+            self.channel = cur_channel[0]
+        elif len(cur_channel) > 1:
+            raise RuntimeError("More than one channels returned for the detection with id %f and rec_stream_id %f." % (self.db_id, self.rec_stream_id))
+        else:
+            self.channel = None
 
 
     def write_to_database(self, project):
@@ -327,6 +335,9 @@ class Catalog(object):
         id_list = [x.rec_stream_id for x in self.detections]
         id_list = list(set(id_list))
         # Get the channels for the ids.
+        # TODO: Handle the correct request of channel using the time-span.
+        # Currently, the first channel is selected if multiple channels have
+        # been assigned to the same stream.
         channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
         channels = [x[0] if len(x) == 1 else None for x in channels]
         channels = dict(zip(id_list, channels))
