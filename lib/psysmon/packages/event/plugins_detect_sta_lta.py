@@ -62,6 +62,7 @@ class DetectStaLta(ViewPlugin):
         gen_group = pref_page.add_group('general')
         thr_group = pref_page.add_group('threshold')
         sc_group = pref_page.add_group('stop criterium')
+        nr_group = pref_page.add_group('noise reject')
 
         # The CF type.
         item = preferences_manager.SingleChoicePrefItem(name = 'cf_type',
@@ -111,6 +112,15 @@ class DetectStaLta(ViewPlugin):
         thr_group.add_item(item)
 
 
+        # start stop growth
+        item = preferences_manager.FloatSpinPrefItem(name = 'start_stop_growth',
+                                                     label = 'start stop growth [s]',
+                                                     value = 0.1,
+                                                     digits = 3,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The duration for which the sta has to be below the lta to start the growth of the stop value [seconds].')
+        sc_group.add_item(item)
+
         # stop growth
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
                                                      label = 'stop grow ratio',
@@ -122,14 +132,39 @@ class DetectStaLta(ViewPlugin):
         # Stop criterium delay.
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
                                                      label = 'Stop delay [s]',
-                                                     value = 0.1,
+                                                     value = 0.0,
                                                      limit = (0, 100),
                                                      tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
         sc_group.add_item(item)
 
 
+        # confirm stop length
+        item = preferences_manager.FloatSpinPrefItem(name = 'confirm_stop_len',
+                                                     label = 'confirm stop length [s]',
+                                                     value = 0.2,
+                                                     digits = 3,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The duration for which the sta has to be below the stop value to confirm a detected stop as valid [seconds].')
+        sc_group.add_item(item)
 
 
+        # start accept length
+        item = preferences_manager.FloatSpinPrefItem(name = 'start_accept_len',
+                                                     label = 'start accept length [s]',
+                                                     value = 0.1,
+                                                     digits = 3,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The duration for which the thrf has to exceed thr to accept the start detection as valid [s].')
+        nr_group.add_item(item)
+
+        # noise confirm length
+        item = preferences_manager.FloatSpinPrefItem(name = 'noise_confirm_len',
+                                                     label = 'noise confirm length [s]',
+                                                     value = 0.2,
+                                                     digits = 3,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The duration for which the thrf has to stay below the thr to confirm a suspected noise start as valid [s].')
+        nr_group.add_item(item)
 
 
     def plot(self, display_manager, data_manager):
@@ -161,6 +196,10 @@ class DetectStaLta(ViewPlugin):
         cf_type = self.pref_manager.get_value('cf_type')
         stop_delay = self.pref_manager.get_value('stop_delay')
         stop_growth = self.pref_manager.get_value('stop_growth')
+        start_accept_len = self.pref_manager.get_value('start_accept_len')
+        noise_confirm_len = self.pref_manager.get_value('noise_confirm_len')
+        start_stop_growth = self.pref_manager.get_value('start_stop_growth')
+        confirm_stop_len = self.pref_manager.get_value('confirm_stop_len')
 
 
         for cur_channel in channels:
@@ -192,7 +231,11 @@ class DetectStaLta(ViewPlugin):
                                   turn_limit = turn_limit,
                                   cf_type = cf_type,
                                   stop_delay = stop_delay,
-                                  stop_growth = stop_growth)
+                                  stop_growth = stop_growth,
+                                  start_stop_growth = start_stop_growth,
+                                  confirm_stop_len = confirm_stop_len,
+                                  start_accept_len = start_accept_len,
+                                  noise_confirm_len = noise_confirm_len)
 
                 cur_view.setXLimits(left = display_manager.startTime.timestamp,
                                     right = display_manager.endTime.timestamp)
@@ -253,13 +296,15 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
 
 
-    def plot(self, stream, sta_len, lta_len, thr, fine_thr, turn_limit, cf_type, stop_delay, stop_growth):
+    def plot(self, stream, sta_len, lta_len, thr, fine_thr, turn_limit,
+             cf_type, stop_delay, stop_growth, start_stop_growth,
+             confirm_stop_len, start_accept_len, noise_confirm_len):
         ''' Plot the STA/LTA features.
         '''
         plot_detection_marker = True
         plot_lta_replace_marker = False
         #plot_features = ['sta', 'lta * thr']
-        plot_features = ['sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
+        plot_features = ['cf', 'sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
         #plot_features = ['thrf']
 
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
@@ -274,12 +319,21 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             if np.ma.count_masked(cur_trace.data):
                 time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
 
+            # Convert the passed time values to samples.
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
             stop_delay_smp = int(stop_delay * cur_trace.stats.sampling_rate)
+            n_start_accept_len = int(start_accept_len * cur_trace.stats.sampling_rate)
+            n_noise_confirm_len = int(noise_confirm_len * cur_trace.stats.sampling_rate)
+            n_start_stop_growth = int(start_stop_growth * cur_trace.stats.sampling_rate)
+            n_confirm_stop_len = int(confirm_stop_len * cur_trace.stats.sampling_rate)
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
+            detector.start_accept_len = n_start_accept_len
+            detector.noise_confirm_len = n_noise_confirm_len
+            detector.start_stop_growth = n_start_stop_growth
+            detector.confirm_stop_len = n_confirm_stop_len
             detector.set_data(cur_trace.data)
             detector.compute_cf()
             detector.compute_sta_lta()
@@ -323,9 +377,9 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                     cur_line.set_ydata(cur_data)
 
             y_lim = [np.min(y_lim_min), np.max(y_lim_max)]
-            print y_lim
-            self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
-            #self.axes.set_ylim(bottom = 0, top = detector.thr)
+            #print y_lim
+            #self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
+            self.axes.set_ylim(bottom = 1, top = y_lim[1])
             self.axes.set_yscale('log')
 
             # Clear the marker lines.
