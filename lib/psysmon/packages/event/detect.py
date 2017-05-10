@@ -593,7 +593,8 @@ class StaLtaDetector:
 
     def __init__(self, data = None, cf_type = 'square', n_sta = 2,
                  n_lta = 10, thr = 3, fine_thr = None, turn_limit = 0.05,
-                 stop_growth = 0.001):
+                 stop_growth = 0.001, start_stop_growth = 10, confirm_stop_len = 20,
+                 start_accept_len = 10, noise_confirm_len = 20):
         ''' Initialize the instance.
         '''
         # The logging logger instance.
@@ -631,6 +632,22 @@ class StaLtaDetector:
         # The ratio with which the stop_value is grown to ensure the reaching
         # of the stop criterium.
         self.stop_growth = stop_growth
+
+        # The duration for which the thrf has to exceed the thr to accept the
+        # start detection as valid [samples].
+        self.start_accept_len = start_accept_len
+
+        # The duration for which the thrf has to stay below the thr to confirm
+        # the suspected noise start as valid [samples].
+        self.noise_confirm_len = noise_confirm_len
+
+        # The number of samples of the sta below the lta which are required to
+        # start the growth of the stop value [samples].
+        self.start_stop_growth = start_stop_growth
+
+        # The number of samples of the sta below the stop value which are
+        # required to confirm the detected stop as valid [samples].
+        self.confirm_stop_len = confirm_stop_len
 
         # The data array.
         if data is None:
@@ -736,7 +753,9 @@ class StaLtaDetector:
             n_cur_sta = len(cur_sta)
             n_cur_lta = len(cur_lta)
             cur_stop_crit = np.empty(n_cur_sta, dtype = np.float64)
-            next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit, self.stop_growth)
+            next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta,
+                                                         stop_value, cur_stop_crit, self.stop_growth,
+                                                         self.start_stop_growth, self.confirm_stop_len)
             self.logger.debug("next_end_ind: %d", next_end_ind)
 
             # Compute the event end.
@@ -818,7 +837,9 @@ class StaLtaDetector:
         clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
 
         thrf = np.ascontiguousarray(self.sta[crop_start:]/self.lta[crop_start:], dtype = np.float64)
-        event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr, self.fine_thr, self.turn_limit)
+        event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr,
+                                                      self.fine_thr, self.turn_limit,
+                                                      self.start_accept_len, self.noise_confirm_len)
 
         event_start_ind = crop_start + event_start
 
