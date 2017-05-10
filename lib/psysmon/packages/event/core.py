@@ -460,11 +460,14 @@ class Catalog(object):
         '''
         ret_events = self.events
 
-        valid_keys = ['db_id', 'public_id', 'event_type', 'changed']
+        valid_keys = ['db_id', 'public_id', 'event_type', 'changed', 'min_detections']
 
         for cur_key, cur_value in kwargs.iteritems():
             if cur_key in valid_keys:
-                ret_events = [x for x in ret_events if getattr(x, cur_key) == cur_value]
+                if cur_key == 'min_detections':
+                    ret_events = [x for x in ret_events if len(x.detections) >= cur_value]
+                else:
+                    ret_events = [x for x in ret_events if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
