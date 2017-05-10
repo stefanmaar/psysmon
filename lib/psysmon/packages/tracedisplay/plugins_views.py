@@ -693,6 +693,19 @@ class DemoPlotter(ViewPlugin):
         self.icons['active'] = icons.attention_icon_16
 
 
+        pref_page = self.pref_manager.add_page('Preferences')
+        cf_group = pref_page.add_group('cf')
+
+
+        # The Allen CF constant.
+        item = preferences_manager.FloatSpinPrefItem(name = 'allen_c',
+                                                     label = 'C',
+                                                     value = 3,
+                                                     limit = (0, None),
+                                                     spin_format = '%e')
+        cf_group.add_item(item)
+
+
     def plot(self, displayManager, dataManager):
         ''' Plot all available stations.
 
@@ -729,7 +742,9 @@ class DemoPlotter(ViewPlugin):
             for curView in views:
                 if curStream:
                     #lineColor = [x/255.0 for x in curChannel.container.color]
-                    curView.plot(curStream, [0.3, 0, 0])
+                    curView.plot(curStream,
+                                 allen_c = self.pref_manager.get_value('allen_c'),
+                                 color = [0.3, 0, 0])
 
                 curView.setXLimits(left = displayManager.startTime.timestamp,
                                    right = displayManager.endTime.timestamp)
@@ -765,11 +780,11 @@ class DemoView(psysmon.core.gui_view.ViewNode):
 
         self.scaleBar = None
 
-        self.line = None
+        self.lines = []
 
 
 
-    def plot(self, stream, color):
+    def plot(self, stream, allen_c = 3, color = 'k'):
 
 
         for trace in stream:
@@ -782,17 +797,53 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                 timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
 
 
-            if not self.line:
-                self.line, = self.axes.plot(timeArray, trace.data * -1, color = color)
+            if not self.lines:
+                #self.line, = self.axes.plot(timeArray, trace.data * -1, color = color)
+                #dxdt = np.diff(trace.data) / np.diff(timeArray)
+                dxdt = np.diff(trace.data)
+                dxdt = np.append(dxdt, 1)
+                cf = trace.data**2 + allen_c * dxdt**2
+                cf_line, = self.axes.plot(timeArray, cf)
+                self.lines.append(cf_line)
+                sq_line, = self.axes.plot(timeArray, trace.data**2)
+                self.lines.append(sq_line)
+                rms = self.window_rms(trace.data**2, 10)
+                rms_line, = self.axes.plot(timeArray, rms)
+                self.lines.append(rms_line)
+                peaks = scipy.signal.argrelmax(rms, order = 5)[0]
+                peak_line, = self.axes.plot(timeArray[peaks], rms[peaks], 'o')
+                self.lines.append(peak_line)
+                f_env = scipy.interpolate.interp1d(timeArray[peaks], rms[peaks], kind = 'cubic', bounds_error = False, fill_value=0.0)
+                env = f_env(timeArray)
+                env_line, = self.axes.plot(timeArray, env)
+                self.lines.append(env_line)
             else:
-                self.line.set_xdata(timeArray)
+                dxdt = np.diff(trace.data)
+                #dxdt = np.diff(trace.data) / np.diff(timeArray)
+                dxdt = np.append(dxdt, 1)
+                cf = trace.data**2 + allen_c * dxdt**2
+                self.lines[0].set_xdata(timeArray)
+                self.lines[0].set_ydata(cf)
+                self.lines[1].set_xdata(timeArray)
+                self.lines[1].set_ydata(trace.data**2)
+                rms = self.window_rms(trace.data**2, 10)
+                self.lines[2].set_xdata(timeArray)
+                self.lines[2].set_ydata(rms)
+                peaks = scipy.signal.argrelmax(rms, order = 5)[0]
+                self.lines[3].set_xdata(timeArray[peaks])
+                self.lines[3].set_ydata((rms)[peaks])
+                f_env = scipy.interpolate.interp1d(timeArray[peaks], rms[peaks], kind = 'cubic', bounds_error = False, fill_value=0.0)
+                env = f_env(timeArray)
+                self.lines[4].set_xdata(timeArray)
+                self.lines[4].set_ydata(env)
                 #self.line.set_ydata(trace.data * -1)
-                self.line.set_ydata(trace.data / np.log10(np.abs(trace.data)))
+                #self.line.set_ydata(trace.data / np.log10(np.abs(trace.data)))
 
             self.axes.set_frame_on(False)
             self.axes.get_xaxis().set_visible(False)
             self.axes.get_yaxis().set_visible(False)
-            yLim = np.max(np.abs(trace.data))
+            #yLim = np.max(np.abs(trace.data))
+            yLim = np.max(np.abs(cf))
             self.axes.set_ylim(bottom = -yLim, top = yLim)
 
 
@@ -810,6 +861,11 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                                   facecolor = '0.75')
         self.axes.add_patch(self.scaleBar)
         #self.axes.axvspan(timeArray[0], timeArray[0] + 10, facecolor='0.5', alpha=0.5)
+
+    def window_rms(self, a, window_size):
+      a2 = np.power(a,2)
+      window = np.ones(window_size)/float(window_size)
+      return np.sqrt(np.convolve(a2, window, 'same'))
 
 
     def setYLimits(self, bottom, top):
