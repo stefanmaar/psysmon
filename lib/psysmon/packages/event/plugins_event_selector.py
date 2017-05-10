@@ -377,6 +377,8 @@ class SelectEvents(OptionPlugin):
             for cur_detection in cur_event.detections:
                 cur_detection.set_channel_from_inventory(self.parent.project.geometry_inventory)
 
+        # TODO: Implement a filtering of the displayed or loaded events.
+        #event_list = self.convert_events_to_list(cur_catalog.get_events(min_detections = 3))
         event_list = self.convert_events_to_list(cur_catalog.events)
         self.pref_manager.set_limit('events', event_list)
 
