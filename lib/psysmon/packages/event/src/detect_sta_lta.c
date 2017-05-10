@@ -24,7 +24,7 @@
 #include <math.h>
 
 
-int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit, const double stop_growth)
+int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit, const double stop_growth, const int sta_below_lta_required, const int sta_below_stop_required)
 {
     int k;
 
@@ -36,11 +36,11 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
 
     // The number of samples of the sta below the lta which are required to
     // start the growth of the stop criterium. 
-    int sta_below_lta_required = 10;
+    //int sta_below_lta_required = 10;
 
     // The number of samples of the sta below the stop value which are
     // required to confirm the triggered event end.
-    int sta_below_stop_required = 100;
+    //int sta_below_stop_required = 100;
 
     // A counter counting the number of samples of the sta below the lta.
     int cnt_sta_below_lta = 0;
@@ -116,10 +116,11 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
 }
 
 
-int compute_event_start(const long n_thrf, const double *thrf, const double thr, const double fine_thr, const double turn_limit)
+
+int compute_event_start(const long n_thrf, const double *thrf, const double thr, const double fine_thr, const double turn_limit, const int min_length, const int noise_confirm_length)
 {
     int k;
-    
+
     // The index of the detected event start. 
     long event_start = -1;
 
@@ -134,13 +135,25 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
 
     // The number of samples to wait until a noise suspect is confirmed as
     // noise.
-    int noise_confirm_length = 160;
+    //int noise_confirm_length = 160;
 
-    int min_length = 80;
+    // The number of samples of the thrf above the thr to confirm the start
+    // detection as an event.
+    //int min_length = 80;
+
+    // Counter counting the samples of the thrf above the thr.
     int cnt_above_thr = 0;
+
+    // Counter counting the samples of the thrf below the thr.
     int cnt_noise_below_thr = 0;
+
+    // Indicate the up direction of the thrf.
     int up_trigger = 0;
+
+    // Indicate, that a turn of the thrf direction was detected.
     int turn_flag = 0;
+
+    // The thrf value of the detection upwards turn.
     double turn_value = 0;
 
     for (k = 0; k < n_thrf; k++)
@@ -154,7 +167,7 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
             trigger_active = 1;
             cnt_above_thr = 0;
         }
-        
+
         if (trigger_active == 1)
         {
             // The trigger was activated. Start to search for the event start.

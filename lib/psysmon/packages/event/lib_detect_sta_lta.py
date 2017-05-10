@@ -49,7 +49,9 @@ clib_detect_sta_lta.compute_event_end.argtypes = [ctypes.c_long,
                                                   np.ctypeslib.ndpointer(dtype = np.float64,
                                                                          ndim = 1,
                                                                          flags = 'C_CONTIGUOUS'),
-                                                  ctypes.c_double]
+                                                  ctypes.c_double,
+                                                  ctypes.c_int,
+                                                  ctypes.c_int]
 
 clib_detect_sta_lta.compute_event_start.argtypes = [ctypes.c_long,
                                                     np.ctypeslib.ndpointer(dtype = np.float64,
@@ -57,6 +59,8 @@ clib_detect_sta_lta.compute_event_start.argtypes = [ctypes.c_long,
                                                                            flags = 'C_CONTIGUOUS'),
                                                     ctypes.c_double,
                                                     ctypes.c_double,
-                                                    ctypes.c_double]
+                                                    ctypes.c_double,
+                                                    ctypes.c_int,
+                                                    ctypes.c_int]
 
 
