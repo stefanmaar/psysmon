@@ -208,6 +208,8 @@ class Event(object):
 
             self.changed = False
         else:
+            # TODO: Adjust the code similar to the above part to handle a
+            # passed db_session. 
             # If the db_id is not None, update the existing event.
             db_session = project.getDbSession()
             db_event_orm = project.dbTables['event']
@@ -577,6 +579,8 @@ class Catalog(object):
             new_events = [x for x in self.events if x.db_id is None]
             exist_events = [x for x in self.events if x.db_id is not None]
 
+
+            # Add the new events to the database.
             for cur_event in new_events:
                 cur_event.write_to_database(project = project,
                                             db_session = db_session)
@@ -590,8 +594,13 @@ class Catalog(object):
                                                         db_session = db_session)
                 cur_event.assign_arrays_in_database(project = project,
                                                     db_session = db_session)
-
             db_session.commit()
+
+            # Handle the existing events one by one.
+            # TODO: Adapt to a better insertion of multiple existing events.
+            for cur_event in exist_events:
+                cur_event.write_to_database(project = project)
+
         finally:
             db_session.close()
 
