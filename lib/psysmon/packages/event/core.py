@@ -108,6 +108,10 @@ class Event(object):
         # Flag to indicate a change of the event attributes.
         self.changed = changed
 
+        # The database orm instance which is related to this event. This is
+        # used when writing events to the database.
+        self.db_event = None
+
 
     @property
     def rid(self):
@@ -137,9 +141,11 @@ class Event(object):
         return self.end_time - self.start_time
 
 
-    def write_to_database(self, project):
+    def write_to_database(self, project, db_session = None):
         ''' Write the event to the pSysmon database.
         '''
+        commit_session = False
+
         if self.db_id is None:
             # If the db_id is None, insert a new event.
             if self.creation_time is not None:
@@ -153,7 +159,9 @@ class Event(object):
                 catalog_id = None
 
             try:
-                db_session = project.getDbSession()
+                if db_session is None:
+                    db_session = project.getDbSession()
+                    commit_session = True
                 db_event_orm = project.dbTables['event']
                 db_event = db_event_orm(ev_catalog_id = catalog_id,
                                         start_time = self.start_time.timestamp,
@@ -170,8 +178,7 @@ class Event(object):
 
                 # Commit the event to the database to get an id.
                 db_session.add(db_event)
-                db_session.commit()
-                self.db_id = db_event.id
+                self.db_event = db_event
 
                 # Assign the event type.
                 if self.event_type:
@@ -184,36 +191,20 @@ class Event(object):
                             self.logger.error("The requested event type '%s' doesn't exist in the database. Creating it.", self.event_type.name)
                         db_event.event_type = db_event_type
 
-                # Add the detections to the event. Do this after the event got an
-                # id.
-                if len(self.detections) > 0 :
-                    # Load the detection_orms from the database.
-                    detection_table = project.dbTables['detection']
-                    d2e_orm_class = project.dbTables['detection_to_event']
-                    query = db_session.query(detection_table).\
-                            filter(detection_table.id.in_([x.db_id for x in self.detections]))
-                    for cur_detection_orm in query:
-                        d2e_orm = d2e_orm_class(ev_id = self.db_id,
-                                                det_id = cur_detection_orm.id)
-                        db_event.detections.append(d2e_orm)
+                # If no existing db session was provided, commit the single
+                # event.
+                if commit_session:
+                    db_session.commit()
+                    self.db_id = db_event.id
+                    self.assign_detections_in_database(project = project,
+                                                       db_session = db_session)
+                    self.assign_arrays_in_database(project = project,
+                                                   db_session = db_session)
+                    db_session.commit()
 
-
-                # Add the arrays to the event. Do this after the event got an
-                # id.
-                if len(self.arrays) > 0:
-                    # load the array orms from the database.
-                    array_table = project.dbTables['geom_array']
-                    e2a_orm_class = project.dbTables['event_to_array']
-                    query = db_session.query(array_table).\
-                            filter(array_table.name.in_([x.name for x in self.arrays]))
-                    for cur_array_orm in query:
-                        e2a_orm = e2a_orm_class(array_name = cur_array_orm.name,
-                                                event_id = self.db_id)
-                        db_event.arrays.append(e2a_orm)
-
-                db_session.commit()
             finally:
-                db_session.close()
+                if commit_session:
+                    db_session.close()
 
             self.changed = False
         else:
@@ -250,6 +241,57 @@ class Event(object):
                 self.changed = False
             else:
                 raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
+
+
+    def assign_detections_in_database(self, project, db_session):
+        ''' Create the many to many relationship in the database.
+
+        It is required, that event has a db_event instance which is part 
+        of the current db_session.
+        '''
+        # Add the detections to the event. Do this after the event got an
+        # id.
+        if len(self.detections) > 0 :
+            # Load the detection_orms from the database.
+            #detection_table = project.dbTables['detection']
+            d2e_orm_class = project.dbTables['detection_to_event']
+            #query = db_session.query(detection_table).\
+            #        filter(detection_table.id.in_([x.db_id for x in self.detections]))
+            #for cur_detection_orm in query:
+            #    d2e_orm = d2e_orm_class(ev_id = self.db_id,
+            #                            det_id = cur_detection_orm.id)
+            #    self.db_event.detections.append(d2e_orm)
+            for cur_detection in self.detections:
+                if cur_detection.db_id:
+                    d2e_orm = d2e_orm_class(ev_id = self.db_id,
+                                            det_id = cur_detection.db_id)
+                    self.db_event.detections.append(d2e_orm)
+
+
+    def assign_arrays_in_database(self, project, db_session):
+        ''' Create the many to many relationship in the database.
+
+        It is required, that the event has a db_event instance which is part
+        of the current db_session.
+        '''
+        # Add the arrays to the event. Do this after the event got an
+        # id.
+        if len(self.arrays) > 0:
+            # load the array orms from the database.
+            #array_table = project.dbTables['geom_array']
+            e2a_orm_class = project.dbTables['event_to_array']
+            #query = db_session.query(array_table).\
+            #        filter(array_table.name.in_([x.name for x in self.arrays]))
+            #for cur_array_orm in query:
+            #    e2a_orm = e2a_orm_class(array_name = cur_array_orm.name,
+            #                            event_id = self.db_id)
+            #    self.db_event.arrays.append(e2a_orm)
+            for cur_array in self.arrays:
+                e2a_orm = e2a_orm_class(array_name = cur_array.name,
+                                        event_id = self.db_id)
+                self.db_event.arrays.append(e2a_orm)
+
+
 
     @classmethod
     def from_db_event(cls, db_event):
@@ -486,52 +528,72 @@ class Catalog(object):
         ''' Write the catalog to the database.
 
         '''
-        if self.db_id is None:
-            # If the db_id is None, insert a new catalog.
-            if self.creation_time is not None:
-                creation_time = self.creation_time.isoformat()
-            else:
-                creation_time = None
-
+        try:
             db_session = project.getDbSession()
-            db_catalog_orm = project.dbTables['event_catalog']
-            db_catalog = db_catalog_orm(name = self.name,
-                                    description = self.description,
-                                    agency_uri = self.agency_uri,
-                                    author_uri = self.author_uri,
-                                    creation_time = creation_time
-                                   )
-            db_session.add(db_catalog)
-            db_session.commit()
-            self.db_id = db_catalog.id
-            db_session.close()
-
-        else:
-            # If the db_id is not None, update the existing event.
-            db_session = project.getDbSession()
-            db_catalog_orm = project.dbTables['event_catalog']
-            query = db_session.query(db_catalog_orm).filter(db_catalog_orm.id == self.db_id)
-            if db_session.query(query.exists()):
-                db_catalog = query.scalar()
-
-                db_catalog.name = self.name
-                db_catalog.description = self.description
-                db_catalog.agency_uri = self.agency_uri
-                db_catalog.author_uri = self.author_uri
+            if self.db_id is None:
+                # If the db_id is None, insert a new catalog.
                 if self.creation_time is not None:
-                    db_catalog.creation_time = self.creation_time.isoformat()
+                    creation_time = self.creation_time.isoformat()
                 else:
-                    db_catalog.creation_time = None
+                    creation_time = None
 
+                db_catalog_orm = project.dbTables['event_catalog']
+                db_catalog = db_catalog_orm(name = self.name,
+                                        description = self.description,
+                                        agency_uri = self.agency_uri,
+                                        author_uri = self.author_uri,
+                                        creation_time = creation_time
+                                       )
+                db_session.add(db_catalog)
                 db_session.commit()
-                db_session.close()
+                self.db_id = db_catalog.id
             else:
-                raise RuntimeError("The event catalog with ID=%d was not found in the database.", self.db_id)
+                # If the db_id is not None, update the existing event.
+                db_catalog_orm = project.dbTables['event_catalog']
+                query = db_session.query(db_catalog_orm).filter(db_catalog_orm.id == self.db_id)
+                if db_session.query(query.exists()):
+                    db_catalog = query.scalar()
+
+                    db_catalog.name = self.name
+                    db_catalog.description = self.description
+                    db_catalog.agency_uri = self.agency_uri
+                    db_catalog.author_uri = self.author_uri
+                    if self.creation_time is not None:
+                        db_catalog.creation_time = self.creation_time.isoformat()
+                    else:
+                        db_catalog.creation_time = None
+
+                    db_session.commit()
+                else:
+                    raise RuntimeError("The event catalog with ID=%d was not found in the database.", self.db_id)
 
 
-        # Write or update all events of the catalog to the database.
-        for cur_event in [x for x in self.events if x.changed is True]:
-            cur_event.write_to_database(project)
+            # Write or update all events of the catalog to the database.
+            #for cur_event in [x for x in self.events if x.changed is True]:
+            #    cur_event.write_to_database(project)
+
+            # Split the events into new ones and those already existing in the
+            # database.
+            new_events = [x for x in self.events if x.db_id is None]
+            exist_events = [x for x in self.events if x.db_id is not None]
+
+            for cur_event in new_events:
+                cur_event.write_to_database(project = project,
+                                            db_session = db_session)
+
+            db_session.commit()
+            for cur_event in new_events:
+                cur_event.db_id = cur_event.db_event.id
+
+            for cur_event in new_events:
+                cur_event.assign_detections_in_database(project = project,
+                                                        db_session = db_session)
+                cur_event.assign_arrays_in_database(project = project,
+                                                    db_session = db_session)
+
+            db_session.commit()
+        finally:
+            db_session.close()
 
 
     def load_events(self, project, start_time = None, end_time = None, event_id = None,
