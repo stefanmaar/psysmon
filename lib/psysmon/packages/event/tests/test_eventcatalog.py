@@ -171,11 +171,11 @@ class EventCatalogTestCase(unittest.TestCase):
         db_catalog_orm = self.project.dbTables['event_catalog']
         db_session = self.project.getDbSession()
         result = db_session.query(db_catalog_orm).all()
-        db_session.close()
         self.assertEqual(len(result), 1)
         tmp = result[0]
         self.assertEqual(len(tmp.events), 1)
         self.assertEqual(tmp.events[0].ev_catalog_id, catalog.db_id)
+        db_session.close()
 
         # Add a second event.
         start_time = '2000-01-02T00:00:00'
@@ -190,12 +190,12 @@ class EventCatalogTestCase(unittest.TestCase):
 
         db_session = self.project.getDbSession()
         result = db_session.query(db_catalog_orm).all()
-        db_session.close()
         self.assertEqual(len(result), 1)
         tmp = result[0]
         self.assertEqual(len(tmp.events), 2)
         self.assertEqual(tmp.events[0].ev_catalog_id, catalog.db_id)
         self.assertEqual(tmp.events[1].ev_catalog_id, catalog.db_id)
+        db_session.close()
 
 
 
@@ -212,7 +212,6 @@ class EventCatalogTestCase(unittest.TestCase):
         db_catalog_orm = self.project.dbTables['event_catalog']
         db_session = self.project.getDbSession()
         result = db_session.query(db_catalog_orm).all()
-        db_session.close()
         self.assertEqual(len(result), 1)
         tmp = result[0]
         self.assertEqual(tmp.name, 'REB')
@@ -220,6 +219,7 @@ class EventCatalogTestCase(unittest.TestCase):
         cur_event = tmp.events[0]
         self.assertEqual(cur_event.public_id, '112460')
         self.assertEqual(cur_event.description, 'Southeast of Honshu, Japan')
+        db_session.close()
 
         # Clear the database tables.
         clear_project_database_tables(self.project)

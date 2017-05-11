@@ -114,7 +114,7 @@ class EventLibraryTestCase(unittest.TestCase):
 
         # Create the library and test the loading of one catalog.
         library = ev_core.Library(name = 'test_name')
-        library.load_catalog_from_db(project = self.project, name = 'REB')
+        library.load_catalog_from_db(project = self.project, name = 'REB', load_events = True)
 
         self.assertEqual(len(library.catalogs), 1)
         self.assertEqual(library.catalogs.keys(), ['REB'])
