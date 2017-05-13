@@ -259,6 +259,7 @@ class CollectionNode(object):
         self.execute(prevNodeOutput)
 
 
+
     def update_pref_manager(self, pref_manager):
         ''' Update the existing preferences manager with the one passed as an argument.
         '''
@@ -332,6 +333,8 @@ class LooperCollectionNode(CollectionNode):
         if children is not None:
             for cur_child in children:
                 self.add_child(cur_child)
+
+
 
 
     def add_child(self, child_node, position = None):
@@ -464,6 +467,14 @@ class LooperCollectionChildNode(CollectionNode):
             loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
             self.logger = logging.getLogger(loggerName)
 
+    def initialize(self):
+        ''' Initialize the node.
+
+        This method is called at the start of a loop. Use it to initialize
+        or reset persistent values of the instance.
+        '''
+        pass
+
 
     def execute(self, stream, process_limits = None, origin_resource = None):
         ''' Execute the looper child.
@@ -480,7 +491,6 @@ class LooperCollectionChildNode(CollectionNode):
             The resource ID of the looper executing the node.
         '''
         assert False, 'execute must be defined'
-
 
 
     def cleanup(self, origin_resource = None):
