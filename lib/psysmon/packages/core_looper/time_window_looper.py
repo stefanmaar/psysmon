@@ -464,14 +464,12 @@ class SlidingWindowProcessor(object):
                 process_limits = (cur_window_start, cur_window_start + window_length)
                 for cur_node in looper_nodes:
                     if k == 0:
-                        # TODO: Call the reset method of the node.
-                        try:
-                            cur_node.sculpture_layer = None
-                        except:
-                            pass
+                        cur_node.initialize()
+
                     cur_node.execute(stream = stream,
                                      process_limits = process_limits,
                                      origin_resource = resource_id)
+
                     # Get the results of the node.
                     if cur_node.result_bag:
                         if len(cur_node.result_bag.results) > 0:
