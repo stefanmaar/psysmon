@@ -304,7 +304,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
         plot_detection_marker = True
         plot_lta_replace_marker = False
         #plot_features = ['sta', 'lta * thr']
-        plot_features = ['cf', 'sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
+        plot_features = ['sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
         #plot_features = ['thrf']
 
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
@@ -378,8 +378,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
             y_lim = [np.min(y_lim_min), np.max(y_lim_max)]
             #print y_lim
-            #self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
-            self.axes.set_ylim(bottom = 1, top = y_lim[1])
+            self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
+            #self.axes.set_ylim(bottom = 1, top = y_lim[1])
             self.axes.set_yscale('log')
 
             # Clear the marker lines.
