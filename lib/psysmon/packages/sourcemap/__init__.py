@@ -26,7 +26,7 @@ description = "The sourcemap package."
 website = "http://www.mertl-research.at"
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = []
+collection_node_modules = ['lc_compute_sourcemap']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
