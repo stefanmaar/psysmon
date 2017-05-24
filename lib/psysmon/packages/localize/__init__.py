@@ -34,6 +34,7 @@ plugin_modules = ['plugins_event_selector',
                   'plugins_localize_tdoa',
                   'plugins_view_map',
                   'plugins_export_result',
+                  'plugins_clear_map',
                   'plugin_pick_selector']
 
 # Specify the module(s) where to search for processing node classes.
