@@ -373,6 +373,9 @@ class TableResult(Result):
             #cur_values.append(id_only)
             #cur_values.append(cur_row.origin_resource)
             #cur_values.reverse()
+            for k, cur_value in enumerate(cur_values):
+                if isinstance(cur_value, unicode):
+                    cur_values[k] = cur_value.encode('utf8')
             export_values.append(cur_values)
 
         # Save the export values to a csv file.
