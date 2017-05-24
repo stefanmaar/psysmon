@@ -474,8 +474,7 @@ class SlidingWindowProcessor(object):
                     if cur_node.result_bag:
                         if len(cur_node.result_bag.results) > 0:
                             for cur_result in cur_node.result_bag.results:
-                                cur_result.base_output_dir = self.output_dir
-                                cur_result.save()
+                                cur_result.save(output_dir = self.output_dir)
 
                             cur_node.result_bag.clear()
 
