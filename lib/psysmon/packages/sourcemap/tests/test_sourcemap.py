@@ -154,6 +154,111 @@ class SourceMapTestCase(unittest.TestCase):
         sm.compute_map_configuration()
         sm.compute_map_grid()
 
+    def test_compute_traveltime_grid(self):
+        ''' Test the traveltime grid computation.
+        '''
+        station_list = []
+        station = inventory.Station(name = 'station1_name',
+                                    location = '00',
+                                    x = 560000,
+                                    y = 5300000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        station = inventory.Station(name = 'station2_name',
+                                    location = '00',
+                                    x = 570000,
+                                    y = 5300000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        station = inventory.Station(name = 'station3_name',
+                                    location = '00',
+                                    x = 560000,
+                                    y = 5310000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        station = inventory.Station(name = 'station4_name',
+                                    location = '00',
+                                    x = 570000,
+                                    y = 5310000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        sm = sourcemap.core.SourceMap(stations = station_list)
+        sm.compute_map_configuration()
+        sm.compute_map_grid()
+        sm.compute_distance_grid()
+        sm.compute_traveltime_grid()
+
+
+    def test_compute_weight_limits(self):
+        ''' Test the map configuration computation.
+        '''
+        station_list = []
+        station = inventory.Station(name = 'station1_name',
+                                    location = '00',
+                                    x = 560000,
+                                    y = 5300000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        station = inventory.Station(name = 'station2_name',
+                                    location = '00',
+                                    x = 570000,
+                                    y = 5300000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        station = inventory.Station(name = 'station3_name',
+                                    location = '00',
+                                    x = 560000,
+                                    y = 5310000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        station = inventory.Station(name = 'station4_name',
+                                    location = '00',
+                                    x = 570000,
+                                    y = 5310000,
+                                    z = 0,
+                                    coord_system = 'epsg:32633')
+        sm_station = sourcemap.core.Station(station)
+        station_list.append(sm_station)
+
+        sm = sourcemap.core.SourceMap(stations = station_list)
+        sm.compute_map_configuration()
+        sm.compute_map_grid()
+        sm.compute_distance_grid()
+        sm.compute_traveltime_grid()
+
+        # Create dummy data and add it to the stations.
+        sps = 100
+        data_len = np.ceil(sm.window_length * sps)
+        data = np.random.rand(data_len)
+        for cur_station in sm.compute_stations:
+            cur_station.data_v = data
+            cur_station.data_h1 = data
+            cur_station.data_h2 = data
+            cur_station.time = np.arange(data_len) * 1/float(sps)
+            cur_station.compute_weight_limits()
+
+
     def test_compute_backprojection(self):
         ''' Test the computation of the backprojection matrices.
         '''
