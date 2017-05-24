@@ -66,7 +66,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
         self.icons['active'] = psysmon.artwork.icons.iconsBlack16.localize_graphical_icon_16
 
         # Add the plugin preferences.
-        pref_page = self.pref_managen.add_page('Preferences')
+        pref_page = self.pref_manager.add_page('Preferences')
         ps_group = pref_page.add_group('phase selection')
         vm_group = pref_page.add_group('velocity model')
 
