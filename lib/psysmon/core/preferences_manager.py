@@ -52,10 +52,12 @@ class PreferencesManager:
         ''' The configuration settings of the preference items.
         '''
         settings = {}
-        for cur_name, cur_page in self.pages.items():
-            settings[cur_name] = {}
-            for cur_item in cur_page:
-                settings[cur_name][cur_item.name] = cur_item.settings
+        for cur_page in self.pages:
+            settings[cur_page.name] = {}
+            for cur_group in cur_page.groups:
+                settings[cur_page.name][cur_group.name] = {}
+                for cur_item in cur_group.items:
+                    settings[cur_page.name][cur_group.name][cur_item.name] = cur_item.settings
 
         return settings
 
