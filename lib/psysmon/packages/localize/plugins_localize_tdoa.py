@@ -66,7 +66,7 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
         self.icons['active'] = psysmon.artwork.icons.iconsBlack16.localize_graphical_icon_16
 
         # Add the plugin preferences.
-        pref_page = self.pref_managen.add_page('Preferences')
+        pref_page = self.pref_manager.add_page('Preferences')
         ps_group = pref_page.add_group('phase selection')
         vm_group = pref_page.add_group('velocity model')
 
@@ -184,6 +184,17 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
             self.logger.error("No phases available. Can't continue with localization.")
             return
 
+        # Clear existing hyperbola from the map view axes.
+        # Get all map views.
+        map_view_name = self.rid[:self.rid.rfind('/') + 1] + 'map_view'
+        map_view = self.parent.viewport.get_node(name = map_view_name)
+
+        for cur_view in map_view:
+            # Remove existing hyperbolas from the view.
+            hyperbola_to_delete = [x for x in cur_view.axes.lines if x.get_gid() == self.rid]
+            for cur_circle in hyperbola_to_delete:
+                cur_view.axes.lines.remove(cur_circle)
+
         # Get the stations for which to compute the epidistances.
         if not stations:
             stations = self.parent.project.geometry_inventory.get_station()
@@ -222,10 +233,6 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
                         used_picks.append(cur_slave_pick)
                     except:
                         self.logger.exception("Couldn't plot the hyperbola. Skipping this combination %s-%s phase %s.", cur_master.name, cur_slave.name, cur_phase)
-
-        # Get all map views.
-        map_view_name = self.rid[:self.rid.rfind('/') + 1] + 'map_view'
-        map_view = self.parent.viewport.get_node(name = map_view_name)
 
         # Update the map view axes.
         for cur_view in map_view:
@@ -287,7 +294,6 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
 
         for cur_view in map_view:
             proj = basemap.pyproj.Proj(init = cur_view.map_config['epsg'])
-
 
             master_lon, master_lat = master.get_lon_lat()
             master_x, master_y = proj(master_lon, master_lat)
