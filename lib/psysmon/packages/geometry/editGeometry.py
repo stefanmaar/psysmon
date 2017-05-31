@@ -380,9 +380,13 @@ class EditGeometryDlg(wx.Frame):
             export_values = []
             for cur_network in self.selected_inventory.networks:
                 for cur_station in cur_network.stations:
-                    export_values.append([cur_station.name, cur_station.network, cur_station.location,
+                    value_list = [cur_station.name, cur_station.network, cur_station.location,
                                           cur_station.x, cur_station.y, cur_station.z, cur_station.coord_system,
-                                          cur_station.description])
+                                          cur_station.description]
+                    for k, cur_value in enumerate(value_list):
+                        if isinstance(cur_value, unicode):
+                            value_list[k] = cur_value.encode('utf8')
+                    export_values.append(value_list)
 
             fid = open(path, 'wt')
             try:
