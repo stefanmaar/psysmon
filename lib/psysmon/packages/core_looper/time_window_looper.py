@@ -466,9 +466,11 @@ class SlidingWindowProcessor(object):
                     if k == 0:
                         cur_node.initialize()
 
+                    self.logger.debug("Executing node %s.", cur_node.name)
                     cur_node.execute(stream = stream,
                                      process_limits = process_limits,
                                      origin_resource = resource_id)
+                    self.logger.debug("Finished execution of node %s.", cur_node.name)
 
                     # Get the results of the node.
                     if cur_node.result_bag:
