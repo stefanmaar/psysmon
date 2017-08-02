@@ -413,6 +413,12 @@ class PsysmonDbWaveClient(WaveClient):
 
                 stream.merge()
 
+        # Trim the stream to the requested time span using only the samples
+        # inside the time span.
+        stream = stream.trim(starttime = startTime,
+                             endtime = endTime,
+                             nearest_sample = False)
+
         self.logger.debug("....finished getting the waveform.")
 
         return stream
