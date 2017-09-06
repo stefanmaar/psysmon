@@ -34,6 +34,7 @@ import psysmon
 import logging
 import re
 import csv
+import gzip
 
 import obspy.core.utcdatetime as utcdatetime
 
@@ -67,16 +68,22 @@ class ImsParser(object):
         self.parser['ims1.0:short'] = self.parse_ims1_0_short
 
 
-    def parse(self, filename):
+    def parse(self, filename, zipped = False):
         ''' Parse a text file in IMS format.
         '''
         if not os.path.exists(filename):
             self.logger.error("The filename %s doesn't exist.", filename)
             return False
 
+        self.events = []
+        self.event_dict = {}
+
         bulletin_format = None
         try:
-            self.b_file = open(filename, 'r')
+            if zipped:
+                self.b_file = gzip.open(filename, 'rb')
+            else:
+                self.b_file = open(filename, 'r')
             for cur_line in self.b_file:
                 cur_line = cur_line.rstrip()
                 if bulletin_format is None:
@@ -85,7 +92,13 @@ class ImsParser(object):
                         tmp = cur_line.split(' ')
                         if tmp[1].lower() == 'bulletin':
                             bulletin_format = tmp[2].lower()
-                            bulletin_parsed = self.parser[bulletin_format]()
+                        elif tmp[1].lower() == 'event':
+                            bulletin_format = tmp[2].lower()
+
+                        if bulletin_format == 'ims1.0':
+                            bulletin_format = 'ims1.0:short'
+
+                        bulletin_parsed = self.parser[bulletin_format]()
 
             self.b_file.close()
 
@@ -144,6 +157,7 @@ class ImsParser(object):
         block_parser['origin'] = self.parse_origin_block
         block_parser['magnitude'] = self.parse_magnitude_block
         block_parser['phase'] = self.parse_phase_block
+        block_parser['isf_comment'] = self.parse_isf_comment
 
         cur_block = None
 
@@ -176,6 +190,10 @@ class ImsParser(object):
             elif cur_line.startswith('#'):
                 # Lines starting with a hashtag are comments.
                 cur_block = 'comment'
+            elif cur_line.startswith(' (#') and cur_line.endswith(')'):
+                # Lines starting with a blank, open paranthesis and a hashtag
+                # ar ISF comments.
+                cur_block = 'isf_comment'
             elif cur_line.lower().startswith('stop'):
                 # The end of the bulletin is reached. Save the last event and 
                 # stop parsing.
@@ -189,7 +207,8 @@ class ImsParser(object):
 
             # Check for comment lines.
             if cur_line.startswith(' ') and cur_line[1] == '(' and cur_line.endswith(')'):
-                continue
+                if cur_block != 'isf_comment':
+                    continue
 
             if cur_block in block_parser.keys():
                 block_parser[cur_block](cur_line)
@@ -223,10 +242,18 @@ class ImsParser(object):
             return
 
         cur_origin = {}
-        cur_date = cur_line[0:10]
+        cur_date = cur_line[0:10].strip()
         [cur_year, cur_month, cur_day] = cur_date.split('/')
-        cur_time = cur_line[11:22]
-        [cur_hour, cur_min, cur_sec, cur_ms] = re.split('[:\.]', cur_time)
+        cur_time = cur_line[11:22].strip()
+        time_split = re.split('[:\.]', cur_time)
+        cur_hour = time_split[0]
+        cur_min = time_split[1]
+        cur_sec = time_split[2]
+        if len(time_split) == 4:
+            cur_ms = time_split[3]
+        else:
+            cur_ms = 0
+
         cur_origin['starttime'] = utcdatetime.UTCDateTime(year = int(cur_year),
                                                           month = int(cur_month),
                                                           day = int(cur_day),
@@ -235,32 +262,81 @@ class ImsParser(object):
                                                           second = int(cur_sec),
                                                           microsecond = int(cur_ms)*1000)
         cur_origin['fixed_ot_flag'] = cur_line[22]
-        cur_ot_error = cur_line[24:29]
-        if len(cur_ot_error.strip()) == 0:
-            cur_ot_error = None
-        else:
-            cur_ot_error = float(cur_ot_error)
-        cur_origin['origin_time_error'] = cur_ot_error
-        cur_origin['rms_residuals'] = float(cur_line[30:35])
-        cur_origin['latitude'] = float(cur_line[36:44])
-        cur_origin['longitude'] = float(cur_line[45:54])
+
+        try:
+            cur_origin['origin_time_error'] = float(cur_line[24:29].strip())
+        except:
+            cur_origin['origin_time_error'] = None
+
+        try:
+            cur_origin['rms_residuals'] = float(cur_line[30:35].strip())
+        except:
+            cur_origin['rms_residuals'] = None
+
+        try:
+            cur_origin['latitude'] = float(cur_line[36:44].strip())
+        except:
+            cur_origin['latitude'] = None
+
+        try:
+            cur_origin['longitude'] = float(cur_line[45:54].strip())
+        except:
+            cur_origin['longitude'] = None
+
         cur_origin['fixed_epi_flag'] = cur_line[54].strip()
-        cur_origin['ellips_semi_major_axis'] = float(cur_line[56:60])
-        cur_origin['ellips_semi_minor_axis'] = float(cur_line[61:66])
-        cur_origin['ellips_strike'] = int(cur_line[67:70])
-        cur_origin['depth'] = float(cur_line[71:76])
+
+        try:
+            cur_origin['ellips_semi_major_axis'] = float(cur_line[56:60].strip())
+        except:
+            cur_origin['ellips_semi_major_axis'] = None
+
+        try:
+            cur_origin['ellips_semi_minor_axis'] = float(cur_line[61:66].strip())
+        except:
+            cur_origin['ellips_semi_minor_axis'] = None
+
+        try:
+            cur_origin['ellips_strike'] = int(cur_line[67:70].strip())
+        except:
+            cur_origin['ellips_strike'] = None
+
+        try:
+            cur_origin['depth'] = float(cur_line[71:76].strip())
+        except:
+            cur_origin['depth'] = None
+
         cur_origin['fixed_depth_flag'] = cur_line[76].strip()
-        cur_depth_error = cur_line[24:29]
-        if len(cur_depth_error.strip()) == 0:
-            cur_depth_error = None
-        else:
-            cur_depth_error = float(cur_depth_error)
-        cur_origin['depth_error'] = cur_depth_error
-        cur_origin['num_def_phases'] = int(cur_line[83:87])
-        cur_origin['num_def_stations'] = int(cur_line[88:92])
-        cur_origin['gap'] = int(cur_line[93:96])
-        cur_origin['dist_closest_station'] = float(cur_line[97:103])
-        cur_origin['dist_furthest_station'] = float(cur_line[104:110])
+
+        try:
+            cur_origin['depth_error'] = float(cur_line[24:29].strip())
+        except:
+            cur_origin['depth_error'] = None
+
+        try:
+            cur_origin['num_def_phases'] = int(cur_line[83:87].strip())
+        except:
+            cur_origin['num_def_phases'] = None
+
+        try:
+            cur_origin['num_def_stations'] = int(cur_line[88:92].strip())
+        except:
+            cur_origin['num_def_stations'] = None
+
+        try:
+            cur_origin['gap'] = int(cur_line[93:96].strip())
+        except:
+            cur_origin['gap'] = None
+
+        try:
+            cur_origin['dist_closest_station'] = float(cur_line[97:103].strip())
+        except:
+            cur_origin['dist_closest_station'] = None
+
+        try:
+            cur_origin['dist_furthest_station'] = float(cur_line[104:110].strip())
+        except:
+            cur_origin['dist_furthest_station'] = None
+
         cur_origin['analysis_type'] = cur_line[111].strip()
         cur_origin['location_method'] = cur_line[113].strip()
         cur_origin['event_type'] = cur_line[115:117].strip()
@@ -288,9 +364,17 @@ class ImsParser(object):
             cur_mag['std_magnitude_error'] = None
 
         try:
-            cur_mag['num_stations'] = int(cur_line[15-19].strip())
+            cur_mag['num_stations'] = int(cur_line[15:19].strip())
         except:
             cur_mag['num_stations'] = None
+
+        cur_mag['author'] = cur_line[20:29].strip()
+
+        try:
+            cur_mag['orig_id'] = int(cur_line[30:38].strip())
+        except:
+            cur_mag['orig_id'] = None
+
 
         self.event_dict['magnitudes'].append(cur_mag)
 
@@ -378,6 +462,17 @@ class ImsParser(object):
         cur_phase['arrival_identification'] = cur_line[114:122].strip()
 
         self.event_dict['phases'].append(cur_phase)
+
+
+    def parse_isf_comment(self, cur_line):
+        ''' Parse an ISF comment.
+        '''
+        cur_comment_line = cur_line[3:-1]
+        keyword = cur_comment_line.split(' ')[0]
+        if keyword.lower() == 'prime':
+            self.event_dict['pref_origin'] = self.event_dict['origins'][-1]
+
+
 
 
 
