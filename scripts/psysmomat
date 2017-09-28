@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import ipdb
 # LICENSE
 #
 # This file is part of psysmomat.
@@ -31,18 +30,19 @@ The psysmomat program.
 '''
 
 import argparse
+import getpass
 import glob
 import logging
 import os
 import os.path
-import shutil
+#import shutil
 
-import matplotlib as mpl
+#import matplotlib as mpl
 
 import psysmon
 import psysmon.core.test_util as test_util
 
-mpl.use('Agg')
+#mpl.use('Agg')
 #mpl.rcParams['backend'] = 'Agg'
 
 
@@ -53,6 +53,31 @@ def load_project(filename):
         project = None
         logger.error('Project file %s not found.', filename)
     return project
+
+def handle_create_user_command(args, logger):
+    logger.debug('Creating a new user.')
+    logger.debug(args)
+
+    user_pwd = ''
+    root_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'New user password:')
+
+    if args.root_password:
+        root_pwd = getpass.getpass(prompt = 'Root password:')
+
+    logger.debug(user_pwd)
+    logger.debug(root_pwd)
+
+    psybase = test_util.create_psybase()
+    try:
+        psybase.createPsysmonDbUser(rootUser = args.root_user,
+                                    rootPwd = root_pwd,
+                                    dbHost = args.db_host,
+                                    user = args.name,
+                                    userPwd = user_pwd)
+    finally:
+        psybase.stop_project_server()
 
 
 def handle_new_command(args, logger):
@@ -72,7 +97,6 @@ def handle_new_command(args, logger):
                                                name = args.project,
                                                base_dir = project_path,
                                                user = 'test')
-        ipdb.set_trace() ############################## Breakpoint ##############################
 
         # If an inventory file is present, copy it to the project
         # directory.
@@ -169,6 +193,20 @@ if __name__ == '__main__':
                         type = str, choices = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'NOTSET'],
                         default = 'WARNING')
 
+    # Create the parser for the create_user command.
+    parser_new_user = subparsers.add_parser('new_user', help = 'Create a new psysmon database user.')
+    parser_new_user.set_defaults(func = handle_create_user_command)
+    parser_new_user.add_argument('name', help = 'The name of the new user.',
+                                 type = str, metavar = 'USER_NAME')
+    parser_new_user.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                 action = 'store_true')
+    parser_new_user.add_argument('-d', '--db_host', help = 'The host on which the mysql server is running.',
+                                type = str, metavar = 'HOST', default = 'localhost')
+    parser_new_user.add_argument('-ru', '--root_user', help = 'The name of the database user with the privileges to create a new user (e.g. the root user).',
+                                 type = str, metavar = 'ROOT_USER_NAME', default = 'root')
+    parser_new_user.add_argument('-rp', '--root_password', help = 'Specify the password for the root user.',
+                                 action = 'store_true')
+
     # Create the parser for the 'new' command.
     parser_new = subparsers.add_parser('new', help = 'Create a new psysmomat project.')
     parser_new.set_defaults(func = handle_new_command)
@@ -223,9 +261,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logger = logging.getLogger('psysmomat')
+    logger = logging.getLogger('psysmon')
     logger.setLevel(args.loglevel)
-    logger.addHandler(psysmon.getLoggerHandler())
+    logger.addHandler(psysmon.getLoggerHandler(log_level = args.loglevel))
 
     args.func(args, logger)
 
