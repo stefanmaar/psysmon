@@ -1,0 +1,232 @@
+#!/usr/bin/env python
+import ipdb
+# LICENSE
+#
+# This file is part of psysmomat.
+#
+# If you use psysmomat in any program or publication, please inform and
+# acknowledge its author Stefan Mertl (stefan@mertl-research.at).
+#
+# psysmomat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
+The psysmomat program.
+
+:copyright:
+    Stefan Mertl
+
+:license:
+    GNU General Public License, Version 3 
+    (http://www.gnu.org/licenses/gpl-3.0.html)
+'''
+
+import argparse
+import glob
+import logging
+import os
+import os.path
+import shutil
+
+import matplotlib as mpl
+
+import psysmon
+import psysmon.core.test_util as test_util
+
+mpl.use('Agg')
+#mpl.rcParams['backend'] = 'Agg'
+
+
+def load_project(filename):
+    if os.path.exists(filename):
+        project = psysmomat.core.project.load_project_from_file(pref_file = filename)
+    else:
+        project = None
+        logger.error('Project file %s not found.', filename)
+    return project
+
+
+def handle_new_command(args, logger):
+    logger.debug('Creating project ' + args.project + '.')
+
+    if args.path:
+        project_path = os.path.join(args.path, args.project)
+    else:
+        project_path = os.path.join(os.getcwd(), args.project)
+
+    if os.path.exists(project_path):
+        logger.error('The project directory %s already exists.', project_path)
+        return
+    else:
+        psybase = test_util.create_psybase()
+        project = psysmon.core.project.Project(psybase = psybase,
+                                               name = args.project,
+                                               base_dir = project_path,
+                                               user = 'test')
+        ipdb.set_trace() ############################## Breakpoint ##############################
+
+        # If an inventory file is present, copy it to the project
+        # directory.
+        #inventory_file = None
+        #if args.inventory:
+        #    if os.path.exists(args.inventory):
+        #        inventory_file = os.path.join(project_path, args.project + '_inventory.xml')
+        #        shutil.copyfile(args.inventory, inventory_file)
+
+        #project.create_database()
+        #project.save_preferences()
+
+
+def handle_update_command(args, logger):
+    logger.debug('Updating the project ' + args.project + '.')
+    logger.debug('Not yet implemented.')
+
+
+def handle_info_command(args, logger):
+    if args.project is None:
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.prj'))
+
+        if len(project_files) == 0:
+            logger.error('No project file found in the current directory.')
+            return
+        elif len(project_files) > 1:
+            logger.error("Multiple project files found, don't know which one to use.")
+            return
+        else:
+            project_file = project_files[0]
+    else:
+        project_file = os.path.join(args.project, args.project + '.prj')
+
+
+    if os.path.exists(project_file):
+        project = psysmomat.core.project.load_project_from_file(project_file)
+    else:
+        logger.error("The project file %s doesn't exist.", project_file)
+        return
+
+    logger.debug('Getting information about the project ' + project_file + '.')
+
+    print str(project)
+
+    if args.listtask is True:
+        # List the available tasks of the project.
+        print 'Available tasks:'
+        for cur_taskclass in sorted(project.task_classes):
+            print '  ' + cur_taskclass.__name__ + '\n'
+
+
+def handle_edit_command(args, logger):
+    logger.debug('Editing the settings of project ' + args.project + '.')
+    logger.debug('Not yet implemented.')
+
+
+def handle_execute_command(args, logger):
+    if args.project is None:
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.prj'))
+
+        if len(project_files) == 0:
+            logger.error('No project file found in the current directory.')
+            return
+        elif len(project_files) > 1:
+            logger.error("Multiple project files found, don't know which one to use.")
+            return
+        else:
+            project_file = project_files[0]
+    else:
+        project_file = os.path.join(args.project, args.project + '.prj')
+
+    # Load the project.
+    if os.path.exists(project_file):
+        project = psysmomat.core.project.load_project_from_file(project_file)
+    else:
+        logger.error("The project file %s doesn't exist.", project_file)
+        return
+
+    logger.debug('Executing the project ' + project_file + '.')
+
+    # Execute the tasklist.
+    if args.tasklist:
+        project.execute_tasklist(args.tasklist, args.starttime, args.endtime)
+
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='psysmomat')
+    subparsers = parser.add_subparsers(title = 'sub commands',
+                                       description = 'valid sub commands')
+
+    parser.add_argument('--loglevel', help = 'Specify the log level.',
+                        type = str, choices = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'NOTSET'],
+                        default = 'WARNING')
+
+    # Create the parser for the 'new' command.
+    parser_new = subparsers.add_parser('new', help = 'Create a new psysmomat project.')
+    parser_new.set_defaults(func = handle_new_command)
+    parser_new.add_argument('project', help = 'Specifiy the project to use.',
+                            type = str, metavar = 'PROJECT_NAME')
+    parser_new.add_argument('-p', '--path', help = 'Specify the path where the project directory should be created.',
+                            type = str, metavar = 'PROJECT_PATH')
+    parser_new.add_argument('-i', '--inventory', help = 'Specify an inventory file to use.',
+                        type = str, metavar = 'INVENTORY_FILENAME')
+
+
+    # Create the parser for the 'execute' command.
+    parser_execute = subparsers.add_parser('execute', help = 'Execute tasklists of a project.')
+    parser_execute.set_defaults(func = handle_execute_command)
+    parser_execute.add_argument('project', help = 'Specifiy the project to use.',
+                            type = str, metavar = 'PROJECT_NAME', nargs = '?', default = None)
+    parser_execute.add_argument('-t', '--tasklist', help = 'The tasklist name to execute.',
+                                type = str, metavar = 'TASKLIST_NAME')
+    parser_execute.add_argument('-p', '--path', help = 'Specify the path in which the project directory is saved.',
+                            type = str, metavar = 'PROJECT_PATH')
+    parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
+                            type = str, metavar = 'STARTTIME')
+    parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
+                            type = str, metavar = 'ENDTIME')
+
+    # Create the parser for the 'update' command.
+    parser_update = subparsers.add_parser('update', help = 'Update a project.')
+    parser_update.set_defaults(func = handle_update_command)
+    parser_update.add_argument('project', help = 'Specifiy the project to use.',
+                            type = str, metavar = 'PROJECT_NAME')
+
+    # Create the parser for the 'info' command.
+    parser_info = subparsers.add_parser('info', help = 'Get information about the project.')
+    parser_info.set_defaults(func = handle_info_command)
+    parser_info.add_argument('project', help = 'Specifiy the project to use.',
+                            type = str, metavar = 'PROJECT_NAME', nargs = '?', default = None)
+    parser_info.add_argument('-a', '--all', help = 'List all the information of the project',
+                             action = 'store_true')
+    parser_info.add_argument('-lt', '--listtask', help = 'List all available tasks',
+                             action = 'store_true')
+    parser_info.add_argument('-ltl', '--listtasklist', help = 'List all available tasklists',
+                             action = 'store_true')
+    parser_info.add_argument('-tl', '--tasklist', help = 'Get information about the specified tasklist.',
+                                type = str, metavar = 'TASKLIST_NAME')
+
+    # Create the parser for the 'edit' command.
+    parser_edit = subparsers.add_parser('edit', help = 'Edit the settings of a project.')
+    parser_edit.set_defaults(func = handle_edit_command)
+
+    # Add name of the project as a positional argument. The project name
+    # always has to be specified.
+
+    args = parser.parse_args()
+
+    logger = logging.getLogger('psysmomat')
+    logger.setLevel(args.loglevel)
+    logger.addHandler(psysmon.getLoggerHandler())
+
+    args.func(args, logger)
+
+
