@@ -54,8 +54,10 @@ def load_project(filename):
         logger.error('Project file %s not found.', filename)
     return project
 
+
+
 def handle_create_user_command(args, logger):
-    logger.debug('Creating a new user.')
+    logger.info('Creating a new psysmon user.')
     logger.debug(args)
 
     user_pwd = ''
@@ -80,34 +82,38 @@ def handle_create_user_command(args, logger):
         psybase.stop_project_server()
 
 
-def handle_new_command(args, logger):
-    logger.debug('Creating project ' + args.project + '.')
 
-    if args.path:
-        project_path = os.path.join(args.path, args.project)
-    else:
-        project_path = os.path.join(os.getcwd(), args.project)
+def handle_new_project_command(args, logger):
+    logger.info('Creating a new psysmon project ' + args.name + ' for user ' + args.user +'.')
 
-    if os.path.exists(project_path):
-        logger.error('The project directory %s already exists.', project_path)
-        return
-    else:
-        psybase = test_util.create_psybase()
-        project = psysmon.core.project.Project(psybase = psybase,
-                                               name = args.project,
-                                               base_dir = project_path,
-                                               user = 'test')
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
 
-        # If an inventory file is present, copy it to the project
-        # directory.
-        #inventory_file = None
-        #if args.inventory:
-        #    if os.path.exists(args.inventory):
-        #        inventory_file = os.path.join(project_path, args.project + '_inventory.xml')
-        #        shutil.copyfile(args.inventory, inventory_file)
+    psybase = test_util.create_psybase()
+    try:
+        project_created = psybase.createPsysmonProject(name = args.name,
+                                                       base_dir = args.base_dir,
+                                                       db_host = args.db_host,
+                                                       user_name = args.user,
+                                                       user_pwd = user_pwd,
+                                                       author_name = args.author_name,
+                                                       author_uri = args.author_uri,
+                                                       agency_name = args.agency_name,
+                                                       agency_uri = args.agency_uri)
+    finally:
+        psybase.stop_project_server()
 
-        #project.create_database()
-        #project.save_preferences()
+    # If an inventory file is present, copy it to the project
+    # directory.
+    #inventory_file = None
+    #if args.inventory:
+    #    if os.path.exists(args.inventory):
+    #        inventory_file = os.path.join(project_path, args.project + '_inventory.xml')
+    #        shutil.copyfile(args.inventory, inventory_file)
+
+    #project.create_database()
+    #project.save_preferences()
 
 
 def handle_update_command(args, logger):
@@ -207,15 +213,30 @@ if __name__ == '__main__':
     parser_new_user.add_argument('-rp', '--root_password', help = 'Specify the password for the root user.',
                                  action = 'store_true')
 
-    # Create the parser for the 'new' command.
-    parser_new = subparsers.add_parser('new', help = 'Create a new psysmomat project.')
-    parser_new.set_defaults(func = handle_new_command)
-    parser_new.add_argument('project', help = 'Specifiy the project to use.',
+
+    # Create the parser for the 'new_project' command.
+    parser_new_project = subparsers.add_parser('new_project', help = 'Create a new psysmon project.')
+    parser_new_project.set_defaults(func = handle_new_project_command)
+    parser_new_project.add_argument('name', help = 'The project name.',
                             type = str, metavar = 'PROJECT_NAME')
-    parser_new.add_argument('-p', '--path', help = 'Specify the path where the project directory should be created.',
-                            type = str, metavar = 'PROJECT_PATH')
-    parser_new.add_argument('-i', '--inventory', help = 'Specify an inventory file to use.',
-                        type = str, metavar = 'INVENTORY_FILENAME')
+    parser_new_project.add_argument('user', help = 'The psysmon user owning the new project.',
+                            type = str, metavar = 'USER')
+    parser_new_project.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                 action = 'store_true')
+    parser_new_project.add_argument('-bd', '--base_dir', help = 'Specify the project base directory.',
+                            type = str, metavar = 'PROJECT_PATH', default = '')
+    parser_new_project.add_argument('-d', '--db_host', help = 'The host on which the mysql server is running.',
+                                type = str, metavar = 'HOST', default = 'localhost')
+    parser_new_project.add_argument('-an', '--author_name', help = 'The full name of the user.',
+                            type = str, metavar = 'AUTHOR_NAME', default = '')
+    parser_new_project.add_argument('-auri', '--author_uri', help = 'The URI of the user.',
+                            type = str, metavar = 'AUTHOR_URI', default = '')
+    parser_new_project.add_argument('-agn', '--agency_name', help = 'The name of the agency to which the user is affiliated.',
+                            type = str, metavar = 'AGENCY_NAME', default = '')
+    parser_new_project.add_argument('-aguri', '--agency_uri', help = 'The URI of the agency to which the user is affiliated.',
+                            type = str, metavar = 'AGENCY_URI', default = '')
+
+
 
 
     # Create the parser for the 'execute' command.
