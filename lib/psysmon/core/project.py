@@ -31,6 +31,7 @@ This module contains the classes for the project and user management.
 '''
 
 
+import json
 import weakref
 import logging
 import os
@@ -685,9 +686,15 @@ class Project(object):
             self.tmpDir = os.path.join(self.projectDir, "tmp")
             os.makedirs(self.tmpDir)
 
+            ## The project's collection directory.
+            self.collectionDir = os.path.join(self.projectDir, "collection")
+            os.makedirs(self.collectionDir)
+            for cur_user in self.user:
+                os.makedirs(os.path.join(self.collectionDir, cur_user.name))
+
         else:
             msg = "Cannot create the directory structure."
-            raise Exception(msg)    
+            raise Exception(msg)
 
 
     def updateDirectoryStructure(self):
@@ -711,9 +718,22 @@ class Project(object):
                 msg = "The project temporary directory %s doesn't exist." % self.tmpDir
                 raise Exception(msg)
 
+            ## The project's collection directory.
+            self.collectionDir = os.path.join(self.projectDir, "collection")
+
+            if not os.path.exists(self.collectionDir):
+                msg = "The project collection directory %s doesn't exist." % self.collectionDir
+                raise Exception(msg)
+
+            for cur_user in self.user:
+                user_dir = os.path.join(self.collectionDir, cur_user.name)
+                if not os.path.exists(user_dir):
+                    msg = "The user collection directory %s doesn't exist." % user_dir
+                    raise Exception(msg)
+
         else:
             msg = "Cannot create the directory structure."
-            raise Exception(msg)    
+            raise Exception(msg)
 
 
     def createDatabaseStructure(self, packages):
@@ -846,10 +866,15 @@ class Project(object):
         ''' Save the project to a JSON formatted file.
 
         '''
-        import json
+        # Save the project file.
         fp = open(os.path.join(self.projectDir, self.projectFile), mode = 'w')
         json.dump(self, fp = fp, cls = psysmon.core.json_util.ProjectFileEncoder)
         fp.close()
+
+        # Save each collections of each user.
+        for cur_user in self.user:
+            cur_filepath = os.path.join(self.projectDir, self.collectionDir)
+            cur_user.save_collections(cur_filepath)
 
 
 
@@ -1180,6 +1205,23 @@ class User:
         '''
         return self.agency_uri.replace(' ', '_') + '.' + self.author_uri.replace(' ', '_')
 
+
+    def save_collections(self, path):
+        ''' Save the collections to json files.
+
+        '''
+        for cur_collection in self.collection.itervalues():
+            cur_collection.save(os.path.join(path, self.name))
+
+    def load_collections(self, path):
+        ''' Load the collections from json files.
+
+        '''
+        for cur_name in self.collection_names:
+            cur_filename = os.path.join(path, self.name, cur_name + '.json')
+            with open(cur_filename, mode = 'r') as fp:
+                cur_collection = json.load(fp, cls = psysmon.core.json_util.CollectionFileDecoder)
+                self.collection[cur_collection.name] = cur_collection
 
 
     def addCollection(self, name, project):

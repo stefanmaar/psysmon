@@ -32,6 +32,7 @@ This module contains the basic classes needed to run the pSysmon program.
 '''
 
 import os
+import json
 import logging
 import shelve
 import threading
@@ -472,8 +473,14 @@ class Base(object):
         self.project.psybase = self
         self.project.base_dir = os.path.dirname(project_dir)
         self.project.updateDirectoryStructure()
-        self.project.setCollectionNodeProject()
 
+        # Load the collections of the users.
+        for cur_user in self.project.user:
+            cur_user.load_collections(self.project.collectionDir)
+            cur_user.setActiveCollection(cur_user.active_collection_name)
+            del cur_user.__dict__['collection_names']
+            del cur_user.__dict__['active_collection_name']
+        self.project.setCollectionNodeProject()
 
         # Set the project of the db_waveclient (if available).
         for cur_waveclient in self.project.waveclient.itervalues():
@@ -709,6 +716,13 @@ class Collection(object):
         self.__dict__.update(d) # I *think* this is a safe way to do it
         self.project = None
 
+
+    def save(self, path):
+        ''' Save the collection to a json file.
+        '''
+        filename = os.path.join(path, self.name + '.json')
+        with open(filename, mode = 'w') as fp:
+            json.dump(self, fp = fp, cls = psysmon.core.json_util.CollectionFileEncoder)
 
 
     def setDataShelfFile(self, filename):
