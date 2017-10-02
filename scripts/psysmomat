@@ -104,16 +104,19 @@ def handle_new_project_command(args, logger):
     finally:
         psybase.stop_project_server()
 
-    # If an inventory file is present, copy it to the project
-    # directory.
-    #inventory_file = None
-    #if args.inventory:
-    #    if os.path.exists(args.inventory):
-    #        inventory_file = os.path.join(project_path, args.project + '_inventory.xml')
-    #        shutil.copyfile(args.inventory, inventory_file)
 
-    #project.create_database()
-    #project.save_preferences()
+def handle_remove_project_command(args, logger):
+    logger.info('Removing the project %s.', args.project_file)
+
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+
+    test_util.remove_project(project_file = args.project_file,
+                             user_name = args.user,
+                             user_pwd = user_pwd)
+
+
 
 
 def handle_update_command(args, logger):
@@ -237,6 +240,15 @@ if __name__ == '__main__':
                             type = str, metavar = 'AGENCY_URI', default = '')
 
 
+    # Create the parser for the 'remove_project' command.
+    parser_remove_project = subparsers.add_parser('remove_project', help = 'Remove a psysmon project (including database tables and file structure.')
+    parser_remove_project.set_defaults(func = handle_remove_project_command)
+    parser_remove_project.add_argument('project_file', help = 'The project file of the project to remove.',
+                                        type = str, metavar = 'PROJECT_FILE')
+    parser_remove_project.add_argument('user', help = 'The user owning the project to remove.',
+                                       type = str, metavar = 'USER')
+    parser_remove_project.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                       action = 'store_true')
 
 
     # Create the parser for the 'execute' command.
