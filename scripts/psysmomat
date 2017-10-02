@@ -35,15 +35,14 @@ import glob
 import logging
 import os
 import os.path
-#import shutil
 
-#import matplotlib as mpl
+import matplotlib as mpl
+mpl.use('Agg')
+mpl.rcParams['backend'] = 'Agg'
 
 import psysmon
 import psysmon.core.test_util as test_util
 
-#mpl.use('Agg')
-#mpl.rcParams['backend'] = 'Agg'
 
 
 def load_project(filename):
@@ -249,6 +248,12 @@ if __name__ == '__main__':
                                        type = str, metavar = 'USER')
     parser_remove_project.add_argument('-p', '--password', help = 'Specify the password for the user.',
                                        action = 'store_true')
+
+
+
+
+
+
 
 
     # Create the parser for the 'execute' command.
