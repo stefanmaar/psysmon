@@ -1855,6 +1855,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         tableField.append(('origDir', 'original directory', 'readonly'))
         tableField.append(('alias', 'alias', 'editable'))
         tableField.append(('description', 'description', 'editable'))
+        tableField.append(('file_ext', 'data file extension', 'editable'))
+        tableField.append(('first_import', 'first import', 'readonly'))
+        tableField.append(('last_scan', 'last scan', 'readonly'))
         return tableField
 
 
@@ -1885,7 +1888,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             self.logger.info('You selected: %s', dlg.GetPath())
 
-            newWfDir = self.wfDir(dlg.GetPath(), '')
+            newWfDir = self.wfDir(dlg.GetPath(), '', '*.msd,*.mseed',
+                                  '', '')
             newAlias = self.wfDirAlias(self.project.activeUser.name,
                                             dlg.GetPath())
             newWfDir.aliases.append(newAlias)
@@ -1906,14 +1910,29 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         '''
         self.wfListCtrl.DeleteAllItems()
         for k, curDir in enumerate(self.wfDirList):
+            if not curDir.first_import:
+                first_import = 'not yet imported'
+            else:
+                first_import = curDir.first_import
+
+            if not curDir.last_scan:
+                last_scan = 'not yet imported'
+            else:
+                last_scan = curDir.last_scan
+
             self.wfListCtrl.InsertStringItem(k, str(curDir.id))
             self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
             self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
             self.wfListCtrl.SetStringItem(k, 3, curDir.description)
+            self.wfListCtrl.SetStringItem(k, 4, curDir.file_ext)
+            self.wfListCtrl.SetStringItem(k, 5, first_import)
+            self.wfListCtrl.SetStringItem(k, 6, last_scan)
 
         self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        #self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        #self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        #self.wfListCtrl.SetColumnWidth(3, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(4, wx.LIST_AUTOSIZE)
 
 
     def onRemoveDirectory(self, event):
@@ -1960,6 +1979,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
+
+
 
 
     def onOk(self):
