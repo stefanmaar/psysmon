@@ -19,27 +19,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "obspyImportWaveform"
-version = "0.0.2"
+version = "0.0.4"
 author = "Stefan Mertl"
 minPsysmonVersion = "0.0.1"
 description = "The obspyImportWaveform packages"
 website = "http://www.stefanmertl.com"
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['importWaveform', ]
+collection_node_modules = ['importWaveform', 'import_filesystem_data']
 
 '''
 Database change history.
 version 0.0.2 - 2016-01-27
 Removed the location field. The location and channel values in the obspy
 trace header is used to build the stream name LOCATION:CHANNEL.
+version 0.0.3 - 2017-10-03
+Added the file_ext, first_import and last_scan columns to the waveformDir
+table.
+version 0.0.4 - 2017-10-03
+Added a unique constraint to the traceheader table (wf_id, filename).
 
 '''
 
 def databaseFactory(base):
     from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
     from sqlalchemy.orm import relationship
-    from sqlalchemy import ForeignKeyConstraint, UniqueConstraint
+    from sqlalchemy import UniqueConstraint
 
     tables = []
 
@@ -47,6 +52,7 @@ def databaseFactory(base):
     class Traceheader(base):
         __tablename__ = 'traceheader'
         __table_args__ = (
+                          UniqueConstraint('wf_id', 'filename'),
                           {'mysql_engine': 'InnoDB'}
                          )
 
@@ -79,12 +85,17 @@ def databaseFactory(base):
         id = Column(Integer, primary_key=True, autoincrement=True)
         directory = Column(String(255), nullable=False, unique=True)
         description = Column(String(255), nullable=False)
+        file_ext = Column(String(255), nullable=False)
+        first_import = Column(String(30), nullable = True)
+        last_scan = Column(String(30), nullable = True)
 
         aliases = relationship("WaveformDirAlias", cascade="all, delete-orphan")
 
-        def __init__(self, directory, description):
+        def __init__(self, directory, description, file_ext,
+                     first_import, last_scan):
             self.directory = directory
             self.description = description
+            self.file_ext = file_ext
 
     tables.append(WaveformDir)
 
