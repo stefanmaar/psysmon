@@ -28,11 +28,16 @@ Module for providing the waveform data from various sources.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+import fnmatch
 import logging
 import os
+import pkg_resources
 import threading
+
 from obspy.core import read, Stream
 from obspy.earthworm import Client
+import obspy.core.utcdatetime as utcdatetime
+from obspy.core.util.base import ENTRY_POINTS
 import numpy as np
 
 class WaveClient(object):
@@ -556,12 +561,105 @@ class PsysmonDbWaveClient(WaveClient):
         self.waveformDirList = dbSession.query(wfDir.id,
                                                wfDir.directory,
                                                wfDirAlias.alias,
-                                               wfDir.description
+                                               wfDir.description,
+                                               wfDir.file_ext,
+                                               wfDir.first_import,
+                                               wfDir.last_scan
                                               ).join(wfDirAlias,
                                                      wfDir.id==wfDirAlias.wf_id
                                                     ).filter(wfDirAlias.user==self.project.activeUser.name).all()
 
         dbSession.close()
+
+
+    def import_waveform(self, waveform_dir_id):
+        ''' Import the waveform from a waveform directory.
+        '''
+        selected_wf_dir = [x for x in self.waveformDirList if x[0] == waveform_dir_id]
+        if not selected_wf_dir:
+            return
+        else:
+            selected_wf_dir = selected_wf_dir[0]
+
+        filter_pattern = selected_wf_dir[4]
+        filter_pattern = filter_pattern.split(',')
+
+        # Import the data of the waveform directory with the root path
+        # specified by the waveform directory alias.
+        for root, dirnames, filenames in os.walk(selected_wf_dir[2], topdown = True):
+            dirnames.sort()
+            self.logger.debug('Scanning directory: %s.', root)
+            db_data = []
+
+            for cur_pattern in filter_pattern:
+                for filename in fnmatch.filter(filenames, cur_pattern):
+                    file_path = os.path.join(root, filename)
+                    # Check the file format.
+                    EPS = ENTRY_POINTS['waveform']
+                    file_format = None
+                    for format_ep in [x for (key, x) in EPS.items()]:
+                        # search isFormat for given entry point
+                        isFormat = pkg_resources.load_entry_point(format_ep.dist.key,
+                            'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
+                            'isFormat')
+                        # check format
+                        self.logger.debug('Checking format with %s.', isFormat)
+                        if isFormat(file_path):
+                            file_format = format_ep.name
+                            break;
+
+                    if not file_format:
+                        self.logger.error("Unknown file format. Skipping this file.")
+                        continue
+
+                    self.logger.debug('Adding file %s to the import list.', file_path)
+                    stream = read(pathname_or_url = file_path,
+                                  format = file_format,
+                                  headonly = True)
+                    for cur_trace in stream.traces:
+                        cur_data = self.get_db_data(filename = file_path,
+                                                    file_format = file_format,
+                                                    trace = cur_trace,
+                                                    waveform_dir = selected_wf_dir)
+                        if cur_data:
+                            db_data.append(cur_data)
+
+            if len(db_data) > 0:
+                self.logger.info("Writing the data to the database.")
+                db_session = self.project.getDbSession()
+                try:
+                    db_session.add_all(db_data)
+                    db_session.commit()
+                finally:
+                    db_session.close()
+
+
+
+
+    def get_db_data(self, filename, file_format, trace, waveform_dir):
+        # Get the database traceheader table mapper class.
+        Header = self.project.dbTables['traceheader']
+
+        # Remove the waveform directory from the file path.
+        relativeFilename = filename.replace(waveform_dir.alias, '')
+        relativeFilename = relativeFilename[1:]
+        labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path',
+                  'network', 'recorder_serial', 'stream', 
+                  'sps', 'numsamp', 'begin_date', 'begin_time',
+                  'agency_uri', 'author_uri', 'creation_time']
+        header2Insert = dict(zip(labels, (None, file_format, waveform_dir.id,
+                        relativeFilename, os.path.dirname(filename),
+                        trace.stats.network, trace.stats.station,
+                        trace.stats.location + ":" + trace.stats.channel,
+                        trace.stats.sampling_rate, trace.stats.npts,
+                        trace.stats.starttime.isoformat(' '),
+                        trace.stats.starttime.timestamp,
+                        self.project.activeUser.author_uri,
+                        self.project.activeUser.agency_uri,
+                        utcdatetime.UTCDateTime().isoformat())))
+
+
+        return Header(**header2Insert)
 
 
 
