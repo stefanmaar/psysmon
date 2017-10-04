@@ -34,11 +34,12 @@ import os
 import pkg_resources
 import threading
 
+import numpy as np
 from obspy.core import read, Stream
 from obspy.earthworm import Client
 import obspy.core.utcdatetime as utcdatetime
 from obspy.core.util.base import ENTRY_POINTS
-import numpy as np
+import sqlalchemy
 
 class WaveClient(object):
     '''The WaveClient class.
@@ -628,7 +629,13 @@ class PsysmonDbWaveClient(WaveClient):
                 self.logger.info("Writing the data to the database.")
                 db_session = self.project.getDbSession()
                 try:
-                    db_session.add_all(db_data)
+                    for cur_data in db_data:
+                        try:
+                            db_session.add(cur_data)
+                            db_session.flush()
+                        except Exception as e:
+                            pass
+                    #db_session.add_all(db_data)
                     db_session.commit()
                 finally:
                     db_session.close()
