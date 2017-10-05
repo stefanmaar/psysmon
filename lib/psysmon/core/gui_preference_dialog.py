@@ -76,7 +76,7 @@ class ListbookPrefDialog(wx.Dialog):
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
-        self.SetSizer(sizer)
+        self.SetSizerAndFit(sizer)
 
 
     def build_pref_listbook(self):
