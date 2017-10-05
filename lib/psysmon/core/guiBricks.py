@@ -346,6 +346,9 @@ class StaticBoxContainer(wx.Panel):
 
         self.adjustLabelSize()
 
+        for cur_field in self.fieldList:
+            cur_field.SetMinSize(cur_field.GetBestSize())
+
 
     def adjustLabelSize(self):
         labelWidth = [x.labelElement.GetBestSize()[0] for x in self.fieldList]
@@ -981,8 +984,6 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
 
 
 
-
-
     def fill_listctrl(self, data):
         index = 0
         self.controlElement.DeleteAllItems()
@@ -1055,6 +1056,7 @@ class SortableListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
 
         self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
+
     def GetListCtrl(self):
         ''' Used by ColumnSorterMixin.
         '''
@@ -1064,6 +1066,7 @@ class SortableListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
         ''' Used by ColumnSorterMixin.
         '''
         return (self.sm_dn, self.sm_up)
+
 
 
 class ListGridEditField(Field):
