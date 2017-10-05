@@ -576,18 +576,19 @@ class PsysmonDbWaveClient(WaveClient):
     def import_waveform(self, waveform_dir_id):
         ''' Import the waveform from a waveform directory.
         '''
+        now = utcdatetime.UTCDateTime()
         selected_wf_dir = [x for x in self.waveformDirList if x[0] == waveform_dir_id]
         if not selected_wf_dir:
             return
         else:
             selected_wf_dir = selected_wf_dir[0]
 
-        filter_pattern = selected_wf_dir[4]
+        filter_pattern = selected_wf_dir.file_ext
         filter_pattern = filter_pattern.split(',')
 
         # Import the data of the waveform directory with the root path
         # specified by the waveform directory alias.
-        for root, dirnames, filenames in os.walk(selected_wf_dir[2], topdown = True):
+        for root, dirnames, filenames in os.walk(selected_wf_dir.alias, topdown = True):
             dirnames.sort()
             self.logger.debug('Scanning directory: %s.', root)
             db_data = []
@@ -637,8 +638,17 @@ class PsysmonDbWaveClient(WaveClient):
                             db_session.rollback()
                     #db_session.add_all(db_data)
                     db_session.commit()
+
+                    wf_dir_table = self.waveformDir
+                    cur_wf_dir = db_session.query(wf_dir_table).filter(wf_dir_table.id == selected_wf_dir.id).one()
+                    if not cur_wf_dir.first_import:
+                        cur_wf_dir.first_import = now.isoformat()
+                    cur_wf_dir.last_scan = now.isoformat()
+                    db_session.commit()
                 finally:
                     db_session.close()
+                    self.loadWaveformDirList()
+
 
 
 
