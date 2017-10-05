@@ -633,8 +633,8 @@ class PsysmonDbWaveClient(WaveClient):
                         try:
                             db_session.add(cur_data)
                             db_session.flush()
-                        except Exception as e:
-                            pass
+                        except:
+                            db_session.rollback()
                     #db_session.add_all(db_data)
                     db_session.commit()
                 finally:
