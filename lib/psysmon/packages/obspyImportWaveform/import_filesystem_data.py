@@ -62,6 +62,7 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
     def edit(self):
         client = self.project.waveclient['db client']
+        client.loadWaveformDirList()
         waveform_dir_list = client.waveformDirList
         self.pref_manager.set_limit('wf_dir', waveform_dir_list)
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
