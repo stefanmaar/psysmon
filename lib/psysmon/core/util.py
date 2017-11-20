@@ -57,6 +57,7 @@
 #    (http://www.gnu.org/copyleft/lesser.html)
 #
 
+import re
 
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
@@ -403,4 +404,87 @@ class HookManager(object):
                 if hook_name in hooks.keys():
                     kwargs = {x:kwargs[x] for x in kwargs if x in self.hook_kwargs[hook_name]}
                     hooks[hook_name](**kwargs)
+
+
+
+class Version(object):
+    ''' A version String representation.
+    '''
+
+    def __init__(self, version = '0.0.1'):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        version:String
+            The version as a point-seperated string.
+
+        '''
+        self.version = self.string_to_tuple(version)
+
+
+    def __eq__(self, c):
+        ''' Test for equality.
+        '''
+        for k, cur_n in enumerate(self.version):
+            if cur_n != c.version[k]:
+                return False
+
+        return True
+
+
+    def __gt__(self, c):
+        ''' Test for greater than.
+        '''
+        for k, cur_n in enumerate(self.version):
+            if cur_n > c.version[k]:
+                return True
+            elif cur_n != c.version[k]:
+                return False
+
+        return False
+
+
+    def __lt__(self, c):
+        ''' Test for less than.
+        '''
+        for k, cur_n in enumerate(self.version):
+            if cur_n < c.version[k]:
+                return True
+            elif cur_n != c.version[k]:
+                return False
+
+        return False
+
+
+    def __ge__(self, c):
+        ''' Test for greater or equal.
+        '''
+        return self.__eq__(c) or self.__gt__(c)
+
+    def __le__(self, c):
+        ''' Test for less or equal.
+        '''
+        return self.__eq__(c) or self.__lt__(c)
+
+
+
+
+    def string_to_tuple(self, vs):
+        ''' Convert a version string to a tuple.
+        '''
+        nn = vs.split('.')
+        for k,x in enumerate(nn):
+            if x.isdigit():
+                nn[k] = int(x)
+            else:
+                tmp = re.split('[A-Za-z]', x)
+                tmp = [x for x in tmp if x.isdigit()]
+                if len(tmp) > 0:
+                    nn[k] = int(tmp[0])
+                else:
+                    nn[k] = 0
+
+        return tuple(nn)
+
 
