@@ -423,6 +423,12 @@ class Version(object):
         self.version = self.string_to_tuple(version)
 
 
+    def __str__(self):
+        ''' The string representation.
+        '''
+        return '.'.join([str(x) for x in self.version])
+
+
     def __eq__(self, c):
         ''' Test for equality.
         '''
