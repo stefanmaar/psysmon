@@ -438,6 +438,11 @@ class Version(object):
 
         return True
 
+    def __ne__(self, c):
+        ''' Test for inequality.
+        '''
+        return not self.__eq__(c)
+
 
     def __gt__(self, c):
         ''' Test for greater than.
