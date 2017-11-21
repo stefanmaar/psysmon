@@ -30,7 +30,12 @@
 '''
 
 import json
+import logging
+
 from obspy.core import UTCDateTime
+import psysmon.core.util as util
+
+FILE_VERSION = util.Version('1.0.0')
 
 
 class ProjectFileEncoder(json.JSONEncoder):
@@ -38,8 +43,17 @@ class ProjectFileEncoder(json.JSONEncoder):
     '''
     def __init__(self, **kwarg):
         json.JSONEncoder.__init__(self, **kwarg)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # File format settings.
         self.indent = 4
         self.sort_keys = True
+
+
+
 
     def default(self, obj):
         ''' Convert pSysmon project objects to a dictionary.
@@ -94,7 +108,14 @@ class ProjectFileEncoder(json.JSONEncoder):
         attr = ['name', 'dbDriver', 'dbDialect', 'dbHost',
                 'dbName', 'pkg_version', 'db_version', 'createTime',
                 'defaultWaveclient', 'scnlDataSources', 'user', 'waveclient']
-        d =  self.object_to_dict(obj, attr)
+        project_dir =  self.object_to_dict(obj, attr)
+
+        # Add the project file container with meta data.
+        file_meta = {'file_version': str(FILE_VERSION),
+                     'save_date': UTCDateTime().isoformat()}
+        d = {}
+        d['file_meta'] = file_meta
+        d['project'] = project_dir
         #d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
         return d
 
@@ -201,7 +222,7 @@ class ProjectFileEncoder(json.JSONEncoder):
 
 
 
-class ProjectFileDecoder(json.JSONDecoder):
+class ProjectFileDecoder_1_0_0(json.JSONDecoder):
 
     def __init__(self, **kwarg):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
@@ -265,23 +286,45 @@ class ProjectFileDecoder(json.JSONDecoder):
 
     def convert_project(self, d):
         import psysmon.core.project
+
+        # Check the project file version.
+        try:
+            file_meta = d['file_meta']
+            loaded_version = util.Version(file_meta['file_version'])
+        except:
+            self.logger.warning("No project file version found in the project file to load.")
+            loaded_version = util.Version('0.0.0')
+            file_meta = {}
+            file_meta['file_version'] = str(loaded_version)
+            file_meta['save_date'] = None
+
+        if loaded_version == FILE_VERSION:
+            self.logger.info("The project file version to load matches the current project file version.")
+        elif loaded_version > FILE_VERSION:
+            self.logger.error("The project file version to load is larger than the current project file version. Can't load the project file correctly.")
+            return (file_meta, None)
+        elif loaded_version < FILE_VERSION:
+            self.logger.warning("The project file version to load is smaller than the current project. Trying to load the needed data from the old version.")
+            return (file_meta, None)
+
+        project_dir = d['project']
         inst = psysmon.core.project.Project(psybase = None,
-                                            name = d['name'],
-                                            user = d['user'],
-                                            dbHost = d['dbHost'],
-                                            dbName = d['dbName'],
-                                            pkg_version = d['pkg_version'],
-                                            db_version = d['db_version'],
-                                            dbDriver = d['dbDriver'],
-                                            dbDialect = d['dbDialect'],
-                                            createTime = d['createTime']
+                                            name = project_dir['name'],
+                                            user = project_dir['user'],
+                                            dbHost = project_dir['dbHost'],
+                                            dbName = project_dir['dbName'],
+                                            pkg_version = project_dir['pkg_version'],
+                                            db_version = project_dir['db_version'],
+                                            dbDriver = project_dir['dbDriver'],
+                                            dbDialect = project_dir['dbDialect'],
+                                            createTime = project_dir['createTime']
                                             )
 
-        inst.defaultWaveclient = d['defaultWaveclient']
-        inst.scnlDataSources = d['scnlDataSources']
-        inst.waveclient = d['waveclient']
+        inst.defaultWaveclient = project_dir['defaultWaveclient']
+        inst.scnlDataSources = project_dir['scnlDataSources']
+        inst.waveclient = project_dir['waveclient']
 
-        return inst
+        return (file_meta, inst)
 
 
     def convert_user(self, d):
@@ -970,3 +1013,11 @@ class CollectionFileDecoder(json.JSONDecoder):
         inst = class_(**args)
         return inst
 
+
+def get_decoder(version):
+    ''' Get the correct json decoder based on the version.
+    '''
+    decoder = {}
+    decoder['1.0.0'] = ProjectFileDecoder_1_0_0
+
+    return decoder[str(version)]
