@@ -114,24 +114,33 @@ def update_db_table(engine, table, metadata, prefix):
                                column = cur_col)
             table_updated = True
 
-        # Check for changed foreign keys.
-        keys_to_add = cur_col.foreign_keys.difference(exist_col.foreign_keys)
-        for cur_key in keys_to_add:
-            # Add the foreign key to the column.
-            logger.info('Adding foreign key %s to the column %s.', cur_key.target_fullname, cur_name)
-            add_foreign_key(engine = engine,
-                            table = table,
-                            column = cur_col,
-                            target = prefix + cur_key.target_fullname)
-
-        keys_to_remove = exist_col.foreign_keys.difference(cur_col.foreign_keys)
-        for cur_key in keys_to_remove:
-            # Remove the foreign key from the column.
-            logger.info('Removing foreign key %s from the column %s.', cur_key.target_fullname, cur_name)
+        # Drop all existing foreign keys. This has to be done in case that unique
+        # keys have to be removed which might be needed by foreign keys.
+        for cur_key in exist_col.foreign_keys:
             remove_foreign_key(engine = engine,
                                table = table,
                                fk_symbol = cur_key.name)
 
+
+        # Check for changed foreign keys.
+        #keys_to_add = cur_col.foreign_keys.difference(exist_col.foreign_keys)
+        #for cur_key in keys_to_add:
+            # Add the foreign key to the column.
+            #logger.info('Adding foreign key %s to the column %s.', cur_key.target_fullname, cur_name)
+            #add_foreign_key(engine = engine,
+            #                table = table,
+            #                column = cur_col,
+            #                target = prefix + cur_key.target_fullname)
+
+        #keys_to_remove = exist_col.foreign_keys.difference(cur_col.foreign_keys)
+        #for cur_key in keys_to_remove:
+            # Remove the foreign key from the column.
+            #logger.info('Removing foreign key %s from the column %s.', cur_key.target_fullname, cur_name)
+            #remove_foreign_key(engine = engine,
+            #                   table = table,
+            #                   fk_symbol = cur_key.name)
+
+    if new_table.name.endswith('geom_rec_stream'):
 
     # I couldn't figure out how to get the existing unique constraints.
     # Therefore, remove all existing unique constraints and than add the new
@@ -145,6 +154,7 @@ def update_db_table(engine, table, metadata, prefix):
     insp = sqa.inspect(engine)
     unique_const = insp.get_unique_constraints(exist_table.name)
     for cur_const in unique_const:
+        logger.info('Removing the unique constraint %s.', cur_const['name'])
         remove_unique_constraint(engine, table, cur_const['name'])
 
 
@@ -153,8 +163,36 @@ def update_db_table(engine, table, metadata, prefix):
         if isinstance(cur_const, sqa.schema.PrimaryKeyConstraint):
             logger.error("Changing a primary key is not supported. (%s)", cur_const)
             continue
+
+        if isinstance(cur_const, sqa.schema.ForeignKeyConstraint):
+            logger.warning("Changing foreign key constraint is not yet implemented (%s).", cur_const)
+            # TODO: Check if the ForeignKeyConstraint can be added using the
+            # constraint. This would avoid going through the individual colums
+            # again later in this code.
+            continue
+
+        # TODO: Add a check for the constraint instance.
+        # TODO: Handle the on_delete and cascade options.
+        logger.info('Adding the unique constraint %s.', cur_const.name)
         add_unique_constraint(engine, table, cur_const)
         table_updated = True
+
+
+    # Add the foreign keys.
+    for cur_name, cur_col in new_table.columns.items():
+        if cur_name not in exist_table.columns.keys():
+            # The column is not existing in the database. 
+            # Might have been deleted. Ignore it.
+            continue
+
+        for cur_key in cur_col.foreign_keys:
+            # Add the foreign key to the column.
+            logger.info('Adding foreign key %s to the column %s.', cur_key.target_fullname, cur_name)
+            add_foreign_key(engine = engine,
+                            table = table,
+                            column = cur_col,
+                            target = prefix + cur_key.target_fullname)
+
 
     return table_updated
 
