@@ -35,7 +35,10 @@ import logging
 from obspy.core import UTCDateTime
 import psysmon.core.util as util
 
-FILE_VERSION = util.Version('1.0.0')
+#FILE_VERSION = {}
+#FILE_VERSION['project'] = util.Version('1.0.0')
+#FILE_VERSION['collection'] = util.Version('1.0.0')
+#FILE_VERSION['config'] = util.Version('1.0.0')
 
 
 class ProjectFileEncoder(json.JSONEncoder):
@@ -47,6 +50,8 @@ class ProjectFileEncoder(json.JSONEncoder):
         # The logger.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
+
+        self.version = util.Version('1.0.0')
 
         # File format settings.
         self.indent = 4
@@ -111,7 +116,7 @@ class ProjectFileEncoder(json.JSONEncoder):
         project_dir =  self.object_to_dict(obj, attr)
 
         # Add the project file container with meta data.
-        file_meta = {'file_version': str(FILE_VERSION),
+        file_meta = {'file_version': str(self.version),
                      'save_date': UTCDateTime().isoformat()}
         d = {}
         d['file_meta'] = file_meta
@@ -221,11 +226,240 @@ class ProjectFileEncoder(json.JSONEncoder):
         return d
 
 
+class ProjectFileDecoder_0_0_0(json.JSONDecoder):
 
-class ProjectFileDecoder_1_0_0(json.JSONDecoder):
+    version = util.Version('0.0.0')
 
     def __init__(self, **kwarg):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+
+    def convert_object(self, d):
+        #print "Converting dict: %s." % str(d)
+
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            module_name = d.pop('__module__')
+            base_class = d.pop('__baseclass__')
+
+            if class_name == 'Project':
+                inst = self.convert_project(d)
+            elif class_name == 'User':
+                inst = self.convert_user(d)
+            elif class_name == 'UTCDateTime':
+                inst = self.convert_utcdatetime(d)
+            elif class_name == 'Collection':
+                inst = self.convert_collection(d)
+            elif class_name == 'PreferencesManager':
+                inst = self.convert_pref_manager(d)
+            elif class_name == 'Page':
+                inst = self.convert_page(d)
+            elif class_name == 'Group':
+                inst = self.convert_group(d)
+            elif class_name == 'CustomPrefItem':
+                inst = self.convert_custom_preferenceitem(d, class_name, module_name)
+            elif class_name == 'type':
+                inst = self.convert_class_object(d, class_name, module_name)
+            elif 'CollectionNode' in base_class:
+                inst = self.convert_collectionnode(d, class_name, module_name)
+            elif 'LooperCollectionNode' in base_class:
+                inst = self.convert_looper_collection_node(d, class_name, module_name)
+            elif 'LooperCollectionChildNode' in base_class:
+                inst = self.convert_looper_collection_child_node(d, class_name, module_name)
+            elif 'PreferenceItem' in base_class:
+                inst = self.convert_preferenceitem(d, class_name, module_name)
+            elif 'WaveClient' in base_class:
+                inst = self.convert_waveclient(d, class_name, module_name)
+            elif 'ProcessingNode' in base_class:
+                inst = self.convert_processing_node(d, class_name, module_name)
+            else:
+                inst = {'ERROR': 'MISSING CONVERTER'}
+
+        else:
+            inst = d
+
+        return inst
+
+
+    def decode_hinted_tuple(self, item):
+        if isinstance(item, dict):
+            if '__tuple__' in item:
+                return tuple(item['items'])
+        elif isinstance(item, list):
+                return [self.decode_hinted_tuple(x) for x in item]
+        else:
+            return item
+
+
+    def convert_project(self, d):
+        import psysmon.core.project
+        inst = psysmon.core.project.Project(psybase = None,
+                                            name = d['name'],
+                                            user = d['user'],
+                                            dbHost = d['dbHost'],
+                                            dbName = d['dbName'],
+                                            pkg_version = d['pkg_version'],
+                                            db_version = d['db_version'],
+                                            dbDriver = d['dbDriver'],
+                                            dbDialect = d['dbDialect'],
+                                            createTime = d['createTime']
+                                            )
+
+        inst.defaultWaveclient = d['defaultWaveclient']
+        inst.scnlDataSources = d['scnlDataSources']
+        inst.waveclient = d['waveclient']
+
+        return inst
+
+
+    def convert_user(self, d):
+        import psysmon.core.project
+        inst = psysmon.core.project.User(user_name = d['name'],
+                                         user_pwd = None,
+                                         user_mode = d['mode'],
+                                         author_name = d['author_name'],
+                                         author_uri = d['author_uri'],
+                                         agency_name = d['agency_name'],
+                                         agency_uri = d['agency_uri']
+                                         )
+        inst.collection = d['collection']
+
+        if d['activeCollection'] in inst.collection.keys():
+            inst.activeCollection = inst.collection[d['activeCollection']]
+        return inst
+
+
+    def convert_utcdatetime(self, d):
+        inst = UTCDateTime(d['utcdatetime'])
+        return inst
+
+
+    def convert_pref_manager(self, d):
+        import psysmon.core.preferences_manager
+
+        inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
+        return inst
+
+
+    def convert_page(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Page(name = d['name'], groups = d['groups'])
+        return inst
+
+
+    def convert_group(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Group(name = d['name'], items = d['items'])
+        return inst
+
+
+    def convert_collection(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.base.Collection(name = d['name'], nodes = d['nodes'])
+
+        return inst
+
+
+    def convert_class_object(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        return class_
+
+
+    def convert_collectionnode(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_looper_collection_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_looper_collection_child_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_processing_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_custom_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+
+        # 2016-12-15: Handle the change of the preference_manager classes.
+        if 'group' in args.keys():
+            del args['group']
+
+        inst = class_(**args)
+        return inst
+
+
+    def convert_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+
+        # 2016-12-15: Handle the change of the preference_manager classes.
+        if 'group' in args.keys():
+            del args['group']
+
+        inst = class_(**args)
+        return inst
+
+
+    def convert_waveclient(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        return inst
+
+
+
+
+class ProjectFileDecoder_1_0_0(json.JSONDecoder):
+    version = util.Version('1.0.0')
+
+    def __init__(self, **kwarg):
+        json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
 
     def convert_object(self, d):
         #print "Converting dict: %s." % str(d)
@@ -288,24 +522,13 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import psysmon.core.project
 
         # Check the project file version.
-        try:
-            file_meta = d['file_meta']
-            loaded_version = util.Version(file_meta['file_version'])
-        except:
-            self.logger.warning("No project file version found in the project file to load.")
-            loaded_version = util.Version('0.0.0')
-            file_meta = {}
-            file_meta['file_version'] = str(loaded_version)
-            file_meta['save_date'] = None
+        file_meta = d['file_meta']
+        loaded_version = util.Version(file_meta['file_version'])
 
-        if loaded_version == FILE_VERSION:
-            self.logger.info("The project file version to load matches the current project file version.")
-        elif loaded_version > FILE_VERSION:
-            self.logger.error("The project file version to load is larger than the current project file version. Can't load the project file correctly.")
-            return (file_meta, None)
-        elif loaded_version < FILE_VERSION:
-            self.logger.warning("The project file version to load is smaller than the current project. Trying to load the needed data from the old version.")
-            return (file_meta, None)
+        if loaded_version != self.version:
+            self.logger.error("The project file version %s doesn't match the version of the parser %s.", 
+                              loaded_version, self.version)
+            return None
 
         project_dir = d['project']
         inst = psysmon.core.project.Project(psybase = None,
@@ -324,7 +547,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         inst.scnlDataSources = project_dir['scnlDataSources']
         inst.waveclient = project_dir['waveclient']
 
-        return (file_meta, inst)
+        return inst
 
 
     def convert_user(self, d):
@@ -1018,6 +1241,8 @@ def get_decoder(version):
     ''' Get the correct json decoder based on the version.
     '''
     decoder = {}
+    decoder['0.0.0'] = ProjectFileDecoder_0_0_0
     decoder['1.0.0'] = ProjectFileDecoder_1_0_0
 
     return decoder[str(version)]
+
