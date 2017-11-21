@@ -708,28 +708,32 @@ class Project(object):
             self.dataDir = os.path.join(self.projectDir, "data")
 
             if not os.path.exists(self.dataDir):
-                msg = "The project data directory %s doesn't exist." % self.dataDir
-                raise Exception(msg)
+                self.logger.warning("The project data directory %s doesn't exist. Creating it.",
+                                     self.dataDir)
+                os.makedirs(self.dataDir)
 
             ## The project's temporary directory.
             self.tmpDir = os.path.join(self.projectDir, "tmp")
 
             if not os.path.exists(self.tmpDir):
-                msg = "The project temporary directory %s doesn't exist." % self.tmpDir
-                raise Exception(msg)
+                self.logger.warning("The project temporary directory %s doesn't exist.",
+                                    self.tmpDir)
+                os.makedirs(self.tmpDir)
 
             ## The project's collection directory.
             self.collectionDir = os.path.join(self.projectDir, "collection")
 
             if not os.path.exists(self.collectionDir):
-                msg = "The project collection directory %s doesn't exist." % self.collectionDir
-                raise Exception(msg)
+                self.logger.warning("The project collection directory %s doesn't exist. Creating it.",
+                                    self.collectionDir)
+                os.makedirs(self.collectionDir)
 
             for cur_user in self.user:
                 user_dir = os.path.join(self.collectionDir, cur_user.name)
                 if not os.path.exists(user_dir):
-                    msg = "The user collection directory %s doesn't exist." % user_dir
-                    raise Exception(msg)
+                    self.logger.warning("The user collection directory %s doesn't exist. Creating it." ,
+                                        user_dir)
+                    os.makedirs(user_dir)
 
         else:
             msg = "Cannot create the directory structure."
@@ -833,6 +837,7 @@ class Project(object):
 
         if save_needed:
             # Save the project to update the package versions.
+            self.logger.info("Saving the project file because of changes in the package versions.")
             self.save_json()
 
 
@@ -867,9 +872,8 @@ class Project(object):
 
         '''
         # Save the project file.
-        fp = open(os.path.join(self.projectDir, self.projectFile), mode = 'w')
-        json.dump(self, fp = fp, cls = psysmon.core.json_util.ProjectFileEncoder)
-        fp.close()
+        with open(os.path.join(self.projectDir, self.projectFile), mode = 'w') as fid:
+            json.dump(self, fp = fid, cls = psysmon.core.json_util.ProjectFileEncoder)
 
         # Save each collections of each user.
         for cur_user in self.user:
