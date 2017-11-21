@@ -463,23 +463,47 @@ class Base(object):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
-        import json
+        with open(filename, 'r') as fid:
+            project_data = json.load(fid)
+
+        if project_data.has_key('file_meta'):
+            # The project file has a meta data dictionary. Use it to select the
+            # correct project file decoder.
+            file_meta = project_data['file_meta']
+        else:
+            # This is an old project file version with no meta data dictionary.
+            # Create a default meta data.
+            file_meta = {'file_version': '0.0.0',
+                         'save_date': '1970-01-01T00:00:00'}
+
+        file_version = psysmon.core.util.Version(file_meta['file_version'])
+        json_decoder = psysmon.core.json_util.get_decoder(version = file_version)
+
         project_dir = os.path.dirname(filename)
-        fp = open(filename, 'r')
-        self.project = json.load(fp, cls = psysmon.core.json_util.ProjectFileDecoder)
-        fp.close()
+        self.logger.info('Loading the project file %s (version %s) with decoder version %s.',
+                         filename, file_version, json_decoder.version)
+        with open(filename, 'r') as fid:
+            self.project = json.load(fid, cls = json_decoder)
+
+        if not self.project:
+            self.logger.error("Couldn't load the project file using the decoder.")
+            return False
 
         # Set some runtime dependent variables.
         self.project.psybase = self
         self.project.base_dir = os.path.dirname(project_dir)
         self.project.updateDirectoryStructure()
 
-        # Load the collections of the users.
-        for cur_user in self.project.user:
-            cur_user.load_collections(self.project.collectionDir)
-            cur_user.setActiveCollection(cur_user.active_collection_name)
-            del cur_user.__dict__['collection_names']
-            del cur_user.__dict__['active_collection_name']
+        if file_version >= psysmon.core.util.Version('1.0.0'):
+            # Load the collections of the users.
+            # Since version 1.0.0 the collections have been seperated in a
+            # dedicated directory.
+            for cur_user in self.project.user:
+                cur_user.load_collections(self.project.collectionDir)
+                cur_user.setActiveCollection(cur_user.active_collection_name)
+                del cur_user.__dict__['collection_names']
+                del cur_user.__dict__['active_collection_name']
+
         self.project.setCollectionNodeProject()
 
         # Set the project of the db_waveclient (if available).
