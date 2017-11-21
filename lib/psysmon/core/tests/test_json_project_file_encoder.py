@@ -7,7 +7,7 @@ Created on May 17, 2011
 import unittest
 import psysmon.core.test_util as test_util
 import shutil
-import psysmon.core.util as util
+import psysmon.core.json_util as json_util
 import os
 from obspy.core.utcdatetime import UTCDateTime
 
@@ -42,7 +42,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
     def test_default(self):
         '''
         '''
-        encoder = util.ProjectFileEncoder()
+        encoder = json_util.ProjectFileEncoder()
         d = encoder.default(self.db_project)
         print d
 
@@ -57,51 +57,70 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
         # Set the createTime of the project to a known value.
         self.db_project.createTime = UTCDateTime('2013-01-01T00:00:00')
 
-        encoder = util.ProjectFileEncoder()
+        encoder = json_util.ProjectFileEncoder()
 
         # Test empty project.
+
+
         expected_result = '''{
-    "__baseclass__": [], 
+    "__baseclass__": [
+        "object"
+    ], 
     "__class__": "Project", 
     "__module__": "psysmon.core.project", 
-    "createTime": {
-        "__baseclass__": [
-            "object"
+    "file_meta": {
+        "file_version": "1.0.0", 
+        "save_date": "2017-11-21T10:28:52.576095"
+    }, 
+    "project": {
+        "createTime": {
+            "__baseclass__": [
+                "newobject"
+            ], 
+            "__class__": "UTCDateTime", 
+            "__module__": "obspy.core.utcdatetime", 
+            "utcdatetime": "2013-01-01T00:00:00"
+        }, 
+        "dbDialect": "mysql", 
+        "dbDriver": null, 
+        "dbHost": "localhost", 
+        "dbName": "psysmon_unit_test", 
+        "db_version": {}, 
+        "defaultWaveclient": null, 
+        "name": "Unit Test", 
+        "pkg_version": {
+            "test_package_1": "0.1.1"
+        }, 
+        "scnlDataSources": {}, 
+        "user": [
+            {
+                "__baseclass__": [], 
+                "__class__": "User", 
+                "__module__": "psysmon.core.project", 
+                "activeCollection": null, 
+                "agency_name": "University of Test", 
+                "agency_uri": "at.uot", 
+                "author_name": "Stefan Test", 
+                "author_uri": "stest", 
+                "collection_names": [], 
+                "mode": "admin", 
+                "name": "unit_test"
+            }
         ], 
-        "__class__": "UTCDateTime", 
-        "__module__": "obspy.core.utcdatetime", 
-        "utcdatetime": "2013-01-01T00:00:00"
-    }, 
-    "dbDialect": "mysql", 
-    "dbDriver": null, 
-    "dbHost": "localhost", 
-    "dbName": "psysmon_unit_test", 
-    "db_version": {}, 
-    "defaultWaveclient": null, 
-    "name": "Unit Test", 
-    "pkg_version": {
-        "test_package_1": "0.1.1"
-    }, 
-    "scnlDataSources": {}, 
-    "user": [
-        {
-            "__baseclass__": [], 
-            "__class__": "User", 
-            "__module__": "psysmon.core.project", 
-            "activeCollection": null, 
-            "agency_name": "University of Test", 
-            "agency_uri": "at.uot", 
-            "author_name": "Stefan Test", 
-            "author_uri": "stest", 
-            "collection": {}, 
-            "mode": "admin", 
-            "name": "unit_test"
-        }
-    ], 
-    "waveclient": {}
+        "waveclient": {}
+    }
 }'''
 
-        self.assertMultiLineEqual(encoder.encode(self.db_project), expected_result)
+        encoded = encoder.encode(self.db_project)
+        encoded_lines = encoded.splitlines()
+        for k, cur_line in enumerate(expected_result.splitlines()):
+            if cur_line.strip().startswith('"save_date"'):
+                self.assertTrue(encoded_lines[k].strip().startswith('"save_date"'))
+            else:
+                self.assertEqual(encoded_lines[k], cur_line)
+
+
+    def test_collection_serialization(self):
 
         # Test project with empty collection
         self.db_project.createDirectoryStructure()

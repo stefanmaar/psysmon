@@ -1,13 +1,16 @@
+import json
+import logging
+import os
+import shutil
 import unittest
+
+from obspy.core.utcdatetime import UTCDateTime
+import psysmon
 import psysmon.core.project
 import psysmon.core.preferences_manager
 import psysmon.core.test_util as test_util
-import shutil
+import psysmon.core.json_util as json_util
 import psysmon.core.util as util
-import os
-import logging
-import psysmon
-from obspy.core.utcdatetime import UTCDateTime
 
 class ProjectFileDecoderTestCase(unittest.TestCase):
     """
@@ -20,6 +23,8 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         logger.addHandler(psysmon.getLoggerHandler(log_level = 'DEBUG'))
         cls.packages_path = os.path.dirname(os.path.abspath(__file__))
         cls.packages_path = os.path.join(cls.packages_path, 'packages')
+        cls.data_path = os.path.dirname(os.path.abspath(__file__))
+        cls.data_path = os.path.join(cls.data_path, 'data')
 
     @classmethod
     def tearDownClass(cls):
@@ -38,6 +43,32 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         del self.db_user
         del self.db_project
         del self.psybase
+
+
+    def test_file_version_loading(self):
+        '''
+        '''
+        test_file = os.path.join(self.data_path, 'project_file_01.ppr')
+
+        with open(test_file, 'r') as fid:
+            project_data = json.load(fid)
+
+        if project_data.has_key('file_meta'):
+            # The project file has a meta data dictionary. Use it to select the
+            # correct project file decoder.
+            file_meta = project_data['file_meta']
+        else:
+            # This is an old project file version with no meta data dictionary.
+            # Create a default meta data.
+            file_meta = {'file_version': '0.0.0',
+                         'save_date': '1970-01-01T00:00:00'}
+
+        file_version = util.Version(file_meta['file_version'])
+        json_decoder = json_util.get_decoder(version = file_version)
+
+        self.assertEqual(json_decoder, json_util.ProjectFileDecoder_0_0_0)
+
+
 
 
     def test_json_deserialization(self):
@@ -59,13 +90,13 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         self.db_project.addNode2Collection(node_template)
 
         # Add a collection node containing preferences.
-        node_template = self.psybase.packageMgr.getCollectionNodeTemplate('json preferences testnode')
-        self.db_project.addNode2Collection(node_template)
+        #node_template = self.psybase.packageMgr.getCollectionNodeTemplate('json preferences testnode')
+        #self.db_project.addNode2Collection(node_template)
         # Change a value in the filter_cutoff pref_item.
-        self.db_project.activeUser.activeCollection.nodes[1].pref_manager.set_value('filter_cutoff', 10)
+        #self.db_project.activeUser.activeCollection.nodes[1].pref_manager.set_value('filter_cutoff', 10)
 
-        encoder = util.ProjectFileEncoder()
-        decoder = util.ProjectFileDecoder()
+        encoder = json_util.ProjectFileEncoder()
+        decoder = json_util.ProjectFileDecoder()
         json_project = encoder.encode(self.db_project)
         project_obj = decoder.decode(json_project)
 
