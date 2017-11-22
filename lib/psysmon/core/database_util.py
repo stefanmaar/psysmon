@@ -40,7 +40,7 @@ def db_table_migration(engine, table, prefix):
     ''' Check if a database table migration is needed and apply the changes.
     '''
     logger.info('Checking if database table %s needs an update.', table.__table__.name)
-    table_updated = False
+    migrate_success = False
     cur_metadata = sqa.MetaData(engine)
     cur_metadata.reflect(engine)
     if table.__table__.name in cur_metadata.tables.keys():
@@ -50,14 +50,19 @@ def db_table_migration(engine, table, prefix):
                                         metadata = cur_metadata,
                                         prefix = prefix)
         if not table_updated:
-            logger.info('Everything is up-to-date.')
+            logger.info('Everything is up-to-date. No update needed.')
+
+        migrate_success = True
     else:
         # The table is missing in the schema, create it.
         logger.info('The table %s is not existing, create it.', table.__table__.name)
-        table.__table__.create()
-        table_updated = True
+        try:
+            table.__table__.create()
+            migrate_success = True
+        except:
+            logger.error('Error creating the table %s.', table.__table__.name)
 
-    return table_updated
+    return migrate_success
 
 
 def update_db_table(engine, table, metadata, prefix):
@@ -122,35 +127,7 @@ def update_db_table(engine, table, metadata, prefix):
                                fk_symbol = cur_key.name)
 
 
-        # Check for changed foreign keys.
-        #keys_to_add = cur_col.foreign_keys.difference(exist_col.foreign_keys)
-        #for cur_key in keys_to_add:
-            # Add the foreign key to the column.
-            #logger.info('Adding foreign key %s to the column %s.', cur_key.target_fullname, cur_name)
-            #add_foreign_key(engine = engine,
-            #                table = table,
-            #                column = cur_col,
-            #                target = prefix + cur_key.target_fullname)
-
-        #keys_to_remove = exist_col.foreign_keys.difference(cur_col.foreign_keys)
-        #for cur_key in keys_to_remove:
-            # Remove the foreign key from the column.
-            #logger.info('Removing foreign key %s from the column %s.', cur_key.target_fullname, cur_name)
-            #remove_foreign_key(engine = engine,
-            #                   table = table,
-            #                   fk_symbol = cur_key.name)
-
-    if new_table.name.endswith('geom_rec_stream'):
-
-    # I couldn't figure out how to get the existing unique constraints.
-    # Therefore, remove all existing unique constraints and than add the new
-    # ones.
-    #const_to_remove = exist_table.constraints.difference(new_table.constraints)
-    #for cur_const in const_to_remove:
-    #    if isinstance(cur_const, sqa.schema.PrimaryKeyConstraint):
-    #        logger.error("Changing a primary key is not supported. (%s)", cur_const)
-    #        continue
-    #    table_updated = True
+    # Remove all unique contraints.
     insp = sqa.inspect(engine)
     unique_const = insp.get_unique_constraints(exist_table.name)
     for cur_const in unique_const:
@@ -158,41 +135,30 @@ def update_db_table(engine, table, metadata, prefix):
         remove_unique_constraint(engine, table, cur_const['name'])
 
 
+    # Add the new constraints to the table.
     const_to_add = new_table.constraints.difference(exist_table.constraints)
-    for cur_const in const_to_add:
-        if isinstance(cur_const, sqa.schema.PrimaryKeyConstraint):
-            logger.error("Changing a primary key is not supported. (%s)", cur_const)
-            continue
+    unique_const = [x for x in const_to_add if isinstance(x, sqa.schema.UniqueConstraint)]
+    foreign_const = [x for x in const_to_add if isinstance(x, sqa.schema.ForeignKeyConstraint)]
+    # TODO: Handle changes of the primary key.
+    primary_const = [x for x in const_to_add if isinstance(x, sqa.schema.PrimaryKeyConstraint)]
 
-        if isinstance(cur_const, sqa.schema.ForeignKeyConstraint):
-            logger.warning("Changing foreign key constraint is not yet implemented (%s).", cur_const)
-            # TODO: Check if the ForeignKeyConstraint can be added using the
-            # constraint. This would avoid going through the individual colums
-            # again later in this code.
-            continue
-
-        # TODO: Add a check for the constraint instance.
-        # TODO: Handle the on_delete and cascade options.
+    for cur_const in unique_const:
         logger.info('Adding the unique constraint %s.', cur_const.name)
         add_unique_constraint(engine, table, cur_const)
         table_updated = True
 
-
-    # Add the foreign keys.
-    for cur_name, cur_col in new_table.columns.items():
-        if cur_name not in exist_table.columns.keys():
-            # The column is not existing in the database. 
-            # Might have been deleted. Ignore it.
-            continue
-
-        for cur_key in cur_col.foreign_keys:
-            # Add the foreign key to the column.
-            logger.info('Adding foreign key %s to the column %s.', cur_key.target_fullname, cur_name)
-            add_foreign_key(engine = engine,
-                            table = table,
-                            column = cur_col,
-                            target = prefix + cur_key.target_fullname)
-
+    for cur_const in foreign_const:
+        #logger.warning("Changing foreign key constraint is not yet implemented (%s).", cur_const)
+        target_columns = [x.target_fullname for x in cur_const.elements]
+        logger.info('Adding foreign key (%s) referring (%s).', ','.join(cur_const.column_keys),
+                    ','.join(target_columns))
+        add_foreign_key(engine = engine,
+                        table = table,
+                        columns = cur_const.column_keys,
+                        target_table = cur_const.referred_table.name,
+                        target_columns = [x.column.name for x in cur_const.elements],
+                        on_update = cur_const.onupdate,
+                        on_delete = cur_const.ondelete)
 
     return table_updated
 
@@ -230,14 +196,32 @@ def change_column_type(engine, table, column):
     engine.execute('ALTER TABLE %s MODIFY %s %s' % (table_name, column.name, column_type))
 
 
-def add_foreign_key(engine, table, column, target):
+def add_foreign_key(engine, table, columns, target_table, target_columns, on_update, on_delete):
+    ''' Add a foreign key constraint.
+    '''
+    table_name = table.__table__.name
+    if on_update is None:
+        on_update = 'RESTRICT'
+
+    if on_delete is None:
+        on_delete = 'RESTRICT'
+
+    engine.execute('ALTER TABLE %s ADD FOREIGN KEY (%s) REFERENCES %s(%s) ON UPDATE %s ON DELETE %s' % (table_name,
+                                                                              ','.join(columns),
+                                                                              target_table,
+                                                                              ','.join(target_columns),
+                                                                              on_update,
+                                                                              on_delete))
+
+
+def add_foreign_key_old(engine, table, column, target, on_update, on_delete):
     ''' Add a foreign key to the column.
     '''
     table_name = table.__table__.name
     tmp = target.split('.')
     target_table = tmp[0]
     target_column = tmp[1]
-    engine.execute('ALTER TABLE %s ADD FOREIGN KEY (%s) REFERENCES %s(%s)' % (table_name, column.name, target_table, target_column))
+    engine.execute('ALTER TABLE %s ADD FOREIGN KEY (%s) REFERENCES %s(%s) ON_DELETE %s ON_UPDATE %s' % (table_name, column.name, target_table, target_column, on_update, on_delete))
 
 
 def remove_foreign_key(engine, table, fk_symbol):

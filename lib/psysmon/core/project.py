@@ -206,7 +206,8 @@ class Project(object):
     def __init__(self, name, user,
                  psybase = None, base_dir = '',
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
-                 pkg_version = None, db_version = {}, dbName="", 
+                 pkg_version = None, db_version = {}, dbName="",
+                 db_table_version = None,
                  createTime=None, dbTables={}):
         '''The constructor.
 
@@ -315,6 +316,11 @@ class Project(object):
                 self.pkg_version[cur_pkg.name] = cur_pkg.version
         else:
             self.pkg_version = pkg_version
+
+        # The database table versions.
+        self.db_table_version = {}
+        if db_table_version is not None:
+            self.db_table_version = db_table_version
 
 
         # The version dictionary of the packages which created at least 
@@ -789,8 +795,6 @@ class Project(object):
 
         save_needed = False
         for _, curPkg in packages.iteritems():
-            pkg_version_changed = False
-            update_success = True
             if not curPkg.databaseFactory:
                 self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
@@ -799,45 +803,42 @@ class Project(object):
                 tables = curPkg.databaseFactory(self.dbBase)
 
                 for curTable in tables:
+                    table_version_changed = False
+                    update_success = True
                     # Add the table prefix.
                     curName = curTable.__table__.name
                     curTable.__table__.name = self.slug + "_" + curTable.__table__.name
-                    try:
-                        # Check for changes in the database.
-                        if curPkg.name not in self.pkg_version.keys():
-                            pkg_version_changed = True
-                            self.logger.info("%s - The current package didn't exist when the project was saved - an update is needed.",curPkg.name)
-                            update_success = db_util.db_table_migration(table = curTable,
-                                                                        engine = self.dbEngine,
-                                                                        prefix = self.slug + '_')
+                    cur_version = psy_util.Version(curTable._version)
 
-                        elif psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name]):
-                            pkg_version_changed = True
-                            self.logger.info('%s - The current package version %s is newer than the one used (%s) when the project was saved - an update is needed.',curPkg.name, curPkg.version, self.pkg_version[curPkg.name])
+                    try:
+                        # Check for changes of the database table.
+                        if curName not in self.db_table_version.keys():
+                            self.logger.info("%s - No table version found in the project. This is a new table.",
+                                             curName)
                             update_success = db_util.db_table_migration(table = curTable,
                                                                         engine = self.dbEngine,
                                                                         prefix = self.slug + '_')
+                            table_version_changed = True
+                        elif cur_version > self.db_table_version[curName]:
+                            self.logger.info("%s - The package table version %s is larger than the one currently used in the database (%s). An update is needed.",
+                                             curName, cur_version, self.db_table_version[curName])
+                            update_success = db_util.db_table_migration(table = curTable,
+                                                                        engine = self.dbEngine,
+                                                                        prefix = self.slug + '_')
+                            table_version_changed = True
 
                     except:
                         update_success = False
                         self.logger.exception("Couldn't migrate the table %s.", curName)
-                        continue
 
                     self.dbTables[curName] = curTable
-
-            # Update the project package version to the current
-            # one.
-            if pkg_version_changed and update_success:
-                self.pkg_version[curPkg.name] = curPkg.version
-                save_needed = True
-            elif pkg_version_changed:
-                self.logger.error('There were errors while migrating the database. Please check the log file and the database consistency.')
-                self.pkg_version[curPkg.name] = curPkg.version
-                save_needed = True
+                    if table_version_changed and update_success:
+                        self.db_table_version[curName] = cur_version
+                        save_needed = True
 
         if save_needed:
             # Save the project to update the package versions.
-            self.logger.info("Saving the project file because of changes in the package versions.")
+            self.logger.info("Saving the project file because of changes in the database table versions.")
             self.save_json()
 
 

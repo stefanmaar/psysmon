@@ -71,6 +71,8 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_project(obj)
         elif obj_class == 'UTCDateTime':
             d = self.convert_utcdatetime(obj)
+        elif obj_class == 'Version':
+            d = self.convert_version(obj)
         elif obj_class == 'User':
             d = self.convert_user(obj)
         elif obj_class == 'Collection':
@@ -112,7 +114,8 @@ class ProjectFileEncoder(json.JSONEncoder):
     def convert_project(self, obj):
         attr = ['name', 'dbDriver', 'dbDialect', 'dbHost',
                 'dbName', 'pkg_version', 'db_version', 'createTime',
-                'defaultWaveclient', 'scnlDataSources', 'user', 'waveclient']
+                'defaultWaveclient', 'scnlDataSources', 'user', 'waveclient',
+                'db_table_version']
         project_dir =  self.object_to_dict(obj, attr)
 
         # Add the project file container with meta data.
@@ -127,6 +130,10 @@ class ProjectFileEncoder(json.JSONEncoder):
 
     def convert_utcdatetime(self, obj):
         return {'utcdatetime': obj.isoformat()}
+
+
+    def convert_version(self, obj):
+        return {'version': str(obj)}
 
 
     def convert_user(self, obj):
@@ -485,6 +492,8 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
                 inst = self.convert_group(d)
             elif class_name == 'CustomPrefItem':
                 inst = self.convert_custom_preferenceitem(d, class_name, module_name)
+            elif class_name == 'Version':
+                inst = self.convert_version(d)
             elif class_name == 'type':
                 inst = self.convert_class_object(d, class_name, module_name)
             elif 'CollectionNode' in base_class:
@@ -526,7 +535,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         loaded_version = util.Version(file_meta['file_version'])
 
         if loaded_version != self.version:
-            self.logger.error("The project file version %s doesn't match the version of the parser %s.", 
+            self.logger.error("The project file version %s doesn't match the version of the parser %s.",
                               loaded_version, self.version)
             return None
 
@@ -537,6 +546,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
                                             dbHost = project_dir['dbHost'],
                                             dbName = project_dir['dbName'],
                                             pkg_version = project_dir['pkg_version'],
+                                            db_table_version = project_dir['db_table_version'],
                                             db_version = project_dir['db_version'],
                                             dbDriver = project_dir['dbDriver'],
                                             dbDialect = project_dir['dbDialect'],
@@ -572,6 +582,11 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
 
     def convert_utcdatetime(self, d):
         inst = UTCDateTime(d['utcdatetime'])
+        return inst
+
+
+    def convert_version(self, d):
+        inst = util.Version(d['version'])
         return inst
 
 
