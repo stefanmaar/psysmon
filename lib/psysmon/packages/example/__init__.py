@@ -40,6 +40,7 @@ def databaseFactory(base):
     class ExampleTable(base):
         __tablename__ = 'exampleTable'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         value = Column(String(40))

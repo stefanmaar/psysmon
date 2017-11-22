@@ -55,6 +55,7 @@ def databaseFactory(base):
                           UniqueConstraint('wf_id', 'filename'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         file_type = Column(String(10), nullable=False)
@@ -81,6 +82,7 @@ def databaseFactory(base):
     class WaveformDir(base):
         __tablename__ = 'waveform_dir'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         directory = Column(String(255), nullable=False, unique=True)
@@ -104,6 +106,7 @@ def databaseFactory(base):
     class WaveformDirAlias(base):
         __tablename__ = 'waveform_dir_alias'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         wf_id = Column(Integer,
                        ForeignKey('waveform_dir.id', onupdate="cascade"),

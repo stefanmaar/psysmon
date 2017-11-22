@@ -62,6 +62,8 @@ def databaseFactory(base):
                           UniqueConstraint('serial', 'model', 'producer'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
+
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
@@ -99,6 +101,7 @@ def databaseFactory(base):
                           UniqueConstraint('recorder_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         recorder_id = Column(Integer,
@@ -142,6 +145,7 @@ def databaseFactory(base):
                           UniqueConstraint('rec_stream_id', 'start_time', 'end_time'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         rec_stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), nullable=True)
@@ -173,6 +177,7 @@ def databaseFactory(base):
     class GeomComponentToStream(base):
         __tablename__ = 'geom_component_to_stream'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
         component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
@@ -197,6 +202,7 @@ def databaseFactory(base):
                           UniqueConstraint('serial', 'model', 'producer'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         serial = Column(String(45), nullable=False)
@@ -232,6 +238,7 @@ def databaseFactory(base):
                           UniqueConstraint('sensor_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         sensor_id = Column(Integer, ForeignKey('geom_sensor.id', onupdate='cascade'), nullable=True, default=-1)
@@ -271,6 +278,7 @@ def databaseFactory(base):
                           UniqueConstraint('component_id', 'start_time', 'end_time'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), nullable=True, default=-1)
@@ -311,6 +319,7 @@ def databaseFactory(base):
     class GeomTfPz(base):
         __tablename__ = 'geom_tf_pz'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         param_id = Column(Integer, ForeignKey('geom_component_param.id', onupdate='cascade'), nullable=False)
@@ -332,6 +341,7 @@ def databaseFactory(base):
     class GeomNetwork(base):
         __tablename__ = 'geom_network'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         name = Column(String(10), primary_key=True, nullable=False)
         description = Column(String(255))
@@ -365,6 +375,7 @@ def databaseFactory(base):
                           UniqueConstraint('network', 'name', 'location'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         network = Column(String(10), ForeignKey('geom_network.name', onupdate='cascade'), nullable=True)
@@ -409,6 +420,7 @@ def databaseFactory(base):
                           UniqueConstraint('station_id', 'name'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         station_id = Column(Integer, ForeignKey('geom_station.id', onupdate='cascade'), primary_key=True, nullable=False)
@@ -437,6 +449,7 @@ def databaseFactory(base):
     class GeomStreamToChannel(base):
         __tablename__ = 'geom_stream_to_channel'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         channel_id = Column(Integer, ForeignKey('geom_channel.id', onupdate='cascade'), primary_key=True, nullable=False)
@@ -459,6 +472,7 @@ def databaseFactory(base):
     class GeomArray(base):
         __tablename__ = 'geom_array'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         name = Column(String(50), primary_key=True, nullable=False)
         description = Column(String(255))
@@ -482,6 +496,7 @@ def databaseFactory(base):
     class GeomStatToArray(base):
         __tablename__ = 'geom_stat_to_array'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         array_name = Column(String(50),
                             ForeignKey('geom_array.name', onupdate = 'cascade'),
