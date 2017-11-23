@@ -122,6 +122,7 @@ def update_db_table(engine, table, metadata, prefix):
         # Drop all existing foreign keys. This has to be done in case that unique
         # keys have to be removed which might be needed by foreign keys.
         for cur_key in exist_col.foreign_keys:
+            logger.info("Removing the foreign key %s from table %s.", cur_key.name, table.__table__.name)
             remove_foreign_key(engine = engine,
                                table = table,
                                fk_symbol = cur_key.name)
@@ -152,13 +153,28 @@ def update_db_table(engine, table, metadata, prefix):
         target_columns = [x.target_fullname for x in cur_const.elements]
         logger.info('Adding foreign key (%s) referring (%s).', ','.join(cur_const.column_keys),
                     ','.join(target_columns))
-        add_foreign_key(engine = engine,
-                        table = table,
-                        columns = cur_const.column_keys,
-                        target_table = cur_const.referred_table.name,
-                        target_columns = [x.column.name for x in cur_const.elements],
-                        on_update = cur_const.onupdate,
-                        on_delete = cur_const.ondelete)
+        try:
+            # Get the target table using the ForeignKey elements. Using the
+            # referred_table was not working for all constraints because the
+            # referred_table is a dynamic attribute.
+            target_name = [x.target_fullname.split('.')[0] for x in cur_const.elements]
+            target_name = list(set(target_name))
+            if len(target_name) != 1:
+                logger.error("Too many target tables for the foreign constraint: %s.", target_name)
+                continue
+            else:
+                target_name = prefix + target_name[0]
+
+            add_foreign_key(engine = engine,
+                            table = table,
+                            columns = cur_const.column_keys,
+                            target_table = target_name,
+                            target_columns = [x.target_fullname.split('.')[1] for x in cur_const.elements],
+                            on_update = cur_const.onupdate,
+                            on_delete = cur_const.ondelete)
+        except:
+            logger.exception("Error creating the foreign key.")
+
 
     return table_updated
 
