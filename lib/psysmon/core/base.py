@@ -465,7 +465,7 @@ class Base(object):
         '''
         file_meta = psysmon.core.json_util.get_file_meta(filename)
         file_version = file_meta['file_version']
-        json_decoder = psysmon.core.json_util.get_decoder(version = file_version)
+        json_decoder = psysmon.core.json_util.get_project_decoder(version = file_version)
 
         project_dir = os.path.dirname(filename)
         self.logger.info('Loading the project file %s (version %s) with decoder version %s.',
