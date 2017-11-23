@@ -740,6 +740,7 @@ class ConfigFileEncoder(json.JSONEncoder):
 
         return d
 
+
     def convert_filecontainer(self, obj):
         d = obj.data
         file_meta = {'file_version': self.version,
@@ -747,8 +748,10 @@ class ConfigFileEncoder(json.JSONEncoder):
         d['file_meta'] = file_meta
         return d
 
+
     def convert_version(self, obj):
         return {'version': str(obj)}
+
 
     def convert_preferencesmanager(self, obj):
         attr = ['pages', ]
@@ -943,6 +946,8 @@ class CollectionFileEncoder(json.JSONEncoder):
 
         if obj_class == 'FileContainer':
             d = self.convert_filecontainer(obj)
+        elif obj_class == 'Version':
+            d = self.convert_version(obj)
         elif obj_class == 'UTCDateTime':
             d = self.convert_utcdatetime(obj)
         elif obj_class == 'Collection':
@@ -986,6 +991,10 @@ class CollectionFileEncoder(json.JSONEncoder):
                      'save_date': UTCDateTime()}
         d['file_meta'] = file_meta
         return d
+
+
+    def convert_version(self, obj):
+        return {'version': str(obj)}
 
 
     def convert_project(self, obj):
