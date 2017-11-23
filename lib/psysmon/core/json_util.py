@@ -1118,7 +1118,7 @@ class CollectionFileEncoder(json.JSONEncoder):
         return d
 
 
-class CollectionFileDecoder(json.JSONDecoder):
+class CollectionFileDecoder_0_0_0(json.JSONDecoder):
 
     def __init__(self, **kwarg):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
@@ -1284,6 +1284,179 @@ class CollectionFileDecoder(json.JSONDecoder):
         return inst
 
 
+class CollectionFileDecoder_1_0_0(json.JSONDecoder):
+
+    def __init__(self, **kwarg):
+        json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+    def convert_object(self, d):
+        #print "Converting dict: %s." % str(d)
+
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            module_name = d.pop('__module__')
+            base_class = d.pop('__baseclass__')
+
+            if class_name == 'UTCDateTime':
+                inst = self.convert_utcdatetime(d)
+            if class_name == 'Version':
+                inst = self.convert_version(d)
+            elif class_name == 'Collection':
+                inst = self.convert_collection(d)
+            elif class_name == 'PreferencesManager':
+                inst = self.convert_pref_manager(d)
+            elif class_name == 'Page':
+                inst = self.convert_page(d)
+            elif class_name == 'Group':
+                inst = self.convert_group(d)
+            elif class_name == 'CustomPrefItem':
+                inst = self.convert_custom_preferenceitem(d, class_name, module_name)
+            elif class_name == 'type':
+                inst = self.convert_class_object(d, class_name, module_name)
+            elif 'CollectionNode' in base_class:
+                inst = self.convert_collectionnode(d, class_name, module_name)
+            elif 'LooperCollectionNode' in base_class:
+                inst = self.convert_looper_collection_node(d, class_name, module_name)
+            elif 'LooperCollectionChildNode' in base_class:
+                inst = self.convert_looper_collection_child_node(d, class_name, module_name)
+            elif 'PreferenceItem' in base_class:
+                inst = self.convert_preferenceitem(d, class_name, module_name)
+            elif 'ProcessingNode' in base_class:
+                inst = self.convert_processing_node(d, class_name, module_name)
+            else:
+                inst = {'ERROR': 'MISSING CONVERTER'}
+
+        else:
+            inst = d
+
+        return inst
+
+
+    def decode_hinted_tuple(self, item):
+        if isinstance(item, dict):
+            if '__tuple__' in item:
+                return tuple(item['items'])
+        elif isinstance(item, list):
+                return [self.decode_hinted_tuple(x) for x in item]
+        else:
+            return item
+
+
+    def convert_version(self, d):
+        inst = util.Version(d['version'])
+        return inst
+
+
+    def convert_utcdatetime(self, d):
+        inst = UTCDateTime(d['utcdatetime'])
+        return inst
+
+
+    def convert_pref_manager(self, d):
+        import psysmon.core.preferences_manager
+
+        inst = psysmon.core.preferences_manager.PreferencesManager(pages = d['pages'])
+        return inst
+
+
+    def convert_page(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Page(name = d['name'], groups = d['groups'])
+        return inst
+
+
+    def convert_group(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.preferences_manager.Group(name = d['name'], items = d['items'])
+        return inst
+
+
+    def convert_collection(self, d):
+        import psysmon.core.preferences_manager
+        inst = psysmon.core.base.Collection(name = d['name'], nodes = d['nodes'])
+
+        return inst
+
+
+    def convert_class_object(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        return class_
+
+
+    def convert_collectionnode(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_looper_collection_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_looper_collection_child_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_processing_node(self, d, class_name, module_name):
+        import importlib
+        pref_manager = d.pop('pref_manager')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        inst = class_(**args)
+        inst.update_pref_manager(pref_manager)
+        return inst
+
+
+    def convert_custom_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+
+        # 2016-12-15: Handle the change of the preference_manager classes.
+        if 'group' in args.keys():
+            del args['group']
+
+        inst = class_(**args)
+        return inst
+
+
+    def convert_preferenceitem(self, d, class_name, module_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+
+        # 2016-12-15: Handle the change of the preference_manager classes.
+        if 'group' in args.keys():
+            del args['group']
+
+        inst = class_(**args)
+        return inst
+
+
 def get_project_decoder(version):
     ''' Get the correct json decoder based on the version.
     '''
@@ -1300,6 +1473,16 @@ def get_config_decoder(version):
     decoder = {}
     decoder['0.0.0'] = ConfigFileDecoder_1_0_0
     decoder['1.0.0'] = ConfigFileDecoder_1_0_0
+
+    return decoder[str(version)]
+
+
+def get_collection_decoder(version):
+    ''' Get the correct collection file json decoder based on the version.
+    '''
+    decoder = {}
+    decoder['0.0.0'] = CollectionFileDecoder_0_0_0
+    decoder['1.0.0'] = CollectionFileDecoder_1_0_0
 
     return decoder[str(version)]
 
