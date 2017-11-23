@@ -811,6 +811,9 @@ class Project(object):
                     cur_version = psy_util.Version(curTable._version)
 
                     try:
+                        # TODO: Create a database backup using mysqldump in
+                        # case that a database migration is needed.
+
                         # Check for changes of the database table.
                         if curName not in self.db_table_version.keys():
                             self.logger.info("%s - No table version found in the project. This is a new table.",
