@@ -144,10 +144,13 @@ class PSysmonGui(wx.Frame):
             config = {}
             config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
             config['pref_manager'] = self.psyBase.pref_manager
+
+            file_container = psysmon.core.json_util.FileContainer(config)
             try:
-                fp = open(config_file, mode = 'w')
-                json.dump(config, fp = fp, cls = psysmon.core.json_util.ConfigFileEncoder)
-                fp.close()
+                with open(config_file, mode = 'w') as fid:
+                    json.dump(file_container,
+                              fp = fid,
+                              cls = psysmon.core.json_util.ConfigFileEncoder)
             except:
                 pass
 
