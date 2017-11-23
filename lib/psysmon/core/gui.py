@@ -2516,8 +2516,20 @@ class CreateNewProjectDlg(wx.Dialog):
 
         try:
             self.psyBase.createPsysmonProject(**projectData)
+
+            # Add the project path to the filehistory.
             self.Parent.filehistory.AddFileToHistory(os.path.join(self.psyBase.project.projectDir,
                                                                   self.psyBase.project.projectFile))
+            # Update the collection panel display.
+            self.Parent.collectionPanel.refreshCollection()
+
+            # Activate the user interfaces.
+            self.Parent.enableGuiElements(mode = 'project')
+
+            # Set the loaded project name as the title.
+            self.Parent.SetTitle(self.psyBase.project.name)
+
+
         except Exception as e:
             self.logger.error("Error while creating the project: %s", e)
             raise
