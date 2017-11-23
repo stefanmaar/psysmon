@@ -657,15 +657,17 @@ class PsysmonDbWaveClient(WaveClient):
         # Get the database traceheader table mapper class.
         Header = self.project.dbTables['traceheader']
 
+        filestat = os.stat(filename)
+
         # Remove the waveform directory from the file path.
         relativeFilename = filename.replace(waveform_dir.alias, '')
         relativeFilename = relativeFilename[1:]
-        labels = ['id', 'file_type', 'wf_id', 'filename', 'orig_path',
-                  'network', 'recorder_serial', 'stream', 
+        labels = ['id', 'file_type', 'wf_id', 'filename', 'filesize', 'orig_path',
+                  'network', 'recorder_serial', 'stream',
                   'sps', 'numsamp', 'begin_date', 'begin_time',
                   'agency_uri', 'author_uri', 'creation_time']
         header2Insert = dict(zip(labels, (None, file_format, waveform_dir.id,
-                        relativeFilename, os.path.dirname(filename),
+                        relativeFilename, filestat.st_size, os.path.dirname(filename),
                         trace.stats.network, trace.stats.station,
                         trace.stats.location + ":" + trace.stats.channel,
                         trace.stats.sampling_rate, trace.stats.npts,
