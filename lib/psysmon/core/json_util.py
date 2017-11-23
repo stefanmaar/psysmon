@@ -829,11 +829,11 @@ class ConfigFileEncoder(json.JSONEncoder):
 
 
 class ConfigFileDecoder_1_0_0(json.JSONDecoder):
+    version = util.Version('1.0.0')
 
     def __init__(self, **kwarg):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
 
-        self.version = util.Version('1.0.0')
 
     def convert_object(self, d):
         #print "Converting dict: %s." % str(d)
@@ -1262,7 +1262,7 @@ class CollectionFileDecoder(json.JSONDecoder):
         return inst
 
 
-def get_decoder(version):
+def get_project_decoder(version):
     ''' Get the correct json decoder based on the version.
     '''
     decoder = {}
