@@ -927,6 +927,8 @@ class ConfigFileDecoder_1_0_0(json.JSONDecoder):
 class CollectionFileEncoder(json.JSONEncoder):
     ''' A JSON encoder for the pSysmon collection file.
     '''
+    version = util.Version('1.0.0')
+
     def __init__(self, **kwarg):
         json.JSONEncoder.__init__(self, **kwarg)
         self.indent = 4
@@ -939,7 +941,9 @@ class CollectionFileEncoder(json.JSONEncoder):
         base_class = [x.__name__ for x in obj.__class__.__bases__]
         #print 'Converting %s' % obj_class
 
-        if obj_class == 'UTCDateTime':
+        if obj_class == 'FileContainer':
+            d = self.convert_filecontainer(obj)
+        elif obj_class == 'UTCDateTime':
             d = self.convert_utcdatetime(obj)
         elif obj_class == 'Collection':
             d = self.convert_collection(obj)
@@ -967,11 +971,20 @@ class CollectionFileEncoder(json.JSONEncoder):
             d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
 
         # Add the class and module information to the dictionary.
-        tmp = {'__baseclass__': base_class,
-               '__class__': obj.__class__.__name__,
-               '__module__': obj.__module__}
-        d.update(tmp)
+        if obj_class != 'FileContainer':
+            tmp = {'__baseclass__': base_class,
+                   '__class__': obj.__class__.__name__,
+                   '__module__': obj.__module__}
+            d.update(tmp)
 
+        return d
+
+
+    def convert_filecontainer(self, obj):
+        d = obj.data
+        file_meta = {'file_version': self.version,
+                     'save_date': UTCDateTime()}
+        d['file_meta'] = file_meta
         return d
 
 
