@@ -740,8 +740,10 @@ class Collection(object):
         ''' Save the collection to a json file.
         '''
         filename = os.path.join(path, self.name + '.json')
+        file_content = {'collection': self}
+        file_container = psysmon.core.json_util.FileContainer(file_content)
         with open(filename, mode = 'w') as fp:
-            json.dump(self, fp = fp, cls = psysmon.core.json_util.CollectionFileEncoder)
+            json.dump(file_container, fp = fp, cls = psysmon.core.json_util.CollectionFileEncoder)
 
 
     def setDataShelfFile(self, filename):
