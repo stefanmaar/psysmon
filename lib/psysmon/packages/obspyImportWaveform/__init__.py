@@ -50,17 +50,25 @@ def databaseFactory(base):
 
     # Create the traceheader table mapper class.
     class Traceheader(base):
+        ''' The traceheader database table mapper.
+
+        History
+        -------
+        1.1.0 - 2017-11-23
+        Added the filesize column.
+        '''
         __tablename__ = 'traceheader'
         __table_args__ = (
                           UniqueConstraint('wf_id', 'filename'),
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '1.0.0'
+        _version = '1.1.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         file_type = Column(String(10), nullable=False)
         wf_id = Column(Integer, nullable=False, default=-1)
         filename = Column(String(255), nullable=False)
+        filesize = Column(Float, nullable=False)
         orig_path = Column(Text, nullable=False)
         network = Column(String(10), nullable=False, default='')
         recorder_serial = Column(String(45), nullable=False)
