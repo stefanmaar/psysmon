@@ -35,10 +35,14 @@ import logging
 from obspy.core import UTCDateTime
 import psysmon.core.util as util
 
-#FILE_VERSION = {}
-#FILE_VERSION['project'] = util.Version('1.0.0')
-#FILE_VERSION['collection'] = util.Version('1.0.0')
-#FILE_VERSION['config'] = util.Version('1.0.0')
+
+# TODO: Add a File container holding the content of a json file. Use the file
+# container to dump the file meta data using the Encoder.
+
+class FileContainer(object):
+
+    def __init__(self, data = {}):
+        self.data = data
 
 
 class ProjectFileEncoder(json.JSONEncoder):
@@ -710,10 +714,13 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
 class ConfigFileEncoder(json.JSONEncoder):
     ''' A JSON encoder for the pSysmon project file.
     '''
+    version = util.Version('1.0.0')
+
     def __init__(self, **kwarg):
         json.JSONEncoder.__init__(self, **kwarg)
         self.indent = 4
         self.sort_keys = True
+
 
     def default(self, obj):
         ''' Convert pSysmon project objects to a dictionary.
@@ -721,7 +728,11 @@ class ConfigFileEncoder(json.JSONEncoder):
         obj_class = obj.__class__.__name__
         base_class = [x.__name__ for x in obj.__class__.__bases__]
 
-        if obj_class == 'PreferencesManager':
+        if obj_class == 'FileContainer':
+            d = self.convert_filecontainer(obj)
+        elif obj_class == 'Version':
+            d = self.convert_version(obj)
+        elif obj_class == 'PreferencesManager':
             d = self.convert_preferencesmanager(obj)
         elif obj_class == 'Page':
             d = self.convert_page(obj)
@@ -739,13 +750,23 @@ class ConfigFileEncoder(json.JSONEncoder):
             d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
 
         # Add the class and module information to the dictionary.
-        tmp = {'__baseclass__': base_class,
-               '__class__': obj.__class__.__name__,
-               '__module__': obj.__module__}
-        d.update(tmp)
+        if obj_class != 'FileContainer':
+            tmp = {'__baseclass__': base_class,
+                   '__class__': obj.__class__.__name__,
+                   '__module__': obj.__module__}
+            d.update(tmp)
 
         return d
 
+    def convert_filecontainer(self, obj):
+        d = obj.data
+        file_meta = {'file_version': self.version,
+                     'save_date': UTCDateTime()}
+        d['file_meta'] = file_meta
+        return d
+
+    def convert_version(self, obj):
+        return {'version': str(obj)}
 
     def convert_preferencesmanager(self, obj):
         attr = ['pages', ]
@@ -825,10 +846,12 @@ class ConfigFileEncoder(json.JSONEncoder):
         return d
 
 
-class ConfigFileDecoder(json.JSONDecoder):
+class ConfigFileDecoder_1_0_0(json.JSONDecoder):
 
     def __init__(self, **kwarg):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
+
+        self.version = util.Version('1.0.0')
 
     def convert_object(self, d):
         #print "Converting dict: %s." % str(d)
@@ -840,6 +863,8 @@ class ConfigFileDecoder(json.JSONDecoder):
 
             if class_name == 'PreferencesManager':
                 inst = self.convert_pref_manager(d)
+            elif class_name == 'Version':
+                inst = self.convert_version(d)
             elif class_name == 'Page':
                 inst = self.convert_page(d)
             elif class_name == 'Group':
@@ -870,6 +895,9 @@ class ConfigFileDecoder(json.JSONDecoder):
         else:
             return item
 
+    def convert_version(self, d):
+        inst = util.Version(d['version'])
+        return inst
 
     def convert_pref_manager(self, d):
         import psysmon.core.preferences_manager
@@ -1260,4 +1288,35 @@ def get_decoder(version):
     decoder['1.0.0'] = ProjectFileDecoder_1_0_0
 
     return decoder[str(version)]
+
+
+def get_config_decoder(version):
+    ''' Get the correct config file json decoder based on the version.
+    '''
+    decoder = {}
+    decoder['0.0.0'] = ConfigFileDecoder_1_0_0
+    decoder['1.0.0'] = ConfigFileDecoder_1_0_0
+
+    return decoder[str(version)]
+
+
+def get_file_meta(filename):
+    ''' Extract the file metadata from a json file.
+    '''
+    with open(filename, 'r') as fid:
+        container_data = json.load(fid)
+
+    if container_data.has_key('file_meta'):
+        # The project file has a meta data dictionary. Use it to select the
+        # correct project file decoder.
+        file_meta = container_data['file_meta']
+        file_meta = {'file_version': util.Version(container_data['file_meta']['file_version']['version']),
+                     'save_date': UTCDateTime(container_data['file_meta']['save_date']['utcdatetime'])}
+    else:
+        # This is an old project file version with no meta data dictionary.
+        # Create a default meta data.
+        file_meta = {'file_version': util.Version('0.0.0'),
+                     'save_date': '1970-01-01T00:00:00'}
+
+    return file_meta
 
