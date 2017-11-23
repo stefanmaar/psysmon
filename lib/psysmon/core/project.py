@@ -876,8 +876,10 @@ class Project(object):
 
         '''
         # Save the project file.
+        file_content = {'project': self}
+        file_container = psysmon.core.json_util.FileContainer(file_content)
         with open(os.path.join(self.projectDir, self.projectFile), mode = 'w') as fid:
-            json.dump(self, fp = fid, cls = psysmon.core.json_util.ProjectFileEncoder)
+            json.dump(file_container, fp = fid, cls = psysmon.core.json_util.ProjectFileEncoder)
 
         # Save each collections of each user.
         for cur_user in self.user:
