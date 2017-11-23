@@ -1233,7 +1233,12 @@ class User:
             decoder = psysmon.core.json_util.get_collection_decoder(version = file_meta['file_version'])
             with open(cur_filename, mode = 'r') as fp:
                 file_data = json.load(fp, cls = decoder)
-                self.collection[file_data['collection'].name] = file_data['collection']
+                # Old file versions didn't have the root level dictionary of
+                # the file container.
+                if file_meta['file_version'] >= psysmon.core.util.Version('1.0.0'):
+                    self.collection[file_data['collection'].name] = file_data['collection']
+                else:
+                    self.collection[file_data.name] = file_data
 
 
     def addCollection(self, name, project):

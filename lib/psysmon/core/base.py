@@ -474,7 +474,12 @@ class Base(object):
         try:
             with open(filename, 'r') as fid:
                 file_data = json.load(fid, cls = json_decoder)
-                self.project = file_data['project']
+                # Old file versions didn't have the root dictionary of the file
+                # container. 
+                if file_version >= psysmon.core.util.Version('1.0.0'):
+                    self.project = file_data['project']
+                else:
+                    self.project = file_data
         except:
             self.logger.exception("Error while decoding the project file.")
             self.project = None
