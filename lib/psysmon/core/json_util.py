@@ -48,6 +48,8 @@ class FileContainer(object):
 class ProjectFileEncoder(json.JSONEncoder):
     ''' A JSON encoder for the pSysmon project file.
     '''
+    version = util.Version('1.0.0')
+
     def __init__(self, **kwarg):
         json.JSONEncoder.__init__(self, **kwarg)
 
@@ -55,13 +57,9 @@ class ProjectFileEncoder(json.JSONEncoder):
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
-        self.version = util.Version('1.0.0')
-
         # File format settings.
         self.indent = 4
         self.sort_keys = True
-
-
 
 
     def default(self, obj):
@@ -71,7 +69,9 @@ class ProjectFileEncoder(json.JSONEncoder):
         base_class = [x.__name__ for x in obj.__class__.__bases__]
         #print 'Converting %s' % obj_class
 
-        if obj_class == 'Project':
+        if obj_class == 'FileContainer':
+            d = self.convert_filecontainer(obj)
+        elif obj_class == 'Project':
             d = self.convert_project(obj)
         elif obj_class == 'UTCDateTime':
             d = self.convert_utcdatetime(obj)
@@ -81,12 +81,6 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_user(obj)
         elif obj_class == 'Collection':
             d = self.convert_collection(obj)
-        elif 'CollectionNode' in base_class:
-            d = self.convert_collection_node(obj)
-        elif 'LooperCollectionNode' in base_class:
-            d = self.convert_looper_collection_node(obj)
-        elif 'LooperCollectionChildNode' in base_class:
-            d = self.convert_looper_collection_child_node(obj)
         elif obj_class == 'PreferencesManager':
             d = self.convert_preferencesmanager(obj)
         elif obj_class == 'Page':
@@ -101,17 +95,24 @@ class ProjectFileEncoder(json.JSONEncoder):
             d = self.convert_preferenceitem(obj)
         elif 'WaveClient' in base_class:
             d = self.convert_waveclient(obj)
-        elif 'ProcessingNode' in base_class:
-            d = self.convert_processing_node(obj)
         else:
             d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
 
         # Add the class and module information to the dictionary.
-        tmp = {'__baseclass__': base_class,
-               '__class__': obj.__class__.__name__,
-               '__module__': obj.__module__}
-        d.update(tmp)
+        if obj_class != 'FileContainer':
+            tmp = {'__baseclass__': base_class,
+                   '__class__': obj.__class__.__name__,
+                   '__module__': obj.__module__}
+            d.update(tmp)
 
+        return d
+
+
+    def convert_filecontainer(self, obj):
+        d = obj.data
+        file_meta = {'file_version': self.version,
+                     'save_date': UTCDateTime()}
+        d['file_meta'] = file_meta
         return d
 
 
@@ -120,15 +121,7 @@ class ProjectFileEncoder(json.JSONEncoder):
                 'dbName', 'pkg_version', 'db_version', 'createTime',
                 'defaultWaveclient', 'scnlDataSources', 'user', 'waveclient',
                 'db_table_version']
-        project_dir =  self.object_to_dict(obj, attr)
-
-        # Add the project file container with meta data.
-        file_meta = {'file_version': str(self.version),
-                     'save_date': UTCDateTime().isoformat()}
-        d = {}
-        d['file_meta'] = file_meta
-        d['project'] = project_dir
-        #d['waveclient'] = [(x.name, x.mode, x.options) for x in obj.waveclient.itervalues()]
+        d =  self.object_to_dict(obj, attr)
         return d
 
 
@@ -145,7 +138,7 @@ class ProjectFileEncoder(json.JSONEncoder):
                 'agency_name', 'agency_uri']
         d = self.object_to_dict(obj, attr)
         if obj.activeCollection is None:
-            d['activeCollection'] = obj.activeCollection
+            d['activeCollection'] = None
         else:
             d['activeCollection'] = obj.activeCollection.name
 
@@ -533,33 +526,22 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
 
     def convert_project(self, d):
         import psysmon.core.project
-
-        # Check the project file version.
-        file_meta = d['file_meta']
-        loaded_version = util.Version(file_meta['file_version'])
-
-        if loaded_version != self.version:
-            self.logger.error("The project file version %s doesn't match the version of the parser %s.",
-                              loaded_version, self.version)
-            return None
-
-        project_dir = d['project']
         inst = psysmon.core.project.Project(psybase = None,
-                                            name = project_dir['name'],
-                                            user = project_dir['user'],
-                                            dbHost = project_dir['dbHost'],
-                                            dbName = project_dir['dbName'],
-                                            pkg_version = project_dir['pkg_version'],
-                                            db_table_version = project_dir['db_table_version'],
-                                            db_version = project_dir['db_version'],
-                                            dbDriver = project_dir['dbDriver'],
-                                            dbDialect = project_dir['dbDialect'],
-                                            createTime = project_dir['createTime']
+                                            name = d['name'],
+                                            user = d['user'],
+                                            dbHost = d['dbHost'],
+                                            dbName = d['dbName'],
+                                            pkg_version = d['pkg_version'],
+                                            db_table_version = d['db_table_version'],
+                                            db_version = d['db_version'],
+                                            dbDriver = d['dbDriver'],
+                                            dbDialect = d['dbDialect'],
+                                            createTime = d['createTime']
                                             )
 
-        inst.defaultWaveclient = project_dir['defaultWaveclient']
-        inst.scnlDataSources = project_dir['scnlDataSources']
-        inst.waveclient = project_dir['waveclient']
+        inst.defaultWaveclient = d['defaultWaveclient']
+        inst.scnlDataSources = d['scnlDataSources']
+        inst.waveclient = d['waveclient']
 
         return inst
 
