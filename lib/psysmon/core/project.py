@@ -1229,9 +1229,11 @@ class User:
         '''
         for cur_name in self.collection_names:
             cur_filename = os.path.join(path, self.name, cur_name + '.json')
+            file_meta = psysmon.core.json_util.get_file_meta(cur_filename)
+            decoder = psysmon.core.json_util.get_collection_decoder(version = file_meta['file_version'])
             with open(cur_filename, mode = 'r') as fp:
-                cur_collection = json.load(fp, cls = psysmon.core.json_util.CollectionFileDecoder)
-                self.collection[cur_collection.name] = cur_collection
+                file_data = json.load(fp, cls = decoder)
+                self.collection[file_data['collection'].name] = file_data['collection']
 
 
     def addCollection(self, name, project):
