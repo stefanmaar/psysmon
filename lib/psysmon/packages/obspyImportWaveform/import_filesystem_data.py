@@ -61,6 +61,13 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
 
     def edit(self):
+        # TODO: Use the filesize to scan for new files.
+        # TODO: List the number of potential files in the grid.
+        # TODO: List the number of imported files in the grid.
+        # TODO: List the number of files in the data directory in the grid.
+        # TODO: Add an option to import the new files only.
+        # TODO: Add an option to do a complete new import including deleting
+        # existing imported files in the database.
         client = self.project.waveclient['db client']
         client.loadWaveformDirList()
         waveform_dir_list = client.waveformDirList
