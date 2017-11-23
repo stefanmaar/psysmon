@@ -2516,6 +2516,8 @@ class CreateNewProjectDlg(wx.Dialog):
 
         try:
             self.psyBase.createPsysmonProject(**projectData)
+            self.Parent.filehistory.AddFileToHistory(os.path.join(self.psyBase.project.projectDir,
+                                                                  self.psyBase.project.projectFile))
         except Exception as e:
             self.logger.error("Error while creating the project: %s", e)
             raise
