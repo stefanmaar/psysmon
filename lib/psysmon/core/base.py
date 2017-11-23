@@ -463,27 +463,22 @@ class Base(object):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
-        with open(filename, 'r') as fid:
-            project_data = json.load(fid)
-
-        if project_data.has_key('file_meta'):
-            # The project file has a meta data dictionary. Use it to select the
-            # correct project file decoder.
-            file_meta = project_data['file_meta']
-        else:
-            # This is an old project file version with no meta data dictionary.
-            # Create a default meta data.
-            file_meta = {'file_version': '0.0.0',
-                         'save_date': '1970-01-01T00:00:00'}
-
-        file_version = psysmon.core.util.Version(file_meta['file_version'])
+        file_meta = psysmon.core.json_util.get_file_meta(filename)
+        file_version = file_meta['file_version']
         json_decoder = psysmon.core.json_util.get_decoder(version = file_version)
 
         project_dir = os.path.dirname(filename)
         self.logger.info('Loading the project file %s (version %s) with decoder version %s.',
                          filename, file_version, json_decoder.version)
-        with open(filename, 'r') as fid:
-            self.project = json.load(fid, cls = json_decoder)
+
+        try:
+            with open(filename, 'r') as fid:
+                file_data = json.load(fid, cls = json_decoder)
+                self.project = file_data['project']
+        except:
+            self.logger.exception("Error while decoding the project file.")
+            self.project = None
+
 
         if not self.project:
             self.logger.error("Couldn't load the project file using the decoder.")
