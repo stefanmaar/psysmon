@@ -274,6 +274,14 @@ class PsysmonDbWaveClient(WaveClient):
             return None
 
     @property
+    def datafile(self):
+        # The datafile database table.
+        if self.project is not None:
+            return self.project.dbTables['datafile']
+        else:
+            return None
+
+    @property
     def waveformDir(self):
         # The waveform directory table.
         if self.project is not None:
@@ -466,10 +474,11 @@ class PsysmonDbWaveClient(WaveClient):
             dbSession = self.project.getDbSession()
 
             # Select the file type, filename and waveform directory.
-            query = dbSession.query(self.traceheader.file_type,
-                                    self.traceheader.filename,
+            query = dbSession.query(self.datafile.file_type,
+                                    self.datafile.filename,
                                     self.waveformDirAlias.alias).\
-                                    filter(self.traceheader.wf_id ==self.waveformDir.id).\
+                                    filter(self.traceheader.datafile_id == self.datafile.id).\
+                                    filter(self.datafile.wf_id ==self.waveformDir.id).\
                                     filter(self.waveformDir.id == self.waveformDirAlias.wf_id).\
                                     filter(self.waveformDirAlias.user == self.project.activeUser.name)
 
@@ -498,7 +507,7 @@ class PsysmonDbWaveClient(WaveClient):
                                   filter(self.traceheader.stream == cur_rec_stream.name)
 
                 # Ignore duplicate filenames.
-                cur_query = cur_query.distinct(self.traceheader.filename)
+                cur_query = cur_query.distinct(self.datafile.filename)
 
                 # Process the results of the query.
                 for curHeader in cur_query:
@@ -544,6 +553,7 @@ class PsysmonDbWaveClient(WaveClient):
         else:
             self.logger.warning("No channel found for SCNL %s:%s:%s:%s.", station, channel, network, location)
 
+        self.logger.debug("Loaded data stream: %s.", str(data_stream))
         return data_stream
 
     def loadWaveformDirList(self):
@@ -615,16 +625,24 @@ class PsysmonDbWaveClient(WaveClient):
                         continue
 
                     self.logger.debug('Adding file %s to the import list.', file_path)
+                    cur_datafile = self.get_datafile_db_data(filename = file_path,
+                                                             file_format = file_format,
+                                                             waveform_dir = selected_wf_dir)
+
+                    if not cur_datafile:
+                        self.logger.error("Couldn't create the datafile database data. Skipping this file.")
+                        continue
+
                     stream = read(pathname_or_url = file_path,
                                   format = file_format,
                                   headonly = True)
                     for cur_trace in stream.traces:
-                        cur_data = self.get_db_data(filename = file_path,
-                                                    file_format = file_format,
-                                                    trace = cur_trace,
-                                                    waveform_dir = selected_wf_dir)
+                        cur_data = self.get_traceheader_db_data(trace = cur_trace)
                         if cur_data:
-                            db_data.append(cur_data)
+                            cur_datafile.traceheaders.append(cur_data)
+
+                    db_data.append(cur_datafile)
+
 
             if len(db_data) > 0:
                 self.logger.info("Writing the data to the database.")
@@ -653,24 +671,35 @@ class PsysmonDbWaveClient(WaveClient):
 
 
 
-    def get_db_data(self, filename, file_format, trace, waveform_dir):
-        # Get the database traceheader table mapper class.
-        Header = self.project.dbTables['traceheader']
-
+    def get_datafile_db_data(self, filename, file_format, waveform_dir):
         filestat = os.stat(filename)
 
         # Remove the waveform directory from the file path.
         relativeFilename = filename.replace(waveform_dir.alias, '')
         relativeFilename = relativeFilename[1:]
-        labels = ['id', 'file_type', 'wf_id', 'filename', 'filesize', 'orig_path',
-                  'network', 'recorder_serial', 'stream',
+
+        labels = ['id', 'wf_id', 'filename', 'filesize', 'file_type',
+                  'orig_path', 'agency_uri', 'author_uri', 'creation_time']
+        db_data = dict(zip(labels, (None, waveform_dir.id,
+                                 relativeFilename, filestat.st_size, file_format,
+                                 os.path.dirname(filename),
+                                 self.project.activeUser.author_uri,
+                                 self.project.activeUser.agency_uri,
+                                 utcdatetime.UTCDateTime().isoformat())))
+        return self.datafile(**db_data)
+
+
+    def get_traceheader_db_data(self, trace):
+        labels = ['id', 'datafile_id',
+                  'recorder_serial', 'stream', 'network',
                   'sps', 'numsamp', 'begin_date', 'begin_time',
                   'agency_uri', 'author_uri', 'creation_time']
-        header2Insert = dict(zip(labels, (None, file_format, waveform_dir.id,
-                        relativeFilename, filestat.st_size, os.path.dirname(filename),
-                        trace.stats.network, trace.stats.station,
+        header2Insert = dict(zip(labels, (None, None,
+                        trace.stats.station,
                         trace.stats.location + ":" + trace.stats.channel,
-                        trace.stats.sampling_rate, trace.stats.npts,
+                        trace.stats.network,
+                        trace.stats.sampling_rate,
+                        trace.stats.npts,
                         trace.stats.starttime.isoformat(' '),
                         trace.stats.starttime.timestamp,
                         self.project.activeUser.author_uri,
@@ -678,7 +707,7 @@ class PsysmonDbWaveClient(WaveClient):
                         utcdatetime.UTCDateTime().isoformat())))
 
 
-        return Header(**header2Insert)
+        return self.traceheader(**header2Insert)
 
 
 
