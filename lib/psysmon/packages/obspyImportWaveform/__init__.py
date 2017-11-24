@@ -48,6 +48,45 @@ def databaseFactory(base):
 
     tables = []
 
+    # Create the datafile table mapper class.
+    class Datafile(base):
+        ''' The datafile database table mapper.
+
+        History
+        -------
+        1.0.0 - 2017-11-24
+        Creation of the table.
+        '''
+        # TODO: Add the begin_time or date to the unique constraint. One file
+        # can hold multiple traces. Currently these files can't be imported.
+        __tablename__ = 'datafile'
+        __table_args__ = (
+                          UniqueConstraint('wf_id', 'filename'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+        _version = '1.0.0'
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        wf_id = Column(Integer,
+                       ForeignKey('waveform_dir.id',
+                                  onupdate = 'cascade',
+                                  ondelete = 'set null'),
+                       nullable=True)
+        filename = Column(String(255), nullable=False)
+        filesize = Column(Float, nullable=False)
+        file_type = Column(String(10), nullable=False)
+        orig_path = Column(Text, nullable=False)
+        agency_uri = Column(String(20))
+        author_uri = Column(String(20))
+        creation_time = Column(String(30))
+
+        traceheaders = relationship('Traceheader',
+                                    backref = 'datafile')
+
+
+    tables.append(Datafile)
+
+
     # Create the traceheader table mapper class.
     class Traceheader(base):
         ''' The traceheader database table mapper.
@@ -56,23 +95,29 @@ def databaseFactory(base):
         -------
         1.1.0 - 2017-11-23
         Added the filesize column.
+
+        2.0.0 - 2017-11-24
+        Removed the columns which have been moved to the datafile table.
+        Added the datafile_id column referencing the datafile.id column.
+
         '''
+        # TODO: Add the begin_time or date to the unique constraint. One file
+        # can hold multiple traces. Currently these files can't be imported.
         __tablename__ = 'traceheader'
         __table_args__ = (
-                          UniqueConstraint('wf_id', 'filename'),
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '1.1.0'
+        _version = '2.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        file_type = Column(String(10), nullable=False)
-        wf_id = Column(Integer, nullable=False, default=-1)
-        filename = Column(String(255), nullable=False)
-        filesize = Column(Float, nullable=False)
-        orig_path = Column(Text, nullable=False)
-        network = Column(String(10), nullable=False, default='')
+        datafile_id = Column(Integer,
+                             ForeignKey('datafile.id',
+                                        onupdate = 'cascade',
+                                        ondelete = 'set null'),
+                             nullable=True)
         recorder_serial = Column(String(45), nullable=False)
         stream = Column(String(45), nullable=False)
+        network = Column(String(10), nullable=False, default='')
         sps = Column(Float(53), nullable=False)
         numsamp = Column(Integer, nullable=False)
         begin_date = Column(String(26), nullable=False)
@@ -80,11 +125,9 @@ def databaseFactory(base):
         agency_uri = Column(String(20))
         author_uri = Column(String(20))
         creation_time = Column(String(30))
-        UniqueConstraint('file_type', 'wf_id', 'filename')
 
 
     tables.append(Traceheader)
-
 
     # Create the waveformdir table mapper class.
     class WaveformDir(base):
