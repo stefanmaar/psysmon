@@ -58,6 +58,7 @@ import psysmon
 import psysmon.core.gui_view
 from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+import psysmon.core.preferences_manager as pm
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 import datetime
 import webbrowser
@@ -1803,7 +1804,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Create the grid editing buttons.
         addDirButton = wx.Button(self, wx.ID_ANY, "add")
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
-        changeAliasButton = wx.Button(self, wx.ID_ANY, "change alias")
+        editDirButton = wx.Button(self, wx.ID_ANY, "edit")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1811,8 +1812,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         # Fill the grid button sizer
         gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(editDirButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
-        gridButtonSizer.Add(changeAliasButton, 0, wx.EXPAND|wx.ALL)
 
         fields = self.getGridColumns()
         self.wfListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
@@ -1831,7 +1832,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
-        self.Bind(wx.EVT_BUTTON, self.onChangeAlias, changeAliasButton)
+        self.Bind(wx.EVT_BUTTON, self.onEditDirectory, editDirButton)
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onDirectorySelected, self.wfListCtrl)
 
@@ -1839,6 +1840,10 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.wfDir = self.project.dbTables['waveform_dir']
         self.wfDirAlias = self.project.dbTables['waveform_dir_alias']
         self.dbSession = self.project.getDbSession()
+
+        # The preferences of the selected waveform directory.
+        self.wfd_pref_manager = pm.PreferencesManager()
+        self.create_wfd_preferences()
 
         # A list of available waveform directories. It consits of tuples of
         self.wfDirList = self.dbSession.query(self.wfDir).join(self.wfDirAlias,
@@ -1870,41 +1875,114 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.selected_waveform_dir = self.wfDirList[evt.GetIndex()]
 
 
+    def initPreferenceValues(self):
+        ''' Set the preference values to default values.
+        '''
+        self.wfd_pref_manager.set_value('waveform_dir',
+                                        '')
+        self.wfd_pref_manager.set_value('waveform_dir_alias',
+                                        '')
+        self.wfd_pref_manager.set_value('description',
+                                        '')
+        self.wfd_pref_manager.set_value('file_ext',
+                                        '*.msd, *.mseed')
+
+
+    def setPreferenceValues(self):
+        ''' Set the preference values using the selected waveform directory.
+        '''
+        self.wfd_pref_manager.set_value('waveform_dir',
+                                        self.selected_waveform_dir.directory)
+        self.wfd_pref_manager.set_value('waveform_dir_alias',
+                                        self.selected_waveform_dir.aliases[0].alias)
+        self.wfd_pref_manager.set_value('description',
+                                        self.selected_waveform_dir.description)
+        self.wfd_pref_manager.set_value('file_ext',
+                                        self.selected_waveform_dir.file_ext)
+
+
+    def onEditDirectory(self, event):
+        ''' Edit the waveform directory values.
+        '''
+        self.setPreferenceValues()
+        self.wfd_pref_manager.get_item('waveform_dir')[0].visible = False
+        self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = True
+
+        dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
+                                 title = 'edit waveform directory')
+        if dlg.ShowModal() == wx.ID_OK:
+            self.selected_waveform_dir.description = self.wfd_pref_manager.get_value('description')
+            self.selected_waveform_dir.file_ext = self.wfd_pref_manager.get_value('file_ext')
+            self.selected_waveform_dir.aliases[0].alias = self.wfd_pref_manager.get_value('waveform_dir_alias')
+            self.updateWfListCtrl()
+
+        dlg.Destroy()
+
+
+
     def onAddDirectory(self, event):
         ''' The add directory callback.
 
         Show a directory browse dialog.
-        If a directory has been selected, call to insert the directory 
+        If a directory has been selected, call to insert the directory
         into the database.
         '''
-
-        # In this case we include a "New directory" button.
-        dlg = wx.DirDialog(self, "Choose a directory:",
-                          style=wx.DD_DEFAULT_STYLE
-                           #| wx.DD_DIR_MUST_EXIST
-                           #| wx.DD_CHANGE_DIR
-                           )
-
-        # If the user selects OK, then we process the dialog's data.
-        # This is done by getting the path data from the dialog - BEFORE
-        # we destroy it.
+        self.initPreferenceValues()
+        self.wfd_pref_manager.get_item('waveform_dir')[0].visible = True
+        self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = False
+        dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
+                                 title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
-            self.logger.info('You selected: %s', dlg.GetPath())
-
-            newWfDir = self.wfDir(dlg.GetPath(), '', '*.msd,*.mseed',
-                                  '', '')
+            newWfDir = self.wfDir(self.wfd_pref_manager.get_value('waveform_dir'),
+                                  self.wfd_pref_manager.get_value('description'),
+                                  self.wfd_pref_manager.get_value('file_ext'),
+                                  '',
+                                  '')
             newAlias = self.wfDirAlias(self.project.activeUser.name,
-                                            dlg.GetPath())
+                                       self.wfd_pref_manager.get_value('waveform_dir'))
             newWfDir.aliases.append(newAlias)
 
             self.dbSession.add(newWfDir)
-            #self.dbSession.add(newWfDirAlias)
 
             self.wfDirList.append(newWfDir)
             self.updateWfListCtrl()
 
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
+
+
+    def create_wfd_preferences(self):
+        ''' Create the preference items used to edit a waveform directory.
+        '''
+        page = self.wfd_pref_manager.add_page('preferences')
+        group = page.add_group('preferences')
+
+        item = pm.DirBrowsePrefItem(name = 'waveform_dir',
+                                        label = 'waveform directory',
+                                        value = '',
+                                        tool_tip = 'The waveform directory.',
+                                       )
+        group.add_item(item)
+
+        item = pm.DirBrowsePrefItem(name = 'waveform_dir_alias',
+                                        label = 'waveform directory alias',
+                                        value = '',
+                                        tool_tip = 'The waveform directory alias.'
+                                       )
+        group.add_item(item)
+
+        item = pm.TextEditPrefItem(name = 'description',
+                                   label = 'description',
+                                   value = '',
+                                   tool_tip = 'The description of the waveform directory.')
+        group.add_item(item)
+
+        item = pm.TextEditPrefItem(name = 'file_ext',
+                                   label = 'file extension',
+                                   value = '',
+                                   tool_tip = 'The file extension search pattern used to scan the directory for data files. A comma separated string (e.g. *.msd, *.mseed).')
+        group.add_item(item)
+
 
 
     def updateWfListCtrl(self):
@@ -1952,40 +2030,6 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.wfListCtrl.DeleteItem(selectedRow)
 
 
-    def onChangeAlias(self, event):
-        ''' The change alias button callback.
-
-        Select a new directory to use a the waveform directory alias.
-
-        Parameters
-        ----------
-        event :
-            The wxPython event passed to the callback.
-        '''
-        if not self.selected_waveform_dir:
-            return
-
-        # In this case we include a "New directory" button.
-        dlg = wx.DirDialog(self, "Choose a new alias directory:",
-                          style=wx.DD_DEFAULT_STYLE
-                           | wx.DD_DIR_MUST_EXIST,
-                           defaultPath = self.selected_waveform_dir.aliases[0].alias
-                           )
-
-        # If the user selects OK, then we process the dialog's data.
-        # This is done by getting the path data from the dialog - BEFORE
-        # we destroy it.
-        if dlg.ShowModal() == wx.ID_OK:
-            self.logger.info('New alias directory: %s', dlg.GetPath())
-            self.selected_waveform_dir.aliases[0].alias = dlg.GetPath()
-            self.updateWfListCtrl()
-
-        # Only destroy a dialog after you're done with it.
-        dlg.Destroy()
-
-
-
-
     def onOk(self):
         ''' Apply the changes.
 
@@ -2005,6 +2049,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         ''' Called when the dialog cancel button is clicked.
         '''
         self.dbSession.close()
+
 
 
 
