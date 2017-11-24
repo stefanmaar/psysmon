@@ -599,8 +599,9 @@ class PsysmonDbWaveClient(WaveClient):
         # Import the data of the waveform directory with the root path
         # specified by the waveform directory alias.
         for root, dirnames, filenames in os.walk(selected_wf_dir.alias, topdown = True):
-            dirnames.sort()
             self.logger.debug('Scanning directory: %s.', root)
+            dirnames.sort()
+            filenames.sort()
             db_data = []
 
             for cur_pattern in filter_pattern:
@@ -653,6 +654,7 @@ class PsysmonDbWaveClient(WaveClient):
                             db_session.add(cur_data)
                             db_session.flush()
                         except:
+                            self.logger.error("Rejecting data. Most likely a duplicate. %s", cur_data.filename)
                             db_session.rollback()
                     #db_session.add_all(db_data)
                     db_session.commit()
