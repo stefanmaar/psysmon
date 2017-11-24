@@ -1299,7 +1299,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
 
             if class_name == 'UTCDateTime':
                 inst = self.convert_utcdatetime(d)
-            if class_name == 'Version':
+            elif class_name == 'Version':
                 inst = self.convert_version(d)
             elif class_name == 'Collection':
                 inst = self.convert_collection(d)
