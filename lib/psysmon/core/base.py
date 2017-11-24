@@ -459,10 +459,15 @@ class Base(object):
         return True
 
 
-    def load_json_project(self, filename, user_name, user_pwd):
+    def load_json_project(self, filename, user_name, user_pwd, update_db = True):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
+        if not os.path.exists(filename):
+            self.logger.error("The project file %s doesn't exist.", filename)
+            self.project = None
+            return False
+
         file_meta = psysmon.core.json_util.get_file_meta(filename)
         file_version = file_meta['file_version']
         json_decoder = psysmon.core.json_util.get_project_decoder(version = file_version)
@@ -517,7 +522,8 @@ class Base(object):
             return False
         else:
             # Load the current database structure.
-            self.project.loadDatabaseStructure(self.packageMgr.packages)
+            self.project.loadDatabaseStructure(self.packageMgr.packages,
+                                               update_db = update_db)
 
             # Load the geometry inventory.
             self.project.load_geometry_inventory()

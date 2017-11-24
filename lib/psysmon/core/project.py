@@ -765,7 +765,7 @@ class Project(object):
         self.dbMetaData.create_all()
 
 
-    def loadDatabaseStructure(self, packages):
+    def loadDatabaseStructure(self, packages, update_db = True):
         '''Load the project's database structure.
 
         In pSysmon, each package can create its own database tables. 
@@ -788,6 +788,10 @@ class Project(object):
         packages : Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
             The packages to be used for the database structure creation.
             The key of the dictionary is the package name.
+
+        update_db : Boolean
+            True if the an update of the database tables should be done.
+            False if no update should be done.
         '''
 
         if not self.dbBase:
@@ -803,36 +807,37 @@ class Project(object):
                 tables = curPkg.databaseFactory(self.dbBase)
 
                 for curTable in tables:
-                    table_version_changed = False
-                    update_success = True
-                    # Add the table prefix.
-                    curName = curTable.__table__.name
-                    curTable.__table__.name = self.slug + "_" + curTable.__table__.name
-                    cur_version = psy_util.Version(curTable._version)
+                    if update_db:
+                        table_version_changed = False
+                        update_success = True
+                        # Add the table prefix.
+                        curName = curTable.__table__.name
+                        curTable.__table__.name = self.slug + "_" + curTable.__table__.name
+                        cur_version = psy_util.Version(curTable._version)
 
-                    try:
-                        # TODO: Create a database backup using mysqldump in
-                        # case that a database migration is needed.
+                        try:
+                            # TODO: Create a database backup using mysqldump in
+                            # case that a database migration is needed.
 
-                        # Check for changes of the database table.
-                        if curName not in self.db_table_version.keys():
-                            self.logger.info("%s - No table version found in the project. This is a new table.",
-                                             curName)
-                            update_success = db_util.db_table_migration(table = curTable,
-                                                                        engine = self.dbEngine,
-                                                                        prefix = self.slug + '_')
-                            table_version_changed = True
-                        elif cur_version > self.db_table_version[curName]:
-                            self.logger.info("%s - The package table version %s is larger than the one currently used in the database (%s). An update is needed.",
-                                             curName, cur_version, self.db_table_version[curName])
-                            update_success = db_util.db_table_migration(table = curTable,
-                                                                        engine = self.dbEngine,
-                                                                        prefix = self.slug + '_')
-                            table_version_changed = True
+                            # Check for changes of the database table.
+                            if curName not in self.db_table_version.keys():
+                                self.logger.info("%s - No table version found in the project. This is a new table.",
+                                                 curName)
+                                update_success = db_util.db_table_migration(table = curTable,
+                                                                            engine = self.dbEngine,
+                                                                            prefix = self.slug + '_')
+                                table_version_changed = True
+                            elif cur_version > self.db_table_version[curName]:
+                                self.logger.info("%s - The package table version %s is larger than the one currently used in the database (%s). An update is needed.",
+                                                 curName, cur_version, self.db_table_version[curName])
+                                update_success = db_util.db_table_migration(table = curTable,
+                                                                            engine = self.dbEngine,
+                                                                            prefix = self.slug + '_')
+                                table_version_changed = True
 
-                    except:
-                        update_success = False
-                        self.logger.exception("Couldn't migrate the table %s.", curName)
+                        except:
+                            update_success = False
+                            self.logger.exception("Couldn't migrate the table %s.", curName)
 
                     self.dbTables[curName] = curTable
                     if table_version_changed and update_success:
