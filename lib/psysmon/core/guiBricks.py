@@ -193,7 +193,7 @@ class PrefPagePanel(wx.Panel):
             cur_container = StaticBoxContainer(parent = self,
                                 label = cur_group.name)
 
-            for cur_item in cur_group.items:
+            for cur_item in [x for x in cur_group.items if x.visible]:
                 if isinstance(cur_item, psy_pm.ActionItem):
                     gui_element = wx.Button(parent = cur_container,
                                             id = wx.ID_ANY,
