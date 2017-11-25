@@ -72,6 +72,12 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         client.loadWaveformDirList()
         waveform_dir_list = client.waveformDirList
         self.pref_manager.set_limit('wf_dir', waveform_dir_list)
+        # Select existing values based on the waveform dir id.
+        values = self.pref_manager.get_value('wf_dir')
+        value_ids = [x[0] for x in values]
+        values = [x for x in waveform_dir_list if x[0] in value_ids]
+        values = list(set(values))
+        self.pref_manager.set_value('wf_dir', values)
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
