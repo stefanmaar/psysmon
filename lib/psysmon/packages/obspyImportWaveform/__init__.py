@@ -56,6 +56,9 @@ def databaseFactory(base):
         -------
         1.0.0 - 2017-11-24
         Creation of the table.
+
+        1.0.1 - 2017-11-25
+        Changed the ondelete of wf_id to cascade.
         '''
         # TODO: Add the begin_time or date to the unique constraint. One file
         # can hold multiple traces. Currently these files can't be imported.
@@ -64,13 +67,13 @@ def databaseFactory(base):
                           UniqueConstraint('wf_id', 'filename'),
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '1.0.0'
+        _version = '1.0.1'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         wf_id = Column(Integer,
                        ForeignKey('waveform_dir.id',
                                   onupdate = 'cascade',
-                                  ondelete = 'set null'),
+                                  ondelete = 'cascade'),
                        nullable=True)
         filename = Column(String(255), nullable=False)
         filesize = Column(Float, nullable=False)
@@ -100,6 +103,9 @@ def databaseFactory(base):
         Removed the columns which have been moved to the datafile table.
         Added the datafile_id column referencing the datafile.id column.
 
+        2.0.1 - 2017-11-25
+        Changed the ondelte of datafile_id to cascade.
+
         '''
         # TODO: Add the begin_time or date to the unique constraint. One file
         # can hold multiple traces. Currently these files can't be imported.
@@ -107,13 +113,13 @@ def databaseFactory(base):
         __table_args__ = (
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '2.0.0'
+        _version = '2.0.1'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         datafile_id = Column(Integer,
                              ForeignKey('datafile.id',
                                         onupdate = 'cascade',
-                                        ondelete = 'set null'),
+                                        ondelete = 'cascade'),
                              nullable=True)
         recorder_serial = Column(String(45), nullable=False)
         stream = Column(String(45), nullable=False)
