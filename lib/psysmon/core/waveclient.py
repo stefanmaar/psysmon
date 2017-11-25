@@ -583,7 +583,7 @@ class PsysmonDbWaveClient(WaveClient):
         dbSession.close()
 
 
-    def import_waveform(self, waveform_dir_id):
+    def import_waveform(self, waveform_dir_id, import_new_only = True, search_path = None):
         ''' Import the waveform from a waveform directory.
         '''
         now = utcdatetime.UTCDateTime()
@@ -593,13 +593,53 @@ class PsysmonDbWaveClient(WaveClient):
         else:
             selected_wf_dir = selected_wf_dir[0]
 
+
+        if import_new_only:
+            db_session = self.project.getDbSession()
+            try:
+                self.logger.info('Importing new data files only.')
+                query = db_session.query(self.datafile).\
+                                         filter(self.datafile.wf_id == selected_wf_dir.id).\
+                                         filter(self.traceheader.datafile_id == self.datafile.id)
+                files_in_database = query.all()
+                exist_filenames = [x.filename for x in files_in_database]
+                exist_files = [(x.filename, x.filesize) for x in files_in_database]
+            except:
+                self.logger.exception('Problems when requesting the existing data files from the database.')
+            finally:
+                db_session.close()
+        else:
+            # Delete all existing files in the database for the selected
+            # waveform directory.
+            db_session = self.project.getDbSession()
+            try:
+                self.logger.info('Doing a fresh import of the waveform directory.')
+                self.logger.info('Deleting all datafiles of waveform directory with ID = %d.', selected_wf_dir.id)
+                self.datafile.__table__.delete(self.datafile.wf_id == selected_wf_dir.id).execute()
+            except:
+                self.logger.exception('Problems when deleting the existing data files from the database.')
+            finally:
+                db_session.close()
+
+
         filter_pattern = selected_wf_dir.file_ext
         filter_pattern = filter_pattern.split(',')
 
+
+        if not search_path:
+            search_path = selected_wf_dir.alias
+        elif not search_path.startswith(selected_wf_dir.alias):
+            self.logger.error('The given search path %s is not a sub directory of the waveform directory %s.',
+                              search_path, selected_wf_dir.alias)
+            return
+        else:
+            self.logger.info('Restricting the search for data files to %s.', search_path)
+
         # Import the data of the waveform directory with the root path
-        # specified by the waveform directory alias.
-        for root, dirnames, filenames in os.walk(selected_wf_dir.alias, topdown = True):
-            self.logger.debug('Scanning directory: %s.', root)
+        # specified by the waveform directory alias or the search_path
+        # parameter.
+        for root, dirnames, filenames in os.walk(search_path, topdown = True):
+            self.logger.info('Scanning directory: %s.', root)
             dirnames.sort()
             filenames.sort()
             db_data = []
@@ -607,6 +647,21 @@ class PsysmonDbWaveClient(WaveClient):
             for cur_pattern in filter_pattern:
                 for filename in fnmatch.filter(filenames, cur_pattern):
                     file_path = os.path.join(root, filename)
+
+                    if import_new_only:
+                        compare_path = file_path.replace(selected_wf_dir.alias, '')[1:]
+                        filestat = os.stat(file_path)
+
+                        if compare_path in exist_filenames:
+                            # The file has already been imported.
+                            self.logger.debug('The file %s already exists in the database. Skipping the file.', file_path)
+                            continue
+                        elif (compare_path in exist_filenames) and ((compare_path, filestat.st_size) not in exist_files):
+                            # The file exists in the database, but the filesize
+                            # is different.
+                            self.logger.warning('The file %s already exists in the database, but the filesize has changed. Skipping the file.', file_path)
+                            continue
+
                     # Check the file format.
                     EPS = ENTRY_POINTS['waveform']
                     file_format = None
