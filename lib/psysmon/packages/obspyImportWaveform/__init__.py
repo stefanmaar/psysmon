@@ -26,7 +26,8 @@ description = "The obspyImportWaveform packages"
 website = "http://www.stefanmertl.com"
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['importWaveform', 'import_filesystem_data']
+#collection_node_modules = ['importWaveform', 'import_filesystem_data']
+collection_node_modules = ['import_filesystem_data']
 
 '''
 Database change history.
