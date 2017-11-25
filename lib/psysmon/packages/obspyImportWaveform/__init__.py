@@ -149,6 +149,8 @@ def databaseFactory(base):
             self.directory = directory
             self.description = description
             self.file_ext = file_ext
+            self.first_import = first_import
+            self.last_scan = last_scan
 
     tables.append(WaveformDir)
 
