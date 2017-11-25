@@ -47,6 +47,7 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
         select_page = self.pref_manager.add_page('Select')
         wfdir_group = select_page.add_group('waveform directory')
+        import_group = select_page.add_group('import options')
 
         column_labels = ['db_id', 'waveform dir', 'alias', 'description',
                          'data file extension', 'first import', 'last scan']
@@ -55,19 +56,34 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
                                            value = [],
                                            column_labels = column_labels,
                                            limit = [],
-                                           tool_tip = 'The available waveform directories.')
+                                           tool_tip = 'The available waveform directories.',
+                                           hooks = {'on_value_change': self.on_wf_dir_selected})
         wfdir_group.add_item(item)
 
 
+        item = psy_pm.CheckBoxPrefItem(name = 'import_new_only',
+                                       label = 'import new files only',
+                                       value = True,
+                                       tool_tip = 'Import only files not yet imported to the database. New files are detected based on the file name and file size. If unchecked all existing data associated with the selected waveform directory is deleted from the database before importing the new files in the waveform directory.')
+        import_group.add_item(item)
+
+        item = psy_pm.CheckBoxPrefItem(name = 'restrict_search_path',
+                                       label = 'restrict search path',
+                                       value = False,
+                                       tool_tip = 'Restrict the search within the waveform directory to the directory specified below.')
+        import_group.add_item(item)
+
+        item = psy_pm.DirBrowsePrefItem(name = 'search_path',
+                                        label = 'search path',
+                                        value = '',
+                                        tool_tip = 'The search path used to restrict the search.')
+        import_group.add_item(item)
+
 
     def edit(self):
-        # TODO: Use the filesize to scan for new files.
         # TODO: List the number of potential files in the grid.
         # TODO: List the number of imported files in the grid.
         # TODO: List the number of files in the data directory in the grid.
-        # TODO: Add an option to import the new files only.
-        # TODO: Add an option to do a complete new import including deleting
-        # existing imported files in the database.
         client = self.project.waveclient['db client']
         client.loadWaveformDirList()
         waveform_dir_list = client.waveformDirList
@@ -78,14 +94,39 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         values = [x for x in waveform_dir_list if x[0] in value_ids]
         values = list(set(values))
         self.pref_manager.set_value('wf_dir', values)
+
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 
+
     def execute(self, prefNodeOutput = {}):
         client = self.project.waveclient['db client']
         selected_wf_dir = self.pref_manager.get_value('wf_dir')
+
         for cur_wf_dir in selected_wf_dir:
             self.logger.info('Importing data from waveformdirectory %d - %s.', cur_wf_dir[0], cur_wf_dir[1])
-            client.import_waveform(cur_wf_dir[0])
+            if self.pref_manager.get_value('restrict_search_path'):
+                search_path = self.pref_manager.get_value('search_path')
+            else:
+                search_path = None
+            client.import_waveform(cur_wf_dir[0],
+                                   import_new_only = self.pref_manager.get_value('import_new_only'),
+                                   search_path = search_path)
+
+
+    def on_wf_dir_selected(self):
+        ''' Handle selections of the waveform directory.
+        '''
+        selected_wf_dir = self.pref_manager.get_value('wf_dir')
+        if selected_wf_dir:
+            selected_wf_dir = selected_wf_dir[0]
+        else:
+            return
+
+        item = self.pref_manager.get_item('search_path')[0]
+        control_element = item.gui_element[0].controlElement
+        item.start_directory = selected_wf_dir.alias
+        control_element.startDirectory = selected_wf_dir.alias
+
 
