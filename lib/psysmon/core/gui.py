@@ -804,6 +804,8 @@ class CollectionTreeCtrl(wx.TreeCtrl):
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
         self.contextMenu = psyContextMenu(cmData)
+        # Disable the delete collection menu item. It's not yet implemented.
+        self.contextMenu.Enable(self.contextMenu.FindItemByPosition(6).GetId(), False)
 
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.onShowContextMenu)
@@ -1055,8 +1057,10 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.
     def onCollectionDelete(self, event):
-        self.logger.debug("Delete a collection.")
-
+        self.logger.warning("Deleting a collection is not yet implemented.")
+        # TODO: Implement the removal of a collection. Take care of the saved
+        # collection file. Think about removing the currently active collection
+        # or showing a dialog from which to select the collection to delete.
 
     def refreshCollection(self):
         '''
