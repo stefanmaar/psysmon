@@ -49,10 +49,10 @@ from matplotlib.figure import Figure
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import numpy as np
+import obspy.signal.invsim
 from mpl_toolkits.basemap import pyproj
 from mpl_toolkits.basemap import Basemap
 from matplotlib.patches import Polygon
-from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Recorder
@@ -3782,8 +3782,8 @@ class SensorsPanel(wx.Panel):
                 return
 
 
-            h,f = pazToFreqResp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
-            #h,f = pazToFreqResp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
+            h,f = obspy.signal.invsim.paz_to_freq_resp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
+            #h,f = obspy.signal.invsim.paz_to_freq_resp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
             phase = np.unwrap(np.arctan2(-h.imag, h.real)) #take negative of imaginary part
 
             lines = self.tfMagAxis.get_lines()
