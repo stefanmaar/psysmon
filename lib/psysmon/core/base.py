@@ -793,6 +793,9 @@ class Collection(object):
     def addNode2Looper(self, node, position, looper_pos = 0):
         ''' Add a looper child node to a looper node.
         '''
+        if not self.nodes:
+            raise PsysmonError('No collection nodes available.')
+
         cur_node = self.nodes[position]
         if isinstance(cur_node, psysmon.core.packageNodes.LooperCollectionNode):
             # Add the node to the looper node.

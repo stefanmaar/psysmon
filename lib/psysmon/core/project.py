@@ -961,7 +961,10 @@ class Project(object):
         '''
         node = nodeTemplate()
         node.project = self
-        self.activeUser.addNode2Looper(node, position, looper_pos)
+        try:
+            self.activeUser.addNode2Looper(node, position, looper_pos)
+        except:
+            self.logger.exception("Couldn't add the collection node to a looper node.")
 
 
     def removeNodeFromCollection(self, position):
