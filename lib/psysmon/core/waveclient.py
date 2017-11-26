@@ -36,7 +36,7 @@ import threading
 
 import numpy as np
 from obspy.core import read, Stream
-from obspy.earthworm import Client
+import obspy.clients.earthworm as earthworm
 import obspy.core.utcdatetime as utcdatetime
 from obspy.core.util.base import ENTRY_POINTS
 import sqlalchemy
@@ -772,7 +772,7 @@ class EarthwormWaveclient(WaveClient):
     ''' The earthworm waveserver client.
 
     This class provides the connector to a Earthworm waveserver.
-    The client uses the :class:`obspy.earthworm.Client` class.
+    The client uses the :class:`obspy.clients.earthworm.Client` class.
     '''
 
     def __init__(self, name = 'earthworm waveserver client', host='localhost', port=16022, **kwargs):
@@ -785,9 +785,9 @@ class EarthwormWaveclient(WaveClient):
         self.port = port
 
         # The obspy earthworm waveserver client instance.
-        self.client = Client(self.host,
-                             self.port,
-                             timeout=2)
+        self.client = earthworm.Client(self.host,
+                             	       self.port,
+                             	       timeout=2)
 
     @property
     def pickle_attributes(self):
