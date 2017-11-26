@@ -811,30 +811,42 @@ class CollectionTreeCtrl(wx.TreeCtrl):
 
     def onShowContextMenu(self, event):
         try:
+            # Enable all node relevant context menu items.
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(2).GetId(), True)
+
             if self.Parent.selectedNodeType in ['node', 'looper']:
                 selectedNode = self.GrandParent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
             elif self.Parent.selectedNodeType == 'looper_child':
                 selectedLooper = self.GrandParent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
                 selectedNode = selectedLooper.children[self.Parent.selectedLooperChildNodeIndex]
+            else:
+                selectedNode = None
 
-            #selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
-            if(selectedNode.mode == 'execute only'):
+            if selectedNode:
+                if(selectedNode.mode == 'execute only'):
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+                else:
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+
+                if selectedNode.enabled:
+                    self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'disable node')
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+                else:
+                    self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'enable node')
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            else:
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
-            else:
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(2).GetId(), False)
 
-            if selectedNode.enabled:
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'disable node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
-            else:
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'enable node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
-        except Exception as e:
+        except Exception:
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
-            print e
-
-        self.PopupMenu(self.contextMenu)
+            self.logger.exception("Problems setting the context menu labels.")
+        finally:
+            self.PopupMenu(self.contextMenu)
 
 
 ## The collection panel.
@@ -996,6 +1008,8 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.    
     def onCollectionNodeItemSelected(self, evt):
+        if not evt.GetItem():
+            return
         collection_pos, node_type = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
         self.logger.debug("Selected node %s at position %d in collection.", node_type, collection_pos)
         self.selectedNodeType = node_type
@@ -1012,12 +1026,12 @@ class CollectionPanel(wx.Panel):
     def onCollectionLoad(self, event):
         collections = self.psyBase.project.getCollection()
         choices = [x.name for x in collections.itervalues()]
-        dlg = wx.SingleChoiceDialog(None, "Select a collection", 
-                                    "Load collection", 
+        dlg = wx.SingleChoiceDialog(None, "Select a collection",
+                                    "Load collection",
                                     choices)
         if dlg.ShowModal() == wx.ID_OK:
             self.psyBase.project.setActiveCollection(dlg.GetStringSelection())
-            self.refreshCollection()   
+            self.refreshCollection()
         dlg.Destroy()
 
 
@@ -1026,7 +1040,7 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object. 
     def onCollectionNew(self, event):
-        colName = wx.GetTextFromUser('collection name', caption='New collection', 
+        colName = wx.GetTextFromUser('collection name', caption='New collection',
                                      default_value="", parent=None)
 
         if not colName:
