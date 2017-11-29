@@ -1878,6 +1878,18 @@ class Station(object):
             return ''
 
     @property
+    def assigned_recorders(self):
+        ''' The unique recorders assigned to the station.
+        '''
+        recorders = []
+        for cur_channel in self.channels:
+            recorders.extend(cur_channel.assigned_recorders)
+
+        recorders = list(set(recorders))
+
+        return recorders
+
+    @property
     def assigned_recorders_string(self):
         recorders = []
         for cur_channel in self.channels:
