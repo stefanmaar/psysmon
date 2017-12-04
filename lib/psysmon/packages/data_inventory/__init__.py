@@ -26,5 +26,6 @@ description = "The data inventory package."
 website = "http://psysmon.mertl-research.at"
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['data_inventory_statistics', ]
+collection_node_modules = ['data_inventory_statistics',
+                           'data_availability']
 
