@@ -56,7 +56,7 @@
 #    GNU Lesser General Public License, Version 3
 #    (http://www.gnu.org/copyleft/lesser.html)
 #
-
+import copy
 import re
 
 from obspy.core import UTCDateTime
@@ -106,6 +106,52 @@ def traceid_to_scnl(trace_id):
     network, station, location, channel = trace_id.split('.')
     return((station, channel, network, location))
 
+
+def compute_month_list(start_time, end_time):
+    ''' Compute a list of months between the two dates.
+
+    Include the start and end month.
+    '''
+    interval_list = []
+    start_year = start_time.year
+    start_month = start_time.month
+    if start_month > 12:
+        start_year = start_year + 1
+        start_month = 1
+    end_year = end_time.year
+    end_month = end_time.month
+
+    month_dict = {}
+    year_list = range(start_year, end_year + 1)
+    for k, cur_year in enumerate(year_list):
+        if k == 0 and end_month > start_month:
+            month_dict[year_list[k]] = range(start_month, end_month + 1)
+        elif k == 0 and end_month <= start_month:
+            month_dict[year_list[k]] = range(start_month, 13)
+            month_dict[year_list[k]].extend(range(1, end_month + 1))
+        elif k == len(year_list) - 1:
+            month_dict[year_list[k]] = range(1, end_month + 1)
+        else:
+            month_dict[year_list[k]] = range(1, 13)
+
+    for cur_year, month_list in month_dict.iteritems():
+        for cur_month in month_list:
+            interval_list.append(UTCDateTime(year = cur_year, month = cur_month, day = 1))
+
+    return interval_list
+
+
+def add_month(date):
+    ''' Add one month to a UTCDateTime.
+    '''
+    date = copy.copy(date)
+    if date.month == 12:
+        date.year += 1
+        date.month = 1
+    else:
+        date.month += 1
+
+    return date
 
 
 class AttribDict(dict, object):
