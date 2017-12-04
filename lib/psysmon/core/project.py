@@ -807,12 +807,13 @@ class Project(object):
                 tables = curPkg.databaseFactory(self.dbBase)
 
                 for curTable in tables:
+                    # Add the table prefix.
+                    curName = curTable.__table__.name
+                    curTable.__table__.name = self.slug + "_" + curTable.__table__.name
+                    table_version_changed = False
+                    update_success = True
+
                     if update_db:
-                        table_version_changed = False
-                        update_success = True
-                        # Add the table prefix.
-                        curName = curTable.__table__.name
-                        curTable.__table__.name = self.slug + "_" + curTable.__table__.name
                         cur_version = psy_util.Version(curTable._version)
 
                         try:
