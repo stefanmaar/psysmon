@@ -605,6 +605,8 @@ class ShelveResult(Result):
         #filename = os.path.join(output_dir, self.filename)
 
         filename = os.path.join(self.output_dir, self.filename)
+        if isinstance(filename, unicode):
+            filename = filename.encode(encoding = 'utf-8')
 
         db = shelve.open(filename)
         db.update(self.db)
