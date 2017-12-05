@@ -282,6 +282,8 @@ class PSDPlotter:
         for cur_file in file_list:
             cur_psd_data = {}
             self.logger.info('Reading file %s.', cur_file)
+            if isinstance(cur_file, unicode):
+                cur_file = cur_file.encode(encoding = 'utf-8')
             db = shelve.open(cur_file)
             cur_psd_data.update(db)
             db.close()
@@ -353,7 +355,7 @@ class PSDPlotter:
 
 
 
-        psd_matrix = np.zeros((psd_nfft/2. + 1, len(psd_data)))
+        psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(psd_data)))
         frequ = None
         time_key = sorted([x for x in psd_data.keys()])
         for m, cur_psd in enumerate([psd_data[x] for x in time_key]):
