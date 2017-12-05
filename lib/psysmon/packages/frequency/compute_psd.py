@@ -176,8 +176,8 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 cur_psd['start_time'] = start_time
                 cur_psd['end_time'] = end_time
 
-        self.save_psd_data(psd = cur_psd,
-                           origin_resource = origin_resource)
+            self.save_psd_data(psd = cur_psd,
+                               origin_resource = origin_resource)
 
 
 
@@ -222,6 +222,8 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         last_time = UTCDateTime(sorted(export_data.keys())[-1])
         #last_key = sorted(export_data.keys())[-1]
         #last_time = export_data[last_key]['end_time']
+        #first_time = sorted([x['start_time'] for x in export_data.values()])[0]
+        #last_time = sorted([x['end_time'] for x in export_data.values()])[-1]
 
         shelve_result = result.ShelveResult(name = 'psd',
                                             start_time = first_time,
