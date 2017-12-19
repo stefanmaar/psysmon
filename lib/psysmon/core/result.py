@@ -325,6 +325,7 @@ class TableResult(Result):
 
         self.rows = []
 
+
     def add_row(self, key, **kwargs):
         ''' Add a value result to the spreadsheet.
 
@@ -338,7 +339,7 @@ class TableResult(Result):
         self.rows.append(row)
 
 
-    def save(self, formats = ['csv', ], output_dir = None):
+    def save(self, formats = ['csv', ]):
         ''' Save the result in the specified format.
 
         Parameters
@@ -349,15 +350,17 @@ class TableResult(Result):
         '''
         for cur_format in formats:
             if cur_format == 'csv':
-                self.save_csv(output_dir = output_dir)
+                self.filename_ext = '.csv'
+                self.save_csv()
             else:
                 # TODO: Throw an exception.
                 pass
 
-    def save_csv(self, output_dir):
+    def save_csv(self):
         '''Save the result in CSV format.
         '''
         import csv
+
 
         export_values = []
         for cur_row in self.rows:
@@ -379,16 +382,12 @@ class TableResult(Result):
             export_values.append(cur_values)
 
         # Save the export values to a csv file.
-        filename = self.rid.replace('/', '-')
-        if filename.startswith('-'):
-            filename = filename[1:]
-        if filename.endswith('-'):
-            filename = filename[:-1]
-        filename = filename + '.csv'
-        filename = os.path.join(output_dir, filename)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        filename = os.path.join(self.output_dir, self.filename)
+        if isinstance(filename, unicode):
+            filename = filename.encode(encoding = 'utf-8')
 
         fid = open(filename, 'wt')
         try:
@@ -464,7 +463,7 @@ class Grid2dResult(Result):
         self.nodata_value = nodata_value
 
 
-    def save(self, formats = ['ascii_grid',], output_dir = None):
+    def save(self, formats = ['ascii_grid',]):
         ''' Save the result in the specified format.
 
         Parameters
@@ -476,14 +475,14 @@ class Grid2dResult(Result):
 
         for cur_format in formats:
             if cur_format == 'ascii_grid':
-                self.save_ascii_grid(output_dir = output_dir)
+                self.save_ascii_grid()
             elif cur_format == 'png':
-                self.save_png(output_dir = output_dir)
+                self.save_png()
             else:
                 # TODO: Throw an exception.
                 pass
 
-    def save_png(self, output_dir):
+    def save_png(self):
         ''' Save the result as a png image.
         '''
         # TODO: Think about a consistent method to save results, that provide a
@@ -507,7 +506,7 @@ class Grid2dResult(Result):
         plt.show()
 
 
-    def save_ascii_grid(self, output_dir):
+    def save_ascii_grid(self):
         ''' Save the result in ascii grid format.
         '''
         import json
@@ -516,8 +515,6 @@ class Grid2dResult(Result):
             #self.logger.error("The grid cell size in dx (%f) and dy(%f) are not equal. Can't save in ASCII grid format.", self.dx, self.dy)
             return
 
-        if not output_dir:
-            output_dir = ''
 
         header = "ncols     %s\n" % self.grid.shape[1]
         header += "nrows    %s\n" % self.grid.shape[0]
@@ -526,24 +523,17 @@ class Grid2dResult(Result):
         header += "cellsize %f\n" % self.dx
         header += "NODATA_value %f\n" % self.nodata_value
 
-        filename = self.rid.replace('/', '-')
-        if filename.startswith('-'):
-            filename = filename[1:]
-        if filename.endswith('-'):
-            filename = filename[:-1]
+        filename = self.filename
+        [name, ext] = os.path.splitext(filename)
+        asc_filename = name + '.asc'
+        json_filename = name + '_metadata.json'
+        prj_filename = name + '.prj'
 
-        asc_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.asc'
-
-        json_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '_metadata.json'
-
-        prj_filename = filename + '_' + self.start_time.isoformat().replace(':', '').replace('.', '') + '_' + self.end_time.isoformat().replace(':', '').replace('.', '') + '.prj'
-
-        output_dir = os.path.join(output_dir, self.name)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        asc_filename = os.path.join(output_dir, asc_filename)
-        json_filename = os.path.join(output_dir, json_filename)
-        prj_filename = os.path.join(output_dir, prj_filename)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        asc_filename = os.path.join(self.output_dir, asc_filename)
+        json_filename = os.path.join(self.output_dir, json_filename)
+        prj_filename = os.path.join(self.output_dir, prj_filename)
 
         np.savetxt(asc_filename,
                    np.flipud(self.grid),
