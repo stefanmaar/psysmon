@@ -624,6 +624,7 @@ class PsysmonDbWaveClient(WaveClient):
 
         filter_pattern = selected_wf_dir.file_ext
         filter_pattern = filter_pattern.split(',')
+        filter_pattern = [x.strip() for x in filter_pattern]
 
 
         if not search_path:
@@ -645,6 +646,7 @@ class PsysmonDbWaveClient(WaveClient):
             db_data = []
 
             for cur_pattern in filter_pattern:
+                self.logger.debug('Search using filter_pattern %s.', cur_pattern);
                 for filename in fnmatch.filter(filenames, cur_pattern):
                     file_path = os.path.join(root, filename)
 
