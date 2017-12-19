@@ -152,7 +152,10 @@ class DataInventoryStatisticsDlg(wx.Frame):
 
                 # The total file size.
                 tot_filesize = db_session.query(sqa.func.sum(t_datafile.filesize)).filter(t_datafile.wf_id == cur_wf_dir[0]).scalar()
-                cur_stats['tot_filesize'] = tot_filesize / 1024. / 1024.
+                if tot_filesize:
+                    cur_stats['tot_filesize'] = tot_filesize / 1024. / 1024.
+                else:
+                    cur_stats['tot_filesize'] = 0
 
                 # The minimum and maximum time of the available data.
                 min_begin = db_session.query(sqa.func.min(t_traceheader.begin_time)).\
