@@ -41,11 +41,14 @@ import psysmon.packages.geometry.util as geom_util
 from mpl_toolkits.basemap import pyproj
 
 
+# TODO: Make the number of data components (e.g. Z, N, E) flexible. Use
+# N data traces. Using only two channels should work as well.
+
 class Station(inventory.Station):
     ''' The sourcemap station.
 
     '''
-    def __init__(self, station, data_v = None, data_h1 = None, data_h2 = None, time = None, corr = 0):
+    def __init__(self, station, corr = 0):
         ''' Initialize the instance.
         '''
         inventory.Station.__init__(self,
@@ -80,25 +83,64 @@ class Station(inventory.Station):
         # The station correction for the backprojection.
         self.corr = corr
 
-        # The waveform data.
-        self.time = time
-        self.data_v = data_v
-        self.data_h1 = data_h1
-        self.data_h2 = data_h2
+        # The length of the data in seconds.
+        self.data_length = None
+
+        # The sampling rate of the station data.
+        self.sps = None
+
+        # The list of waveform data.
+        self.data = None
 
         # The pseudo-magnitude matrix.
         self.pseudo_mag = None
 
 
     @property
+    def time(self):
+        return np.arange(self.data.shape[1]) * 1/float(self.sps)
+
+    @property
     def alt_resultant(self):
-        minmax_v = np.abs(np.min(self.data_v)) + np.abs(np.max(self.data_v))
-        minmax_h1 = np.abs(np.min(self.data_h1)) + np.abs(np.max(self.data_h1))
-        minmax_h2 = np.abs(np.min(self.data_h2)) + np.abs(np.max(self.data_h2))
-        return np.sqrt(minmax_v**2 + minmax_h1**2 + minmax_h2**2)
+        minmax = []
+        for cur_data in self.data:
+            cur_minmax = np.abs(np.min(cur_data)) + np.abs(np.max(cur_data))
+            minmax.append(cur_minmax)
+
+        minmax = np.array(minmax)
+        return np.sqrt(np.sum(minmax**2))
+
+
+    def clear(self):
+        ''' Clear the data of the sourcemap.
+        '''
+        self.data = None
+        self.pseudo_mag = None
+        self.pseudo_amp = None
+
+
+    def add_data(self, data, sps):
+        # TODO: Add a check if the length of the data fits the expected length
+        # base on the window_length of the station.
+        if len(data) != self.data_length * sps:
+            raise ValueError("The length of the passed data doesn't fit the expected data length of the station.")
+
+        if self.sps is None:
+            self.sps = sps
+
+        if self.data is None:
+            self.data = np.array(data)
+        elif len(data) == len(self.data) and self.sps == sps:
+            self.data = np.vstack((self.data, data))
+        else:
+            raise ValueError("The size of the data or the sampling rate doesn't match the existing data.")
+
+        self.logger.debug("The size of data: %s.", self.data.shape())
 
 
     def compute_pseudo_amp(self, method = 'weighted'):
+        if self.data is None or len(self.data) == 0:
+            return
 
         if method == 'plain':
             self.compute_plain_res()
@@ -149,15 +191,16 @@ class Station(inventory.Station):
 
 
     def compute_windowed_max_res(self):
-        v_w = self.data_v[np.newaxis, np.newaxis, ...]
-        h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
-        h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+        #v_w = self.data_v[np.newaxis, np.newaxis, ...]
+        #h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
+        #h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+        #res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
 
-        res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
-
+        res = np.sqrt(np.sum(self.data**2, axis = 0))
+        res = res[np.newaxis, np.newaxis, ...]
         nx = self.epi_dist.shape[0]
         ny = self.epi_dist.shape[1]
-        nz = len(self.data_v)
+        nz = self.data.shape[1]
         alt_res = np.broadcast_to(res, (nx, ny, nz))
         weight = self.weight.copy()
         weight[weight > 0 ] = 1
@@ -173,11 +216,14 @@ class Station(inventory.Station):
     def compute_amplitude_weight(self):
         ''' Compute the amplitude weight for each grid point.
         '''
+        if self.data is None or len(self.data) == 0:
+            return
+
         # TODO: This matrix is too large for large networks and dense grid
         # spacing. Make it more efficient.
         nx = self.epi_dist.shape[0]
         ny = self.epi_dist.shape[1]
-        nz = len(self.data_v)
+        nz = self.data.shape[1]
 
         weight = np.zeros((nx, ny, nz))
         print "weight.shape: %s; %d total points; %d MB" % (str(weight.shape), weight.size, weight.nbytes / (1024 * 1024))
@@ -273,6 +319,17 @@ class SourceMap(object):
         else:
             return None
 
+    def clear(self):
+        ''' Clear all result variables and the stations.
+        '''
+        self.result_map = []
+        self.location_map = []
+        self.max_pgv_map = []
+        self.max_mmi_map = []
+
+        for cur_station in self.stations:
+            cur_station.clear()
+
 
     def compute_map_configuration(self):
         ''' The map limits computed from the stations.
@@ -322,6 +379,10 @@ class SourceMap(object):
 
         # Compute the maximum station to station distance.
         self.compute_station_distance()
+
+        # Set the data length of the stations.
+        for cur_station in self.stations:
+            cur_station.data_length = np.ceil(self.window_length)
 
 
     def compute_map_grid(self):
@@ -451,7 +512,7 @@ class SourceMap(object):
         ''' Compute the weight matrix based on seismic travel times.
 
         '''
-        for cur_station in self.compute_stations:
+        for cur_station in [x for x in self.compute_stations if len(x.weight) == 0]:
             cur_station.compute_amplitude_weight()
 
 
@@ -480,6 +541,8 @@ class SourceMap(object):
         '''
         for cur_station in self.compute_stations:
             #cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp) + cur_station.backprojection
+            if cur_station.pseudo_amp is None:
+                continue
             cur_station.pseudo_mag = np.log10(2 * np.pi * cur_station.pseudo_amp) + cur_station.backprojection
             #cur_station.pseudo_mag = np.log10(cur_station.alt_resultant) + cur_station.backprojection
             #cur_station.pseudo_mag = np.log10(np.abs(np.max(cur_station.data_v))) + cur_station.backprojection
@@ -488,7 +551,11 @@ class SourceMap(object):
     def compute_sourcemap(self, method = 'min'):
         ''' Compute the source map.
         '''
-        pm_list = [x.pseudo_mag for x in self.compute_stations]
+        pm_list = [x.pseudo_mag for x in self.compute_stations if x.pseudo_mag is not None]
+        if len(pm_list) == 0:
+            self.logger.error("No data available to compute the sourcemap.")
+            return
+
         pm_mat = np.dstack(pm_list)
         if method == 'std':
             self.result_map = np.std(pm_mat, axis = 2)
