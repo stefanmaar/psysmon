@@ -128,7 +128,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         # TODO: Create preference items for the following variables.
         map_dx = 1000
         map_dy = 1000
-        hypo_depth = 1000
+        hypo_depth = 7000
         use_station_corr = True
 
         self.sm = sourcemap.core.SourceMap(stations = station_list,
@@ -179,7 +179,8 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
 
         # Export the sourcemap to an image file.
-        self.export_as_image(start_time = process_limits[0])
+        self.export_as_image(start_time = process_limits[0],
+                             end_time = process_limits[1])
 
 
         # Create a 2D grid result.
@@ -270,7 +271,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
 
 
-    def export_as_image(self, start_time):
+    def export_as_image(self, start_time, end_time):
         ''' Export the sourcemap to an image file. '''
         clim = (-2., 5)
         proj = pyproj.Proj(init = 'epsg:32633')
@@ -305,7 +306,18 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         ax.scatter(stat_x, stat_y, s=100, marker='^', color='r', picker=5, zorder = 3)
 
         if len(self.sm.result_map) > 0:
-            artist = ax.contour(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, 20, colors = 'w')
+            levels = np.arange(0, 6, 0.25)
+            artist = ax.contour(self.sm.map_x_coord,
+                                self.sm.map_y_coord,
+                                self.sm.result_map,
+                                levels = levels,
+                                colors = 'w',
+                                linewidths = 0.25)
+            plt.clabel(artist,
+                       artist.levels[0::4],
+                       inline = 1,
+                       fmt = '%.2f',
+                       fontsize = 4)
             #artist.set_clip_path(poly)
 
         ax.axis('equal')
@@ -313,13 +325,13 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         ax.set_xlim([np.min(point_list[cv.vertices, 0]), np.max(point_list[cv.vertices, 0])])
         ax.set_ylim([np.min(point_list[cv.vertices, 1]), np.max(point_list[cv.vertices, 1])])
 
-        ax.set_title(start_time.isoformat() + ' -- ' + self.sm.method)
+        ax.set_title(start_time.isoformat() + ' - ' + end_time.isoformat() + ' - ' + self.sm.method)
 
         # TODO: Add an matplotlib figure result. Also take care of deleting the
         # figure when clearing the resultbag! Add a clear() method to the
         # Result class for this task.
         output_dir = self.parent.pref_manager.get_value('output_dir')
-        filename = 'sourcemap_' + self.sm.method + '_' + start_time.isoformat().replace(':', '') + '.png'
+        filename = 'sourcemap_' + self.sm.method + '_' + end_time.isoformat().replace(':', '') + '.png'
         fig.savefig(os.path.join(output_dir, filename), dpi = 300)
 
         # Delete the figure.
