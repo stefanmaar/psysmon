@@ -531,6 +531,7 @@ class SourceMap(object):
         '''
         for cur_station in self.compute_stations:
             if use_station_corr:
+                self.logger.info("Using station correction %s:  %f.", ':'.join((cur_station.network, cur_station.name, cur_station.location)), cur_station.corr)
                 cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist) + cur_station.corr
             else:
                 cur_station.backprojection = self.alpha * np.log10(cur_station.hypo_dist)
@@ -540,12 +541,10 @@ class SourceMap(object):
         ''' Compute the pseudo-magnitude.
         '''
         for cur_station in self.compute_stations:
-            #cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp) + cur_station.backprojection
             if cur_station.pseudo_amp is None:
                 continue
-            cur_station.pseudo_mag = np.log10(2 * np.pi * cur_station.pseudo_amp) + cur_station.backprojection
-            #cur_station.pseudo_mag = np.log10(cur_station.alt_resultant) + cur_station.backprojection
-            #cur_station.pseudo_mag = np.log10(np.abs(np.max(cur_station.data_v))) + cur_station.backprojection
+            #cur_station.pseudo_mag = np.log10(2 * np.pi * cur_station.pseudo_amp) + cur_station.backprojection
+            cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp * 1e3) - 2.074 + cur_station.backprojection
 
 
     def compute_sourcemap(self, method = 'min'):
