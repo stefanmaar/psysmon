@@ -153,18 +153,22 @@ class Station(inventory.Station):
 
 
     def compute_plain_res(self):
-        v_w = self.data_v[np.newaxis, np.newaxis, ...]
-        h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
-        h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+        #v_w = self.data_v[np.newaxis, np.newaxis, ...]
+        #h1_w = self.data_h1[np.newaxis, np.newaxis, ...]
+        #h2_w = self.data_h2[np.newaxis, np.newaxis, ...]
+        #res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
 
-        res = np.sqrt(v_w**2 + h1_w**2 + h2_w**2)
-
+        res = np.sqrt(np.sum(self.data**2, axis = 0))
+        res = res[np.newaxis, np.newaxis, ...]
         nx = self.epi_dist.shape[0]
         ny = self.epi_dist.shape[1]
-        nz = len(self.data_v)
+        nz = self.data.shape[1]
         alt_res = np.broadcast_to(res, (nx, ny, nz))
-
         alt_res = np.max(alt_res, axis = 2)
+
+        # Handle zero values. This would cause problems when using the log.
+        ind = np.argwhere(alt_res <= 0)
+        alt_res[ind[:, 0], ind[:, 1]] = np.min(alt_res[alt_res > 0])
 
         self.pseudo_amp = alt_res
 
@@ -185,7 +189,8 @@ class Station(inventory.Station):
 
         # Handle zero values. This will cause problems when using the log.
         ind = np.argwhere(alt_res <= 0)
-        alt_res[ind[:, 0], ind[:, 1]] = np.min(alt_res[alt_res > 0])
+        #alt_res[ind[:, 0], ind[:, 1]] = np.min(alt_res[alt_res > 0])
+        alt_res[ind[:, 0], ind[:, 1]] = 1e-10
 
         self.pseudo_amp = alt_res
 
@@ -206,7 +211,7 @@ class Station(inventory.Station):
         weight[weight > 0 ] = 1
         alt_res = np.max(alt_res * weight, axis = 2)
 
-        # Handle zero values. This will cause problems when using the log.
+        # Handle zero values. This would cause problems when using the log.
         ind = np.argwhere(alt_res <= 0)
         alt_res[ind[:, 0], ind[:, 1]] = np.min(alt_res[alt_res > 0])
 
@@ -434,11 +439,11 @@ class SourceMap(object):
             stat_lon_lat = cur_station.get_lon_lat()
             stat_x, stat_y = proj(stat_lon_lat[0], stat_lon_lat[1])
             cur_station.epi_dist = np.sqrt((stat_x - x_grid)**2 + (stat_y - y_grid)**2)
-            cur_station.hypo_dist = np.sqrt(cur_station.epi_dist**2 + self.hypo_depth**2)
+            cur_station.hypo_dist = np.sqrt(cur_station.epi_dist**2 + (cur_station.z + self.hypo_depth)**2)
 
 
 
-    def compute_traveltime_grid(self, hypo_depth = 1000, dist_step = None):
+    def compute_traveltime_grid(self, dist_step = None):
         ''' Compute the grid of traveltimes for p, s and surface waves.
 
         '''
@@ -454,17 +459,19 @@ class SourceMap(object):
         tt['p'] = []
         tt['s'] = []
         tt['surf_max'] = []
+        mean_station_height = np.mean([x.z for x in self.compute_stations])
+        mean_hypo_depth = self.hypo_depth + mean_station_height
         for cur_dist in dist:
             cur_dist_deg = obspy.geodetics.base.kilometer2degrees(cur_dist / 1000)
-            p_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+            p_arrivals = model.get_travel_times(source_depth_in_km = mean_hypo_depth / 1000.,
                                                 distance_in_degree = cur_dist_deg,
                                                 phase_list = ['ttp'])
             tt['p'].append(p_arrivals[0].time)
-            s_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+            s_arrivals = model.get_travel_times(source_depth_in_km = mean_hypo_depth / 1000.,
                                                 distance_in_degree = cur_dist_deg,
                                                 phase_list = ['tts'])
             tt['s'].append(s_arrivals[0].time)
-            surf_arrivals = model.get_travel_times(source_depth_in_km = hypo_depth / 1000.,
+            surf_arrivals = model.get_travel_times(source_depth_in_km = 0.,
                                                    distance_in_degree = cur_dist_deg,
                                                    phase_list = ['1.5kmps'])
             tt['surf_max'].append(surf_arrivals[0].time)
@@ -474,8 +481,8 @@ class SourceMap(object):
 
 
         for cur_station in self.compute_stations:
-            cur_station.tt_grid['p'] = np.interp(cur_station.epi_dist, dist, tt['p'])
-            cur_station.tt_grid['s'] = np.interp(cur_station.epi_dist, dist, tt['s'])
+            cur_station.tt_grid['p'] = np.interp(cur_station.hypo_dist, dist, tt['p'])
+            cur_station.tt_grid['s'] = np.interp(cur_station.hypo_dist, dist, tt['s'])
             cur_station.tt_grid['surf_max'] = np.interp(cur_station.epi_dist, dist, tt['surf_max'])
 
             #epi_dist_deg = obspy.geodetics.base.kilometer2degrees(cur_station.epi_dist / 1000)
@@ -547,9 +554,12 @@ class SourceMap(object):
             cur_station.pseudo_mag = np.log10(cur_station.pseudo_amp * 1e3) - 2.074 + cur_station.backprojection
 
 
-    def compute_sourcemap(self, method = 'min'):
+    def compute_sourcemap(self, method = None):
         ''' Compute the source map.
         '''
+        if method is None:
+            method = self.method
+
         pm_list = [x.pseudo_mag for x in self.compute_stations if x.pseudo_mag is not None]
         if len(pm_list) == 0:
             self.logger.error("No data available to compute the sourcemap.")
