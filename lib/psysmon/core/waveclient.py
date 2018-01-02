@@ -32,7 +32,7 @@ import logging
 import os
 import threading
 from obspy.core import read, Stream
-from obspy.earthworm import Client
+from obspy.clients.earthworm import Client
 import numpy as np
 
 class WaveClient(object):
