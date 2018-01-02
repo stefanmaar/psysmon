@@ -1012,13 +1012,16 @@ class CollectionPanel(wx.Panel):
     def onCollectionNodeItemSelected(self, evt):
         if not evt.GetItem():
             return
-        collection_pos, node_type = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
-        self.logger.debug("Selected node %s at position %d in collection.", node_type, collection_pos)
+        item_data = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
+        node_type = item_data['node_type']
+        node_pos = item_data['node_pos']
+        self.logger.debug("Selected node %s at position %d in collection.", node_type, node_pos)
         self.selectedNodeType = node_type
-        if node_type in ['node', 'looper']:
-            self.selectedCollectionNodeIndex = collection_pos
-        elif node_type == 'looper_child':
-            self.selectedLooperChildNodeIndex = collection_pos
+        self.selectedCollectionNodeIndex = node_pos
+        if node_type == 'looper_child':
+            self.selectedLooperChildNodeIndex = item_data['child_pos']
+        else:
+            self.selectedLooperChildNodeIndex = -1
 
 
     # Load a collection context menu callback.
@@ -1084,7 +1087,9 @@ class CollectionPanel(wx.Panel):
                 if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
                     node_string = curNode.name + ' (looper)'
                     looper_node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
-                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, (k, 'looper'))
+                    item_data = {'node_pos': k,
+                                 'node_type': 'looper'}
+                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, item_data)
                     self.collectionTreeCtrl.SetItemImage(looper_node_item, self.collectionTreeCtrl.icons['looper_node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(looper_node_item)
@@ -1094,14 +1099,19 @@ class CollectionPanel(wx.Panel):
                     for child_pos, cur_child in enumerate(curNode.children):
                         node_string = cur_child.name + '(child)'
                         node_item = self.collectionTreeCtrl.AppendItem(looper_node_item, node_string)
-                        self.collectionTreeCtrl.SetItemPyData(node_item, (child_pos, 'looper_child'))
+                        item_data = {'node_pos': k,
+                                     'child_pos': child_pos,
+                                     'node_type': 'looper_child'}
+                        self.collectionTreeCtrl.SetItemPyData(node_item, item_data)
                         self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['looper_node_child'], wx.TreeItemIcon_Normal)
                         if not curNode.enabled:
                             self.collectionTreeCtrl.SetItemTextColour(node_item, wx.TheColourDatabase.Find('GREY70'))
                 else:
                     node_string = curNode.name
                     node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
-                    self.collectionTreeCtrl.SetItemPyData(node_item, (k, 'node'))
+                    item_data = {'node_pos': k,
+                                 'node_type': 'node'}
+                    self.collectionTreeCtrl.SetItemPyData(node_item, item_data)
                     self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(node_item)
