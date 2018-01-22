@@ -682,7 +682,7 @@ class CustomPrefItem(PreferenceItem):
 class ActionItem(object):
     '''
     '''
-    def __init__(self, name, label, mode, action, tool_tip = None):
+    def __init__(self, name, label, mode, action, tool_tip = None, visible = True):
 
         self.name = name
 
@@ -695,6 +695,9 @@ class ActionItem(object):
         self.tool_tip = tool_tip
 
         self.gui_element = []
+
+        # Flag to indicate if the prefrence item is visible in GUI.
+        self.visible = visible
 
 
     def __getstate__(self):
