@@ -79,7 +79,7 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
         archive_group.add_item(pref_item)
 
         # Scan archive button.
-        pref_item = psy_pm.ActionItem(name = 'acan_archive',
+        pref_item = psy_pm.ActionItem(name = 'scan_archive',
                                       label = 'scan archive',
                                       mode = 'button',
                                       action = self.on_scan_archive,
