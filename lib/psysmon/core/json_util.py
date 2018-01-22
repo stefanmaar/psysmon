@@ -34,6 +34,7 @@ import logging
 
 from obspy.core import UTCDateTime
 import psysmon.core.util as util
+import psysmon.core.preferences_manager as pm
 
 
 # TODO: Add a File container holding the content of a json file. Use the file
@@ -1054,6 +1055,9 @@ class CollectionFileEncoder(json.JSONEncoder):
     def convert_group(self, obj):
         attr = ['name', 'items']
         d =self.object_to_dict(obj, attr)
+
+        # Remove action items from the group.
+        d['items'] = [x for x in d['items'] if not isinstance(x, pm.ActionItem)]
         return d
 
 
