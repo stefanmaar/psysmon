@@ -2433,6 +2433,7 @@ class NetworkPanel(wx.Panel):
         tableField.append(('description', 'description', 'readonly', str))
         tableField.append(('available_channels_string', 'channels', 'readonly', str))
         tableField.append(('assigned_recorders_string', 'recorders', 'readonly', str))
+        tableField.append(('assigned_sensors_string', 'sensors', 'readonly', str))
         return tableField
 
 
