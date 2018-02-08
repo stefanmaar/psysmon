@@ -1902,6 +1902,20 @@ class Station(object):
         else:
             return ''
 
+    @property
+    def assigned_sensors_string(self):
+        sensor_components = []
+        for cur_channel in self.channels:
+            for cur_stream in cur_channel.streams:
+                for cur_component in cur_stream.components:
+                    sensor_components.append(cur_component.item.serial)
+
+        sensor_components = list(set(sensor_components))
+
+        if sensor_components:
+            return ','.join(sorted(sensor_components))
+        else:
+            return ''
 
 
     def __setitem__(self, name, value):
