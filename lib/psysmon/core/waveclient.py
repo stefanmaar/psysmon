@@ -396,7 +396,7 @@ class PsysmonDbWaveClient(WaveClient):
                     if isinstance(stock_stream.traces[0].data, np.ma.masked_array):
                         # Try to fill the data gaps.
                         stock_stream = stock_stream.split()
-                        gaps = stock_stream.getGaps()
+                        gaps = stock_stream.get_gaps()
                         if len(gaps) > 0:
                             self.logger.debug('There are gaps in the stock stream. Try to fill them...')
                         for cur_gap in gaps:
