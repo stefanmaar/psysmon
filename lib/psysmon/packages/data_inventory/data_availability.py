@@ -280,7 +280,7 @@ class AvailabilityProcessor(object):
             # Compute the start times of the sliding windows.
             windowlist_start = [start_time, ]
             n_windows = np.floor(end_time - start_time) / window_length
-            windowlist_start = [start_time + x * window_length for x in range(0, int(n_windows))]
+            windowlist_start = np.array([start_time + x * window_length for x in range(0, int(n_windows))])
             windowlist_end = windowlist_start + window_length
         else:
             windowlist_start = window_start_times
@@ -343,10 +343,10 @@ class AvailabilityProcessor(object):
                         query = query.filter(t_traceheader.recorder_serial == cur_rec_stream.serial)
                         query = query.filter(t_traceheader.stream == cur_rec_stream.name)
                         query = query.filter(t_traceheader.begin_time + t_traceheader.numsamp * 1/t_traceheader.sps > cur_timebox.start_time.timestamp)
+                        query = query.filter(t_traceheader.begin_time + t_traceheader.numsamp * 1/t_traceheader.sps > cur_window_start.timestamp)
                         if cur_timebox.end_time:
                             query = query.filter(t_traceheader.begin_time < cur_timebox.end_time.timestamp)
-                        else:
-                            query = query.filter(t_traceheader.begin_time < cur_window_end.timestamp)
+                        query = query.filter(t_traceheader.begin_time < cur_window_end.timestamp)
                         headers.extend(query.all())
 
                     self.compute_availability(channel = cur_channel,
