@@ -267,7 +267,7 @@ class PSDPlotter:
         ''' Plot the psd data and save it to an file.
         '''
         # Get the files containing the PSD data.
-        self.logger.info('Scanning for files.')
+        self.logger.info('Scanning for files in %s.', self.data_dir)
         file_list = self.scan_for_files()
 
         if len(file_list) == 0:
@@ -385,7 +385,7 @@ class PSDPlotter:
         cm_to_inch = 2.54
         avg_width = 4 / cm_to_inch
         psd_min_width = 10 / cm_to_inch
-        cb_width = 2 / cm_to_inch
+        cb_width = 1 / cm_to_inch
         plot_length = self.endtime - self.starttime
         #width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
         psd_width = len(time) / dpi
@@ -420,7 +420,9 @@ class PSDPlotter:
             ax_avg.set_yscale('log')
             ax_avg.set_ylim((min_frequ, np.max(frequ)))
         else:
-            ax_psd = fig.add_subplot(111)
+            ax_psd = fig.add_axes([0.1, 0.15, psd_width/width, 0.75])
+            pos = ax_psd.get_position()
+            ax_cb = fig.add_axes([pos.x1 + 0.01, 0.15, cb_width/width, 0.75])
 
 
         ax_psd.set_yscale('log')
