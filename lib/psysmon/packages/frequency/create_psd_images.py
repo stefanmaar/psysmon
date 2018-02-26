@@ -445,8 +445,8 @@ class PSDPlotter:
         if self.with_average_plot:
             avg_amp_resp = np.mean(amp_resp, 1)
             med_amp_resp = np.median(amp_resp, 1)
-            p_nhnm, nhnm = obspy.signal.spectral_estimation.get_NHNM()
-            p_nlnm, nlnm = obspy.signal.spectral_estimation.get_NLNM()
+            p_nhnm, nhnm = obspy.signal.spectral_estimation.get_nhnm()
+            p_nlnm, nlnm = obspy.signal.spectral_estimation.get_nlnm()
 
             # obspy returns the NLNM and NHNM values in acceleration.
             # Convert them to the current unit (see Bormann (1998)).
