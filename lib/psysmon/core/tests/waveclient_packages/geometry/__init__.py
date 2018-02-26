@@ -26,8 +26,7 @@ description = "The geometry package."
 website = "http://www.stefanmertl.com"
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['applyGeometry',
-                           'editGeometry']
+collection_node_modules = ['editGeometry',]
 
 
 def databaseFactory(base):

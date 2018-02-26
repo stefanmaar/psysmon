@@ -37,8 +37,8 @@ from psysmon.core.guiBricks import PrefPagePanel
 
 class ListbookPrefDialog(wx.Dialog):
 
-    def __init__(self, parent = None, preferences = None, size = (400, 600)):
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Project Preferences", style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
+    def __init__(self, parent = None, preferences = None, size = (400, 600), title = 'preferences'):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, title = title, style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
 
         # The logger.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -76,7 +76,7 @@ class ListbookPrefDialog(wx.Dialog):
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
-        self.SetSizer(sizer)
+        self.SetSizerAndFit(sizer)
 
 
     def build_pref_listbook(self):

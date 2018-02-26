@@ -193,7 +193,7 @@ class PrefPagePanel(wx.Panel):
             cur_container = StaticBoxContainer(parent = self,
                                 label = cur_group.name)
 
-            for cur_item in cur_group.items:
+            for cur_item in [x for x in cur_group.items if x.visible]:
                 if isinstance(cur_item, psy_pm.ActionItem):
                     gui_element = wx.Button(parent = cur_container,
                                             id = wx.ID_ANY,
@@ -345,6 +345,9 @@ class StaticBoxContainer(wx.Panel):
         self.fieldList.append(field)
 
         self.adjustLabelSize()
+
+        for cur_field in self.fieldList:
+            cur_field.SetMinSize(cur_field.GetBestSize())
 
 
     def adjustLabelSize(self):
@@ -981,8 +984,6 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
 
 
 
-
-
     def fill_listctrl(self, data):
         index = 0
         self.controlElement.DeleteAllItems()
@@ -1055,6 +1056,7 @@ class SortableListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
 
         self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
+
     def GetListCtrl(self):
         ''' Used by ColumnSorterMixin.
         '''
@@ -1064,6 +1066,7 @@ class SortableListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
         ''' Used by ColumnSorterMixin.
         '''
         return (self.sm_dn, self.sm_up)
+
 
 
 class ListGridEditField(Field):

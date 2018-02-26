@@ -56,6 +56,7 @@ def databaseFactory(base):
                           UniqueConstraint('name'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         name = Column(String(255), nullable = False)
@@ -87,6 +88,7 @@ def databaseFactory(base):
         __table_args__ = (
                           {'mysql_engine': 'InnoDb'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         catalog_id = Column(Integer,

@@ -2141,7 +2141,8 @@ class DataManager():
             curStream =  curWaveclient.getWaveform(startTime = startTime,
                                                    endTime = endTime,
                                                    scnl = scnl)
-            self.origStream += curStream
+            if curStream:
+                self.origStream += curStream
 
 
 

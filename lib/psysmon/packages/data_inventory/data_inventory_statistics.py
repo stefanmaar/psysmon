@@ -30,12 +30,15 @@ The editGeometry module.
 This module contains the classes of the editGeometry dialog window.
 '''
 
+import pprint
 import logging
+
+import obspy.core.utcdatetime as udt
 import psysmon.core.gui
 import psysmon.core.packageNodes as psy_packageNodes
 import psysmon.core.preferences_manager as psy_preferences_manager
+import sqlalchemy as sqa
 import wx
-import obspy.core.utcdatetime as udt
 
 class DataInventoryStatistics(psy_packageNodes.CollectionNode):
     ''' Display statistics of the available data inventory.
@@ -93,21 +96,20 @@ class DataInventoryStatisticsDlg(wx.Frame):
 
         # The statistics of the data inventory.
         self.stats = {}
-        self.stats['overview'] = {}
-        self.stats['stations'] = {}
 
         # initialize the user interface
         self.initUI()
 
         self.load_data_inventory()
-        self.inventory_view_notebook.overview_panel.textctrl.SetLabel(self.overview_text)
+        self.inventory_view_notebook.overview_panel.textctrl.AppendText(self.overview_text)
 
 
     @property
     def overview_text(self):
-        text = ''
-        text += 'First data in database: %s' % self.stats['overview']['first_data'] + '\n'
-        text += 'Last data in database: %s' % self.stats['overview']['last_data'] + '\n'
+        #text = ''
+        #text += 'First data in database: %s' % self.stats['overview']['first_data'] + '\n'
+        #text += 'Last data in database: %s' % self.stats['overview']['last_data'] + '\n'
+        text = pprint.pformat(self.stats, indent = 4)
         return text
 
 
@@ -131,27 +133,67 @@ class DataInventoryStatisticsDlg(wx.Frame):
         ''' Load inventory data.
 
         '''
-        import sqlalchemy
-
         db_session = self.project.getDbSession()
 
-        overview_stats = self.stats['overview']
-        min_begin = db_session.query(sqlalchemy.func.min(self.project.dbTables['traceheader'].begin_time)).scalar()
-        max_begin = db_session.query(sqlalchemy.func.max(self.project.dbTables['traceheader'].begin_time)).scalar()
+        try:
+            # The the waveform directories.
+            wf_dir_list = self.project.waveclient['db client'].waveformDirList
 
-        if min_begin is None or max_begin is None:
-            overview_stats['first_data'] = None
-            overview_stats['last_data'] = None
-        else:
-            overview_stats['first_data'] = udt.UTCDateTime(min_begin)
-            last_begin_time = udt.UTCDateTime(max_begin)
-            tmp = db_session.query(self.project.dbTables['traceheader']).filter_by(begin_time = last_begin_time.timestamp).all()
-            end_time = [x.begin_time + (x.numsamp-1)/float(x.sps) for x in tmp]
-            overview_stats['last_data'] = udt.UTCDateTime(max(end_time))
+            # The database tables.
+            t_datafile = self.project.dbTables['datafile']
+            t_traceheader = self.project.dbTables['traceheader']
 
-        db_session.close()
+            for cur_wf_dir in wf_dir_list:
+                # Compute the statistics for each waveform directory.
+                cur_stats = {}
+                # The number of data files.
+                n_files = db_session.query(t_datafile).filter(t_datafile.wf_id == cur_wf_dir[0]).count()
+                cur_stats['n_files'] = n_files
 
+                # The total file size.
+                tot_filesize = db_session.query(sqa.func.sum(t_datafile.filesize)).filter(t_datafile.wf_id == cur_wf_dir[0]).scalar()
+                if tot_filesize:
+                    cur_stats['tot_filesize'] = tot_filesize / 1024. / 1024.
+                else:
+                    cur_stats['tot_filesize'] = 0
 
+                # The minimum and maximum time of the available data.
+                min_begin = db_session.query(sqa.func.min(t_traceheader.begin_time)).\
+                                             filter(t_datafile.wf_id == cur_wf_dir[0]).\
+                                             filter(t_traceheader.datafile_id == t_datafile.id).scalar()
+                max_begin = db_session.query(sqa.func.max(t_traceheader.begin_time)).\
+                                             filter(t_datafile.wf_id == cur_wf_dir[0]).\
+                                             filter(t_traceheader.datafile_id == t_datafile.id).scalar()
+                if min_begin is None or max_begin is None:
+                    cur_stats['first_data'] = None
+                    cur_stats['last_data'] = None
+                else:
+                    cur_stats['first_data'] = udt.UTCDateTime(min_begin)
+                    last_begin_time = udt.UTCDateTime(max_begin)
+                    tmp = db_session.query(self.project.dbTables['traceheader']).filter_by(begin_time = last_begin_time.timestamp).all()
+                    end_time = [x.begin_time + (x.numsamp-1)/float(x.sps) for x in tmp]
+                    cur_stats['last_data'] = udt.UTCDateTime(max(end_time))
+
+                # The unique serial numbers.
+                unique_streams = db_session.query(t_traceheader.recorder_serial, t_traceheader.stream).\
+                                                 filter(t_datafile.wf_id == cur_wf_dir[0]).\
+                                                 filter(t_traceheader.datafile_id == t_datafile.id).\
+                                                 distinct().all()
+                cur_stats['unique_streams'] = [' '.join(x) for x in unique_streams]
+
+                # The datafiles per recorder serial.
+                files_per_recorder = db_session.query(t_traceheader.recorder_serial, sqa.func.count()).\
+                                                      filter(t_datafile.wf_id == cur_wf_dir[0]).\
+                                                      filter(t_traceheader.datafile_id == t_datafile.id).\
+                                                      group_by(t_traceheader.recorder_serial).all()
+                cur_stats['files_per_recorder'] = files_per_recorder
+
+                self.stats[(cur_wf_dir[0], cur_wf_dir[2])] = cur_stats
+
+            #overview_stats = self.stats['overview']
+
+        finally:
+            db_session.close()
 
 
 
@@ -182,8 +224,9 @@ class TextViewPanel(wx.Panel):
 
         self.sizer = wx.GridBagSizer(5, 5)
 
-        self.textctrl = wx.StaticText(self, wx.ID_ANY,
-                            "This is an example of static text", (20, 10))
+        self.textctrl = wx.TextCtrl(self, wx.ID_ANY,
+                            "", (20, 10),
+                            style = wx.TE_MULTILINE | wx.TE_READONLY)
 
         self.sizer.Add(self.textctrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=20)
         self.sizer.AddGrowableCol(0)

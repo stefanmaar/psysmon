@@ -74,7 +74,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
         item = pm.SingleChoicePrefItem(name = 'method',
                                        value = 'min',
-                                       limit = ['min', 'std', 'quart'],
+                                       limit = ['min', 'std', 'quart', 'minmax'],
                                        tool_tip = 'Select the sourcemap computation method.')
         mo_group.add_item(item)
 
@@ -122,13 +122,13 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
                 cur_corr = stat_corr[cur_station.snl]
             else:
                 cur_corr = 0
-
-            station_list.append(sourcemap.core.Station(cur_station, corr = cur_corr))
+            station_list.append(sourcemap.core.Station(cur_station,
+                                                       corr = cur_corr))
 
         # TODO: Create preference items for the following variables.
-        map_dx = 5000
-        map_dy = 5000
-        hypo_depth = 1000
+        map_dx = 500
+        map_dy = 500
+        hypo_depth = 0
         use_station_corr = True
 
         self.sm = sourcemap.core.SourceMap(stations = station_list,
@@ -154,6 +154,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
+        self.sm.clear()
 
         self.add_data(stream = stream,
                       start_time = process_limits[0],
@@ -163,9 +164,11 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         # TODO: Make the computation undependent of the adding of the data.
         # This somehow requires to pass the sps of the data of the station to
         # the sourcemap before the first data is loaded. Is this possible?
-        if self.compute_weight:
-            self.sm.compute_amplitude_weight()
-            self.compute_weight = False
+        #if self.compute_weight:
+        #    self.sm.compute_amplitude_weight()
+        #    self.compute_weight = False
+
+        self.sm.compute_amplitude_weight()
 
         # TODO: Create preference items for the following variables.
         pseudo_amp_method = 'windowed_max'
@@ -176,7 +179,8 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
 
         # Export the sourcemap to an image file.
-        self.export_as_image(start_time = process_limits[0])
+        self.export_as_image(start_time = process_limits[0],
+                             end_time = process_limits[1])
 
 
         # Create a 2D grid result.
@@ -187,26 +191,32 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         for cur_station in self.sm.compute_stations:
             meta_stat_corr[cur_station.snl_string] = cur_station.corr
         metadata['stat_corr'] = meta_stat_corr
-        metadata['alpha'] = self.sm.alpha
         metadata['map_config'] = self.sm.map_config
         metadata['processing_time_window'] = {'start_time': process_limits[0].isoformat(),
                                               'end_time': process_limits[1].isoformat()}
         metadata['station_list'] = {x.snl_string: {'x': x.x, 'y': x.y, 'z': x.z, 'epsg': x.coord_system} for x in self.sm.compute_stations}
+        metadata['sourcemap_config'] = {}
+        metadata['sourcemap_config']['alpha'] = self.sm.alpha
+        metadata['sourcemap_config']['hypo_depth'] = self.sm.hypo_depth
+        metadata['sourcemap_config']['v_surf_min'] = self.sm.v_surf_min
+        metadata['sourcemap_config']['method'] = self.sm.method
+        metadata['sourcemap_config']['pseudo_amp_method'] = pseudo_amp_method
         metadata['preprocessing'] = self.parent.get_settings(upper_node_limit = self)
 
-        grid_result = result.Grid2dResult(name = 'sourcemap',
-                                          start_time = process_limits[0],
-                                          end_time = process_limits[1],
-                                          origin_name = self.name,
-                                          origin_resource = origin_resource,
-                                          x_coord = self.sm.map_x_coord,
-                                          y_coord = self.sm.map_y_coord,
-                                          grid = self.sm.result_map,
-                                          dx = self.sm.map_dx,
-                                          dy = self.sm.map_dy,
-                                          epsg = self.sm.map_config['epsg'],
-                                          metadata = metadata)
-        self.result_bag.add(grid_result)
+        if len(self.sm.result_map) > 0:
+            grid_result = result.Grid2dResult(name = 'sourcemap',
+                                              start_time = process_limits[0],
+                                              end_time = process_limits[1],
+                                              origin_name = self.name,
+                                              origin_resource = origin_resource,
+                                              x_coord = self.sm.map_x_coord,
+                                              y_coord = self.sm.map_y_coord,
+                                              grid = self.sm.result_map,
+                                              dx = self.sm.map_dx,
+                                              dy = self.sm.map_dy,
+                                              epsg = self.sm.map_config['epsg'],
+                                              metadata = metadata)
+            self.result_bag.add(grid_result)
 
         columns = ['name', 'network', 'location', 'x', 'y', 'z', 'coord_system', 'description']
         table_result = result.TableResult(name = 'sourcemap_used_stations',
@@ -235,7 +245,10 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         '''
         # TODO: Make the channel mapping a user preference. Check the
         # polarization analysis for a reference.
-        channels = ['HHZ', 'HHN', 'HHE']
+        #channels = ['HHZ', 'HHN', 'HHE']
+        channels = ['Z', 'HNormal', 'HParallel']
+
+        # TODO: Add a check, that the required channels are available.
 
         for cur_station in self.sm.compute_stations:
             for cur_channel in channels:
@@ -243,28 +256,28 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
                                            location = cur_station.location,
                                            channel = cur_channel).copy()
 
-                # Select the time span from the earthquake origin time.
-                # Select a longer time span. some of the streams don't start at zero second.
-                #cur_stream = cur_stream.trim(starttime = start_time, endtime = start_time + self.sm.window_length + 1)
-                cur_trace = cur_stream.traces[0]
+                if cur_stream:
+                    cur_trace = cur_stream.traces[0]
 
-                # Trim the data to equal length.
-                # It is assumed, that the sampling rate of all streams is the same.
-                win_length = int(np.floor(self.sm.window_length * cur_trace.stats.sampling_rate))
-                cur_data = cur_trace.data[:win_length]
+                    if np.abs((cur_trace.stats.starttime - start_time)) > (1.5 * cur_trace.stats.delta):
+                        self.logger.error("The trace start time doesn't match the start time of the processing window.")
+                        continue
 
-                if cur_channel == 'HHZ':
-                    cur_station.data_v = cur_data
-                    cur_station.time = np.arange(len(cur_data)) * 1/float(cur_trace.stats.sampling_rate)
-                elif cur_channel == 'HHN':
-                    cur_station.data_h1 = cur_data
-                elif cur_channel == 'HHE':
-                    cur_station.data_h2 = cur_data
+                    # Trim the data to equal length.
+                    # It is assumed, that the sampling rate of all traces in
+                    # the stream is the same.
+                    win_length = int(np.floor(cur_station.data_length * cur_trace.stats.sampling_rate))
+                    cur_data = cur_trace.data[:win_length]
+
+                    try:
+                        cur_station.add_data(cur_data, sps = cur_trace.stats.sampling_rate)
+                    except:
+                        self.logger.exception("Couldn't add the data to the station.")
 
 
-    def export_as_image(self, start_time):
+
+    def export_as_image(self, start_time, end_time):
         ''' Export the sourcemap to an image file. '''
-        clim = (-2., 5)
         proj = pyproj.Proj(init = 'epsg:32633')
         # Compute the projected station coordinates.
         stat_lon = [cur_stat.get_lon_lat()[0] for cur_stat in self.sm.compute_stations]
@@ -280,36 +293,64 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         fig = plt.figure(figsize = (8, 8))
         ax = fig.add_subplot(111)
 
-        if self.sm.method == 'min':
-            #artist = ax.pcolormesh(sm.map_x_coord, sm.map_y_coord, sm.result_map, cmap = 'viridis')
-            artist = ax.pcolormesh(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, cmap = 'viridis',
-                                    vmin = clim[0], vmax = clim[1])
-        else:
-            artist = ax.pcolormesh(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, cmap = 'viridis')
-        cv_poly = matplotlib.patches.Polygon(point_list[cv.vertices, :], closed = True,
-                                             transform = plt.gca().transData)
-        artist.set_clip_path(cv_poly)
-        cb = fig.colorbar(artist, ax = ax, ticks = np.arange(-2, 6), extend = 'max')
-        cb.set_label('pseudo-magnitude')
+        if len(self.sm.result_map) > 0:
+            if self.sm.method == 'min':
+                clim = (-2., 5)
+                #artist = ax.pcolormesh(sm.map_x_coord, sm.map_y_coord, sm.result_map, cmap = 'viridis')
+                artist = ax.pcolormesh(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, cmap = 'viridis',
+                                        vmin = clim[0], vmax = clim[1])
+                cb = fig.colorbar(artist, ax = ax, ticks = np.arange(clim[0], clim[1] + 1), extend = 'max')
+                cb.set_label('pseudo-magnitude')
+            elif self.sm.method == 'std':
+                clim = (0., 2.)
+                artist = ax.pcolormesh(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, cmap = 'viridis',
+                                        vmin = clim[0], vmax = clim[1])
+                cb = fig.colorbar(artist, ax = ax, ticks = np.arange(clim[0], clim[1]), extend = 'max')
+                cb.set_label('std. deviation of pseudo-mag.')
+            else:
+                artist = ax.pcolormesh(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, cmap = 'viridis')
+                cb = fig.colorbar(artist, ax = ax)
+            cv_poly = matplotlib.patches.Polygon(point_list[cv.vertices, :], closed = True,
+                                                 transform = plt.gca().transData)
+            artist.set_clip_path(cv_poly)
 
         # Add the stations.
         ax.scatter(stat_x, stat_y, s=100, marker='^', color='r', picker=5, zorder = 3)
 
-        artist = ax.contour(self.sm.map_x_coord, self.sm.map_y_coord, self.sm.result_map, 20, colors = 'w')
-        #artist.set_clip_path(poly)
+        if len(self.sm.result_map) > 0:
+            if self.sm.method == 'min':
+                levels = np.arange(0, 6, 0.25)
+                artist = ax.contour(self.sm.map_x_coord,
+                                    self.sm.map_y_coord,
+                                    self.sm.result_map,
+                                    levels = levels,
+                                    colors = 'w',
+                                    linewidths = 0.25)
+                plt.clabel(artist,
+                           artist.levels[0::4],
+                           inline = 1,
+                           fmt = '%.2f',
+                           fontsize = 4)
+            else:
+                artist = ax.contour(self.sm.map_x_coord,
+                                    self.sm.map_y_coord,
+                                    self.sm.result_map,
+                                    colors = 'w',
+                                    linewidths = 0.25)
+
 
         ax.axis('equal')
 
         ax.set_xlim([np.min(point_list[cv.vertices, 0]), np.max(point_list[cv.vertices, 0])])
         ax.set_ylim([np.min(point_list[cv.vertices, 1]), np.max(point_list[cv.vertices, 1])])
 
-        ax.set_title(start_time.isoformat() + ' -- ' + self.sm.method)
+        ax.set_title(start_time.isoformat() + ' - ' + end_time.isoformat() + ' - ' + self.sm.method)
 
         # TODO: Add an matplotlib figure result. Also take care of deleting the
         # figure when clearing the resultbag! Add a clear() method to the
         # Result class for this task.
         output_dir = self.parent.pref_manager.get_value('output_dir')
-        filename = 'sourcemap_' + self.sm.method + '_' + start_time.isoformat().replace(':', '') + '.png'
+        filename = 'sourcemap_' + self.sm.method +'_' + start_time.isoformat().replace(':', '') + '_' + end_time.isoformat().replace(':', '') + '.png'
         fig.savefig(os.path.join(output_dir, filename), dpi = 300)
 
         # Delete the figure.

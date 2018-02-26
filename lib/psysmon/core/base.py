@@ -32,6 +32,7 @@ This module contains the basic classes needed to run the pSysmon program.
 '''
 
 import os
+import json
 import logging
 import shelve
 import threading
@@ -345,7 +346,10 @@ class Base(object):
             conn.execute('commit')
 
         except SQLAlchemyError as e:
-            print e
+            self.logger.exception(e)
+            raise
+        except Exception as e:
+            self.logger.exception(e)
             raise
 
         try:
@@ -455,22 +459,57 @@ class Base(object):
         return True
 
 
-    def load_json_project(self, filename, user_name, user_pwd):
+    def load_json_project(self, filename, user_name, user_pwd, update_db = True):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
-        import json
+        if not os.path.exists(filename):
+            self.logger.error("The project file %s doesn't exist.", filename)
+            self.project = None
+            return False
+
+        file_meta = psysmon.core.json_util.get_file_meta(filename)
+        file_version = file_meta['file_version']
+        json_decoder = psysmon.core.json_util.get_project_decoder(version = file_version)
+
         project_dir = os.path.dirname(filename)
-        fp = open(filename, 'r')
-        self.project = json.load(fp, cls = psysmon.core.json_util.ProjectFileDecoder)
-        fp.close()
+        self.logger.info('Loading the project file %s (version %s) with decoder version %s.',
+                         filename, file_version, json_decoder.version)
+
+        try:
+            with open(filename, 'r') as fid:
+                file_data = json.load(fid, cls = json_decoder)
+                # Old file versions didn't have the root dictionary of the file
+                # container. 
+                if file_version >= psysmon.core.util.Version('1.0.0'):
+                    self.project = file_data['project']
+                else:
+                    self.project = file_data
+        except:
+            self.logger.exception("Error while decoding the project file.")
+            self.project = None
+
+
+        if not self.project:
+            self.logger.error("Couldn't load the project file using the decoder.")
+            return False
 
         # Set some runtime dependent variables.
         self.project.psybase = self
         self.project.base_dir = os.path.dirname(project_dir)
         self.project.updateDirectoryStructure()
-        self.project.setCollectionNodeProject()
 
+        if file_version >= psysmon.core.util.Version('1.0.0'):
+            # Load the collections of the users.
+            # Since version 1.0.0 the collections have been seperated in a
+            # dedicated directory.
+            for cur_user in self.project.user:
+                cur_user.load_collections(self.project.collectionDir)
+                cur_user.setActiveCollection(cur_user.active_collection_name)
+                del cur_user.__dict__['collection_names']
+                del cur_user.__dict__['active_collection_name']
+
+        self.project.setCollectionNodeProject()
 
         # Set the project of the db_waveclient (if available).
         for cur_waveclient in self.project.waveclient.itervalues():
@@ -483,7 +522,8 @@ class Base(object):
             return False
         else:
             # Load the current database structure.
-            self.project.loadDatabaseStructure(self.packageMgr.packages)
+            self.project.loadDatabaseStructure(self.packageMgr.packages,
+                                               update_db = update_db)
 
             # Load the geometry inventory.
             self.project.load_geometry_inventory()
@@ -707,6 +747,15 @@ class Collection(object):
         self.project = None
 
 
+    def save(self, path):
+        ''' Save the collection to a json file.
+        '''
+        filename = os.path.join(path, self.name + '.json')
+        file_content = {'collection': self}
+        file_container = psysmon.core.json_util.FileContainer(file_content)
+        with open(filename, mode = 'w') as fp:
+            json.dump(file_container, fp = fp, cls = psysmon.core.json_util.CollectionFileEncoder)
+
 
     def setDataShelfFile(self, filename):
         ''' Set the dataShelf filename of the collection.
@@ -744,6 +793,9 @@ class Collection(object):
     def addNode2Looper(self, node, position, looper_pos = 0):
         ''' Add a looper child node to a looper node.
         '''
+        if not self.nodes:
+            raise PsysmonError('No collection nodes available.')
+
         cur_node = self.nodes[position]
         if isinstance(cur_node, psysmon.core.packageNodes.LooperCollectionNode):
             # Add the node to the looper node.

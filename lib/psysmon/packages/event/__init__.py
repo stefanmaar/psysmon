@@ -64,6 +64,7 @@ def databaseFactory(base):
                           UniqueConstraint('name'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         name = Column(String(255), nullable = False)
@@ -97,6 +98,7 @@ def databaseFactory(base):
         __table_args__ = (
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         ev_catalog_id = Column(Integer,
@@ -154,6 +156,7 @@ def databaseFactory(base):
         __table_args__ = (
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         ev_id = Column(Integer,
                        ForeignKey('event.id', onupdate = 'cascade'),
@@ -181,6 +184,7 @@ def databaseFactory(base):
                           UniqueConstraint('name'),
                           {'mysql_engine': 'InnoDB'}
                          )
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         name = Column(String(255), nullable = False)
@@ -211,6 +215,7 @@ def databaseFactory(base):
     class DetectionDb(base):
         __tablename__  = 'detection'
         __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         catalog_id = Column(Integer,

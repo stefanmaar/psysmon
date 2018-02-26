@@ -397,7 +397,7 @@ class PreferenceItem(object):
     def __init__(self, name, value, mode, label = None,
                  limit = None, parent_page = None,
                  default = None, gui_element = None,
-                 tool_tip = None, hooks = None):
+                 tool_tip = None, hooks = None, visible = True):
         ''' Initialization of the instance.
 
         '''
@@ -439,6 +439,9 @@ class PreferenceItem(object):
             self.hooks = {}
         else:
             self.hooks = hooks
+
+        # Flag to indicate if the prefrence item is visible in GUI.
+        self.visible = visible
 
 
     @property
@@ -679,7 +682,7 @@ class CustomPrefItem(PreferenceItem):
 class ActionItem(object):
     '''
     '''
-    def __init__(self, name, label, mode, action, tool_tip = None):
+    def __init__(self, name, label, mode, action, tool_tip = None, visible = True):
 
         self.name = name
 
@@ -692,6 +695,9 @@ class ActionItem(object):
         self.tool_tip = tool_tip
 
         self.gui_element = []
+
+        # Flag to indicate if the prefrence item is visible in GUI.
+        self.visible = visible
 
 
     def __getstate__(self):

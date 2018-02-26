@@ -56,7 +56,8 @@
 #    GNU Lesser General Public License, Version 3
 #    (http://www.gnu.org/copyleft/lesser.html)
 #
-
+import copy
+import re
 
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
@@ -105,6 +106,52 @@ def traceid_to_scnl(trace_id):
     network, station, location, channel = trace_id.split('.')
     return((station, channel, network, location))
 
+
+def compute_month_list(start_time, end_time):
+    ''' Compute a list of months between the two dates.
+
+    Include the start and end month.
+    '''
+    interval_list = []
+    start_year = start_time.year
+    start_month = start_time.month
+    if start_month > 12:
+        start_year = start_year + 1
+        start_month = 1
+    end_year = end_time.year
+    end_month = end_time.month
+
+    month_dict = {}
+    year_list = range(start_year, end_year + 1)
+    for k, cur_year in enumerate(year_list):
+        if k == 0 and end_month > start_month:
+            month_dict[year_list[k]] = range(start_month, end_month + 1)
+        elif k == 0 and end_month <= start_month:
+            month_dict[year_list[k]] = range(start_month, 13)
+            month_dict[year_list[k]].extend(range(1, end_month + 1))
+        elif k == len(year_list) - 1:
+            month_dict[year_list[k]] = range(1, end_month + 1)
+        else:
+            month_dict[year_list[k]] = range(1, 13)
+
+    for cur_year, month_list in month_dict.iteritems():
+        for cur_month in month_list:
+            interval_list.append(UTCDateTime(year = cur_year, month = cur_month, day = 1))
+
+    return interval_list
+
+
+def add_month(date):
+    ''' Add one month to a UTCDateTime.
+    '''
+    date = copy.copy(date)
+    if date.month == 12:
+        date.year += 1
+        date.month = 1
+    else:
+        date.month += 1
+
+    return date
 
 
 class AttribDict(dict, object):
@@ -403,4 +450,98 @@ class HookManager(object):
                 if hook_name in hooks.keys():
                     kwargs = {x:kwargs[x] for x in kwargs if x in self.hook_kwargs[hook_name]}
                     hooks[hook_name](**kwargs)
+
+
+
+class Version(object):
+    ''' A version String representation.
+    '''
+
+    def __init__(self, version = '0.0.1'):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        version:String
+            The version as a point-seperated string.
+
+        '''
+        self.version = self.string_to_tuple(version)
+
+
+    def __str__(self):
+        ''' The string representation.
+        '''
+        return '.'.join([str(x) for x in self.version])
+
+
+    def __eq__(self, c):
+        ''' Test for equality.
+        '''
+        for k, cur_n in enumerate(self.version):
+            if cur_n != c.version[k]:
+                return False
+
+        return True
+
+    def __ne__(self, c):
+        ''' Test for inequality.
+        '''
+        return not self.__eq__(c)
+
+
+    def __gt__(self, c):
+        ''' Test for greater than.
+        '''
+        for k, cur_n in enumerate(self.version):
+            if cur_n > c.version[k]:
+                return True
+            elif cur_n != c.version[k]:
+                return False
+
+        return False
+
+
+    def __lt__(self, c):
+        ''' Test for less than.
+        '''
+        for k, cur_n in enumerate(self.version):
+            if cur_n < c.version[k]:
+                return True
+            elif cur_n != c.version[k]:
+                return False
+
+        return False
+
+
+    def __ge__(self, c):
+        ''' Test for greater or equal.
+        '''
+        return self.__eq__(c) or self.__gt__(c)
+
+    def __le__(self, c):
+        ''' Test for less or equal.
+        '''
+        return self.__eq__(c) or self.__lt__(c)
+
+
+
+
+    def string_to_tuple(self, vs):
+        ''' Convert a version string to a tuple.
+        '''
+        nn = vs.split('.')
+        for k,x in enumerate(nn):
+            if x.isdigit():
+                nn[k] = int(x)
+            else:
+                tmp = re.split('[A-Za-z]', x)
+                tmp = [x for x in tmp if x.isdigit()]
+                if len(tmp) > 0:
+                    nn[k] = int(tmp[0])
+                else:
+                    nn[k] = 0
+
+        return tuple(nn)
+
 

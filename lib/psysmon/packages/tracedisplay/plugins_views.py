@@ -1119,6 +1119,8 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
                          extent = extent,
                          aspect = 'auto',
                          cmap = cmap)
+        # TODO: Add an option to select logarithmic scaling.
+        #self.axes.set_yscale('log')
 
 
 
@@ -1300,7 +1302,7 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
             psd = 10 * np.log10(psd)
             frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
 
-            left_fft = np.ceil(n_fft / 2.)
+            left_fft = int(np.ceil(n_fft / 2.))
 
             # Plot the psd.
             if not self.lines['psd']:

@@ -259,7 +259,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
         # Create the obspy PAZ dictionary.
         paz = {}
-        paz['gain'] = 1
+        paz['gain'] = comp_param.tf_normalization_factor
         paz['sensitivity'] = (rec_stream_param.gain * comp_param.sensitivity) / rec_stream_param.bitweight
         paz['poles'] = comp_param.tf_poles
         paz['zeros'] = comp_param.tf_zeros
@@ -270,10 +270,12 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         # Monkey patch the PPSD plot method.
         obspy.signal.PPSD.plot = ppsd_plot
 
+        # TODO: Make the db_bins argument user-selectable. 
+        # db_bins = (-200, -20, 1.)
         self.ppsd = obspy.signal.PPSD(stats,
-                                      paz = paz,
+                                      metadata = paz,
                                       ppsd_length = ppsd_length,
-                                      overlap = ppsd_overlap);
+                                      overlap = ppsd_overlap)
 
 
     def save_ppsd(self):

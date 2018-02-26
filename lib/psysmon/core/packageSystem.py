@@ -459,7 +459,7 @@ class PackageManager:
         nodesFound = {}
         for curPkg in self.packages.itervalues():
             for curNode in curPkg.collectionNodeTemplates.itervalues():
-                if searchString in ','.join([curNode.name]+curNode.tags):
+                if searchString.lower() in ','.join([curNode.name]+curNode.tags).lower():
                     nodesFound[curNode.name] = curNode
 
         return nodesFound

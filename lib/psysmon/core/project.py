@@ -31,6 +31,7 @@ This module contains the classes for the project and user management.
 '''
 
 
+import json
 import weakref
 import logging
 import os
@@ -205,7 +206,8 @@ class Project(object):
     def __init__(self, name, user,
                  psybase = None, base_dir = '',
                  dbDialect='mysql', dbDriver=None, dbHost='localhost', 
-                 pkg_version = None, db_version = {}, dbName="", 
+                 pkg_version = None, db_version = {}, dbName="",
+                 db_table_version = None,
                  createTime=None, dbTables={}):
         '''The constructor.
 
@@ -314,6 +316,11 @@ class Project(object):
                 self.pkg_version[cur_pkg.name] = cur_pkg.version
         else:
             self.pkg_version = pkg_version
+
+        # The database table versions.
+        self.db_table_version = {}
+        if db_table_version is not None:
+            self.db_table_version = db_table_version
 
 
         # The version dictionary of the packages which created at least 
@@ -685,9 +692,15 @@ class Project(object):
             self.tmpDir = os.path.join(self.projectDir, "tmp")
             os.makedirs(self.tmpDir)
 
+            ## The project's collection directory.
+            self.collectionDir = os.path.join(self.projectDir, "collection")
+            os.makedirs(self.collectionDir)
+            for cur_user in self.user:
+                os.makedirs(os.path.join(self.collectionDir, cur_user.name))
+
         else:
             msg = "Cannot create the directory structure."
-            raise Exception(msg)    
+            raise Exception(msg)
 
 
     def updateDirectoryStructure(self):
@@ -701,19 +714,36 @@ class Project(object):
             self.dataDir = os.path.join(self.projectDir, "data")
 
             if not os.path.exists(self.dataDir):
-                msg = "The project data directory %s doesn't exist." % self.dataDir
-                raise Exception(msg)
+                self.logger.warning("The project data directory %s doesn't exist. Creating it.",
+                                     self.dataDir)
+                os.makedirs(self.dataDir)
 
             ## The project's temporary directory.
             self.tmpDir = os.path.join(self.projectDir, "tmp")
 
             if not os.path.exists(self.tmpDir):
-                msg = "The project temporary directory %s doesn't exist." % self.tmpDir
-                raise Exception(msg)
+                self.logger.warning("The project temporary directory %s doesn't exist.",
+                                    self.tmpDir)
+                os.makedirs(self.tmpDir)
+
+            ## The project's collection directory.
+            self.collectionDir = os.path.join(self.projectDir, "collection")
+
+            if not os.path.exists(self.collectionDir):
+                self.logger.warning("The project collection directory %s doesn't exist. Creating it.",
+                                    self.collectionDir)
+                os.makedirs(self.collectionDir)
+
+            for cur_user in self.user:
+                user_dir = os.path.join(self.collectionDir, cur_user.name)
+                if not os.path.exists(user_dir):
+                    self.logger.warning("The user collection directory %s doesn't exist. Creating it." ,
+                                        user_dir)
+                    os.makedirs(user_dir)
 
         else:
             msg = "Cannot create the directory structure."
-            raise Exception(msg)    
+            raise Exception(msg)
 
 
     def createDatabaseStructure(self, packages):
@@ -735,7 +765,7 @@ class Project(object):
         self.dbMetaData.create_all()
 
 
-    def loadDatabaseStructure(self, packages):
+    def loadDatabaseStructure(self, packages, update_db = True):
         '''Load the project's database structure.
 
         In pSysmon, each package can create its own database tables. 
@@ -758,6 +788,10 @@ class Project(object):
         packages : Dictionary of :class:`~psysmon.core.packageSystem.Package` instances.
             The packages to be used for the database structure creation.
             The key of the dictionary is the package name.
+
+        update_db : Boolean
+            True if the an update of the database tables should be done.
+            False if no update should be done.
         '''
 
         if not self.dbBase:
@@ -765,8 +799,6 @@ class Project(object):
 
         save_needed = False
         for _, curPkg in packages.iteritems():
-            pkg_version_changed = False
-            update_success = True
             if not curPkg.databaseFactory:
                 self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
@@ -778,41 +810,44 @@ class Project(object):
                     # Add the table prefix.
                     curName = curTable.__table__.name
                     curTable.__table__.name = self.slug + "_" + curTable.__table__.name
-                    try:
-                        # Check for changes in the database.
-                        if curPkg.name not in self.pkg_version.keys():
-                            pkg_version_changed = True
-                            self.logger.info("%s - The current package didn't exist when the project was saved - an update is needed.",curPkg.name)
-                            update_success = db_util.db_table_migration(table = curTable,
-                                                                        engine = self.dbEngine,
-                                                                        prefix = self.slug + '_')
+                    table_version_changed = False
+                    update_success = True
 
-                        elif psy_util.version_tuple(curPkg.version) > psy_util.version_tuple(self.pkg_version[curPkg.name]):
-                            pkg_version_changed = True
-                            self.logger.info('%s - The current package version %s is newer than the one used (%s) when the project was saved - an update is needed.',curPkg.name, curPkg.version, self.pkg_version[curPkg.name])
-                            update_success = db_util.db_table_migration(table = curTable,
-                                                                        engine = self.dbEngine,
-                                                                        prefix = self.slug + '_')
+                    if update_db:
+                        cur_version = psy_util.Version(curTable._version)
 
-                    except:
-                        update_success = False
-                        self.logger.exception("Couldn't migrate the table %s.", curName)
-                        continue
+                        try:
+                            # TODO: Create a database backup using mysqldump in
+                            # case that a database migration is needed.
+
+                            # Check for changes of the database table.
+                            if curName not in self.db_table_version.keys():
+                                self.logger.info("%s - No table version found in the project. This is a new table.",
+                                                 curName)
+                                update_success = db_util.db_table_migration(table = curTable,
+                                                                            engine = self.dbEngine,
+                                                                            prefix = self.slug + '_')
+                                table_version_changed = True
+                            elif cur_version > self.db_table_version[curName]:
+                                self.logger.info("%s - The package table version %s is larger than the one currently used in the database (%s). An update is needed.",
+                                                 curName, cur_version, self.db_table_version[curName])
+                                update_success = db_util.db_table_migration(table = curTable,
+                                                                            engine = self.dbEngine,
+                                                                            prefix = self.slug + '_')
+                                table_version_changed = True
+
+                        except:
+                            update_success = False
+                            self.logger.exception("Couldn't migrate the table %s.", curName)
 
                     self.dbTables[curName] = curTable
-
-            # Update the project package version to the current
-            # one.
-            if pkg_version_changed and update_success:
-                self.pkg_version[curPkg.name] = curPkg.version
-                save_needed = True
-            elif pkg_version_changed:
-                self.logger.error('There were errors while migrating the database. Please check the log file and the database consistency.')
-                self.pkg_version[curPkg.name] = curPkg.version
-                save_needed = True
+                    if table_version_changed and update_success:
+                        self.db_table_version[curName] = cur_version
+                        save_needed = True
 
         if save_needed:
             # Save the project to update the package versions.
+            self.logger.info("Saving the project file because of changes in the database table versions.")
             self.save_json()
 
 
@@ -846,10 +881,16 @@ class Project(object):
         ''' Save the project to a JSON formatted file.
 
         '''
-        import json
-        fp = open(os.path.join(self.projectDir, self.projectFile), mode = 'w')
-        json.dump(self, fp = fp, cls = psysmon.core.json_util.ProjectFileEncoder)
-        fp.close()
+        # Save the project file.
+        file_content = {'project': self}
+        file_container = psysmon.core.json_util.FileContainer(file_content)
+        with open(os.path.join(self.projectDir, self.projectFile), mode = 'w') as fid:
+            json.dump(file_container, fp = fid, cls = psysmon.core.json_util.ProjectFileEncoder)
+
+        # Save each collections of each user.
+        for cur_user in self.user:
+            cur_filepath = os.path.join(self.projectDir, self.collectionDir)
+            cur_user.save_collections(cur_filepath)
 
 
 
@@ -921,7 +962,10 @@ class Project(object):
         '''
         node = nodeTemplate()
         node.project = self
-        self.activeUser.addNode2Looper(node, position, looper_pos)
+        try:
+            self.activeUser.addNode2Looper(node, position, looper_pos)
+        except:
+            self.logger.exception("Couldn't add the collection node to a looper node.")
 
 
     def removeNodeFromCollection(self, position):
@@ -1180,6 +1224,30 @@ class User:
         '''
         return self.agency_uri.replace(' ', '_') + '.' + self.author_uri.replace(' ', '_')
 
+
+    def save_collections(self, path):
+        ''' Save the collections to json files.
+
+        '''
+        for cur_collection in self.collection.itervalues():
+            cur_collection.save(os.path.join(path, self.name))
+
+    def load_collections(self, path):
+        ''' Load the collections from json files.
+
+        '''
+        for cur_name in self.collection_names:
+            cur_filename = os.path.join(path, self.name, cur_name + '.json')
+            file_meta = psysmon.core.json_util.get_file_meta(cur_filename)
+            decoder = psysmon.core.json_util.get_collection_decoder(version = file_meta['file_version'])
+            with open(cur_filename, mode = 'r') as fp:
+                file_data = json.load(fp, cls = decoder)
+                # Old file versions didn't have the root level dictionary of
+                # the file container.
+                if file_meta['file_version'] >= psysmon.core.util.Version('1.0.0'):
+                    self.collection[file_data['collection'].name] = file_data['collection']
+                else:
+                    self.collection[file_data.name] = file_data
 
 
     def addCollection(self, name, project):

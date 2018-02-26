@@ -267,7 +267,7 @@ class PSDPlotter:
         ''' Plot the psd data and save it to an file.
         '''
         # Get the files containing the PSD data.
-        self.logger.info('Scanning for files.')
+        self.logger.info('Scanning for files in %s.', self.data_dir)
         file_list = self.scan_for_files()
 
         if len(file_list) == 0:
@@ -282,6 +282,8 @@ class PSDPlotter:
         for cur_file in file_list:
             cur_psd_data = {}
             self.logger.info('Reading file %s.', cur_file)
+            if isinstance(cur_file, unicode):
+                cur_file = cur_file.encode(encoding = 'utf-8')
             db = shelve.open(cur_file)
             cur_psd_data.update(db)
             db.close()
@@ -353,7 +355,7 @@ class PSDPlotter:
 
 
 
-        psd_matrix = np.zeros((psd_nfft/2. + 1, len(psd_data)))
+        psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(psd_data)))
         frequ = None
         time_key = sorted([x for x in psd_data.keys()])
         for m, cur_psd in enumerate([psd_data[x] for x in time_key]):
@@ -383,7 +385,7 @@ class PSDPlotter:
         cm_to_inch = 2.54
         avg_width = 4 / cm_to_inch
         psd_min_width = 10 / cm_to_inch
-        cb_width = 2 / cm_to_inch
+        cb_width = 1 / cm_to_inch
         plot_length = self.endtime - self.starttime
         #width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
         psd_width = len(time) / dpi
@@ -418,7 +420,9 @@ class PSDPlotter:
             ax_avg.set_yscale('log')
             ax_avg.set_ylim((min_frequ, np.max(frequ)))
         else:
-            ax_psd = fig.add_subplot(111)
+            ax_psd = fig.add_axes([0.1, 0.15, psd_width/width, 0.75])
+            pos = ax_psd.get_position()
+            ax_cb = fig.add_axes([pos.x1 + 0.01, 0.15, cb_width/width, 0.75])
 
 
         ax_psd.set_yscale('log')
@@ -441,8 +445,8 @@ class PSDPlotter:
         if self.with_average_plot:
             avg_amp_resp = np.mean(amp_resp, 1)
             med_amp_resp = np.median(amp_resp, 1)
-            p_nhnm, nhnm = obspy.signal.spectral_estimation.get_NHNM()
-            p_nlnm, nlnm = obspy.signal.spectral_estimation.get_NLNM()
+            p_nhnm, nhnm = obspy.signal.spectral_estimation.get_nhnm()
+            p_nlnm, nlnm = obspy.signal.spectral_estimation.get_nlnm()
 
             # obspy returns the NLNM and NHNM values in acceleration.
             # Convert them to the current unit (see Bormann (1998)).

@@ -58,6 +58,7 @@ import psysmon
 import psysmon.core.gui_view
 from psysmon.core.error import PsysmonError
 from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+import psysmon.core.preferences_manager as pm
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 import datetime
 import webbrowser
@@ -144,10 +145,13 @@ class PSysmonGui(wx.Frame):
             config = {}
             config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
             config['pref_manager'] = self.psyBase.pref_manager
+
+            file_container = psysmon.core.json_util.FileContainer(config)
             try:
-                fp = open(config_file, mode = 'w')
-                json.dump(config, fp = fp, cls = psysmon.core.json_util.ConfigFileEncoder)
-                fp.close()
+                with open(config_file, mode = 'w') as fid:
+                    json.dump(file_container,
+                              fp = fid,
+                              cls = psysmon.core.json_util.ConfigFileEncoder)
             except:
                 pass
 
@@ -800,6 +804,8 @@ class CollectionTreeCtrl(wx.TreeCtrl):
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
         self.contextMenu = psyContextMenu(cmData)
+        # Disable the delete collection menu item. It's not yet implemented.
+        self.contextMenu.Enable(self.contextMenu.FindItemByPosition(6).GetId(), False)
 
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.onShowContextMenu)
@@ -807,30 +813,42 @@ class CollectionTreeCtrl(wx.TreeCtrl):
 
     def onShowContextMenu(self, event):
         try:
+            # Enable all node relevant context menu items.
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            self.contextMenu.Enable(self.contextMenu.FindItemByPosition(2).GetId(), True)
+
             if self.Parent.selectedNodeType in ['node', 'looper']:
                 selectedNode = self.GrandParent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
             elif self.Parent.selectedNodeType == 'looper_child':
                 selectedLooper = self.GrandParent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
                 selectedNode = selectedLooper.children[self.Parent.selectedLooperChildNodeIndex]
+            else:
+                selectedNode = None
 
-            #selectedNode = self.Parent.Parent.psyBase.project.getNodeFromCollection(self.Parent.selectedCollectionNodeIndex)
-            if(selectedNode.mode == 'execute only'):
+            if selectedNode:
+                if(selectedNode.mode == 'execute only'):
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
+                else:
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+
+                if selectedNode.enabled:
+                    self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'disable node')
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+                else:
+                    self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'enable node')
+                    self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
+            else:
                 self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
-            else:
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), True)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
+                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(2).GetId(), False)
 
-            if selectedNode.enabled:
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'disable node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
-            else:
-                self.contextMenu.SetLabel(self.contextMenu.FindItemByPosition(1).GetId(), 'enable node')
-                self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), True)
-        except Exception as e:
+        except Exception:
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(0).GetId(), False)
             self.contextMenu.Enable(self.contextMenu.FindItemByPosition(1).GetId(), False)
-            print e
-
-        self.PopupMenu(self.contextMenu)
+            self.logger.exception("Problems setting the context menu labels.")
+        finally:
+            self.PopupMenu(self.contextMenu)
 
 
 ## The collection panel.
@@ -992,13 +1010,18 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.    
     def onCollectionNodeItemSelected(self, evt):
-        collection_pos, node_type = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
-        self.logger.debug("Selected node %s at position %d in collection.", node_type, collection_pos)
+        if not evt.GetItem():
+            return
+        item_data = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
+        node_type = item_data['node_type']
+        node_pos = item_data['node_pos']
+        self.logger.debug("Selected node %s at position %d in collection.", node_type, node_pos)
         self.selectedNodeType = node_type
-        if node_type in ['node', 'looper']:
-            self.selectedCollectionNodeIndex = collection_pos
-        elif node_type == 'looper_child':
-            self.selectedLooperChildNodeIndex = collection_pos
+        self.selectedCollectionNodeIndex = node_pos
+        if node_type == 'looper_child':
+            self.selectedLooperChildNodeIndex = item_data['child_pos']
+        else:
+            self.selectedLooperChildNodeIndex = -1
 
 
     # Load a collection context menu callback.
@@ -1008,12 +1031,12 @@ class CollectionPanel(wx.Panel):
     def onCollectionLoad(self, event):
         collections = self.psyBase.project.getCollection()
         choices = [x.name for x in collections.itervalues()]
-        dlg = wx.SingleChoiceDialog(None, "Select a collection", 
-                                    "Load collection", 
+        dlg = wx.SingleChoiceDialog(None, "Select a collection",
+                                    "Load collection",
                                     choices)
         if dlg.ShowModal() == wx.ID_OK:
             self.psyBase.project.setActiveCollection(dlg.GetStringSelection())
-            self.refreshCollection()   
+            self.refreshCollection()
         dlg.Destroy()
 
 
@@ -1022,7 +1045,7 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object. 
     def onCollectionNew(self, event):
-        colName = wx.GetTextFromUser('collection name', caption='New collection', 
+        colName = wx.GetTextFromUser('collection name', caption='New collection',
                                      default_value="", parent=None)
 
         if not colName:
@@ -1037,8 +1060,10 @@ class CollectionPanel(wx.Panel):
     # @param self The object pointer.
     # @param event The event object.
     def onCollectionDelete(self, event):
-        self.logger.debug("Delete a collection.")
-
+        self.logger.warning("Deleting a collection is not yet implemented.")
+        # TODO: Implement the removal of a collection. Take care of the saved
+        # collection file. Think about removing the currently active collection
+        # or showing a dialog from which to select the collection to delete.
 
     def refreshCollection(self):
         '''
@@ -1062,7 +1087,9 @@ class CollectionPanel(wx.Panel):
                 if isinstance(curNode, psysmon.core.packageNodes.LooperCollectionNode):
                     node_string = curNode.name + ' (looper)'
                     looper_node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
-                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, (k, 'looper'))
+                    item_data = {'node_pos': k,
+                                 'node_type': 'looper'}
+                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, item_data)
                     self.collectionTreeCtrl.SetItemImage(looper_node_item, self.collectionTreeCtrl.icons['looper_node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(looper_node_item)
@@ -1072,14 +1099,19 @@ class CollectionPanel(wx.Panel):
                     for child_pos, cur_child in enumerate(curNode.children):
                         node_string = cur_child.name + '(child)'
                         node_item = self.collectionTreeCtrl.AppendItem(looper_node_item, node_string)
-                        self.collectionTreeCtrl.SetItemPyData(node_item, (child_pos, 'looper_child'))
+                        item_data = {'node_pos': k,
+                                     'child_pos': child_pos,
+                                     'node_type': 'looper_child'}
+                        self.collectionTreeCtrl.SetItemPyData(node_item, item_data)
                         self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['looper_node_child'], wx.TreeItemIcon_Normal)
                         if not curNode.enabled:
                             self.collectionTreeCtrl.SetItemTextColour(node_item, wx.TheColourDatabase.Find('GREY70'))
                 else:
                     node_string = curNode.name
                     node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
-                    self.collectionTreeCtrl.SetItemPyData(node_item, (k, 'node'))
+                    item_data = {'node_pos': k,
+                                 'node_type': 'node'}
+                    self.collectionTreeCtrl.SetItemPyData(node_item, item_data)
                     self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(node_item)
@@ -1800,7 +1832,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Create the grid editing buttons.
         addDirButton = wx.Button(self, wx.ID_ANY, "add")
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
-        changeAliasButton = wx.Button(self, wx.ID_ANY, "change alias")
+        editDirButton = wx.Button(self, wx.ID_ANY, "edit")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5,5)
@@ -1808,8 +1840,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         # Fill the grid button sizer
         gridButtonSizer.Add(addDirButton, 0, wx.EXPAND|wx.ALL)
+        gridButtonSizer.Add(editDirButton, 0, wx.EXPAND|wx.ALL)
         gridButtonSizer.Add(removeDirButton, 0, wx.EXPAND|wx.ALL)
-        gridButtonSizer.Add(changeAliasButton, 0, wx.EXPAND|wx.ALL)
 
         fields = self.getGridColumns()
         self.wfListCtrl = wx.ListCtrl(self, style=wx.LC_REPORT)
@@ -1828,7 +1860,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
-        self.Bind(wx.EVT_BUTTON, self.onChangeAlias, changeAliasButton)
+        self.Bind(wx.EVT_BUTTON, self.onEditDirectory, editDirButton)
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onDirectorySelected, self.wfListCtrl)
 
@@ -1836,6 +1868,10 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.wfDir = self.project.dbTables['waveform_dir']
         self.wfDirAlias = self.project.dbTables['waveform_dir_alias']
         self.dbSession = self.project.getDbSession()
+
+        # The preferences of the selected waveform directory.
+        self.wfd_pref_manager = pm.PreferencesManager()
+        self.create_wfd_preferences()
 
         # A list of available waveform directories. It consits of tuples of
         self.wfDirList = self.dbSession.query(self.wfDir).join(self.wfDirAlias,
@@ -1855,6 +1891,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         tableField.append(('origDir', 'original directory', 'readonly'))
         tableField.append(('alias', 'alias', 'editable'))
         tableField.append(('description', 'description', 'editable'))
+        tableField.append(('file_ext', 'data file extension', 'editable'))
+        tableField.append(('first_import', 'first import', 'readonly'))
+        tableField.append(('last_scan', 'last scan', 'readonly'))
         return tableField
 
 
@@ -1864,34 +1903,74 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.selected_waveform_dir = self.wfDirList[evt.GetIndex()]
 
 
+    def initPreferenceValues(self):
+        ''' Set the preference values to default values.
+        '''
+        self.wfd_pref_manager.set_value('waveform_dir',
+                                        '')
+        self.wfd_pref_manager.set_value('waveform_dir_alias',
+                                        '')
+        self.wfd_pref_manager.set_value('description',
+                                        '')
+        self.wfd_pref_manager.set_value('file_ext',
+                                        '*.msd, *.mseed')
+
+
+    def setPreferenceValues(self):
+        ''' Set the preference values using the selected waveform directory.
+        '''
+        self.wfd_pref_manager.set_value('waveform_dir',
+                                        self.selected_waveform_dir.directory)
+        self.wfd_pref_manager.set_value('waveform_dir_alias',
+                                        self.selected_waveform_dir.aliases[0].alias)
+        self.wfd_pref_manager.set_value('description',
+                                        self.selected_waveform_dir.description)
+        self.wfd_pref_manager.set_value('file_ext',
+                                        self.selected_waveform_dir.file_ext)
+
+
+    def onEditDirectory(self, event):
+        ''' Edit the waveform directory values.
+        '''
+        self.setPreferenceValues()
+        self.wfd_pref_manager.get_item('waveform_dir')[0].visible = False
+        self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = True
+
+        dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
+                                 title = 'edit waveform directory')
+        if dlg.ShowModal() == wx.ID_OK:
+            self.selected_waveform_dir.description = self.wfd_pref_manager.get_value('description')
+            self.selected_waveform_dir.file_ext = self.wfd_pref_manager.get_value('file_ext')
+            self.selected_waveform_dir.aliases[0].alias = self.wfd_pref_manager.get_value('waveform_dir_alias')
+            self.updateWfListCtrl()
+
+        dlg.Destroy()
+
+
+
     def onAddDirectory(self, event):
         ''' The add directory callback.
 
         Show a directory browse dialog.
-        If a directory has been selected, call to insert the directory 
+        If a directory has been selected, call to insert the directory
         into the database.
         '''
-
-        # In this case we include a "New directory" button.
-        dlg = wx.DirDialog(self, "Choose a directory:",
-                          style=wx.DD_DEFAULT_STYLE
-                           #| wx.DD_DIR_MUST_EXIST
-                           #| wx.DD_CHANGE_DIR
-                           )
-
-        # If the user selects OK, then we process the dialog's data.
-        # This is done by getting the path data from the dialog - BEFORE
-        # we destroy it.
+        self.initPreferenceValues()
+        self.wfd_pref_manager.get_item('waveform_dir')[0].visible = True
+        self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = False
+        dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
+                                 title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
-            self.logger.info('You selected: %s', dlg.GetPath())
-
-            newWfDir = self.wfDir(dlg.GetPath(), '')
+            newWfDir = self.wfDir(self.wfd_pref_manager.get_value('waveform_dir'),
+                                  self.wfd_pref_manager.get_value('description'),
+                                  self.wfd_pref_manager.get_value('file_ext'),
+                                  '',
+                                  '')
             newAlias = self.wfDirAlias(self.project.activeUser.name,
-                                            dlg.GetPath())
+                                       self.wfd_pref_manager.get_value('waveform_dir'))
             newWfDir.aliases.append(newAlias)
 
             self.dbSession.add(newWfDir)
-            #self.dbSession.add(newWfDirAlias)
 
             self.wfDirList.append(newWfDir)
             self.updateWfListCtrl()
@@ -1900,20 +1979,69 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         dlg.Destroy()
 
 
+    def create_wfd_preferences(self):
+        ''' Create the preference items used to edit a waveform directory.
+        '''
+        page = self.wfd_pref_manager.add_page('preferences')
+        group = page.add_group('preferences')
+
+        item = pm.DirBrowsePrefItem(name = 'waveform_dir',
+                                        label = 'waveform directory',
+                                        value = '',
+                                        tool_tip = 'The waveform directory.',
+                                       )
+        group.add_item(item)
+
+        item = pm.DirBrowsePrefItem(name = 'waveform_dir_alias',
+                                        label = 'waveform directory alias',
+                                        value = '',
+                                        tool_tip = 'The waveform directory alias.'
+                                       )
+        group.add_item(item)
+
+        item = pm.TextEditPrefItem(name = 'description',
+                                   label = 'description',
+                                   value = '',
+                                   tool_tip = 'The description of the waveform directory.')
+        group.add_item(item)
+
+        item = pm.TextEditPrefItem(name = 'file_ext',
+                                   label = 'file extension',
+                                   value = '',
+                                   tool_tip = 'The file extension search pattern used to scan the directory for data files. A comma separated string (e.g. *.msd, *.mseed).')
+        group.add_item(item)
+
+
+
     def updateWfListCtrl(self):
         ''' Initialize the waveformDir table with values.
 
         '''
         self.wfListCtrl.DeleteAllItems()
         for k, curDir in enumerate(self.wfDirList):
+            if not curDir.first_import:
+                first_import = 'not yet imported'
+            else:
+                first_import = curDir.first_import
+
+            if not curDir.last_scan:
+                last_scan = 'not yet imported'
+            else:
+                last_scan = curDir.last_scan
+
             self.wfListCtrl.InsertStringItem(k, str(curDir.id))
             self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
             self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
             self.wfListCtrl.SetStringItem(k, 3, curDir.description)
+            self.wfListCtrl.SetStringItem(k, 4, curDir.file_ext)
+            self.wfListCtrl.SetStringItem(k, 5, first_import)
+            self.wfListCtrl.SetStringItem(k, 6, last_scan)
 
         self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        #self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        #self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        #self.wfListCtrl.SetColumnWidth(3, wx.LIST_AUTOSIZE)
+        self.wfListCtrl.SetColumnWidth(4, wx.LIST_AUTOSIZE)
 
 
     def onRemoveDirectory(self, event):
@@ -1928,38 +2056,6 @@ class PsysmonDbWaveclientOptions(wx.Panel):
             self.dbSession.expunge(obj2Delete)
 
         self.wfListCtrl.DeleteItem(selectedRow)
-
-
-    def onChangeAlias(self, event):
-        ''' The change alias button callback.
-
-        Select a new directory to use a the waveform directory alias.
-
-        Parameters
-        ----------
-        event :
-            The wxPython event passed to the callback.
-        '''
-        if not self.selected_waveform_dir:
-            return
-
-        # In this case we include a "New directory" button.
-        dlg = wx.DirDialog(self, "Choose a new alias directory:",
-                          style=wx.DD_DEFAULT_STYLE
-                           | wx.DD_DIR_MUST_EXIST,
-                           defaultPath = self.selected_waveform_dir.aliases[0].alias
-                           )
-
-        # If the user selects OK, then we process the dialog's data.
-        # This is done by getting the path data from the dialog - BEFORE
-        # we destroy it.
-        if dlg.ShowModal() == wx.ID_OK:
-            self.logger.info('New alias directory: %s', dlg.GetPath())
-            self.selected_waveform_dir.aliases[0].alias = dlg.GetPath()
-            self.updateWfListCtrl()
-
-        # Only destroy a dialog after you're done with it.
-        dlg.Destroy()
 
 
     def onOk(self):
@@ -1981,6 +2077,7 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         ''' Called when the dialog cancel button is clicked.
         '''
         self.dbSession.close()
+
 
 
 
@@ -2492,6 +2589,20 @@ class CreateNewProjectDlg(wx.Dialog):
 
         try:
             self.psyBase.createPsysmonProject(**projectData)
+
+            # Add the project path to the filehistory.
+            self.Parent.filehistory.AddFileToHistory(os.path.join(self.psyBase.project.projectDir,
+                                                                  self.psyBase.project.projectFile))
+            # Update the collection panel display.
+            self.Parent.collectionPanel.refreshCollection()
+
+            # Activate the user interfaces.
+            self.Parent.enableGuiElements(mode = 'project')
+
+            # Set the loaded project name as the title.
+            self.Parent.SetTitle(self.psyBase.project.name)
+
+
         except Exception as e:
             self.logger.error("Error while creating the project: %s", e)
             raise

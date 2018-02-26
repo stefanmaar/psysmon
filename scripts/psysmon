@@ -150,13 +150,13 @@ def load_config():
         raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
 
     if os.path.exists(config_file):
-        fp = open(config_file, 'r')
         try:
-            config = json.load(fp, cls = psysmon.core.json_util.ConfigFileDecoder)
+            file_meta = psysmon.core.json_util.get_file_meta(config_file)
+            decoder = psysmon.core.json_util.get_config_decoder(file_meta['file_version'])
+            with open(config_file, 'r') as fid:
+                config = json.load(fid, cls = decoder)
         except:
             config = {}
-        finally:
-            fp.close()
 
 
     return config

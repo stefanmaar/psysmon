@@ -49,10 +49,10 @@ from matplotlib.figure import Figure
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import numpy as np
+import obspy.signal.invsim
 from mpl_toolkits.basemap import pyproj
 from mpl_toolkits.basemap import Basemap
 from matplotlib.patches import Polygon
-from obspy.signal import pazToFreqResp
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Recorder
@@ -282,6 +282,7 @@ class EditGeometryDlg(wx.Frame):
                  ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml),
                  ("", "", ""),
                  ("Export stations to CSV", "Export the stations of the selected inventory to a CSV file.", self.onExportStations2Csv),
+                 ("Export stations to StationXML", "Export the stations of the selected inventory to a StationXML file.", self.onExportStations2StationXML),
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
                 ("Edit",
@@ -396,6 +397,163 @@ class EditGeometryDlg(wx.Frame):
                 writer.writerows(export_values)
             finally:
                 fid.close()
+
+
+    def onExportStations2StationXML(self, event):
+        ''' Export the stations to s StationXML formatted file.
+        '''
+        import obspy.core.inventory as obs_inv
+
+        if not self.selected_inventory:
+            self.logger.info("No inventory selected.")
+            return
+
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="xml file (*.xml)"\
+                     "All files (*.*)|*.*",
+            style=wx.SAVE | wx.CHANGE_DIR
+            )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            filepath = dlg.GetPath()
+        else:
+            return
+
+        exp_inv = obs_inv.Inventory(networks = [],
+                                    source = "psysmon")
+
+        for cur_network in self.selected_inventory.networks:
+            sx_network = obs_inv.Network(code = cur_network.name,
+                                         description = cur_network.description)
+
+            for cur_station in cur_network.stations:
+                cur_lonlat = cur_station.get_lon_lat();
+                sx_station = obs_inv.Station(code = cur_station.name,
+                                             latitude = cur_lonlat[1],
+                                             longitude = cur_lonlat[0],
+                                             elevation = cur_station.z,
+                                             site = obspy.core.inventory.Site(name = cur_station.description),
+                                             creation_date = obspy.core.utcdatetime.UTCDateTime('1970-01-01'))
+
+                for cur_channel in cur_station.channels:
+                    for cur_stream_timebox in cur_channel.streams:
+                        cur_rec_stream = cur_stream_timebox.item
+                        sx_datalogger = obs_inv.Equipment(type = ' - '.join((cur_rec_stream.producer, cur_rec_stream.model)),
+                                                          manufacturer = cur_rec_stream.producer,
+                                                          model = cur_rec_stream.model,
+                                                          serial_number = cur_rec_stream.serial,
+                                                          installation_date = cur_stream_timebox.start_time,
+                                                          removal_date = cur_stream_timebox.end_time)
+
+                        for cur_comp_timebox in cur_rec_stream.components:
+                            cur_component = cur_comp_timebox.item
+                            sx_sensor = obs_inv.Equipment(type = ' - '.join((cur_component.producer, cur_component.model)),
+                                                          manufacturer = cur_component.producer,
+                                                          model = cur_component.model,
+                                                          serial_number = cur_component.serial,
+                                                          installation_date = cur_comp_timebox.start_time,
+                                                          removal_date = cur_comp_timebox.end_time)
+
+                            cur_rec_parameter = cur_rec_stream.get_parameter(start_time = cur_comp_timebox.start_time,
+                                                                             end_time = cur_comp_timebox.end_time)
+
+                            if len(cur_rec_parameter) > 1:
+                                raise RuntimeError("Currently only one recorder parameter per deployment time is supported.")
+                            elif cur_rec_parameter > 0:
+                                cur_rec_parameter = cur_rec_parameter[0]
+
+                            cur_sensor_parameter = cur_component.get_parameter(start_time = cur_comp_timebox.start_time,
+                                                                               end_time = cur_comp_timebox.end_time)
+
+                            if len(cur_sensor_parameter) > 1:
+                                raise RuntimeError("Currently only one sensor parameter per deployment time is supported.")
+                            elif cur_sensor_parameter > 0:
+                                cur_sensor_parameter = cur_sensor_parameter[0]
+
+
+                            stage_number = 1
+                            stage_frequency = 10
+                            response = obs_inv.Response()
+                            if cur_sensor_parameter:
+                                sensor_stage = obs_inv.PolesZerosResponseStage(stage_sequence_number = stage_number,
+                                                                               stage_gain = cur_sensor_parameter.sensitivity,
+                                                                               stage_gain_frequency = stage_frequency,
+                                                                               input_units = cur_component.output_unit,
+                                                                               output_units = cur_component.deliver_unit,
+                                                                               pz_transfer_function_type = 'LAPLACE (RADIANS/SECOND)',
+                                                                               normalization_frequency = cur_sensor_parameter.tf_normalization_frequency,
+                                                                               normalization_factor = cur_sensor_parameter.tf_normalization_factor,
+                                                                               zeros = cur_sensor_parameter.tf_zeros,
+                                                                               poles = cur_sensor_parameter.tf_poles,
+                                                                               description = ','.join((cur_component.producer,
+                                                                                                       cur_component.model,
+                                                                                                       cur_component.serial,
+                                                                                                       cur_component.name)))
+                                response.response_stages.append(sensor_stage)
+                                stage_number += 1
+
+                            if cur_rec_parameter:
+                                recorder_stage = obs_inv.ResponseStage(stage_sequence_number = stage_number,
+                                                                       stage_gain = cur_rec_parameter.gain,
+                                                                       stage_gain_frequency = stage_frequency,
+                                                                       input_units = 'V',
+                                                                       output_units = 'V',
+                                                                       description = ','.join((cur_rec_stream.producer,
+                                                                                               cur_rec_stream.model,
+                                                                                               cur_rec_stream.serial,
+                                                                                               cur_rec_stream.name)))
+                                response.response_stages.append(recorder_stage)
+                                stage_number += 1
+
+                                decimation_stage = obs_inv.ResponseStage(stage_sequence_number = stage_number,
+                                                                         stage_gain = 1/cur_rec_parameter.bitweight,
+                                                                         stage_gain_frequency = stage_frequency,
+                                                                         input_units = 'V',
+                                                                         output_units = 'COUNTS',
+                                                                         description = ','.join((cur_rec_stream.producer,
+                                                                                                 cur_rec_stream.model,
+                                                                                                 cur_rec_stream.serial,
+                                                                                                 cur_rec_stream.name)))
+                                response.response_stages.append(decimation_stage)
+                                stage_number += 1
+
+                            if cur_sensor_parameter and cur_rec_parameter:
+                                overall_sensitivity = obs_inv.InstrumentSensitivity(value = cur_sensor_parameter.sensitivity * cur_rec_parameter.gain / cur_rec_parameter.bitweight,
+                                                                                    frequency = stage_frequency,
+                                                                                    input_units = response.response_stages[0].input_units,
+                                                                                    output_units = response.response_stages[-1].output_units)
+                                response.instrument_sensitivity = overall_sensitivity
+
+
+
+                            sx_channel = obs_inv.Channel(code = cur_channel.name,
+                                                         location_code = cur_station.location,
+                                                         latitude = cur_lonlat[1],
+                                                         longitude = cur_lonlat[0],
+                                                         elevation = cur_station.z,
+                                                         depth = 0,
+                                                         start_date = cur_comp_timebox.start_time,
+                                                         end_date = cur_comp_timebox.end_time,
+                                                         data_logger = sx_datalogger,
+                                                         sensor = sx_sensor,
+                                                         response = response)
+
+                            sx_station.channels.append(sx_channel)
+
+                sx_network.stations.append(sx_station)
+
+
+
+            exp_inv.networks.append(sx_network)
+
+        exp_inv.write(filepath,
+                      format = 'STATIONXML')
+
+
 
 
     def onCreateXmlInventory(self, event):
@@ -2433,6 +2591,7 @@ class NetworkPanel(wx.Panel):
         tableField.append(('description', 'description', 'readonly', str))
         tableField.append(('available_channels_string', 'channels', 'readonly', str))
         tableField.append(('assigned_recorders_string', 'recorders', 'readonly', str))
+        tableField.append(('assigned_sensors_string', 'sensors', 'readonly', str))
         return tableField
 
 
@@ -3782,8 +3941,8 @@ class SensorsPanel(wx.Panel):
                 return
 
 
-            h,f = pazToFreqResp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
-            #h,f = pazToFreqResp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
+            h,f = obspy.signal.invsim.paz_to_freq_resp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
+            #h,f = obspy.signal.invsim.paz_to_freq_resp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
             phase = np.unwrap(np.arctan2(-h.imag, h.real)) #take negative of imaginary part
 
             lines = self.tfMagAxis.get_lines()
