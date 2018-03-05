@@ -274,32 +274,36 @@ def handle_edit_command(args, logger):
 
 
 def handle_execute_command(args, logger):
-    if args.project is None:
-        project_files = glob.glob(os.path.join(os.getcwd(), '*.prj'))
+    logger.info('Executing the collection %s.', args.collection)
 
-        if len(project_files) == 0:
-            logger.error('No project file found in the current directory.')
-            return
-        elif len(project_files) > 1:
-            logger.error("Multiple project files found, don't know which one to use.")
-            return
-        else:
+    user_name = args.user
+
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+
+    if not args.project_file:
+        # Try to get the project file from the current directory.
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
+        if len(project_files) == 1:
             project_file = project_files[0]
+        else:
+            logger.error('More than one project file found in the current directory.')
+            return
     else:
-        project_file = os.path.join(args.project, args.project + '.prj')
+        project_file = args.project_file
 
-    # Load the project.
-    if os.path.exists(project_file):
-        project = psysmomat.core.project.load_project_from_file(project_file)
-    else:
-        logger.error("The project file %s doesn't exist.", project_file)
-        return
 
-    logger.debug('Executing the project ' + project_file + '.')
+    psybase = test_util.create_psybase();
+    try:
+        load_success = psybase.load_json_project(project_file,
+                                                user_name,
+                                                user_pwd)
+        psybase.project.setActiveCollection(args.collection)
+        psybase.project.executeCollection()
+    finally:
+        psybase.stop_project_server()
 
-    # Execute the tasklist.
-    if args.tasklist:
-        project.execute_tasklist(args.tasklist, args.starttime, args.endtime)
 
 
 
@@ -394,18 +398,20 @@ if __name__ == '__main__':
 
 
     # Create the parser for the 'execute' command.
-    parser_execute = subparsers.add_parser('execute', help = 'Execute tasklists of a project.')
+    parser_execute = subparsers.add_parser('execute', help = 'Execute a collection of the project.')
     parser_execute.set_defaults(func = handle_execute_command)
-    parser_execute.add_argument('project', help = 'Specifiy the project to use.',
-                            type = str, metavar = 'PROJECT_NAME', nargs = '?', default = None)
-    parser_execute.add_argument('-t', '--tasklist', help = 'The tasklist name to execute.',
-                                type = str, metavar = 'TASKLIST_NAME')
-    parser_execute.add_argument('-p', '--path', help = 'Specify the path in which the project directory is saved.',
-                            type = str, metavar = 'PROJECT_PATH')
-    parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
-                            type = str, metavar = 'STARTTIME')
-    parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
-                            type = str, metavar = 'ENDTIME')
+    parser_execute.add_argument('collection', help = 'The name of the collection to execute.',
+                                type = str, metavar = 'COLLECTION')
+    parser_execute.add_argument('-pf', '--project_file', help = 'The project file to work with.',
+                                type = str, metavar = 'PROJECT_FILE')
+    parser_execute.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
+                                type = str, metavar = 'USER')
+    parser_execute.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                action = 'store_true')
+    #parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
+    #                        type = str, metavar = 'STARTTIME')
+    #parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
+    #                        type = str, metavar = 'ENDTIME')
 
 
     # Create the parser for the 'update' command.
