@@ -179,6 +179,55 @@ def handle_import_geometry_command(args, logger):
 
 
 
+def handle_add_waveform_dir_command(args, logger):
+    logger.info('Adding the waveform directory %s.', args.path)
+
+    user_name = args.user
+
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+
+    if not args.project_file:
+        # Try to get the project file from the current directory.
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
+        if len(project_files) == 1:
+            project_file = project_files[0]
+        else:
+            logger.error('More than one project file found in the current directory.')
+            return
+    else:
+        project_file = args.project_file
+
+    if not args.description:
+        args.description = ''
+
+
+    psybase = test_util.create_psybase();
+    try:
+        load_success = psybase.load_json_project(project_file,
+                                                user_name,
+                                                user_pwd)
+        wf_dir_orm = psybase.project.dbTables['waveform_dir']
+        wf_dir_alias_orm = psybase.project.dbTables['waveform_dir_alias']
+
+        wf_dir = wf_dir_orm(args.path,
+                            args.description,
+                            args.file_ext,
+                            '',
+                            '')
+        wf_dir_alias = wf_dir_alias_orm(psybase.project.activeUser.name,
+                                        args.path)
+        wf_dir.aliases.append(wf_dir_alias)
+
+        db_session = psybase.project.getDbSession()
+        try:
+            db_session.add(wf_dir)
+            db_session.commit()
+        finally:
+            db_session.close()
+    finally:
+        psybase.stop_project_server()
 
 
 def handle_update_command(args, logger):
@@ -325,6 +374,22 @@ if __name__ == '__main__':
     parser_import_geometry.add_argument('-p', '--password', help = 'Specify the password for the user.',
                                        action = 'store_true')
 
+
+    # Create the parser for the 'add_waveform_directory' command.
+    parser_add_waveform_dir = subparsers.add_parser('add_waveform_dir', help = 'Add a waveform directory tothe database waveclient.')
+    parser_add_waveform_dir.set_defaults(func = handle_add_waveform_dir_command)
+    parser_add_waveform_dir.add_argument('path', help = 'The absolute path to the waveform directory.',
+                                        type = str, metavar = 'PATH')
+    parser_add_waveform_dir.add_argument('file_ext', help = 'The file extensions of the data files in the waveform directory (e.g. "*.msd,*.mseed").',
+                                        type = str, metavar = 'FILE_EXT')
+    parser_add_waveform_dir.add_argument('-d', '--description', help = 'The description of the waveform directory.',
+                                        type = str, metavar = 'DESCRIPTION')
+    parser_add_waveform_dir.add_argument('-pf', '--project_file', help = 'The project file to work with.',
+                                        type = str, metavar = 'PROJECT_FILE')
+    parser_add_waveform_dir.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
+                                       type = str, metavar = 'USER')
+    parser_add_waveform_dir.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                       action = 'store_true')
 
 
 
