@@ -114,6 +114,15 @@ class Inventory(object):
             return False
 
 
+    def clear(self):
+        ''' Clear all elements in the inventory.
+        '''
+        self.networks = []
+        self.arrays = []
+        self.recorders = []
+        self.sensors = []
+
+
     def add_recorder(self, recorder):
         ''' Add a recorder to the inventory.
 
