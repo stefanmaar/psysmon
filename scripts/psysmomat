@@ -42,6 +42,7 @@ mpl.rcParams['backend'] = 'Agg'
 
 import psysmon
 import psysmon.core.test_util as test_util
+import psysmon.packages.geometry as geom
 
 
 
@@ -114,6 +115,68 @@ def handle_remove_project_command(args, logger):
     test_util.remove_project(project_file = args.project_file,
                              user_name = args.user,
                              user_pwd = user_pwd)
+
+
+def handle_import_geometry_command(args, logger):
+    logger.info('Importing the geometry from file %s.', args.geometry_file)
+
+    user_name = args.user
+
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+
+    if not args.project_file:
+        # Try to get the project file from the current directory.
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
+        if len(project_files) == 1:
+            project_file = project_files[0]
+        else:
+            logger.error('More than one project file found in the current directory.')
+            return
+    else:
+        project_file = args.project_file
+
+
+    psybase = test_util.create_psybase();
+    try:
+        load_success = psybase.load_json_project(project_file,
+                                                user_name,
+                                                user_pwd)
+
+        inventory_parser = geom.inventory_parser.InventoryXmlParser()
+        try:
+            inventory = inventory_parser.parse(args.geometry_file)
+        except Warning as w:
+            print w
+
+        # Clear the existing data from the geometry tables.
+        project_slug = psybase.project.slug
+        tables_to_clear = [table for table in reversed(psybase.project.dbMetaData.sorted_tables) if table.key.startswith(project_slug + '_geom')]
+        for cur_table in tables_to_clear:
+            psybase.project.dbEngine.execute(cur_table.delete())
+
+        # Remove all elements from the session.
+        psybase.project.geometry_inventory.db_session.expunge_all()
+
+        db_inventory = psybase.project.geometry_inventory
+        db_inventory.clear()
+        for cur_sensor in inventory.sensors:
+            db_inventory.add_sensor(cur_sensor)
+
+        for cur_recorder in inventory.recorders:
+            db_inventory.add_recorder(cur_recorder)
+
+        for cur_network in inventory.networks:
+            db_inventory.add_network(cur_network)
+
+        for cur_array in inventory.arrays:
+            db_inventory.add_array(cur_array)
+
+        db_inventory.commit()
+    finally:
+        psybase.stop_project_server()
+
 
 
 
@@ -250,8 +313,17 @@ if __name__ == '__main__':
                                        action = 'store_true')
 
 
-
-
+    # Create the parser for the 'import_geometry' command.
+    parser_import_geometry = subparsers.add_parser('import_geometry', help = 'Import a psysmon geometry XML file to the database.')
+    parser_import_geometry.set_defaults(func = handle_import_geometry_command)
+    parser_import_geometry.add_argument('geometry_file', help = 'The geometry file to import.',
+                                        type = str, metavar = 'GEOMETRY_FILE')
+    parser_import_geometry.add_argument('-pf', '--project_file', help = 'The project file to work with.',
+                                        type = str, metavar = 'PROJECT_FILE')
+    parser_import_geometry.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
+                                       type = str, metavar = 'USER')
+    parser_import_geometry.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                       action = 'store_true')
 
 
 
@@ -270,11 +342,13 @@ if __name__ == '__main__':
     parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
                             type = str, metavar = 'ENDTIME')
 
+
     # Create the parser for the 'update' command.
     parser_update = subparsers.add_parser('update', help = 'Update a project.')
     parser_update.set_defaults(func = handle_update_command)
     parser_update.add_argument('project', help = 'Specifiy the project to use.',
                             type = str, metavar = 'PROJECT_NAME')
+
 
     # Create the parser for the 'info' command.
     parser_info = subparsers.add_parser('info', help = 'Get information about the project.')
@@ -290,12 +364,14 @@ if __name__ == '__main__':
     parser_info.add_argument('-tl', '--tasklist', help = 'Get information about the specified tasklist.',
                                 type = str, metavar = 'TASKLIST_NAME')
 
+
     # Create the parser for the 'edit' command.
     parser_edit = subparsers.add_parser('edit', help = 'Edit the settings of a project.')
     parser_edit.set_defaults(func = handle_edit_command)
 
     # Add name of the project as a positional argument. The project name
     # always has to be specified.
+
 
     args = parser.parse_args()
 
