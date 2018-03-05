@@ -31,6 +31,7 @@ This module contains the classes for the project and user management.
 '''
 
 
+import glob
 import json
 import weakref
 import logging
@@ -39,6 +40,7 @@ import sys
 import thread
 import subprocess
 import copy
+import wx
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 from wx import CallAfter
@@ -1236,8 +1238,9 @@ class User:
         ''' Load the collections from json files.
 
         '''
-        for cur_name in self.collection_names:
-            cur_filename = os.path.join(path, self.name, cur_name + '.json')
+        collection_files = glob.glob(os.path.join(path, self.name, '*.json'))
+        for cur_filename in collection_files:
+            #cur_filename = os.path.join(path, self.name, cur_name + '.json')
             file_meta = psysmon.core.json_util.get_file_meta(cur_filename)
             decoder = psysmon.core.json_util.get_collection_decoder(version = file_meta['file_version'])
             with open(cur_filename, mode = 'r') as fp:
@@ -1566,10 +1569,12 @@ class User:
             msg['procName'] = col2Proc.procName
             pub.sendMessage(msgTopic, msg = msg)
 
-            thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+            # Start the process checker only if the wx GUI is running.
+            if wx.App.Get():
+                thread.start_new_thread(processChecker, (proc, col2Proc.procName))
 
         else:
-            raise PsysmonError('No active collection found!') 
+            raise PsysmonError('No active collection found!')
 
 
 
