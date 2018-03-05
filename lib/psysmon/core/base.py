@@ -459,7 +459,7 @@ class Base(object):
         return True
 
 
-    def load_json_project(self, filename, user_name, user_pwd, update_db = True):
+    def load_json_project(self, filename, user_name = None, user_pwd = None, update_db = True):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
@@ -516,29 +516,32 @@ class Base(object):
             if cur_waveclient.mode == 'PsysmonDbWaveClient':
                 cur_waveclient.project = self.project
 
-        userSet = self.project.setActiveUser(user_name, user_pwd = user_pwd)
-        if not userSet:
-            self.project = None
-            return False
-        else:
-            # Load the current database structure.
-            self.project.loadDatabaseStructure(self.packageMgr.packages,
-                                               update_db = update_db)
+        # Check for a preferred user.
+        if user_name:
+            userSet = self.project.setActiveUser(user_name, user_pwd = user_pwd)
 
-            # Load the geometry inventory.
-            self.project.load_geometry_inventory()
+            if not userSet:
+                self.project = None
+                return False
 
-            # Check if the default wave client exists.
-            if self.project.defaultWaveclient not in self.project.waveclient.keys():
-                self.project.defaultWaveclient = None
+        # Load the current database structure.
+        self.project.loadDatabaseStructure(self.packageMgr.packages,
+                                           update_db = update_db)
 
-            # Set some variables depending on the database.
-            for cur_waveclient in self.project.waveclient.itervalues():
-                if cur_waveclient.mode == 'PsysmonDbWaveClient':
-                    # Load the waveform directory list from database.
-                    cur_waveclient.loadWaveformDirList()
+        # Load the geometry inventory.
+        self.project.load_geometry_inventory()
 
-            return True
+        # Check if the default wave client exists.
+        if self.project.defaultWaveclient not in self.project.waveclient.keys():
+            self.project.defaultWaveclient = None
+
+        # Set some variables depending on the database.
+        for cur_waveclient in self.project.waveclient.itervalues():
+            if cur_waveclient.mode == 'PsysmonDbWaveClient':
+                # Load the waveform directory list from database.
+                cur_waveclient.loadWaveformDirList()
+
+        return True
 
 
 
