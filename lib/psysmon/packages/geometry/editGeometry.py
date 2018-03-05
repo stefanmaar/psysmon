@@ -587,10 +587,7 @@ class EditGeometryDlg(wx.Frame):
         ''' Clear all elements from the selected inventory.
         '''
         if self.selected_inventory:
-            self.selected_inventory.networks = []
-            self.selected_inventory.arrays = []
-            self.selected_inventory.recorders = []
-            self.selected_inventory.sensors = []
+            self.selected_inventory.clear()
             self.inventoryTree.updateInventoryData()
 
             if self.selected_inventory.type == 'db':
