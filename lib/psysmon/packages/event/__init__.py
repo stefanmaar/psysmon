@@ -149,31 +149,6 @@ def databaseFactory(base):
     tables.append(EventDb)
 
 
-    ###########################################################################
-    # DETECTION_TO_EVENT table mapper class
-    class DetectionToEventDb(base):
-        __tablename__  = 'detection_to_event'
-        __table_args__ = (
-                          {'mysql_engine': 'InnoDB'}
-                         )
-        _version = '1.0.0'
-
-        ev_id = Column(Integer,
-                       ForeignKey('event.id', onupdate = 'cascade'),
-                       primary_key = True,
-                       nullable = False)
-        det_id = Column(Integer,
-                        ForeignKey('detection.id', onupdate = 'cascade'),
-                        primary_key = True,
-                        nullable = False)
-
-        detection = relationship('DetectionDb')
-
-        def __init(self, ev_id, det_id):
-            self.ev_id = ev_id
-            self.det_id = det_id
-
-    tables.append(DetectionToEventDb)
 
 
     ###########################################################################
@@ -248,6 +223,35 @@ def databaseFactory(base):
             self.creation_time = creation_time
 
     tables.append(DetectionDb)
+
+
+
+    ###########################################################################
+    # DETECTION_TO_EVENT table mapper class
+    class DetectionToEventDb(base):
+        __tablename__  = 'detection_to_event'
+        __table_args__ = (
+                          {'mysql_engine': 'InnoDB'}
+                         )
+        _version = '1.0.0'
+
+        ev_id = Column(Integer,
+                       ForeignKey('event.id', onupdate = 'cascade'),
+                       primary_key = True,
+                       nullable = False)
+        det_id = Column(Integer,
+                        ForeignKey('detection.id', onupdate = 'cascade'),
+                        primary_key = True,
+                        nullable = False)
+
+        detection = relationship('DetectionDb')
+
+        def __init(self, ev_id, det_id):
+            self.ev_id = ev_id
+            self.det_id = det_id
+
+    tables.append(DetectionToEventDb)
+
 
 
     return tables

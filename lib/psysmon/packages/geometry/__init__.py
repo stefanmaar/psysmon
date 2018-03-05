@@ -173,29 +173,6 @@ def databaseFactory(base):
 
 
 
-
-    class GeomComponentToStream(base):
-        __tablename__ = 'geom_component_to_stream'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
-        _version = '1.0.0'
-
-        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
-        component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
-        start_time = Column(Float(53), primary_key=True, nullable=False)
-        end_time = Column(Float(53))
-
-        component = relationship('GeomSensorComponent')
-
-        def __init__(self, stream_id, component_id, start_time, end_time):
-            self.stream_id = stream_id
-            self.component_id = component_id
-            self.start_time = start_time
-            self.end_time = end_time
-
-
-    tables.append(GeomComponentToStream)
-
-
     class GeomSensor(base):
         __tablename__ = 'geom_sensor'
         __table_args__ = (
@@ -335,6 +312,28 @@ def databaseFactory(base):
 
     tables.append(GeomTfPz)
 
+
+
+    class GeomComponentToStream(base):
+        __tablename__ = 'geom_component_to_stream'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
+
+        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
+        component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
+        start_time = Column(Float(53), primary_key=True, nullable=False)
+        end_time = Column(Float(53))
+
+        component = relationship('GeomSensorComponent')
+
+        def __init__(self, stream_id, component_id, start_time, end_time):
+            self.stream_id = stream_id
+            self.component_id = component_id
+            self.start_time = start_time
+            self.end_time = end_time
+
+
+    tables.append(GeomComponentToStream)
 
 
     # Create the geom_network table mapper.

@@ -49,6 +49,54 @@ def databaseFactory(base):
 
     tables = []
 
+    # Create the waveformdir table mapper class.
+    class WaveformDir(base):
+        __tablename__ = 'waveform_dir'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
+
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        directory = Column(String(255), nullable=False, unique=True)
+        description = Column(String(255), nullable=False)
+        file_ext = Column(String(255), nullable=False)
+        first_import = Column(String(30), nullable = True)
+        last_scan = Column(String(30), nullable = True)
+
+        aliases = relationship("WaveformDirAlias", cascade="all, delete-orphan")
+
+        def __init__(self, directory, description, file_ext,
+                     first_import, last_scan):
+            self.directory = directory
+            self.description = description
+            self.file_ext = file_ext
+            self.first_import = first_import
+            self.last_scan = last_scan
+
+    tables.append(WaveformDir)
+
+
+    # Create the waveformdiralias database table.
+    class WaveformDirAlias(base):
+        __tablename__ = 'waveform_dir_alias'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
+
+        wf_id = Column(Integer,
+                       ForeignKey('waveform_dir.id', onupdate="cascade"),
+                       nullable=False, 
+                       autoincrement=False, 
+                       primary_key=True)
+        user = Column(String(45), nullable=False, primary_key=True)
+        alias = Column(String(255), nullable=False)
+
+
+        def __init__(self, user, alias):
+            self.user = user
+            self.alias = alias
+
+    tables.append(WaveformDirAlias)
+
+
     # Create the datafile table mapper class.
     class Datafile(base):
         ''' The datafile database table mapper.
@@ -136,52 +184,6 @@ def databaseFactory(base):
 
     tables.append(Traceheader)
 
-    # Create the waveformdir table mapper class.
-    class WaveformDir(base):
-        __tablename__ = 'waveform_dir'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
-        _version = '1.0.0'
-
-        id = Column(Integer, primary_key=True, autoincrement=True)
-        directory = Column(String(255), nullable=False, unique=True)
-        description = Column(String(255), nullable=False)
-        file_ext = Column(String(255), nullable=False)
-        first_import = Column(String(30), nullable = True)
-        last_scan = Column(String(30), nullable = True)
-
-        aliases = relationship("WaveformDirAlias", cascade="all, delete-orphan")
-
-        def __init__(self, directory, description, file_ext,
-                     first_import, last_scan):
-            self.directory = directory
-            self.description = description
-            self.file_ext = file_ext
-            self.first_import = first_import
-            self.last_scan = last_scan
-
-    tables.append(WaveformDir)
-
-
-    # Create the waveformdiralias database table.
-    class WaveformDirAlias(base):
-        __tablename__ = 'waveform_dir_alias'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
-        _version = '1.0.0'
-
-        wf_id = Column(Integer,
-                       ForeignKey('waveform_dir.id', onupdate="cascade"),
-                       nullable=False, 
-                       autoincrement=False, 
-                       primary_key=True)
-        user = Column(String(45), nullable=False, primary_key=True)
-        alias = Column(String(255), nullable=False)
-
-
-        def __init__(self, user, alias):
-            self.user = user
-            self.alias = alias
-
-    tables.append(WaveformDirAlias)
 
     return tables
 
