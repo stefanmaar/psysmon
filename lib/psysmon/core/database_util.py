@@ -60,7 +60,7 @@ def db_table_migration(engine, table, prefix):
             table.__table__.create()
             migrate_success = True
         except:
-            logger.error('Error creating the table %s.', table.__table__.name)
+            logger.exception('Error creating the table %s.', table.__table__.name)
 
     return migrate_success
 
