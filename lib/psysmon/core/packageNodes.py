@@ -399,6 +399,10 @@ class LooperCollectionChildNode(CollectionNode):
             self._parent = None
 
 
+        # Indicate if waveform data is needed.
+        self.need_waveform_data = True
+
+
     @property
     def pre_stream_length(self):
         ''' The time-span needed for correct processing prior to the start time
@@ -476,7 +480,7 @@ class LooperCollectionChildNode(CollectionNode):
         pass
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, channels = None):
         ''' Execute the looper child.
 
         Parameters
@@ -489,6 +493,9 @@ class LooperCollectionChildNode(CollectionNode):
 
         origin_resource : String
             The resource ID of the looper executing the node.
+
+        channels : List of :class:`psysmon.packages.geometry.inventory.Channel`
+            The channels which should be processed.
         '''
         assert False, 'execute must be defined'
 
