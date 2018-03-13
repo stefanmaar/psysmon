@@ -35,7 +35,9 @@ import itertools
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
+import psysmon.packages.geometry.util as geom_util
 from mpl_toolkits.basemap import pyproj
+import numpy as np
 import warnings
 import logging
 from wx.lib.pubsub import setupkwargs
@@ -593,6 +595,39 @@ class Inventory(object):
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_array
+
+
+    def get_utm_epsg(self):
+        ''' Compute a the epsg code of the best fitting UTM coordinate system.
+        '''
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        for curNet in self.networks:
+            lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
+
+        if len(lonLat) == 0:
+            return
+
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0)
+        utm_zone = geom_util.lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        if np.mean([lonLatMin[1], lonLatMax[1]]) >= 0:
+            hemisphere = 'north'
+        else:
+            hemisphere = 'south'
+
+        # Get the epsg code of the UTM projection.
+        search_dict = {'projection': 'utm',
+                       'ellps': 'WGS84',
+                       'zone': utm_zone,
+                       'no_defs': True,
+                       'units': 'm'}
+        if hemisphere == 'south':
+            search_dict['south'] = True
+
+        epsg_dict = geom_util.get_epsg_dict()
+        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        return code
 
 
     @classmethod
@@ -2312,6 +2347,8 @@ class Network(object):
             return True
         else:
             return False
+
+
 
 
     def add_station(self, station):
