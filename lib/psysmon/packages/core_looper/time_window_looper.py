@@ -348,6 +348,8 @@ class SlidingWindowProcessor(object):
         chunk_length : float
             The lenght of the chunk window in seconds.
         '''
+        # Check if any of the looper nodes needs waveform data.
+        waveform_needed = np.any([x.need_waveform_data for x in looper_nodes])
 
         # Get the channels to process.
         channels = []
@@ -378,9 +380,13 @@ class SlidingWindowProcessor(object):
                         cur_chunk_end = cur_window_start + window_length
                     self.logger.info("Processing chunk for %s from %s to %s.", cur_channel.scnl_string, cur_chunk_start, cur_chunk_end)
 
-                    stream = self.request_stream(start_time = cur_chunk_start - pre_stream_length,
-                                                 end_time = cur_chunk_end + post_stream_length,
-                                                 scnl = [cur_channel.scnl,])
+
+                    if waveform_needed:
+                        stream = self.request_stream(start_time = cur_chunk_start - pre_stream_length,
+                                                     end_time = cur_chunk_end + post_stream_length,
+                                                     scnl = [cur_channel.scnl,])
+                    else:
+                        stream = None
 
                     # Execute the looper nodes.
                     resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
@@ -430,6 +436,9 @@ class SlidingWindowProcessor(object):
         '''
         n_windows = len(windowlist_start)
 
+        # Check if any of the looper nodes needs waveform data.
+        waveform_needed = np.any([x.need_waveform_data for x in looper_nodes])
+
         # Get the channels to process.
         channels = []
         for cur_station in station_names:
@@ -452,12 +461,15 @@ class SlidingWindowProcessor(object):
 
                 self.logger.info("Processing sliding window %d/%d.", k+1, n_windows)
 
-                self.logger.info("Initial stream request for time-span: %s to %s for scnl: %s.", cur_window_start.isoformat(),
-                                                                                    (cur_window_start + window_length).isoformat(),
-                                                                                     str(scnl))
-                stream = self.request_stream(start_time = cur_window_start - pre_stream_length,
-                                             end_time = cur_window_start + window_length + post_stream_length,
-                                             scnl = scnl)
+                if waveform_needed:
+                    self.logger.info("Initial stream request for time-span: %s to %s for scnl: %s.", cur_window_start.isoformat(),
+                                                                                        (cur_window_start + window_length).isoformat(),
+                                                                                         str(scnl))
+                    stream = self.request_stream(start_time = cur_window_start - pre_stream_length,
+                                                 end_time = cur_window_start + window_length + post_stream_length,
+                                                 scnl = scnl)
+                else:
+                    stream = None
 
                 # Execute the looper nodes.
                 resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
@@ -469,7 +481,8 @@ class SlidingWindowProcessor(object):
                     self.logger.debug("Executing node %s.", cur_node.name)
                     cur_node.execute(stream = stream,
                                      process_limits = process_limits,
-                                     origin_resource = resource_id)
+                                     origin_resource = resource_id,
+                                     channels = channels)
                     self.logger.debug("Finished execution of node %s.", cur_node.name)
 
                     # Get the results of the node.
