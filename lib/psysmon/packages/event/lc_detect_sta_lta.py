@@ -199,7 +199,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         self.load_catalogs()
         selected_catalog = [x for x in self.catalogs if x.name == catalog_name]
         if len(selected_catalog) == 0:
-            raise RuntimeError("No detection datalog found with name %s in the database.", catalog_name)
+            raise RuntimeError("No detection catalog found with name %s in the database.", catalog_name)
         elif len(selected_catalog) > 1:
             raise RuntimeError("Multiple detection catalogs found with name %s: %s.", catalog_name, selected_catalog)
         else:
