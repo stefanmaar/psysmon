@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -114,7 +113,6 @@ class DetectionBinder(object):
             # binding.
 
             if len(neighbors) < min_match_neighbors:
-                ipdb.set_trace() ############################## Breakpoint ##############################
                 raise RuntimeError("Not enough neighbors found for station %s. Detection ID: %d.", first_detection.snl, first_detection.db_id)
 
             if match_snl and (len(match_snl) <= min_match_neighbors) and (len(match_neighbors) == len(match_snl)):
@@ -152,8 +150,6 @@ class DetectionBinder(object):
 
             # Get the next earliest detection of each channel.
             next_detections = [x[0] for x in detections.values() if len(x) > 0]
-
-        ipdb.set_trace() ############################## Breakpoint ##############################
 
 
     def get_search_window(self, master, slaves):
