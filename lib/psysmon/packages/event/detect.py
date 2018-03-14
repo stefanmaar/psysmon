@@ -275,7 +275,25 @@ class Catalog(object):
 
 
     def add_detections(self, detections):
-        ''' Add one or more events to the detections.
+        ''' Add one or more detections to the catalog.
+
+        Parameters
+        ----------
+        detections : list of :class:`Detection`
+            The detections to add to the catalog.
+        '''
+        # Check for potential duplicates.
+        # TODO: add a compare method for the detection class.
+        db_ids = [x.db_id for x in self.detections]
+        detections = [x for x in detections if x.db_id is None or x.db_id not in db_ids]
+
+        for cur_detection in detections:
+            cur_detection.parent = self
+        self.detections.extend(detections)
+
+
+    def remove_detections(self, detections):
+        ''' Remove the detections from the catalog.
 
         Parameters
         ----------
@@ -283,11 +301,12 @@ class Catalog(object):
             The detections to add to the catalog.
         '''
         for cur_detection in detections:
-            cur_detection.parent = self
-        self.detections.extend(detections)
+            if cur_detection in self.detections:
+                self.detections.remove(cur_detection)
 
 
-    def get_detections(self, start_time = None, end_time = None, **kwargs):
+    def get_detections(self, start_time = None, end_time = None,
+                       start_inside = False, end_inside = False, **kwargs):
         ''' Get detections using search criteria passed as keywords.
 
         Parameters
@@ -297,6 +316,14 @@ class Catalog(object):
 
         end_time : class:`~obspy.core.utcdatetime.UTCDateTime`
             The maximum end_time of the detections.
+
+        start_inside : Boolean
+            If True, select only those detection with a start time
+            inside the search window.
+
+        end_inside : Boolean
+            If True, select only those detection with an end time
+            inside the search window.
 
         scnl : tuple of Strings
             The scnl code of the channel (e.g. ('GILA, 'HHZ', 'XX', '00')).
@@ -312,10 +339,16 @@ class Catalog(object):
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         if start_time is not None:
-            ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.end_time > start_time)]
+            if start_inside:
+                ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.start_time >= start_time)]
+            else:
+                ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.end_time > start_time)]
 
         if end_time is not None:
-            ret_detections = [x for x in ret_detections if x.start_time < end_time]
+            if end_inside:
+                ret_detections = [x for x in ret_detections if x.end_time <= end_time]
+            else:
+                ret_detections = [x for x in ret_detections if x.start_time < end_time]
 
         return ret_detections
 
