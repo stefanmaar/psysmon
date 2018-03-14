@@ -160,7 +160,9 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         stations = [x.parent_station for x in channels]
         stations = list(set(stations))
         binder = detection_binding.DetectionBinder(event_catalog = self.event_catalog,
-                                                   stations = stations)
+                                                   stations = stations,
+                                                   author_uri = self.project.activeUser.author_uri,
+                                                   agency_uri = self.project.activeUser.agency_uri)
         binder.compute_search_windows(vel = 3000)
 
         # Get the detecions at the end of the processing window which can't be
@@ -178,6 +180,11 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # Store the unprocessed detection in the catalog for the next step.
         self.detection_catalog.clear_detections()
         self.detection_catalog.add_detections(keep_detections)
+
+        # Write the events of the binder to the database and clear the
+        # binder event catalog.
+        binder.event_catalog.write_to_database(self.project)
+        binder.event_catalog.clear_events()
 
 
 
