@@ -147,7 +147,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         '''
         # Load the detections for the processing timespan.
         # TODO: Make the minimum detection length a user preference.
-        min_detection_length = 1
+        min_detection_length = None
         self.detection_catalog.load_detections(project = self.project,
                                                start_time = process_limits[0],
                                                end_time = process_limits[1],
@@ -155,13 +155,30 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.detection_catalog.assign_channel(inventory = self.project.geometry_inventory)
 
 
-        # Bind the detections.
+        # Initialize the binder.
+        # TODO: This could be moved to the initialize method.
         stations = [x.parent_station for x in channels]
         stations = list(set(stations))
         binder = detection_binding.DetectionBinder(event_catalog = self.event_catalog,
                                                    stations = stations)
         binder.compute_search_windows(vel = 3000)
+
+        # Get the detecions at the end of the processing window which can't be
+        # processed becaused of potentially missing detections outside the
+        # processing window.
+        max_search_window = max([max(x.values()) for x in binder.search_windows.values()])
+        keep_detections = self.detection_catalog.get_detections(start_time = process_limits[1] - max_search_window,
+                                                                start_inside = True)
+        self.detection_catalog.remove_detections(keep_detections)
+
+        # Bind the detections
         binder.bind(catalog = self.detection_catalog,
                     channel_scnl = [x.scnl for x in channels])
+
+        # Store the unprocessed detection in the catalog for the next step.
+        self.detection_catalog.clear_detections()
+        self.detection_catalog.add_detections(keep_detections)
+
+
 
 
