@@ -44,8 +44,17 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # No waveform data is needed.
         self.need_waveform_data = False
 
-        # The available detection catalogs.
-        self.catalogs = []
+        # The detection catalog libarary
+        self.detection_library = detect.Library('binder')
+
+        # The working detection catalog.
+        self.detection_catalog = None
+
+        # The event catalog library
+        self.event_library = event_core.Library('binder')
+
+        # The working event catalog.
+        self.event_catalog = None
 
         # Create the preference items.
         self.create_preferences()
@@ -81,18 +90,15 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
     def edit(self):
         ''' Create the preferences edit dialog.
         '''
-        # Load the detection and event catalogs from db.
-        self.load_catalogs()
-
         # Initialize the detection_catalog preference item.
-        catalog_names = [x.name for x in self.detection_catalogs]
+        catalog_names = sorted(self.detection_library.get_catalogs_in_db(self.project))
         self.pref_manager.set_limit('detection_catalog', catalog_names)
         if catalog_names:
             if self.pref_manager.get_value('detection_catalog') not in catalog_names:
                 self.pref_manager.set_value('detection_catalog', catalog_names[0])
 
         # Initialize the event catalog preference item.
-        catalog_names = [x.name for x in self.event_catalogs]
+        catalog_names = sorted(self.event_library.get_catalogs_in_db(self.project))
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
             if self.pref_manager.get_value('event_catalog') not in catalog_names:
@@ -109,6 +115,28 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         dlg.Destroy()
 
 
+    def initialize(self):
+        ''' Initialize some insance persistent attributes.
+        '''
+        # Get the selected detection and event catalogs.
+        catalog_name = self.pref_manager.get_value('detection_catalog')
+        self.detection_library.load_catalog_from_db(project = self.project,
+                                                    name = catalog_name)
+        if catalog_name in self.detection_library.catalogs.keys():
+            self.detection_catalog = self.detection_library.catalogs[catalog_name]
+        else:
+            raise RuntimeError("No detection catalog with name %s found in the database.", catalog_name)
+
+
+        catalog_name = self.pref_manager.get_value('event_catalog')
+        self.event_library.load_catalog_from_db(project = self.project,
+                                                name = catalog_name)
+        if catalog_name in self.event_library.catalogs.keys():
+            self.event_catalog = self.event_library.catalogs[catalog_name]
+        else:
+            raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)
+
+
     def execute(self, stream, process_limits = None, origin_resource = None, channels = None):
         ''' Execute the stack node.
 
@@ -117,74 +145,23 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
-        # Get the selected detection and event catalogs.
-        self.load_catalogs()
-        catalog_name = self.pref_manager.get_value('detection_catalog')
-        detection_library = detect.Library('binder')
-        detection_library.load_catalog_from_db(project = self.project,
-                                               name = catalog_name)
-        if catalog_name in detection_library.catalogs.keys():
-            detection_catalog = detection_library.catalogs[catalog_name]
-        else:
-            raise RuntimeError("No detection catalog with name %s found in the database.", catalog_name)
-
-
-        catalog_name = self.pref_manager.get_value('event_catalog')
-        event_library = event_core.Library('binder')
-        event_library.load_catalog_from_db(project = self.project,
-                                           name = catalog_name)
-        if catalog_name in event_library.catalogs.keys():
-            event_catalog = event_library.catalogs[catalog_name]
-        else:
-            raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)
-
-
         # Load the detections for the processing timespan.
         # TODO: Make the minimum detection length a user preference.
-        min_detection_length = None
-        detection_catalog.load_detections(project = self.project,
-                                          start_time = process_limits[0],
-                                          end_time = process_limits[1],
-                                          min_detection_length = min_detection_length)
-        detection_catalog.assign_channel(inventory = self.project.geometry_inventory)
+        min_detection_length = 1
+        self.detection_catalog.load_detections(project = self.project,
+                                               start_time = process_limits[0],
+                                               end_time = process_limits[1],
+                                               min_detection_length = min_detection_length)
+        self.detection_catalog.assign_channel(inventory = self.project.geometry_inventory)
 
 
         # Bind the detections.
         stations = [x.parent_station for x in channels]
         stations = list(set(stations))
-        binder = detection_binding.DetectionBinder(event_catalog = event_catalog,
+        binder = detection_binding.DetectionBinder(event_catalog = self.event_catalog,
                                                    stations = stations)
         binder.compute_search_windows(vel = 3000)
-        binder.bind(catalog = detection_catalog,
+        binder.bind(catalog = self.detection_catalog,
                     channel_scnl = [x.scnl for x in channels])
 
-
-
-
-
-    def load_catalogs(self):
-        ''' Load the detection and event catalogs from the database.
-
-        '''
-        db_session = self.project.getDbSession()
-        try:
-            cat_table = self.project.dbTables['detection_catalog']
-            query = db_session.query(cat_table.id,
-                                     cat_table.name,
-                                     cat_table.description,
-                                     cat_table.agency_uri,
-                                     cat_table.author_uri,
-                                     cat_table.creation_time)
-            self.detection_catalogs = query.all()
-
-            cat_table = self.project.dbTables['event_catalog']
-            query = db_session.query(cat_table.id,
-                                     cat_table.name,
-                                     cat_table.description,
-                                     cat_table.agency_uri,
-                                     cat_table.author_uri,
-                                     cat_table.creation_time)
-            self.event_catalogs = query.all()
-        finally:
-            db_session.close()
 
