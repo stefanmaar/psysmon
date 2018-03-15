@@ -78,14 +78,6 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
             if self.pref_manager.get_value('event_catalog') not in catalog_names:
                 self.pref_manager.set_value('event_catalog', catalog_names[0])
 
-        # Initialize the available processing nodes.
-        processing_nodes = self.project.getProcessingNodes(('common', ))
-        if self.pref_manager.get_value('processing_stack') is None:
-                detrend_node_template = [x for x in processing_nodes if x.name == 'detrend'][0]
-                detrend_node = copy.deepcopy(detrend_node_template)
-                self.pref_manager.set_value('processing_stack', [detrend_node, ])
-        self.pref_manager.set_limit('processing_stack', processing_nodes)
-
         # Initialize the components.
         if self.project.geometry_inventory:
             stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
