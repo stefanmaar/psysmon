@@ -29,7 +29,6 @@ website = "http://www.stefanmertl.com"          # The package website.
 collection_node_modules = ['import_bulletin',
                            'detect_sta_lta',
                            'edit_event_catalogs',
-                           'event_processor',
                            'lc_detect_sta_lta',
                            'edit_detection_catalogs',
                            'lc_detection_binder']
