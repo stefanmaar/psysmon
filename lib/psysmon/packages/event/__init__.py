@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "events"                                 # The package name.
-version = "0.0.1"                               # The package version.
+version = "0.0.2"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
 description = "The events core package"            # The package description.
@@ -43,6 +43,16 @@ plugin_modules = ['plugins_event_selector',
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
 
+
+'''
+Database change history.
+version 0.0.1 - 2018-03-15
+Added the event_type database.
+Added the foreign key relationship to the event database.
+
+'''
+
+
 def databaseFactory(base):
     from sqlalchemy import Column
     from sqlalchemy import Integer
@@ -52,6 +62,7 @@ def databaseFactory(base):
     from sqlalchemy import ForeignKey
     from sqlalchemy import UniqueConstraint
     from sqlalchemy.orm import relationship
+    from sqlalchemy.orm import backref
 
     tables = []
 
@@ -98,7 +109,7 @@ def databaseFactory(base):
         __table_args__ = (
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '1.0.0'
+        _version = '1.0.1'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         ev_catalog_id = Column(Integer,
@@ -112,7 +123,11 @@ def databaseFactory(base):
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
         tags = Column(String(255), nullable = True)
-        ev_type_id = Column(Integer, nullable = True)
+        ev_type_id = Column(Integer,
+                            ForeignKey('event_type.id',
+                                       onupdate = 'cascade',
+                                       ondelete = 'set null'),
+                            nullable = True)
         ev_type_certainty = Column(String(50), nullable = True)
         pref_origin_id = Column(Integer, nullable = True)
         pref_magnitude_id = Column(Integer, nullable = True)
@@ -122,6 +137,7 @@ def databaseFactory(base):
         creation_time = Column(String(30), nullable = True)
 
         detections = relationship('DetectionToEventDb')
+        event_type = relationship('EventTypeDb')
 
 
         def __init__(self, ev_catalog_id, start_time, end_time,
@@ -145,10 +161,48 @@ def databaseFactory(base):
             self.author_uri = author_uri
             self.creation_time = creation_time
 
-
     tables.append(EventDb)
 
 
+
+
+    ###########################################################################
+    # EVENT_TYPE table mapper class
+    class EventTypeDb(base):
+        __tablename__  = 'event_type'
+        __table_args__ = (
+                          UniqueConstraint('name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+        _version = '1.0.0'
+
+        id = Column(Integer, primary_key = True, autoincrement = True)
+        parent_id = Column(Integer,
+                           ForeignKey('event_type.id',
+                                      onupdate = 'cascade',
+                                      ondelete = 'cascade'),
+                           nullable = True)
+        name = Column(String(255), nullable = False)
+        description = Column(Text, nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
+        creation_time = Column(String(30), nullable = True)
+
+        children = relationship('EventTypeDb',
+                                cascade = 'all',
+                                backref = backref('parent', remote_side = [id]))
+
+
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+
+    tables.append(EventTypeDb)
 
 
     ###########################################################################
