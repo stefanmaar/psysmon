@@ -480,7 +480,7 @@ class LooperCollectionChildNode(CollectionNode):
         pass
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None, channels = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
         ''' Execute the looper child.
 
         Parameters

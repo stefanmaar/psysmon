@@ -68,7 +68,7 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
 
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         ''' Execute the stack node.
 
         Parameters

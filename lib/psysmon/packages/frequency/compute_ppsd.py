@@ -147,7 +147,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         dlg.Destroy()
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         '''
         '''
         start_time = process_limits[0]

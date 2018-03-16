@@ -137,7 +137,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
             raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None, channels = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
         ''' Execute the stack node.
 
         Parameters

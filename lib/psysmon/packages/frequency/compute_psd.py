@@ -106,7 +106,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         dlg.Destroy()
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         '''
         '''
         psd_nfft = self.pref_manager.get_value('psd_nfft')
