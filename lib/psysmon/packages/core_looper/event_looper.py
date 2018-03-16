@@ -35,6 +35,8 @@ This module contains the classes of the importWaveform dialog window.
 import os
 import copy
 import logging
+
+import numpy as np
 import psysmon
 import psysmon.core.packageNodes as package_nodes
 import obspy.core
@@ -45,7 +47,7 @@ from psysmon.packages.event.plugins_event_selector import EventListField
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.processingStack import ProcessingStack
 #from psysmon.core.processingStack import ResultBag
-import psysmon.packages.event.core as ev_core
+import psysmon.packages.event.core as event_core
 
 
 
@@ -62,17 +64,18 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
     def __init__(self, **args):
         package_nodes.LooperCollectionNode.__init__(self, **args)
 
-        self.catalogs = []
+        # The event catalog library
+        self.event_library = event_core.Library('binder')
 
         self.create_selector_preferences()
         self.create_component_selector_preferences()
+        self.create_processing_preferences()
         self.create_output_preferences()
 
 
     def edit(self):
-        # Initialize the available catalogs.
-        self.load_catalogs()
-        catalog_names = [x.name for x in self.catalogs]
+        # Initialize the event catalog preference item.
+        catalog_names = sorted(self.event_library.get_catalogs_in_db(self.project))
         self.pref_manager.set_limit('event_catalog', catalog_names)
         if catalog_names:
             if self.pref_manager.get_value('event_catalog') not in catalog_names:
@@ -97,10 +100,6 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
 
 
     def execute(self, prevNodeOutput={}):
-        processing_stack = ProcessingStack(name = 'pstack',
-                                           project = self.project,
-                                           nodes = self.pref_manager.get_value('processing_stack'))
-
         # Get the output directory from the pref_manager. If no directory is
         # specified create one based on the node resource id.
         output_dir = self.pref_manager.get_value('output_dir')
@@ -108,7 +107,6 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
             output_dir = self.project.dataDir
 
         processor = EventProcessor(project = self.project,
-                                   processing_stack = processing_stack,
                                    output_dir = output_dir,
                                    parent_rid = self.rid)
 
@@ -118,59 +116,14 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         else:
             event_ids = None
 
-
-        # Compute the processing intervals.
-        output_interval = self.pref_manager.get_value('output_interval')
-        start_time = self.pref_manager.get_value('start_time')
-        end_time = self.pref_manager.get_value('end_time')
-        seconds_per_day = 86400
-        interval_start = [start_time, ]
-        interval_end = []
-        if output_interval == 'daily':
-            interval = seconds_per_day
-            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + interval
-            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day)
-            n_intervals = (int_end - int_start) / interval
-            interval_start.extend([int_start + x * interval for x in range(0, int(n_intervals))])
-        elif output_interval == 'weekly':
-            interval = seconds_per_day*7
-            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + (6 - start_time.weekday) * seconds_per_day
-            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day) - end_time.weekday * seconds_per_day
-            n_intervals = (int_end - int_start) / interval
-            interval_start.extend([int_start + x * interval for x in range(0, int(n_intervals))])
-        elif output_interval == 'monthly':
-            start_year = start_time.year
-            start_month = start_time.month + 1
-            if start_month > 12:
-                start_year = start_year + 1
-                start_month = 1
-            end_year = end_time.year
-            end_month = end_time.month
-
-            month_dict = {}
-            year_list = range(start_year, end_year + 1)
-            for k, cur_year in enumerate(year_list):
-                if k == 0:
-                    month_dict[year_list[0]] = range(start_month, end_month)
-                elif k == len(year_list) - 1:
-                    month_dict[year_list[0]] = range(1, end_month)
-                else:
-                    month_dict[year_list[0]] = range(1, 12)
-
-            for cur_year, month_list in month_dict.iteritems():
-                for cur_month in month_list:
-                    interval_start.append(UTCDateTime(year = cur_year, month = cur_month))
-
-        interval_start.append(end_time)
-
-
-        for k, cur_start_time in enumerate(interval_start[:-1]):
-            processor.process(start_time = cur_start_time,
-                              end_time = interval_start[k+1],
-                              station_names = self.pref_manager.get_value('stations'),
-                              channel_names = self.pref_manager.get_value('channels'),
-                              event_catalog = self.pref_manager.get_value('event_catalog'),
-                              event_ids = event_ids)
+        processor.process(looper_nodes = self.children,
+                          start_time = self.pref_manager.get_value('start_time'),
+                          end_time = self.pref_manager.get_value('end_time'),
+                          processing_interval = self.pref_manager.get_value('processing_interval'),
+                          station_names = self.pref_manager.get_value('stations'),
+                          channel_names = self.pref_manager.get_value('channels'),
+                          event_catalog = self.pref_manager.get_value('event_catalog'),
+                          event_ids = event_ids)
 
 
 
@@ -263,57 +216,39 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
 
 
 
-    def load_catalogs(self):
-        ''' Load the event catalogs from the database.
-
+    def create_processing_preferences(self):
+        ''' Create the preference items of the processing stack section.
         '''
-        db_session = self.project.getDbSession()
-        try:
-            cat_table = self.project.dbTables['event_catalog'];
-            query = db_session.query(cat_table.id,
-                                     cat_table.name,
-                                     cat_table.description,
-                                     cat_table.agency_uri,
-                                     cat_table.author_uri,
-                                     cat_table.creation_time)
-            self.catalogs = query.all()
+        ps_page = self.pref_manager.add_page('processing')
+        mode_group = ps_page.add_group('mode')
 
-        finally:
-            db_session.close()
+        item = psy_pm.SingleChoicePrefItem(name = 'processing_interval',
+                                          label = 'processing interval',
+                                          limit = ('hour', 'day', 'week', 'month', 'whole'),
+                                          value = 'day',
+                                          tool_tip = 'The interval of the processing.')
+        mode_group.add_item(item)
 
 
     def on_load_events(self, event):
         ''' Handle a click on the load_events ActionItem Button.
         '''
-        event_table = self.project.dbTables['event']
-        cat_table = self.project.dbTables['event_catalog']
-        db_session = self.project.getDbSession()
-        try:
-            start_time = self.pref_manager.get_value('start_time')
-            end_time = self.pref_manager.get_value('end_time')
-            catalog_name = self.pref_manager.get_value('event_catalog')
-            query = db_session.query(event_table.id,
-                                     event_table.start_time,
-                                     event_table.end_time,
-                                     event_table.public_id,
-                                     event_table.description,
-                                     event_table.agency_uri,
-                                     event_table.author_uri,
-                                     event_table.comment,
-                                     event_table.tags).\
-                                     filter(event_table.start_time >= start_time.timestamp).\
-                                     filter(event_table.start_time <= end_time.timestamp).\
-                                     filter(event_table.ev_catalog_id == cat_table.id).\
-                                     filter(cat_table.name == catalog_name)
-
-            events = query.all()
-            pref_item = self.pref_manager.get_item('events')[0]
-            field = pref_item.gui_element[0]
-            field.set_events(events)
+        # TODO: The looper node can't be deep-copied when executing, if events have been
+        # loaded.
+        start_time = self.pref_manager.get_value('start_time')
+        end_time = self.pref_manager.get_value('end_time')
+        catalog_name = self.pref_manager.get_value('event_catalog')
+        self.event_library.load_catalog_from_db(project = self.project,
+                                                name = catalog_name)
+        event_catalog = self.event_library.catalogs[catalog_name]
+        event_catalog.load_events(project = self.project,
+                                  start_time = start_time,
+                                  end_time = end_time)
 
 
-        finally:
-            db_session.close()
+        pref_item = self.pref_manager.get_item('events')[0]
+        field = pref_item.gui_element[0]
+        field.set_events(event_catalog.events)
 
 
     def on_select_individual(self):
@@ -329,7 +264,7 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
 
 class EventProcessor(object):
 
-    def __init__(self, project, output_dir, processing_stack = None, parent_rid = None):
+    def __init__(self, project, output_dir, parent_rid = None):
         ''' Initialize the instance.
 
         '''
@@ -340,7 +275,8 @@ class EventProcessor(object):
 
         self.project = project
 
-        self.processing_stack = processing_stack
+        # The timespan for which waveform data is available.
+        self.active_timespan = ()
 
         self.parent_rid = parent_rid
 
@@ -355,10 +291,8 @@ class EventProcessor(object):
             self.output_dir = output_dir
 
 
-
-    #@profile(immediate=True)
-    def process(self, start_time, end_time, station_names, channel_names, event_catalog, event_ids = None):
-        ''' Start the detection.
+    def compute_intervals(self, start_time, end_time, interval):
+        ''' Compute the processing interval times.
 
         Parameters
         ----------
@@ -367,6 +301,80 @@ class EventProcessor(object):
 
         end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
             The end time of the timespan for which to detect the events.
+
+        interval : String or Float
+            The interval which is used to handle a set of events. If a float is
+            passed, it is interpreted as the inteval length in seconds.
+            (whole, hour, day, week, month or a float value)
+        '''
+        seconds_per_day = 86400
+        interval_start = [start_time, ]
+        interval = interval.lower()
+        if interval == 'hour':
+            length = 3600
+            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + length
+            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day)
+            n_intervals = (int_end - int_start) / length
+            interval_start.extend([int_start + x * length for x in range(0, int(n_intervals))])
+        if interval == 'day':
+            length = seconds_per_day
+            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + length
+            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day)
+            n_intervals = (int_end - int_start) / length
+            interval_start.extend([int_start + x * length for x in range(0, int(n_intervals))])
+        elif interval == 'week':
+            length = seconds_per_day*7
+            int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + (6 - start_time.weekday) * seconds_per_day
+            int_end = UTCDateTime(end_time.year, end_time.month, end_time.day) - end_time.weekday * seconds_per_day
+            n_intervals = (int_end - int_start) / length
+            interval_start.extend([int_start + x * length for x in range(0, int(n_intervals))])
+        elif interval == 'month':
+            start_year = start_time.year
+            start_month = start_time.month + 1
+            if start_month > 12:
+                start_year = start_year + 1
+                start_month = 1
+            end_year = end_time.year
+            end_month = end_time.month
+
+            month_dict = {}
+            year_list = range(start_year, end_year + 1)
+            for k, cur_year in enumerate(year_list):
+                if k == 0:
+                    month_dict[year_list[0]] = range(start_month, end_month)
+                elif k == len(year_list) - 1:
+                    month_dict[year_list[0]] = range(1, end_month)
+                else:
+                    month_dict[year_list[0]] = range(1, 12)
+
+            for cur_year, month_list in month_dict.iteritems():
+                for cur_month in month_list:
+                    interval_start.append(UTCDateTime(year = cur_year, month = cur_month))
+
+        interval_start.append(end_time)
+        return interval_start
+
+
+    #@profile(immediate=True)
+    def process(self, looper_nodes, start_time, end_time, processing_interval,
+                station_names, channel_names, event_catalog, event_ids = None):
+        ''' Start the detection.
+
+        Parameters
+        ----------
+        looper_nodes : list of
+            The looper nodes to execute.
+
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The start time of the timespan for which to detect the events.
+
+        end_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The end time of the timespan for which to detect the events.
+
+        processing_interval : String or Float
+            The interval which is used to handle a set of events. If a float is
+            passed, it is interpreted as the inteval length in seconds.
+            (whole, hour, day, week, month or a float value)
 
         station_names : list of Strings
             The names of the stations to process.
@@ -383,114 +391,116 @@ class EventProcessor(object):
         '''
         self.logger.info("Processing timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
 
-        result_bag = ResultBag()
-
-        event_lib = ev_core.Library('events')
-        event_lib.load_catalog_from_db(self.project, name = event_catalog)
-        catalog = event_lib.catalogs[event_catalog]
-        if event_ids is None:
-            # Load the events for the given time span from the database.
-            # TODO: Remove the hardcoded min_event_length value and create
-            # user-selectable filter fields.
-            catalog.load_events(project = self.project,
-                                start_time = start_time,
-                                end_time = end_time,
-                                min_event_length = 1)
-        else:
-            # Load the events with the given ids from the database. Ignore the
-            # time-span.
-            catalog.load_events(event_id = event_ids)
-
-        # Abort the execution if no events are available for the time span.
-        if not catalog.events:
-            if event_ids is None:
-                self.logger.info('No events found for the timespan %s to %s.', start_time.isoformat(), end_time.isoformat())
-            else:
-                self.logger.info('No events found for the specified event IDs: %s.', event_ids)
+        if not looper_nodes:
+            self.logger.warning("No looper nodes found.")
             return
 
-        # Get the channels to process.
-        channels = []
-        for cur_station in station_names:
-            for cur_channel in channel_names:
-                channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
-                                                                            name = cur_channel))
-        scnl = [x.scnl for x in channels]
+        interval_start = self.compute_intervals(start_time = start_time,
+                                                end_time = end_time,
+                                                interval = processing_interval)
 
+        event_lib = event_core.Library('events')
+        event_lib.load_catalog_from_db(self.project, name = event_catalog)
+        catalog = event_lib.catalogs[event_catalog]
 
-        n_events = len(catalog.events)
-        active_timespan = ()
-        try:
-            for k, cur_event in enumerate(catalog.events):
-                self.logger.info("Processing event %d (%d/%d).", cur_event.db_id, k, n_events)
+        # Check if any of the looper nodes needs waveform data.
+        waveform_needed = np.any([x.need_waveform_data for x in looper_nodes])
 
-                # Load the waveform data for the event and the given stations and
-                # channels.
-                # TODO: Add a feature which allows adding a window before and after
-                # the event time limits.
-                pre_event_time = 20
-                post_event_time = 10
+        for k, cur_start_time in enumerate(interval_start[:-1]):
+            cur_end_time = interval_start[k + 1]
 
-                # TODO: Make the length of the waveform load interval user
-                # selectable.
-                waveform_load_interval = 3600
-
-                # When many short events with small gaps inbetween are processed,
-                # it is very ineffective to load the waveform for each event. Load
-                # a larger time-span and then request the waveform data from the
-                # waveclient stock.
-                timespan_begin = UTCDateTime(cur_event.start_time.year, cur_event.start_time.month, cur_event.start_time.day, cur_event.start_time.hour)
-                timespan_end = UTCDateTime(cur_event.end_time.year, cur_event.end_time.month, cur_event.end_time.day, cur_event.start_time.hour) + waveform_load_interval
-                if not active_timespan:
-                    self.logger.info("Initial stream request for hourly time-span: %s to %s.", timespan_begin.isoformat(),
-                                                                                          timespan_end.isoformat())
-                    stream = self.request_stream(start_time = timespan_begin,
-                                                 end_time = timespan_end,
-                                                 scnl = scnl)
-                    active_timespan = (timespan_begin, timespan_end)
-
-
-                cur_start_time = cur_event.start_time - pre_event_time
-                cur_end_time = cur_event.end_time + post_event_time
-
-                if not (((cur_start_time >= active_timespan[0]) and (cur_start_time <= active_timespan[1])) and ((cur_end_time >= active_timespan[0]) and (cur_end_time <= active_timespan[1]))):
-                    self.logger.info("Requesting stream for hourly time-span: %s to %s.", timespan_begin.isoformat(),
-                                                                                          timespan_end.isoformat())
-                    stream = self.request_stream(start_time = timespan_begin,
-                                                 end_time = timespan_end,
-                                                 scnl = scnl)
-                    active_timespan = (timespan_begin, timespan_end)
-
-
-                stream = self.request_stream(start_time = cur_start_time,
-                                             end_time = cur_end_time,
-                                             scnl = scnl)
-
-                # Execute the processing stack.
-                # TODO: The 0.5 seconds where added because there's currently no
-                # access to the event detection of the individual channels. Make
-                # sure, that this hard-coded value is turned into a user-selectable
-                # one or removed completely.
-                process_limits = (cur_event.start_time - 0.5, cur_event.end_time)
-                self.processing_stack.execute(stream = stream,
-                                              process_limits = process_limits)
-
-                # Put the results of the processing stack into the results bag.
-                results = self.processing_stack.get_results()
-                resource_id = self.project.rid + cur_event.rid
-                result_bag.add(resource_id = resource_id,
-                                    results = results)
-
-        finally:
-            # Add the time-span directory to the output directory.
-            if k != len(catalog.events) - 1:
-                cur_end_time = cur_event.end_time
+            if event_ids is None:
+                # Load the events for the given time span from the database.
+                # TODO: Remove the hardcoded min_event_length value and create
+                # user-selectable filter fields.
+                catalog.load_events(project = self.project,
+                                    start_time = cur_start_time,
+                                    end_time = cur_end_time,
+                                    min_event_length = 1)
             else:
-                cur_end_time = end_time
-            timespan_dir = start_time.strftime('%Y%m%dT%H%M%S') + '_to_' + cur_end_time.strftime('%Y%m%dT%H%M%S')
-            cur_output_dir = os.path.join(self.output_dir, timespan_dir)
-            # Save the processing results to files.
-            result_bag.save(output_dir = cur_output_dir, scnl = scnl)
+                # Load the events with the given ids from the database. Ignore the
+                # time-span.
+                catalog.load_events(event_id = event_ids)
+
+            # Abort the execution if no events are available for the time span.
+            if not catalog.events:
+                if event_ids is None:
+                    self.logger.info('No events found for the timespan %s to %s.', cur_start_time.isoformat(), cur_end_time.isoformat())
+                else:
+                    self.logger.info('No events found for the specified event IDs: %s.', event_ids)
+                return
+
+            # Get the channels to process.
+            channels = []
+            for cur_station in station_names:
+                for cur_channel in channel_names:
+                    channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
+                                                                                name = cur_channel))
+            scnl = [x.scnl for x in channels]
+
+            n_events = len(catalog.events)
+            try:
+                for k, cur_event in enumerate(catalog.events):
+                    self.logger.info("Processing event %d (%d/%d).", cur_event.db_id, k, n_events)
+
+
+                    # Get the pre- and post timewindow time required by the looper
+                    # children. The pre- and post timewindow times could be needed because
+                    # of effects due to filter buildup.
+                    pre_event_length = [x.pre_stream_length for x in looper_nodes]
+                    post_event_length = [x.post_stream_length for x in looper_nodes]
+                    pre_event_length = max(pre_event_length)
+                    post_event_length = max(post_event_length)
+
+                    cur_window_start = cur_event.start_time - pre_event_length
+                    cur_window_end = cur_event.end_time + post_event_length
+
+                    if waveform_needed:
+                        stream = self.request_stream(start_time = cur_window_start,
+                                                     end_time = cur_window_end,
+                                                     scnl = scnl)
+                    else:
+                        stream = None
+
+
+                    # Execute the looper nodes.
+                    resource_id = self.parent_rid + '/event_processor/' + str(cur_event.db_id)
+                    process_limits = (cur_window_start, cur_window_end)
+                    for cur_node in looper_nodes:
+                        if k == 0:
+                            cur_node.initialize()
+
+                        self.logger.debug("Executing node %s.", cur_node.name)
+                        cur_node.execute(stream = stream,
+                                         process_limits = process_limits,
+                                         origin_resource = resource_id,
+                                         channels = channels,
+                                         event = cur_event)
+
+                        self.logger.debug("Finished execution of node %s.", cur_node.name)
+
+                        # Get the results of the node.
+                        if cur_node.result_bag:
+                            if len(cur_node.result_bag.results) > 0:
+                                for cur_result in cur_node.result_bag.results:
+                                    cur_result.base_output_dir = self.output_dir
+                                    cur_result.save()
+
+                                cur_node.result_bag.clear()
+            finally:
+                pass
+
+        # Call the cleanup method for all nodes.
+        for cur_node in looper_nodes:
+            cur_node.cleanup(origin_resource = resource_id)
+
+            # Get the remaining results of the node and save them.
+            if cur_node.result_bag:
+                for cur_result in cur_node.result_bag.results:
+                    cur_result.base_output_dir = self.output_dir
+                    cur_result.save()
+
+            cur_node.result_bag.clear()
 
 
     def request_stream(self, start_time, end_time, scnl):
