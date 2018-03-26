@@ -389,7 +389,7 @@ class EventProcessor(object):
             If individual events are specified, this list contains the database IDs of the events
             to process.
         '''
-        self.logger.info("Processing timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
+        self.logger.info("Processing whole timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
 
         if not looper_nodes:
             self.logger.warning("No looper nodes found.")
@@ -408,6 +408,10 @@ class EventProcessor(object):
 
         for k, cur_start_time in enumerate(interval_start[:-1]):
             cur_end_time = interval_start[k + 1]
+            self.logger.info("Processing interval timespan %s to %s.",
+                             cur_start_time.isoformat(),
+                             cur_end_time.isoformat())
+            catalog.clear_events()
 
             if event_ids is None:
                 # Load the events for the given time span from the database.
@@ -443,6 +447,8 @@ class EventProcessor(object):
                 for k, cur_event in enumerate(catalog.events):
                     self.logger.info("Processing event %d (%d/%d).", cur_event.db_id, k, n_events)
 
+                    # Assign the channel instance to the detections.
+                    cur_event.assign_channel_to_detections(self.project.geometry_inventory)
 
                     # Get the pre- and post timewindow time required by the looper
                     # children. The pre- and post timewindow times could be needed because
