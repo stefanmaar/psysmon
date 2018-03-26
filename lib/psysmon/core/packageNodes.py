@@ -316,6 +316,22 @@ class CollectionNode(object):
         return self.parentCollection.unpickleData(name=name, origin=origin)
 
 
+    def kwargs_exists(self, needed_keywords, **kwargs):
+        ''' Check if the needed keywords exist in the passed kwargs dictionar.
+
+        Paramters
+        ---------
+        needed_keywords : List of Strings
+            The required keywords.
+        '''
+        for cur_kw in needed_keywords:
+            if cur_kw not in kwargs.keys():
+                return False
+
+        return True
+
+
+
 
 
 class LooperCollectionNode(CollectionNode):
