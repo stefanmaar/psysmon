@@ -126,6 +126,21 @@ class Event(object):
         return self.end_time - self.start_time
 
 
+    def assign_channel_to_detections(self, inventory):
+        ''' Set the channels according to the rec_stream_ids.
+        '''
+        # Get the unique stream ids.
+        id_list = [x.rec_stream_id for x in self.detections]
+        id_list = list(set(id_list))
+        # Get the channels for the ids.
+        channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
+        channels = [x[0] if len(x) == 1 else None for x in channels]
+        channels = dict(zip(id_list, channels))
+
+        for cur_detection in self.detections:
+            cur_detection.channel = channels[cur_detection.rec_stream_id]
+
+
     def write_to_database(self, project):
         ''' Write the event to the pSysmon database.
         '''
