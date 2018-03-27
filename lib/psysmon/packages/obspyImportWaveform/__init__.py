@@ -39,7 +39,6 @@ Added the file_ext, first_import and last_scan columns to the waveformDir
 table.
 version 0.0.4 - 2017-10-03
 Added a unique constraint to the traceheader table (wf_id, filename).
-
 '''
 
 def databaseFactory(base):
@@ -51,11 +50,19 @@ def databaseFactory(base):
 
     # Create the waveformdir table mapper class.
     class WaveformDir(base):
+        '''
+        History
+        -------
+        2.0.0 - 2018-03-27
+        Added the waveclient column to the table.
+
+        '''
         __tablename__ = 'waveform_dir'
         __table_args__ = {'mysql_engine': 'InnoDB'}
-        _version = '1.0.0'
+        _version = '2.0.0'
 
         id = Column(Integer, primary_key=True, autoincrement=True)
+        waveclient = Column(String(255), nullable=False, unique=False)
         directory = Column(String(255), nullable=False, unique=True)
         description = Column(String(255), nullable=False)
         file_ext = Column(String(255), nullable=False)
@@ -64,8 +71,9 @@ def databaseFactory(base):
 
         aliases = relationship("WaveformDirAlias", cascade="all, delete-orphan")
 
-        def __init__(self, directory, description, file_ext,
+        def __init__(self, waveclient, directory, description, file_ext,
                      first_import, last_scan):
+            self.waveclient = waveclient
             self.directory = directory
             self.description = description
             self.file_ext = file_ext
