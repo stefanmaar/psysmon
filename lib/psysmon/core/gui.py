@@ -1751,18 +1751,20 @@ class DataSourceDlg(wx.Dialog):
 
         '''
         self.wcListCtrl.DeleteAllItems()
-        for k, (name, client) in enumerate(self.psyBase.project.waveclient.iteritems()):
+        client_names = sorted(self.psyBase.project.waveclient.keys())
+        for k, name in enumerate(client_names):
+            client = self.psyBase.project.waveclient[name]
             if name == self.psyBase.project.defaultWaveclient:
                 self.wcListCtrl.InsertImageStringItem(k, client.name, self.iconDefault)
             else:
                 self.wcListCtrl.InsertStringItem(k, client.name)
             self.wcListCtrl.SetStringItem(k, 1, client.mode)
+            self.wcListCtrl.SetStringItem(k, 2, client.description)
             #self.wcListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
-            #self.wcListCtrl.SetStringItem(k, 3, curDir.description)
 
         self.wcListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.wcListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        #self.wcListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        self.wcListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
 
 
     def addItem2WfListCtrl(self, item):
@@ -1791,8 +1793,7 @@ class DataSourceDlg(wx.Dialog):
         tableField = []
         tableField.append(('name', 'name', 'readonly'))
         tableField.append(('type', 'type', 'readonly'))
-        #tableField.append(('alias', 'alias', 'editable'))
-        #tableField.append(('description', 'description', 'editable'))
+        tableField.append(('description', 'description', 'readonly'))
         return tableField
 
 
@@ -1834,8 +1835,6 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
         editDirButton = wx.Button(self, wx.ID_ANY, "edit")
 
-        # Layout using sizers.
-        sizer = wx.GridBagSizer(5,5)
         gridButtonSizer = wx.BoxSizer(wx.VERTICAL)
 
         # Fill the grid button sizer
@@ -1849,11 +1848,27 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         for k, (name, label, attr) in enumerate(fields):
             self.wfListCtrl.InsertColumn(k, label)
 
-        sizer.Add(self.wfListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
-        sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
 
-        sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(0)
+        # Add the editing elements.
+        self.name_label= wx.StaticText(self, -1, "name:")
+        self.name_edit = wx.TextCtrl(self, -1, self.client.name, size=(100, -1))
+        self.description_label = wx.StaticText(self, -1, "description:")
+        self.description_edit = wx.TextCtrl(self, -1, self.client.description, size=(100, -1))
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+
+
+        sizer.Add(self.name_label, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.name_edit, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.description_label, pos=(1,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.description_edit, pos=(1,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.Add(self.wfListCtrl, pos=(2,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(gridButtonSizer, pos=(2,2), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(2)
+        sizer.AddGrowableCol(1)
 
         self.SetSizer(sizer)
 
@@ -1861,8 +1876,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
         self.Bind(wx.EVT_BUTTON, self.onEditDirectory, editDirButton)
-
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onDirectorySelected, self.wfListCtrl)
+
+        self.SetSizerAndFit(sizer)
 
         self.project = project
         self.wfDir = self.project.dbTables['waveform_dir']
@@ -1875,8 +1891,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         # A list of available waveform directories. It consits of tuples of
         self.wfDirList = self.dbSession.query(self.wfDir).join(self.wfDirAlias,
-                                                               self.wfDir.id==self.wfDirAlias.wf_id
-                                                              ).filter(self.wfDirAlias.user==self.project.activeUser.name).all()
+                                                               self.wfDir.id==self.wfDirAlias.wf_id).\
+                                                          filter(self.wfDirAlias.user==self.project.activeUser.name).\
+                                                          filter(self.wfDir.waveclient == self.client.name).all()
         self.updateWfListCtrl()
         sizer.Fit(self)
 
@@ -1961,7 +1978,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
                                  title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
-            newWfDir = self.wfDir(self.wfd_pref_manager.get_value('waveform_dir'),
+            newWfDir = self.wfDir(self.client.name,
+                                  self.wfd_pref_manager.get_value('waveform_dir'),
                                   self.wfd_pref_manager.get_value('description'),
                                   self.wfd_pref_manager.get_value('file_ext'),
                                   '',
@@ -2057,13 +2075,16 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         self.wfListCtrl.DeleteItem(selectedRow)
 
-
     def onOk(self):
         ''' Apply the changes.
 
         This method should be called by the dialog holding the options when the user clicks 
         the ok button.
         '''
+        self.client.name = self.name_edit.GetValue()
+        self.client.description = self.description_edit.GetValue()
+        self.logger.debug(self.client.name)
+
         try:
             self.dbSession.commit()
         finally:
@@ -2071,6 +2092,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Reload the project's waveform directory list to make sure, that it's 
         # consistent with the database.
         self.client.loadWaveformDirList()
+
+        return self.client
 
 
     def onCancel(self):
@@ -2122,7 +2145,6 @@ class EarthwormWaveclientOptions(wx.Panel):
         self.project = project
 
 
-    
     def onOk(self):
         ''' Apply the changes.
 
@@ -2256,12 +2278,14 @@ class AddDataSourceDlg(wx.Dialog):
 
         for curLabel, curClass in self.clientModes().itervalues():
             if curClass == PsysmonDbWaveClient:
-                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook, project=self.psyBase.project)
+                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook,
+                                                   project = self.psyBase.project,
+                                                   client = curClass(name = 'database client'))
                 #panel.SetBackgroundColour('red')
             elif curClass == EarthwormWaveclient:
-                panel = EarthwormWaveclientOptions(parent=self.modeChoiceBook, 
-                                                   project=self.psyBase.project,
-                                                   client=curClass(name='earthworm client'))
+                panel = EarthwormWaveclientOptions(parent = self.modeChoiceBook,
+                                                   project = self.psyBase.project,
+                                                   client = curClass(name='earthworm client'))
                 #panel.SetBackgroundColour('green')
 
             panel.SetMinSize((200, 200))
@@ -2280,12 +2304,12 @@ class AddDataSourceDlg(wx.Dialog):
         btnSizer.AddButton(cancelButton)
         btnSizer.Realize()
         sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
-        
+
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
         self.SetSizerAndFit(sizer)
-        
+
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
 
@@ -2293,7 +2317,7 @@ class AddDataSourceDlg(wx.Dialog):
     def clientModes(self):
         clientModes = {}
         clientModes['earthworm'] =  ('Earthworm', EarthwormWaveclient)
-        #clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
+        clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
         return clientModes
 
 
@@ -2301,9 +2325,6 @@ class AddDataSourceDlg(wx.Dialog):
         client = self.modeChoiceBook.GetCurrentPage().onOk()
         self.psyBase.project.addWaveClient(client) 
         self.Destroy()
-
-        
-        
 
 
 
