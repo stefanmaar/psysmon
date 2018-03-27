@@ -50,7 +50,7 @@ class WaveClient(object):
 
     '''
 
-    def __init__(self, name, stock_window = 3600):
+    def __init__(self, name, description = '', stock_window = 3600):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -70,6 +70,9 @@ class WaveClient(object):
 
         # The name of the waveclient.
         self.name = name
+
+        # The description of the waveclient.
+        self.description = description
 
         # The available data of the waveclient. This includes the
         # currently displayed time period and the preloaded data in
@@ -480,7 +483,8 @@ class PsysmonDbWaveClient(WaveClient):
                                     filter(self.traceheader.datafile_id == self.datafile.id).\
                                     filter(self.datafile.wf_id ==self.waveformDir.id).\
                                     filter(self.waveformDir.id == self.waveformDirAlias.wf_id).\
-                                    filter(self.waveformDirAlias.user == self.project.activeUser.name)
+                                    filter(self.waveformDirAlias.user == self.project.activeUser.name).\
+                                    filter(self.waveformDir.waveclient == self.name)
 
             # Add the startTime filter option.
             if start_time:
@@ -570,15 +574,17 @@ class PsysmonDbWaveClient(WaveClient):
         # TODO: make the waveform dir list a dynamic property.
         dbSession = self.project.getDbSession()
         self.waveformDirList = dbSession.query(wfDir.id,
+                                               wfDir.waveclient,
                                                wfDir.directory,
                                                wfDirAlias.alias,
                                                wfDir.description,
                                                wfDir.file_ext,
                                                wfDir.first_import,
-                                               wfDir.last_scan
-                                              ).join(wfDirAlias,
-                                                     wfDir.id==wfDirAlias.wf_id
-                                                    ).filter(wfDirAlias.user==self.project.activeUser.name).all()
+                                               wfDir.last_scan).\
+                                         join(wfDirAlias,
+                                              wfDir.id==wfDirAlias.wf_id).\
+                                         filter(wfDirAlias.user==self.project.activeUser.name).\
+                                         filter(wfDir.waveclient==self.name).all()
 
         dbSession.close()
 
@@ -788,8 +794,8 @@ class EarthwormWaveclient(WaveClient):
 
         # The obspy earthworm waveserver client instance.
         self.client = earthworm.Client(self.host,
-                             	       self.port,
-                             	       timeout=2)
+                                       self.port,
+                                       timeout=2)
 
     @property
     def pickle_attributes(self):
