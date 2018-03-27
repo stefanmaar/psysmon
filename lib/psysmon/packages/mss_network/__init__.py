@@ -26,7 +26,8 @@ description = "psysmon nodes used within the MSS Network project."            # 
 website = "http://www.mertl-research.at"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['quarry_blast_classification',]
+collection_node_modules = ['quarry_blast_classification',
+                           'quarry_blast_validation']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
