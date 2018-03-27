@@ -49,7 +49,17 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         wfdir_group = select_page.add_group('waveform directory')
         import_group = select_page.add_group('import options')
 
-        column_labels = ['db_id', 'waveform dir', 'alias', 'description',
+
+        item = psy_pm.SingleChoicePrefItem(name = 'waveclient',
+                                           label = 'waveclient',
+                                           limit = (),
+                                           value = '',
+                                           tool_tip = 'The available database waveclients.',
+                                           hooks = {'on_value_change': self.on_waveclient_selected})
+        wfdir_group.add_item(item)
+
+
+        column_labels = ['db_id', 'waveclient', 'waveform dir', 'alias', 'description',
                          'data file extension', 'first import', 'last scan']
         item = psy_pm.ListCtrlEditPrefItem(name = 'wf_dir',
                                            label = 'waveform directory',
@@ -84,16 +94,17 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         # TODO: List the number of potential files in the grid.
         # TODO: List the number of imported files in the grid.
         # TODO: List the number of files in the data directory in the grid.
-        client = self.project.waveclient['db client']
-        client.loadWaveformDirList()
-        waveform_dir_list = client.waveformDirList
-        self.pref_manager.set_limit('wf_dir', waveform_dir_list)
-        # Select existing values based on the waveform dir id.
-        values = self.pref_manager.get_value('wf_dir')
-        value_ids = [x[0] for x in values]
-        values = [x for x in waveform_dir_list if x[0] in value_ids]
-        values = list(set(values))
-        self.pref_manager.set_value('wf_dir', values)
+
+        # Get all database clients.
+        db_clients = sorted([x for x in self.project.waveclient.values() if x.mode == 'PsysmonDbWaveClient'])
+        db_client_names = [x.name for x in db_clients]
+        self.pref_manager.set_limit('waveclient', db_client_names)
+        sel_client = self.pref_manager.get_value('waveclient')
+        if not sel_client:
+            sel_client = db_client_names[0]
+            self.pref_manager.set_value('waveclient', sel_client)
+
+        self.on_waveclient_selected()
 
         dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
@@ -101,8 +112,11 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
 
     def execute(self, prefNodeOutput = {}):
-        client = self.project.waveclient['db client']
+
+        selected_waveclient = self.pref_manager.get_value('waveclient')
         selected_wf_dir = self.pref_manager.get_value('wf_dir')
+
+        client = self.project.waveclient[selected_waveclient]
 
         for cur_wf_dir in selected_wf_dir:
             self.logger.info('Importing data from waveformdirectory %d - %s.', cur_wf_dir[0], cur_wf_dir[1])
@@ -128,5 +142,26 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         control_element = item.gui_element[0].controlElement
         item.start_directory = selected_wf_dir.alias
         control_element.startDirectory = selected_wf_dir.alias
+
+
+    def on_waveclient_selected(self):
+        ''' Handle selections of the waveclient.
+        '''
+        selected_waveclient = self.pref_manager.get_value('waveclient')
+        if not selected_waveclient:
+            return
+
+        client = self.project.waveclient[selected_waveclient]
+        client.loadWaveformDirList()
+        waveform_dir_list = client.waveformDirList
+        self.pref_manager.set_limit('wf_dir', waveform_dir_list)
+
+        # Select existing values based on the waveform dir id.
+        values = self.pref_manager.get_value('wf_dir')
+        value_ids = [x[0] for x in values]
+        values = [x for x in waveform_dir_list if x[0] in value_ids]
+        values = list(set(values))
+        self.pref_manager.set_value('wf_dir', values)
+
 
 
