@@ -475,7 +475,7 @@ class SlidingWindowProcessor(object):
                 resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
                 process_limits = (cur_window_start, cur_window_start + window_length)
                 for cur_node in looper_nodes:
-                    if k == 0:
+                    if not cur_node.initialized:
                         cur_node.initialize()
 
                     self.logger.debug("Executing node %s.", cur_node.name)
