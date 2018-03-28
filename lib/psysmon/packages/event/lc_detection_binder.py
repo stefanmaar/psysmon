@@ -118,6 +118,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
     def initialize(self):
         ''' Initialize some insance persistent attributes.
         '''
+        super(QuarryBlastClassification, self).initialize()
         # Get the selected detection and event catalogs.
         catalog_name = self.pref_manager.get_value('detection_catalog')
         self.detection_library.load_catalog_from_db(project = self.project,

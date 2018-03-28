@@ -118,6 +118,7 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
         ''' Initialize the node.
 
         '''
+        super(QuarryBlastClassification, self).initialize()
         # Compute the neighbor stations.
         nearest_station_name = self.pref_manager.get_value('nearest_station')[0]
         nearest_station = self.project.geometry_inventory.get_station(name = nearest_station_name)[0]
@@ -139,6 +140,7 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
         event_types = self.load_event_types()
         dst_event_type = self.pref_manager.get_value('event_type')[0]
         self.event_type = [x for x in event_types if x.name == dst_event_type][0]
+
 
 
     def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
