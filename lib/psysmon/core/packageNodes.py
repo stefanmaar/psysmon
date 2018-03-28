@@ -375,6 +375,44 @@ class LooperCollectionNode(CollectionNode):
         pass
 
 
+    def move_node_up(self, node):
+        ''' Move a node up in the looper collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.children:
+            raise RuntimeError("The node is not part of the looper.")
+
+        old_index = self.children.index(node)
+        if old_index == 0:
+            return
+        self.children.remove(node)
+        self.children.insert(old_index - 1, node)
+
+
+    def move_node_down(self, node):
+        ''' Move a node down in the looper collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.children:
+            raise RuntimeError("The node is not part of the looper.")
+
+        old_index = self.children.index(node)
+        if old_index == len(self.children) - 1:
+            return
+        self.children.remove(node)
+        self.children.insert(old_index + 1, node)
+
+
     def get_settings(self, upper_node_limit = None):
         ''' Get the settings of the nodes in the processing stack.
 

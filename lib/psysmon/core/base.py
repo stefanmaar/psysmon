@@ -826,6 +826,44 @@ class Collection(object):
             return self.nodes.pop(position)
 
 
+    def moveNodeUp(self, node):
+        ''' Move a node up in the collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.nodes:
+            raise RuntimeError("The node is not part of the collection.")
+
+        old_index = self.nodes.index(node)
+        if old_index == 0:
+            return
+        self.nodes.remove(node)
+        self.nodes.insert(old_index - 1, node)
+
+
+    def moveNodeDown(self, node):
+        ''' Move a node up in the collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.nodes:
+            raise RuntimeError("The node is not part of the collection.")
+
+        old_index = self.nodes.index(node)
+        if old_index == len(self.nodes) - 1:
+            return
+        self.nodes.remove(node)
+        self.nodes.insert(old_index + 1, node)
+
+
     def editNode(self, position):
         ''' Edit a node.
 
