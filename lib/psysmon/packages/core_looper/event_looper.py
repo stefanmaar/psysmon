@@ -391,9 +391,13 @@ class EventProcessor(object):
         '''
         self.logger.info("Processing whole timespan %s to %s.", start_time.isoformat(), end_time.isoformat())
 
+        # Use only the enabled looper nodes.
+        looper_nodes = [x for x in looper_nodes if x.enabled]
+
         if not looper_nodes:
             self.logger.warning("No looper nodes found.")
             return
+
 
         interval_start = self.compute_intervals(start_time = start_time,
                                                 end_time = end_time,
