@@ -2147,19 +2147,12 @@ class DataManager():
         ''' Add a stream to the existing stream.
 
         '''
-        if scnl in self.project.scnlDataSources.keys():
-            dataSource = self.project.scnlDataSources[scnl] 
-        else:
-            dataSource = self.project.defaultWaveclient
+        cur_stream = self.project.request_data_stream(start_time = startTime,
+                                                      end_time = endTime,
+                                                      scnl = [scnl, ])
 
-        curWaveClient = self.project.waveclient[dataSource]
-
-        curStream = curWaveClient.getWaveform(startTime = startTime,
-                                              endTime = endTime,
-                                              scnl = scnl)
-
-        self.origStream = self.origStream + curStream
-        return curStream
+        self.origStream = self.origStream + cur_stream
+        return cur_stream
 
 
     def processStream(self, stack = None, scnl = None):
