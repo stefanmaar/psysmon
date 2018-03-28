@@ -604,7 +604,8 @@ class Project(object):
             curStream =  curWaveclient.getWaveform(startTime = start_time,
                                                    endTime = end_time,
                                                    scnl = scnl)
-            stream += curStream
+            if curStream:
+                stream += curStream
 
         return stream
 
