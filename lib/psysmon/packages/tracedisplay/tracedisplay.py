@@ -2120,29 +2120,9 @@ class DataManager():
 
         This method overwrites the existing stream.
         '''
-        dataSources = {}
-        for curScnl in scnl:
-            if curScnl in self.project.scnlDataSources.keys():
-                if self.project.scnlDataSources[curScnl] not in dataSources.keys():
-                    dataSources[self.project.scnlDataSources[curScnl]] = [curScnl, ]
-                else:
-                    dataSources[self.project.scnlDataSources[curScnl]].append(curScnl)
-            else:
-                if self.project.defaultWaveclient not in dataSources.keys():
-                    dataSources[self.project.defaultWaveclient] = [curScnl, ]
-                else:
-                    dataSources[self.project.defaultWaveclient].append(curScnl)
-
-        self.origStream = Stream()
-
-        for curName in dataSources.iterkeys():
-            self.logger.debug("curName: %s", curName)
-            curWaveclient = self.project.waveclient[curName]
-            curStream =  curWaveclient.getWaveform(startTime = startTime,
-                                                   endTime = endTime,
-                                                   scnl = scnl)
-            if curStream:
-                self.origStream += curStream
+        self.origStream = self.project.request_data_stream(start_time = startTime,
+                                                           end_time = endTime,
+                                                           scnl = scnl)
 
 
 
