@@ -456,6 +456,9 @@ class LooperCollectionChildNode(CollectionNode):
         # Indicate if waveform data is needed.
         self.need_waveform_data = True
 
+        # Flag to indicate if the node has been initialized.
+        self.initialized = False
+
 
     @property
     def pre_stream_length(self):
@@ -531,7 +534,7 @@ class LooperCollectionChildNode(CollectionNode):
         This method is called at the start of a loop. Use it to initialize
         or reset persistent values of the instance.
         '''
-        pass
+        self.initialized = True
 
 
     def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
