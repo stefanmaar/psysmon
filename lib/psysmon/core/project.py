@@ -584,22 +584,20 @@ class Project(object):
             The requested waveform data. All traces are packed into one stream.
 
         '''
-        data_sources = {}
-        for cur_scnl in scnl:
-            if cur_scnl in self.scnlDataSources.keys():
-                if self.scnlDataSources[cur_scnl] not in data_sources.keys():
-                    data_sources[self.scnlDataSources[cur_scnl]] = [cur_scnl, ]
-                else:
-                    data_sources[self.scnlDataSources[cur_scnl]].append(cur_scnl)
-            else:
-                if self.defaultWaveclient not in data_sources.keys():
-                    data_sources[self.defaultWaveclient] = [cur_scnl, ]
-                else:
-                    data_sources[self.defaultWaveclient].append(cur_scnl)
+        collection = self.getActiveCollection()
+        data_sources = collection.data_sources
 
         stream = obspy.core.Stream()
 
-        for cur_name in data_sources.iterkeys():
+        waveclients = [data_sources[x] for x in scnl]
+        unique_wc = list(set(waveclients))
+        scnl_waveclients = {}
+        for cur_wc in unique_wc:
+            scnl_waveclients[cur_wc] = [x[0] for x in zip(scnl, waveclients) if x[1] == cur_wc]
+
+        self.logger.debug("Using waveclients: %s.", scnl_waveclients)
+
+        for cur_name in scnl_waveclients.iterkeys():
             curWaveclient = self.waveclient[cur_name]
             curStream =  curWaveclient.getWaveform(startTime = start_time,
                                                    endTime = end_time,
