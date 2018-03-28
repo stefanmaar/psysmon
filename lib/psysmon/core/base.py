@@ -689,6 +689,9 @@ class Collection(object):
         # The collection's data file.
         self.dataShelf = None
 
+        # The datasource used for the execution of the collection.
+        self.data_sources = {}
+
 
     def __getitem__(self, index):
         ''' Get a node at a given position in the collection.
@@ -924,6 +927,12 @@ class Collection(object):
         db = shelve.open(self.dataShelf.encode('utf8'))
         db['nodeDataContent'] = content
         db.close()
+
+        # Build the default data source dictionary.
+        # TODO: Implement the scnl specific data sources for a collection.
+        scnl = [x.scnl for x in self.project.geometry_inventory.get_channel()]
+        default_source = self.project.defaultWaveclient
+        self.data_sources = dict([(x, default_source) for x in scnl])
 
         # Execute each node in the collection.
         for (ind, curNode) in enumerate(self.nodes):
