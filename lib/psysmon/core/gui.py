@@ -800,6 +800,9 @@ class CollectionTreeCtrl(wx.TreeCtrl):
                   ("enable node", parent.onToggleNodeEnable),
                   ("remove node", parent.onRemoveNode),
                   ("separator", None),
+                  ("move up", parent.onMoveUp),
+                  ("move down", parent.onMoveDown),
+                  ("separator", None),
                   ("load collection", parent.onCollectionLoad),
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
@@ -986,6 +989,37 @@ class CollectionPanel(wx.Panel):
                                    "pSysmon runtime error.",
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal() 
+
+    def onMoveUp(self, event):
+        ''' Move a node up in the collection.
+        '''
+        collection = self.psyBase.project.getActiveCollection()
+
+        if self.selectedNodeType in ['node', 'looper']:
+            # Move the node in the collection.
+            selected_node = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            collection.moveNodeUp(selected_node)
+        elif self.selectedNodeType == 'looper_child':
+            # Move the node in the looper.
+            selected_looper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            selected_node = selected_looper.children[self.selectedLooperChildNodeIndex]
+            selected_looper.move_node_up(selected_node)
+        self.refreshCollection()
+
+    def onMoveDown(self, event):
+        ''' Move a node up in the collection.
+        '''
+        collection = self.psyBase.project.getActiveCollection()
+        if self.selectedNodeType in ['node', 'looper']:
+            # Move the node in the collection.
+            selected_node = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            collection.moveNodeDown(selected_node)
+        elif self.selectedNodeType == 'looper_child':
+            # Move the node in the looper.
+            selected_looper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            selected_node = selected_looper.children[self.selectedLooperChildNodeIndex]
+            selected_looper.move_node_down(selected_node)
+        self.refreshCollection()
 
 
     def onToggleNodeEnable(self, event):
