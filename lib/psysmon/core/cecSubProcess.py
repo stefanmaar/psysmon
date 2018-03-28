@@ -114,6 +114,10 @@ if __name__ == "__main__":
 
         collection.set_project(project)
         collection.createNodeLoggers()
+        # Replace the collection in the project with the copied collection.
+        # This makes the use of the activeCollection attribute valid.
+        project.activeUser.collection[collection.name] = collection
+        project.setActiveCollection(collection.name)
 
         project.psybase = psyBase
         logger.debug('psyBase: %s', project.psybase)
