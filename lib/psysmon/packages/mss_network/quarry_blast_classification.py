@@ -44,6 +44,9 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
         self.create_general_prefs()
         self.create_classification_prefs()
 
+        # No waveform data is needed.
+        self.need_waveform_data = False
+
         # The nearest station to the quarry site.
         self.nearest_station = None
 
@@ -174,9 +177,11 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
             self.logger.info("Quarry blast event %d.", event.db_id)
         else:
             self.logger.info("Not enough neighbor stations for a quarry blast classification (db_id: %d).", event.db_id)
+            return
 
 
         # TODO: Check for the required velocity threshold.
+        # TODO: Don't forget to enable the need_waveform_data flag.
 
 
         # Write the classification to the database.
