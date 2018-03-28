@@ -473,15 +473,15 @@ class EventProcessor(object):
                     resource_id = self.parent_rid + '/event_processor/' + str(cur_event.db_id)
                     process_limits = (cur_window_start, cur_window_end)
                     for cur_node in looper_nodes:
-                        if k == 0:
+                        if not cur_node.initialized:
                             cur_node.initialize()
 
                         self.logger.debug("Executing node %s.", cur_node.name)
-                        cur_node.execute(stream = stream,
-                                         process_limits = process_limits,
-                                         origin_resource = resource_id,
-                                         channels = channels,
-                                         event = cur_event)
+                        ret = cur_node.execute(stream = stream,
+                                               process_limits = process_limits,
+                                               origin_resource = resource_id,
+                                               channels = channels,
+                                               event = cur_event)
 
                         self.logger.debug("Finished execution of node %s.", cur_node.name)
 
@@ -493,6 +493,10 @@ class EventProcessor(object):
                                     cur_result.save()
 
                                 cur_node.result_bag.clear()
+
+                        # Handle the looper child return value.
+                        if ret and ret == 'abort':
+                            break
             finally:
                 pass
 
