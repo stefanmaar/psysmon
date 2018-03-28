@@ -241,7 +241,7 @@ class Event(object):
                     end_time = db_event.end_time,
                     db_id = db_event.id,
                     public_id = db_event.public_id,
-                    event_type = None,
+                    event_type = db_event.event_type,
                     event_type_certainty = db_event.ev_type_certainty,
                     description = db_event.description,
                     tags = db_event.tags,
