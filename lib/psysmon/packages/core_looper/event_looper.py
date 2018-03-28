@@ -462,9 +462,9 @@ class EventProcessor(object):
                     cur_window_end = cur_event.end_time + post_event_length
 
                     if waveform_needed:
-                        stream = self.request_stream(start_time = cur_window_start,
-                                                     end_time = cur_window_end,
-                                                     scnl = scnl)
+                        stream = self.project.request_data_stream(start_time = cur_window_start,
+                                                                  end_time = cur_window_end,
+                                                                  scnl = scnl)
                     else:
                         stream = None
 
@@ -508,31 +508,3 @@ class EventProcessor(object):
 
             cur_node.result_bag.clear()
 
-
-    def request_stream(self, start_time, end_time, scnl):
-        ''' Request a data stream from the waveclient.
-
-        '''
-        data_sources = {}
-        for cur_scnl in scnl:
-            if cur_scnl in self.project.scnlDataSources.keys():
-                if self.project.scnlDataSources[cur_scnl] not in data_sources.keys():
-                    data_sources[self.project.scnlDataSources[cur_scnl]] = [cur_scnl, ]
-                else:
-                    data_sources[self.project.scnlDataSources[cur_scnl]].append(cur_scnl)
-            else:
-                if self.project.defaultWaveclient not in data_sources.keys():
-                    data_sources[self.project.defaultWaveclient] = [cur_scnl, ]
-                else:
-                    data_sources[self.project.defaultWaveclient].append(cur_scnl)
-
-        stream = obspy.core.Stream()
-
-        for cur_name in data_sources.iterkeys():
-            curWaveclient = self.project.waveclient[cur_name]
-            curStream =  curWaveclient.getWaveform(startTime = start_time,
-                                                   endTime = end_time,
-                                                   scnl = scnl)
-            stream += curStream
-
-        return stream
