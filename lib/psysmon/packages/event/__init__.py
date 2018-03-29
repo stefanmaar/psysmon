@@ -284,18 +284,31 @@ def databaseFactory(base):
     ###########################################################################
     # DETECTION_TO_EVENT table mapper class
     class DetectionToEventDb(base):
+        ''' The traceheader database table mapper.
+
+        History
+        -------
+        1.1.0 - 2018-03-29
+        Cascade the deletes of events and detections.
+        '''
         __tablename__  = 'detection_to_event'
         __table_args__ = (
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '1.0.0'
+        _version = '1.1.0'
+
+
 
         ev_id = Column(Integer,
-                       ForeignKey('event.id', onupdate = 'cascade'),
+                       ForeignKey('event.id',
+                                   onupdate = 'cascade',
+                                   ondelete = 'cascade'),
                        primary_key = True,
                        nullable = False)
         det_id = Column(Integer,
-                        ForeignKey('detection.id', onupdate = 'cascade'),
+                        ForeignKey('detection.id',
+                                   onupdate = 'cascade',
+                                   ondelete = 'cascade'),
                         primary_key = True,
                         nullable = False)
 
