@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 import obspy.geodetics as geodetics
 import sqlalchemy.orm
 
@@ -192,6 +194,7 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
                     filter(events_table.id == event.db_id).\
                     update({'ev_type_id': self.event_type.id}, synchronize_session = False)
             db_session.commit()
+            event.event_type = copy.copy(self.event_type)
         finally:
             db_session.close()
 
