@@ -32,6 +32,7 @@ import sqlalchemy.orm
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
+import psysmon.packages.event.core as event_core
 
 
 class QuarryBlastValidation(package_nodes.CollectionNode):
@@ -241,12 +242,32 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
                     quarry_blast[cur_row['Sprengnummer']] = tmp
 
 
-        # Save the results.
+        # Search for related events in the database.
+        catalog_name = 'rt_binding'
+        event_lib = event_core.Library('events')
+        event_lib.load_catalog_from_db(self.project, name = catalog_name)
+        catalog = event_lib.catalogs[catalog_name]
 
+        for cur_key, cur_blast in quarry_blast.iteritems():
+            catalog.clear_events()
+            catalog.load_events(project = self.project,
+                                start_time = cur_blast['time'] - 60,
+                                end_time = cur_blast['time'] + 300)
+            # Select by event type.
+            quarry_events = [x for x in catalog.events if x.event_type and x.event_type.name == 'duernbach']
+            if quarry_events:
+                quarry_blast[cur_key]['psysmon_event_id'] = [x.db_id for x in quarry_events]
+                for cur_event in quarry_events:
+                    cur_event.tags = ['mss_result_needed', 'baumit_id:' + cur_key.replace(',', ';')]
+                    cur_event.write_to_database(self.project)
+
+        # Save the results.
         with open(blast_filename, 'w') as fp:
             json.dump(quarry_blast,
                       fp = fp,
                       cls = QuarryFileEncoder)
+
+
 
 
     def load_event_types(self):
