@@ -213,7 +213,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     def initialize_ppsd(self, trace, start_time, end_time):
         ''' Initialize the PPSD.
         '''
-        super(QuarryBlastClassification, self).initialize()
+        super(ComputePpsdNode, self).initialize()
 
         ppsd_length = self.pref_manager.get_value('ppsd_length')
         ppsd_overlap = self.pref_manager.get_value('ppsd_overlap') / 100.

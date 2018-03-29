@@ -95,7 +95,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
     def initialize(self):
         ''' Initialize the node.
         '''
-        super(QuarryBlastClassification, self).initialize()
+        super(ComputeSourcemap, self).initialize()
 
         # Reset the weight computation flag.
         self.compute_weight = True
