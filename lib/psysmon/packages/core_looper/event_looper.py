@@ -407,9 +407,6 @@ class EventProcessor(object):
         event_lib.load_catalog_from_db(self.project, name = event_catalog)
         catalog = event_lib.catalogs[event_catalog]
 
-        # Check if any of the looper nodes needs waveform data.
-        waveform_needed = np.any([x.need_waveform_data for x in looper_nodes])
-
         for k, cur_start_time in enumerate(interval_start[:-1]):
             cur_end_time = interval_start[k + 1]
             self.logger.info("Processing interval timespan %s to %s.",
@@ -465,20 +462,23 @@ class EventProcessor(object):
                     cur_window_start = cur_event.start_time - pre_event_length
                     cur_window_end = cur_event.end_time + post_event_length
 
-                    if waveform_needed:
-                        stream = self.project.request_data_stream(start_time = cur_window_start,
-                                                                  end_time = cur_window_end,
-                                                                  scnl = scnl)
-                    else:
-                        stream = None
-
 
                     # Execute the looper nodes.
                     resource_id = self.parent_rid + '/event_processor/' + str(cur_event.db_id)
                     process_limits = (cur_window_start, cur_window_end)
+                    waveform_loaded = False
+                    stream = None
                     for cur_node in looper_nodes:
                         if not cur_node.initialized:
                             cur_node.initialize()
+
+                        # Load the waveform data when it is needed by a looper
+                        # node.
+                        if not waveform_loaded and cur_node.need_waveform_data:
+                            stream = self.project.request_data_stream(start_time = cur_window_start,
+                                                                      end_time = cur_window_end,
+                                                                      scnl = scnl)
+
 
                         self.logger.debug("Executing node %s.", cur_node.name)
                         ret = cur_node.execute(stream = stream,
