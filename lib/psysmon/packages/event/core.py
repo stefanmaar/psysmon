@@ -212,6 +212,7 @@ class Event(object):
                 #db_event.pref_focmec_id = self.pref_focmec_id
                 db_event.ev_type = self.event_type
                 db_event.ev_type_certainty = self.event_type_certainty
+                db_event.tags = ','.join(self.tags)
                 db_event.agency_uri = self.agency_uri
                 db_event.author_uri = self.author_uri
                 if self.creation_time is not None:
