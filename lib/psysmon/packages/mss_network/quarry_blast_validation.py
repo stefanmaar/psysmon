@@ -175,7 +175,6 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         with open(tmp_filename, 'r') as fp:
             reader = csv.DictReader(fp, delimiter = ';')
             for cur_row in reader:
-                print cur_row
                 if cur_row['Sprengnummer'] not in quarry_blast.keys():
                     tmp = {}
                     tmp['id'] = int(cur_row['ID'])
@@ -190,26 +189,27 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
                                                           second = time.second)
                     x = []
                     try:
-                        x.append(float(cur_row['Koord_x1'].replace(',', '.')))
-                    except:
-                        self.logger.warning("Koord_x1 couldn't be converted.")
-
-                    try:
-                        x.append(float(cur_row['Koord_x2'].replace(',', '.')))
-                    except:
-                        self.logger.warning("Koord_x2 couldn't be converted.")
-
-                    y = []
-                    try:
-                        y.append(float(cur_row['Koord_y1'].replace(',', '.')))
+                        x.append(float(cur_row['Koord_y1'].replace(',', '.')))
                     except:
                         self.logger.warning("Koord_y1 couldn't be converted.")
 
                     try:
-                        y.append(float(cur_row['Koord_y2'].replace(',', '.')))
+                        x.append(float(cur_row['Koord_y2'].replace(',', '.')))
                     except:
                         self.logger.warning("Koord_y2 couldn't be converted.")
 
+                    y = []
+                    try:
+                        y.append(float(cur_row['Koord_x1'].replace(',', '.')))
+                    except:
+                        self.logger.warning("Koord_x1 couldn't be converted.")
+
+                    try:
+                        y.append(float(cur_row['Koord_x2'].replace(',', '.')))
+                    except:
+                        self.logger.warning("Koord_x2 couldn't be converted.")
+
+                    y = [k - 5000000 for k in y]
 
                     z = []
                     try:
@@ -237,7 +237,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
                     else:
                         tmp['z'] = -9999
 
-                    tmp['epsg'] = '31259'
+                    tmp['epsg'] = '31256'
 
                     quarry_blast[cur_row['Sprengnummer']] = tmp
 
