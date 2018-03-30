@@ -238,6 +238,10 @@ class Event(object):
         db_event : SQLAlchemy ORM
             The ORM of the events database table.
         '''
+        if db_event.tags:
+            event_tags = db_event.tags.split(',')
+        else:
+            event_tags = []
         event = cls(start_time = db_event.start_time,
                     end_time = db_event.end_time,
                     db_id = db_event.id,
@@ -245,7 +249,7 @@ class Event(object):
                     event_type = db_event.event_type,
                     event_type_certainty = db_event.ev_type_certainty,
                     description = db_event.description,
-                    tags = db_event.tags,
+                    tags = event_tags,
                     agency_uri = db_event.agency_uri,
                     author_uri = db_event.author_uri,
                     creation_time = db_event.creation_time,
@@ -397,7 +401,7 @@ class Catalog(object):
 
 
     def load_events(self, project, start_time = None, end_time = None, event_id = None,
-            min_event_length = None):
+            min_event_length = None, event_types = None, event_tags = None):
         ''' Load events from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -430,6 +434,10 @@ class Catalog(object):
 
             if min_event_length:
                 query = query.filter(events_table.end_time - events_table.start_time >= min_event_length)
+
+            if event_tags:
+                for cur_tag in event_tags:
+                    query = query.filter(events_table.tags.like('%' + cur_tag + '%'))
 
             events_to_add = []
             for cur_orm in query:
