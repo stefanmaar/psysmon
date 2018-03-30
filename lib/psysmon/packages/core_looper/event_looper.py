@@ -69,6 +69,7 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
 
         self.create_selector_preferences()
         self.create_component_selector_preferences()
+        self.create_filter_preferences()
         self.create_processing_preferences()
         self.create_output_preferences()
 
@@ -123,7 +124,9 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
                           station_names = self.pref_manager.get_value('stations'),
                           channel_names = self.pref_manager.get_value('channels'),
                           event_catalog = self.pref_manager.get_value('event_catalog'),
-                          event_ids = event_ids)
+                          event_ids = event_ids,
+                          event_types = self.pref_manager.get_value('event_type'),
+                          event_tags = [self.pref_manager.get_value('event_tag'),])
 
 
 
@@ -198,6 +201,33 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
                                           value = [],
                                           tool_tip = 'The channels which should be used for the processing.')
         comp_to_process_group.add_item(item)
+
+
+    def create_filter_preferences(self):
+        ''' Create the filter preferences.
+        '''
+        pref_page = self.pref_manager.add_page('Filter')
+        type_group = pref_page.add_group('type')
+        tag_group = pref_page.add_group('tag')
+
+        # TODO: Add a more advanced filter options providing the possibility of
+        # combinig multiple values with logical operators.
+
+        # The event types to search for.
+        item = psy_pm.MultiChoicePrefItem(name = 'event_type',
+                                           label = 'event type',
+                                           limit = (),
+                                           value = [],
+                                           tool_tip = 'The event types to load.')
+        type_group.add_item(item)
+
+        # The event tags to search for.
+        item = psy_pm.TextEditPrefItem(name = 'event_tag',
+                                       label = 'event tag',
+                                       value = '',
+                                       tool_tip = 'The tag to search for.')
+        tag_group.add_item(item)
+
 
 
     def create_output_preferences(self):
@@ -357,7 +387,8 @@ class EventProcessor(object):
 
     #@profile(immediate=True)
     def process(self, looper_nodes, start_time, end_time, processing_interval,
-                station_names, channel_names, event_catalog, event_ids = None):
+                station_names, channel_names, event_catalog, event_ids = None,
+                event_types = None, event_tags = None):
         ''' Start the detection.
 
         Parameters
@@ -398,6 +429,12 @@ class EventProcessor(object):
             self.logger.warning("No looper nodes found.")
             return
 
+        if event_tags is None:
+            event_tags = []
+
+        if event_types is None:
+            event_types = []
+
 
         interval_start = self.compute_intervals(start_time = start_time,
                                                 end_time = end_time,
@@ -421,7 +458,8 @@ class EventProcessor(object):
                 catalog.load_events(project = self.project,
                                     start_time = cur_start_time,
                                     end_time = cur_end_time,
-                                    min_event_length = 1)
+                                    min_event_length = 1,
+                                    event_tags = event_tags)
             else:
                 # Load the events with the given ids from the database. Ignore the
                 # time-span.
@@ -478,6 +516,7 @@ class EventProcessor(object):
                             stream = self.project.request_data_stream(start_time = cur_window_start,
                                                                       end_time = cur_window_end,
                                                                       scnl = scnl)
+                            waveform_loaded = True
 
 
                         self.logger.debug("Executing node %s.", cur_node.name)
