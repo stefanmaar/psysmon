@@ -96,6 +96,19 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         # Enable/Disable the gui elements based on the pref_manager settings.
         self.on_select_individual()
 
+        # Enable/Disable the time-span elements depending on the 'set
+        # collection time-span' collection node.
+        if 'set collection time-span' in [x.name for x in self.parentCollection.nodes]:
+            item = self.pref_manager.get_item('start_time')[0]
+            item.disable_gui_element()
+            item = self.pref_manager.get_item('end_time')[0]
+            item.disable_gui_element()
+        else:
+            item = self.pref_manager.get_item('start_time')[0]
+            item.enable_gui_element()
+            item = self.pref_manager.get_item('end_time')[0]
+            item.enable_gui_element()
+
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -117,16 +130,32 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         else:
             event_ids = None
 
+        if self.parentCollection.runtime_att.start_time:
+            start_time = self.parentCollection.runtime_att.start_time
+        else:
+            start_time = self.pref_manager.get_value('start_time')
+
+        if self.parentCollection.runtime_att.end_time:
+            end_time = self.parentCollection.runtime_att.end_time
+        else:
+            end_time = self.pref_manager.get_value('end_time')
+
+        event_tags = self.pref_manager.get_value('event_tag')
+        if event_tags:
+            event_tags = [event_tags,]
+        else:
+            event_tags = None
+
         processor.process(looper_nodes = self.children,
-                          start_time = self.pref_manager.get_value('start_time'),
-                          end_time = self.pref_manager.get_value('end_time'),
+                          start_time = start_time,
+                          end_time = end_time,
                           processing_interval = self.pref_manager.get_value('processing_interval'),
                           station_names = self.pref_manager.get_value('stations'),
                           channel_names = self.pref_manager.get_value('channels'),
                           event_catalog = self.pref_manager.get_value('event_catalog'),
                           event_ids = event_ids,
                           event_types = self.pref_manager.get_value('event_type'),
-                          event_tags = [self.pref_manager.get_value('event_tag'),])
+                          event_tags = event_tags)
 
 
 
