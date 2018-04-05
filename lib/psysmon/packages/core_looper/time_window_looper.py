@@ -80,8 +80,18 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         # Create the edit dialog.
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
 
-        # Enable/Disable the gui elements based on the pref_manager settings.
-        #self.on_select_individual()
+        # Enable/Disable the time-span elements depending on the 'set
+        # collection time-span' collection node.
+        if 'set collection time-span' in [x.name for x in self.parentCollection.nodes]:
+            item = self.pref_manager.get_item('start_time')[0]
+            item.disable_gui_element()
+            item = self.pref_manager.get_item('end_time')[0]
+            item.disable_gui_element()
+        else:
+            item = self.pref_manager.get_item('start_time')[0]
+            item.enable_gui_element()
+            item = self.pref_manager.get_item('end_time')[0]
+            item.enable_gui_element()
 
         dlg.ShowModal()
         dlg.Destroy()
@@ -99,9 +109,21 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                            parent_rid = self.rid)
 
         window_mode = self.pref_manager.get_value('window_mode')
-        start_time = self.pref_manager.get_value('start_time')
-        end_time = self.pref_manager.get_value('end_time')
-        if window_mode == 'free':
+
+        if self.parentCollection.runtime_att.start_time:
+            start_time = self.parentCollection.runtime_att.start_time
+        else:
+            start_time = self.pref_manager.get_value('start_time')
+
+        if self.parentCollection.runtime_att.end_time:
+            end_time = self.parentCollection.runtime_att.end_time
+        else:
+            end_time = self.pref_manager.get_value('end_time')
+
+        if window_mode == 'whole':
+            window_length = end_time - start_time
+            overlap = 0.
+        elif window_mode == 'free':
             window_length = self.pref_manager.get_value('window_length')
             overlap = self.pref_manager.get_value('window_overlap')
         elif window_mode == 'daily':
@@ -149,7 +171,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
         item = psy_pm.SingleChoicePrefItem(name = 'window_mode',
                                            label = 'window mode',
-                                           limit = ('free', 'daily', 'weekly'),
+                                           limit = ('free', 'daily', 'weekly', 'whole'),
                                            value = 'free',
                                            hooks = {'on_value_change': self.on_window_mode_selected},
                                            tool_tip = 'The mode of the window computation.')
