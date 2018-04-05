@@ -231,7 +231,10 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(cur_trace.data):
-                time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+                try:
+                    time_array = np.ma.array(time_array, mask=cur_trace.data.mask)
+                except:
+                    time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
 
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
