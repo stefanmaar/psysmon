@@ -82,6 +82,7 @@ class DetectionBinder(object):
         next_detections = [x[0] for x in detections.values() if len(x) > 0]
 
         while len(next_detections) > 0:
+
             next_detections = sorted(next_detections, key = op.attrgetter('start_time'))
             first_detection = next_detections.pop(0)
 
@@ -89,7 +90,8 @@ class DetectionBinder(object):
             search_windows = self.get_search_window(first_detection, next_detections)
 
             # Get the detections matching the search window.
-            match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k]]
+            window_extend = 1.
+            match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + window_extend]
 
             # TODO: Make the neighbor values a user preference.
             # Check if there are matching detections on neighboring stations.
