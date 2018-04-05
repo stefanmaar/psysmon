@@ -686,6 +686,11 @@ class Collection(object):
         # Collection log files go in there.
         self.tmpDir = tmpDir
 
+        # The runtime attributes of the collection.
+        self.runtime_att = psysmon.core.util.AttribDict()
+        self.runtime_att.start_time = None
+        self.runtime_att.end_time = None
+
         # The collection's data file.
         self.dataShelf = None
 
