@@ -265,6 +265,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                        station = cur_channel.parent_station.name,
                                        location = cur_channel.parent_station.location,
                                        channel = cur_channel.name)
+            cur_stream = cur_stream.split()
             for cur_trace in cur_stream:
                 cur_trace.stats.network = orig_net
                 cur_trace.stats.station = orig_serial
@@ -293,5 +294,8 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     os.makedirs(dest_path)
 
                 file_path = os.path.join(dest_path, filename)
-                cur_trace.write(file_path, format = export_format)
+                try:
+                    cur_trace.write(file_path, format = export_format)
+                except Exception as e:
+                    self.logger.exception(e)
 
