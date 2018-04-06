@@ -690,6 +690,8 @@ class Collection(object):
         self.runtime_att = psysmon.core.util.AttribDict()
         self.runtime_att.start_time = None
         self.runtime_att.end_time = None
+        self.runtime_att.loop_start_times = []
+        self.runtime_att.loop_end_times = []
 
         # The collection's data file.
         self.dataShelf = None
@@ -950,6 +952,28 @@ class Collection(object):
                 if curNode.mode != 'standalone' and curNode.enabled:
                     curNode.run(procName=self.procName,
                                 prevNodeOutput=self.nodes[ind-1].output)
+
+        # Check for a possible request of additional loops.
+        if self.runtime_att.loop_start_times:
+            for cur_start, cur_end in zip(self.runtime_att.loop_start_times, self.runtime_att.loop_end_times):
+                self.runtime_att.start_time = cur_start
+                self.runtime_att.end_time = cur_end
+                # Execute each node in the collection.
+                for (ind, curNode) in enumerate(self.nodes):
+                    # TODO: Create a smarter way to get the collection nodes to
+                    # ignore.
+                    if curNode.name == 'loop the collection':
+                        continue
+                    #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
+                    if ind == 0:
+                        if curNode.mode != 'standalone' and curNode.enabled:
+                            curNode.run(procName=self.procName)
+                    else:
+                        #curNode.run(threadId=self.threadId)
+                        if curNode.mode != 'standalone' and curNode.enabled:
+                            curNode.run(procName=self.procName,
+                                        prevNodeOutput=self.nodes[ind-1].output)
+
 
         #e.set()
         #heartbeat.join()
