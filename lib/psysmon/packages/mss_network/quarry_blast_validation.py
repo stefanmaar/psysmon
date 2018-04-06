@@ -23,6 +23,7 @@ import datetime
 import ftplib
 import json
 import os
+import pytz
 import tempfile
 
 import numpy as np
@@ -181,12 +182,17 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
 
                     date = datetime.datetime.strptime(cur_row['Datum_Sprengung'], '%d.%m.%Y %H:%M:%S')
                     time = datetime.datetime.strptime(cur_row['Uhrzeit_Sprengung'], '%d.%m.%Y %H:%M:%S')
-                    tmp['time'] = utcdatetime.UTCDateTime(year = date.year,
+                    local = pytz.timezone("Europe/Vienna")
+                    orig_time = utcdatetime.UTCDateTime(year = date.year,
                                                           month = date.month,
                                                           day = date.day,
                                                           hour = time.hour,
                                                           minute = time.minute,
                                                           second = time.second)
+                    local_dt = local.localize(orig_time.datetime, is_dst = None)
+                    utc_dt = local_dt.astimezone(pytz.utc)
+                    tmp['time'] = utcdatetime.UTCDateTime(utc_dt)
+
                     x = []
                     try:
                         x.append(float(cur_row['Koord_y1'].replace(',', '.')))
@@ -251,7 +257,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         for cur_key, cur_blast in quarry_blast.iteritems():
             catalog.clear_events()
             catalog.load_events(project = self.project,
-                                start_time = cur_blast['time'] - 60,
+                                start_time = cur_blast['time'] - 300,
                                 end_time = cur_blast['time'] + 300)
             # Select by event type.
             quarry_events = [x for x in catalog.events if x.event_type and x.event_type.name == 'duernbach']
