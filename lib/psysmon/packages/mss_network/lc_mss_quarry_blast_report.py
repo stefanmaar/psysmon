@@ -24,6 +24,7 @@ import os
 import mpl_toolkits.basemap as basemap
 import numpy as np
 import obspy.core
+import obspy.core.utcdatetime as utcdatetime
 
 import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -146,6 +147,8 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Update the quarry blast information dictionary.
         export_max_pgv = dict(max_pgv)
         export_magnitude = dict(zip([x.snl_string for x in res_stations], magnitude))
+        quarry_blast[baumit_id]['computed_on'] = utcdatetime.UTCDateTime()
+        quarry_blast[baumit_id]['event_time'] = event.start_time
         quarry_blast[baumit_id]['max_pgv'] = {}
         quarry_blast[baumit_id]['max_pgv']['data'] = export_max_pgv
         quarry_blast[baumit_id]['max_pgv']['used_channels'] = resultant_channels
