@@ -26,7 +26,8 @@ description = "Utilities for the psysmon collections."            # The package 
 website = "http://www.mertl-research.at"          # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['cn_collection_timespan']
+collection_node_modules = ['cn_collection_timespan',
+                           'cn_collection_looper']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
