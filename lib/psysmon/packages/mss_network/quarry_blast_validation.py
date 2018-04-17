@@ -42,7 +42,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
 
     '''
     name = 'quarry blast validation'
-    mode = 'looper child'
+    mode = 'editable'
     category = 'classification'
     tags = ['mss', 'macroseismic', 'quarry', 'blast']
 
