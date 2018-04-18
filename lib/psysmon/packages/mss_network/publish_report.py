@@ -1,4 +1,3 @@
-import ipdb
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -25,9 +24,9 @@ import json
 import os
 import tempfile
 
+import matplotlib.pyplot as plt
+import mpl_toolkits.basemap as basemap
 import numpy as np
-import obspy.core
-import obspy.core.utcdatetime as utcdatetime
 
 import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -158,15 +157,99 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                         cur_export_row = {}
                         cur_export_row['Sprengnummer'] = cur_row['Sprengnummer']
                         cur_export_row['ID'] = cur_blast['id']
-                        cur_export_row['time'] = cur_blast['event_time'].isoformat()
-                        cur_export_row['network_mag'] = cur_blast['magnitude']['network_mag']
-                        cur_export_row['network_mag_std'] = cur_blast['magnitude']['network_mag_std']
+                        cur_export_row['time [UTC]'] = cur_blast['event_time'].isoformat()
+                        cur_export_row['network_mag'] = round(cur_blast['magnitude']['network_mag'], 2)
+                        cur_export_row['network_mag_std'] = round(cur_blast['magnitude']['network_mag_std'], 2)
                         max_pgv = max(cur_blast['max_pgv']['data'].values())
                         max_pgv_ind = cur_blast['max_pgv']['data'].values().index(max_pgv)
-                        cur_export_row['max_pgv'] = max_pgv
+                        cur_export_row['max_pgv [mm/s]'] = round(max_pgv * 1000, 3)
                         cur_export_row['max_pgv_station'] = cur_blast['max_pgv']['data'].keys()[max_pgv_ind]
                         export_rows.append(cur_export_row)
-                        ipdb.set_trace() ############################## Breakpoint ##############################
                     else:
                         self.logger.info("No related result found for blast %s.", cur_row['Sprengnummer'])
+
+
+
+        if export_rows:
+            export_filepath = os.path.join(self.project.tmpDir, 'sprengungen_auswertung.csv')
+            with open(export_filepath, 'w') as fp:
+                fieldnames = ['ID', 'Sprengnummer', 'time [UTC]', 'network_mag',
+                              'network_mag_std', 'max_pgv [mm/s]', 'max_pgv_station']
+                writer = csv.DictWriter(fp, fieldnames = fieldnames)
+                writer.writeheader()
+                writer.writerows(export_rows)
+
+
+
+        # Plot the PGV vs. station.
+        if export_rows:
+            # Prepare the overal statistics.
+            pgv_data = {}
+            stations = []
+            for cur_key, cur_blast in quarry_blast.iteritems():
+                if 'psysmon_event_id' not in cur_blast.keys():
+                    continue
+                cur_data = cur_blast['max_pgv']['data']
+                for cur_snl, cur_pgv in cur_data.iteritems():
+                    if cur_snl not in pgv_data:
+                        pgv_data[cur_snl] = [cur_pgv,]
+                    else:
+                        pgv_data[cur_snl].append(cur_pgv)
+
+
+            proj = basemap.pyproj.Proj(init = 'epsg:' + cur_blast['epsg'])
+            ref_x = -21514.445
+            ref_y = 301766.29
+
+            station_names = [x.split(':')[0] for x in pgv_data.keys()]
+            for cur_station_name in station_names:
+                cur_station = self.project.geometry_inventory.get_station(name = cur_station_name)[0]
+                stat_lonlat = cur_station.get_lon_lat()
+                stat_x, stat_y = proj(stat_lonlat[0], stat_lonlat[1])
+                cur_station.epidist = np.sqrt((stat_x - ref_x)**2 + (stat_y - ref_y)**2)
+                stations.append(cur_station)
+            stations = sorted(stations, key = lambda x: x.epidist)
+
+            bp_data = [np.array(pgv_data[x.snl_string]) * 1000 for x in stations]
+
+            print [x.name for x in stations]
+            for cur_key, cur_blast in quarry_blast.iteritems():
+                self.logger.info("Plotting blast %s.", cur_key);
+                blast_pgv = []
+                if 'psysmon_event_id' not in cur_blast.keys():
+                    continue
+                cur_data = cur_blast['max_pgv']['data']
+                for cur_station in stations:
+                    if cur_station.snl_string in cur_data.keys():
+                        blast_pgv.append(cur_data[cur_station.snl_string])
+                    else:
+                        blast_pgv.append(np.nan)
+
+                blast_pgv = np.array(blast_pgv)
+                blast_pgv = blast_pgv * 1000
+
+
+                fig_height = 10
+                fig_width = 16 / 2.54
+                fig_dpi = 300
+                fig = plt.figure(figsize = (fig_width, fig_height), dpi = fig_dpi)
+                ax = fig.add_subplot(111)
+                ax.boxplot(bp_data, zorder = 1, flierprops = {'marker': 'o', 'markerfacecolor': 'lightgray', 'markeredgecolor': 'lightgray', 'markersize': 4})
+                ax.plot(np.arange(blast_pgv.size) + 1, blast_pgv, 'o', zorder = 3)
+                ax.axhline(0.1, linewidth = 1, linestyle = '--', color = 'gray', zorder = 0);
+                ax.set_xticklabels([str(x.name) for x in stations], rotation = 'vertical')
+                ax.set_ylabel('PGV [mm/s]')
+                ax.set_yscale('log')
+                title_string = 'Sprengung %s, %s' % (cur_key, cur_blast['event_time'].isoformat())
+                ax.set_title(title_string)
+                fig.tight_layout()
+                filepath = os.path.join(self.project.tmpDir, 'max_pgv_' + str(cur_blast['id']) + '.png')
+                fig.savefig(filepath, dpi = 300, bbox_inches = 'tight')
+
+                fig.clear()
+                del fig
+
+
+
+
 
