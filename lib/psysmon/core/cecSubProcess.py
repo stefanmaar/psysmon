@@ -125,6 +125,8 @@ if __name__ == "__main__":
         returncode = 0
         collection.setDataShelfFile(filename)
         try:
+            logger.info('global start time: %s', collection.runtime_att.start_time.isoformat())
+            logger.info('global end time: %s', collection.runtime_att.end_time.isoformat())
             collection.execute()
             logger.info('Finished the execution. Cleaning up....')
         except:
@@ -138,9 +140,11 @@ if __name__ == "__main__":
         try:
             logger.info('Unregistering the exported data from the project server.')
             psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
-            logger.info('Deleting data file %s.', filename)
-            os.remove(filename)
         except:
             # An error happened because basic variables couldn't be accessed.
             returncode = 4
+            logger.exception("Error when unregistering the project server data.")
+        logger.info('Deleting data file %s.', filename)
+        os.remove(filename)
+
         sys.exit(returncode)
