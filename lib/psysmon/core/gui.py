@@ -50,6 +50,12 @@ try:
     from agw import ribbon as ribbon
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.ribbon as ribbon
+
+try:
+    from wx import SimpleHtmlListBox
+except ImportError:
+    from wx.html import SimpleHtmlListBox
+
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
@@ -694,13 +700,13 @@ class Logger:
 
 ## The collection listbox.
 #
-class CollectionListBox(wx.SimpleHtmlListBox):
+class CollectionListBox(SimpleHtmlListBox):
 
     ## The constructor
     #
     # @param self The object pointer. 
     def __init__(self, parent, id=wx.ID_ANY):
-        wx.SimpleHtmlListBox.__init__(self, parent=parent, id=id)
+        SimpleHtmlListBox.__init__(self, parent=parent, id=id)
         cmData = (("edit node", parent.onEditNode),
                   ("remove node", parent.onRemoveNode),
                   ("new collection", parent.onCollectionNew),
