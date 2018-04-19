@@ -39,6 +39,7 @@ import os.path
 import matplotlib as mpl
 mpl.use('Agg')
 mpl.rcParams['backend'] = 'Agg'
+import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
 import psysmon.core.test_util as test_util
@@ -300,6 +301,10 @@ def handle_execute_command(args, logger):
                                                 user_name,
                                                 user_pwd)
         psybase.project.setActiveCollection(args.collection)
+        if args.starttime and args.endtime:
+            # Set the global time span of the collection.
+            psybase.project.getActiveCollection().runtime_att.start_time = utcdatetime.UTCDateTime(args.starttime)
+            psybase.project.getActiveCollection().runtime_att.end_time = utcdatetime.UTCDateTime(args.endtime)
         psybase.project.executeCollection()
     finally:
         psybase.stop_project_server()
@@ -408,10 +413,10 @@ if __name__ == '__main__':
                                 type = str, metavar = 'USER')
     parser_execute.add_argument('-p', '--password', help = 'Specify the password for the user.',
                                 action = 'store_true')
-    #parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
-    #                        type = str, metavar = 'STARTTIME')
-    #parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
-    #                        type = str, metavar = 'ENDTIME')
+    parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
+                            type = str, metavar = 'STARTTIME')
+    parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
+                            type = str, metavar = 'ENDTIME')
 
 
     # Create the parser for the 'update' command.
