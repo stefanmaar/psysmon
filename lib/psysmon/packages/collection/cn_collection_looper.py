@@ -50,6 +50,7 @@ class CollectionLooper(package_nodes.CollectionNode):
         ''' Execute the looper collection node.
 
         '''
+        '''
         start_times = ['2018-03-07T12:30',
                        '2018-03-07T13:10',
                        '2018-03-08T14:50',
@@ -59,6 +60,10 @@ class CollectionLooper(package_nodes.CollectionNode):
                        '2018-03-28T13:20',
                        '2018-03-28T13:50',
                        '2018-03-29T13:50']
+        '''
+        start_times = ['2018-04-10T09:40',
+                       '2018-04-18T10:00',
+                       '2018-04-18T13:40']
         start_times = [utcdatetime.UTCDateTime(x) for x in start_times]
         end_times = [x + 600 for x in start_times]
 
