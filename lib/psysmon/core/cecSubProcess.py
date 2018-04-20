@@ -125,8 +125,10 @@ if __name__ == "__main__":
         returncode = 0
         collection.setDataShelfFile(filename)
         try:
-            logger.info('global start time: %s', collection.runtime_att.start_time.isoformat())
-            logger.info('global end time: %s', collection.runtime_att.end_time.isoformat())
+            if collection.runtime_att.start_time:
+                logger.info('global start time: %s', collection.runtime_att.start_time.isoformat())
+            if collection.runtime_att.end_time:
+                logger.info('global end time: %s', collection.runtime_att.end_time.isoformat())
             collection.execute()
             logger.info('Finished the execution. Cleaning up....')
         except:
