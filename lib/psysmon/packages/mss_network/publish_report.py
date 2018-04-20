@@ -212,7 +212,6 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
             bp_data = [np.array(pgv_data[x.snl_string]) * 1000 for x in stations]
 
-            print [x.name for x in stations]
             for cur_key, cur_blast in quarry_blast.iteritems():
                 self.logger.info("Plotting blast %s.", cur_key);
                 blast_pgv = []
