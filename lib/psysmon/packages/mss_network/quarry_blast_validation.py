@@ -254,11 +254,14 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         event_lib.load_catalog_from_db(self.project, name = catalog_name)
         catalog = event_lib.catalogs[catalog_name]
 
+        # The search window for the psysmon event [s].
+        # TODO: Make this a preference item.
+        search_win = 600
         for cur_key, cur_blast in quarry_blast.iteritems():
             catalog.clear_events()
             catalog.load_events(project = self.project,
-                                start_time = cur_blast['time'] - 300,
-                                end_time = cur_blast['time'] + 300)
+                                start_time = cur_blast['time'] - search_win,
+                                end_time = cur_blast['time'] + search_win)
             # Select by event type.
             quarry_events = [x for x in catalog.events if x.event_type and x.event_type.name == 'duernbach']
             if quarry_events:
