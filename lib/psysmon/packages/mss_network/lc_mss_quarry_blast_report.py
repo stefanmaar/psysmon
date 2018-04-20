@@ -117,6 +117,8 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                                        station = cur_detection.scnl[0],
                                        location = cur_detection.scnl[3])
             cur_res_stream = self.compute_resultant(cur_stream, resultant_channels)
+            if not cur_res_stream:
+                continue
             res_stream = res_stream + cur_res_stream
             res_stations.append(cur_detection.channel.parent_station)
 
