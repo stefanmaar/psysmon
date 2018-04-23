@@ -38,6 +38,7 @@ import numpy as np
 from obspy.core import read, Stream
 import obspy.clients.earthworm as earthworm
 import obspy.core.utcdatetime as utcdatetime
+import obspy.clients.seedlink.basic_client as sl_basic_client
 from obspy.core.util.base import ENTRY_POINTS
 import sqlalchemy
 
@@ -937,4 +938,190 @@ class EarthwormWaveclient(WaveClient):
 
 
 
+class SeedlinkWaveclient(WaveClient):
+    ''' The seedlink waveserver client.
 
+    Request data for timewindows from a seedlink server.
+    The client uses :class:`obspy.clients.seedlink.basic_client.Client`.
+    '''
+
+    def __init__(self, name = 'seedlink waveserver client', host='localhost', port=18000, project = None, **kwargs):
+        WaveClient.__init__(self, name=name, **kwargs)
+
+        # The psysmon project owning the waveclient.
+        self.project = project
+
+        # The Earthworm waveserver host to which the client should connect.
+        self.host = host
+
+        # The port on which the Eartworm waveserver is running on host.
+        self.port = port
+
+        # The obspy earthworm waveserver client instance.
+        self.client = sl_basic_client.Client(self.host,
+                                             self.port,
+                                             timeout=2)
+
+    @property
+    def pickle_attributes(self):
+        ''' The attributes which can be pickled.
+        '''
+        d = super(SeedlinkWaveclient, self).pickle_attributes
+        d['host'] = self.host
+        d['port'] = self.port
+        return d
+
+
+    def getWaveform(self, startTime, endTime, scnl):
+        ''' Get the waveform data for the specified parameters.
+
+        Parameters
+        ----------
+        startTime : UTCDateTime
+            The begin datetime of the data to fetch.
+
+        endTime : UTCDateTime
+            The end datetime of the data to fetch.
+
+        scnl : List of tuples
+            The SCNL codes of the data to request.
+
+
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
+        '''
+        from obspy.core import Stream
+
+        self.logger.debug("Querying...")
+        self.logger.debug('startTime: %s', startTime)
+        self.logger.debug('endTime: %s', endTime)
+        self.logger.debug("%s", scnl)
+
+        stream = Stream()
+        for curScnl in scnl:
+            curStation = curScnl[0]
+            curChannel = curScnl[1]
+            curNetwork = curScnl[2]
+            curLocation = curScnl[3]
+
+
+            stock_stream = self.get_from_stock(station = curStation,
+                                               channel = curChannel,
+                                               network = curNetwork,
+                                               location = curLocation,
+                                               start_time = startTime,
+                                               end_time = endTime)
+
+            if len(stock_stream) > 0:
+                cur_trace = stock_stream.traces[0]
+                cur_start_time = cur_trace.stats.starttime
+                cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+
+                stream += stock_stream
+
+                if startTime < cur_start_time:
+                    curStream = self.request_from_server(station = curStation,
+                                                         channel = curChannel,
+                                                         network = curNetwork,
+                                                         location = curLocation,
+                                                         start_time = startTime,
+                                                         end_time = cur_start_time)
+                    stream += curStream
+
+                if cur_end_time < endTime:
+                    curStream = self.request_from_server(station = curStation,
+                                                         channel = curChannel,
+                                                         network = curNetwork,
+                                                         location = curLocation,
+                                                         start_time = cur_end_time,
+                                                         end_time = endTime)
+                    stream += curStream
+
+            else:
+                curStream = self.request_from_server(station = curStation,
+                                                     channel = curChannel,
+                                                     network = curNetwork,
+                                                     location = curLocation,
+                                                     start_time = startTime,
+                                                     end_time = endTime)
+                stream += curStream
+
+            stream.merge()
+
+        self.add_to_stock(stream)
+
+        return stream
+
+
+    def request_from_server(self, station, network, channel, location, start_time, end_time):
+        ''' Request the data from a seedlink server.
+        '''
+        # Get the channel from the inventory. It's expected, that only one
+        # channel is returned. If more than one channels are returned, then
+        # there is an error in the geometry inventory.
+        cur_channel = self.project.geometry_inventory.get_channel(network = network,
+                                                                  station = station,
+                                                                  location = location,
+                                                                  name = channel)
+
+        stream = Stream()
+        if cur_channel:
+            if len(cur_channel) > 1:
+                raise RuntimeError('More than 1 channel returned for SCNL: %s:%s:%s:%s. Check the geometry inventory for duplicate entries.' % (station, channel, network, location))
+
+            cur_channel = cur_channel[0]
+
+            # Get the streams assigned to the channel for the requested
+            # time-span.
+            assigned_streams = cur_channel.get_stream(start_time = start_time,
+                                                      end_time = end_time)
+
+            if len(assigned_streams) == 0:
+                self.logger.warning("No assigned streams found for SCNL %s.", cur_channel.scnl_string)
+
+            for cur_timebox in assigned_streams:
+                cur_rec_stream = cur_timebox.item
+                orig_location, orig_channel = cur_rec_stream.name.split(':')
+
+                try:
+                    self.logger.debug('Before getWaveform....')
+                    #stream = self.client.get_waveforms(network = 'AT',
+                    #                                   station = cur_rec_stream.serial,
+                    #                                   location = orig_location,
+                    #                                   channel = orig_channel,
+                    #                                   starttime = start_time,
+                    #                                   endtime = end_time)
+                    stream = self.client.get_waveforms(network = 'AT',
+                                                       station = 'AT11',
+                                                       location = '00',
+                                                       channel = 'HOI',
+                                                       starttime = start_time,
+                                                       endtime = end_time)
+                    print stream
+                    for cur_trace in stream:
+                        cur_trace.stats.unit = 'counts'
+                    self.logger.debug('got waveform: %s', stream)
+                    self.logger.debug('leave try')
+                except Exception as e:
+                    self.logger.exception("Error connecting to waveserver: %s", e)
+
+        return stream
+
+
+    def preload(self, start_time, end_time, scnl):
+        ''' Preload the data for the given timespan and the scnl.
+
+        Preloading is done as a thread.
+        '''
+        t = PreloadThread(name = 'daemon',
+                          start_time = start_time,
+                          end_time = end_time,
+                          scnl = scnl,
+                          target = self.getWaveform
+                         )
+        t.setDaemon(True)
+        t.start()
+        self.preload_threads.append(t)
+        return t
