@@ -75,12 +75,13 @@ class SelectDataSource(psysmon.core.packageNodes.CollectionNode):
         ''' Call the edit dialog of the collection node.
         '''
         # Get all database clients.
-        db_clients = sorted([x for x in self.project.waveclient.values() if x.mode == 'PsysmonDbWaveClient'])
-        db_client_names = [x.name for x in db_clients]
-        self.pref_manager.set_limit('waveclient', db_client_names)
+        #db_clients = sorted([x for x in self.project.waveclient.values() if x.mode == 'PsysmonDbWaveClient'])
+        waveclients = sorted([x for x in self.project.waveclient.values()])
+        waveclient_names = [x.name for x in waveclients]
+        self.pref_manager.set_limit('waveclient', waveclient_names)
         sel_client = self.pref_manager.get_value('waveclient')
         if not sel_client:
-            sel_client = db_client_names[0]
+            sel_client = waveclient_names[0]
             self.pref_manager.set_value('waveclient', sel_client)
 
         self.on_waveclient_selected()
@@ -131,8 +132,13 @@ class SelectDataSource(psysmon.core.packageNodes.CollectionNode):
             return
 
         client = self.project.waveclient[selected_waveclient]
-        client.loadWaveformDirList()
-        waveform_dir_list = client.waveformDirList
+
+        if client.mode is not 'PsysmonDbWaveClient':
+            waveform_dir_list = []
+        else:
+            client.loadWaveformDirList()
+            waveform_dir_list = client.waveformDirList
+
         self.pref_manager.set_limit('wf_dir', waveform_dir_list)
 
         # Select existing values based on the waveform dir id.
