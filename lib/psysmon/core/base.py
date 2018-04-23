@@ -44,7 +44,9 @@ import psysmon.core.project
 import psysmon.core.util
 import psysmon.core.json_util
 import psysmon.core.project_server
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import EarthwormWaveclient
+from psysmon.core.waveclient import SeedlinkWaveclient
 from psysmon.core.error import PsysmonError
 import psysmon.core.preferences_manager as pm
 from sqlalchemy import create_engine
@@ -513,7 +515,7 @@ class Base(object):
 
         # Set the project of the db_waveclient (if available).
         for cur_waveclient in self.project.waveclient.itervalues():
-            if cur_waveclient.mode == 'PsysmonDbWaveClient':
+            if cur_waveclient.mode == 'PsysmonDbWaveClient' or cur_waveclient.mode =='SeedlinkWaveclient':
                 cur_waveclient.project = self.project
 
         # Check for a preferred user.
@@ -596,6 +598,8 @@ class Base(object):
                     waveclient = PsysmonDbWaveClient(curName, self.project)
                 elif curMode == 'earthworm':
                     waveclient = EarthwormWaveclient(name=curName, **curOptions)
+                elif curMode == 'seedlink':
+                    waveclient = SeedlinkWaveclient(name = curName, **curOptions)
                 else:
                     waveclient = None
 
