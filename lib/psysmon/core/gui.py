@@ -63,7 +63,9 @@ import sqlalchemy
 import psysmon
 import psysmon.core.gui_view
 from psysmon.core.error import PsysmonError
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import EarthwormWaveclient
+from psysmon.core.waveclient import SeedlinkWaveclient
 import psysmon.core.preferences_manager as pm
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 import datetime
@@ -2204,6 +2206,65 @@ class EarthwormWaveclientOptions(wx.Panel):
         pass
 
 
+class SeedlinkWaveclientOptions(wx.Panel):
+
+    def __init__(self, parent=None, client=None, project=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The waveclient holding the options.
+        self.client = client
+
+
+        self.nameLabel = wx.StaticText(self, -1, "name:")
+        self.nameEdit = wx.TextCtrl(self, -1, self.client.name, size=(100, -1))
+        self.hostLabel = wx.StaticText(self, -1, "host:")
+        self.hostEdit = wx.TextCtrl(self, -1, self.client.host, size=(100, -1))
+        self.portLabel = wx.StaticText(self, -1, "port:")
+        self.portEdit = wx.TextCtrl(self, -1, str(self.client.port), size=(100, -1))
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+
+
+        sizer.Add(self.nameLabel, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.nameEdit, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.hostLabel, pos=(1,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.hostEdit, pos=(1,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.portLabel, pos=(2,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.portEdit, pos=(2,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.AddGrowableCol(1)
+
+        self.SetSizerAndFit(sizer)
+
+        self.project = project
+
+
+    def onOk(self):
+        ''' Apply the changes.
+
+        This method should be called by the dialog holding the options when the user clicks 
+        the ok button.
+        '''
+        self.client.name = self.nameEdit.GetValue()
+        self.client.host = self.hostEdit.GetValue()
+        self.client.port = int(self.portEdit.GetValue())
+        self.logger.debug(self.client.name)
+        return self.client
+
+
+    def onCancel(self):
+        ''' Called when the dialog cancel button is clicked.
+        '''
+        pass
+
 
 
 class EditWaveclientDlg(wx.Dialog):
@@ -2256,8 +2317,9 @@ class EditWaveclientDlg(wx.Dialog):
 
     def getClientOptionsPanels(self):
         clientModes = {}
-        clientModes['EarthwormWaveclient'] =  ('Earthworm', EarthwormWaveclientOptions)
+        clientModes['EarthwormWaveclient'] =  ('Earthworm Waveserver', EarthwormWaveclientOptions)
         clientModes['PsysmonDbWaveClient'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
+        clientModes['SeedlinkWaveClient'] =  ('Seedlink Server', SeedlinkWaveclientOptions)
         return clientModes
 
 
@@ -2321,12 +2383,14 @@ class AddDataSourceDlg(wx.Dialog):
                 panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook,
                                                    project = self.psyBase.project,
                                                    client = curClass(name = 'database client'))
-                #panel.SetBackgroundColour('red')
             elif curClass == EarthwormWaveclient:
                 panel = EarthwormWaveclientOptions(parent = self.modeChoiceBook,
                                                    project = self.psyBase.project,
                                                    client = curClass(name='earthworm client'))
-                #panel.SetBackgroundColour('green')
+            elif curClass == SeedlinkWaveclient:
+                panel = SeedlinkWaveclientOptions(parent = self.modeChoiceBook,
+                                                  project = self.psyBase.project,
+                                                  client = curClass(name='seedlink client'))
 
             panel.SetMinSize((200, 200))
             self.modeChoiceBook.AddPage(panel, curLabel)
@@ -2356,8 +2420,9 @@ class AddDataSourceDlg(wx.Dialog):
 
     def clientModes(self):
         clientModes = {}
-        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveclient)
+        clientModes['earthworm'] =  ('Earthworm Waveserver', EarthwormWaveclient)
         clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
+        clientModes['seedlink'] =  ('Seedlink Server', SeedlinkWaveclient)
         return clientModes
 
 
