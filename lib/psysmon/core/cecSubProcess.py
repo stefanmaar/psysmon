@@ -32,7 +32,9 @@ import matplotlib as mpl
 mpl.rcParams['backend'] = 'WXAgg'
 
 import psysmon
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import EarthwormWaveclient
+from psysmon.core.waveclient import SeedlinkWaveclient
 import psysmon.core.base as psybase
 import sys
 import shelve
@@ -106,6 +108,8 @@ if __name__ == "__main__":
                 waveclient = PsysmonDbWaveClient(curName, project)
             elif curMode == 'EarthwormWaveclient':
                 waveclient = EarthwormWaveclient(curName, **curAttributes)
+            elif curMode == 'SeedlinkWaveclient':
+                waveclient = SeedlinkWaveclient(curName, project = project, **curAttributes)
             else:
                 waveclient = None
 
