@@ -561,6 +561,7 @@ class PsysmonDbWaveClient(WaveClient):
         self.logger.debug("Loaded data stream: %s.", str(data_stream))
         return data_stream
 
+
     def loadWaveformDirList(self):
         '''Load the waveform directories from the database table.
 
@@ -960,7 +961,7 @@ class SeedlinkWaveclient(WaveClient):
         # The obspy earthworm waveserver client instance.
         self.client = sl_basic_client.Client(self.host,
                                              self.port,
-                                             timeout=2)
+                                             timeout=0.2)
 
     @property
     def pickle_attributes(self):
@@ -994,12 +995,17 @@ class SeedlinkWaveclient(WaveClient):
         '''
         from obspy.core import Stream
 
-        self.logger.debug("Querying...")
-        self.logger.debug('startTime: %s', startTime)
-        self.logger.debug('endTime: %s', endTime)
-        self.logger.debug("%s", scnl)
+        #self.logger.debug("Querying...")
+        #self.logger.debug('startTime: %s', startTime)
+        #self.logger.debug('endTime: %s', endTime)
+        #self.logger.debug("%s", scnl)
+        self.logger.debug("Getting the waveform for SCNL: %s from %s to %s...", scnl, startTime.isoformat(), endTime.isoformat())
 
         stream = Stream()
+
+        # Trim the stock stream to new limits.
+        self.trim_stock(start_time = startTime, end_time = endTime)
+
         for curScnl in scnl:
             curStation = curScnl[0]
             curChannel = curScnl[1]
@@ -1019,9 +1025,9 @@ class SeedlinkWaveclient(WaveClient):
                 cur_start_time = cur_trace.stats.starttime
                 cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
 
-                stream += stock_stream
+                stream += stock_stream.split()
 
-                if startTime < cur_start_time:
+                if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
                     curStream = self.request_from_server(station = curStation,
                                                          channel = curChannel,
                                                          network = curNetwork,
@@ -1030,7 +1036,7 @@ class SeedlinkWaveclient(WaveClient):
                                                          end_time = cur_start_time)
                     stream += curStream
 
-                if cur_end_time < endTime:
+                if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
                     curStream = self.request_from_server(station = curStation,
                                                          channel = curChannel,
                                                          network = curNetwork,
@@ -1048,11 +1054,17 @@ class SeedlinkWaveclient(WaveClient):
                                                      end_time = endTime)
                 stream += curStream
 
+            self.logger.debug('Merging stream.')
             stream.merge()
 
-        self.add_to_stock(stream)
+        # Trim the stream to the requested time span using only the samples
+        # inside the time span.
+        stream = stream.trim(starttime = startTime,
+                             endtime = endTime,
+                             nearest_sample = False)
 
         return stream
+
 
 
     def request_from_server(self, station, network, channel, location, start_time, end_time):
@@ -1087,41 +1099,34 @@ class SeedlinkWaveclient(WaveClient):
 
                 try:
                     self.logger.debug('Before getWaveform....')
-                    #stream = self.client.get_waveforms(network = 'AT',
-                    #                                   station = cur_rec_stream.serial,
-                    #                                   location = orig_location,
-                    #                                   channel = orig_channel,
-                    #                                   starttime = start_time,
-                    #                                   endtime = end_time)
                     stream = self.client.get_waveforms(network = 'AT',
-                                                       station = 'AT11',
-                                                       location = '00',
-                                                       channel = 'HOI',
+                                                       station = cur_rec_stream.serial,
+                                                       location = orig_location,
+                                                       channel = orig_channel,
                                                        starttime = start_time,
                                                        endtime = end_time)
-                    print stream
+                    #stream = self.client.get_waveforms(network = 'AT',
+                    #                                   station = 'AT11',
+                    #                                   location = '00',
+                    #                                   channel = 'HOI',
+                    #                                   starttime = start_time,
+                    #                                   endtime = end_time)
+                    self.logger.debug("Received seedlink stream: %s.", str(stream))
                     for cur_trace in stream:
+                        cur_trace.stats.network = network
+                        cur_trace.stats.station = station
+                        cur_trace.stats.location = location
+                        cur_trace.stats.channel = channel
                         cur_trace.stats.unit = 'counts'
-                    self.logger.debug('got waveform: %s', stream)
+                    self.logger.debug('Changed stream header: %s', stream)
+
+                    # Add the stream to the stock.
+                    self.logger.debug('Adding to stock.')
+                    self.add_to_stock(stream)
+
                     self.logger.debug('leave try')
                 except Exception as e:
                     self.logger.exception("Error connecting to waveserver: %s", e)
 
         return stream
 
-
-    def preload(self, start_time, end_time, scnl):
-        ''' Preload the data for the given timespan and the scnl.
-
-        Preloading is done as a thread.
-        '''
-        t = PreloadThread(name = 'daemon',
-                          start_time = start_time,
-                          end_time = end_time,
-                          scnl = scnl,
-                          target = self.getWaveform
-                         )
-        t.setDaemon(True)
-        t.start()
-        self.preload_threads.append(t)
-        return t
