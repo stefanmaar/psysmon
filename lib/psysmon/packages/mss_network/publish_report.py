@@ -242,7 +242,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 title_string = 'Sprengung %s, %s' % (cur_key, cur_blast['event_time'].isoformat())
                 ax.set_title(title_string)
                 fig.tight_layout()
-                filepath = os.path.join(self.project.tmpDir, 'max_pgv_' + str(cur_blast['id']) + '.png')
+                filepath = os.path.join(self.project.tmpDir, 'pgv_' + str(cur_blast['id']) + '.png')
                 fig.savefig(filepath, dpi = 300, bbox_inches = 'tight')
 
                 fig.clear()
