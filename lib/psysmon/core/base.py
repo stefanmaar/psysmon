@@ -170,6 +170,7 @@ class Base(object):
         self.pyro_nameserver = None
 
         # The pyro project data server.
+        '''
         if project_server is None:
             self.project_server = psysmon.core.project_server.ProjectServer()
 
@@ -178,6 +179,7 @@ class Base(object):
             self.ps_thread.start()
         else:
             self.project_server = project_server
+        '''
 
 
     def __del__(self):
