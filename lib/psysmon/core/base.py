@@ -171,6 +171,7 @@ class Base(object):
 
         # The pyro project data server.
         self.project_server = None
+        #Test
         '''
         if project_server is None:
             self.project_server = psysmon.core.project_server.ProjectServer()
