@@ -146,7 +146,8 @@ if __name__ == "__main__":
     finally:
         try:
             logger.info('Unregistering the exported data from the project server.')
-            psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
+            # TODO: Reactivate the project server again.
+            #psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
         except:
             # An error happened because basic variables couldn't be accessed.
             returncode = 4
