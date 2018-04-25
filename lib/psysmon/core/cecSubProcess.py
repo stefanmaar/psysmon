@@ -141,6 +141,7 @@ if __name__ == "__main__":
             returncode = 2
     except:
         # An error happened while preparing the execution of the collection.
+        logger.exception("Failed to prepare to exectute the collection.")
         returncode = 3
     finally:
         try:
