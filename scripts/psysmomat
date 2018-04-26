@@ -461,7 +461,9 @@ if __name__ == '__main__':
 
     logger = logging.getLogger('psysmon')
     logger.setLevel(args.loglevel)
-    logger.addHandler(psysmon.getLoggerHandler(log_level = args.loglevel))
+    shell_handler = psysmon.getLoggerHandler(log_level = args.loglevel)
+    shell_handler.setLevel(args.loglevel)
+    logger.addHandler(shell_handler)
 
     args.func(args, logger)
 
