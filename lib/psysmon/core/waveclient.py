@@ -40,7 +40,7 @@ import obspy.clients.earthworm as earthworm
 import obspy.core.utcdatetime as utcdatetime
 import obspy.clients.seedlink.basic_client as sl_basic_client
 from obspy.core.util.base import ENTRY_POINTS
-import sqlalchemy
+
 
 class WaveClient(object):
     '''The WaveClient class.
@@ -962,6 +962,14 @@ class SeedlinkWaveclient(WaveClient):
         self.client = sl_basic_client.Client(self.host,
                                              self.port,
                                              timeout = 2)
+
+        # In obspy.clients.seedlink.slclient.SLClient the logging.basicConfig
+        # is called which creates a default stream handler in the
+        # logging.Logger.root root-logger. Clear this handler.
+        # TODO: Check if current versions of obspy still have this issue.
+        if logging.Logger.root.handlers:
+            logging.Logger.root.removeHandler(logging.Logger.root.handlers[0])
+
 
     @property
     def pickle_attributes(self):
