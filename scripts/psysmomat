@@ -304,7 +304,7 @@ def handle_execute_command(args, logger):
                                                 user_pwd)
         # Set the log level.
         psybase.pref_manager.set_value('main_loglevel', 'DEBUG')
-        psybase.pref_manager.set_value('shell_loglevel', 'DEBUG')
+        psybase.pref_manager.set_value('shell_loglevel', 'ERROR')
         psybase.pref_manager.set_value('collection_loglevel', 'DEBUG')
         psybase.project.setActiveCollection(args.collection)
         if args.starttime and args.endtime:
