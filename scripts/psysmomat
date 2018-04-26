@@ -280,8 +280,10 @@ def handle_execute_command(args, logger):
     user_name = args.user
 
     user_pwd = ''
-    if args.password:
+    if args.password and not args.passphrase:
         user_pwd = getpass.getpass(prompt = 'User password:')
+    elif args.password:
+        user_pwd = args.passphrase
 
     if not args.project_file:
         # Try to get the project file from the current directory.
@@ -415,8 +417,10 @@ if __name__ == '__main__':
                                 type = str, metavar = 'PROJECT_FILE')
     parser_execute.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
                                 type = str, metavar = 'USER')
-    parser_execute.add_argument('-p', '--password', help = 'Specify the password for the user.',
+    parser_execute.add_argument('-p', '--password', help = 'A password is needed.',
                                 action = 'store_true')
+    parser_execute.add_argument('-pp', '--passphrase', help = 'The passphrase of the user.',
+                                type = str, metavar = 'PASSPHRASE', default = '')
     parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
                             type = str, metavar = 'STARTTIME')
     parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
