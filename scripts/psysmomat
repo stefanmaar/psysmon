@@ -303,9 +303,9 @@ def handle_execute_command(args, logger):
                                                 user_name,
                                                 user_pwd)
         # Set the log level.
-        psybase.project.pref_manager.set_value('main_loglevel', 'DEBUG')
-        psybase.project.pref_manager.set_value('shell_loglevel', 'DEBUG')
-        psybase.project.pref_manager.set_value('collection_loglevel', 'DEBUG')
+        psybase.pref_manager.set_value('main_loglevel', 'DEBUG')
+        psybase.pref_manager.set_value('shell_loglevel', 'DEBUG')
+        psybase.pref_manager.set_value('collection_loglevel', 'DEBUG')
         psybase.project.setActiveCollection(args.collection)
         if args.starttime and args.endtime:
             # Set the global time span of the collection.
