@@ -961,7 +961,7 @@ class SeedlinkWaveclient(WaveClient):
         # The obspy earthworm waveserver client instance.
         self.client = sl_basic_client.Client(self.host,
                                              self.port,
-                                             timeout=0.2)
+                                             timeout = 2)
 
     @property
     def pickle_attributes(self):
