@@ -20,6 +20,8 @@
 
 import os
 
+import matplotlib.pyplot as plt
+import numpy as np
 import obspy.core.util.base
 
 
@@ -250,6 +252,8 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         export_format = self.pref_manager.get_value('file_format')
         dest_dir = self.pref_manager.get_value('folder')
 
+        stream.sort()
+
         for cur_channel in channels:
             if len(cur_channel.streams) > 1:
                 self.logger.error("Can't handle multiple assigned streams. Skipping channel %s.", cur_channel.scnl)
@@ -298,4 +302,45 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     cur_trace.write(file_path, format = export_format)
                 except Exception as e:
                     self.logger.exception(e)
+
+        if event:
+            dest_path = os.path.join(dest_dir, 'event_%010d' % event.db_id)
+            self.plot_data(stream, dest_path, 'event_%010d' % event.db_id)
+
+
+    def plot_data(self, stream, dest_path, title):
+        ''' Plot the data of the sourcemap stations.
+        '''
+        fig = plt.figure(figsize = (6.4, 8.8))
+        n_plots = len(stream)
+        for k, cur_trace in enumerate(stream):
+            ax = fig.add_subplot(n_plots, 1, k+1)
+            cur_data = cur_trace.data
+            cur_time = cur_trace.times()
+            ax.plot(cur_time, cur_data)
+            ax.text(x = 0.99, y = 0.5,
+                    s = cur_trace.id,
+                    transform = ax.transAxes,
+                    fontsize = 8,
+                    verticalalignment = 'center',
+                    horizontalalignment = 'right',
+                    bbox = dict(facecolor='white', alpha=0.6))
+
+            ax.set_xlim((cur_time[0], cur_time[-1]))
+            max_data = np.max(np.abs(cur_data))
+            ax.set_ylim((-max_data, max_data))
+            if k < n_plots - 1:
+                ax.set_xticklabels([])
+            if k == n_plots -1:
+                ax.set_ylabel('vel [$\mu m/s$]')
+
+        ax.set_xlabel('time [s]')
+        fig.suptitle(title)
+        fig.subplots_adjust(hspace=0)
+
+        filename = title + '.png'
+        fig.savefig(os.path.join(dest_path, filename), dpi = 150)
+        fig.clear()
+        del fig
+
 
