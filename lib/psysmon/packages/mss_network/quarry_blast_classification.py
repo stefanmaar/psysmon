@@ -20,6 +20,7 @@
 
 import copy
 
+import numpy as np
 import obspy.geodetics as geodetics
 import sqlalchemy.orm
 
@@ -182,8 +183,23 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
             return
 
 
-        # TODO: Check for the required velocity threshold.
-        # TODO: Don't forget to enable the need_waveform_data flag.
+        # Check for the required velocity threshold on the nearest
+        # station.
+        # TODO: Make the pgv_thr a preference item.
+        pgv_thr = 1e-4
+        nearest_detections = [x for x in event.detections if x.snl == self.nearest_station.snl]
+        if not nearest_detections:
+            self.logger.error("No detection for the nearest station found.")
+            return
+
+        cur_stream = self.project.request_data_stream(start_time = nearest_detections[0].start_time,
+                                                      end_time = nearest_detections[0].end_time,
+                                                      scnl = [nearest_detections[0].scnl, ])
+        self.convert_to_sensor_units(cur_stream);
+        pgv = np.abs(cur_stream.max())
+        if pgv <= pgv_thr:
+            self.logger.info("The PGV %f is smaller than the required threshold of %f.", pgv, pgv_thr)
+            return
 
 
         # Write the classification to the database.
@@ -200,6 +216,51 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
 
 
 
+    def convert_to_sensor_units(self, stream):
+        for tr in stream.traces:
+            station = self.project.geometry_inventory.get_station(network = tr.stats.network,
+                                                                  name = tr.stats.station,
+                                                                  location = tr.stats.location)
+            if len(station) > 1:
+                raise ValueError('There are more than one stations. This is not yet supported.')
+            station = station[0]
+
+            channel = station.get_channel(name = tr.stats.channel)
+
+            if len(channel) > 1:
+                raise ValueError('There are more than one channels. This is not yet supported.')
+            channel = channel[0]
+
+            stream_tb = channel.get_stream(start_time = tr.stats.starttime,
+                                           end_time = tr.stats.endtime)
+
+            if len(stream_tb) > 1:
+                raise ValueError('There are more than one recorder streams. This is not yet supported.')
+            rec_stream = stream_tb[0].item
+
+            rec_stream_param = rec_stream.get_parameter(start_time = tr.stats.starttime,
+                                                        end_time = tr.stats.endtime)
+            if len(rec_stream_param) > 1:
+                raise ValueError('There are more than one recorder stream parameters. This is not yet supported.')
+            rec_stream_param = rec_stream_param[0]
+
+
+            components_tb = rec_stream.get_component(start_time = tr.stats.starttime,
+                                                     end_time = tr.stats.endtime)
+
+            if len(components_tb) > 1:
+                raise ValueError('There are more than one components. This is not yet supported.')
+            component = components_tb[0].item
+            comp_param = component.get_parameter(start_time = tr.stats.starttime,
+                                                 end_time = tr.stats.endtime)
+
+            if len(comp_param) > 1:
+                raise ValueError('There are more than one parameters for this component. This is not yet supported.')
+
+            comp_param = comp_param[0]
+
+            tr.data = tr.data * rec_stream_param.bitweight / (rec_stream_param.gain * comp_param.sensitivity)
+            tr.stats.unit = component.output_unit.strip()
 
 
     def load_event_types(self):
