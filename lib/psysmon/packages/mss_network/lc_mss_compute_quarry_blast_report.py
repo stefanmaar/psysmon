@@ -20,11 +20,13 @@
 
 import json
 import os
+import pickle
 
 import mpl_toolkits.basemap as basemap
 import numpy as np
 import obspy.core
 import obspy.core.utcdatetime as utcdatetime
+import scipy
 
 import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -32,11 +34,11 @@ import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 
 
-class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
+class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
     ''' Create a report of a quarry blast recorded on the MSS network.
 
     '''
-    name = 'mss report'
+    name = 'mss compute report data'
     mode = 'looper child'
     category = 'mss'
     tags = ['macroseismic', 'mss', 'quarry', 'blast']
@@ -54,6 +56,7 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         '''
         input_page = self.pref_manager.add_page('Input')
         bi_group = input_page.add_group('blast information')
+        rd_group = input_page.add_group('report data')
 
         # The quarry blast information file.
         item = psy_pm.FileBrowsePrefItem(name = 'blast_file',
@@ -62,6 +65,13 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                                          filemask = 'json (*.json)|*.json',
                                          tool_tip = 'The quarry blast information file created with the quarry blast validation collection node.')
         bi_group.add_item(item)
+
+        # The report data directory.
+        item = psy_pm.DirBrowsePrefItem(name = 'report_data_dir',
+                                        label = 'report data directory',
+                                        value = '',
+                                        tool_tip = 'The directory holding the quarry blast report data.')
+        rd_group.add_item(item)
 
 
     def edit(self):
@@ -110,6 +120,7 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Compute the resultant of the stations.
         resultant_channels = ['Hnormal', 'Hparallel']
         res_stream = obspy.core.Stream()
+        orig_stream = obspy.core.Stream()
         res_stations = []
         for cur_detection in event.detections:
             # TODO: Select the detection timespan only.
@@ -119,6 +130,7 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             cur_res_stream = self.compute_resultant(cur_stream, resultant_channels)
             if not cur_res_stream:
                 continue
+            orig_stream = orig_stream + cur_stream
             res_stream = res_stream + cur_res_stream
             res_stations.append(cur_detection.channel.parent_station)
 
@@ -146,6 +158,12 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         magnitude = np.log10([x[1] * 1000 for x in max_pgv]) + 1.6 * np.log10(hypo_dist) - 2.074 + stat_corr
 
 
+        # Compute the PSD.
+        psd_data = {}
+        for cur_trace in orig_stream:
+            cur_psd_data = self.compute_psd(cur_trace)
+            psd_data[cur_trace.id] = cur_psd_data
+
         # Update the quarry blast information dictionary.
         export_max_pgv = dict(max_pgv)
         export_magnitude = dict(zip([x.snl_string for x in res_stations], magnitude))
@@ -165,17 +183,18 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                       fp = fp,
                       cls = quarry_blast_validation.QuarryFileEncoder)
 
-        # TODO: Write a timestamped result file for the event.
 
+        # TODO: Write a timestamped result file for the event.
+        output_dir = self.pref_manager.get_value('report_data_dir')
+        filename = 'blast_report_data_event_%010d.pkl' % event.db_id
+        report_data = {}
+        report_data['baumit_id'] = baumit_id
+        report_data['blast_data'] = quarry_blast[baumit_id]
+        report_data['psd_data'] = psd_data
+        with open(os.path.join(output_dir, filename), 'w') as fp:
+            pickle.dump(report_data, fp)
 
         # TODO: Clear the computation request flag in the event database.
-
-
-        # TODO: Create images of the results.
-
-
-        # TODO: Join the images and the data in a Latex file and create a pdf
-        # file. 
 
 
 
@@ -208,4 +227,28 @@ class MssQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         res_st.split()
 
         return res_st
+
+
+    def compute_psd(self, trace):
+        ''' Compute the power spectral density of a trace.
+        '''
+
+        # Compute the power amplitude density spectrum.
+        # As defined by Havskov and Alguacil (page 164), the power density spectrum can be
+        # written as 
+        #   P = 2* 1/T * deltaT^2 * abs(F_dft)^2
+        #   
+        n_fft = len(trace.data)
+        delta_t = 1 / trace.stats.sampling_rate
+        T = (len(trace.data) - 1) * delta_t
+        Y = scipy.fft(trace.data, n_fft)
+        psd = 2 * delta_t**2 / T * np.abs(Y)**2
+        psd = 10 * np.log10(psd)
+        frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
+        psd_data = {}
+        psd_data['n_fft'] = n_fft
+        psd_data['psd'] = psd
+        psd_data['frequ'] = frequ
+
+        return psd_data
 
