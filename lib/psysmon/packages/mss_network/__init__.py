@@ -29,7 +29,8 @@ website = "http://www.mertl-research.at"          # The package website.
 collection_node_modules = ['quarry_blast_classification',
                            'quarry_blast_validation',
                            'publish_report',
-                           'lc_mss_quarry_blast_report']
+                           'lc_mss_compute_quarry_blast_report',
+                           'lc_mss_visualize_quarry_blast_report']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
