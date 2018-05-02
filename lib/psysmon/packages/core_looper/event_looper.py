@@ -512,7 +512,7 @@ class EventProcessor(object):
 
             n_events = len(catalog.events)
             try:
-                for k, cur_event in enumerate(catalog.events):
+                for k, cur_event in enumerate(sorted(catalog.events, key = lambda x: x.start_time)):
                     self.logger.info("Processing event %d (%d/%d).", cur_event.db_id, k, n_events)
 
                     # Assign the channel instance to the detections.
