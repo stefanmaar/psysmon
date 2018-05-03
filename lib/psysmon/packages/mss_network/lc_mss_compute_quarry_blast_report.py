@@ -184,7 +184,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                       cls = quarry_blast_validation.QuarryFileEncoder)
 
 
-        # TODO: Write a timestamped result file for the event.
+        # Write a result file for the event.
         output_dir = self.pref_manager.get_value('report_data_dir')
         filename = 'blast_report_data_event_%010d.pkl' % event.db_id
         report_data = {}
@@ -194,8 +194,10 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         with open(os.path.join(output_dir, filename), 'w') as fp:
             pickle.dump(report_data, fp)
 
-        # TODO: Clear the computation request flag in the event database.
-
+        # Clear the computation request flag in the event database.
+        event.tags.remove('mss_result_needed')
+        event.tags.append('mss_result_computed')
+        event.write_to_database(self.project)
 
 
     def compute_resultant(self, st, channel_names):
