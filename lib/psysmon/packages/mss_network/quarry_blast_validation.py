@@ -264,9 +264,13 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
                                 end_time = cur_blast['time'] + search_win)
             # Select by event type.
             quarry_events = [x for x in catalog.events if x.event_type and x.event_type.name == 'duernbach']
+            if len(quarry_events) > 1:
+                self.logger.error("More than one event related to the quarry blast. Skipping blast %s.", cur_key)
+                continue
+
             if quarry_events:
                 quarry_blast[cur_key]['psysmon_event_id'] = [x.db_id for x in quarry_events]
-                for cur_event in quarry_events:
+                for cur_event in [x for x in quarry_events if 'mss_result_computed' not in x.tags]:
                     cur_event.tags = ['mss_result_needed', 'baumit_id:' + cur_key.replace(',', ';')]
                     cur_event.write_to_database(self.project)
 
