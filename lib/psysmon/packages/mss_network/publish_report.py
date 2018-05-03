@@ -169,8 +169,8 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                         self.logger.info("No related result found for blast %s.", cur_row['Sprengnummer'])
 
 
-
         if export_rows:
+            # Upload the overall result file.
             export_filepath = os.path.join(self.project.tmpDir, 'sprengungen_auswertung.csv')
             with open(export_filepath, 'w') as fp:
                 fieldnames = ['ID', 'Sprengnummer', 'time [UTC]', 'network_mag',
@@ -178,4 +178,21 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 writer = csv.DictWriter(fp, fieldnames = fieldnames)
                 writer.writeheader()
                 writer.writerows(export_rows)
+
+            # Upload the result files.
+            ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
+                             user = self.pref_manager.get_value('username'),
+                             passwd = self.pref_manager.get_value('password'))
+            try:
+                with open(export_filepath, 'r') as fp:
+                    ftp.storbinary('STOR ' + os.path.basename(export_filepath), fp)
+            except:
+                self.logger.exception("Problems when uploading the result file.")
+            finally:
+                ftp.quit()
+                os.close(export_filepath)
+
+
+
+
 
