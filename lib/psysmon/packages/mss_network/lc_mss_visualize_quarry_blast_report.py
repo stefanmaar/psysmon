@@ -115,6 +115,14 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         else:
             pgv_boxplot_data = {}
 
+        # Load the pgv-distance data.
+        filename = 'blast_report_pgv_distance_data.pkl'
+        if os.path.exists(os.path.join(data_dir, filename)):
+            with open(os.path.join(data_dir, filename), 'r') as fp:
+                pgv_distance_data = pickle.load(fp)
+        else:
+            pgv_distance_data = {}
+
         baumit_id_slug = report_data['baumit_id'].replace('/', '-')
         output_dir = os.path.join(self.pref_manager.get_value('report_results_dir'), 'sprengung_%s' % baumit_id_slug)
         if not os.path.exists(output_dir):
@@ -126,10 +134,26 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Plot the PGV boxplot.
         pgv_boxplot_data = self.export_pgv_boxplot(report_data['blast_data']['max_pgv']['data'], pgv_boxplot_data,
                                                    output_dir, baumit_id_slug, report_data['blast_data']['epsg'])
+
+        # Plot the PGV-distance.
+        pgv_distance_data = self.export_pgv_distance_plot(report_data['blast_data']['max_pgv']['data'],
+                                                          pgv_distance_data,
+                                                          output_dir,
+                                                          baumit_id_slug,
+                                                          report_data['blast_data']['epsg'],
+                                                          (report_data['blast_data']['x'], report_data['blast_data']['y']),
+                                                          report_data['blast_data']['magnitude']['network_mag'])
+
+
         # Save the PGV boxplot data.
         filename = 'blast_report_pgv_boxplot_data.pkl'
         with open(os.path.join(data_dir, filename), 'w') as fp:
             pickle.dump(pgv_boxplot_data, fp)
+
+        # Save the PGV-distance data.
+        filename = 'blast_report_pgv_distance_data.pkl'
+        with open(os.path.join(data_dir, filename), 'w') as fp:
+            pickle.dump(pgv_distance_data, fp)
 
 
     def export_psd_data(self, psd_data, output_dir, baumit_id_slug):
@@ -224,8 +248,6 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ax.boxplot(bp_data, zorder = 1, flierprops = {'marker': 'o', 'markerfacecolor': 'lightgray', 'markeredgecolor': 'lightgray', 'markersize': 4})
         ax.plot(np.arange(blast_pgv.size) + 1, blast_pgv, 'o', zorder = 3)
         ax.axhline(0.1, linewidth = 1, linestyle = '--', color = 'gray', zorder = 0);
-        ax.set_xticks(np.arange(blast_pgv.size) + 1)
-        ax.set_xticklabels([str(x.name) for x in stations], rotation = 'vertical')
         ax.set_ylabel('PGV [mm/s]')
         ax.set_yscale('log')
         ax.set_title(title)
@@ -247,4 +269,88 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
 
+    def export_pgv_distance_plot(self, pgv_data, pgv_distance_data, output_dir, baumit_id_slug, epsg, epi, mag):
+        ''' Create the PGV-distance plots.
+        '''
+        output_dir = os.path.join(output_dir, 'pgv_distance')
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
+
+        # Prepare the past pgv-distance data.
+        past_pgv_dist = []
+        past_pgv_dist.append([])
+        past_pgv_dist.append([])
+        for cur_value in pgv_distance_data.values():
+            past_pgv_dist[0].extend(cur_value[0])
+            past_pgv_dist[1].extend(cur_value[1])
+        past_pgv_dist[1] = np.array(past_pgv_dist[1]) * 1000
+
+
+        # Compute the epidistance and sort the stations according to it.
+        stations = []
+        proj = basemap.pyproj.Proj(init = 'epsg:' + epsg)
+        ref_x = epi[0]
+        ref_y = epi[1]
+
+        station_names = [x.split(':')[0] for x in pgv_data.keys()]
+        for cur_station_name in station_names:
+            cur_station = self.project.geometry_inventory.get_station(name = cur_station_name)[0]
+            stat_lonlat = cur_station.get_lon_lat()
+            stat_x, stat_y = proj(stat_lonlat[0], stat_lonlat[1])
+            cur_station.epidist = np.sqrt((stat_x - ref_x)**2 + (stat_y - ref_y)**2)
+            stations.append(cur_station)
+        stations = sorted(stations, key = lambda x: x.epidist)
+
+        # Get the PGV data related to the sorted stations.
+        sorted_pgv = []
+        for cur_station in stations:
+            if cur_station.snl_string in pgv_data.keys():
+                sorted_pgv.append(pgv_data[cur_station.snl_string])
+            else:
+                sorted_pgv.append(np.nan)
+
+        blast_pgv = np.array(sorted_pgv)
+        blast_pgv = blast_pgv * 1000
+
+        # Normalize the data to M_ref.
+        m_ref = 2.2
+        m_fac = 10**(mag - m_ref)
+        blast_pgv = blast_pgv / m_fac
+
+
+        # Plot the data.
+        title = 'sprengung_%s_pgv-distance' % baumit_id_slug
+
+        fig_height = 10
+        fig_width = 16 / 2.54
+        fig_dpi = 300
+        fig = plt.figure(figsize = (fig_width, fig_height), dpi = fig_dpi)
+        ax = fig.add_subplot(111)
+        ax.plot(past_pgv_dist[0], past_pgv_dist[1], 'x',
+                markeredgewidth = 0.5, zorder = 0, markersize = 3, color = 'gray')
+        ax.plot([x.epidist for x in stations], blast_pgv, 'o', zorder = 3)
+        #ax.axhline(0.1, linewidth = 1, linestyle = '--', color = 'gray', zorder = 0);
+        ax.set_xticks(np.arange(blast_pgv.size) + 1)
+        ax.set_xticklabels([str(x.name) for x in stations], rotation = 'vertical')
+        ax.set_ylabel('PGV red. M_mss=2.2 [mm/s]')
+        ax.set_xlabel('distance [m]')
+        ax.set_yscale('log')
+        ax.set_xscale('log')
+        ax.set_xlim((100, 50000))
+        ax.set_ylim((1e-3, 10))
+        ax.set_title(title)
+        fig.tight_layout()
+        filepath = os.path.join(output_dir, title + '.png')
+        fig.savefig(filepath, dpi = 300, bbox_inches = 'tight')
+
+        fig.clear()
+        del fig
+
+
+        # Update the PGV-distance data.
+        pgv_distance_data[baumit_id_slug] = []
+        pgv_distance_data[baumit_id_slug].append([x.epidist for x in stations])
+        pgv_distance_data[baumit_id_slug].append(list(blast_pgv / 1000))
+
+        return pgv_distance_data
