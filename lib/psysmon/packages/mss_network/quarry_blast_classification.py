@@ -165,6 +165,7 @@ class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):
         detection_stations = [x.scnl[0] for x in event.detections]
         detection_stations = list(set(detection_stations))
         if self.nearest_station.name not in detection_stations:
+            self.logger.debug("No detection on the nearest station %s for event %d.", self.nearest_station.name, event.db_id)
             return
 
         # Check for the minimum number of neighboring stations.
