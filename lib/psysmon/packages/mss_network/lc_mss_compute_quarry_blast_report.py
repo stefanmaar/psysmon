@@ -32,6 +32,7 @@ import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
+import psysmon.core.util as util
 
 
 class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
@@ -160,9 +161,15 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Compute the PSD.
         psd_data = {}
+        dom_frequ = {};
         for cur_trace in orig_stream:
             cur_psd_data = self.compute_psd(cur_trace)
+            cur_scnl = util.traceid_to_scnl(cur_trace.id)
+            cur_scnl_string = ':'.join(cur_scnl)
             psd_data[cur_trace.id] = cur_psd_data
+            max_ind = np.argmax(cur_psd_data['psd'])
+            dom_frequ[cur_scnl_string] = cur_psd_data['frequ'][max_ind]
+
 
         # Update the quarry blast information dictionary.
         export_max_pgv = dict(max_pgv)
@@ -176,6 +183,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         quarry_blast[baumit_id]['magnitude']['station_mag'] = export_magnitude
         quarry_blast[baumit_id]['magnitude']['network_mag'] = np.mean(magnitude)
         quarry_blast[baumit_id]['magnitude']['network_mag_std'] = np.std(magnitude)
+        quarry_blast[baumit_id]['dom_frequ'] = dom_frequ
 
         # Save the quarry blast information.
         with open(blast_filename, 'w') as fp:
