@@ -248,6 +248,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ax.boxplot(bp_data, zorder = 1, flierprops = {'marker': 'o', 'markerfacecolor': 'lightgray', 'markeredgecolor': 'lightgray', 'markersize': 4})
         ax.plot(np.arange(blast_pgv.size) + 1, blast_pgv, 'o', zorder = 3)
         ax.axhline(0.1, linewidth = 1, linestyle = '--', color = 'gray', zorder = 0);
+        ax.set_xticks(np.arange(blast_pgv.size) + 1)
+        ax.set_xticklabels([str(x.name) for x in stations], rotation = 'vertical')
         ax.set_ylabel('PGV [mm/s]')
         ax.set_yscale('log')
         ax.set_title(title)
