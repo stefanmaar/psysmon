@@ -961,7 +961,7 @@ class SeedlinkWaveclient(WaveClient):
         # The obspy earthworm waveserver client instance.
         self.client = sl_basic_client.Client(self.host,
                                              self.port,
-                                             timeout = 2)
+                                             timeout = 5)
 
         # In obspy.clients.seedlink.slclient.SLClient the logging.basicConfig
         # is called which creates a default stream handler in the
@@ -1106,7 +1106,7 @@ class SeedlinkWaveclient(WaveClient):
                 orig_location, orig_channel = cur_rec_stream.name.split(':')
 
                 try:
-                    self.logger.debug('Before getWaveform....')
+                    self.logger.debug('get_waveforms for %s, %s, %s', cur_rec_stream.serial, orig_location, orig_channel)
                     stream = self.client.get_waveforms(network = 'AT',
                                                        station = cur_rec_stream.serial,
                                                        location = orig_location,
