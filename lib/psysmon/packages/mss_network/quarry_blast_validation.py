@@ -161,6 +161,8 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         try:
             with open(tmp_filename, 'wb') as fp:
                 ftp.retrbinary('RETR ' + src_filename, fp.write)
+        except:
+            self.logger.error("Couldn't download the blast exchange file %s from %s.", src_filename, ftp.host)
         finally:
             ftp.quit()
             os.close(tmp_fid)
@@ -265,12 +267,15 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
             # Select by event type.
             quarry_events = [x for x in catalog.events if x.event_type and x.event_type.name == 'duernbach']
             if len(quarry_events) > 1:
-                self.logger.error("More than one event related to the quarry blast. Skipping blast %s.", cur_key)
-                continue
+                self.logger.error("More than one event related to the quarry blast %s. Using the one nearest to the blast time.", cur_key)
+                time_diff = [np.abs(cur_blast['time'] - x.start_time) for x in quarry_events]
+                nearest_ind = np.argmin(time_diff)
+                quarry_events = [quarry_events[nearest_ind]]
 
             if quarry_events:
                 quarry_blast[cur_key]['psysmon_event_id'] = [x.db_id for x in quarry_events]
-                for cur_event in [x for x in quarry_events if 'mss_result_computed' not in x.tags]:
+                #for cur_event in [x for x in quarry_events if 'mss_result_computed' not in x.tags]:
+                for cur_event in [x for x in quarry_events]:
                     cur_event.tags = ['mss_result_needed', 'baumit_id:' + cur_key.replace(',', ';')]
                     cur_event.write_to_database(self.project)
 
