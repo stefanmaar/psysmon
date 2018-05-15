@@ -115,13 +115,13 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         else:
             pgv_boxplot_data = {}
 
-        # Load the pgv-distance data.
-        filename = 'blast_report_pgv_distance_data.pkl'
+        # Load the pgv-reduced data.
+        filename = 'blast_report_pgv_red_data.pkl'
         if os.path.exists(os.path.join(data_dir, filename)):
             with open(os.path.join(data_dir, filename), 'r') as fp:
-                pgv_distance_data = pickle.load(fp)
+                pgv_red_data = pickle.load(fp)
         else:
-            pgv_distance_data = {}
+            pgv_red_data = {}
 
         baumit_id_slug = report_data['baumit_id'].replace('/', '-')
         output_dir = os.path.join(self.pref_manager.get_value('report_results_dir'), 'sprengung_%s' % baumit_id_slug)
@@ -136,8 +136,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                                                    output_dir, baumit_id_slug, report_data['blast_data']['epsg'])
 
         # Plot the PGV-distance.
-        pgv_distance_data = self.export_pgv_distance_plot(report_data['blast_data']['max_pgv']['data'],
-                                                          pgv_distance_data,
+        pgv_red_data = self.export_pgv_red_plot(report_data['blast_data']['max_pgv']['data'],
+                                                          pgv_red_data,
                                                           output_dir,
                                                           baumit_id_slug,
                                                           report_data['blast_data']['epsg'],
@@ -151,9 +151,9 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             pickle.dump(pgv_boxplot_data, fp)
 
         # Save the PGV-distance data.
-        filename = 'blast_report_pgv_distance_data.pkl'
+        filename = 'blast_report_pgv_red_data.pkl'
         with open(os.path.join(data_dir, filename), 'w') as fp:
-            pickle.dump(pgv_distance_data, fp)
+            pickle.dump(pgv_red_data, fp)
 
 
     def export_psd_data(self, psd_data, output_dir, baumit_id_slug):
@@ -271,10 +271,10 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
 
-    def export_pgv_distance_plot(self, pgv_data, pgv_distance_data, output_dir, baumit_id_slug, epsg, epi, mag):
+    def export_pgv_red_plot(self, pgv_data, pgv_red_data, output_dir, baumit_id_slug, epsg, epi, mag):
         ''' Create the PGV-distance plots.
         '''
-        output_dir = os.path.join(output_dir, 'pgv_distance')
+        output_dir = os.path.join(output_dir, 'pgv_red')
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
@@ -283,7 +283,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         past_pgv_dist = []
         past_pgv_dist.append([])
         past_pgv_dist.append([])
-        for cur_value in pgv_distance_data.values():
+        for cur_value in pgv_red_data.values():
             past_pgv_dist[0].extend(cur_value[0])
             past_pgv_dist[1].extend(cur_value[1])
         past_pgv_dist[1] = np.array(past_pgv_dist[1]) * 1000
@@ -322,7 +322,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
         # Plot the data.
-        title = 'sprengung_%s_pgv-distance' % baumit_id_slug
+        title = 'sprengung_%s_pgv_red' % baumit_id_slug
 
         fig_height = 10
         fig_width = 16 / 2.54
@@ -351,8 +351,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
         # Update the PGV-distance data.
-        pgv_distance_data[baumit_id_slug] = []
-        pgv_distance_data[baumit_id_slug].append([x.epidist for x in stations])
-        pgv_distance_data[baumit_id_slug].append(list(blast_pgv / 1000))
+        pgv_red_data[baumit_id_slug] = []
+        pgv_red_data[baumit_id_slug].append([x.epidist for x in stations])
+        pgv_red_data[baumit_id_slug].append(list(blast_pgv / 1000))
 
-        return pgv_distance_data
+        return pgv_red_data
