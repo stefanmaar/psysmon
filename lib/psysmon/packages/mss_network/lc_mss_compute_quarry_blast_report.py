@@ -161,14 +161,26 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Compute the PSD.
         psd_data = {}
-        dom_frequ = {};
         for cur_trace in orig_stream:
             cur_psd_data = self.compute_psd(cur_trace)
             cur_scnl = util.traceid_to_scnl(cur_trace.id)
             cur_scnl_string = ':'.join(cur_scnl)
             psd_data[cur_trace.id] = cur_psd_data
-            max_ind = np.argmax(cur_psd_data['psd'])
-            dom_frequ[cur_scnl_string] = cur_psd_data['frequ'][max_ind]
+
+        # Compute the dominant frequency.
+        dom_frequ = {};
+        dom_stat_frequ = {}
+        for cur_station in res_stations:
+            cur_psd_keys = [x for x in psd_data.keys() if x.startswith(cur_station.network + '.' + cur_station.name)]
+            cur_df = []
+            for cur_key in cur_psd_keys:
+                max_ind = np.argmax(psd_data[cur_key]['psd'])
+                dom_frequ[cur_key] = psd_data[cur_key]['frequ'][max_ind]
+                cur_df.append(dom_frequ[cur_key])
+
+            dom_stat_frequ[cur_station.snl_string] = np.mean(cur_df)
+
+
 
 
         # Update the quarry blast information dictionary.
@@ -184,6 +196,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         quarry_blast[baumit_id]['magnitude']['network_mag'] = np.mean(magnitude)
         quarry_blast[baumit_id]['magnitude']['network_mag_std'] = np.std(magnitude)
         quarry_blast[baumit_id]['dom_frequ'] = dom_frequ
+        quarry_blast[baumit_id]['dom_stat_frequ'] = dom_stat_frequ
 
         # Save the quarry blast information.
         with open(blast_filename, 'w') as fp:
