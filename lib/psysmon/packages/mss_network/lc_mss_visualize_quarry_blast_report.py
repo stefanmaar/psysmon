@@ -240,7 +240,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Plot the data.
         title = 'sprengung_%s_pgv' % baumit_id_slug
 
-        fig_height = 10
+        fig_height = 10 / 2.54
         fig_width = 16 / 2.54
         fig_dpi = 300
         fig = plt.figure(figsize = (fig_width, fig_height), dpi = fig_dpi)
@@ -324,7 +324,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Plot the data.
         title = 'sprengung_%s_pgv_red' % baumit_id_slug
 
-        fig_height = 10
+        fig_height = 10 / 2.54
         fig_width = 16 / 2.54
         fig_dpi = 300
         fig = plt.figure(figsize = (fig_width, fig_height), dpi = fig_dpi)
