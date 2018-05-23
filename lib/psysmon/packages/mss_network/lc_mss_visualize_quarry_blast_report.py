@@ -128,6 +128,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
+
+        plt.close('all')
         # Plot the PSD data.
         self.export_psd_data(report_data['psd_data'], output_dir, baumit_id_slug)
 
@@ -174,6 +176,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             filename = title + '.png'
             fig.savefig(os.path.join(output_dir, filename), dpi = 150)
             fig.clear()
+            plt.close(fig)
             del fig
 
 
@@ -258,6 +261,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         fig.savefig(filepath, dpi = 300, bbox_inches = 'tight')
 
         fig.clear()
+        plt.close(fig)
         del fig
 
 
@@ -347,6 +351,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         fig.savefig(filepath, dpi = 300, bbox_inches = 'tight')
 
         fig.clear()
+        plt.close(fig)
         del fig
 
 
