@@ -274,8 +274,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
 
             if quarry_events:
                 quarry_blast[cur_key]['psysmon_event_id'] = [x.db_id for x in quarry_events]
-                #for cur_event in [x for x in quarry_events if 'mss_result_computed' not in x.tags]:
-                for cur_event in [x for x in quarry_events]:
+                for cur_event in [x for x in quarry_events if 'mss_result_computed' not in x.tags]:
                     cur_event.tags = ['mss_result_needed', 'baumit_id:' + cur_key.replace(',', ';')]
                     cur_event.write_to_database(self.project)
 
