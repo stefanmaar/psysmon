@@ -50,6 +50,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
         self.create_ftp_prefs()
         self.create_input_preferences()
+        self.create_output_preferences()
 
 
     def create_ftp_prefs(self):
@@ -101,6 +102,20 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                                          filemask = 'json (*.json)|*.json',
                                          tool_tip = 'The quarry blast information file created with the quarry blast validation collection node.')
         bi_group.add_item(item)
+
+
+    def create_output_preferences(self):
+        ''' Create the output preferences.
+        '''
+        input_page = self.pref_manager.add_page('Output')
+        res_group = input_page.add_group('result')
+
+        # The quarry blast information file.
+        item = psy_pm.DirBrowsePrefItem(name = 'result_dir',
+                                         label = 'result directory',
+                                         value = '',
+                                         tool_tip = 'The directory where to store the result file.')
+        res_group.add_item(item)
 
 
     def edit(self):
@@ -221,7 +236,8 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
         if export_rows:
             # Upload the overall result file.
-            export_filepath = os.path.join(self.project.tmpDir, 'sprengungen_auswertung.csv')
+            result_dir = self.pref_manager.get_value('result_dir')
+            export_filepath = os.path.join(result_dir, 'sprengungen_auswertung.csv')
             with open(export_filepath, 'w') as fp:
                 fieldnames = ['ID', 'Sprengnummer', 'time [UTC]', 'network_mag',
                               'network_mag_std', 'max_pgv [mm/s]', 'max_pgv_station',
