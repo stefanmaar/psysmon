@@ -27,6 +27,7 @@ import tempfile
 import matplotlib.pyplot as plt
 import mpl_toolkits.basemap as basemap
 import numpy as np
+import obspy.core.utcdatetime as utcdatetime
 
 import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -136,6 +137,8 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
+        result_dir = self.pref_manager.get_value('result_dir')
+
         # Load the quarry_blast information.
         blast_filename = self.pref_manager.get_value('blast_file')
         if os.path.exists(blast_filename):
@@ -234,9 +237,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 else:
                     self.logger.info("No related result found for blast %s.", cur_blast_key)
 
+
         if export_rows:
             # Upload the overall result file.
-            result_dir = self.pref_manager.get_value('result_dir')
             export_filepath = os.path.join(result_dir, 'sprengungen_auswertung.csv')
             with open(export_filepath, 'w') as fp:
                 fieldnames = ['ID', 'Sprengnummer', 'time [UTC]', 'network_mag',
@@ -254,10 +257,47 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                                  user = self.pref_manager.get_value('username'),
                                  passwd = self.pref_manager.get_value('password'))
                 try:
+                    self.logger.info("Uploading the result file %s.", export_filepath)
                     with open(export_filepath, 'r') as fp:
                         ftp.storbinary('STOR ' + os.path.basename(export_filepath), fp)
+
+                    # Check for needed upload of results.
+                    save_blast_file = False
+                    for cur_blast_key in sorted(quarry_blast.keys()):
+                        cur_blast = quarry_blast[cur_blast_key]
+                        if 'psysmon_event_id' in cur_blast.keys() and 'computed_on' in cur_blast.keys() and 'uploaded_on' not in cur_blast.keys():
+                            # Upload the result images to the FTP Server.
+                            self.logger.info('Uploading images of %s.', cur_blast_key)
+                            cur_blast_dir = os.path.join(result_dir, 'sprengung_' + cur_blast_key)
+
+                            # Upload the pgv file.
+                            cur_file = os.path.join(cur_blast_dir, 'pgv', 'sprengung_' + cur_blast_key + '_pgv.png')
+                            with open(cur_file) as fp:
+                                ftp.storbinary('STOR images/pgv/' + os.path.basename(cur_file), fp)
+
+                            # Upload the pgv_red file.
+                            cur_file = os.path.join(cur_blast_dir, 'pgv_red', 'sprengung_' + cur_blast_key + '_pgv_red.png')
+                            with open(cur_file) as fp:
+                                ftp.storbinary('STOR images/pgv_red/' + os.path.basename(cur_file), fp)
+
+                            # Upload the psd file of station DUBA.
+                            cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBA.png')
+                            with open(cur_file) as fp:
+                                ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
+
+                            # Add the uploaded_on flag.
+                            quarry_blast[cur_blast_key]['uploaded_on'] = utcdatetime.UTCDateTime()
+                            save_blast_file = True
                 except:
-                    self.logger.exception("Problems when uploading the result file.")
+                    self.logger.exception("Problems when uploading the result files.")
                 finally:
                     ftp.quit()
+
+
+                # Save the quarry blast information.
+                if save_blast_file:
+                    with open(blast_filename, 'w') as fp:
+                        json.dump(quarry_blast,
+                                  fp = fp,
+                                  cls = quarry_blast_validation.QuarryFileEncoder)
 
