@@ -246,8 +246,17 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                               'network_mag_std', 'max_pgv [mm/s]', 'max_pgv_station',
                               'pgv_duba [mm/s]', 'dom_frequ_duba [Hz]',
                               'pgv_dubam [mm/s]', 'dom_frequ_dubam [Hz]']
+                # Use a custom header.
+                header = ['ID', 'Sprengnummer', 'time UTC', 'network_mag',
+                          'network_mag_std', 'max_pgv mm/s', 'max_pgv_station',
+                          'pgv_duba mm/s', 'dom_frequ_duba Hz',
+                          'pgv_dubam mm/s', 'dom_frequ_dubam Hz']
+
                 writer = csv.DictWriter(fp, fieldnames = fieldnames)
-                writer.writeheader()
+                #writer.writeheader()
+                # Use the dictwriter underlying writer instance to write the
+                # custom header.
+                writer.writer.writerow(header)
                 writer.writerows(export_rows)
 
             # Upload the result files.
