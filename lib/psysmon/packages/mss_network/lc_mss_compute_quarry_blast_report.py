@@ -260,7 +260,8 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # As defined by Havskov and Alguacil (page 164), the power density spectrum can be
         # written as 
         #   P = 2* 1/T * deltaT^2 * abs(F_dft)^2
-        #   
+        # This is valid for the left-sided fft.
+        #
         n_fft = len(trace.data)
         delta_t = 1 / trace.stats.sampling_rate
         T = (len(trace.data) - 1) * delta_t
