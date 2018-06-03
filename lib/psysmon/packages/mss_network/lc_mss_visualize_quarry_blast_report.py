@@ -22,12 +22,15 @@ import json
 import os
 import pickle
 
+import matplotlib
 import matplotlib.pyplot as plt
 import mpl_toolkits.basemap as basemap
 import numpy as np
 import obspy.core
 import obspy.core.utcdatetime as utcdatetime
+import seaborn as sns
 import scipy
+
 
 import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -183,24 +186,52 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
     def plot_psd_data(self, psd_data, title):
         ''' Create the PSD images.
         '''
-        fig = plt.figure(figsize = (6.4, 8.8))
+        fig = plt.figure(figsize = (8.8, 6.4), dpi = 72)
         ax = fig.add_subplot(1, 1, 1)
+        ax.minorticks_on()
+
+        #self.plot_noise_model(ax)
 
         for cur_key, cur_data in psd_data.items():
-            cur_frequ = cur_data['frequ']
-            cur_psd = cur_data['psd']
             cur_nfft = cur_data['n_fft']
             left_fft = int(np.ceil(cur_nfft / 2.))
-            ax.plot(cur_frequ[1:left_fft], cur_psd[1:left_fft], label = cur_key)
+            cur_frequ = cur_data['frequ'][1:left_fft]
+            cur_psd = cur_data['psd'][1:left_fft]
+            cur_psd = 10 * np.log10(cur_psd)
+
+            # Smooth the psd.
+            win_len = 21
+            op = np.ones(win_len)
+            op = op / np.sum(op)
+            cur_psd_smooth = np.convolve(op, cur_psd, mode = 'same')
+            cur_frequ_smooth = cur_frequ[int(np.ceil(win_len/2)):]
+            cur_psd_smooth = cur_psd_smooth[int(np.ceil(win_len/2)):]
+
+            ax.plot(cur_frequ, cur_psd, color = sns.xkcd_rgb['light grey'])
+            ax.plot(cur_frequ_smooth[10:-10], cur_psd_smooth[10:-10], label = cur_key, zorder = 20)
 
         ax.set_xlabel('Frequenz [Hz]')
         ax.set_ylabel('PSD [(m/s)^2/HZ in dB rel. to 1 m/s]')
         ax.set_xscale('log')
+        ax.grid(b = True, which = 'major')
+        ax.grid(b = True, which = 'minor', linestyle = ':', axis = 'x')
         ax.legend()
         ax.set_title(title)
         fig.subplots_adjust(hspace=0)
         fig.tight_layout()
         return fig
+
+    def plot_noise_model(self, ax):
+        p_nhnm, nhnm = obspy.signal.spectral_estimation.get_nhnm()
+        p_nlnm, nlnm = obspy.signal.spectral_estimation.get_nlnm()
+
+        # obspy returns the NLNM and NHNM values in acceleration.
+        # Convert them to the current unit (see Bormann (1998)).
+        nhnm = nhnm + 20 * np.log10(p_nhnm/ (2 * np.pi))
+        nlnm = nlnm + 20 * np.log10(p_nlnm/ (2 * np.pi))
+        #ax.plot(1/p_nlnm, nlnm, color = self.line_colors['nlnm'])
+        ax.plot(1/p_nhnm, nhnm, color = sns.xkcd_rgb['very light blue'], linestyle = '--')
+
 
 
     def export_pgv_boxplot(self, pgv_data, pgv_boxplot_data, output_dir, baumit_id_slug, epsg):
