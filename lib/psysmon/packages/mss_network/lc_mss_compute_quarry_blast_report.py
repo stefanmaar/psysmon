@@ -267,7 +267,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         T = (len(trace.data) - 1) * delta_t
         Y = scipy.fft(trace.data, n_fft)
         psd = 2 * delta_t**2 / T * np.abs(Y)**2
-        psd = 10 * np.log10(psd)
+        #psd = 10 * np.log10(psd)
         frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
         psd_data = {}
         psd_data['n_fft'] = n_fft
