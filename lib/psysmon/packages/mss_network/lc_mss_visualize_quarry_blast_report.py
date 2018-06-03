@@ -197,7 +197,6 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             left_fft = int(np.ceil(cur_nfft / 2.))
             cur_frequ = cur_data['frequ'][1:left_fft]
             cur_psd = cur_data['psd'][1:left_fft]
-            cur_psd = 10 * np.log10(cur_psd)
 
             # Smooth the psd.
             win_len = 21
