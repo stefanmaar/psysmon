@@ -37,9 +37,6 @@ import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 
-sns.set_style('whitegrid')
-sns.set_style('ticks')
-sns.set_context('paper')
 
 
 class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
@@ -134,6 +131,11 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
         plt.close('all')
+
+        # Set the seaborn plot style.
+        sns.set()
+        sns.set(context = 'paper', style = 'ticks')
+
         # Plot the PSD data.
         self.export_psd_data(report_data['psd_data'], output_dir, baumit_id_slug)
 
