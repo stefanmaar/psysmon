@@ -342,6 +342,20 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ax.set_yscale('log')
         ax.set_title(title)
         fig.tight_layout()
+
+        # Plot the PGV values.
+        ylim = ax.get_ylim()
+        for k, cur_pgv in enumerate(blast_pgv):
+            bbox_props = dict(boxstyle = 'round,pad=0.3',
+                              facecolor = 'white',
+                              edgecolor = 'black',
+                              linewidth = 1)
+            cur_text = ax.text(k + 1, ylim[0], '%.3f' % cur_pgv,
+                               ha = 'center',
+                               va = 'bottom',
+                               size = 6,
+                               bbox = bbox_props)
+
         filepath = os.path.join(output_dir, title + '.png')
         fig.savefig(filepath, dpi = 300, bbox_inches = 'tight')
 
