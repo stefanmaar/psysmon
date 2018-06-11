@@ -437,6 +437,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ax.set_xscale('log')
         ax.set_xlim((100, 50000))
         ax.set_ylim((1e-3, 10))
+        ax.grid(b = True, which = 'major')
+        ax.grid(b = True, which = 'minor', linestyle = ':', axis = 'x')
         ax.set_title(title)
         fig.tight_layout()
         filepath = os.path.join(output_dir, title + '.png')
