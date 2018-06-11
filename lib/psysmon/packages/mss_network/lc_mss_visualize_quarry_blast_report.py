@@ -79,6 +79,15 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                                         tool_tip = 'The directory where to save the report result files.')
         rr_group.add_item(item)
 
+        # The quarry blast information file.
+        item = psy_pm.FileBrowsePrefItem(name = 'blast_file',
+                                         label = 'blast file',
+                                         value = '',
+                                         filemask = 'json (*.json)|*.json',
+                                         tool_tip = 'The quarry blast information file created with the quarry blast validation collection node.')
+        rr_group.add_item(item)
+
+
     def edit(self):
         ''' Create the preferences edit dialog.
         '''
@@ -111,20 +120,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
         # Load the pgv boxplot data.
-        filename = 'blast_report_pgv_boxplot_data.pkl'
-        if os.path.exists(os.path.join(data_dir, filename)):
-            with open(os.path.join(data_dir, filename), 'r') as fp:
-                pgv_boxplot_data = pickle.load(fp)
-        else:
-            pgv_boxplot_data = {}
-
-        # Load the pgv-reduced data.
-        filename = 'blast_report_pgv_red_data.pkl'
-        if os.path.exists(os.path.join(data_dir, filename)):
-            with open(os.path.join(data_dir, filename), 'r') as fp:
-                pgv_red_data = pickle.load(fp)
-        else:
-            pgv_red_data = {}
+        overall_data = self.load_overall_data()
 
         baumit_id_slug = report_data['baumit_id'].replace('/', '-')
         output_dir = os.path.join(self.pref_manager.get_value('report_results_dir'), 'sprengung_%s' % baumit_id_slug)
@@ -137,28 +133,86 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         self.export_psd_data(report_data['psd_data'], output_dir, baumit_id_slug)
 
         # Plot the PGV boxplot.
-        pgv_boxplot_data = self.export_pgv_boxplot(report_data['blast_data']['max_pgv']['data'], pgv_boxplot_data,
-                                                   output_dir, baumit_id_slug, report_data['blast_data']['epsg'])
+        self.export_pgv_boxplot(report_data['blast_data']['max_pgv']['data'],
+                                overall_data['pgv_boxplot'],
+                                output_dir,
+                                baumit_id_slug,
+                                report_data['blast_data']['epsg'])
 
         # Plot the PGV-distance.
-        pgv_red_data = self.export_pgv_red_plot(report_data['blast_data']['max_pgv']['data'],
-                                                          pgv_red_data,
-                                                          output_dir,
-                                                          baumit_id_slug,
-                                                          report_data['blast_data']['epsg'],
-                                                          (report_data['blast_data']['x'], report_data['blast_data']['y']),
-                                                          report_data['blast_data']['magnitude']['network_mag'])
+        self.export_pgv_red_plot(report_data['blast_data']['max_pgv']['data'],
+                                 overall_data['pgv_dist'],
+                                 output_dir,
+                                 baumit_id_slug,
+                                 report_data['blast_data']['epsg'],
+                                 (report_data['blast_data']['x'], report_data['blast_data']['y']),
+                                 report_data['blast_data']['magnitude']['network_mag'])
 
 
-        # Save the PGV boxplot data.
-        filename = 'blast_report_pgv_boxplot_data.pkl'
-        with open(os.path.join(data_dir, filename), 'w') as fp:
-            pickle.dump(pgv_boxplot_data, fp)
 
-        # Save the PGV-distance data.
-        filename = 'blast_report_pgv_red_data.pkl'
-        with open(os.path.join(data_dir, filename), 'w') as fp:
-            pickle.dump(pgv_red_data, fp)
+    def load_overall_data(self):
+        ''' Load the already existing blast results and create the needed data for the plots.
+        '''
+        # Load the quarry_blast information.
+        blast_filename = self.pref_manager.get_value('blast_file')
+        if os.path.exists(blast_filename):
+            with open(blast_filename, 'r') as fp:
+                quarry_blast = json.load(fp = fp,
+                                         cls = quarry_blast_validation.QuarryFileDecoder)
+        else:
+            raise RuntimeError("Couldn't open the blast file %s.", blast_filename)
+
+        # Extract the data needed for the plots.
+        pgv_boxplot_data = {}
+        pgv_dist_data = []
+        for cur_key in sorted(quarry_blast.keys()):
+            cur_blast = quarry_blast[cur_key]
+
+            # Use entries with computed results only.
+            if 'computed_on' not in cur_blast.keys():
+                continue
+
+            # Get the pgv values for the boxplots. 
+            for cur_snl_string, cur_pgv in cur_blast['max_pgv']['data'].items():
+                if cur_snl_string not in pgv_boxplot_data:
+                    pgv_boxplot_data[cur_snl_string] = []
+                pgv_boxplot_data[cur_snl_string].append(cur_pgv)
+
+            # Get the epidistance, pgv, magnitude pairs for the red_pgv plots.
+            # Compute the epidistance and sort the stations according to it.
+            stations = []
+            proj = basemap.pyproj.Proj(init = 'epsg:' + cur_blast['epsg'])
+            ref_x = cur_blast['x']
+            ref_y = cur_blast['y']
+
+            # Get the needed stations from the geometry inventory.
+            station_names = [x.split(':')[0] for x in cur_blast['max_pgv']['data'].keys()]
+            for cur_station_name in station_names:
+                cur_station = self.project.geometry_inventory.get_station(name = cur_station_name)[0]
+                stat_lonlat = cur_station.get_lon_lat()
+                stat_x, stat_y = proj(stat_lonlat[0], stat_lonlat[1])
+                cur_station.epidist = np.sqrt((stat_x - ref_x)**2 + (stat_y - ref_y)**2)
+                stations.append(cur_station)
+            stations = sorted(stations, key = lambda x: x.epidist)
+
+            # Get the PGV data related to the sorted stations.
+            sorted_pgv = []
+            for cur_station in stations:
+                if cur_station.snl_string in cur_blast['max_pgv']['data'].keys():
+                    sorted_pgv.append(cur_blast['max_pgv']['data'][cur_station.snl_string])
+                else:
+                    sorted_pgv.append(np.nan)
+
+            # Add the extracted data to the overall list. 
+            pgv_dist_data.extend(zip([x.epidist for x in stations], sorted_pgv, [cur_blast['magnitude']['network_mag']] * len(sorted_pgv)))
+
+        overall_data = {}
+        overall_data['pgv_boxplot'] = pgv_boxplot_data
+        overall_data['pgv_dist'] = np.array(pgv_dist_data)
+
+        return overall_data
+
+
 
 
     def export_psd_data(self, psd_data, output_dir, baumit_id_slug):
@@ -295,33 +349,20 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         del fig
 
 
-        # Update the PGV boxplot data.
-        for k, cur_station in enumerate(stations):
-            if cur_station.snl_string not in pgv_boxplot_data.keys():
-                pgv_boxplot_data[cur_station.snl_string] = []
-            pgv_boxplot_data[cur_station.snl_string].append(blast_pgv[k] / 1000)
 
-        return pgv_boxplot_data
-
-
-
-    def export_pgv_red_plot(self, pgv_data, pgv_red_data, output_dir, baumit_id_slug, epsg, epi, mag):
+    def export_pgv_red_plot(self, pgv_data, past_pgv_dist, output_dir, baumit_id_slug, epsg, epi, mag):
         ''' Create the PGV-distance plots.
         '''
         output_dir = os.path.join(output_dir, 'pgv_red')
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
+        # The reference magnitude.
+        m_ref = 2.2
 
-        # Prepare the past pgv-distance data.
-        past_pgv_dist = []
-        past_pgv_dist.append([])
-        past_pgv_dist.append([])
-        for cur_value in pgv_red_data.values():
-            past_pgv_dist[0].extend(cur_value[0])
-            past_pgv_dist[1].extend(cur_value[1])
-        past_pgv_dist[1] = np.array(past_pgv_dist[1]) * 1000
-
+        # Convert the past pgv-distance data to mm/s.
+        past_pgv_dist[:,1] = past_pgv_dist[:,1] * 1000
+        past_pgv_dist[:,1] = past_pgv_dist[:,1] / (10**(past_pgv_dist[:,2] - m_ref))
 
         # Compute the epidistance and sort the stations according to it.
         stations = []
@@ -350,20 +391,20 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         blast_pgv = blast_pgv * 1000
 
         # Normalize the data to M_ref.
-        m_ref = 2.2
         m_fac = 10**(mag - m_ref)
         blast_pgv = blast_pgv / m_fac
+
 
 
         # Plot the data.
         title = 'sprengung_%s_pgv_red' % baumit_id_slug
 
-        fig_height = 10 / 2.54
         fig_width = 16 / 2.54
+        fig_height = 10 / 2.54
         fig_dpi = 300
         fig = plt.figure(figsize = (fig_width, fig_height), dpi = fig_dpi)
         ax = fig.add_subplot(111)
-        ax.plot(past_pgv_dist[0], past_pgv_dist[1], 'x',
+        ax.plot(past_pgv_dist[:,0], past_pgv_dist[:,1], 'x',
                 markeredgewidth = 0.5, zorder = 0, markersize = 3, color = 'gray')
         ax.plot([x.epidist for x in stations], blast_pgv, 'o', zorder = 3)
         #ax.axhline(0.1, linewidth = 1, linestyle = '--', color = 'gray', zorder = 0);
@@ -383,11 +424,3 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         fig.clear()
         plt.close(fig)
         del fig
-
-
-        # Update the PGV-distance data.
-        pgv_red_data[baumit_id_slug] = []
-        pgv_red_data[baumit_id_slug].append([x.epidist for x in stations])
-        pgv_red_data[baumit_id_slug].append(list(blast_pgv / 1000))
-
-        return pgv_red_data
