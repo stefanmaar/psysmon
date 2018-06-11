@@ -72,6 +72,14 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                                         tool_tip = 'The directory holding the quarry blast report data.')
         rd_group.add_item(item)
 
+        # The quarry blast information file.
+        item = psy_pm.FileBrowsePrefItem(name = 'blast_file',
+                                         label = 'blast file',
+                                         value = '',
+                                         filemask = 'json (*.json)|*.json',
+                                         tool_tip = 'The quarry blast information file created with the quarry blast validation collection node.')
+        rd_group.add_item(item)
+
         # The report results directory.
         item = psy_pm.DirBrowsePrefItem(name = 'report_results_dir',
                                         label = 'report results directory',
@@ -79,13 +87,6 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                                         tool_tip = 'The directory where to save the report result files.')
         rr_group.add_item(item)
 
-        # The quarry blast information file.
-        item = psy_pm.FileBrowsePrefItem(name = 'blast_file',
-                                         label = 'blast file',
-                                         value = '',
-                                         filemask = 'json (*.json)|*.json',
-                                         tool_tip = 'The quarry blast information file created with the quarry blast validation collection node.')
-        rr_group.add_item(item)
 
 
     def edit(self):
