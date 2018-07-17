@@ -319,8 +319,45 @@ class Inventory(object):
         return False
 
 
+    def merge(self, merge_inventory):
+        ''' Merge two inventories.
+        '''
+        # Merge the sensors.
+        for cur_sensor in merge_inventory.sensors:
+            self.logger.debug('Checking sensor %s.', cur_sensor.serial)
+            exist_sensor = self.get_sensor(serial = cur_sensor.serial,
+                                   model = cur_sensor.model,
+                                   producer = cur_sensor.producer)
+            if not exist_sensor:
+                self.logger.debug('Adding the sensor to the inventory.')
+                self.add_sensor(cur_sensor)
+            else:
+                exist_sensor = exist_sensor[0]
+                self.logger.debug('Merging the sensor with existing sensor %s.', exist_sensor.serial)
+                exist_sensor.merge(cur_sensor)
+
+        # Merge the recorders.
+        for cur_recorder in merge_inventory.recorders:
+            self.logger.debug('Checking recorder %s.', cur_recorder.serial)
+            exist_recorder = self.get_recorder(serial = cur_recorder.serial,
+                                               model = cur_recorder.model,
+                                               producer = cur_recorder.producer)
+            if not exist_recorder:
+                self.logger.debug('Adding the recorder to the inventory.')
+                self.add_recorder(cur_recorder)
+            else:
+                exist_recorder = exist_recorder[0]
+                self.logger.debug('Merging the recorder with existing recorder %s.', exist_recorder.serial)
+                exist_recorder.merge(cur_recorder)
+
+        # Check the networks.
+        #for cur_network in merge_inventory.networks:
+        #    if not self.get_network(name = cur_network.name):
+        #        self.add_network(cur_network)
+
+
     ## Refresh the inventory networks.
-    def refresh_networks(self):
+    def update_networks(self):
         for cur_network in self.networks:
             cur_network.refresh_stations(self.stations)
 
@@ -800,6 +837,24 @@ class Recorder(object):
         return ret_stream
 
 
+    def merge(self, merge_recorder):
+        ''' Merge a recorder with the existing.
+        '''
+        # Update the attributes.
+        self.description = merge_recorder.description
+
+        # Merge the streams.
+        for cur_stream in merge_recorder.streams:
+            exist_stream = self.get_stream(name = cur_stream.name)
+            if not exist_stream:
+                self.add_stream(cur_stream)
+            else:
+                exist_stream = exist_stream[0]
+                exist_stream.merge(cur_stream)
+
+
+
+
 
 class RecorderStream(object):
     ''' A digital stream of a data recorder.
@@ -1160,6 +1215,20 @@ class RecorderStream(object):
             return (None, None)
 
 
+    def merge(self, merge_stream):
+        ''' Merge a stream.
+        '''
+        # Update the attributes.
+        self.label = merge_stream.label
+
+        # Replace existing parameters with the new ones.
+        for cur_parameter in [x for x in self.parameters]:
+            self.remove_parameter_by_instance(cur_parameter)
+
+        #for cur_parameter in merge_stream.parameters:
+        #    self.add_parameter(cur_parameter)
+
+
 class RecorderStreamParameter(object):
     ''' Parameters of a recorder stream.
     '''
@@ -1384,6 +1453,27 @@ class Sensor(object):
         return components_popped
 
 
+    def merge(self, merge_sensor):
+        ''' Merge a sensor to the existing.
+        '''
+        # Update the attributes.
+        self.description = merge_sensor.description
+
+        # Update the components.
+        for cur_component in merge_sensor.components:
+            self.logger.debug('Checking component %s.', cur_component.name)
+            exist_component = self.get_component(name = cur_component.name)
+            if not exist_component:
+                self.logger.debug('Adding component %s.', cur_component.name)
+                self.add_component(cur_component)
+            else:
+                exist_component = exist_component[0]
+                self.logger.debug('Merging component %s.', cur_component.name)
+                exist_component.merge(cur_component)
+
+
+
+
 
 class SensorComponent(object):
     ''' A component of a seismic sensor.
@@ -1555,7 +1645,7 @@ class SensorComponent(object):
 
 
     def change_parameter_start_time(self, position, start_time):
-        msg = ''    
+        msg = ''
         cur_row = self.parameters[position]
 
         if not isinstance(start_time, UTCDateTime):
@@ -1577,7 +1667,7 @@ class SensorComponent(object):
 
 
     def change_parameter_end_time(self, position, end_time):
-        msg = ''    
+        msg = ''
         cur_row = self.parameters[position]
 
         if end_time == 'running':
@@ -1606,6 +1696,25 @@ class SensorComponent(object):
                 msg = "The end-time has to be larger than the begin time."
 
         return (end_time, msg)
+
+
+    def merge(self, merge_component):
+        ''' Merge the components.
+        '''
+        # Update the attributes.
+        self.description = merge_component.description
+        self.input_unit = merge_component.input_unit
+        self.output_unit = merge_component.output_unit
+        self.deliver_unit = merge_component.deliver_unit
+
+        # Replace the existing parameters with the new ones.
+        for cur_parameter in [x for x in self.parameters]:
+            self.remove_parameter(cur_parameter)
+
+        for cur_parameter in merge_component.parameters:
+            self.add_parameter(cur_parameter)
+
+
 
 
 

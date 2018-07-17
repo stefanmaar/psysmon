@@ -915,6 +915,13 @@ class DbRecorderStream(RecorderStream):
         return added_parameter
 
 
+    def remove_parameter_by_instance(self, parameter_to_remove):
+        ''' Remove a parameter.
+        '''
+        RecorderStream.remove_parameter_by_instance(self, parameter_to_remove)
+        self.orm.parameters.remove(parameter_to_remove.orm)
+
+
 
     def change_sensor_start_time_OLD(self, sensor, start_time, end_time, new_start_time):
         ''' Change the sensor deployment start time
@@ -1319,6 +1326,15 @@ class DbSensorComponent(SensorComponent):
                     cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(0, cur_zero.real, cur_zero.imag))
 
         return added_parameter
+
+
+    def remove_parameter(self, parameter_to_remove):
+        ''' Remove a parameter from the component.
+        '''
+        SensorComponent.remove_parameter(self, parameter_to_remove)
+        self.orm.parameters.remove(parameter_to_remove.orm)
+
+
 
 
 

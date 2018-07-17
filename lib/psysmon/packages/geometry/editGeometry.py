@@ -959,12 +959,14 @@ class EditGeometryDlg(wx.Frame):
 
         if self.selected_inventory.type not in 'db':
             if self.db_inventory.sensors or self.db_inventory.recorders or self.db_inventory.networks:
-                msg = "The database inventory is not empty. Adding elements to an existing database inventory is currently not working. Please clear the database inventory first and then write your new inventory to the database.."
-                dlg = wx.MessageDialog(self, msg,
-                                       'Error while updating the database inventory.',
-                                        wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                dlg.Destroy()
+                self.db_inventory.merge(self.selected_inventory)
+                self.db_inventory.commit()
+                #msg = "The database inventory is not empty. Adding elements to an existing database inventory is currently not working. Please clear the database inventory first and then write your new inventory to the database.."
+                #dlg = wx.MessageDialog(self, msg,
+                #                       'Error while updating the database inventory.',
+                #                        wx.OK | wx.ICON_INFORMATION)
+                #dlg.ShowModal()
+                #dlg.Destroy()
             else:
                 self.logger.debug("Saving a non db inventory to the database.")
 
