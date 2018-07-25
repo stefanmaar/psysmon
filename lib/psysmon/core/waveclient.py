@@ -1107,6 +1107,14 @@ class SeedlinkWaveclient(WaveClient):
 
                 try:
                     self.logger.debug('get_waveforms for %s, %s, %s', cur_rec_stream.serial, orig_location, orig_channel)
+                    # TODO: The network has to be taken from the database. This
+                    # is tricky, because the original network as stated in the
+                    # miniseed headers is most likely not equal to the station
+                    # network in the psysmon geometry. I have to adapt the
+                    # inventory to keep the original network string. The best
+                    # way will be to to use the stream name as
+                    # NETWORK:LOCATION:CHANNEL as listed in the miniseed
+                    # header.
                     stream = self.client.get_waveforms(network = 'AT',
                                                        station = cur_rec_stream.serial,
                                                        location = orig_location,
