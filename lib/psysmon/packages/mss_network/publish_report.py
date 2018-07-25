@@ -267,7 +267,8 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 writer.writerows(export_rows)
 
             # Upload the result files.
-            upload = False
+            # TODO: Make this a user preference.
+            upload = True
             if upload:
                 ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
                                  user = self.pref_manager.get_value('username'),
