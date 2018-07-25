@@ -213,7 +213,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                     cur_export_row['max_pgv [mm/s]'] = round(max_pgv * 1000, 3)
                     cur_export_row['max_pgv_station'] = cur_blast['max_pgv']['data'].keys()[max_pgv_ind]
 
-                    if 'DUBA:MSSNet:00' in cur_blast['max_pgv']['data'].keys():
+                    if 'max_pgv_3d' in cur_blast and 'DUBA:MSSNet:00' in cur_blast['max_pgv_3d']['data']:
+                        cur_export_row['pgv_duba [mm/s]'] = round(cur_blast['max_pgv_3d']['data']['DUBA:MSSNet:00'] * 1000, 3)
+                    elif 'max_pgv' in cur_blast and 'DUBA:MSSNet:00' in cur_blast['max_pgv']['data']:
                         cur_export_row['pgv_duba [mm/s]'] = round(cur_blast['max_pgv']['data']['DUBA:MSSNet:00'] * 1000, 3)
                     else:
                         cur_export_row['pgv_duba [mm/s]'] = ''
@@ -223,7 +225,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                     else:
                         cur_export_row['dom_frequ_duba [Hz]'] = ''
 
-                    if 'DUBAM:MSSNet:00' in cur_blast['max_pgv']['data'].keys():
+                    if 'max_pgv_3d' in cur_blast and 'DUBAM:MSSNet:00' in cur_blast['max_pgv_3d']['data']:
+                        cur_export_row['pgv_dubam [mm/s]'] = round(cur_blast['max_pgv_3d']['data']['DUBAM:MSSNet:00'] * 1000, 3)
+                    elif 'max_pgv' in cur_blast and 'DUBAM:MSSNet:00' in cur_blast['max_pgv']['data']:
                         cur_export_row['pgv_dubam [mm/s]'] = round(cur_blast['max_pgv']['data']['DUBAM:MSSNet:00'] * 1000, 3)
                     else:
                         cur_export_row['pgv_dubam [mm/s]'] = ''
@@ -242,6 +246,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             # Upload the overall result file.
             export_filepath = os.path.join(result_dir, 'sprengungen_auswertung.csv')
             with open(export_filepath, 'w') as fp:
+                # The pgv_duba and pgv_dubam are based on the 3D-resultant. The
+                # network max_pgv is based on the 2D-resultant used for the
+                # magnitude computation.
                 fieldnames = ['ID', 'Sprengnummer', 'time [UTC]', 'network_mag',
                               'network_mag_std', 'max_pgv [mm/s]', 'max_pgv_station',
                               'pgv_duba [mm/s]', 'dom_frequ_duba [Hz]',
@@ -260,7 +267,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 writer.writerows(export_rows)
 
             # Upload the result files.
-            upload = True
+            upload = False
             if upload:
                 ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
                                  user = self.pref_manager.get_value('username'),
