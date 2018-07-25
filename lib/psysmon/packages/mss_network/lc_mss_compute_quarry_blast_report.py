@@ -119,8 +119,8 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
 
         # Compute the resultant of the stations.
-        resultant_channels = ['Hnormal', 'Hparallel']
         res_stream = obspy.core.Stream()
+        res3d_stream = obspy.core.Stream()
         orig_stream = obspy.core.Stream()
         res_stations = []
         for cur_detection in event.detections:
@@ -128,11 +128,19 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             cur_stream = stream.select(network = cur_detection.scnl[2],
                                        station = cur_detection.scnl[0],
                                        location = cur_detection.scnl[3])
+            # Compute the 2D-resultant used for the magnitude computation.
+            resultant_channels = ['Hnormal', 'Hparallel']
             cur_res_stream = self.compute_resultant(cur_stream, resultant_channels)
             if not cur_res_stream:
                 continue
+
+            #Compute the 3D-resultant used for reporting of the DUBA stations.
+            resultant_3d_channels = ['Hnormal', 'Hparallel', 'Z']
+            cur_res3d_stream = self.compute_resultant(cur_stream, resultant_3d_channels)
+
             orig_stream = orig_stream + cur_stream
             res_stream = res_stream + cur_res_stream
+            res3d_stream = res3d_stream + cur_res3d_stream
             res_stations.append(cur_detection.channel.parent_station)
 
         # TODO: Check if all expected stations have got a trigger. Test the
@@ -142,7 +150,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Compute the max. PGV.
         max_pgv = [(str.join(':', (x.stats.station, x.stats.network, x.stats.location)), np.max(x.data))  for x in res_stream]
-
+        max_pgv_3d = [(str.join(':', (x.stats.station, x.stats.network, x.stats.location)), np.max(x.data))  for x in res3d_stream]
 
         # Compute the magnitude.
         # TODO: Check the standard for the sign of the station correction.
@@ -191,6 +199,9 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         quarry_blast[baumit_id]['max_pgv'] = {}
         quarry_blast[baumit_id]['max_pgv']['data'] = export_max_pgv
         quarry_blast[baumit_id]['max_pgv']['used_channels'] = resultant_channels
+        quarry_blast[baumit_id]['max_pgv_3d'] = {}
+        quarry_blast[baumit_id]['max_pgv_3d']['data'] = dict(max_pgv_3d)
+        quarry_blast[baumit_id]['max_pgv_3d']['used_channels'] = resultant_3d_channels
         quarry_blast[baumit_id]['magnitude'] = {}
         quarry_blast[baumit_id]['magnitude']['station_mag'] = export_magnitude
         quarry_blast[baumit_id]['magnitude']['network_mag'] = np.mean(magnitude)
@@ -224,26 +235,35 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
     def compute_resultant(self, st, channel_names):
         ''' Compute the resultant of the peak-ground-velocity.
         '''
-        x_st = st.select(channel = 'Hparallel').merge()
-        y_st = st.select(channel = 'Hnormal').merge()
-
         res_st = obspy.core.Stream()
-        for cur_x_trace, cur_y_trace in zip(x_st.traces, y_st.traces):
-            cur_x = cur_x_trace.data
-            cur_y = cur_y_trace.data
+        used_streams = []
+        for cur_channel in channel_names:
+            cur_stream = st.select(channel = cur_channel).merge()
+            if len(cur_stream) == 0:
+                self.logger.error("No data found in stream %s for channel %s.", st, cur_channel)
+                return res_st
+            used_streams.append(cur_stream)
 
-            if len(cur_x) != len(cur_y):
-                self.logger.error("The x and y data lenght dont't match. Can't compute the res. PGV for this trace.")
+        # Check for correct data size.
+        #if len(set([len(x.traces[0].data) for x in used_streams])) > 1:
+        #    pass
+
+        for cur_traces in zip(*[x.traces for x in used_streams]):
+            cur_data = [x.data for x in cur_traces]
+
+            if len(set([len(x) for x in cur_data])) > 1:
+                self.logger.error("The lenght of the data of the individual traces dont't match. Can't compute the res. PGV for these traces: %s.", [str(x) for x in cur_traces])
                 continue
 
-            cur_res = np.sqrt(cur_x**2 + cur_y**2)
+            cur_data = np.array(cur_data)
+            cur_res = np.sqrt(np.sum(cur_data**2, axis = 0))
 
-            cur_stats = {'network': cur_x_trace.stats['network'],
-                         'station': cur_x_trace.stats['station'],
-                         'location': cur_x_trace.stats['location'],
-                         'channel': 'res',
-                         'sampling_rate': cur_x_trace.stats['sampling_rate'],
-                         'starttime': cur_x_trace.stats['starttime']}
+            cur_stats = {'network': cur_traces[0].stats['network'],
+                         'station': cur_traces[0].stats['station'],
+                         'location': cur_traces[0].stats['location'],
+                         'channel': 'res_{0:d}d'.format(len(cur_traces)),
+                         'sampling_rate': cur_traces[0].stats['sampling_rate'],
+                         'starttime': cur_traces[0].stats['starttime']}
             res_trace = obspy.core.Trace(data = cur_res, header = cur_stats)
             res_st.append(res_trace)
 
