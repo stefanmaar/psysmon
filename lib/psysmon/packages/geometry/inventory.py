@@ -350,10 +350,34 @@ class Inventory(object):
                 self.logger.debug('Merging the recorder with existing recorder %s.', exist_recorder.serial)
                 exist_recorder.merge(cur_recorder)
 
-        # Check the networks.
-        #for cur_network in merge_inventory.networks:
-        #    if not self.get_network(name = cur_network.name):
-        #        self.add_network(cur_network)
+        # Merge the networks.
+        for cur_network in merge_inventory.networks:
+            self.logger.debug('Checking network %s.', cur_network.name)
+
+            exist_network = self.get_network(name = cur_network.name)
+
+            if not exist_network:
+                self.logger.debug('Adding the network to the inventory.')
+                self.add_network(cur_network)
+            else:
+                exist_network = exist_network[0]
+                self.logger.debug('Merging the network with existing network %s.', exist_network.name)
+                exist_network.merge(cur_network)
+
+
+        # Merge the arrays.
+        for cur_array in merge_inventory.arrays:
+            self.logger.debug('Checking array %s.', cur_array.name)
+
+            exist_array = self.get_array(name = cur_array.name)
+
+            if not exist_array:
+                self.logger.debug('Adding the array to the inventory.')
+                self.add_array(cur_array)
+            else:
+                exist_array = exist_array[0]
+                self.logger.debug('Merging the array with existing array %s.', exist_array.name)
+                exist_array.merge(cur_array)
 
 
     ## Refresh the inventory networks.
@@ -1225,8 +1249,21 @@ class RecorderStream(object):
         for cur_parameter in [x for x in self.parameters]:
             self.remove_parameter_by_instance(cur_parameter)
 
-        #for cur_parameter in merge_stream.parameters:
-        #    self.add_parameter(cur_parameter)
+        for cur_parameter in merge_stream.parameters:
+            self.add_parameter(cur_parameter)
+
+
+        # Replace existing components with the new ones.
+        for cur_component in [x for x in self.components]:
+            self.remove_component_by_instance(cur_component)
+
+        for cur_component in merge_stream.components:
+            self.add_component(serial = cur_component.serial,
+                               model = cur_component.model,
+                               producer = cur_component.producer,
+                               name = cur_component.name,
+                               start_time = cur_component.start_time,
+                               end_time = cur_component.end_time)
 
 
 class RecorderStreamParameter(object):
@@ -2178,6 +2215,27 @@ class Station(object):
         return channel_names
 
 
+    def merge(self, merge_station):
+        ''' Merge a station into the existing one.
+        '''
+        # Update the attributes.
+        self.description = merge_station.description
+        self.x = merge_station.x
+        self.y = merge_station.y
+        self.z = merge_station.z
+        self.coord_system = merge_station.coord_system
+
+        # Merge the channels.
+        for cur_channel in merge_station.channels:
+            exist_channel = self.get_channel(name = cur_channel.name)
+            if not exist_channel:
+                self.add_channel(cur_channel)
+            else:
+                exist_channel = exist_channel[0]
+                exist_channel.merge(cur_channel)
+
+
+
 
 class Channel(object):
     ''' A channel of a station.
@@ -2390,11 +2448,31 @@ class Channel(object):
         return ret_stream
 
 
+    def merge(self, merge_channel):
+        ''' Merge a channel with the existing one.
+        '''
+        # Update the attributes.
+        self.description = merge_channel.description
+
+        # Replace existing streams with the new ones.
+        for cur_stream in [x for x in self.streams]:
+            self.remove_stream_by_instance(cur_stream)
+
+        for cur_stream in merge_channel.streams:
+            self.add_stream(serial = cur_stream.serial,
+                            model = cur_stream.model,
+                            producer = cur_stream.producer,
+                            name = cur_stream.name,
+                            start_time = cur_stream.start_time,
+                            end_time = cur_stream.end_time)
+
     # TODO: Implement the methods to change the stream start- and end-time.
     # This will be analog to the sensors in the streams. It would be great to
     # have these methods in the TimeBox class.
     # Keep in mind, that in the DbInventory, the ORM mapper values of the 
     # time-spans have to be changed as well.
+
+
 
 
 class Network(object):
@@ -2546,6 +2624,24 @@ class Network(object):
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_station
+
+
+    def merge(self, merge_network):
+        ''' Merge a network with the existing.
+        '''
+        # Update the attributes.
+        self.description = merge_network.description
+        self.type = merge_network.type
+
+        # Merge the stations.
+        for cur_station in merge_network.stations:
+            exist_station = self.get_station(name = cur_station.name,
+                                             location = cur_station.location)
+            if not exist_station:
+                self.add_station(cur_station)
+            else:
+                exist_station = exist_station[0]
+                exist_station.merge(cur_station)
 
 
 
@@ -2734,6 +2830,23 @@ class Array(object):
 
 
         return ret_station
+
+
+    def merge(self, merge_station):
+        ''' Merge an array with the existing one.
+        '''
+        # Update the attributes.
+        self.description = merge_station.description
+
+        # Replace the assigned stations with the new ones.
+        for cur_station in [x for x in self.stations]:
+            self.remove_station_by_instance(cur_station)
+
+        for cur_station in merge_station.stations:
+            self.add_station(station = cur_station.item,
+                             start_time = cur_station.start_time,
+                             end_time = cur_station.end_time)
+
 
 
 

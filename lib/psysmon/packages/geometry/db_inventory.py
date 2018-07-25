@@ -920,6 +920,31 @@ class DbRecorderStream(RecorderStream):
         '''
         RecorderStream.remove_parameter_by_instance(self, parameter_to_remove)
         self.orm.parameters.remove(parameter_to_remove.orm)
+        self.parent_inventory.db_session.delete(parameter_to_remove.orm)
+
+
+    def remove_component_by_instance(self, component_to_remove):
+        ''' Remove a component from the stream.
+        '''
+        RecorderStream.remove_component_by_instance(self, component_to_remove)
+        try:
+            start_time = component_to_remove.start_time.timestamp
+        except:
+            start_time = None
+
+        try:
+            end_time = component_to_remove.end_time.timestamp
+        except:
+            end_time = None
+
+        orm_to_remove = [x for x in self.orm.components if x.component_id == component_to_remove.id \
+                                                        and x.start_time == start_time \
+                                                        and x.end_time == end_time]
+
+        for cur_orm in orm_to_remove:
+            self.parent_inventory.db_session.delete(cur_orm)
+
+
 
 
 
@@ -1333,6 +1358,7 @@ class DbSensorComponent(SensorComponent):
         '''
         SensorComponent.remove_parameter(self, parameter_to_remove)
         self.orm.parameters.remove(parameter_to_remove.orm)
+        self.parent_inventory.db_session.delete(parameter_to_remove.orm)
 
 
 
@@ -1606,4 +1632,27 @@ class DbChannel(Channel):
                 self.orm.streams.append(stream_to_channel_orm)
 
         return added_stream
+
+
+    def remove_stream_by_instance(self, stream_timebox):
+        ''' Remove a stream timebox.
+        '''
+        Channel.remove_stream_by_instance(self, stream_timebox)
+        try:
+            start_time = stream_timebox.start_time.timestamp
+        except:
+            start_time = None
+
+        try:
+            end_time = stream_timebox.end_time.timestamp
+        except:
+            end_time = None
+
+        orm_to_remove = [x for x in self.orm.streams if x.stream_id == stream_timebox.id \
+                                                     and x.start_time == start_time \
+                                                     and x.end_time == end_time]
+
+        for cur_orm in orm_to_remove:
+            self.parent_inventory.db_session.delete(cur_orm)
+
 
