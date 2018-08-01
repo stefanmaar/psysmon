@@ -498,7 +498,9 @@ class SlidingWindowProcessor(object):
                 process_limits = (cur_window_start, cur_window_start + window_length)
                 for cur_node in looper_nodes:
                     if not cur_node.initialized:
+                        self.logger.debug("Initializing node %s.", cur_node.name)
                         cur_node.initialize()
+                        self.logger.debug("Finished the initialization.")
 
                     self.logger.debug("Executing node %s.", cur_node.name)
                     cur_node.execute(stream = stream,
@@ -510,11 +512,13 @@ class SlidingWindowProcessor(object):
                     # Get the results of the node.
                     if cur_node.result_bag:
                         if len(cur_node.result_bag.results) > 0:
+                            self.logger.debug("Saving the results.")
                             for cur_result in cur_node.result_bag.results:
                                 cur_result.base_output_dir = self.output_dir
                                 cur_result.save()
 
                             cur_node.result_bag.clear()
+                            self.logger.debug("Finished saving of the results.")
 
 
                 # Handle the results.

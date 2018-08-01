@@ -120,7 +120,9 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         '''
         super(DetectionBinder, self).initialize()
         # Get the selected detection and event catalogs.
+
         catalog_name = self.pref_manager.get_value('detection_catalog')
+        self.logger.debug('Loading the detection catalog.')
         self.detection_library.load_catalog_from_db(project = self.project,
                                                     name = catalog_name)
         if catalog_name in self.detection_library.catalogs.keys():
@@ -130,6 +132,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
 
 
         catalog_name = self.pref_manager.get_value('event_catalog')
+        self.logger.debug('Loading the event catalog.')
         self.event_library.load_catalog_from_db(project = self.project,
                                                 name = catalog_name)
         if catalog_name in self.event_library.catalogs.keys():
