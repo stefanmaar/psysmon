@@ -226,7 +226,7 @@ def databaseFactory(base):
         detections = relationship('DetectionDb',
                                   cascade = 'all',
                                   backref = 'parent',
-                                  lazy = 'subquery')
+                                  lazy = 'noload')
 
         def __init__(self, name, description, agency_uri,
                      author_uri, creation_time):
