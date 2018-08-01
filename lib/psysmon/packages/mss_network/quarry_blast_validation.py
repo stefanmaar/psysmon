@@ -195,6 +195,9 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
                     utc_dt = local_dt.astimezone(pytz.utc)
                     tmp['time'] = utcdatetime.UTCDateTime(utc_dt)
 
+
+                    # Compute the coordinate of the blast using the two points
+                    # of the line.
                     x = []
                     try:
                         x.append(float(cur_row['Koord_y1'].replace(',', '.')))
@@ -245,6 +248,59 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
                     else:
                         tmp['z'] = -9999
 
+
+                    # Get the coordinates of the DUBAM station.
+                    try:
+                        x_dubam = float(cur_row['Tab_Messorte_y_koord'].replace(',', '.'))
+                    except:
+                        self.logger.warning("Tab_Messorte_y_Koord couldn't be converted.")
+                        x_dubam = None
+
+                    try:
+                        y_dubam = float(cur_row['Tab_Messorte_x_Koord'].replace(',', '.'))
+                        y_dubam = y_dubam - 5000000
+                    except:
+                        self.logger.warning("Tab_Messorte_x_Koord couldn't be converted.")
+                        y_dubam = None
+
+                    try:
+                        z_dubam = float(cur_row['Tab_Messorte_z_Koord'].replace(',', '.'))
+                    except:
+                        self.logger.warning("Tab_Messorte_z_Koord couldn't be converted.")
+                        z_dubam = None
+
+                    tmp['x_dubam'] = x_dubam
+                    tmp['y_dubam'] = y_dubam
+                    tmp['z_dubam'] = z_dubam
+
+                    # Get the alternative coordinates of the DUBAM station.
+                    # These coordinates are used in case that the DUBAM is
+                    # positioned somewhere else than given in the standard
+                    # DUBAM coordinates.
+                    try:
+                        x_dubam_1 = float(cur_row['Tab_Messorte_1_y_koord'].replace(',', '.'))
+                    except:
+                        self.logger.warning("Tab_Messorte_1_y_Koord couldn't be converted.")
+                        x_dubam_1 = None
+
+                    try:
+                        y_dubam_1 = float(cur_row['Tab_Messorte_1_x_Koord'].replace(',', '.'))
+                        y_dubam_1 = y_dubam_1 - 5000000
+                    except:
+                        self.logger.warning("Tab_Messorte_1_x_Koord couldn't be converted.")
+                        y_dubam_1 = None
+
+                    try:
+                        z_dubam_1 = float(cur_row['Tab_Messorte_1_z_Koord'].replace(',', '.'))
+                    except:
+                        self.logger.warning("Tab_Messorte_1_z_Koord couldn't be converted.")
+                        z_dubam_1 = None
+
+                    tmp['x_dubam_1'] = x_dubam_1
+                    tmp['y_dubam_1'] = y_dubam_1
+                    tmp['z_dubam_1'] = z_dubam_1
+
+                    # MGI / Austria GK M34
                     tmp['epsg'] = '31256'
 
                     quarry_blast[cur_row['Sprengnummer']] = tmp
