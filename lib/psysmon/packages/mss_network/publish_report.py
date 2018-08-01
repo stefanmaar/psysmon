@@ -60,6 +60,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
         '''
         general_page = self.pref_manager.add_page('Ftp')
         server_group = general_page.add_group('server')
+        mss_group = general_page.add_group('mss server')
 
         # The Ftp Server IP.
         item = psy_pm.TextEditPrefItem(name = 'host',
@@ -88,6 +89,29 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                                        value = '',
                                        tool_tip = 'The name of the file holding the blast details.')
         server_group.add_item(item)
+
+
+        # The MSS homepage server section.
+        # The Ftp Server IP.
+        item = psy_pm.TextEditPrefItem(name = 'mss_host',
+                                       label = 'host',
+                                       value = '',
+                                       tool_tip = 'The IP address of the MSS homepage Ftp server.')
+        mss_group.add_item(item)
+
+        # The Ftp Server username.
+        item = psy_pm.TextEditPrefItem(name = 'mss_username',
+                                       label = 'username',
+                                       value = '',
+                                       tool_tip = 'The username of the MSS hompage Ftp server.')
+        mss_group.add_item(item)
+
+        # The Ftp Server username.
+        item = psy_pm.TextEditPrefItem(name = 'mss_password',
+                                       label = 'password',
+                                       value = '',
+                                       tool_tip = 'The password of the MSS homepage Ftp user.')
+        mss_group.add_item(item)
 
 
     def create_input_preferences(self):
@@ -310,11 +334,29 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 finally:
                     ftp.quit()
 
-
                 # Save the quarry blast information.
                 if save_blast_file:
                     with open(blast_filename, 'w') as fp:
                         json.dump(quarry_blast,
                                   fp = fp,
                                   cls = quarry_blast_validation.QuarryFileEncoder)
+
+
+            # Make this a user preference.
+            upload_mss_homepage = True
+            if upload_mss_homepage:
+                ftp = ftplib.FTP(host = self.pref_manager.get_value('mss_host'),
+                                 user = self.pref_manager.get_value('mss_username'),
+                                 passwd = self.pref_manager.get_value('mss_password'))
+                try:
+                    self.logger.info("Uploading the json file %s.", blast_filename)
+                    with open(blast_filename, 'r') as fp:
+                        ftp.storbinary('STOR msn_ergebnisse/' + os.path.basename(blast_filename), fp)
+
+                except:
+                    self.logger.exception("Problems when uploading the json file to the MSS homepage.")
+                finally:
+                    ftp.quit()
+
+
 
