@@ -22,7 +22,7 @@ import json
 import os
 import pickle
 
-import mpl_toolkits.basemap as basemap
+import pyproj
 import numpy as np
 import obspy.core
 import obspy.core.utcdatetime as utcdatetime
@@ -143,6 +143,18 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             res3d_stream = res3d_stream + cur_res3d_stream
             res_stations.append(cur_detection.channel.parent_station)
 
+        # Handle possible coordinate changes of station DUBAM.
+        # If the field x_dubam_1 is set, the alternative DUBAM position is
+        # used.
+        stat_dubam = [x for x in res_stations if x.name == 'DUBAM']
+        if stat_dubam:
+            stat_dubam = stat_dubam[0]
+            if quarry_blast[baumit_id]['x_dubam_1'] is not None:
+                stat_dubam.x = quarry_blast[baumit_id]['x_dubam_1']
+                stat_dubam.y = quarry_blast[baumit_id]['y_dubam_1']
+                stat_dubam.z = quarry_blast[baumit_id]['z_dubam_1']
+                stat_dubam.coord_system = 'epsg:31256'
+
         # TODO: Check if all expected stations have got a trigger. Test the
         # missing stations for available data an eventually missed events. Use
         # a threshold value of the maximum amplitude as a rule whether to
@@ -155,9 +167,10 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Compute the magnitude.
         # TODO: Check the standard for the sign of the station correction.
         # Brueckl subtracts the station correction.
-        proj = basemap.pyproj.Proj(init = 'epsg:' + quarry_blast[baumit_id]['epsg'])
+        proj_baumit = pyproj.Proj(init = 'epsg:' + quarry_blast[baumit_id]['epsg'])
+        proj_wgs84 = pyproj.Proj(init = 'epsg:4326')
         stat_lonlat = np.array([x.get_lon_lat() for x in res_stations])
-        stat_x, stat_y = proj(stat_lonlat[:,0], stat_lonlat[:,1])
+        stat_x, stat_y = pyproj.transform(proj_wgs84, proj_baumit, stat_lonlat[:,0], stat_lonlat[:,1])
         stat_z = np.array([x.z for x in res_stations])
         quarry_x = quarry_blast[baumit_id]['x']
         quarry_y = quarry_blast[baumit_id]['y']
@@ -208,6 +221,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         quarry_blast[baumit_id]['magnitude']['network_mag_std'] = np.std(magnitude)
         quarry_blast[baumit_id]['dom_frequ'] = dom_frequ
         quarry_blast[baumit_id]['dom_stat_frequ'] = dom_stat_frequ
+        quarry_blast[baumit_id]['hypo_dist'] = dict(zip([x.snl_string for x in res_stations], hypo_dist))
 
         # Save the quarry blast information.
         with open(blast_filename, 'w') as fp:
