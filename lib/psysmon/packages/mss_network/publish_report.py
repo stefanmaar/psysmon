@@ -313,23 +313,35 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
                             # Upload the pgv file.
                             cur_file = os.path.join(cur_blast_dir, 'pgv', 'sprengung_' + cur_blast_key + '_pgv.png')
-                            with open(cur_file) as fp:
-                                ftp.storbinary('STOR images/pgv/' + os.path.basename(cur_file), fp)
+                            if os.path.exists(cur_file):
+                                with open(cur_file) as fp:
+                                    ftp.storbinary('STOR images/pgv/' + os.path.basename(cur_file), fp)
+                            else:
+                                self.logger.error('File %s does not exist.', cur_file)
 
                             # Upload the pgv_red file.
                             cur_file = os.path.join(cur_blast_dir, 'pgv_red', 'sprengung_' + cur_blast_key + '_pgv_red.png')
-                            with open(cur_file) as fp:
-                                ftp.storbinary('STOR images/pgv_red/' + os.path.basename(cur_file), fp)
+                            if os.path.exists(cur_file):
+                                with open(cur_file) as fp:
+                                    ftp.storbinary('STOR images/pgv_red/' + os.path.basename(cur_file), fp)
+                            else:
+                                self.logger.error('File %s does not exist.', cur_file)
 
                             # Upload the psd file of station DUBA.
                             cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBA.png')
-                            with open(cur_file) as fp:
-                                ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
+                            if os.path.exists(cur_file):
+                                with open(cur_file) as fp:
+                                    ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
+                            else:
+                                self.logger.error('File %s does not exist.', cur_file)
 
                             # Upload the psd file of station DUBAM.
                             cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBAM.png')
-                            with open(cur_file) as fp:
-                                ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
+                            if os.path.exists(cur_file):
+                                with open(cur_file) as fp:
+                                    ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
+                            else:
+                                self.logger.error('File %s does not exist.', cur_file)
 
                             # Add the uploaded_on flag.
                             quarry_blast[cur_blast_key]['uploaded_on'] = utcdatetime.UTCDateTime()
