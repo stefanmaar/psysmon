@@ -326,6 +326,11 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                             with open(cur_file) as fp:
                                 ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
 
+                            # Upload the psd file of station DUBAM.
+                            cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBAM.png')
+                            with open(cur_file) as fp:
+                                ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
+
                             # Add the uploaded_on flag.
                             quarry_blast[cur_blast_key]['uploaded_on'] = utcdatetime.UTCDateTime()
                             save_blast_file = True
