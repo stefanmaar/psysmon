@@ -339,7 +339,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         fig_dpi = 300
         fig = plt.figure(figsize = (fig_width, fig_height), dpi = fig_dpi)
         ax = fig.add_subplot(111)
-        ax.boxplot(bp_data, zorder = 1, flierprops = {'marker': 'o', 'markerfacecolor': 'lightgray', 'markeredgecolor': 'lightgray', 'markersize': 4})
+        ax.boxplot(bp_data, zorder = 1, whis = 'range', flierprops = {'marker': 'o', 'markerfacecolor': 'lightgray', 'markeredgecolor': 'lightgray', 'markersize': 4})
         ax.plot(np.arange(blast_pgv.size) + 1, blast_pgv, 'o', zorder = 3)
         ax.axhline(0.1, linewidth = 1, linestyle = '--', color = 'gray', zorder = 0);
         ax.set_xticks(np.arange(blast_pgv.size) + 1)
