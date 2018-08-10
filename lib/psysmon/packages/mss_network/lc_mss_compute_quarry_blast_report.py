@@ -154,17 +154,15 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             # Compute the 2D-resultant used for the magnitude computation.
             resultant_channels = ['Hnormal', 'Hparallel']
             cur_res_stream = self.compute_resultant(cur_stream, resultant_channels)
-            if not cur_res_stream:
-                break
+            if cur_res_stream:
+                #Compute the 3D-resultant used for reporting of the DUBA stations.
+                resultant_3d_channels = ['Hnormal', 'Hparallel', 'Z']
+                cur_res3d_stream = self.compute_resultant(cur_stream, resultant_3d_channels)
 
-            #Compute the 3D-resultant used for reporting of the DUBA stations.
-            resultant_3d_channels = ['Hnormal', 'Hparallel', 'Z']
-            cur_res3d_stream = self.compute_resultant(cur_stream, resultant_3d_channels)
-
-            orig_stream = orig_stream + cur_stream
-            res_stream = res_stream + cur_res_stream
-            res3d_stream = res3d_stream + cur_res3d_stream
-            res_stations.append(cur_detection.channel.parent_station)
+                orig_stream = orig_stream + cur_stream
+                res_stream = res_stream + cur_res_stream
+                res3d_stream = res3d_stream + cur_res3d_stream
+                res_stations.append(cur_detection.channel.parent_station)
 
 
 
