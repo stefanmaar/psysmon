@@ -165,7 +165,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                 orig_stream = orig_stream + cur_stream
                 res_stream = res_stream + cur_res_stream
                 res3d_stream = res3d_stream + cur_res3d_stream
-                cur_station = self.project.geometry_inventory.get_station(name = 'DUBAM')
+                cur_station = self.project.geometry_inventory.get_station(name = 'DUBAM')[0]
                 res_stations.append(cur_station)
 
         self.logger.debug(res_stations)
