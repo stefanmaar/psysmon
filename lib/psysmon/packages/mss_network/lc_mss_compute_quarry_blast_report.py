@@ -143,6 +143,31 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             res3d_stream = res3d_stream + cur_res3d_stream
             res_stations.append(cur_detection.channel.parent_station)
 
+        # Handle the DUBAM station separately. Due to a time-error relative to
+        # DUBA, the DUBAM detections are most likely not included in the event
+        # detections.
+        stat_dubam = [x for x in res_stations if x.name == 'DUBAM']
+        if not stat_dubam:
+            cur_stream = stream.select(network = 'AT',
+                                       station = 'DUBAM',
+                                       location = '')
+            # Compute the 2D-resultant used for the magnitude computation.
+            resultant_channels = ['Hnormal', 'Hparallel']
+            cur_res_stream = self.compute_resultant(cur_stream, resultant_channels)
+            if not cur_res_stream:
+                break
+
+            #Compute the 3D-resultant used for reporting of the DUBA stations.
+            resultant_3d_channels = ['Hnormal', 'Hparallel', 'Z']
+            cur_res3d_stream = self.compute_resultant(cur_stream, resultant_3d_channels)
+
+            orig_stream = orig_stream + cur_stream
+            res_stream = res_stream + cur_res_stream
+            res3d_stream = res3d_stream + cur_res3d_stream
+            res_stations.append(cur_detection.channel.parent_station)
+
+
+
         # Handle possible coordinate changes of station DUBAM.
         # If the field x_dubam_1 is set, the alternative DUBAM position is
         # used.
