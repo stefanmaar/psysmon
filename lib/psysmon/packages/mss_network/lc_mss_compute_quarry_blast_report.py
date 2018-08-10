@@ -150,8 +150,9 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         self.logger.debug("##################### DUBAM HANDLING ###############")
         self.logger.debug(stat_dubam)
         if not stat_dubam:
-            cur_stream = stream.select(network = 'AT',
-                                       station = 'DUBAM')
+            cur_stream = stream.select(network = 'MSSNet',
+                                       station = 'DUBAM',
+                                       location = '00')
             self.logger.debug(cur_stream)
             # Compute the 2D-resultant used for the magnitude computation.
             resultant_channels = ['Hnormal', 'Hparallel']
