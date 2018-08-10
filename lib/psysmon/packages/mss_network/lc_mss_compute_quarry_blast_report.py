@@ -147,10 +147,12 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # DUBA, the DUBAM detections are most likely not included in the event
         # detections.
         stat_dubam = [x for x in res_stations if x.name == 'DUBAM']
+        self.logger.debug("##################### DUBAM HANDLING ###############")
+        self.logger.debug(stat_dubam)
         if not stat_dubam:
             cur_stream = stream.select(network = 'AT',
-                                       station = 'DUBAM',
-                                       location = '')
+                                       station = 'DUBAM')
+            self.logger.debug(cur_stream)
             # Compute the 2D-resultant used for the magnitude computation.
             resultant_channels = ['Hnormal', 'Hparallel']
             cur_res_stream = self.compute_resultant(cur_stream, resultant_channels)
@@ -163,6 +165,10 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                 res_stream = res_stream + cur_res_stream
                 res3d_stream = res3d_stream + cur_res3d_stream
                 res_stations.append(cur_detection.channel.parent_station)
+
+        self.logger.debug(res_stations)
+        self.logger.debug(res_stream)
+        self.logger.debug(res3d_stream)
 
 
 
