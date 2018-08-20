@@ -223,10 +223,12 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         dom_frequ = {};
         dom_stat_frequ = {}
         for cur_station in res_stations:
-            cur_psd_keys = [x for x in psd_data.keys() if x.startswith(cur_station.network + '.' + cur_station.name)]
+            cur_psd_keys = [x for x in psd_data.keys() if x.startswith(cur_station.network + '.' + cur_station.name + '.')]
             cur_df = []
             for cur_key in cur_psd_keys:
-                max_ind = np.argmax(psd_data[cur_key]['psd'])
+                cur_nfft = psd_data[cur_key]['n_fft']
+                left_fft = int(np.ceil(cur_nfft / 2.))
+                max_ind = np.argmax(psd_data[cur_key]['psd'][1:left_fft])
                 dom_frequ[cur_key] = psd_data[cur_key]['frequ'][max_ind]
                 cur_df.append(dom_frequ[cur_key])
 
