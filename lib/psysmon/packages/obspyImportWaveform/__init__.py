@@ -64,7 +64,7 @@ def databaseFactory(base):
 
         id = Column(Integer, primary_key=True, autoincrement=True)
         waveclient = Column(String(255), nullable=False, unique=False)
-        directory = Column(String(255), nullable=False, unique=True)
+        directory = Column(String(191), nullable=False, unique=True)
         description = Column(String(255), nullable=False)
         file_ext = Column(String(255), nullable=False)
         first_import = Column(String(30), nullable = True)
@@ -133,7 +133,7 @@ def databaseFactory(base):
                                   onupdate = 'cascade',
                                   ondelete = 'cascade'),
                        nullable=True)
-        filename = Column(String(255), nullable=False)
+        filename = Column(String(191), nullable=False)
         filesize = Column(Float, nullable=False)
         file_type = Column(String(10), nullable=False)
         orig_path = Column(Text, nullable=False)

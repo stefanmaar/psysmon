@@ -83,7 +83,7 @@ def databaseFactory(base):
         __table_args__ = {'mysql_engine': 'InnoDB'}
 
         id = Column(Integer, primary_key=True, autoincrement=True)
-        directory = Column(String(255), nullable=False, unique=True)
+        directory = Column(String(191), nullable=False, unique=True)
         description = Column(String(255), nullable=False)
 
         aliases = relationship("WaveformDirAlias", cascade="all, delete-orphan")

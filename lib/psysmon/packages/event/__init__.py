@@ -79,7 +79,7 @@ def databaseFactory(base):
         _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
-        name = Column(String(255), nullable = False)
+        name = Column(String(191), nullable = False)
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
@@ -183,7 +183,7 @@ def databaseFactory(base):
                                       onupdate = 'cascade',
                                       ondelete = 'cascade'),
                            nullable = True)
-        name = Column(String(255), nullable = False)
+        name = Column(String(191), nullable = False)
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
@@ -217,7 +217,7 @@ def databaseFactory(base):
         _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
-        name = Column(String(255), nullable = False)
+        name = Column(String(191), nullable = False)
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
