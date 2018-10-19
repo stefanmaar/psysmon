@@ -24,10 +24,10 @@ The pSysmon GUI module.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 
+    GNU General Public License, Version 3
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
-This module contains the graphical user interface (GUI) of the pSysmon 
+This module contains the graphical user interface (GUI) of the pSysmon
 main program.
 '''
 from __future__ import absolute_import      # Used for the signal import.
@@ -43,12 +43,13 @@ import wx.grid
 from wx import Choicebook
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
+import wx.lib.dialogs
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import wx.lib.colourdb
 try:
     from agw import ribbon as ribbon
-except ImportError: # if it's not there locally, try the wxPython lib.
+except ImportError:  # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.ribbon as ribbon
 
 try:
@@ -289,7 +290,7 @@ class PSysmonGui(wx.Frame):
         self.enableGuiElements(False)
 
         # Create the status bar.
-        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(2, wx.STB_SIZEGRIP)
         self.statusbar.SetStatusWidths([-2, -3])
         self.statusbar.SetStatusText("Ready", 0)
         self.statusbar.SetStatusText("pSysmon is there for you!", 1)
@@ -1642,11 +1643,34 @@ class CreateNewDbUserDlg(wx.Dialog):
             return True
         except SQLAlchemyError as e:
             msg = "An error occured when trying to create the pSysmon database user:\n%s" % str(e)
-            dlg = wx.MessageDialog(None, msg,
-                                   "MySQL database error.",
-                                   wx.OK | wx.ICON_ERROR)
+            user_db = "psysmon_" + userData['userName']
+            query_db = "CREATE DATABASE IF NOT EXISTS %s;" % user_db
+            query_user = "CREATE USER %s@'%s' IDENTIFIED BY 'YOUR_PASSWORD';" % (userData['userName'], userData['mysqlHost'])
+            query_grant = "GRANT ALL ON %s.* TO '%s'@'localhost';" % (user_db, userData['userName'])
+
+            msg = 'With new mariaDB installations, there is a restricted root acces to the database.\nPlease execute the following commands as root in the mariaDB command prompt:\n\n\n'
+            msg += query_db + '\n' + query_user + '\n' + query_grant
+            dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, 'Error when creating the user.')
+            #dlg = wx.MessageDialog(None, msg,
+            #                       "MySQL database error.",
+            #                       wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             return False
+
+
+class MessageBox(wx.Dialog):
+    def __init__(self, parent, title, msg, detail):
+        wx.Dialog.__init__(self, parent, title=title)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        label = wx.StaticText(self, wx.ID_ANY, msg)
+        detail_text = wx.TextCtrl(self, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.BORDER_NONE)
+        detail_text.SetValue(detail)
+        detail_text.SetBackgroundColour(wx.SystemSettings.GetColour(4))
+        sizer.Add(label, 0, wx.EXPAND)
+        sizer.Add(detail_text, 0, wx.EXPAND)
+        self.SetSizerAndFit(sizer)
+        self.ShowModal()
+        self.Destroy()
 
 
 
@@ -2764,7 +2788,7 @@ class NotEmptyValidator(wx.PyValidator):
             ctrl.Refresh()
             return False
         else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
 
@@ -2816,7 +2840,7 @@ class IsEqualValidator(wx.PyValidator):
             ctrl.Refresh()
             return False
         else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
 
