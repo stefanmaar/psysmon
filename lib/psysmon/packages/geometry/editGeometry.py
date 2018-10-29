@@ -244,7 +244,7 @@ class EditGeometryDlg(wx.Frame):
                           CenterPane().BestSize(wx.Size(300,300)).MinSize(wx.Size(100,-1)))
 
         # Create the status bar.
-        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(2, wx.STB_SIZEGRIP)
         self.statusbar.SetStatusWidths([-2, -3])
         self.statusbar.SetStatusText("Ready", 0)
         self.statusbar.SetStatusText("Edit the pSysmon inventory.", 1)
@@ -308,7 +308,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
-            style=wx.OPEN | wx.CHANGE_DIR
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -338,7 +338,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
-            style=wx.SAVE | wx.CHANGE_DIR
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -369,7 +369,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.csv)"\
                      "All files (*.*)|*.*",
-            style=wx.SAVE | wx.CHANGE_DIR
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -414,7 +414,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
-            style=wx.SAVE | wx.CHANGE_DIR
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )
 
         if dlg.ShowModal() == wx.ID_OK:
@@ -2524,7 +2524,7 @@ class NetworkPanel(wx.Panel):
         self.network_grid.CreateGrid(1, len(fields))
 
         # Bind the network_grid events.
-        self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onNetworkCellChange)
+        self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onNetworkCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter)  in enumerate(fields):
@@ -2543,7 +2543,7 @@ class NetworkPanel(wx.Panel):
         self.station_grid.CreateGrid(5, len(fields))
 
         # Bind the stationGrid events.
-        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onSensorTimeCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter) in enumerate(fields):
@@ -2666,7 +2666,7 @@ class ArrayPanel(wx.Panel):
         self.array_grid.CreateGrid(1, len(fields))
 
         # Bind the array_grid events.
-        self.array_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onArrayCellChange)
+        self.array_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onArrayCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter)  in enumerate(fields):
@@ -2685,7 +2685,7 @@ class ArrayPanel(wx.Panel):
         self.station_grid.CreateGrid(5, len(fields))
 
         # Bind the stationGrid events.
-        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onSensorTimeCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter) in enumerate(fields):
@@ -2814,7 +2814,7 @@ class RecorderPanel(wx.Panel):
         self.recorder_grid.CreateGrid(1, len(fields))
 
         # Bind the recorder_grid events.
-        self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onRecorderCellChange)
+        self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onRecorderCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, convert)  in enumerate(fields):
@@ -2834,7 +2834,7 @@ class RecorderPanel(wx.Panel):
         self.stream_grid.CreateGrid(1, len(fields))
 
         # Bind the stream_grid events.
-        self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                               self.onStreamCellChange)
         self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
                               self.onStreamCellLeftClick)
@@ -2859,7 +2859,7 @@ class RecorderPanel(wx.Panel):
         self.stream_parameter_grid.CreateGrid(1, len(fields))
 
         # Bind the stream_parameter_grid events.
-        self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                                         self.onStreamParameterCellChange)
         self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
                                         self.onStreamParameterCellLeftClick)
@@ -2884,7 +2884,7 @@ class RecorderPanel(wx.Panel):
         self.assigned_component_grid.CreateGrid(1, len(fields))
 
         # Bind the assigned_component_grid events.
-        self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                                         self.onAssignedComponentCellChange)
         self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
                                         self.onAssignedComponentCellLeftClick)
@@ -3266,7 +3266,7 @@ class StationsPanel(wx.Panel):
         self.station_grid.CreateGrid(1, len(fields))
 
         # Bind the stationGrid events.
-        self.station_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+        self.station_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onStationCellChange)
 
         for k, (name, label, attr, converter)  in enumerate(fields):
             self.station_grid.SetColLabelValue(k, label)
@@ -3285,7 +3285,7 @@ class StationsPanel(wx.Panel):
         self.channel_grid.CreateGrid(1, len(fields))
 
         # Bind the channel grid events.
-        self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onChannelCellChange)
+        self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onChannelCellChange)
         self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onChannelCellLeftClick)
 
         for k, (name, label, attr, converter) in enumerate(fields):
@@ -3306,7 +3306,7 @@ class StationsPanel(wx.Panel):
         self.assigned_recorder_stream_grid.CreateGrid(1, len(fields))
 
         # Bind the assigned recorder streams grid events.
-        self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onAssignedStreamCellChange)
+        self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onAssignedStreamCellChange)
         self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onAssignedStreamCellLeftClick)
 
         # Set the column attributes.
@@ -3624,7 +3624,7 @@ class SensorsPanel(wx.Panel):
         self.sensorGrid.CreateGrid(1, len(fields))
 
         # Bind the sensorGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                   self.onSensorCellChange,
                   self.sensorGrid)
 
@@ -3645,7 +3645,7 @@ class SensorsPanel(wx.Panel):
         self.componentGrid.CreateGrid(1, len(fields))
 
         # Bind the componentGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                   self.onComponentCellChange,
                   self.componentGrid)
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
@@ -3673,7 +3673,7 @@ class SensorsPanel(wx.Panel):
         self.parameterGrid.CreateGrid(1, len(fields))
 
         # Bind the paramGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                   self.onComponentParameterCellChange,
                   self.parameterGrid)
 
@@ -3695,13 +3695,15 @@ class SensorsPanel(wx.Panel):
         self.tfFigure = Figure((8,4), dpi=75, facecolor='white')
         #rect = 0.1,0.1,0.8,0.8
         #self.tfAxis = self.tfFigure.add_axes(rect, xscale='log', axis_bgcolor='w')
-        self.tfMagAxis = self.tfFigure.add_subplot(121, xscale='linear', axis_bgcolor='w')
+        self.tfMagAxis = self.tfFigure.add_subplot(121, xscale='linear')
+        self.tfMagAxis.set_facecolor('w')
         self.tfMagAxis.set_xlabel('Frequency [Hz]', fontsize=10)
         self.tfMagAxis.set_ylabel('Amplitude', fontsize=10)
         self.tfMagAxis.set_title('Amplitude Response', fontsize=10)
         self.tfMagAxis.grid(True)
 
-        self.tfPhaseAxis = self.tfFigure.add_subplot(122, xscale='linear', axis_bgcolor='w')
+        self.tfPhaseAxis = self.tfFigure.add_subplot(122, xscale='linear')
+        self.tfPhaseAxis.set_facecolor('w')
         self.tfPhaseAxis.set_xlabel('Frequency [Hz]', fontsize=10)
         self.tfPhaseAxis.set_ylabel('Phase [rad]', fontsize=10)
         self.tfPhaseAxis.set_title('Phase Response', fontsize=10)
