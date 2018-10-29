@@ -511,7 +511,7 @@ class PreferenceItem(object):
         ''' Update the limits of the gui elements.
         '''
         for cur_element in self.gui_element:
-            cur_element.updateLimit();
+            cur_element.updateLimit()
 
     def enable_gui_element(self):
         ''' Enable the gui element to make it active for user interaction.
