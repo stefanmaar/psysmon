@@ -118,7 +118,10 @@ class Field(wx.Panel):
         self.SetSizer(self.sizer)
 
     def __del__(self):
-        self.pref_item.remove_gui_element(self)
+        try:
+            self.pref_item.remove_gui_element(self)
+        except Exception:
+            pass
 
 
     def addLabel(self, labelElement):
@@ -329,6 +332,14 @@ class StaticBoxContainer(wx.Panel):
         ''' The number of fields.
         '''
         return len(self.fieldList) + len(self.actionFieldList)
+
+
+    def __del__(self):
+        '''
+        '''
+        print "Deleting StaticBoxContainer."
+        for cur_field in self.fieldList:
+            cur_field.pref_item.remove_gui_element(cur_field)
 
 
     ## Add a field to the container.
@@ -1007,7 +1018,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_selected(self, event):
         '''
         '''
-        item_data = self.controlElement.GetItemData(event.m_itemIndex)
+        item_data = self.controlElement.GetItemData(event.GetIndex())
         selected_value = self.controlElement.itemDataMap[item_data]
         if selected_value not in self.pref_item.value:
             self.pref_item.value.append(selected_value)
@@ -1018,7 +1029,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_deselected(self, event):
         '''
         '''
-        item_data = self.controlElement.GetItemData(event.m_itemIndex)
+        item_data = self.controlElement.GetItemData(event.GetIndex())
         selected_value = self.controlElement.itemDataMap[item_data]
         self.pref_item.value.remove(selected_value)
         self.call_hook('on_value_change')
