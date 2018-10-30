@@ -306,7 +306,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                 id = wx.ID_ANY,
                                 title = "TraceDisplay Development",
                                 plugins = plugins)
-
+        tdDlg.Show()
         app.MainLoop()
 
 
@@ -416,9 +416,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
         # Display the data.
         self.update_display()
-
-        # Show the frame. 
-        self.Show(True)
 
 
     @property
