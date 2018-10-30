@@ -205,6 +205,9 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         last_save_day = self.save_day[scnl]
 
         # Create a result if the current start time extends the save interval.
+        # TODO: The naming of the result when saved by the time window looper
+        # uses the wrong start- and end-times. Add a support to specify the
+        # valid timespan of the result in the result instance.
         if start_time - last_save_day >= save_interval:
             self.create_result(scnl, origin_resource = origin_resource)
             self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % save_interval)
