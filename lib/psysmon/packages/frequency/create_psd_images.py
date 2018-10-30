@@ -34,15 +34,21 @@ import logging
 import fnmatch
 import re
 
+import psysmon
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+plt.style.use(psysmon.plot_style)
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from obspy.core.utcdatetime import UTCDateTime
 import obspy.signal
+
+# Set the matplotlib general settings.
+plt.style.use(['seaborn', 'seaborn-paper'])
 
 
 class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
@@ -403,8 +409,8 @@ class PSDPlotter:
 
         # Font sizes.
         axes_label_size = 8
-        tick_label_size = 8
-        title_size = 10
+        tick_label_size = 6
+        title_size = 8
 
         fig = plt.figure(figsize=(width, height), dpi = dpi)
         if self.with_average_plot:
@@ -451,11 +457,11 @@ class PSDPlotter:
             # obspy returns the NLNM and NHNM values in acceleration.
             # Convert them to the current unit (see Bormann (1998)).
             if unit == 'm':
-                nhnm = nhnm + 40 * np.log10(p_nhnm/ (2 * np.pi))
-                nlnm = nlnm + 40 * np.log10(p_nlnm/ (2 * np.pi))
+                nhnm = nhnm + 40 * np.log10(p_nhnm / (2 * np.pi))
+                nlnm = nlnm + 40 * np.log10(p_nlnm / (2 * np.pi))
             elif unit == 'm/s':
-                nhnm = nhnm + 20 * np.log10(p_nhnm/ (2 * np.pi))
-                nlnm = nlnm + 20 * np.log10(p_nlnm/ (2 * np.pi))
+                nhnm = nhnm + 20 * np.log10(p_nhnm / (2 * np.pi))
+                nlnm = nlnm + 20 * np.log10(p_nlnm / (2 * np.pi))
             elif unit != 'm/s^2':
                 nhnm = None
                 nlnm = None
@@ -467,18 +473,20 @@ class PSDPlotter:
             if nhnm is not None:
                 ax_avg.plot(nhnm, 1/p_nhnm, color = 'lightgray')
 
-            ax_avg.plot(avg_amp_resp, frequ, color = 'saddlebrown')
-            ax_avg.plot(med_amp_resp, frequ, color = 'darkviolet')
+            ax_avg.plot(avg_amp_resp, frequ, color='saddlebrown', label='avg')
+            ax_avg.plot(med_amp_resp, frequ, color='darkviolet', label='med')
 
             ax_avg.set_xlim(pcm.get_clim())
             xlim = ax_avg.get_xlim()
-            #xtick_labels = -np.arange(np.abs(xlim[1]), np.abs(xlim[0]), 50)
+            # xtick_labels = -np.arange(np.abs(xlim[1]), np.abs(xlim[0]), 50)
             xtick_labels = xlim
             ax_avg.set_xticks(xtick_labels)
-            #ax_avg.set_xticks(xtick_labels.astype(np.int))
-            #ax_avg.set_xticklabels(ax_avg.get_xticks(), rotation = 'vertical', va = 'top')
+            # ax_avg.set_xticks(xtick_labels.astype(np.int))
+            # ax_avg.set_xticklabels(ax_avg.get_xticks(), rotation = 'vertical', va = 'top')
             ax_avg.set_xticklabels(ax_avg.get_xticks())
             ax_avg.invert_xaxis()
+            ax_avg.set_xlabel('PSD [dB]', fontsize=axes_label_size)
+            ax_avg.legend(loc='lower left', fontsize=tick_label_size)
 
         cb = fig.colorbar(pcm, ax = ax_psd, cax = ax_cb)
         cb.set_label('PSD ' + unit_label + ' in dB', fontsize = axes_label_size)
@@ -522,6 +530,12 @@ class PSDPlotter:
             pos.x0 = pos.x0 + np.abs(bbox_i.x0)
             ax_avg.set_position(pos)
 
+            # Reposition the avg x-axes label.
+            bbox = ax_avg.xaxis.get_tightbbox(fig.canvas.get_renderer())
+            bbox_i = bbox.inverse_transformed(ax_avg.transAxes)
+            ax_avg.xaxis.set_label_coords(0.5, bbox_i.y1)
+
+
             # Shift the colorbar to the right of the psd axis labels.
             bbox = ax_psd.yaxis.get_tightbbox(fig.canvas.get_renderer())
             bbox_i = bbox.inverse_transformed(fig.transFigure)
@@ -548,12 +562,12 @@ class PSDPlotter:
 
         filename = '%s_%s_%s_%s_%s_%s.png' % (self.starttime.strftime('%Y%m%d'),
                                               self.endtime.strftime('%Y%m%d'),
-                                              self.station, self.channel,
-                                              self.network, self.location)
+                                              self.network, self.station,
+                                              self.location, self.channel)
         filename = filename.lower()
-        output_dir = os.path.join(self.output_dir, self.station.lower())
+        output_dir = os.path.join(self.output_dir, self.network.lower(), self.station.lower(), self.location.lower())
         if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+            os.makedirs(output_dir)
         filename = os.path.join(output_dir, filename)
 
         self.logger.info("Saving PSD image file ...")
