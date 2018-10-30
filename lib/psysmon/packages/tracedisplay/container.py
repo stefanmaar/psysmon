@@ -429,8 +429,9 @@ class ChannelAnnotationArea(wx.Panel):
 
         # Define the font styles.
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        color = wx.Colour('black')
         #font.SetWeight(wx.BOLD)
-        gc.SetFont(font)
+        gc.SetFont(font, color)
 
         path = gc.CreatePath()
         path.MoveToPoint(width, penSize/2.0)
@@ -859,7 +860,7 @@ class TdDatetimeInfo(wx.Panel):
         #                                            style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
         #                                           )
 
-        self.startDatePicker = DatePickerCtrl(self, id=wx.ID_ANY, style=wx.DP_DEFAULT|wx.DP_SHOWCENTURY)
+        self.startDatePicker = DatePickerCtrl(self, id=wx.ID_ANY, style=wx.adv.DP_DEFAULT|wx.adv.DP_SHOWCENTURY)
 
 
         self.startTimePicker = MaskedTextCtrl( self, wx.ID_ANY, '',
@@ -961,10 +962,10 @@ class TdDatetimeInfo(wx.Panel):
         width = winSize[0]
         height = winSize[1]
 
-
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        color = wx.Colour('black')
         font.SetWeight(wx.BOLD)
-        gc.SetFont(font)
+        gc.SetFont(font, color)
         if self.startTime:
             gc.PushState()
             gc.Translate(80, height/2.0)
@@ -1079,8 +1080,9 @@ class StationAnnotationArea(wx.Panel):
 
         # Define the font styles.
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        color = wx.Colour('black')
         font.SetWeight(wx.BOLD)
-        gc.SetFont(font)
+        gc.SetFont(font, color)
 
         path = gc.CreatePath()
         path.MoveToPoint(width, penSize/2.0)
