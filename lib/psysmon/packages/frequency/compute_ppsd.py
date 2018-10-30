@@ -28,6 +28,7 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+import copy
 import os
 
 import psysmon
@@ -289,9 +290,15 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, self.overall_start_time.isoformat().replace(':',''), self.overall_end_time.isoformat().replace(':','')))
 
 
-        # Set the viridis colomap 0 value to white.
+        # Set the viridis colomap 0 value to fully transparent white.
         cmap = plt.get_cmap('viridis')
-        cmap.colors[0] = [1, 1, 1]
+        cmap = copy.copy(cmap)
+        cmap.colors = np.array(cmap.colors)
+        cmap.colors = np.hstack([cmap.colors, np.ones(cmap.N)[:, np.newaxis]])
+        cmap.colors[0] = np.array([1, 1, 1, 0])
+        cmap.colors = list(cmap.colors)
+
+
 
 
         # TODO: make the period limit user selectable
@@ -416,6 +423,8 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
     else:
         ax = fig.add_subplot(111)
 
+    ax.set_axisbelow(True)
+
     if show_percentiles:
         # for every period look up the approximate place of the percentiles
         for percentile in percentiles:
@@ -487,6 +496,7 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
             fig.ppsd.color_limits = color_limits
 
         self._plot_histogram(fig=fig)
+        fig.ppsd.quadmesh.set_zorder(5)
 
     ax.semilogx()
     if xaxis_frequency:
@@ -499,7 +509,7 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
     ax.set_xlim(sorted(xlim))
     ax.set_ylim(self.db_bin_edges[0], self.db_bin_edges[-1])
     if self.special_handling is None:
-        ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]', fontsize = 8)
+        ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]', fontsize=8)
     else:
         ax.set_ylabel('Amplitude [dB]')
     ax.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))
