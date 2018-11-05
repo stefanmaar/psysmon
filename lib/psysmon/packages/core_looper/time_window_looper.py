@@ -490,6 +490,7 @@ class SlidingWindowProcessor(object):
                     stream = self.project.request_data_stream(start_time = cur_window_start - pre_stream_length,
                                                               end_time = cur_window_start + window_length + post_stream_length,
                                                               scnl = scnl)
+                    stream = stream.split()
                 else:
                     stream = None
 
