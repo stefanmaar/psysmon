@@ -206,8 +206,9 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             except:
                 self.logger.warning("No PPSD data accumulated.")
 
-            if chunk_count == total_chunks:
-                self.save_ppsd()
+        if chunk_count == total_chunks:
+            self.overall_end_time = end_time
+            self.save_ppsd()
 
 
 
