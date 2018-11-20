@@ -151,7 +151,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         '''
         # Load the detections for the processing timespan.
         # TODO: Make the minimum detection length a user preference.
-        min_detection_length = None
+        min_detection_length = 0.5
         self.detection_catalog.load_detections(project = self.project,
                                                start_time = process_limits[0],
                                                end_time = process_limits[1],
@@ -167,26 +167,33 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                    stations = stations,
                                                    author_uri = self.project.activeUser.author_uri,
                                                    agency_uri = self.project.activeUser.agency_uri)
+        # TODO: Make the search window velocity a user preference.
         binder.compute_search_windows(vel = 3000)
+        self.logger.debug('Search windows: %s', binder.search_windows)
+        self.logger.debug('Epi-distances: %s', binder.epi_dist)
 
         # Get the detecions at the end of the processing window which can't be
         # processed becaused of potentially missing detections outside the
         # processing window.
         max_search_window = max([max(x.values()) for x in binder.search_windows.values()])
+        self.logger.debug('Fixing the catalog.')
         keep_detections = self.detection_catalog.get_detections(start_time = process_limits[1] - max_search_window,
                                                                 start_inside = True)
         self.detection_catalog.remove_detections(keep_detections)
 
         # Bind the detections
+        self.logger.debug('Binding the detections.')
         binder.bind(catalog = self.detection_catalog,
                     channel_scnl = [x.scnl for x in channels])
 
         # Store the unprocessed detection in the catalog for the next step.
+        self.logger.debug('Cleaning the detection catalog.')
         self.detection_catalog.clear_detections()
         self.detection_catalog.add_detections(keep_detections)
 
         # Write the events of the binder to the database and clear the
         # binder event catalog.
+        self.logger.debug('Writing the events to the database.')
         binder.event_catalog.write_to_database(self.project)
         binder.event_catalog.clear_events()
 
