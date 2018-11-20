@@ -170,7 +170,7 @@ class Result(object):
     def __init__(self, name, origin_name, origin_pos = None,
                  origin_resource = None, metadata = None,
                  start_time = None, end_time = None, postfix = None,
-                 sub_directory = None):
+                 sub_directory = None, event_id = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -191,6 +191,8 @@ class Result(object):
         # The end time of the time window to which the result is associated.
         self.end_time = end_time
 
+        # The id of the event to which the result is related to.
+        self.event_id = event_id
 
         # The directory structure created for the result.
         self.sub_directory = sub_directory
@@ -227,7 +229,10 @@ class Result(object):
     def filename(self):
         ''' The filename of the result.
         '''
-        filename = self.name.lower() + '_' \
+        filename = self.name.lower()
+        if self.event_id:
+            filename += '_' + str(self.event_id)
+        filename += '_' \
                    + self.start_time.isoformat().replace(':', '').replace('.', '').replace('-','') \
                    + '_' \
                    + self.end_time.isoformat().replace(':', '').replace('.', '').replace('-','')
@@ -364,7 +369,10 @@ class TableResult(Result):
 
         export_values = []
         for cur_row in self.rows:
-            cur_values = [cur_row.key, self.start_time.isoformat(), self.end_time.isoformat()]
+            if self.event_id:
+                cur_values = [cur_row.key, self.event_id, self.start_time.isoformat(), self.end_time.isoformat()]
+            else:
+                cur_values = [cur_row.key, self.start_time.isoformat(), self.end_time.isoformat()]
             cur_values.extend([cur_row[key] for key in self.column_names])
             #cur_values.reverse()
             #try:
@@ -391,9 +399,12 @@ class TableResult(Result):
 
         fid = open(filename, 'wt')
         try:
-            header = [self.key_name, 'start_time', 'end_time']
+            if self.event_id:
+                header = [self.key_name, 'event_id', 'start_time', 'end_time']
+            else:
+                header = [self.key_name, 'start_time', 'end_time']
             header.extend(self.column_names)
-            writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
+            writer = csv.writer(fid, quoting=csv.QUOTE_MINIMAL)
             writer.writerow(header)
             writer.writerows(export_values)
         finally:
