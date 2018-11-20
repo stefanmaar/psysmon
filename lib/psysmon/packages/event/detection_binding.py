@@ -28,11 +28,13 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+import logging
 import operator as op
 
 import obspy.core.utcdatetime as utcdatetime
 import obspy.geodetics as geodetics
 
+import psysmon
 import psysmon.packages.event.core as ev_core
 
 
@@ -50,6 +52,11 @@ class DetectionBinder(object):
             The stations for wich the search windows are computed.
 
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         # The event catalog to which the events should be added.
         self.event_catalog = event_catalog
 
@@ -86,27 +93,38 @@ class DetectionBinder(object):
             next_detections = sorted(next_detections, key = op.attrgetter('start_time'))
             first_detection = next_detections.pop(0)
 
+            self.logger.debug('Processing detection %d, %s, %s.', first_detection.db_id,
+                              first_detection.start_time,
+                              first_detection.snl)
+
             # Get the search windows for the detection combinations.
             search_windows = self.get_search_window(first_detection, next_detections)
 
             # Get the detections matching the search window.
             window_extend = 1.
             match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + window_extend]
+            self.logger.debug('Matching detections: %s.', [(x.db_id, x.start_time, x.snl) for x in match_detections])
 
             # TODO: Make the neighbor values a user preference.
+            # TODO: Make the min_match_neighbors a user preference.
             # Check if there are matching detections on neighboring stations.
             # There have to be detections at at least min_match_neighbors.
             # If there are not enough matching detections, all matching
             # detections have to be on neighbor stations.
-            # The neighbors 
-            n_neighbors = 5
-            min_match_neighbors = 3
+
+            #TODO: The neighbors should contain only stations which have been
+            # selected for binding the detections. 
+            n_neighbors = 20
+            min_match_neighbors = 1
             #max_neighbor_dist = 10000.          # The maximum distance to a neighbor station.
             neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
             #neighbors = [x for x in neighbors if x[1] <= max_neighbor_dist]
             neighbors_snl = [x[0] for x in neighbors]
             match_snl = [x.snl for x in match_detections]
             match_neighbors = [x for x in neighbors_snl if x in match_snl]
+
+            self.logger.debug('neighbors_snl: %s', neighbors_snl)
+            self.logger.debug('match_snl: %s', match_snl)
 
             # TODO: Add a check for detections on distant neighbors.
             # If there is a small number of detections on distant stations,
@@ -126,6 +144,7 @@ class DetectionBinder(object):
             elif len(match_neighbors) < min_match_neighbors:
                 # There are not enough detection on neigboring stations.
                 # Reset the matched detections.
+                self.logger.debug('Not enough detections on neighboring stations. Detection ID: %d. Start time: %s', first_detection.db_id, first_detection.start_time)
                 match_detections = []
             else:
                 # This is a valid event.
@@ -142,6 +161,9 @@ class DetectionBinder(object):
                                       creation_time = utcdatetime.UTCDateTime(),
                                       detections = match_detections)
                 self.event_catalog.add_events([event, ])
+                self.logger.debug('Added event %s to %s.',
+                                  event.start_time,
+                                  event.end_time)
 
                 # Remove the matching detections from the detections list.
                 for cur_detection in match_detections:
@@ -180,6 +202,7 @@ class DetectionBinder(object):
             is used.
 
         '''
+        # TODO: Make this a user preference.
         # The minimum length of the search window.
         min_search_win = 0.5
 
