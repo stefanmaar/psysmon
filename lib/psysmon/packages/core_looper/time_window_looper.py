@@ -147,6 +147,8 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                           chunked = self.pref_manager.get_value('process_chunked'),
                           chunk_window_length = self.pref_manager.get_value('chunk_win_length'))
 
+        return not processor.node_execution_error
+
 
 
     def create_component_selector_preferences(self):
@@ -273,6 +275,8 @@ class SlidingWindowProcessor(object):
         self.project = project
 
         self.parent_rid = parent_rid
+
+        self.node_execution_error = False
 
         if self.parent_rid is not None:
             rid_dir = self.parent_rid.replace('/', '-').replace(':', '-')
@@ -497,29 +501,34 @@ class SlidingWindowProcessor(object):
                 # Execute the looper nodes.
                 resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
                 process_limits = (cur_window_start, cur_window_start + window_length)
-                for cur_node in looper_nodes:
-                    if not cur_node.initialized:
-                        self.logger.debug("Initializing node %s.", cur_node.name)
-                        cur_node.initialize()
-                        self.logger.debug("Finished the initialization.")
 
-                    self.logger.debug("Executing node %s.", cur_node.name)
-                    cur_node.execute(stream = stream,
-                                     process_limits = process_limits,
-                                     origin_resource = resource_id,
-                                     channels = channels)
-                    self.logger.debug("Finished execution of node %s.", cur_node.name)
+                try:
+                    for cur_node in looper_nodes:
+                        if not cur_node.initialized:
+                            self.logger.debug("Initializing node %s.", cur_node.name)
+                            cur_node.initialize()
+                            self.logger.debug("Finished the initialization.")
 
-                    # Get the results of the node.
-                    if cur_node.result_bag:
-                        if len(cur_node.result_bag.results) > 0:
-                            self.logger.debug("Saving the results.")
-                            for cur_result in cur_node.result_bag.results:
-                                cur_result.base_output_dir = self.output_dir
-                                cur_result.save()
+                        self.logger.debug("Executing node %s.", cur_node.name)
+                        cur_node.execute(stream = stream,
+                                         process_limits = process_limits,
+                                         origin_resource = resource_id,
+                                         channels = channels)
+                        self.logger.debug("Finished execution of node %s.", cur_node.name)
 
-                            cur_node.result_bag.clear()
-                            self.logger.debug("Finished saving of the results.")
+                        # Get the results of the node.
+                        if cur_node.result_bag:
+                            if len(cur_node.result_bag.results) > 0:
+                                self.logger.debug("Saving the results.")
+                                for cur_result in cur_node.result_bag.results:
+                                    cur_result.base_output_dir = self.output_dir
+                                    cur_result.save()
+
+                                cur_node.result_bag.clear()
+                                self.logger.debug("Finished saving of the results.")
+                except Exception:
+                    self.node_execution_error = True
+                    self.logger.exception("Error when executing a looper node. Skipping this time window.")
 
 
                 # Handle the results.
