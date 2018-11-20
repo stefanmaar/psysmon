@@ -710,6 +710,7 @@ class ActionItem(object):
         # These values have to be reset when loading the project.
         if isinstance(self.action, types.MethodType):
             result['action'] = self.action.__name__
+        result['gui_element'] = []
 
         return result
 
@@ -726,7 +727,10 @@ class ActionItem(object):
         # TODO: Create GUI fields for the ActionItem similar to the PrefItems
         # to handle the removal of the gui_element when the GUI field is
         # deleted.
-        self.gui_element = [x for x in self.gui_element if not isinstance(x, wx._core._wxPyDeadObject)]
+
+        # Remove the gui_elements for which the C++ part has been deleted.
+        self.gui_element = [x for x in self.gui_element if x]
+
         if element not in self.gui_element:
             self.gui_element.append(element)
 
