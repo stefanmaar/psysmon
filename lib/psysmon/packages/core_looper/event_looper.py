@@ -32,6 +32,7 @@ This module contains the classes of the importWaveform dialog window.
 
 #from profilehooks import profile
 
+import json
 import os
 import copy
 import logging
@@ -84,11 +85,8 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
 
         # Initialize the components.
         if self.project.geometry_inventory:
-            stations = sorted([x.name for x in self.project.geometry_inventory.get_station()])
-            self.pref_manager.set_limit('stations', stations)
-
-            channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
-            self.pref_manager.set_limit('channels', channels)
+            channels = sorted([x.scnl for x in self.project.geometry_inventory.get_channel()])
+            self.pref_manager.set_limit('scnl_list', channels)
 
         # Create the edit dialog.
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
@@ -146,12 +144,12 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         else:
             event_tags = None
 
+
         processor.process(looper_nodes = self.children,
                           start_time = start_time,
                           end_time = end_time,
                           processing_interval = self.pref_manager.get_value('processing_interval'),
-                          station_names = self.pref_manager.get_value('stations'),
-                          channel_names = self.pref_manager.get_value('channels'),
+                          scnl = self.pref_manager.get_value('scnl_list'),
                           event_catalog = self.pref_manager.get_value('event_catalog'),
                           event_ids = event_ids,
                           event_types = self.pref_manager.get_value('event_type'),
@@ -215,21 +213,15 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         components_page = self.pref_manager.add_page('components')
         comp_to_process_group = components_page.add_group('components to process')
 
-        # The stations to process.
-        item = psy_pm.MultiChoicePrefItem(name = 'stations',
-                                          label = 'stations',
-                                          limit = (),
-                                          value = [],
-                                          tool_tip = 'The stations which should be used for the processing.')
-        comp_to_process_group.add_item(item)
+        # The SCNL list
+        pref_item = psy_pm.ListCtrlEditPrefItem(name = 'scnl_list',
+                                           label = 'SCNL',
+                                           value = [],
+                                           column_labels = ['station', 'channel', 'network', 'location'],
+                                           tool_tip = 'Select the components to process.'
+                                          )
+        comp_to_process_group.add_item(pref_item)
 
-        # The channels to process.
-        item = psy_pm.MultiChoicePrefItem(name = 'channels',
-                                          label = 'channels',
-                                          limit = (),
-                                          value = [],
-                                          tool_tip = 'The channels which should be used for the processing.')
-        comp_to_process_group.add_item(item)
 
 
     def create_filter_preferences(self):
@@ -416,7 +408,7 @@ class EventProcessor(object):
 
     #@profile(immediate=True)
     def process(self, looper_nodes, start_time, end_time, processing_interval,
-                station_names, channel_names, event_catalog, event_ids = None,
+                scnl, event_catalog, event_ids = None,
                 event_types = None, event_tags = None):
         ''' Start the detection.
 
@@ -436,11 +428,8 @@ class EventProcessor(object):
             passed, it is interpreted as the inteval length in seconds.
             (whole, hour, day, week, month or a float value)
 
-        station_names : list of Strings
-            The names of the stations to process.
-
-        channel_names : list of Strings
-            The names of the channels to process.
+        scnl : list of Strings
+            The scnl codes of the components to process.
 
         event_catalog : String
             The name of the event catalog to process.
@@ -504,10 +493,15 @@ class EventProcessor(object):
 
             # Get the channels to process.
             channels = []
-            for cur_station in station_names:
-                for cur_channel in channel_names:
-                    channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
-                                                                                name = cur_channel))
+            #for cur_station in station_names:
+            #    for cur_channel in channel_names:
+            #        channels.extend(self.project.geometry_inventory.get_channel(station = cur_station,
+            #                                                                    name = cur_channel))
+            for cur_scnl in scnl:
+                channels.extend(self.project.geometry_inventory.get_channel(network=cur_scnl[2],
+                                                                            station=cur_scnl[0],
+                                                                            location=cur_scnl[3],
+                                                                            name=cur_scnl[1]))
             scnl = [x.scnl for x in channels]
 
             n_events = len(catalog.events)
@@ -526,8 +520,8 @@ class EventProcessor(object):
                     pre_event_length = max(pre_event_length)
                     post_event_length = max(post_event_length)
 
-                    cur_window_start = cur_event.start_time - pre_event_length
-                    cur_window_end = cur_event.end_time + post_event_length
+                    cur_window_start = cur_event.start_time
+                    cur_window_end = cur_event.end_time
 
 
                     # Execute the looper nodes.
@@ -542,9 +536,9 @@ class EventProcessor(object):
                         # Load the waveform data when it is needed by a looper
                         # node.
                         if not waveform_loaded and cur_node.need_waveform_data:
-                            stream = self.project.request_data_stream(start_time = cur_window_start,
-                                                                      end_time = cur_window_end,
-                                                                      scnl = scnl)
+                            stream = self.project.request_data_stream(start_time=cur_window_start-pre_event_length,
+                                                                      end_time=cur_window_end+post_event_length,
+                                                                      scnl=scnl)
                             waveform_loaded = True
 
 
@@ -583,4 +577,17 @@ class EventProcessor(object):
                     cur_result.save()
 
             cur_node.result_bag.clear()
+
+        # Save the collection settings to the result directory if it exists.
+        if os.path.exists(self.output_dir):
+            exec_meta = {}
+            exec_meta['rid'] = self.parent_rid
+            exec_meta['node_settings'] = looper_nodes[0].parent.get_settings()
+            settings_filename = 'execution_metadata.json'
+            settings_filepath = os.path.join(self.output_dir, settings_filename)
+            with open(settings_filepath, 'w') as fp:
+                json.dump(exec_meta,
+                          fp,
+                          indent = 4,
+                          sort_keys = True)
 
