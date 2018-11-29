@@ -59,6 +59,11 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         # Last day of the saved psd data.
         self.save_day = {}
 
+        # The interval for which to create the results. This is ignored when
+        # processing events. For events a result is created for each event.
+        # TODO: Make the save interval user selectable.
+        self.save_interval = 3600.
+
 
     def create_parameters_prefs(self):
         ''' Create the preference items of the parameters section.
@@ -115,9 +120,13 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         start_time = process_limits[0]
         end_time = process_limits[1]
 
+        if 'event' in kwargs.keys():
+            cur_event = kwargs['event']
+        else:
+            cur_event = None
 
         for cur_trace in stream:
-            self.logger.info('Processing trace with id %s.', cur_trace.id)
+            self.logger.info('###Processing trace with id %s.', cur_trace.id)
 
             cur_scnl = (cur_trace.stats.station, cur_trace.stats.channel,
                         cur_trace.stats.network, cur_trace.stats.location)
@@ -139,11 +148,20 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
             if cur_trace:
                 # Compute the PSD using matplotlib.mlab.psd
-                n_overlap = psd_nfft / 100 * psd_overlap
+                m_psd_nfft = psd_nfft
+                m_pad_to = None
+                if len(cur_trace.data) < psd_nfft:
+                    m_psd_nfft = len(cur_trace.data) / 4
+                    m_pad_to = psd_nfft
+                n_overlap = m_psd_nfft / 100 * psd_overlap
+
                 (P, frequ) = mlab.psd(cur_trace.data,
                                       Fs = cur_trace.stats.sampling_rate,
-                                      NFFT = psd_nfft,
-                                      noverlap = n_overlap)
+                                      NFFT = m_psd_nfft,
+                                      noverlap = n_overlap,
+                                      detrend = 'constant',
+                                      scale_by_freq = True,
+                                      pad_to = m_pad_to)
 
                 if P.ndim == 2:
                     P = P.squeeze()
@@ -176,12 +194,24 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 cur_psd['start_time'] = start_time
                 cur_psd['end_time'] = end_time
 
+            if cur_event:
+                cur_psd['event_id'] = cur_event.db_id
+
+            # Store the psd data in the psd dictionary.
             self.save_psd_data(psd = cur_psd,
                                origin_resource = origin_resource)
 
+            # Check if a result has to be created.
+            if not cur_event:
+                self.check_result_needed(cur_scnl, start_time)
+
+        if cur_event:
+            self.create_event_result(event = cur_event,
+                                     origin_resource = origin_resource)
 
 
-    def save_psd_data(self, psd, origin_resource = None):
+    def save_psd_data(self, psd,
+                      origin_resource = None):
         ''' Save the psd data to a file.
         '''
         if not psd:
@@ -190,9 +220,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         scnl = psd['scnl']
         start_time = psd['start_time']
 
-        # TODO: Make the save interval user selectable.
-        save_interval = 3600.
-
         if scnl not in self.psd_data.keys():
             self.psd_data[scnl] = {}
 
@@ -200,19 +227,28 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             self.save_day[scnl] = None
 
         if self.save_day[scnl] is None:
-            self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % save_interval)
+            self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % self.save_interval)
 
+        if 'event_id' in psd.keys():
+            self.psd_data[scnl][psd['event_id']] = psd
+        else:
+            self.psd_data[scnl][start_time.isoformat()] = psd
+
+
+
+    def check_result_needed(self, scnl, start_time,
+                            origin_resource = None):
+        ''' Check if a result has to be created for the given SCNL.
+        '''
         last_save_day = self.save_day[scnl]
 
         # Create a result if the current start time extends the save interval.
         # TODO: The naming of the result when saved by the time window looper
         # uses the wrong start- and end-times. Add a support to specify the
         # valid timespan of the result in the result instance.
-        if start_time - last_save_day >= save_interval:
+        if start_time - last_save_day >= self.save_interval:
             self.create_result(scnl, origin_resource = origin_resource)
-            self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % save_interval)
-
-        self.psd_data[scnl][start_time.isoformat()] = psd
+            self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % self.save_interval)
 
 
 
@@ -243,6 +279,28 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
         self.psd_data[scnl] = {}
 
+
+    def create_event_result(self, event, origin_resource = None):
+        ''' Write the psd data for the given scnl to file.
+        '''
+        export_data = dict((str(':'.join(key)), value) for (key, value) in self.psd_data.items())
+        export_data['event_id'] = event.db_id
+
+        shelve_result = result.ShelveResult(name = 'psd',
+                                            start_time = event.start_time,
+                                            end_time = event.end_time,
+                                            origin_name = self.name,
+                                            origin_resource = origin_resource,
+                                            db = export_data)
+        self.result_bag.add(shelve_result)
+        self.logger.info("Published the result for event %d (%s to %s).",
+                         event.db_id,
+                         event.start_time.isoformat(),
+                         event.end_time.isoformat())
+
+        self.psd_data = {}
+        for cur_scnl in export_data.keys():
+            self.save_day[cur_scnl] = UTCDateTime(event.start_time.timestamp - event.start_time.timestamp % self.save_interval)
 
     def cleanup(self, origin_resource = None):
         ''' Publish all remaining psd data to results.
