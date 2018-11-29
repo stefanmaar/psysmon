@@ -1185,7 +1185,8 @@ class FrequencySpectrumPlotter(ViewPlugin):
                             )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         # Define the plugin icons.
@@ -1258,7 +1259,8 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
         psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
@@ -1274,7 +1276,7 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
         self.lines['nhnm'] = None
         self.lines['nlnm'] = None
 
-        self.show_noise_model = True
+        self.show_noise_model = False
 
 
 
@@ -1304,14 +1306,43 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
 
             left_fft = int(np.ceil(n_fft / 2.))
 
+
+            # Try the matlab psd function.
+            import matplotlib.mlab as mlab
+            m_n_fft = 8192
+            m_pad_to = None
+            m_left_fft = int(np.ceil(m_n_fft / 2.))
+            if len(trace.data) < m_n_fft:
+                m_n_fft = len(trace.data) / 4
+                m_pad_to = 8192
+                m_left_fft = int(np.ceil(m_pad_to / 2.))
+            m_overlap = m_n_fft * 0.75
+            (m_psd, m_frequ) = mlab.psd(trace.data,
+                                  Fs = trace.stats.sampling_rate,
+                                  NFFT = m_n_fft,
+                                  noverlap = m_overlap,
+                                  detrend = 'constant',
+                                  scale_by_freq = True,
+                                  pad_to = m_pad_to)
+            m_psd = 10 * np.log10(m_psd)
+            self.logger.info('PSD: %s', m_psd)
+
+
+
             # Plot the psd.
             if not self.lines['psd']:
-                self.lines['psd'], = self.axes.plot(frequ[:left_fft], psd[:left_fft], color = self.line_colors['psd'])
+                self.lines['psd'], = self.axes.plot(frequ[1:left_fft], psd[1:left_fft], color = self.line_colors['psd'])
+                self.lines['m_psd'], = self.axes.plot(m_frequ[1:m_left_fft], m_psd[1:m_left_fft], color = 'r')
             else:
-                self.lines['psd'].set_xdata(frequ[:left_fft])
-                self.lines['psd'].set_ydata(psd[:left_fft])
+                self.lines['psd'].set_xdata(frequ[1:left_fft])
+                self.lines['psd'].set_ydata(psd[1:left_fft])
+                self.lines['m_psd'].set_xdata(m_frequ[1:m_left_fft])
+                self.lines['m_psd'].set_ydata(m_psd[1:m_left_fft])
 
             cur_unit = trace.stats.unit
+
+            self.logger.info('max: %s', max(psd[1:left_fft]))
+            self.logger.info('min: %s', min(psd[1:left_fft]))
 
             # Plot the noise model.
             if self.show_noise_model:
@@ -1325,6 +1356,8 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
                 self.axes.set_ylim(bottom = -220, top = -80)
                 cur_unit_label = '(m/s^2)^2/Hz in dB'
             elif cur_unit == 'counts':
+                self.axes.set_ylim(bottom = min(psd[1:left_fft]),
+                                   top = max(psd[1:left_fft]))
                 cur_unit_label = 'counts^2/Hz in dB'
             else:
                 cur_unit_label = '???^2/Hz in dB'
@@ -1342,8 +1375,8 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
 
 
     def plot_noise_model(self, unit):
-        p_nhnm, nhnm = obspy.signal.spectral_estimation.get_NHNM()
-        p_nlnm, nlnm = obspy.signal.spectral_estimation.get_NLNM()
+        p_nhnm, nhnm = obspy.signal.spectral_estimation.get_nhnm()
+        p_nlnm, nlnm = obspy.signal.spectral_estimation.get_nlnm()
 
         # obspy returns the NLNM and NHNM values in acceleration.
         # Convert them to the current unit (see Bormann (1998)).
