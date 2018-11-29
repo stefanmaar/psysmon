@@ -555,6 +555,7 @@ class EventProcessor(object):
                         if cur_node.result_bag:
                             if len(cur_node.result_bag.results) > 0:
                                 for cur_result in cur_node.result_bag.results:
+                                    cur_result.event_id = cur_event.db_id
                                     cur_result.base_output_dir = self.output_dir
                                     cur_result.save()
 
