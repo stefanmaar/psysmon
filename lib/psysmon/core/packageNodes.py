@@ -419,8 +419,12 @@ class LooperCollectionNode(CollectionNode):
         The upper limit can be set by the upper_node_limit attribute.
         '''
         settings = {}
+        settings[self.name] = {}
+        settings[self.name]['preferences'] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
+        settings[self.name]['looper_children'] = {}
         for pos, cur_node in enumerate(self.children):
-            settings[pos+1] = cur_node.settings
+            settings[self.name]['looper_children'][pos+1] = cur_node.settings
 
             if cur_node == upper_node_limit:
                 break
@@ -498,7 +502,9 @@ class LooperCollectionChildNode(CollectionNode):
         ''' The configuration settings of the node.
         '''
         settings = {}
-        settings[self.name] = self.pref_manager.settings
+        settings[self.name] = {}
+        settings[self.name]['preferences'] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
         return settings
 
 
