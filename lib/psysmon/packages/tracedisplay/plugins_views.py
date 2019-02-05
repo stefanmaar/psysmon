@@ -1283,6 +1283,7 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
     def plot(self, stream):
 
         for trace in stream:
+            self.logger.debug('Computing PSD for trace %s.', trace)
             timeArray = np.arange(0, trace.stats.npts)
             timeArray = timeArray * 1/trace.stats.sampling_rate
             timeArray = timeArray + trace.stats.starttime.timestamp
@@ -1325,7 +1326,8 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
                                   scale_by_freq = True,
                                   pad_to = m_pad_to)
             m_psd = 10 * np.log10(m_psd)
-            self.logger.info('PSD: %s', m_psd)
+            self.logger.debug('m_frequ: %s', m_frequ)
+            self.logger.debug('m_psd: %s', m_psd)
 
 
 
