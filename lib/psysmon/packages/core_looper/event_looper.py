@@ -43,6 +43,7 @@ import psysmon.core.packageNodes as package_nodes
 import obspy.core
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
+import psysmon.core.json_util as json_util
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 from psysmon.packages.event.plugins_event_selector import EventListField
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
@@ -588,7 +589,5 @@ class EventProcessor(object):
             settings_filepath = os.path.join(self.output_dir, settings_filename)
             with open(settings_filepath, 'w') as fp:
                 json.dump(exec_meta,
-                          fp,
-                          indent = 4,
-                          sort_keys = True)
-
+                          fp = fp,
+                          cls = json_util.GeneralFileEncoder)
