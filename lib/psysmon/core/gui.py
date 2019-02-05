@@ -333,7 +333,7 @@ class PSysmonGui(wx.Frame):
             defaultFile="",
             wildcard="pSysmon project (*.ppr)|*.ppr|"\
                      "All files (*.*)|*.*",
-            style=wx.OPEN | wx.CHANGE_DIR
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -1292,7 +1292,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
     def updateThread(self, data):
         #self.logger.debug('updating process: %s', data['procName'])
-        error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error'}
+        error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error', 5: 'looper child error'}
         if data['procName'] in self.processMap.keys():
             curIndex = self.processMap[data['procName']]
             #self.logger.debug('process has index: %d', curIndex)

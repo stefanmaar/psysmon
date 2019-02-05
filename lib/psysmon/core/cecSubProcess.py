@@ -133,7 +133,10 @@ if __name__ == "__main__":
                 logger.info('global start time: %s', collection.runtime_att.start_time.isoformat())
             if collection.runtime_att.end_time:
                 logger.info('global end time: %s', collection.runtime_att.end_time.isoformat())
-            collection.execute()
+            exec_success = collection.execute()
+            if type(exec_success) == bool and not exec_success:
+                return_code = 5
+                logger.error('The collection execution was not successful. There have been some errors which have been handled by the collection. Check the log file for the error messages.')
             logger.info('Finished the execution. Cleaning up....')
         except:
             logger.exception("Failed to execute the collection.")
