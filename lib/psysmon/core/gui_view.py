@@ -132,7 +132,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
         for cur_node in nodes_to_remove:
             self.node_list.remove(cur_node)
-            self.sizer.Remove(cur_node)
+            self.sizer.Detach(cur_node)
             cur_node.Destroy()
 
         if recursive:
@@ -294,7 +294,7 @@ class ContainerNode(wx.Panel):
         nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
         for cur_node in nodes_to_remove:
             self.node_list.remove(cur_node)
-            self.container_sizer.Remove(cur_node)
+            self.container_sizer.Detach(cur_node)
             cur_node.Destroy()
 
         if recursive:
@@ -554,7 +554,7 @@ class ViewContainerNode(wx.Panel):
         '''
         for cur_node in [x for x in self.node_list if x.name == name]:
             self.node_list.remove(cur_node)
-            self.container_sizer.Remove(cur_node)
+            self.container_sizer.Detach(cur_node)
             cur_node.Destroy()
 
         self.rearrange_nodes()

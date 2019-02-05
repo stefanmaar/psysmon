@@ -1137,10 +1137,11 @@ class DisplayManager(object):
         # Check if the station is part of one or more arrays that are currently
         # shown.
         parent_container = []
-        for cur_array in self.availableArrays:
-            if snl in [x.snl for x in cur_array.stations]:
-                cur_container = self.createArrayContainer(array = cur_array)
-                parent_container.append(cur_container)
+        if self.display_mode == 'array':
+            for cur_array in self.availableArrays:
+                if snl in [x.snl for x in cur_array.stations]:
+                    cur_container = self.createArrayContainer(array = cur_array)
+                    parent_container.append(cur_container)
 
         if not parent_container:
             parent_container.append(self.parent.viewport)
@@ -2144,9 +2145,12 @@ class DataManager():
         ''' Add a stream to the existing stream.
 
         '''
+        if not isinstance(scnl, list):
+            scnl = [scnl, ]
+
         cur_stream = self.project.request_data_stream(start_time = startTime,
                                                       end_time = endTime,
-                                                      scnl = [scnl, ])
+                                                      scnl = scnl)
 
         self.origStream = self.origStream + cur_stream
         return cur_stream
