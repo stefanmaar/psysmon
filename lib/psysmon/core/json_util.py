@@ -33,6 +33,8 @@ import json
 import logging
 
 from obspy.core import UTCDateTime
+
+import psysmon
 import psysmon.core.util as util
 import psysmon.core.preferences_manager as pm
 
@@ -1510,4 +1512,47 @@ def get_file_meta(filename):
                      'save_date': '1970-01-01T00:00:00'}
 
     return file_meta
+
+
+class GeneralFileEncoder(json.JSONEncoder):
+    ''' A JSON encoder for the serialization of general data.
+    '''
+    version = util.Version('1.0.0')
+
+    def __init__(self, **kwarg):
+        json.JSONEncoder.__init__(self, **kwarg)
+
+        # The logger.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # File format settings.
+        self.indent = 4
+        self.sort_keys = True
+
+    def default(self, obj):
+        ''' Convert pSysmon project objects to a dictionary.
+        '''
+        obj_class = obj.__class__.__name__
+        base_class = [x.__name__ for x in obj.__class__.__bases__]
+
+        self.logger.debug('obj_class: %s.', obj_class)
+        if obj_class == 'UTCDateTime':
+            d = self.convert_utcdatetime(obj)
+        elif obj_class == 'ndarray':
+            d = self.convert_ndarray(obj)
+        elif obj_class == 'type':
+            d = {}
+        else:
+            d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
+
+        self.logger.debug('d: %s', d)
+        return d
+
+    def convert_utcdatetime(self, obj):
+        return obj.isoformat()
+
+    def convert_ndarray(self, obj):
+        return obj.tolist()
 
