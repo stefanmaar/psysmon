@@ -57,7 +57,8 @@ class PreferencesManager:
             for cur_group in cur_page.groups:
                 settings[cur_page.name][cur_group.name] = {}
                 for cur_item in cur_group.items:
-                    settings[cur_page.name][cur_group.name][cur_item.name] = cur_item.settings
+                    if not isinstance(cur_item, ActionItem):
+                        settings[cur_page.name][cur_group.name][cur_item.name] = cur_item.settings
 
         return settings
 
