@@ -253,6 +253,7 @@ class ProcessingNode:
         '''
         settings = {}
         settings[self.name] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
         return settings
 
 
