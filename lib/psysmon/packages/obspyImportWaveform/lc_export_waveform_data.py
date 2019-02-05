@@ -25,6 +25,7 @@ import numpy as np
 import obspy.core.util.base
 
 
+import psysmon.core.util as util
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -287,7 +288,9 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                                            orig_channel)
 
                 if event:
-                    dest_path = os.path.join(dest_dir, 'event_%010d' % event.db_id)
+                    dest_path = os.path.join(dest_dir,
+                                             'event_%010d_%s' % (event.db_id,
+                                                                 event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
                 else:
                     dest_path = dest_dir
 
@@ -304,20 +307,47 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     self.logger.exception(e)
 
         if event:
-            dest_path = os.path.join(dest_dir, 'event_%010d' % event.db_id)
-            self.plot_data(stream, dest_path, 'event_%010d' % event.db_id)
+            dest_path = os.path.join(dest_dir,
+                                     'event_%010d_%s' % (event.db_id,
+                                                         event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
+            self.plot_data(stream,
+                           dest_path,
+                           event)
 
 
-    def plot_data(self, stream, dest_path, title):
+    def plot_data(self, stream, dest_path, event):
         ''' Plot the data of the sourcemap stations.
         '''
-        fig = plt.figure(figsize = (6.4, 8.8))
+        title = 'event_%010d (%s)' % (event.db_id,
+                                      event.start_time.isoformat())
+        detection_scnl = [x.scnl for x in event.detections]
+
         n_plots = len(stream)
+        fig = plt.figure(figsize = (20 / 2.54, n_plots * 2))
         for k, cur_trace in enumerate(stream):
             ax = fig.add_subplot(n_plots, 1, k+1)
+
+            # Plot the trace data.
             cur_data = cur_trace.data
             cur_time = cur_trace.times()
             ax.plot(cur_time, cur_data)
+
+            # Add the event limit lines.
+            ax.axvspan(event.start_time - cur_trace.stats.starttime,
+                       event.end_time - cur_trace.stats.starttime,
+                       color = 'xkcd:light grey')
+
+            # Add the detection limits if available for the current trace.
+            if util.traceid_to_scnl(cur_trace.id) in detection_scnl:
+                detection_list = [x for x in event.detections if x.scnl == util.traceid_to_scnl(cur_trace.id)]
+                for cur_detection in detection_list:
+                    ax.axvspan(cur_detection.start_time - cur_trace.stats.starttime,
+                               cur_detection.end_time - cur_trace.stats.starttime,
+                               color = 'xkcd:eggshell')
+
+
+
+            # Add the SCNL text.
             ax.text(x = 0.99, y = 0.5,
                     s = cur_trace.id,
                     transform = ax.transAxes,
@@ -326,21 +356,39 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     horizontalalignment = 'right',
                     bbox = dict(facecolor='white', alpha=0.6))
 
+
+
             ax.set_xlim((cur_time[0], cur_time[-1]))
             max_data = np.max(np.abs(cur_data))
             ax.set_ylim((-max_data, max_data))
+            if k == 0:
+                ax.set_title(title)
             if k < n_plots - 1:
                 ax.set_xticklabels([])
             if k == n_plots -1:
-                ax.set_ylabel('vel [$\mu m/s$]')
+                cur_unit = cur_trace.stats.unit
+                if cur_unit == 'm/s':
+                    cur_unit_label = 'vel. [m/s]'
+                elif cur_unit == 'm/s^2':
+                    cur_unit_label = 'accel. [m/s^2]'
+                elif cur_unit == 'counts':
+                    cur_unit_label = 'counts'
+                else:
+                    cur_unit_label = 'units unknown'
+
+                ax.set_ylabel(cur_unit_label)
 
         ax.set_xlabel('time [s]')
-        fig.suptitle(title)
+        fig.tight_layout()
         fig.subplots_adjust(hspace=0)
 
-        filename = title + '.png'
-        fig.savefig(os.path.join(dest_path, filename), dpi = 150)
+        filename = 'event_%010d_%s.png' % (event.db_id,
+                                           event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', ''))
+        fig.savefig(os.path.join(dest_path, filename),
+                    dpi = 150)
         fig.clear()
+        plt.close(fig)
+        plt.close('all')
         del fig
 
 
