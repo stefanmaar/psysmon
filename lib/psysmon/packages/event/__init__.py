@@ -32,7 +32,8 @@ collection_node_modules = ['import_bulletin',
                            'lc_detect_sta_lta',
                            'edit_detection_catalogs',
                            'lc_detection_binder',
-                           'lc_event_type_filter']
+                           'lc_event_type_filter',
+                           'cn_export_events']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugins_event_selector',
