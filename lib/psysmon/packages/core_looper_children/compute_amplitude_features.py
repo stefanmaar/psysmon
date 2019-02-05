@@ -91,19 +91,13 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
         '''
         # Create a table result.
         columns = ['max_abs', 'peak_to_peak', 'mean', 'std', 'median', 'snr', 'snr_max_mean', 'snr_max_max']
-        if 'event' in kwargs:
-            event_id = kwargs['event'].db_id
-            #columns = ['event_id'].extend(columns)
-        else:
-            result_postfix = None
         table_result = result.TableResult(name='amplitude features',
                                           key_name='scnl',
                                           start_time=process_limits[0],
                                           end_time=process_limits[1],
                                           origin_name=self.name,
                                           origin_resource=origin_resource,
-                                          column_names=columns,
-                                          event_id = event_id)
+                                          column_names=columns)
 
         for tr in stream.traces:
             if process_limits is not None:
@@ -152,7 +146,7 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
 
 
             cur_scnl = p_util.traceid_to_scnl(tr.id)
-            table_result.add_row(key = cur_scnl,
+            table_result.add_row(key = ':'.join(cur_scnl),
                                  max_abs = max_abs,
                                  peak_to_peak = peak_to_peak,
                                  mean = mean,
