@@ -30,11 +30,16 @@ The pSysmon result module.
 This module contains the pSysmon result system.
 '''
 
-import os
+import gzip
 import itertools
+import json
+import os
+import shutil
 import warnings
 
 import numpy as np
+
+import psysmon.core.json_util as json_util
 
 
 class ResultBag(object):
@@ -254,6 +259,12 @@ class Result(object):
         if self.sub_directory:
             output_dir = os.path.join(output_dir, *self.sub_directory)
 
+        # TODO: Make the sub-directory structure user
+        # selectable.
+        year = str(self.start_time.year)
+        doy = str(self.start_time.julday)
+        #output_dir = os.path.join(output_dir, year, doy)
+
         return output_dir
 
 
@@ -368,7 +379,7 @@ class TableResult(Result):
 
 
         export_values = []
-        for cur_row in self.rows:
+        for cur_row in sorted(self.rows, key=lambda x: x.key):
             if self.event_id:
                 cur_values = [cur_row.key, self.event_id, self.start_time.isoformat(), self.end_time.isoformat()]
             else:
@@ -613,11 +624,44 @@ class ShelveResult(Result):
         db.update(self.db)
         db.close()
 
+        # Compress the shelve file.
+        zip_filename = filename + '.gz'
+        with open(filename, 'rb') as f_in, gzip.open(zip_filename, 'wt') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
 
+class JsonResult(Result):
+    ''' A json dictionary result.
+    '''
+    def __init__(self, data, **kwargs):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        db : Dictionary
+            The pickle-able instances.
+        '''
+        Result.__init__(self, **kwargs)
+
+        # TODO: Add a check if the data is serializable with json.
+        self.data = data
+
+        self.filename_ext = 'json'
 
 
+    def save(self):
+        ''' Save the result as a shelve file.
+        '''
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
+        filename = os.path.join(self.output_dir, self.filename)
+        if isinstance(filename, unicode):
+            filename = filename.encode(encoding = 'utf-8')
 
-
+        # Compress the shelve file.
+        with gzip.open(filename + '.gz', 'wt') as jsonfile:
+            json.dump(self.data,
+                      fp = jsonfile,
+                      cls = json_util.GeneralFileEncoder)
 
