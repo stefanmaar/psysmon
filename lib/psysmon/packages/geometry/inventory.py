@@ -43,8 +43,6 @@ except:
 import numpy as np
 import warnings
 import logging
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
 from operator import attrgetter
 
 class Inventory(object):
@@ -980,9 +978,11 @@ class RecorderStream(object):
             self.parent_recorder.has_changed =  True
 
         # Send an inventory update event.
-        msgTopic = 'inventory.update.stream'
-        msg = (self, name, value)
-        pub.sendMessage(msgTopic, msg)
+        # TODO: The sending of the pub messages should be done somewhere else.
+        # A GUI related method should be used for that.
+        #msgTopic = 'inventory.update.stream'
+        #msg = (self, name, value)
+        #pub.sendMessage(msgTopic, msg)
 
 
     def __eq__(self, other):
@@ -1618,9 +1618,9 @@ class SensorComponent(object):
         self.logger.debug('Changing attribute %s of sensor %d', name, self.id)
 
         # Send an inventory update event.
-        msgTopic = 'inventory.update.sensor'
-        msg = (self, name, value)
-        pub.sendMessage(msgTopic, msg)
+        #msgTopic = 'inventory.update.sensor'
+        #msg = (self, name, value)
+        #pub.sendMessage(msgTopic, msg)
 
 
     def __eq__(self, other):
