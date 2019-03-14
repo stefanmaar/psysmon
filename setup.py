@@ -46,6 +46,7 @@ from setupExt import printStatus, printMessage, printLine, printRaw, \
 headless = False
 if "--headless" in sys.argv:
     headless = True
+    sys.argv.remove("--headless")
 
 
 # Get the current pSysmon version, author and description.
