@@ -42,6 +42,12 @@ from setupExt import printStatus, printMessage, printLine, printRaw, \
     checkForPackage, get_data_files
 
 
+# Check the commandline argument for the headless option.
+headless = False
+if "--headless" in sys.argv:
+    headless = True
+
+
 # Get the current pSysmon version, author and description.
 for line in open('lib/psysmon/__init__.py').readlines():
     if (line.startswith('__version__') 
@@ -100,8 +106,9 @@ requirements =[('mpl_toolkits.basemap', '1.0.7'),
                ('cairo', '1.8.8'),
                ('Pyro4', '4.32'),
                ('scipy', '0.13.1'),
-               ('sqlalchemy', '0.9.8'),
-               ('wx', '3.0.0')]
+               ('sqlalchemy', '0.9.8')]
+if not headless:
+    requirements.append[('wx', '3.0.0')]
 
 # Let the user know what's going on.
 printLine()
