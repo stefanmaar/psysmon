@@ -707,6 +707,11 @@ class Recorder(object):
         ''' Initialize the instance.
 
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         ## The recorder database id.
         self.id = id
 
@@ -875,6 +880,7 @@ class Recorder(object):
                 self.add_stream(cur_stream)
             else:
                 exist_stream = exist_stream[0]
+                self.logger.debug('Merging db stream %s (id: %d) with %s.', '-'.join([exist_stream.model, exist_stream.name]), exist_stream.id, '-'.join([cur_stream.model, cur_stream.name]))
                 exist_stream.merge(cur_stream)
 
 
@@ -1250,9 +1256,13 @@ class RecorderStream(object):
 
         # Replace existing parameters with the new ones.
         for cur_parameter in [x for x in self.parameters]:
+            self.logger.debug('Removing parameter %d.', cur_parameter.id)
             self.remove_parameter_by_instance(cur_parameter)
 
         for cur_parameter in merge_stream.parameters:
+            self.logger.debug('Adding parameter %s - %s.',
+                              cur_parameter.start_time_string,
+                              cur_parameter.end_time_string)
             self.add_parameter(cur_parameter)
 
 

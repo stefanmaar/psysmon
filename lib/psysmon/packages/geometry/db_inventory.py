@@ -919,6 +919,7 @@ class DbRecorderStream(RecorderStream):
         ''' Remove a parameter.
         '''
         RecorderStream.remove_parameter_by_instance(self, parameter_to_remove)
+        self.logger.debug('Removing DB parameter %d.', parameter_to_remove.id)
         self.orm.parameters.remove(parameter_to_remove.orm)
         self.parent_inventory.db_session.delete(parameter_to_remove.orm)
 
