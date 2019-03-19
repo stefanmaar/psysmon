@@ -710,7 +710,11 @@ class PsysmonDbWaveClient(WaveClient):
                         continue
 
                     for cur_trace in stream.traces:
-                        cur_data = self.get_traceheader_db_data(trace = cur_trace)
+                        try:
+                            cur_data = self.get_traceheader_db_data(trace = cur_trace)
+                        except Exception:
+                            self.logger.exception("Error while getting the database data for trace %s. Skipping this trace.", cur_trace)
+                            continue
                         if cur_data:
                             cur_datafile.traceheaders.append(cur_data)
 
