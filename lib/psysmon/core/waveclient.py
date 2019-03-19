@@ -696,12 +696,19 @@ class PsysmonDbWaveClient(WaveClient):
                                                              waveform_dir = selected_wf_dir)
 
                     if not cur_datafile:
-                        self.logger.error("Couldn't create the datafile database data. Skipping this file.")
+                        self.logger.error("Couldn't create the datafile database data. Skipping file %s.",
+                                          file_path)
                         continue
 
-                    stream = read(pathname_or_url = file_path,
-                                  format = file_format,
-                                  headonly = True)
+                    try:
+                        stream = read(pathname_or_url = file_path,
+                                      format = file_format,
+                                      headonly = True)
+                    except Exception:
+                        self.logger.exception("Error while reading the header from file %s. Skipping this file",
+                                              file_path)
+                        continue
+
                     for cur_trace in stream.traces:
                         cur_data = self.get_traceheader_db_data(trace = cur_trace)
                         if cur_data:
