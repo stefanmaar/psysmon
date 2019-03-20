@@ -523,9 +523,15 @@ class PsysmonDbWaveClient(WaveClient):
                     #                       starttime = start_time,
                     #                       endtime = end_time,
                     #                       dtype = 'float64')
-                    cur_data_stream = read(pathname_or_url = filename,
-                                           format = curHeader.file_type,
-                                           dtype = 'float64')
+                    try:
+                        cur_data_stream = read(pathname_or_url = filename,
+                                               format = curHeader.file_type,
+                                               dtype = 'float64')
+                    except Exception:
+                        self.logger.exception("Error loading the data file %s."
+                                              " Skipping this file.",
+                                              filename)
+                        continue
 
                     # If multiple channels are combined in one file, the
                     # read data stream might contain these channels. Select
