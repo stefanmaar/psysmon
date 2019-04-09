@@ -232,10 +232,15 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                     cur_export_row['time [UTC]'] = cur_blast['event_time'].isoformat()
                     cur_export_row['network_mag'] = round(cur_blast['magnitude']['network_mag'], 2)
                     cur_export_row['network_mag_std'] = round(cur_blast['magnitude']['network_mag_std'], 2)
-                    max_pgv = max(cur_blast['max_pgv']['data'].values())
-                    max_pgv_ind = cur_blast['max_pgv']['data'].values().index(max_pgv)
-                    cur_export_row['max_pgv [mm/s]'] = round(max_pgv * 1000, 3)
-                    cur_export_row['max_pgv_station'] = cur_blast['max_pgv']['data'].keys()[max_pgv_ind]
+                    if cur_blast['max_pgv']['data'].values():
+                        max_pgv = max(cur_blast['max_pgv']['data'].values())
+                        max_pgv_ind = cur_blast['max_pgv']['data'].values().index(max_pgv)
+                        cur_export_row['max_pgv [mm/s]'] = round(max_pgv * 1000, 3)
+                        cur_export_row['max_pgv_station'] = cur_blast['max_pgv']['data'].keys()[max_pgv_ind]
+                    else:
+                        cur_export_row['max_pgv [mm/s]'] = -9999
+                        cur_export_row['max_pgv_station'] = -9999
+
 
                     if 'max_pgv_3d' in cur_blast and 'DUBA:MSSNet:00' in cur_blast['max_pgv_3d']['data']:
                         cur_export_row['pgv_duba [mm/s]'] = round(cur_blast['max_pgv_3d']['data']['DUBA:MSSNet:00'] * 1000, 3)
