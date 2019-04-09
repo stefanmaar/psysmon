@@ -168,11 +168,9 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
                 cur_station = self.project.geometry_inventory.get_station(name = 'DUBAM')[0]
                 res_stations.append(cur_station)
 
-        self.logger.debug(res_stations)
-        self.logger.debug(res_stream)
-        self.logger.debug(res3d_stream)
-
-
+        self.logger.debug("res_stations: %s", res_stations)
+        self.logger.debug("res_stream: %s", res_stream)
+        self.logger.debug("res3d_stream: %s", res3d_stream)
 
         # Handle possible coordinate changes of station DUBAM.
         # If the field x_dubam_1 is set, the alternative DUBAM position is
@@ -200,15 +198,18 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Brueckl subtracts the station correction.
         proj_baumit = pyproj.Proj(init = 'epsg:' + quarry_blast[baumit_id]['epsg'])
         proj_wgs84 = pyproj.Proj(init = 'epsg:4326')
-        stat_lonlat = np.array([x.get_lon_lat() for x in res_stations])
-        stat_x, stat_y = pyproj.transform(proj_wgs84, proj_baumit, stat_lonlat[:,0], stat_lonlat[:,1])
-        stat_z = np.array([x.z for x in res_stations])
-        quarry_x = quarry_blast[baumit_id]['x']
-        quarry_y = quarry_blast[baumit_id]['y']
-        quarry_z = quarry_blast[baumit_id]['z']
-        hypo_dist = np.sqrt((stat_x - quarry_x)**2 + (stat_y - quarry_y)**2 + (stat_z - quarry_z)**2)
-        stat_corr = np.zeros(len(max_pgv))
-        magnitude = np.log10([x[1] * 1000 for x in max_pgv]) + 1.6 * np.log10(hypo_dist) - 2.074 + stat_corr
+        if res_stations:
+            stat_lonlat = np.array([x.get_lon_lat() for x in res_stations])
+            stat_x, stat_y = pyproj.transform(proj_wgs84, proj_baumit, stat_lonlat[:,0], stat_lonlat[:,1])
+            stat_z = np.array([x.z for x in res_stations])
+            quarry_x = quarry_blast[baumit_id]['x']
+            quarry_y = quarry_blast[baumit_id]['y']
+            quarry_z = quarry_blast[baumit_id]['z']
+            hypo_dist = np.sqrt((stat_x - quarry_x)**2 + (stat_y - quarry_y)**2 + (stat_z - quarry_z)**2)
+            stat_corr = np.zeros(len(max_pgv))
+            magnitude = np.log10([x[1] * 1000 for x in max_pgv]) + 1.6 * np.log10(hypo_dist) - 2.074 + stat_corr
+        else:
+            magnitude = []
 
 
         # Compute the PSD.
