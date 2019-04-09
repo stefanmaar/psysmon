@@ -28,26 +28,17 @@ The pSysmon main program.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
-import matplotlib as mpl
-mpl.rcParams['backend'] = 'WXAgg'
-
-import psysmon
-from psysmon.core.waveclient import PsysmonDbWaveClient
-from psysmon.core.waveclient import EarthwormWaveclient
-from psysmon.core.waveclient import SeedlinkWaveclient
-import psysmon.core.base as psybase
-import sys
-import shelve
-import wx
 import logging
 import os
+import sys
+import shelve
 
-class ExecutionFrame(wx.Frame):
 
-    def __init__(self, collection):
-        wx.Frame.__init__(self, None, wx.ID_ANY, 'Execution frame')
-        #wx.CallAfter(collection.execute, 'halloooo')
-
+#class ExecutionFrame(wx.Frame):
+#
+#    def __init__(self, collection):
+#        wx.Frame.__init__(self, None, wx.ID_ANY, 'Execution frame')
+#        #wx.CallAfter(collection.execute, 'halloooo')
 
 
 if __name__ == "__main__":
@@ -55,6 +46,16 @@ if __name__ == "__main__":
     # The process name and the temp. file are passes as arguments. 
     filename = sys.argv[1]
     proc_name = sys.argv[2]
+    backend = sys.argv[3]
+
+    import matplotlib as mpl
+    mpl.rcParams['backend'] = backend
+
+    import psysmon
+    from psysmon.core.waveclient import PsysmonDbWaveClient
+    from psysmon.core.waveclient import EarthwormWaveclient
+    from psysmon.core.waveclient import SeedlinkWaveclient
+    import psysmon.core.base as psybase
 
     filename = filename.decode('utf8')
     proc_name = proc_name.decode('utf8')

@@ -1557,7 +1557,17 @@ class User:
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
             #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
             #                        stdout=subprocess.PIPE)
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
+            # TODO: Handle the matplotlib backend in the cecSubProcess whether
+            # psysmon or psysmomat is used. The matplotlib backend is set in
+            # the psysmon or psysmomat script. cecSubProcess is another process
+            # and the matplotlib is set there.
+            import matplotlib as mpl
+            backend = mpl.rcParams['backend']
+            proc = subprocess.Popen([sys.executable,
+                                     os.path.join(cecPath, 'cecSubProcess.py'),
+                                     filename,
+                                     col2Proc.procName,
+                                     backend])
 
             msgTopic = "state.collection.execution"
             msg = {}
