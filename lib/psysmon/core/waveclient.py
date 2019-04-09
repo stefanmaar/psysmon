@@ -1132,7 +1132,13 @@ class SeedlinkWaveclient(WaveClient):
                     # way will be to to use the stream name as
                     # NETWORK:LOCATION:CHANNEL as listed in the miniseed
                     # header.
-                    stream = self.client.get_waveforms(network = 'AT',
+                    if cur_rec_stream.serial.startswith('AT'):
+                        orig_network = 'AT'
+                    elif cur_rec_stream.serial == 'DUBAM':
+                        orig_network = 'AT'
+                    else:
+                        orig_network = 'XX'
+                    stream = self.client.get_waveforms(network = orig_network,
                                                        station = cur_rec_stream.serial,
                                                        location = orig_location,
                                                        channel = orig_channel,
