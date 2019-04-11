@@ -259,9 +259,6 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         self.logger.debug("The event to export: %s.", event)
 
         for cur_channel in channels:
-            if len(cur_channel.streams) > 1:
-                self.logger.error("Can't handle multiple assigned streams. Skipping channel %s.", cur_channel.scnl)
-                continue
             for cur_rec_stream_tb in cur_channel.streams:
                 cur_rec_stream = cur_rec_stream_tb.item
                 orig_serial = cur_rec_stream.serial
