@@ -587,6 +587,9 @@ class Project(object):
         collection = self.getActiveCollection()
         data_sources = collection.data_sources
 
+        self.logger.debug('Requesting data for scnl: %s.', scnl)
+        self.logger.debug('data_sources: %s.', data_sources)
+
         stream = obspy.core.Stream()
 
         waveclients = [data_sources[x] for x in scnl]
