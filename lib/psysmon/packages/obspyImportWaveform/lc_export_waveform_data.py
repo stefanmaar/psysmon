@@ -262,52 +262,53 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
             if len(cur_channel.streams) > 1:
                 self.logger.error("Can't handle multiple assigned streams. Skipping channel %s.", cur_channel.scnl)
                 continue
-            cur_rec_stream = cur_channel.streams[0].item
-            orig_serial = cur_rec_stream.serial
-            tmp = cur_rec_stream.name.split(':')
-            orig_loc = tmp[0]
-            orig_channel = tmp[1]
-            orig_net = cur_channel.parent_station.network
+            for cur_rec_stream_tb in cur_channel.streams:
+                cur_rec_stream = cur_rec_stream_tb.item
+                orig_serial = cur_rec_stream.serial
+                tmp = cur_rec_stream.name.split(':')
+                orig_loc = tmp[0]
+                orig_channel = tmp[1]
+                orig_net = cur_channel.parent_station.network
 
-            cur_stream = stream.select(network = cur_channel.parent_station.network,
-                                       station = cur_channel.parent_station.name,
-                                       location = cur_channel.parent_station.location,
-                                       channel = cur_channel.name)
-            cur_stream = cur_stream.split()
-            for cur_trace in cur_stream:
-                cur_trace.stats.network = orig_net
-                cur_trace.stats.station = orig_serial
-                cur_trace.stats.location = orig_loc
-                cur_trace.stats.channel = orig_channel
-                cur_start = cur_trace.stats.starttime
-                filename = '%d_%03d_%02d%02d%02d_%s_%s_%s_%s.msd' % (cur_start.year,
-                                                           cur_start.julday,
-                                                           cur_start.hour,
-                                                           cur_start.minute,
-                                                           cur_start.second,
-                                                           orig_net,
-                                                           orig_serial,
-                                                           orig_loc,
-                                                           orig_channel)
+                cur_stream = stream.select(network = cur_channel.parent_station.network,
+                                           station = cur_channel.parent_station.name,
+                                           location = cur_channel.parent_station.location,
+                                           channel = cur_channel.name)
+                cur_stream = cur_stream.split()
+                for cur_trace in cur_stream:
+                    cur_trace.stats.network = orig_net
+                    cur_trace.stats.station = orig_serial
+                    cur_trace.stats.location = orig_loc
+                    cur_trace.stats.channel = orig_channel
+                    cur_start = cur_trace.stats.starttime
+                    filename = '%d_%03d_%02d%02d%02d_%s_%s_%s_%s.msd' % (cur_start.year,
+                                                               cur_start.julday,
+                                                               cur_start.hour,
+                                                               cur_start.minute,
+                                                               cur_start.second,
+                                                               orig_net,
+                                                               orig_serial,
+                                                               orig_loc,
+                                                               orig_channel)
 
-                if event:
-                    dest_path = os.path.join(dest_dir,
-                                             'event_%010d_%s' % (event.db_id,
-                                                                 event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
-                else:
-                    dest_path = dest_dir
+                    if event:
+                        dest_path = os.path.join(dest_dir,
+                                                 'event_%010d_%s' % (event.db_id,
+                                                                     event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
+                    else:
+                        dest_path = dest_dir
 
-                dest_path = os.path.join(dest_path, str(cur_start.year), str(cur_start.julday), orig_serial)
+                    dest_path = os.path.join(dest_path, str(cur_start.year), str(cur_start.julday), orig_serial)
 
 
-                if not os.path.exists(dest_path):
-                    os.makedirs(dest_path)
+                    if not os.path.exists(dest_path):
+                        os.makedirs(dest_path)
 
-                file_path = os.path.join(dest_path, filename)
-                try:
-                    cur_trace.write(file_path, format = export_format)
-                except Exception as e:
-                    self.logger.exception(e)
+                    file_path = os.path.join(dest_path, filename)
+                    try:
+                        cur_trace.write(file_path, format = export_format)
+                    except Exception as e:
+                        self.logger.exception(e)
 
         if event:
             dest_path = os.path.join(dest_dir,
