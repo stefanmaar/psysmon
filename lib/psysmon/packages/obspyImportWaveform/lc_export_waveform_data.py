@@ -254,6 +254,9 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         dest_dir = self.pref_manager.get_value('folder')
 
         stream.sort()
+        self.logger.debug("Using stream: %s.", stream)
+        self.logger.debug("The channels to export: %s.", channels)
+        self.logger.debug("The event to export: %s.", event)
 
         for cur_channel in channels:
             if len(cur_channel.streams) > 1:
