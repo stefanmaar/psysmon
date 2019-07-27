@@ -79,6 +79,7 @@ packages = [
 # Define the scripts to be processed.
 # TODO: Scan the scripts folder of all packages.
 scripts = ['scripts/psysmon',
+           'scripts/psysmomat',
            'lib/psysmon/packages/reftek/scripts/rt2ms']
 
 # Define some package data.
