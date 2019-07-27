@@ -123,6 +123,9 @@ if sys.platform == 'win32':
 printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
 
+if headless:
+    printStatus("Headless option set.")
+
 
 requirements_fullfilled = True
 for cur_name, cur_version in requirements:
