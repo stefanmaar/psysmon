@@ -109,7 +109,7 @@ requirements =[('mpl_toolkits.basemap', '1.0.7'),
                ('scipy', '0.13.1'),
                ('sqlalchemy', '0.9.8')]
 if not headless:
-    requirements.append[('wx', '3.0.0')]
+    requirements.append(('wx', '3.0.0'))
 
 # Let the user know what's going on.
 printLine()
