@@ -253,7 +253,7 @@ def handle_info_command(args, logger):
 
 
     if os.path.exists(project_file):
-        project = psysmomat.core.project.load_project_from_file(project_file)
+        project = psysmon.core.project.load_project_from_file(project_file)
     else:
         logger.error("The project file %s doesn't exist.", project_file)
         return
