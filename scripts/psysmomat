@@ -238,7 +238,7 @@ def handle_update_command(args, logger):
 
 def handle_info_command(args, logger):
     if args.project is None:
-        project_files = glob.glob(os.path.join(os.getcwd(), '*.prj'))
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
 
         if len(project_files) == 0:
             logger.error('No project file found in the current directory.')
@@ -249,7 +249,7 @@ def handle_info_command(args, logger):
         else:
             project_file = project_files[0]
     else:
-        project_file = os.path.join(args.project, args.project + '.prj')
+        project_file = os.path.join(args.project, args.project + '.ppr')
 
 
     if os.path.exists(project_file):
