@@ -464,7 +464,8 @@ class Base(object):
         return True
 
 
-    def load_json_project(self, filename, user_name = None, user_pwd = None, update_db = True):
+    def load_json_project(self, filename, user_name = None, user_pwd = None,
+                          update_db = True, db_host = None):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
@@ -498,6 +499,10 @@ class Base(object):
         if not self.project:
             self.logger.error("Couldn't load the project file using the decoder.")
             return False
+
+        if db_host is not None:
+            # Override the project database host name.
+            self.project.dbHost = db_host
 
         # Set some runtime dependent variables.
         self.project.psybase = self
