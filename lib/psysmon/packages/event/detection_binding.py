@@ -114,8 +114,8 @@ class DetectionBinder(object):
 
             #TODO: The neighbors should contain only stations which have been
             # selected for binding the detections. 
-            n_neighbors = 20
-            min_match_neighbors = 1
+            n_neighbors = 2
+            min_match_neighbors = 2
             #max_neighbor_dist = 10000.          # The maximum distance to a neighbor station.
             neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
             #neighbors = [x for x in neighbors if x[1] <= max_neighbor_dist]
@@ -204,7 +204,7 @@ class DetectionBinder(object):
         '''
         # TODO: Make this a user preference.
         # The minimum length of the search window.
-        min_search_win = 0.5
+        min_search_win = 0.2
 
         # TODO: Use a standard earth model to compute the search windows. Use
         # the P and S phases to determine the window width.
