@@ -307,9 +307,13 @@ def handle_execute_command(args, logger):
 
     psybase = test_util.create_psybase();
     try:
+        db_host = None
+        if args.db_host:
+            db_host = args.db_host
         load_success = psybase.load_json_project(project_file,
                                                 user_name,
-                                                user_pwd)
+                                                user_pwd,
+                                                db_host = db_host)
         # Set the log level.
         psybase.pref_manager.set_value('main_loglevel', 'DEBUG')
         psybase.pref_manager.set_value('shell_loglevel', 'ERROR')
@@ -319,8 +323,6 @@ def handle_execute_command(args, logger):
             # Set the global time span of the collection.
             psybase.project.getActiveCollection().runtime_att.start_time = utcdatetime.UTCDateTime(args.starttime)
             psybase.project.getActiveCollection().runtime_att.end_time = utcdatetime.UTCDateTime(args.endtime)
-        if args.db_host:
-            psybase.project.dbHost = args.db_host
         psybase.project.executeCollection()
     finally:
         psybase.stop_project_server()
