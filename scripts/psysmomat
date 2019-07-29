@@ -289,12 +289,16 @@ def handle_execute_command(args, logger):
         user_pwd = args.passphrase
 
     if not args.project_file:
+        # TODO: Handle the search for a project file in a central function.
         # Try to get the project file from the current directory.
         project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
         if len(project_files) == 1:
             project_file = project_files[0]
+        elif len(project_files) == 0:
+            logger.error('No project file found in the current directory.')
+            return
         else:
-            logger.error('More than one project file found in the current directory.')
+            logger.error('More than one project file found in the current directory: %s', project_files)
             return
     else:
         project_file = args.project_file
