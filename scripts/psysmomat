@@ -297,6 +297,7 @@ def handle_execute_command(args, logger):
         project_file = args.project_file
 
 
+
     psybase = test_util.create_psybase();
     try:
         load_success = psybase.load_json_project(project_file,
@@ -311,6 +312,8 @@ def handle_execute_command(args, logger):
             # Set the global time span of the collection.
             psybase.project.getActiveCollection().runtime_att.start_time = utcdatetime.UTCDateTime(args.starttime)
             psybase.project.getActiveCollection().runtime_att.end_time = utcdatetime.UTCDateTime(args.endtime)
+        if args.db_host:
+            psybase.project.dbHost = args.db_host
         psybase.project.executeCollection()
     finally:
         psybase.stop_project_server()
@@ -425,6 +428,8 @@ if __name__ == '__main__':
                             type = str, metavar = 'STARTTIME')
     parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
                             type = str, metavar = 'ENDTIME')
+    parser_execute.add_argument('-d', '--db_host', help = 'The host on which the mysql server is running.',
+                                type = str, metavar = 'HOST', default = 'localhost')
 
 
     # Create the parser for the 'update' command.
