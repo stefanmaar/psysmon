@@ -134,6 +134,7 @@ def handle_import_geometry_command(args, logger):
             project_file = project_files[0]
         elif len(project_files) == 0:
             logger.error('No project file found in the current directory.')
+            return
         else:
             logger.error('More than one project file found in the current directory: %s', project_files)
             return
