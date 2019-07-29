@@ -99,6 +99,7 @@ class DetectionBinder(object):
 
             # Get the search windows for the detection combinations.
             search_windows = self.get_search_window(first_detection, next_detections)
+            self.logger.debug('Search windows: %s', search_windows)
 
             # Get the detections matching the search window.
             window_extend = 1.
