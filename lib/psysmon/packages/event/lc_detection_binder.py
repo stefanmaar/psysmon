@@ -26,6 +26,8 @@ import psysmon.packages.event.detect as detect
 import psysmon.packages.event.detection_binding as detection_binding
 import psysmon.packages.event.core as event_core
 
+#from profilehooks import profile
+
 
 class DetectionBinder(package_nodes.LooperCollectionChildNode):
     ''' Detect events using STA/LTA algorithm.
@@ -141,6 +143,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
             raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)
 
 
+    #@profile(immediate=True)
     def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
         ''' Execute the stack node.
 
@@ -152,6 +155,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # Load the detections for the processing timespan.
         # TODO: Make the minimum detection length a user preference.
         min_detection_length = 0.5
+        self.logger.info('Loading the detections.')
         self.detection_catalog.load_detections(project = self.project,
                                                start_time = process_limits[0],
                                                end_time = process_limits[1],
@@ -163,6 +167,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # TODO: This could be moved to the initialize method.
         stations = [x.parent_station for x in channels]
         stations = list(set(stations))
+        self.logger.info('Initializing the Binder.')
         binder = detection_binding.DetectionBinder(event_catalog = self.event_catalog,
                                                    stations = stations,
                                                    author_uri = self.project.activeUser.author_uri,
@@ -182,19 +187,20 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.detection_catalog.remove_detections(keep_detections)
 
         # Bind the detections
-        self.logger.debug('Binding the detections.')
+        self.logger.info('Binding the detections.')
         binder.bind(catalog = self.detection_catalog,
                     channel_scnl = [x.scnl for x in channels])
 
         # Store the unprocessed detection in the catalog for the next step.
-        self.logger.debug('Cleaning the detection catalog.')
+        self.logger.info('Cleaning the detection catalog.')
         self.detection_catalog.clear_detections()
         self.detection_catalog.add_detections(keep_detections)
 
         # Write the events of the binder to the database and clear the
         # binder event catalog.
-        self.logger.debug('Writing the events to the database.')
-        binder.event_catalog.write_to_database(self.project)
+        self.logger.info('Writing the events to the database.')
+        binder.event_catalog.write_to_database(self.project,
+                                               bulk_insert = True)
         binder.event_catalog.clear_events()
 
 

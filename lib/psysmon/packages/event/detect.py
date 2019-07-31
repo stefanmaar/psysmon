@@ -211,6 +211,39 @@ class Detection(object):
             else:
                 raise RuntimeError("The detection with ID=%d was not found in the database.", self.db_id)
 
+    def get_db_orm(self, project):
+        ''' Get an orm representation to use it for bulk insertion into
+        the database.
+        '''
+        db_detection_orm = project.dbTables['detection']
+
+        if self.creation_time is not None:
+            creation_time = self.creation_time.isoformat()
+        else:
+            creation_time = None
+
+        if self.parent is not None:
+            catalog_id = self.parent.db_id
+        else:
+            catalog_id = None
+
+        labels = ['catalog_id', 'rec_stream_id',
+                  'start_time', 'end_time',
+                  'method', 'agency_uri',
+                  'author_uri', 'creation_time']
+        db_dict = dict(zip(labels,
+                           (catalog_id,
+                            self.rec_stream_id,
+                            self.start_time.timestamp,
+                            self.end_time.timestamp,
+                            self.method,
+                            self.agency_uri,
+                            self.author_uri,
+                            creation_time)))
+        db_detection = db_detection_orm(**db_dict)
+        db_detection.id = self.db_id
+        return db_detection
+
     @classmethod
     def from_db_detection(cls, detection_orm):
         ''' Convert a database orm mapper detection to a detection.
@@ -368,6 +401,7 @@ class Catalog(object):
             cur_detection.channel = channels[cur_detection.rec_stream_id]
 
 
+    #@profile(immediate=True)
     def load_detections(self, project, start_time = None, end_time = None,
                         min_detection_length = None):
         ''' Load detections from the database.
@@ -720,7 +754,6 @@ class StaLtaDetector:
         self.valid_ind = self.n_lta + self.n_sta
 
 
-    #@profile
     def compute_event_limits(self, stop_delay = 0):
         ''' Compute the event start and end times based on the detection functions.
 

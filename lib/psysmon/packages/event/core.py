@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
 import logging
 import warnings
 
@@ -25,6 +26,8 @@ import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
 import psysmon.packages.event.detect as detect
+
+#from profilehooks import profile
 
 class Event(object):
 
@@ -141,6 +144,7 @@ class Event(object):
             cur_detection.channel = channels[cur_detection.rec_stream_id]
 
 
+    #@profile(immediate=True)
     def write_to_database(self, project):
         ''' Write the event to the pSysmon database.
         '''
@@ -228,6 +232,54 @@ class Event(object):
                 self.changed = False
             else:
                 raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
+
+    def get_db_orm(self, project):
+        ''' Get an orm representation to use it for bulk insertion into
+        the database.
+        '''
+        db_event_orm_class = project.dbTables['event']
+        d2e_orm_class = project.dbTables['detection_to_event']
+
+        if self.creation_time is not None:
+            cur_creation_time = self.creation_time.isoformat()
+        else:
+            cur_creation_time = None
+
+        if self.parent is not None:
+            catalog_id = self.parent.db_id
+        else:
+            catalog_id = None
+
+        labels = ['ev_catalog_id', 'start_time', 'end_time',
+                  'public_id', 'description', 'comment', 'tags',
+                  'ev_type_id', 'ev_type_certainty', 'pref_origin_id',
+                  'pref_magnitude_id', 'pref_focmec_id', 'agency_uri',
+                  'author_uri', 'creation_time']
+        db_dict = dict(zip(labels,
+                           (catalog_id,
+                            self.start_time.timestamp,
+                            self.end_time.timestamp,
+                            self.public_id,
+                            self.description,
+                            self.comment,
+                            ','.join(self.tags),
+                            self.event_type,
+                            self.event_type_certainty,
+                            None,
+                            None,
+                            None,
+                            self.agency_uri,
+                            self.author_uri,
+                            cur_creation_time)))
+        db_event = db_event_orm_class(**db_dict)
+
+        for cur_detection in self.detections:
+            cur_d2e_orm = d2e_orm_class(ev_id = None,
+                                        det_id = cur_detection.db_id)
+            #cur_d2e_orm.detection = cur_detection.get_db_orm(project)
+            db_event.detections.append(cur_d2e_orm)
+
+        return db_event
 
     @classmethod
     def from_db_event(cls, db_event):
@@ -346,9 +398,10 @@ class Catalog(object):
         return ret_events
 
 
-
-
-    def write_to_database(self, project, only_changed_events = True):
+    #@profile(immediate=True)
+    def write_to_database(self, project,
+                          only_changed_events = True,
+                          bulk_insert = False):
         ''' Write the catalog to the database.
 
         '''
@@ -396,8 +449,34 @@ class Catalog(object):
 
 
         # Write or update all events of the catalog to the database.
-        for cur_event in [x for x in self.events if x.changed is True]:
-            cur_event.write_to_database(project)
+        if bulk_insert:
+            db_data = self.get_events_db_data(project = project)
+            db_session = project.getDbSession()
+            try:
+                assigned_detections = [x.detections for x in db_data]
+
+                for cur_db_data in db_data:
+                    cur_db_data.detections = []
+
+                db_session.add_all(db_data)
+                db_session.flush()
+
+                for k, cur_db_data in enumerate(db_data):
+                    for cur_detection in assigned_detections[k]:
+                        cur_detection.ev_id = cur_db_data.id
+                db_session.add_all(itertools.chain.from_iterable(assigned_detections))
+                db_session.commit()
+            finally:
+                db_session.close()
+        else:
+            for cur_event in [x for x in self.events if x.changed is True]:
+                cur_event.write_to_database(project)
+
+    def get_events_db_data(self, project):
+        ''' Get a dictionary to bulk insert into the dabase.
+        '''
+        db_data = [x.get_db_orm(project) for x in self.events]
+        return db_data
 
 
     def load_events(self, project, start_time = None, end_time = None, event_id = None,
@@ -456,6 +535,12 @@ class Catalog(object):
         ''' Clear the events list.
         '''
         self.events = []
+
+
+    def write_to_csv(self, filepath):
+        ''' Write the events in the catalog to CSV file.
+        '''
+        pass
 
 
     @classmethod
