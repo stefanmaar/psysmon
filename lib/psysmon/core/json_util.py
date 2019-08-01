@@ -381,7 +381,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -392,7 +392,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -403,7 +403,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -414,7 +414,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -424,7 +424,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -438,7 +438,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -452,7 +452,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -619,7 +619,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -630,7 +630,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -641,7 +641,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -652,7 +652,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -662,7 +662,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -676,7 +676,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -690,7 +690,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -911,7 +911,7 @@ class ConfigFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -920,7 +920,7 @@ class ConfigFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -1225,7 +1225,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1236,7 +1236,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1247,7 +1247,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1258,7 +1258,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1268,7 +1268,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -1282,7 +1282,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -1398,7 +1398,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1409,7 +1409,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1420,7 +1420,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1431,7 +1431,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1441,7 +1441,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
@@ -1455,7 +1455,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in list(d.items()))
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
         if 'group' in iter(args.keys()):
