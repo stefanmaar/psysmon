@@ -57,11 +57,11 @@ if __name__ == "__main__":
     from psysmon.core.waveclient import SeedlinkWaveclient
     import psysmon.core.base as psybase
 
-    filename = filename.decode('utf8')
-    proc_name = proc_name.decode('utf8')
+    filename = filename
+    proc_name = proc_name
 
     # Get the execution parameters from the ced file.
-    db = shelve.open(filename.encode('utf8'))
+    db = shelve.open(filename)
     package_directories = db['package_directories']
     sys.path.extend(package_directories)
     project = db['project']

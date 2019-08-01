@@ -1550,7 +1550,8 @@ class User(object):
             #tmpDir = tempfile.gettempdir()
             filename = os.path.join(project.tmpDir, col2Proc.procName + '.ced')  # ced for Collection Execution Data
 
-            db = shelve.open(filename.encode('utf-8'), flag='n')
+            #db = shelve.open(filename.encode('utf-8'), flag='n')
+            db = shelve.open(filename, flag='n')
             db['project'] = project
             db['collection'] = col2Proc
             db['package_directories'] = project.psybase.packageMgr.packageDirectories
