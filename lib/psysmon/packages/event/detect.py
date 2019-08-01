@@ -423,7 +423,8 @@ class Catalog(object):
         try:
             detection_table = project.dbTables['detection']
             query = db_session.query(detection_table).\
-                    filter(detection_table.catalog_id == self.db_id)
+                    filter(detection_table.catalog_id == self.db_id).\
+                    filter(detection_table.end_time > detection_table.start_time)
 
             if start_time:
                 query = query.filter(detection_table.start_time >= start_time.timestamp)
