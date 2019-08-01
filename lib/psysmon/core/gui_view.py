@@ -1102,15 +1102,15 @@ class ViewAnnotationPanel(wx.Panel):
         self.SetMinSize((200, -1))
 
 
-	# Create a test label.
+        # Create a test label.
         self.label = wx.lib.stattext.GenStaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
         font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.label.SetFont(font)
 
-	# Add the label to the sizer.
-	sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Add the label to the sizer.
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
-	self.SetSizer(sizer)
+        self.SetSizer(sizer)
 
 
     def setLabel(self, text):
