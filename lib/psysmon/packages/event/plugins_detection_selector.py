@@ -120,8 +120,9 @@ class SelectDetection(OptionPlugin):
         '''
         hooks = {}
 
+        #hooks['time_limit_changed'] = self.load_detections
         hooks['after_plot'] = self.on_after_plot
-        #hooks['after_plot_station'] = self.on_after_plot_station
+        hooks['after_plot_station'] = self.on_after_plot_station
 
         return hooks
 
@@ -151,22 +152,28 @@ class SelectDetection(OptionPlugin):
         '''
         start_time = self.parent.displayManager.startTime
         end_time = self.parent.displayManager.endTime
+        self.logger.debug('Loading the detections from %s to %s....',
+                          start_time,
+                          end_time)
         self.selected_catalog.clear_detections()
         self.selected_catalog.load_detections(project = self.parent.project,
                                               start_time = start_time,
                                               end_time = end_time)
         self.selected_catalog.assign_channel(self.parent.project.geometry_inventory)
+        self.logger.debug('....done.')
 
 
     def on_after_plot(self):
         ''' The hook called after the plotting in tracedisplay.
         '''
+        self.logger.debug('on_after_plot')
         self.add_detection_marker_to_station(station = self.parent.displayManager.showStations)
 
 
     def on_after_plot_station(self, station):
         ''' The hook called after the plotting of a station in tracedisplay.
         '''
+        self.logger.debug('on_after_plot_station')
         self.add_detection_marker_to_station(station = station)
 
 
