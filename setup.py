@@ -98,11 +98,12 @@ data_files = []
 #dataFiles = ('artwork', ['lib/psysmon/artwork/splash/splash.png'])
 
 # Define the package requirements.
-requirements =[('mpl_toolkits.basemap', '1.0.7'),
-               ('lxml', '2.3.2'),
+requirements =[('lxml', '2.3.2'),
                ('matplotlib', '1.3.0'),
+               #('mpl_toolkits.basemap', '1.0.7'),
                ('numpy', '1.8.1'),
-               ('MySQLdb', '1.2.3'),
+               #('MySQLdb', '1.2.3'),
+               ('pymysql', '0.9.3'),
                ('obspy', '0.9.2'),
                ('pillow', '2.3.0'),
                ('cairo', '1.8.8'),
