@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 import nose.plugins.attrib as nose_attrib
@@ -149,8 +150,8 @@ class EditDialogTestCase(unittest.TestCase):
         #self.dlg.refit()
 
     def tearDown(self):
-        print self.property
-        print "Good by."
+        print(self.property)
+        print("Good by.")
 
     def testDlg(self):
         self.dlg.Show()

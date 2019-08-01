@@ -145,7 +145,7 @@ class PluginNode(object):
         if attrname in self.pref_manager.get_name():
             return self.pref_manager.get_value(attrname)
         else:
-            raise AttributeError, attrname
+            raise AttributeError(attrname)
 
 
     def register(self, parent):

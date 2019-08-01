@@ -907,7 +907,7 @@ class InventoryXmlParser(object):
     def keys_complete(self, node_content, required_keys):
         missing_keys = []
         for cur_key in required_keys:
-            if node_content.has_key(cur_key):
+            if cur_key in node_content:
                 continue
             else:
                 missing_keys.append(cur_key)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -50,9 +51,9 @@ class ConvertArchiveToMiniseedEditDlgTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print "stopping the project server..."
+        print("stopping the project server...")
         cls.psybase.stop_project_server()
-        print "...done.\n"
+        print("...done.\n")
 
 
     def setUp(self):

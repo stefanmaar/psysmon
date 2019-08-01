@@ -30,6 +30,7 @@ The package node base classes.
 This module contains the base classes of the nodes used in 
 the :mod:`~psysmon.core.packageSystem`.
 '''
+from __future__ import print_function
 
 import weakref
 import logging
@@ -312,7 +313,7 @@ class CollectionNode(object):
             The names of the variables to restore from the collection's 
             shelf.
         '''
-        print "Requiring data with name: %s and origin: %s" % (name, origin)
+        print("Requiring data with name: %s and origin: %s" % (name, origin))
         return self.parentCollection.unpickleData(name=name, origin=origin)
 
 

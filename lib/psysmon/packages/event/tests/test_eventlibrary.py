@@ -29,6 +29,7 @@ Test the event library.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
 '''
+from __future__ import print_function
 
 import unittest
 import logging
@@ -71,13 +72,13 @@ class EventLibraryTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.psybase.stop_project_server()
-        print "dropping database tables...\n"
+        print("dropping database tables...\n")
         drop_project_database_tables(cls.project)
-        print "removing temporary file structure....\n"
+        print("removing temporary file structure....\n")
         remove_project_filestructure(cls.project)
-        print "removing temporary base directory....\n"
+        print("removing temporary base directory....\n")
         os.removedirs(cls.project.base_dir)
-        print "....finished cleaning up.\n"
+        print("....finished cleaning up.\n")
 
     def setUp(self):
         pass

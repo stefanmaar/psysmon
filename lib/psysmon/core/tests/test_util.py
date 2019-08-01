@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import logging
 import unittest
@@ -24,7 +25,7 @@ class UtilTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print "....in tearDownClass.\n"
+        print("....in tearDownClass.\n")
 
 
     def setUp(self):

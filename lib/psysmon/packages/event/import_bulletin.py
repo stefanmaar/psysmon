@@ -28,6 +28,7 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import absolute_import
 
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
@@ -40,7 +41,7 @@ import wx
 import operator
 import logging
 import fnmatch
-import bulletin
+from . import bulletin
 
 class ImportBulletin(CollectionNode):
     ''' Import earthquake bulletin files into the database.

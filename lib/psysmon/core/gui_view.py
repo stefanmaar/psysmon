@@ -110,7 +110,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
         for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
+            ret_nodes = [x for x in ret_nodes if cur_key in x.props and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
         if recursive:
@@ -326,7 +326,7 @@ class ContainerNode(wx.Panel):
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
         for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
+            ret_nodes = [x for x in ret_nodes if cur_key in x.props and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
         if recursive:
@@ -576,7 +576,7 @@ class ViewContainerNode(wx.Panel):
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
         for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
+            ret_nodes = [x for x in ret_nodes if cur_key in x.props and getattr(x.props, cur_key) == cur_value]
 
         if node_type is not None:
             if node_type == 'view':

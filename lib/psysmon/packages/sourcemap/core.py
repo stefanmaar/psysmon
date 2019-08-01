@@ -27,6 +27,7 @@ The sourcemap module.
     GNU General Public License, Version 3 
     http://www.gnu.org/licenses/gpl-3.0.html
 '''
+from __future__ import print_function
 
 import logging
 import numpy as np
@@ -231,7 +232,7 @@ class Station(inventory.Station):
         nz = self.data.shape[1]
 
         weight = np.zeros((nx, ny, nz))
-        print "weight.shape: %s; %d total points; %d MB" % (str(weight.shape), weight.size, weight.nbytes / (1024 * 1024))
+        print("weight.shape: %s; %d total points; %d MB" % (str(weight.shape), weight.size, weight.nbytes / (1024 * 1024)))
 
         time = self.time[np.newaxis, np.newaxis,...]
         time = np.broadcast_to(time, (nx, ny, nz))

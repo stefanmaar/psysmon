@@ -32,6 +32,7 @@ A utility program to run psysmon tests.
 Examples
 -----------
 '''
+from __future__ import print_function
 
 import argparse
 import unittest
@@ -44,7 +45,7 @@ def getsuites(package_names):
 
     for cur_name in package_names:
         mod_path = 'psysmon.packages.%s.tests' % cur_name
-        print "Searching %s" % mod_path
+        print("Searching %s" % mod_path)
         cur_suites = testloader.loadTestsFromName(mod_path)
         suites.append(cur_suites)
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -337,7 +338,7 @@ class StaticBoxContainer(wx.Panel):
     def __del__(self):
         '''
         '''
-        print "Deleting StaticBoxContainer."
+        print("Deleting StaticBoxContainer.")
         for cur_field in self.fieldList:
             cur_field.pref_item.remove_gui_element(cur_field)
 

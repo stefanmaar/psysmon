@@ -29,6 +29,7 @@ The editGeometry module.
 
 This module contains the classes of the editGeometry dialog window.
 '''
+from __future__ import print_function
 
 import logging
 from threading import Thread
@@ -264,7 +265,7 @@ class EditGeometryDlg(wx.Frame):
             self.db_inventory.load()
             cur_inventory = self.db_inventory
         except Warning as w:
-                print w
+                print(w)
 
         self.inventories[cur_inventory.name] = cur_inventory
         self.inventoryTree.updateInventoryData()
@@ -321,7 +322,7 @@ class EditGeometryDlg(wx.Frame):
             try:
                 cur_inventory = inventory_parser.parse(path)
             except Warning as w:
-                    print w
+                    print(w)
 
             self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
@@ -351,7 +352,7 @@ class EditGeometryDlg(wx.Frame):
             try:
                 inventory_parser.export_xml(self.selected_inventory, path)
             except Warning as w:
-                    print w
+                    print(w)
 
 
     def onExportStations2Csv(self, event):
@@ -1893,7 +1894,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
                 for curStationTb in sorted(curArray.stations, key = attrgetter('name')):
                     curStationItem = self.AppendItem(curArrayItem, curStationTb.network + ':' + curStationTb.name + ':' + curStationTb.location_string)
-                    print curStationTb.item
+                    print(curStationTb.item)
                     self.SetItemPyData(curStationItem, curStationTb)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
 

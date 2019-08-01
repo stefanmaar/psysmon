@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # LICENSE
 #
 # This file is part of psysmomat.
@@ -33,7 +34,7 @@ from obspy.core.utcdatetime import UTCDateTime
 import obspy.core.stream
 import obspy.core.trace
 
-import RT_130_h
+from . import RT_130_h
 
 
 class RawFile(object):

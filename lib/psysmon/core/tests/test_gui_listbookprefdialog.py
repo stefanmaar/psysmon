@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 import nose.plugins.attrib as nose_attrib
@@ -31,13 +32,13 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
 
 
 
     @classmethod
     def tearDownClass(cls):
-        print "....in tearDownClass.\n"
+        print("....in tearDownClass.\n")
 
 
     def setUp(self):
@@ -170,7 +171,7 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
         dlg = ListbookPrefDialog(preferences = self.pref)
         dlg.ShowModal()
         dlg.Destroy()
-        print self.pref
+        print(self.pref)
         self.app.MainLoop()
 
 

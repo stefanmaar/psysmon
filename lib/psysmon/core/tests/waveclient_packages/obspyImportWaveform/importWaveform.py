@@ -29,6 +29,7 @@ The importWaveform module.
 
 This module contains the classes of the importWaveform dialog window.
 '''
+from __future__ import print_function
 
 import os
 import fnmatch
@@ -71,7 +72,7 @@ class ImportWaveform(CollectionNode):
         dlg.Show()
 
     def execute(self, prevNodeOutput={}):
-        print "Executing the node %s." % self.name
+        print("Executing the node %s." % self.name)
         dbData = []
         for curFile in self.pref_manager.get_value('input_files'):
             print("Processing file " + curFile[1])
@@ -83,10 +84,10 @@ class ImportWaveform(CollectionNode):
                              format = format,
                              headonly=True)
 
-            print stream
+            print(stream)
 
             for curTrace in stream.traces:
-                print "Importing trace " + curTrace.getId()
+                print("Importing trace " + curTrace.getId())
                 cur_data = self.getDbData(curFile[1], format, curTrace)
                 if cur_data is not None:
                     dbData.append(cur_data)
@@ -111,7 +112,7 @@ class ImportWaveform(CollectionNode):
                 wfDirId = curWfDir.id
                 break
 
-        print wfDirId
+        print(wfDirId)
 
         if wfDirId:
             # Remove the waveform directory from the file path.
@@ -130,11 +131,11 @@ class ImportWaveform(CollectionNode):
                             Trace.stats.starttime.timestamp,
                             None, None, None)))
 
-            print header2Insert
+            print(header2Insert)
 
             return Header(**header2Insert)
         else:
-            print "File %s is not inside a waveform directory. Skipping this trace." % filename
+            print("File %s is not inside a waveform directory. Skipping this trace." % filename)
             return None
 
 

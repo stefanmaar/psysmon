@@ -30,6 +30,7 @@ The pSysmon base module.
 
 This module contains the basic classes needed to run the pSysmon program.
 '''
+from __future__ import print_function
 #test
 import os
 import json
@@ -373,7 +374,7 @@ class Base(object):
 
             conn.execute('commit')
         except SQLAlchemyError as e:
-            print e
+            print(e)
             raise
         finally:
             conn.close()

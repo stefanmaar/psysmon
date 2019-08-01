@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -48,19 +49,19 @@ class CreatePsdImagesEditDlgTestCase(unittest.TestCase):
 
         cls.psybase = create_psybase()
         cls.project = create_full_project(cls.psybase)
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
 
 
     @classmethod
     def tearDownClass(cls):
         cls.psybase.stop_project_server()
-        print "dropping database tables...\n"
+        print("dropping database tables...\n")
         drop_project_database_tables(cls.project)
-        print "removing temporary file structure....\n"
+        print("removing temporary file structure....\n")
         remove_project_filestructure(cls.project)
-        print "removing temporary base directory....\n"
+        print("removing temporary base directory....\n")
         os.removedirs(cls.project.base_dir)
-        print "....finished cleaning up.\n"
+        print("....finished cleaning up.\n")
 
 
     def setUp(self):
@@ -79,7 +80,7 @@ class CreatePsdImagesEditDlgTestCase(unittest.TestCase):
 
 
     def tearDown(self):
-        print "\n\nEs war sehr schoen - auf Wiederseh'n.\n"
+        print("\n\nEs war sehr schoen - auf Wiederseh'n.\n")
 
     def test_dialog(self):
         self.node.edit()

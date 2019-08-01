@@ -193,7 +193,7 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
     def update_units_list(self):
         '''
         '''
-        if self.scan_summary.has_key('stream_list'):
+        if 'stream_list' in self.scan_summary:
             self.pref_manager.set_limit('unit_list', self.scan_summary['stream_list'])
 
 

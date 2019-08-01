@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -37,7 +38,7 @@ from psysmon.core.processingStack import ProcessingStack
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
-import container
+from . import container
 import psysmon.core.preferences_manager as pref_manager
 import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 import psysmon.core.plugins
@@ -1624,7 +1625,7 @@ class DisplayManager(object):
         chanContainer = stationContainer.get_node(channel = channel.name)
 
         if not chanContainer:
-            if self.channelColors.has_key(channel.name):
+            if channel.name in self.channelColors:
                 curColor = self.channelColors[channel.name]
             else:
                 curColor = (0, 0, 0)

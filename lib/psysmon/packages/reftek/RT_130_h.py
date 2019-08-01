@@ -7,6 +7,7 @@
 #   Steve Azevedo, July 2008
 #
 
+from __future__ import print_function
 import sys
 import exceptions
 import os
@@ -26,7 +27,7 @@ import psysmon.lib.rt_130_py as rt_130_py
 PROG_VERSION = '2009.264'
 
 def __version__ () :
-    print PROG_VERSION
+    print(PROG_VERSION)
     
 def pfloat () :
     PFLOAT = construct.Struct ("PFLOAT",
@@ -104,11 +105,11 @@ class PacketHeader (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in packet header.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in packet header.\n" % k)
         
     def get (self) :
         t = packet_header ()
@@ -195,11 +196,11 @@ class DT (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in data packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in data packet.\n" % k)
         
     def get (self) :
         t = data_packet ()
@@ -349,11 +350,11 @@ class EH (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in event header packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in event header packet.\n" % k)
         
     def get (self) :
         t = event_header ()
@@ -460,11 +461,11 @@ class SH (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in SOH packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in SOH packet.\n" % k)
         
     def get (self) :
         t = SOH_packet ()
@@ -608,11 +609,11 @@ class SC (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in station channel packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in station channel packet.\n" % k)
         
     def get (self) :
         t = station_channel ()
@@ -648,11 +649,11 @@ class AD (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in auxiliary data packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in auxiliary data packet.\n" % k)
         
     def get (self) :
         t = aux_data_parameter ()
@@ -801,11 +802,11 @@ class CD (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in auxiliary data packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in auxiliary data packet.\n" % k)
         
     def get (self) :
         t = cal_parameter ()
@@ -964,11 +965,11 @@ class DS (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in auxiliary data packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in auxiliary data packet.\n" % k)
         
     def get (self) :
         t = data_stream ()
@@ -1068,11 +1069,11 @@ class FD (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in filter description packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in filter description packet.\n" % k)
         
     def get (self) :
         t = filter_description ()
@@ -1127,7 +1128,7 @@ class FD (object) :
                 fiptr = fiptr + 8 + coeffptr
                 fd = self.parse (buf[fiptr:])
                 ibuf = fd.BIN.FilterInfo
-        except Exception, e :
+        except Exception as e :
                 sys.stderr.write ("Error parsing FD packet. This appears to be a bug!\n")
                 sys.stderr.write ("%s\n" % e)
                 F = []
@@ -1177,11 +1178,11 @@ class OM (object) :
             
     def set (self, keyval) :
         for k in keyval.keys () :
-            if self.__dict__.has_key (k) :
+            if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
                 #   XXX   Needs proper exception handling   XXX
-                raise HeaderError, "Warning: Attempt to set unknown variable %s in filter description packet.\n" % k
+                raise HeaderError("Warning: Attempt to set unknown variable %s in filter description packet.\n" % k)
         
     def get (self) :
         t = operating_mode ()
@@ -1263,7 +1264,7 @@ def main () :
             c = om.parse (buf)
             #print c
             
-    print "DT: %d EH: %d SH: %d SC: %d AD: %d CD: %d DS: %d FD: %d OM: %d\n" % (DTcnt, 
+    print("DT: %d EH: %d SH: %d SC: %d AD: %d CD: %d DS: %d FD: %d OM: %d\n" % (DTcnt, 
                                                                                 EHcnt, 
                                                                                 SHcnt,
                                                                                 SCcnt,
@@ -1271,7 +1272,7 @@ def main () :
                                                                                 CDcnt,
                                                                                 DScnt,
                                                                                 FDcnt,
-                                                                                OMcnt)
+                                                                                OMcnt))
     
 if __name__ == '__main__' :
     import os#, profile

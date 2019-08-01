@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -522,17 +523,17 @@ class OLD_ChannelContainer(wx.Panel):
         return False
 
     def onKeyDown(self, event):
-        print "onKeyDown in channel container."
+        print("onKeyDown in channel container.")
         event.ResumePropagation(30)
         event.Skip()
 
     def onEnterWindow(self, event):
-        print "Entered channel container."
+        print("Entered channel container.")
         self.SetFocus()
         self.Refresh()
 
     def onSetFocus(self, event):
-        print "onSetFocus in channel container."
+        print("onSetFocus in channel container.")
         event.Skip()
 
     def addView(self, view):
@@ -694,15 +695,15 @@ class OLD_StationContainer(wx.Panel):
 
 
     def onKeyDown(self, event):
-        print "onKeyDown in station container."
+        print("onKeyDown in station container.")
         event.ResumePropagation(30)
         event.Skip()
 
     def onSetFocus(self, event):
-        print "onSetFocus in station container."
+        print("onSetFocus in station container.")
 
     def onEnterWindow(self, event):
-        print "Entered station container."
+        print("Entered station container.")
         self.SetFocus()
         self.Refresh()
 
@@ -789,10 +790,10 @@ class OLD_StationContainer(wx.Panel):
         show_channels = [x for x in self.channels.itervalues()]
         if show_channels:
             stationSize = show_channels[0].GetMinSize()
-            print "stationSize: %s" % stationSize
+            print("stationSize: %s" % stationSize)
             stationSize[1] = stationSize[1] * len(show_channels)
             self.SetMinSize(stationSize)
-            print "self.MinSize: %s" % self.GetMinSize()
+            print("self.MinSize: %s" % self.GetMinSize())
 
         for curChannel in show_channels:
             if curChannel.show_channel:
@@ -1046,11 +1047,11 @@ class StationAnnotationArea(wx.Panel):
         self.draw(gc)
 
     def onSetFocus(self, event):
-        print "onSetFocus in station annotation"
+        print("onSetFocus in station annotation")
 
 
     def onKeyDown(self, event):
-        print "onKeyDown in station annotation"
+        print("onKeyDown in station annotation")
         event.ResumePropagation(1)
         event.Skip()
 
@@ -1149,7 +1150,7 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
 
     def onLeftDown(self, event):
-        print "##### LEFT DOWN IN VIEWPORT #######"
+        print("##### LEFT DOWN IN VIEWPORT #######")
 
     def onStationMsg(self, msg):
         if msg.topic == ('tracedisplay', 'display', 'station', 'hide'):

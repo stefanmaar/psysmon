@@ -30,6 +30,7 @@ The inventory module.
 This module contains the classed needed to build a pSysmon geometry 
 inventory.
 '''
+from __future__ import print_function
 
 import logging
 from psysmon.packages.geometry.inventory import Inventory
@@ -92,7 +93,7 @@ class DbInventory(Inventory):
     def __del__(self):
         ''' Clean up the database connection.
         '''
-        print "Deleting DbInventory - closing the session.\n"
+        print("Deleting DbInventory - closing the session.\n")
         self.db_session.close()
 
 
@@ -121,7 +122,7 @@ class DbInventory(Inventory):
     def close(self):
         ''' Close the inventory database connection.
         '''
-        print "Closing the session.\n"
+        print("Closing the session.\n")
         self.db_session.close()
 
 

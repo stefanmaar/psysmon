@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -259,7 +260,7 @@ class ActionHistory(object):
         ''' Register an action in the history.
 
         '''
-        print "Registering action: " + action.style
+        print("Registering action: " + action.style)
         self.actions.append(action)
 
 
@@ -267,7 +268,7 @@ class ActionHistory(object):
         ''' Undo the last action in the history.
 
         '''
-        print "undo action"
+        print("undo action")
         if not self.hasActions:
            return
 

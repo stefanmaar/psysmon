@@ -1499,7 +1499,7 @@ def get_file_meta(filename):
     with open(filename, 'r') as fid:
         container_data = json.load(fid)
 
-    if container_data.has_key('file_meta'):
+    if 'file_meta' in container_data:
         # The project file has a meta data dictionary. Use it to select the
         # correct project file decoder.
         file_meta = container_data['file_meta']

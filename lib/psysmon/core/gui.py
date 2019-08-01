@@ -31,6 +31,7 @@ This module contains the graphical user interface (GUI) of the pSysmon
 main program.
 '''
 from __future__ import absolute_import      # Used for the signal import.
+from __future__ import print_function
 
 import logging
 import warnings
@@ -3117,7 +3118,7 @@ class FoldPanelBarSplitter(scrolled.ScrolledPanel):
 
 
     def onSashChanged(self, event):
-        print 'Changed sash: %d; %s\n' % (event.GetSashIdx(), event.GetSashPosition())
+        print('Changed sash: %d; %s\n' % (event.GetSashIdx(), event.GetSashPosition()))
 
 
     def addPanel(self, subPanel):

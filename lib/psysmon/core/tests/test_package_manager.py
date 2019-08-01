@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 import os
@@ -17,7 +18,7 @@ class PackageManagerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
         logger = logging.getLogger('psysmon')
         logger.setLevel('DEBUG')
         logger.addHandler(psysmon.getLoggerHandler())
@@ -28,7 +29,7 @@ class PackageManagerTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print "....in tearDownClass.\n"
+        print("....in tearDownClass.\n")
 
 
     def setUp(self):
