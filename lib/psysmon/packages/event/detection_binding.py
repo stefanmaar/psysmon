@@ -121,6 +121,7 @@ class DetectionBinder(object):
             n_neighbors = 2
             min_match_neighbors = 2
             #max_neighbor_dist = 10000.          # The maximum distance to a neighbor station.
+            # TODO: Check if the neighbors have the correct length.
             neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
             #neighbors = [x for x in neighbors if x[1] <= max_neighbor_dist]
             neighbors_snl = [x[0] for x in neighbors]
@@ -139,6 +140,8 @@ class DetectionBinder(object):
             if len(neighbors) < min_match_neighbors:
                 raise RuntimeError("Not enough neighbors found for station %s. Detection ID: %d.", first_detection.snl, first_detection.db_id)
 
+            # TODO: Remove the first if case. This overrides the
+            # min_match_neighbors in an unexpected way.
             if match_snl and (len(match_snl) <= min_match_neighbors) and (len(match_neighbors) == len(match_snl)):
                 # Only a small amount of detections match but all of these
                 # detections are on neighboring stations.
