@@ -34,7 +34,7 @@ def tukey(N, alpha):
     #w[mask] = 1
 
     mask = (n > (N-1)*(1-alpha/2)) & (n <= (N-1))
-    w[mask] = 1/2. * (1 + np.cos(np.pi * ( (2*n[mask]) / (alpha * (N-1)) - 2/alpha + 1 )))
+    w[mask] = 1/2 * (1 + np.cos(np.pi * ( (2*n[mask]) / (alpha * (N-1)) - 2/alpha + 1 )))
 
     return w
 
