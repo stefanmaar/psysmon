@@ -8,7 +8,7 @@
  */
 
 #define PROG_VERSION "2010.242" 
- 
+
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "rt_130_py.h"
@@ -99,7 +99,7 @@ PyTuple_FromArray (int32_t *values, int num_values)
 	return NULL;
   
   for (i = 0; i < num_values; i++)
-	PyList_SetItem (tuple, i, PyInt_FromLong ((long int) values[i]));
+	PyList_SetItem (tuple, i, PyLong_FromLong ((long int) values[i]));
   
   free (values);
   
@@ -261,7 +261,19 @@ static PyMethodDef rt_130methods[] = {
 };
 
 PyMODINIT_FUNC
-initrt_130_py (void)
+PyInit_rt_130_py (void)
 {
-  (void) Py_InitModule ("rt_130_py", rt_130methods);
+  static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "rt_130_py",   /* m_name */
+    "Reftek 130 raw data file handling.",    /* m_doc */
+    -1,                 /* m_size */
+    rt_130methods,      /* m_methods */
+    NULL,               /* m_reload */
+    NULL,               /* m_traverse */
+    NULL,               /* m_clear */
+    NULL                /* m_free */
+  };
+  //(void) Py_InitModule ("rt_130_py", rt_130methods);
+  PyModule_Create(&moduledef);
 }

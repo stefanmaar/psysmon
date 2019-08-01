@@ -12,7 +12,6 @@ from builtins import hex
 from builtins import range
 from builtins import object
 import sys
-import exceptions
 import os
 import os.path
 import string
@@ -64,15 +63,15 @@ def build_short (x) :
     
     return pshort_s.build (construct.Container (x = x))
     
-class HeaderError (exceptions.Exception) :
+class HeaderError (Exception) :
     def __init__ (self, args = None) :
         self.args = args
         
-class CorruptPacketError (exceptions.Exception) :
+class CorruptPacketError (Exception) :
     def __init__ (self, args = None) :
         self.args = args
         
-class EmptyDTPacketError (exceptions.Exception) :
+class EmptyDTPacketError (Exception) :
     def __init__ (self, args = None) :
         self.args = args
         
