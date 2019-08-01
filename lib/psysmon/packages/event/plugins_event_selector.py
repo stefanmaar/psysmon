@@ -280,6 +280,7 @@ class SelectEvents(OptionPlugin):
                                                                  parent_rid = self.rid,
                                                                  key = self.selected_event['id'],
                                                                  color = self.colors['event_vspan'])
+                cur_node.draw()
 
 
     def on_load_events(self, event):
