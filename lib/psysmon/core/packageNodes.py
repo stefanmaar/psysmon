@@ -325,7 +325,7 @@ class CollectionNode(object):
             The required keywords.
         '''
         for cur_kw in needed_keywords:
-            if cur_kw not in kwargs.keys():
+            if cur_kw not in kwargs.iterkeys():
                 return False
 
         return True
@@ -516,7 +516,7 @@ class LooperCollectionChildNode(CollectionNode):
         # The following attributes can't be pickled and therefore have
         # to be removed.
         # These values have to be reset when loading the project.
-        if 'logger' in result.keys():
+        if 'logger' in result.iterkeys():
             del result['logger']
         return result
 

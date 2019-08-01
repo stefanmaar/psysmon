@@ -599,7 +599,7 @@ class EditDlg(wx.Dialog):
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
 
-            if curKey in self.data.keys():
+            if curKey in self.data.iterkeys():
                 self.edit[curKey].SetValue(str(self.data[curKey]))
 
             if curValidator == 'not_empty':

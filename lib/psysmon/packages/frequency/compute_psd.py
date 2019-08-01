@@ -120,7 +120,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         start_time = process_limits[0]
         end_time = process_limits[1]
 
-        if 'event' in kwargs.keys():
+        if 'event' in kwargs.iterkeys():
             cur_event = kwargs['event']
         else:
             cur_event = None
@@ -220,16 +220,16 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         scnl = psd['scnl']
         start_time = psd['start_time']
 
-        if scnl not in self.psd_data.keys():
+        if scnl not in self.psd_data.iterkeys():
             self.psd_data[scnl] = {}
 
-        if scnl not in self.save_day.keys():
+        if scnl not in self.save_day.iterkeys():
             self.save_day[scnl] = None
 
         if self.save_day[scnl] is None:
             self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % self.save_interval)
 
-        if 'event_id' in psd.keys():
+        if 'event_id' in psd.iterkeys():
             self.psd_data[scnl][psd['event_id']] = psd
         else:
             self.psd_data[scnl][start_time.isoformat()] = psd
@@ -257,9 +257,9 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         '''
         export_data = self.psd_data[scnl]
 
-        first_time = UTCDateTime(sorted(export_data.keys())[0])
-        last_time = UTCDateTime(sorted(export_data.keys())[-1])
-        #last_key = sorted(export_data.keys())[-1]
+        first_time = UTCDateTime(sorted(export_data.iterkeys())[0])
+        last_time = UTCDateTime(sorted(export_data.iterkeys())[-1])
+        #last_key = sorted(export_data.iterkeys())[-1]
         #last_time = export_data[last_key]['end_time']
         #first_time = sorted([x['start_time'] for x in export_data.values()])[0]
         #last_time = sorted([x['end_time'] for x in export_data.values()])[-1]
@@ -299,7 +299,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                          event.end_time.isoformat())
 
         self.psd_data = {}
-        for cur_scnl in export_data.keys():
+        for cur_scnl in export_data.iterkeys():
             self.save_day[cur_scnl] = UTCDateTime(event.start_time.timestamp - event.start_time.timestamp % self.save_interval)
 
     def cleanup(self, origin_resource = None):

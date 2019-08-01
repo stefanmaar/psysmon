@@ -104,7 +104,7 @@ class ProjectTestCase(unittest.TestCase):
                          'waveclient', 'defaultWaveclient',
                          'scnlDataSources']
         for cur_key in required_keys:
-            self.assertTrue(cur_key in db.keys())
+            self.assertTrue(cur_key in db.iterkeys())
 
         pkg_version = {}
         for cur_pkg in self.psybase.packageMgr.packages.itervalues():

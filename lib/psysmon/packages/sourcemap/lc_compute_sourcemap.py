@@ -120,7 +120,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
         station_list = []
         for cur_station in process_stations:
-            if cur_station.snl in stat_corr.keys():
+            if cur_station.snl in stat_corr.iterkeys():
                 cur_corr = stat_corr[cur_station.snl]
             else:
                 cur_corr = 0

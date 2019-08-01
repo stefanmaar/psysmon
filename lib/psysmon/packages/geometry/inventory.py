@@ -579,15 +579,15 @@ class Inventory(object):
         '''
 
         search_dict = {}
-        if 'network' in kwargs.keys():
+        if 'network' in kwargs.iterkeys():
             search_dict['network'] = kwargs['network']
             kwargs.pop('network')
 
-        if 'station' in kwargs.keys():
+        if 'station' in kwargs.iterkeys():
             search_dict['name'] = kwargs['station']
             kwargs.pop('station')
 
-        if 'location' in kwargs.keys():
+        if 'location' in kwargs.iterkeys():
             search_dict['location'] = kwargs['location']
             kwargs.pop('location')
 

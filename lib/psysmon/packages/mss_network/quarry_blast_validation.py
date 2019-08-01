@@ -178,7 +178,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         with open(tmp_filename, 'r') as fp:
             reader = csv.DictReader(fp, delimiter = ';')
             for cur_row in reader:
-                if cur_row['Sprengnummer'] not in quarry_blast.keys():
+                if cur_row['Sprengnummer'] not in quarry_blast.iterkeys():
                     tmp = {}
                     tmp['id'] = int(cur_row['ID'])
 

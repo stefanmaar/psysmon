@@ -315,7 +315,7 @@ class ValueResult(Result):
         A list of results in the order of the scnl list.
         '''
         if scnl is None:
-            scnl = self.values.keys()
+            scnl = self.values.iterkeys()
 
         return scnl, [self.values.get(key, None) for key in scnl]
 
@@ -452,10 +452,10 @@ class TableResultRow(object):
         ''' Add values to the row.
         '''
         for cur_key, cur_value in kwargs.iteritems():
-            if cur_key in self.cells.keys():
+            if cur_key in self.cells.iterkeys():
                 self.cells[cur_key] = cur_value
             else:
-                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, self.cells.keys()), RuntimeWarning)
+                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, self.cells.iterkeys()), RuntimeWarning)
 
 
 

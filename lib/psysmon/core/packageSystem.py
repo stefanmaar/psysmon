@@ -433,7 +433,7 @@ class PackageManager(object):
         '''
         for curNode in procNodes:
             curKey = curNode.nodeClass
-            if curKey in self.processingNodes.keys():
+            if curKey in self.processingNodes.iterkeys():
                 self.processingNodes[curKey].append(curNode)
             else:
                 self.processingNodes[curKey] = [curNode, ]

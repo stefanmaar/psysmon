@@ -265,7 +265,7 @@ class ProcessingNode(object):
         # The following attributes can't be pickled and therefore have
         # to be removed.
         # These values have to be reset when loading the project.
-        if 'logger' in result.keys():
+        if 'logger' in result.iterkeys():
             del result['logger']
         return result
 
@@ -350,7 +350,7 @@ class ProcessingNode(object):
         custom_class : class inhereted from :class:`ProcessingResult`
             The custom class of a result of kind 'custom'.
         '''
-        if name not in self.results.keys():
+        if name not in self.results.iterkeys():
             if res_type == 'value':
                 self.results[name] = ValueResult(name = name,
                                                  origin_name = self.name,

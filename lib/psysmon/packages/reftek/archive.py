@@ -208,7 +208,7 @@ class PasscalRecordingFormatParser(object):
         if packet_header.type != 'DT':
             self.logger.debug("Found a packet: %s.", packet_header.type)
 
-        if packet_header.type in self.packet_parser.keys():
+        if packet_header.type in self.packet_parser.iterkeys():
             self.packet_parser[packet_header.type](packet_header, packet_buffer)
         else:
             self.logger.error("Unknown data packet: %s.", packet_header.type)
@@ -238,10 +238,10 @@ class PasscalRecordingFormatParser(object):
         data_packet = RT_130_h.DT().decode(packet_buffer)
 
         # Get the sampling rate from the event header.
-        if packet_header.unit in self.events.keys() and data_packet.event in self.events[packet_header.unit].keys():
+        if packet_header.unit in self.events.iterkeys() and data_packet.event in self.events[packet_header.unit].keys():
             cur_event = self.events[packet_header.unit][data_packet.event]
             sampling_rate = float(cur_event.SampleRate)
-        elif packet_header.unit in self.events.keys():
+        elif packet_header.unit in self.events.iterkeys():
             # TODO: Add a user flag to select the guessing of the sampling
             # rate.
             keys = np.array(self.events[packet_header.unit].keys())
@@ -312,7 +312,7 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event header packet.
         '''
         event_header = RT_130_h.EH().decode(packet_buffer)
-        if packet_header.unit not in self.events.keys():
+        if packet_header.unit not in self.events.iterkeys():
             self.events[packet_header.unit] = {}
         self.events[packet_header.unit][event_header.EventNumber] = event_header
         self.logger.debug("Added event of unit %s: %d.", packet_header.unit, event_header.EventNumber)
@@ -322,7 +322,7 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event trailer packet.
         '''
         event_trailer = RT_130_h.EH().decode(packet_buffer)
-        #if packet_header.unit in self.active_event.keys():
+        #if packet_header.unit in self.active_event.iterkeys():
         #    if event_trailer.EventNumber == self.active_event[packet_header.unit].EventNumber:
         #        self.active_event.pop(packet_header.unit)
         #        self.logger.debug("Closed active event of %s: %d.", packet_header.unit, event_trailer.EventNumber)
@@ -385,7 +385,7 @@ class Unit(object):
         raw_file : :class:`RawFile`
             The RawFile instance representing a reftek raw data file.
         '''
-        if raw_file.stream_num not in self.streams.keys():
+        if raw_file.stream_num not in self.streams.iterkeys():
             self.streams[raw_file.stream_num] = Stream(raw_file.stream_num, parent_unit = self)
 
         self.streams[raw_file.stream_num].add_raw_file(raw_file)
@@ -603,7 +603,7 @@ class ArchiveController(object):
 
         cur_raw_file = RawFile(filename)
 
-        if cur_raw_file.unit_id not in self.units.keys():
+        if cur_raw_file.unit_id not in self.units.iterkeys():
             self.units[cur_raw_file.unit_id] = Unit(cur_raw_file.unit_id, parent_archive = self)
 
         self.units[cur_raw_file.unit_id].add_raw_file(cur_raw_file)

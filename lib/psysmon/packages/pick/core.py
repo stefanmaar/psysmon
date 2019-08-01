@@ -71,7 +71,7 @@ class Library(object):
         removed_catalog : :class:`Catalog`
             The removed catalog. None if no catalog was removed.
         '''
-        if name in self.catalogs.keys():
+        if name in self.catalogs.iterkeys():
             return self.catalogs.pop(name)
         else:
             return None

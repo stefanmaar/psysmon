@@ -2041,12 +2041,12 @@ class DisplayChannel(object):
         return (self.parent.name, self.name, self.parent.network, self.parent.location)
 
     def addView(self, name, viewType):
-        if name not in self.views.keys():
+        if name not in self.views.iterkeys():
             self.views[name] = (viewType, )
 
 
     def removeView(self, name, viewType):
-        if name in self.views.keys():
+        if name in self.views.iterkeys():
             self.views.pop(name)
 
     #TODO: Replace all getSCNL calls with the scnl attribute.

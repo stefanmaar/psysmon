@@ -172,11 +172,11 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Extract the data needed for the plots.
         pgv_boxplot_data = {}
         pgv_dist_data = []
-        for cur_key in sorted(quarry_blast.keys()):
+        for cur_key in sorted(quarry_blast.iterkeys()):
             cur_blast = quarry_blast[cur_key]
 
             # Use entries with computed results only.
-            if 'computed_on' not in cur_blast.keys():
+            if 'computed_on' not in cur_blast.iterkeys():
                 continue
 
             # Get the pgv values for the boxplots. 
@@ -229,10 +229,10 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-        station_names = list(set([x.split('.')[1] for x in psd_data.keys()]))
+        station_names = list(set([x.split('.')[1] for x in psd_data.iterkeys()]))
 
         for cur_name in station_names:
-            channel_keys = [x for x in psd_data.keys() if x.split('.')[1] == cur_name]
+            channel_keys = [x for x in psd_data.iterkeys() if x.split('.')[1] == cur_name]
             channel_data = [psd_data[x] for x in channel_keys]
             cur_psd_data = dict(zip(channel_keys, channel_data))
             title = 'sprengung_%s_psd_%s' % (baumit_id_slug, cur_name)
@@ -308,7 +308,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ref_x = -21514.445
         ref_y = 301766.29
 
-        station_names = [x.split(':')[0] for x in pgv_data.keys()]
+        station_names = [x.split(':')[0] for x in pgv_data.iterkeys()]
         for cur_station_name in station_names:
             cur_station = self.project.geometry_inventory.get_station(name = cur_station_name)[0]
             stat_lonlat = cur_station.get_lon_lat()
@@ -318,12 +318,12 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         stations = sorted(stations, key = lambda x: x.epidist)
 
         # Get the PGV boxplot data related to the sorted stations.
-        bp_data = [np.array(pgv_boxplot_data[x.snl_string]) * 1000 if x.snl_string in pgv_boxplot_data.keys() else np.empty(0) for x in stations]
+        bp_data = [np.array(pgv_boxplot_data[x.snl_string]) * 1000 if x.snl_string in pgv_boxplot_data.iterkeys() else np.empty(0) for x in stations]
 
         # Get the PGV data related to the sorted stations.
         sorted_pgv = []
         for cur_station in stations:
-            if cur_station.snl_string in pgv_data.keys():
+            if cur_station.snl_string in pgv_data.iterkeys():
                 sorted_pgv.append(pgv_data[cur_station.snl_string])
             else:
                 sorted_pgv.append(np.nan)
@@ -391,7 +391,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ref_x = epi[0]
         ref_y = epi[1]
 
-        station_names = [x.split(':')[0] for x in pgv_data.keys()]
+        station_names = [x.split(':')[0] for x in pgv_data.iterkeys()]
         for cur_station_name in station_names:
             cur_station = self.project.geometry_inventory.get_station(name = cur_station_name)[0]
             stat_lonlat = cur_station.get_lon_lat()
@@ -403,7 +403,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Get the PGV data related to the sorted stations.
         sorted_pgv = []
         for cur_station in stations:
-            if cur_station.snl_string in pgv_data.keys():
+            if cur_station.snl_string in pgv_data.iterkeys():
                 sorted_pgv.append(pgv_data[cur_station.snl_string])
             else:
                 sorted_pgv.append(np.nan)

@@ -140,7 +140,7 @@ class MeasurePoint(InteractivePlugin):
             cur_axes = cur_measurement['axes']
 
             xy = cur_measurement['xy']
-            if (self.view, cur_axes) not in self.crosshair.keys():
+            if (self.view, cur_axes) not in self.crosshair.iterkeys():
                 ml_x = cur_axes.axvline(x = xy[0])
                 ml_y = cur_axes.axhline(y = xy[1])
                 self.crosshair[(self.view, cur_axes)] = (ml_x, ml_y)
@@ -167,7 +167,7 @@ class MeasurePoint(InteractivePlugin):
         if view is None:
             view = self.view
 
-        view_crosshairs = [x for x in self.crosshair.keys() if x[0] == view]
+        view_crosshairs = [x for x in self.crosshair.iterkeys() if x[0] == view]
         if len(view_crosshairs) == 0:
             return
 

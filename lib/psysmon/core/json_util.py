@@ -147,7 +147,7 @@ class ProjectFileEncoder(json.JSONEncoder):
 
         # Only the collection names are saved. The collection itself is written
         # to a separate json file.
-        d['collection_names'] = sorted(obj.collection.keys())
+        d['collection_names'] = sorted(obj.collection.iterkeys())
 
         return d
 
@@ -331,7 +331,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
                                          )
         inst.collection = d['collection']
 
-        if d['activeCollection'] in inst.collection.keys():
+        if d['activeCollection'] in inst.collection.iterkeys():
             inst.activeCollection = inst.collection[d['activeCollection']]
         return inst
 
@@ -425,7 +425,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -439,7 +439,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -564,7 +564,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         inst.collection_names = d['collection_names']
         inst.active_collection_name = d['activeCollection']
 
-        if d['activeCollection'] in inst.collection.keys():
+        if d['activeCollection'] in inst.collection.iterkeys():
             inst.activeCollection = inst.collection[d['activeCollection']]
         return inst
 
@@ -663,7 +663,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -677,7 +677,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -1269,7 +1269,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -1283,7 +1283,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -1442,7 +1442,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)
@@ -1456,7 +1456,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in args.iterkeys():
             del args['group']
 
         inst = class_(**args)

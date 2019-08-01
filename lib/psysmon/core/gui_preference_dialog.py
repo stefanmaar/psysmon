@@ -208,7 +208,7 @@ class NotebookPrefDialog(wx.Frame):
             print "No dialog pages found. Create one first."
             return
 
-        if not pageName in self.pages.keys():
+        if not pageName in self.pages.iterkeys():
             print "The specified page is not in the container list."
             return
 

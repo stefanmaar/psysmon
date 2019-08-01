@@ -374,7 +374,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
                 label_artist = None

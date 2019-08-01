@@ -3128,7 +3128,7 @@ class RecorderPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                if field in custom_fields.iterkeys() and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
@@ -3524,7 +3524,7 @@ class StationsPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                if field in custom_fields.iterkeys() and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
@@ -3981,7 +3981,7 @@ class SensorsPanel(wx.Panel):
                 custom_fields['end_time'] = 'end_time_string'
                 custom_fields['tf_poles'] = 'poles_string'
                 custom_fields['tf_zeros'] = 'zeros_string'
-                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                if field in custom_fields.iterkeys() and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:

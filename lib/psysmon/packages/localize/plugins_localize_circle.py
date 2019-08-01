@@ -258,7 +258,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
             for cur_circle in circles_to_delete:
                 cur_view.axes.patches.remove(cur_circle)
 
-            for cur_station_name in epidist.keys():
+            for cur_station_name in epidist.iterkeys():
                 station = self.parent.project.geometry_inventory.get_station(name = cur_station_name)
 
                 if not station:

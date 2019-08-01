@@ -164,7 +164,7 @@ class Field(wx.Panel):
     def call_hook(self, hook_name):
         ''' Call the registerd hooks of the pref item.
         '''
-        if hook_name in self.pref_item.hooks.keys():
+        if hook_name in self.pref_item.hooks.iterkeys():
             self.pref_item.hooks[hook_name]()
 
 
@@ -207,7 +207,7 @@ class PrefPagePanel(wx.Panel):
                     cur_item.set_gui_element(gui_element)
                     cur_container.addActionField(gui_element)
                 else:
-                    if cur_item.mode in gui_elements.keys():
+                    if cur_item.mode in gui_elements.iterkeys():
                         guiclass = gui_elements[cur_item.mode]
                     else:
                         guiclass = cur_item.gui_class

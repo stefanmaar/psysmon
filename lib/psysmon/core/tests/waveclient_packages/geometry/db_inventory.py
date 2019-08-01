@@ -506,7 +506,7 @@ class DbNetwork(Network):
 
         self.__dict__[attr] = value
 
-        if attr in attr_map.keys():
+        if attr in attr_map.iterkeys():
             if 'geom_network' in self.__dict__:
                 setattr(self.geom_network, attr_map[attr], value)
 
@@ -637,7 +637,7 @@ class DbStation(Station):
 
         self.__dict__[attr] = value
 
-        if attr in attr_map.keys():
+        if attr in attr_map.iterkeys():
             if 'geom_station' in self.__dict__:
                 setattr(self.geom_station, attr_map[attr], value)
 
@@ -849,7 +849,7 @@ class DbRecorder(Recorder):
         attr_map['type'] = 'type'
         attr_map['description'] = 'description'
 
-        if attr in attr_map.keys():
+        if attr in attr_map.iterkeys():
             self.__dict__[attr] = value
             if 'geom_recorder' in self.__dict__:
                 setattr(self.geom_recorder, attr_map[attr], value)
@@ -939,7 +939,7 @@ class DbSensor(Sensor):
         attr_map['rec_channel_name'] = 'rec_channel_name'
         attr_map['channel_name'] = 'channel_name'
 
-        if attr in attr_map.keys():
+        if attr in attr_map.iterkeys():
             self.__dict__[attr] = value
             if 'geom_sensor' in self.__dict__:
                 setattr(self.geom_sensor, attr_map[attr], value)
@@ -1091,7 +1091,7 @@ class DbSensorParameter(SensorParameter):
         attr_map['bitweight'] = 'bitweight'
         attr_map['bitweight_units'] = 'bitweight_units'
 
-        if attr in attr_map.keys():
+        if attr in attr_map.iterkeys():
             self.__dict__[attr] = value
             if 'geom_sensor_parameter' in self.__dict__:
                 if (attr == 'start_time') or (attr == 'end_time'):

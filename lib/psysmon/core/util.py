@@ -37,7 +37,7 @@
 #    'OE'
 #    >>> stats.station
 #    'CONA'
-#    >>> x = stats.keys()
+#    >>> x = stats.iterkeys()
 #    >>> x = sorted(x)
 #    >>> x[0:3]
 #    ['network', 'station']
@@ -324,7 +324,7 @@ class ActionHistory(object):
                 lastAction = firstAction
 
             # If the attribute exists in the attribute map, create the update string.
-            if curAttr in self.attrMap.keys():
+            if curAttr in self.attrMap.iterkeys():
                 curStr = "%s = '%s'," %(self.attrMap[curAttr], str(lastAction['dataAfter']))
                 updateString += curStr 
 
@@ -441,13 +441,13 @@ class HookManager(object):
         receivers : list of objects
             The objects for which the hooks are called.
         '''
-        if hook_name not in self.hooks.keys():
+        if hook_name not in self.hooks.iterkeys():
             raise RuntimeError('The name %s is not available in the allowed hooks.' % hook_name)
 
         for cur_receiver in receivers:
             hooks = cur_receiver.getHooks()
             if hooks:
-                if hook_name in hooks.keys():
+                if hook_name in hooks.iterkeys():
                     kwargs = {x:kwargs[x] for x in kwargs if x in self.hook_kwargs[hook_name]}
                     hooks[hook_name](**kwargs)
 

@@ -818,7 +818,7 @@ class ViewNode(wx.Panel):
 
         cid_list = []
         if event_name is not None:
-            if event_name in self.mpl_cids.keys():
+            if event_name in self.mpl_cids.iterkeys():
                 cid_list = self.mpl_cids[event_name]
         else:
             for cur_key, cur_cid_list in self.mpl_cids.iteritems():
@@ -932,9 +932,9 @@ class PlotPanel(wx.Panel):
     """
     def __init__( self, parent, name = None, color=None, dpi=None, n_axes = 1, **kwargs ):
         # initialize Panel
-        if 'id' not in kwargs.keys():
+        if 'id' not in kwargs.iterkeys():
             kwargs['id'] = wx.ID_ANY
-        if 'style' not in kwargs.keys():
+        if 'style' not in kwargs.iterkeys():
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
         self.SetMinSize((100, 40))

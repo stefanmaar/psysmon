@@ -363,7 +363,7 @@ class PSDPlotter(object):
 
         psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(psd_data)))
         frequ = None
-        time_key = sorted([x for x in psd_data.keys()])
+        time_key = sorted([x for x in psd_data.iterkeys()])
         for m, cur_psd in enumerate([psd_data[x] for x in time_key]):
             if cur_psd['frequ'] is not None:
                 psd_matrix[:,m] = cur_psd['P']

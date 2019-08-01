@@ -87,9 +87,9 @@ class OLD_PlotPanel(wx.Panel):
     """
     def __init__( self, parent, color=None, dpi=None, **kwargs ):
         # initialize Panel
-        if 'id' not in kwargs.keys():
+        if 'id' not in kwargs.iterkeys():
             kwargs['id'] = wx.ID_ANY
-        if 'style' not in kwargs.keys():
+        if 'style' not in kwargs.iterkeys():
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
         self.SetMinSize((100, 40))

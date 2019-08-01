@@ -61,10 +61,10 @@ class ProjectServer(object):
         '''
         if uri is None:
             return self.data
-        elif exact is True and uri in self.data.keys():
+        elif exact is True and uri in self.data.iterkeys():
             return self.data[uri]
         elif exact is False:
-            keys_to_return = [x for x in self.data.keys() if re.search(uri, x) is not None]
+            keys_to_return = [x for x in self.data.iterkeys() if re.search(uri, x) is not None]
             return [self.data[x] for x in keys_to_return]
         else:
             return None
@@ -73,7 +73,7 @@ class ProjectServer(object):
     def list_data(self):
         ''' Return a list of uri of the available data.
         '''
-        return self.data.keys()
+        return self.data.iterkeys()
 
 
     @pyro.expose
@@ -89,14 +89,14 @@ class ProjectServer(object):
         ''' Remove selected data from the the server.
         '''
         if uri is None:
-            data_to_remove = self.data.keys()
+            data_to_remove = self.data.iterkeys()
         elif recursive is True:
-            data_to_remove = [x for x in self.data.keys() if x.startswith(uri)]
+            data_to_remove = [x for x in self.data.iterkeys() if x.startswith(uri)]
         else:
             data_to_remove = [uri,]
 
         for cur_key in data_to_remove:
-            if cur_key in self.data.keys():
+            if cur_key in self.data.iterkeys():
                 self.data.pop(cur_key)
 
 

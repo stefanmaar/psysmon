@@ -210,7 +210,7 @@ class ImsParser(object):
                 if cur_block != 'isf_comment':
                     continue
 
-            if cur_block in block_parser.keys():
+            if cur_block in block_parser.iterkeys():
                 block_parser[cur_block](cur_line)
 
         return False

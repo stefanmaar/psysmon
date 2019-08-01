@@ -217,7 +217,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             # Check for open_end events and slice the data to the stored event
             # start. If no open_end event is found. slice the trace to the
             # original pre_stream_length.
-            if cur_trace.id in self.open_end_start.keys():
+            if cur_trace.id in self.open_end_start.iterkeys():
                 cur_oe_start = self.open_end_start.pop(cur_trace.id)
                 cur_trace = cur_trace.slice(starttime = cur_oe_start)
                 self.logger.debug("Sliced the cur_trace to the open_end start. cur_trace: %s.", cur_trace)

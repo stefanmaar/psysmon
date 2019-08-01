@@ -362,7 +362,7 @@ class EditDlg(wx.Dialog):
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
 
-            if curKey in self.data.keys():
+            if curKey in self.data.iterkeys():
                 if not isinstance(self.data[curKey], (str, unicode)):
                     value_string = unicode(self.data[curKey], encoding = 'utf8')
                 elif isinstance(self.data[curKey], str):

@@ -1285,7 +1285,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
         # The new process is added on top of the list. Add 1 to all
         # index values of the process map.
-        for curKey in self.processMap.keys():
+        for curKey in self.processMap.iterkeys():
             self.processMap[curKey] += 1
 
         self.processMap[data['procName']] = index
@@ -1293,7 +1293,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
     def updateThread(self, data):
         #self.logger.debug('updating process: %s', data['procName'])
         error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error', 5: 'looper child error'}
-        if data['procName'] in self.processMap.keys():
+        if data['procName'] in self.processMap.iterkeys():
             curIndex = self.processMap[data['procName']]
             #self.logger.debug('process has index: %d', curIndex)
             self.processes.SetStringItem(curIndex, 3, data['state'])
@@ -1817,7 +1817,7 @@ class DataSourceDlg(wx.Dialog):
 
         '''
         self.wcListCtrl.DeleteAllItems()
-        client_names = sorted(self.psyBase.project.waveclient.keys())
+        client_names = sorted(self.psyBase.project.waveclient.iterkeys())
         for k, name in enumerate(client_names):
             client = self.psyBase.project.waveclient[name]
             if name == self.psyBase.project.defaultWaveclient:
@@ -2493,7 +2493,7 @@ class EditScnlDataSourcesDlg(wx.Dialog):
         self.scnl = sorted(self.scnl, key = itemgetter(0,1,2,3))
 
         for curScnl in self.scnl:
-            if curScnl not in self.psyBase.project.scnlDataSources.keys():
+            if curScnl not in self.psyBase.project.scnlDataSources.iterkeys():
                 self.psyBase.project.scnlDataSources[curScnl] = self.psyBase.project.defaultWaveclient
 
 
@@ -3263,11 +3263,11 @@ class PsysmonDockingFrame(wx.Frame):
         self.ribbonToolbars = {}
         self.foldPanels = {}
         for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = itemgetter(0,1)):
-            if curGroup not in self.ribbonPages.keys():
+            if curGroup not in self.ribbonPages.iterkeys():
                 self.logger.debug('Creating page %s', curGroup)
                 self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
 
-            if curCategory not in self.ribbonPanels.keys():
+            if curCategory not in self.ribbonPanels.iterkeys():
                 self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.ribbonPages[curGroup],
                                                                     wx.ID_ANY,
                                                                     curCategory,
@@ -3374,7 +3374,7 @@ class PsysmonDockingFrame(wx.Frame):
 
         cur_toolbar = event.GetEventObject()
         if cur_toolbar.GetToolState(event.GetId()) != ribbon.RIBBON_TOOLBAR_TOOL_TOGGLED:
-            if plugin.name not in self.foldPanels.keys():
+            if plugin.name not in self.foldPanels.iterkeys():
                 # The panel of the option tool does't exist. Create it and add
                 # it to the panel manager.
                 curPanel = plugin.buildFoldPanel(self)
@@ -3484,9 +3484,9 @@ class PsysmonDockingFrame(wx.Frame):
 
             # Get the hooks and register the matplotlib hooks in the viewport.
             hooks = plugin.getHooks()
-            allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
+            allowed_matplotlib_hooks = self.hook_manager.view_hooks.iterkeys()
 
-            for cur_key in hooks.keys():
+            for cur_key in hooks.iterkeys():
                 if cur_key not in allowed_matplotlib_hooks:
                     hooks.pop(cur_key)
 
@@ -3521,7 +3521,7 @@ class PsysmonDockingFrame(wx.Frame):
         '''
         self.logger.debug('Dropdown clicked -> editing preferences.')
 
-        if plugin.name not in self.foldPanels.keys():
+        if plugin.name not in self.foldPanels.iterkeys():
             #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
             #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
 

@@ -196,9 +196,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             with open(tmp_filename, 'r') as fp:
                 reader = csv.DictReader(fp, delimiter = ';')
                 for cur_row in reader:
-                    if cur_row['Sprengnummer'] in quarry_blast.keys():
+                    if cur_row['Sprengnummer'] in quarry_blast.iterkeys():
                         cur_blast = quarry_blast[cur_row['Sprengnummer']]
-                        if 'psysmon_event_id' in cur_blast.keys() and 'computed_on' in cur_blast.keys():
+                        if 'psysmon_event_id' in cur_blast.iterkeys() and 'computed_on' in cur_blast.iterkeys():
                             cur_export_row = {}
                             cur_export_row['Sprengnummer'] = cur_row['Sprengnummer']
                             cur_export_row['ID'] = cur_blast['id']
@@ -223,9 +223,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                         else:
                             self.logger.info("No related result found for blast %s.", cur_row['Sprengnummer'])
         else:
-            for cur_blast_key in sorted(quarry_blast.keys()):
+            for cur_blast_key in sorted(quarry_blast.iterkeys()):
                 cur_blast = quarry_blast[cur_blast_key]
-                if 'psysmon_event_id' in cur_blast.keys() and 'computed_on' in cur_blast.keys():
+                if 'psysmon_event_id' in cur_blast.iterkeys() and 'computed_on' in cur_blast.iterkeys():
                     cur_export_row = {}
                     cur_export_row['Sprengnummer'] = cur_blast_key
                     cur_export_row['ID'] = cur_blast['id']
@@ -309,9 +309,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
                     # Check for needed upload of results.
                     save_blast_file = False
-                    for cur_blast_key in sorted(quarry_blast.keys()):
+                    for cur_blast_key in sorted(quarry_blast.iterkeys()):
                         cur_blast = quarry_blast[cur_blast_key]
-                        if 'psysmon_event_id' in cur_blast.keys() and 'computed_on' in cur_blast.keys() and 'uploaded_on' not in cur_blast.keys():
+                        if 'psysmon_event_id' in cur_blast.iterkeys() and 'computed_on' in cur_blast.iterkeys() and 'uploaded_on' not in cur_blast.iterkeys():
                             # Upload the result images to the FTP Server.
                             self.logger.info('Uploading images of %s.', cur_blast_key)
                             cur_blast_dir = os.path.join(result_dir, 'sprengung_' + cur_blast_key)

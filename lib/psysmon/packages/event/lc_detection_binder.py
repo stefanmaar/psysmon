@@ -127,7 +127,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.debug('Loading the detection catalog.')
         self.detection_library.load_catalog_from_db(project = self.project,
                                                     name = catalog_name)
-        if catalog_name in self.detection_library.catalogs.keys():
+        if catalog_name in self.detection_library.catalogs.iterkeys():
             self.detection_catalog = self.detection_library.catalogs[catalog_name]
         else:
             raise RuntimeError("No detection catalog with name %s found in the database.", catalog_name)
@@ -137,7 +137,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.debug('Loading the event catalog.')
         self.event_library.load_catalog_from_db(project = self.project,
                                                 name = catalog_name)
-        if catalog_name in self.event_library.catalogs.keys():
+        if catalog_name in self.event_library.catalogs.iterkeys():
             self.event_catalog = self.event_library.catalogs[catalog_name]
         else:
             raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)

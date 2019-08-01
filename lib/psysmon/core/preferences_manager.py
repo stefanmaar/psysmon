@@ -257,7 +257,7 @@ class PreferencesManager(object):
         # 2016-12-15: Handle the change of the prefence_manager classes.
         if isinstance(pref_manager.pages, dict):
             # The preferences manager was saved using an old class.
-            for cur_key in pref_manager.pages.keys():
+            for cur_key in pref_manager.pages.iterkeys():
                 page_names = [x.name.lower() for x in self.pages]
                 ext_pagename = cur_key.lower()
                 if ext_pagename in page_names:

@@ -234,7 +234,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         plot_features = ['incidence', 'azimuth', 'ellipticity', 'pol_strength']
         axes_limits = [(0, np.pi/2.), (-np.pi/2., np.pi/2.), (0 ,1), (0, 1)]
         for k, cur_feature_name in enumerate(plot_features):
-            if cur_feature_name in self.lines.keys():
+            if cur_feature_name in self.lines.iterkeys():
                 self.axes[k].collections.remove(self.lines[cur_feature_name])
             cur_data = features[cur_feature_name]
             self.lines[cur_feature_name] = self.axes[k].fill_between(x = time_array,

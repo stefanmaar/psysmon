@@ -478,7 +478,7 @@ class Project(object):
             name = (name,)
 
         for curName in name:
-            if curName in self.psybase.packageMgr.plugins.keys():
+            if curName in self.psybase.packageMgr.plugins.iterkeys():
                 plugins.extend([curPlugin() for curPlugin in self.psybase.packageMgr.plugins[curName]])
         return plugins
 
@@ -495,7 +495,7 @@ class Project(object):
             selection = (selection, )
 
         for curKey in selection:
-            if curKey in self.psybase.packageMgr.processingNodes.keys():
+            if curKey in self.psybase.packageMgr.processingNodes.iterkeys():
                 procNodes.extend([curNode() for curNode  in self.psybase.packageMgr.processingNodes[curKey]])
 
         return procNodes
@@ -521,7 +521,7 @@ class Project(object):
             The waveclient to be added to the project. Usually this 
             is an instance of a class derived from WaveClient.
         '''
-        if waveclient.name in self.waveclient.keys():
+        if waveclient.name in self.waveclient.iterkeys():
             self.logger.error('The waveclient with name %s already exits.\nRemove it first to avoid troubles.', waveclient.name)
             return
 
@@ -546,7 +546,7 @@ class Project(object):
         '''
         if name == 'main client':
             return None
-        if name in self.waveclient.keys():
+        if name in self.waveclient.iterkeys():
             return self.waveclient.pop(name)
 
 
@@ -825,7 +825,7 @@ class Project(object):
                             # case that a database migration is needed.
 
                             # Check for changes of the database table.
-                            if curName not in self.db_table_version.keys():
+                            if curName not in self.db_table_version.iterkeys():
                                 self.logger.info("%s - No table version found in the project. This is a new table.",
                                                  curName)
                                 update_success = db_util.db_table_migration(table = curTable,
@@ -1269,7 +1269,7 @@ class User(object):
         if not isinstance(self.collection, dict):
             self.collection = {}
 
-        if name in self.collection.keys():
+        if name in self.collection.iterkeys():
             self.logger.error("The collection already exists.")
             return
 
@@ -1288,7 +1288,7 @@ class User(object):
         name : String
             The name of the collection which should be activated.
         '''
-        if name in self.collection.keys():
+        if name in self.collection.iterkeys():
             self.activeCollection = self.collection[name]
 
 

@@ -297,7 +297,7 @@ class SelectEvents(OptionPlugin):
         start_time = self.pref_manager.get_value('start_time')
         duration = self.pref_manager.get_value('window_length')
 
-        if catalog_name not in event_library.catalogs.keys():
+        if catalog_name not in event_library.catalogs.iterkeys():
             event_library.load_catalog_from_db(project = self.parent.project,
                                                name = catalog_name)
 
@@ -451,9 +451,9 @@ class EventListField(wx.Panel, listmix.ColumnSorterMixin):
         self.controlElement.DeleteAllItems()
         for k, cur_event in enumerate(events):
             for n_col, cur_name in enumerate(self.columns):
-                if cur_name in self.get_method.keys():
+                if cur_name in self.get_method.iterkeys():
                     val = self.get_method[cur_name](cur_event)
-                elif cur_name in self.convert_method.keys():
+                elif cur_name in self.convert_method.iterkeys():
                     val = self.convert_method[cur_name](getattr(cur_event, cur_name))
                 else:
                     val = str(getattr(cur_event, cur_name))

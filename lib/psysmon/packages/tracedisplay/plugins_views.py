@@ -583,7 +583,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
                 label_artist = None
@@ -625,7 +625,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x_start, ylim[1]))
         else:
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x_start, y = ylim[1],
                                                   s = kwargs['label'],
@@ -852,7 +852,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
@@ -890,7 +890,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x_start, ylim[1]))
         else:
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x_start, y = ylim[1],
                                                   s = kwargs['label'],
@@ -1614,7 +1614,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
@@ -1652,7 +1652,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x_start, ylim[1]))
         else:
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in kwargs.iterkeys():
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x_start, y = ylim[1],
                                                   s = kwargs['label'],

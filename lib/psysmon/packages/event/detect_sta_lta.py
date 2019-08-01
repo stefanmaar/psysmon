@@ -384,7 +384,7 @@ class StaLtaDetector(object):
         '''
         data_sources = {}
         for cur_scnl in scnl:
-            if cur_scnl in self.project.scnlDataSources.keys():
+            if cur_scnl in self.project.scnlDataSources.iterkeys():
                 data_sources[cur_scnl] = self.project.scnlDataSources[cur_scnl]
             else:
                 data_sources[cur_scnl] = self.project.defaultWaveclient
