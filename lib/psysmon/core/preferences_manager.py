@@ -30,7 +30,7 @@ Module for handling object preferences.
 
 import wx
 
-class PreferencesManager:
+class PreferencesManager(object):
     ''' The preferences of the project.
 
     The PreferencesManager holds and organizes all project preferences.

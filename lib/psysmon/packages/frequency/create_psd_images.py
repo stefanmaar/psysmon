@@ -209,7 +209,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
 
 
 
-class PSDPlotter:
+class PSDPlotter(object):
 
     def __init__(self, station, channel, network, location, data_dir, output_dir, starttime = None, endtime = None, with_average_plot = False):
         ''' The constructor.

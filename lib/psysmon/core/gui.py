@@ -641,7 +641,7 @@ class PSysmonGui(wx.Frame):
 
 
 
-class Logger:
+class Logger(object):
 
     def __init__(self, loggingArea, psyBase):
         self.loggingArea = loggingArea
@@ -3656,7 +3656,7 @@ class PsysmonDockingFrame(wx.Frame):
 
 
 
-class ShortcutManager:
+class ShortcutManager(object):
 
 
     def __init__(self):

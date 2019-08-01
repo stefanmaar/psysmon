@@ -40,7 +40,7 @@ from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
 
-class ProcessingStack:
+class ProcessingStack(object):
     ''' The ProcessingStack class.
 
     The processing stack handles the editing and execution of the processing nodes.
@@ -200,7 +200,7 @@ class ProcessingStack:
 
 
 
-class ProcessingNode:
+class ProcessingNode(object):
     ''' The ProcessingNode class.
 
     The processing node gets data from the processing stack, does some computation with 

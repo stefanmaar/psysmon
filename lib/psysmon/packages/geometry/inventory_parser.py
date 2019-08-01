@@ -46,7 +46,7 @@ from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
 from obspy.core.utcdatetime import UTCDateTime
 
-class InventoryXmlParser:
+class InventoryXmlParser(object):
     '''
     Parse a pSysmon inventory XML file.
     '''

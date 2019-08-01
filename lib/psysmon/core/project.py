@@ -1055,7 +1055,7 @@ class Project(object):
 # 
 # The user class holds the details of the user and the userspecific project
 # variables (e.g. collection, settings, ...).
-class User:
+class User(object):
     '''The pSysmon user class.
 
     A pSysmon project can be used by multiple users. For each user, an instance 

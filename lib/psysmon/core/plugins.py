@@ -38,7 +38,7 @@ from psysmon.core.guiBricks import PrefEditPanel
 #
 # Each collection node can load plugins which provide some functionality to
 # the node. 
-class PluginNode:
+class PluginNode(object):
     ''' The base class of all plugin nodes.
 
     This class is the base class on which all plugins are built.

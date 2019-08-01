@@ -644,7 +644,7 @@ class Library(object):
             db_session.close()
 
 
-class StaLtaDetector:
+class StaLtaDetector(object):
     ''' Run a standard STA/LTA Detection.
     '''
 

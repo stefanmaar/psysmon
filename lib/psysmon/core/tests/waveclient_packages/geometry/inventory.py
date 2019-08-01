@@ -42,7 +42,7 @@ from wx.lib.pubsub import pub
 
 ## The Inventory class.
 #
-class Inventory:
+class Inventory(object):
 
     ## The constructor.
     #
@@ -376,7 +376,7 @@ class Inventory:
 
 
 
-class InventoryXmlParser:
+class InventoryXmlParser(object):
     '''
     Parse a pSysmon inventory XML file.
     '''
@@ -819,7 +819,7 @@ class InventoryXmlParser:
 # 
 # A recorder is more or less the representation of a digitizer.@n
 #     
-class Recorder:
+class Recorder(object):
 
     ## The constructor.
     #
@@ -987,7 +987,7 @@ class Recorder:
 ## The sensor class.
 #
 # 
-class Sensor:
+class Sensor(object):
 
     ## The constructor.
     #
@@ -1196,7 +1196,7 @@ class Sensor:
 
 ## The sensor parameter class.
 #
-class SensorParameter:
+class SensorParameter(object):
     ## The constructor.
     #
     # @param self The object pointer.
@@ -1328,7 +1328,7 @@ class SensorParameter:
 
 ## The station class.
 #
-class Station:
+class Station(object):
 
     ## The constructor.
     #
@@ -1685,7 +1685,7 @@ class Station:
 
 
 ## The network class.
-class Network:
+class Network(object):
 
     def __init__(self, name, description=None, type=None, parent_inventory=None):
         # The logger instance.

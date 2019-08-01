@@ -160,7 +160,7 @@ def scan_module_for_processing_nodes(package_name, node_modules):
     return node_templates
 
 
-class PackageManager:
+class PackageManager(object):
     '''The Package Manager keeps track of the pSysmon packages and 
     manages them. 
 
@@ -495,7 +495,7 @@ class PackageManager:
 
 
 
-class Package:
+class Package(object):
     '''The pSysmon Package class.
 
     A pSysmon package provides the functionality to pSysmon. A package contains 

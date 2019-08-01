@@ -215,7 +215,7 @@ class AttribDict(dict, object):
 
 
 
-class ActionHistory:
+class ActionHistory(object):
     ''' Keep track of actions in a GUI.
 
     This helper class provides the recording of actions executed by the user 
@@ -335,7 +335,7 @@ class ActionHistory:
 
 
 
-class Action:
+class Action(object):
     ''' The Action class used by `~psysmon.core.util.ActionHistory`.
 
 
