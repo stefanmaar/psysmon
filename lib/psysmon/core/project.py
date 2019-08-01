@@ -31,13 +31,17 @@ This module contains the classes for the project and user management.
 '''
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import object
 import glob
 import json
 import weakref
 import logging
 import os
 import sys
-import thread
+import _thread
 import subprocess
 import copy
 import wx
@@ -314,7 +318,7 @@ class Project(object):
         # The version dictionary of the package versions.
         self.pkg_version = {}
         if pkg_version is None:
-            for cur_pkg in self.psybase.packageMgr.packages.itervalues():
+            for cur_pkg in self.psybase.packageMgr.packages.values():
                 self.pkg_version[cur_pkg.name] = cur_pkg.version
         else:
             self.pkg_version = pkg_version
@@ -478,7 +482,7 @@ class Project(object):
             name = (name,)
 
         for curName in name:
-            if curName in self.psybase.packageMgr.plugins.iterkeys():
+            if curName in iter(self.psybase.packageMgr.plugins.keys()):
                 plugins.extend([curPlugin() for curPlugin in self.psybase.packageMgr.plugins[curName]])
         return plugins
 
@@ -495,7 +499,7 @@ class Project(object):
             selection = (selection, )
 
         for curKey in selection:
-            if curKey in self.psybase.packageMgr.processingNodes.iterkeys():
+            if curKey in iter(self.psybase.packageMgr.processingNodes.keys()):
                 procNodes.extend([curNode() for curNode  in self.psybase.packageMgr.processingNodes[curKey]])
 
         return procNodes
@@ -508,7 +512,7 @@ class Project(object):
 
         '''
         for curUser in self.user:
-            for curCollection in curUser.collection.itervalues():
+            for curCollection in curUser.collection.values():
                 curCollection.set_project(self)
 
 
@@ -521,7 +525,7 @@ class Project(object):
             The waveclient to be added to the project. Usually this 
             is an instance of a class derived from WaveClient.
         '''
-        if waveclient.name in self.waveclient.iterkeys():
+        if waveclient.name in iter(self.waveclient.keys()):
             self.logger.error('The waveclient with name %s already exits.\nRemove it first to avoid troubles.', waveclient.name)
             return
 
@@ -546,7 +550,7 @@ class Project(object):
         '''
         if name == 'main client':
             return None
-        if name in self.waveclient.iterkeys():
+        if name in iter(self.waveclient.keys()):
             return self.waveclient.pop(name)
 
 
@@ -600,7 +604,7 @@ class Project(object):
 
         self.logger.debug("Using waveclients: %s.", scnl_waveclients)
 
-        for cur_name in scnl_waveclients.iterkeys():
+        for cur_name in scnl_waveclients.keys():
             curWaveclient = self.waveclient[cur_name]
             curStream =  curWaveclient.getWaveform(startTime = start_time,
                                                    endTime = end_time,
@@ -802,7 +806,7 @@ class Project(object):
             self.connect2Db()
 
         save_needed = False
-        for _, curPkg in packages.iteritems():
+        for _, curPkg in packages.items():
             if not curPkg.databaseFactory:
                 self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
@@ -825,7 +829,7 @@ class Project(object):
                             # case that a database migration is needed.
 
                             # Check for changes of the database table.
-                            if curName not in self.db_table_version.iterkeys():
+                            if curName not in iter(self.db_table_version.keys()):
                                 self.logger.info("%s - No table version found in the project. This is a new table.",
                                                  curName)
                                 update_success = db_util.db_table_migration(table = curTable,
@@ -874,7 +878,7 @@ class Project(object):
         db['db_version'] = self.db_version
         db['user'] = self.user
         db['createTime'] = self.createTime
-        db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.itervalues()]
+        db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.values()]
         db['defaultWaveclient'] = self.defaultWaveclient
         db['scnlDataSources'] = self.scnlDataSources
         db.close()
@@ -1233,7 +1237,7 @@ class User(object):
         ''' Save the collections to json files.
 
         '''
-        for cur_collection in self.collection.itervalues():
+        for cur_collection in self.collection.values():
             cur_collection.save(os.path.join(path, self.name))
 
     def load_collections(self, path):
@@ -1269,7 +1273,7 @@ class User(object):
         if not isinstance(self.collection, dict):
             self.collection = {}
 
-        if name in self.collection.iterkeys():
+        if name in iter(self.collection.keys()):
             self.logger.error("The collection already exists.")
             return
 
@@ -1288,7 +1292,7 @@ class User(object):
         name : String
             The name of the collection which should be activated.
         '''
-        if name in self.collection.iterkeys():
+        if name in iter(self.collection.keys()):
             self.activeCollection = self.collection[name]
 
 
@@ -1516,7 +1520,7 @@ class User(object):
 
         if self.activeCollection is not None:
             if not project.threadMutex:
-                project.threadMutex = thread.allocate_lock()
+                project.threadMutex = _thread.allocate_lock()
 
             col2Proc = copy.deepcopy(self.activeCollection)
             curTime = datetime.now()
@@ -1550,7 +1554,7 @@ class User(object):
             db['project'] = project
             db['collection'] = col2Proc
             db['package_directories'] = project.psybase.packageMgr.packageDirectories
-            db['waveclient'] = [(x.name, x.mode, x.pickle_attributes) for x in project.waveclient.itervalues()]
+            db['waveclient'] = [(x.name, x.mode, x.pickle_attributes) for x in project.waveclient.values()]
             db['project_server'] = project.psybase.project_server
             db['pref_manager'] = project.psybase.pref_manager
             db.close()
@@ -1583,7 +1587,7 @@ class User(object):
 
             # Start the process checker only if the wx GUI is running.
             if wx.App.Get():
-                thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+                _thread.start_new_thread(processChecker, (proc, col2Proc.procName))
 
         else:
             raise PsysmonError('No active collection found!')

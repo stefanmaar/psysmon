@@ -33,6 +33,9 @@ main program.
 from __future__ import absolute_import      # Used for the signal import.
 from __future__ import print_function
 
+from builtins import str
+from builtins import range
+from builtins import object
 import logging
 import warnings
 from operator import attrgetter
@@ -896,7 +899,7 @@ class CollectionPanel(wx.Panel):
 
             columns = {1: 'node'}
 
-            for colNum, name in columns.iteritems():
+            for colNum, name in columns.items():
                 self.collectionListCtrl.InsertColumn(colNum, name)
 
             sizer = wx.GridBagSizer(5, 5)
@@ -1074,7 +1077,7 @@ class CollectionPanel(wx.Panel):
     # @param event The event object. 
     def onCollectionLoad(self, event):
         collections = self.psyBase.project.getCollection()
-        choices = [x.name for x in collections.itervalues()]
+        choices = [x.name for x in collections.values()]
         dlg = wx.SingleChoiceDialog(None, "Select a collection",
                                     "Load collection",
                                     choices)
@@ -1213,7 +1216,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
                                       | wx.LC_SINGLE_SEL
                                       | wx.LC_SORT_ASCENDING)
         columns = {1: 'level', 2: 'message'}
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.status.InsertColumn(colNum, name)
         self.status.SetColumnWidth(0, 100)
         self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
@@ -1227,7 +1230,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
         columns = {1: 'start', 2: 'pid', 3: 'name', 4: 'status', 5: 'duration'}
 
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.processes.InsertColumn(colNum, name)
 
         # Create the context menu of the thread logging area.
@@ -1286,7 +1289,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
         # The new process is added on top of the list. Add 1 to all
         # index values of the process map.
-        for curKey in self.processMap.iterkeys():
+        for curKey in self.processMap.keys():
             self.processMap[curKey] += 1
 
         self.processMap[data['procName']] = index
@@ -1294,7 +1297,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
     def updateThread(self, data):
         #self.logger.debug('updating process: %s', data['procName'])
         error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error', 5: 'looper child error'}
-        if data['procName'] in self.processMap.iterkeys():
+        if data['procName'] in iter(self.processMap.keys()):
             curIndex = self.processMap[data['procName']]
             #self.logger.debug('process has index: %d', curIndex)
             self.processes.SetStringItem(curIndex, 3, data['state'])
@@ -1383,7 +1386,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         columns = {1: 'name', 2: 'mode', 3: 'category', 4: 'tags'}
 
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.nodeListCtrl.InsertColumn(colNum, name)
 
         sizer.Add(self.nodeListCtrl, pos=(1, 0), flag=wx.EXPAND|wx.ALL, border=0)
@@ -1476,7 +1479,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
     def initNodeInventoryList(self):
         nodeTemplates = {}
-        for curPkg in self.psyBase.packageMgr.packages.itervalues():
+        for curPkg in self.psyBase.packageMgr.packages.values():
             nodeTemplates.update(curPkg.collectionNodeTemplates)
 
         self.updateNodeInvenotryList(nodeTemplates)
@@ -1490,7 +1493,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         index = 0
         self.nodeListCtrl.DeleteAllItems()
 
-        for curNode in nodeTemplates.itervalues():
+        for curNode in nodeTemplates.values():
             self.nodeListCtrl.InsertStringItem(index, curNode.name)
             self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
             self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
@@ -1818,7 +1821,7 @@ class DataSourceDlg(wx.Dialog):
 
         '''
         self.wcListCtrl.DeleteAllItems()
-        client_names = sorted(self.psyBase.project.waveclient.iterkeys())
+        client_names = sorted(self.psyBase.project.waveclient.keys())
         for k, name in enumerate(client_names):
             client = self.psyBase.project.waveclient[name]
             if name == self.psyBase.project.defaultWaveclient:
@@ -2403,7 +2406,7 @@ class AddDataSourceDlg(wx.Dialog):
         # Create the choicebook.
         self.modeChoiceBook = Choicebook(parent = self, id = wx.ID_ANY)
 
-        for curLabel, curClass in self.clientModes().itervalues():
+        for curLabel, curClass in self.clientModes().values():
             if curClass == PsysmonDbWaveClient:
                 panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook,
                                                    project = self.psyBase.project,
@@ -2486,15 +2489,15 @@ class EditScnlDataSourcesDlg(wx.Dialog):
 
         # Create the scnl-datasource list.
         self.scnl = []
-        for curNetwork in self.inventory.networks.itervalues():
-            for curStation in curNetwork.stations.itervalues():
+        for curNetwork in self.inventory.networks.values():
+            for curStation in curNetwork.stations.values():
                 self.scnl.extend(curStation.getScnl())
 
         # Sort the scnl list.
         self.scnl = sorted(self.scnl, key = itemgetter(0,1,2,3))
 
         for curScnl in self.scnl:
-            if curScnl not in self.psyBase.project.scnlDataSources.iterkeys():
+            if curScnl not in iter(self.psyBase.project.scnlDataSources.keys()):
                 self.psyBase.project.scnlDataSources[curScnl] = self.psyBase.project.defaultWaveclient
 
 
@@ -3264,11 +3267,11 @@ class PsysmonDockingFrame(wx.Frame):
         self.ribbonToolbars = {}
         self.foldPanels = {}
         for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = itemgetter(0,1)):
-            if curGroup not in self.ribbonPages.iterkeys():
+            if curGroup not in iter(self.ribbonPages.keys()):
                 self.logger.debug('Creating page %s', curGroup)
                 self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
 
-            if curCategory not in self.ribbonPanels.iterkeys():
+            if curCategory not in iter(self.ribbonPanels.keys()):
                 self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.ribbonPages[curGroup],
                                                                     wx.ID_ANY,
                                                                     curCategory,
@@ -3375,7 +3378,7 @@ class PsysmonDockingFrame(wx.Frame):
 
         cur_toolbar = event.GetEventObject()
         if cur_toolbar.GetToolState(event.GetId()) != ribbon.RIBBON_TOOLBAR_TOOL_TOGGLED:
-            if plugin.name not in self.foldPanels.iterkeys():
+            if plugin.name not in iter(self.foldPanels.keys()):
                 # The panel of the option tool does't exist. Create it and add
                 # it to the panel manager.
                 curPanel = plugin.buildFoldPanel(self)
@@ -3485,9 +3488,9 @@ class PsysmonDockingFrame(wx.Frame):
 
             # Get the hooks and register the matplotlib hooks in the viewport.
             hooks = plugin.getHooks()
-            allowed_matplotlib_hooks = self.hook_manager.view_hooks.iterkeys()
+            allowed_matplotlib_hooks = iter(self.hook_manager.view_hooks.keys())
 
-            for cur_key in hooks.iterkeys():
+            for cur_key in hooks.keys():
                 if cur_key not in allowed_matplotlib_hooks:
                     hooks.pop(cur_key)
 
@@ -3522,7 +3525,7 @@ class PsysmonDockingFrame(wx.Frame):
         '''
         self.logger.debug('Dropdown clicked -> editing preferences.')
 
-        if plugin.name not in self.foldPanels.iterkeys():
+        if plugin.name not in iter(self.foldPanels.keys()):
             #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
             #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
 
@@ -3730,7 +3733,7 @@ class ShortcutManager(object):
         ret_val = self.shortcuts
 
         valid_keys = ['key_combination', 'origin_rid', 'kind']
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
             else:

@@ -31,6 +31,8 @@ This module contains the classes of the editGeometry dialog window.
 '''
 from __future__ import print_function
 
+from builtins import zip
+from builtins import str
 import logging
 from threading import Thread
 import psysmon
@@ -470,7 +472,7 @@ class EditGeometryDlg(wx.Frame):
     def onExit(self, event):
         self.logger.debug("onExit")
         # Check if an unsaved database inventory exists.
-        for curInventory in self.inventories.itervalues():
+        for curInventory in self.inventories.values():
             if curInventory.has_changed():
                 self.logger.warning('There are unsaved elements in the inventory.')
 
@@ -871,7 +873,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.DeleteChildren(self.root)
 
         # rebuild the inventory tree.
-        for curKey, curInventory in self.Parent.inventories.iteritems():
+        for curKey, curInventory in self.Parent.inventories.items():
             inventoryItem = self.AppendItem(self.root, curKey + '(' + curInventory.type + ')')
             self.SetItemPyData(inventoryItem, curInventory)
             self.SetItemBold(inventoryItem, True)
@@ -1057,7 +1059,7 @@ class ListViewPanel(wx.Panel):
         self.controlPanels['recorder'] = RecorderPanel(self, wx.ID_ANY)
         self.controlPanels['network'] = NetworkPanel(self, wx.ID_ANY)
 
-        for cur_panel in self.controlPanels.values():
+        for cur_panel in list(self.controlPanels.values()):
             cur_panel.Hide()
 
         #sizer.Add(self.controlPanels['station'], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
@@ -1245,7 +1247,7 @@ class MapViewPanel(wx.Panel):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())

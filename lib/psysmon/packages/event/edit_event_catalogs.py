@@ -30,6 +30,7 @@ The importWaveform module.
 This module contains the classes of the importWaveform dialog window.
 '''
 
+from builtins import str
 import os
 import fnmatch
 import logging
@@ -362,9 +363,9 @@ class EditDlg(wx.Dialog):
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
 
-            if curKey in self.data.iterkeys():
-                if not isinstance(self.data[curKey], (str, unicode)):
-                    value_string = unicode(self.data[curKey], encoding = 'utf8')
+            if curKey in iter(self.data.keys()):
+                if not isinstance(self.data[curKey], (str, str)):
+                    value_string = str(self.data[curKey], encoding = 'utf8')
                 elif isinstance(self.data[curKey], str):
                     value_string = self.data[curKey].decode('utf8')
                 else:

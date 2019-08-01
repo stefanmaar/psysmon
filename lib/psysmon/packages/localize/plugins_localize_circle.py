@@ -28,7 +28,10 @@ The plugin for the localization using the circle method.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
 import logging
 
 import numpy as np
@@ -227,7 +230,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
                     cur_s = cur_s[0]
 
                     sp_diff = cur_s.time - cur_p.time
-                    cur_epidist = sp_diff * vp / (np.sqrt(3) - 1)
+                    cur_epidist = old_div(sp_diff * vp, (np.sqrt(3) - 1))
                     epidist[cur_station.name][(cur_p.label, cur_s.label)] = cur_epidist
 
                     used_picks.append(cur_p)
@@ -258,7 +261,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
             for cur_circle in circles_to_delete:
                 cur_view.axes.patches.remove(cur_circle)
 
-            for cur_station_name in epidist.iterkeys():
+            for cur_station_name in epidist.keys():
                 station = self.parent.project.geometry_inventory.get_station(name = cur_station_name)
 
                 if not station:
@@ -267,7 +270,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
                 station = station[0]
                 stat_lon, stat_lat = station.get_lon_lat()
                 stat_x, stat_y = proj(stat_lon, stat_lat)
-                for cur_key, cur_epidist in epidist[cur_station_name].iteritems():
+                for cur_key, cur_epidist in epidist[cur_station_name].items():
                     label = cur_station_name + ':' + cur_key[0] + ':' + cur_key[1]
                     circle = mpl.patches.Circle((stat_x, stat_y), radius = cur_epidist,
                                                 fill = False, gid = self.rid, label = label)

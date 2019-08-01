@@ -18,6 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import zip
+from past.builtins import basestring
+from builtins import object
 import itertools
 import logging
 import warnings
@@ -138,7 +142,7 @@ class Event(object):
         # Get the channels for the ids.
         channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
         channels = [x[0] if len(x) == 1 else None for x in channels]
-        channels = dict(zip(id_list, channels))
+        channels = dict(list(zip(id_list, channels)))
 
         for cur_detection in self.detections:
             cur_detection.channel = channels[cur_detection.rec_stream_id]
@@ -255,7 +259,7 @@ class Event(object):
                   'ev_type_id', 'ev_type_certainty', 'pref_origin_id',
                   'pref_magnitude_id', 'pref_focmec_id', 'agency_uri',
                   'author_uri', 'creation_time']
-        db_dict = dict(zip(labels,
+        db_dict = dict(list(zip(labels,
                            (catalog_id,
                             self.start_time.timestamp,
                             self.end_time.timestamp,
@@ -270,7 +274,7 @@ class Event(object):
                             None,
                             self.agency_uri,
                             self.author_uri,
-                            cur_creation_time)))
+                            cur_creation_time))))
         db_event = db_event_orm_class(**db_dict)
 
         for cur_detection in self.detections:
@@ -383,7 +387,7 @@ class Catalog(object):
 
         valid_keys = ['db_id', 'public_id', 'event_type', 'changed']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_events = [x for x in ret_events if getattr(x, cur_key) == cur_value]
             else:
@@ -618,7 +622,7 @@ class Library(object):
         removed_catalog : :class:`Catalog`
             The removed catalog. None if no catalog was removed.
         '''
-        if name in self.catalogs.iterkeys():
+        if name in iter(self.catalogs.keys()):
             return self.catalogs.pop(name)
         else:
             return None

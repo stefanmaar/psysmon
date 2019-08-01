@@ -17,6 +17,7 @@ It will:
 """
 from __future__ import print_function
 
+from builtins import str
 import os, re, pydoc
 from docscrape_sphinx import get_doc_object, SphinxDocString
 import inspect

@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import logging
 import tempfile
 import os
@@ -165,7 +167,7 @@ def create_full_project(psybase):
     filelist = []
     for cur_file in filenames:
         fsize = os.path.getsize(cur_file);
-        fsize = fsize/(1024.0*1024.0)           # Convert to MB
+        fsize = old_div(fsize,(1024.0*1024.0))           # Convert to MB
         filelist.append(('mseed', cur_file, '%.2f' % fsize))
     node.pref_manager.set_value('input_files', filelist)
     node.execute()
@@ -283,7 +285,7 @@ def drop_database_tables(db_dialect, db_driver, db_user, db_pwd, db_host, db_nam
 def drop_project_database_tables(project):
     project.connect2Db()
     project.dbMetaData.reflect(project.dbEngine)
-    tables_to_remove = [table for key, table in project.dbMetaData.tables.items() if key.startswith(project.slug)]
+    tables_to_remove = [table for key, table in list(project.dbMetaData.tables.items()) if key.startswith(project.slug)]
     project.dbMetaData.drop_all(tables = tables_to_remove)
 
 
@@ -386,7 +388,7 @@ def compute_wavelet(amp, sps):
     '''
     # Create a test wavelet.
     fc = 10.
-    fn = fc / (sps/2)
+    fn = old_div(fc, (old_div(sps,2)))
 
     # Create a butterworth filter. The butterworth wavelet is minimum-phase.
     b,a = scipy.signal.butter(4, fn)
@@ -395,7 +397,7 @@ def compute_wavelet(amp, sps):
     impulse[0] = 1
     # Compute the impulse response of the filter.
     data = scipy.signal.lfilter(b, a, impulse)
-    data = data / np.max(np.abs(data))
+    data = old_div(data, np.max(np.abs(data)))
     data = data * amp
 
     return data

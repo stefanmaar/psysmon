@@ -31,6 +31,7 @@ This module uses code from the obspy package.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+from builtins import str
 import os
 import re
 import platform

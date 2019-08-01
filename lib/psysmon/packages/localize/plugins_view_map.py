@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import zip
 import logging
 import wx
 import numpy as np
@@ -140,7 +141,7 @@ class MapView(psysmon.core.gui_view.ViewNode):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         self.map_config['epsg'] = 'epsg:' + code[0][0]
 

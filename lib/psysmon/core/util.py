@@ -57,6 +57,10 @@ from __future__ import print_function
 #    GNU Lesser General Public License, Version 3
 #    (http://www.gnu.org/copyleft/lesser.html)
 #
+from builtins import map
+from builtins import str
+from builtins import range
+from builtins import object
 import copy
 import re
 
@@ -70,7 +74,7 @@ def _wxdate2pydate(date):
 
      assert isinstance(date, DateTime)
      if date.IsValid():
-         ymd = map(int, date.FormatISODate().split('-'))
+         ymd = list(map(int, date.FormatISODate().split('-')))
          return UTCDateTime(*ymd)
      else:
          return None 
@@ -123,19 +127,19 @@ def compute_month_list(start_time, end_time):
     end_month = end_time.month
 
     month_dict = {}
-    year_list = range(start_year, end_year + 1)
+    year_list = list(range(start_year, end_year + 1))
     for k, cur_year in enumerate(year_list):
         if k == 0 and end_month > start_month:
-            month_dict[year_list[k]] = range(start_month, end_month + 1)
+            month_dict[year_list[k]] = list(range(start_month, end_month + 1))
         elif k == 0 and end_month <= start_month:
-            month_dict[year_list[k]] = range(start_month, 13)
-            month_dict[year_list[k]].extend(range(1, end_month + 1))
+            month_dict[year_list[k]] = list(range(start_month, 13))
+            month_dict[year_list[k]].extend(list(range(1, end_month + 1)))
         elif k == len(year_list) - 1:
-            month_dict[year_list[k]] = range(1, end_month + 1)
+            month_dict[year_list[k]] = list(range(1, end_month + 1))
         else:
-            month_dict[year_list[k]] = range(1, 13)
+            month_dict[year_list[k]] = list(range(1, 13))
 
-    for cur_year, month_list in month_dict.iteritems():
+    for cur_year, month_list in month_dict.items():
         for cur_month in month_list:
             interval_list.append(UTCDateTime(year = cur_year, month = cur_month, day = 1))
 
@@ -208,7 +212,7 @@ class AttribDict(dict, object):
         return st
 
     def update(self, adict={}):
-        for (key, value) in adict.iteritems():
+        for (key, value) in adict.items():
             if key in self.readonly:
                 continue
             self[key] = value
@@ -325,7 +329,7 @@ class ActionHistory(object):
                 lastAction = firstAction
 
             # If the attribute exists in the attribute map, create the update string.
-            if curAttr in self.attrMap.iterkeys():
+            if curAttr in iter(self.attrMap.keys()):
                 curStr = "%s = '%s'," %(self.attrMap[curAttr], str(lastAction['dataAfter']))
                 updateString += curStr 
 
@@ -442,13 +446,13 @@ class HookManager(object):
         receivers : list of objects
             The objects for which the hooks are called.
         '''
-        if hook_name not in self.hooks.iterkeys():
+        if hook_name not in iter(self.hooks.keys()):
             raise RuntimeError('The name %s is not available in the allowed hooks.' % hook_name)
 
         for cur_receiver in receivers:
             hooks = cur_receiver.getHooks()
             if hooks:
-                if hook_name in hooks.iterkeys():
+                if hook_name in iter(hooks.keys()):
                     kwargs = {x:kwargs[x] for x in kwargs if x in self.hook_kwargs[hook_name]}
                     hooks[hook_name](**kwargs)
 

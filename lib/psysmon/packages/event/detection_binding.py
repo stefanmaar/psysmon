@@ -28,6 +28,9 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import logging
 import operator as op
 
@@ -86,7 +89,7 @@ class DetectionBinder(object):
 
         # Get the earlies detection of each channel. Remove these detections
         # from the detections list.
-        next_detections = [x[0] for x in detections.values() if len(x) > 0]
+        next_detections = [x[0] for x in list(detections.values()) if len(x) > 0]
 
         while len(next_detections) > 0:
 
@@ -174,7 +177,7 @@ class DetectionBinder(object):
                 detections[first_detection.scnl].remove(first_detection)
 
             # Get the next earliest detection of each channel.
-            next_detections = [x[0] for x in detections.values() if len(x) > 0]
+            next_detections = [x[0] for x in list(detections.values()) if len(x) > 0]
 
 
     def get_search_window(self, master, slaves):
@@ -220,7 +223,7 @@ class DetectionBinder(object):
                 dst_lonlat = cur_dst.get_lon_lat()
                 dist, az1, az2 = geodetics.gps2dist_azimuth(lon1 = src_lonlat[0], lat1 = src_lonlat[1],
                                                             lon2 = dst_lonlat[0], lat2 = dst_lonlat[1])
-                cur_tt = dist / vel
+                cur_tt = old_div(dist, vel)
                 if cur_tt < min_search_win:
                     cur_tt = min_search_win
                 cur_search_win[cur_dst.snl] = cur_tt

@@ -29,7 +29,12 @@ The importWaveform module.
 
 This module contains the classes of the importWaveform dialog window.
 '''
+from __future__ import division
 
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os
 import copy
 import logging
@@ -337,7 +342,7 @@ class SlidingWindowProcessor(object):
 
         # Compute the start times of the sliding windows.
         windowlist_start = [start_time, ]
-        n_windows = np.floor(end_time - start_time) / (window_length * window_step)
+        n_windows = old_div(np.floor(end_time - start_time), (window_length * window_step))
         windowlist_start = [start_time + x * (window_length * window_step) for x in range(0, int(n_windows))]
 
         try:
@@ -387,7 +392,7 @@ class SlidingWindowProcessor(object):
                                                                             location = cur_loc,
                                                                             name = cur_channel))
 
-        n_chunk_windows =  np.ceil(window_length / chunk_length)
+        n_chunk_windows =  np.ceil(old_div(window_length, chunk_length))
 
         pre_stream_length = [x.pre_stream_length for x in looper_nodes]
         post_stream_length = [x.post_stream_length for x in looper_nodes]

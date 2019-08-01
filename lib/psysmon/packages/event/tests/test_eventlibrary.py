@@ -118,7 +118,7 @@ class EventLibraryTestCase(unittest.TestCase):
         library.load_catalog_from_db(project = self.project, name = 'REB')
 
         self.assertEqual(len(library.catalogs), 1)
-        self.assertEqual(library.catalogs.iterkeys(), ['REB'])
+        self.assertEqual(iter(library.catalogs.keys()), ['REB'])
         self.assertIsInstance(library.catalogs['REB'], ev_core.Catalog)
 
         cur_catalog = library.catalogs['REB']
@@ -131,7 +131,7 @@ class EventLibraryTestCase(unittest.TestCase):
         library = ev_core.Library(name = 'test_name')
         library.load_catalog_from_db(project = self.project, name = ['REB', 'ZAMG_AUTODRM'])
         self.assertEqual(len(library.catalogs), 2)
-        self.assertListEqual(sorted(library.catalogs.iterkeys()), ['REB', 'ZAMG_AUTODRM'])
+        self.assertListEqual(sorted(library.catalogs.keys()), ['REB', 'ZAMG_AUTODRM'])
 
 
     def test_get_catalogs_in_db(self):

@@ -28,7 +28,10 @@ The plugin for the localization using the circle method.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
 
+from builtins import range
+from past.utils import old_div
 import logging
 
 import numpy as np
@@ -269,7 +272,7 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
         else:
             x = a + x
 
-        xa = x**2 / a**2
+        xa = old_div(x**2, a**2)
         mask = xa >= 1
         xa = xa[mask]
         x = x[mask]

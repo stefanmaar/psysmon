@@ -30,6 +30,8 @@ The pSysmon result module.
 This module contains the pSysmon result system.
 '''
 
+from builtins import str
+from builtins import object
 import gzip
 import itertools
 import json
@@ -91,7 +93,7 @@ class ResultBag(object):
         import csv
 
         if group_by == 'result':
-            result_rids = list(set(list(itertools.chain.from_iterable(self.results.values()))))
+            result_rids = list(set(list(itertools.chain.from_iterable(list(self.results.values())))))
             for cur_result_rid in result_rids:
                 results_to_export = self.get_results(result_rid = cur_result_rid)
                 export_values = []
@@ -147,7 +149,7 @@ class ResultBag(object):
 
         valid_keys = ['resource_id', 'result_rid', 'name']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
             else:
@@ -315,7 +317,7 @@ class ValueResult(Result):
         A list of results in the order of the scnl list.
         '''
         if scnl is None:
-            scnl = self.values.iterkeys()
+            scnl = iter(self.values.keys())
 
         return scnl, [self.values.get(key, None) for key in scnl]
 
@@ -396,7 +398,7 @@ class TableResult(Result):
             #cur_values.append(cur_row.origin_resource)
             #cur_values.reverse()
             for k, cur_value in enumerate(cur_values):
-                if isinstance(cur_value, unicode):
+                if isinstance(cur_value, str):
                     cur_values[k] = cur_value.encode('utf8')
             export_values.append(cur_values)
 
@@ -405,7 +407,7 @@ class TableResult(Result):
             os.makedirs(self.output_dir)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, unicode):
+        if isinstance(filename, str):
             filename = filename.encode(encoding = 'utf-8')
 
         fid = open(filename, 'wt')
@@ -451,11 +453,11 @@ class TableResultRow(object):
     def add_cells(self, **kwargs):
         ''' Add values to the row.
         '''
-        for cur_key, cur_value in kwargs.iteritems():
-            if cur_key in self.cells.iterkeys():
+        for cur_key, cur_value in kwargs.items():
+            if cur_key in iter(self.cells.keys()):
                 self.cells[cur_key] = cur_value
             else:
-                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, self.cells.iterkeys()), RuntimeWarning)
+                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, iter(self.cells.keys())), RuntimeWarning)
 
 
 
@@ -617,7 +619,7 @@ class ShelveResult(Result):
         #filename = os.path.join(output_dir, self.filename)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, unicode):
+        if isinstance(filename, str):
             filename = filename.encode(encoding = 'utf-8')
 
         db = shelve.open(filename)
@@ -656,7 +658,7 @@ class JsonResult(Result):
             os.makedirs(self.output_dir)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, unicode):
+        if isinstance(filename, str):
             filename = filename.encode(encoding = 'utf-8')
 
         # Compress the shelve file.

@@ -29,7 +29,11 @@
 
 '''
 from __future__ import absolute_import
+from __future__ import division
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
@@ -212,7 +216,7 @@ class ImportBulletinEditDlg(wx.Frame):
         wildcard_list = self.get_wildcard_data()
 
         wildcard = ""
-        for curKey in sorted(wildcard_list.iterkeys()):
+        for curKey in sorted(wildcard_list.keys()):
             wildcard = wildcard + wildcard_list[curKey] + '|'
 
         wildcard = wildcard + 'All files (*)|*'
@@ -238,7 +242,7 @@ class ImportBulletinEditDlg(wx.Frame):
             for filename in paths:
                 self.logger.info('Adding file %s', filename)
                 fsize = os.path.getsize(filename);
-                fsize = fsize/(1024.0*1024.0)           # Convert to MB
+                fsize = old_div(fsize,(1024.0*1024.0))           # Convert to MB
                 bulletin_format = self.collectionNode.pref_manager.get_value('bulletin_format')
                 matches.append((bulletin_format, filename, '%.2f' % fsize))
 
@@ -272,7 +276,7 @@ class ImportBulletinEditDlg(wx.Frame):
                     for filename in fnmatch.filter(filenames, cur_pattern):
                         self.logger.info('Adding file %s', os.path.join(root, filename))
                         fsize = os.path.getsize(os.path.join(root, filename));
-                        fsize = fsize/(1024.0 * 1024.0)
+                        fsize = old_div(fsize,(1024.0 * 1024.0))
                         bulletin_format = self.collectionNode.pref_manager.get_value('bulletin_format')
                         matches.append(bulletin_format, (os.path.join(root, filename), '%.2f' % fsize))
                         k += 1
@@ -519,7 +523,7 @@ class FileGrid(wx.grid.Grid):
     def colPopup(self, col, evt):
         """(col, evt) -> display a popup menu when a column label is
         right clicked"""
-        x = self.GetColSize(col)/2
+        x = old_div(self.GetColSize(col),2)
         menu = wx.Menu()
 
         xo, yo = evt.GetPosition()

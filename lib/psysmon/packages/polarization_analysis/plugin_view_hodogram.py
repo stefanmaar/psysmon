@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import zip
+from past.utils import old_div
 import logging
 import wx
 import numpy as np
@@ -94,7 +97,7 @@ class PolarizationAnalysis(ViewPlugin):
         ''' This plugin needs to create a virtual channel.
         '''
         # TODO: Get the needed channels from preference items.
-        return self.channel_map.values()
+        return list(self.channel_map.values())
 
 
 
@@ -201,13 +204,13 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         sps = []
 
         # Get the data of the three components.
-        for component, channel_name in channel_map.iteritems():
+        for component, channel_name in channel_map.items():
             cur_stream = stream.select(channel = channel_name)
             cur_trace = cur_stream.traces[0]
             sps.append(cur_trace.stats.sampling_rate)
 
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = time_array * 1/cur_trace.stats.sampling_rate
+            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -233,16 +236,16 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
         # Normalize to the station maximum.
         max_amp = np.max(np.max(np.abs(np.vstack((x_data,y_data, z_data))), axis = 1))
-        x_data = x_data / max_amp
-        y_data = y_data / max_amp
-        z_data = z_data / max_amp
+        x_data = old_div(x_data, max_amp)
+        y_data = old_div(y_data, max_amp)
+        z_data = old_div(z_data, max_amp)
 
         # Scale to the desired size in points.
         # TODO: Make the size a user preference.
         max_size = 20.
 
         win_step = np.floor(window_length_smp - (window_length_smp * overlap))
-        n_win = np.floor( (len(z_data) - window_length_smp) / win_step)
+        n_win = np.floor( old_div((len(z_data) - window_length_smp), win_step))
 
         for cur_axes in self.axes:
             #cur_axes.clear()
@@ -268,9 +271,9 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
             # Normalize to the station maximum.
             max_amp = np.max(np.max(np.abs(np.vstack((cur_x_data, cur_y_data, cur_z_data))), axis = 1))
-            cur_x_data = cur_x_data / max_amp * max_size
-            cur_y_data = cur_y_data / max_amp * max_size
-            cur_z_data = cur_z_data / max_amp * max_size
+            cur_x_data = old_div(cur_x_data, max_amp * max_size)
+            cur_y_data = old_div(cur_y_data, max_amp * max_size)
+            cur_z_data = old_div(cur_z_data, max_amp * max_size)
 
             cur_line = list(zip(cur_x_data, cur_y_data))
             lines_xy.append(cur_line)

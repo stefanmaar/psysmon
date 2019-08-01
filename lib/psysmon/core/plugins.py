@@ -29,6 +29,7 @@ Extend psysmon with custom code.
 
 This module contains the pSysmon plugin system.
 '''
+from builtins import object
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -515,7 +516,7 @@ class SharedInformationBag(object):
 
         ret_val = self.shared_info
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
             else:

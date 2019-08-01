@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
 from psysmon.core.preferences_manager import FloatSpinPrefItem
@@ -140,9 +142,9 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                 noise_rms = np.sqrt(np.mean(noise_trace.data**2))
                 noise_mean = np.mean(np.abs(noise_trace.data))
                 noise_max_abs = np.max(np.abs(noise_trace.data))
-                snr = signal_rms/noise_rms
-                snr_max_mean = max_abs / noise_mean
-                snr_max_max = max_abs / noise_max_abs
+                snr = old_div(signal_rms,noise_rms)
+                snr_max_mean = old_div(max_abs, noise_mean)
+                snr_max_max = old_div(max_abs, noise_max_abs)
 
 
             cur_scnl = p_util.traceid_to_scnl(tr.id)

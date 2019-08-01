@@ -29,9 +29,14 @@ The event looper.
 
 This module contains the classes of the importWaveform dialog window.
 '''
+from __future__ import division
 
 #from profilehooks import profile
 
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import json
 import os
 import copy
@@ -366,19 +371,19 @@ class EventProcessor(object):
             length = 3600
             int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + length
             int_end = UTCDateTime(end_time.year, end_time.month, end_time.day)
-            n_intervals = (int_end - int_start) / length
+            n_intervals = old_div((int_end - int_start), length)
             interval_start.extend([int_start + x * length for x in range(0, int(n_intervals))])
         if interval == 'day':
             length = seconds_per_day
             int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + length
             int_end = UTCDateTime(end_time.year, end_time.month, end_time.day)
-            n_intervals = (int_end - int_start) / length
+            n_intervals = old_div((int_end - int_start), length)
             interval_start.extend([int_start + x * length for x in range(0, int(n_intervals))])
         elif interval == 'week':
             length = seconds_per_day*7
             int_start = UTCDateTime(start_time.year, start_time.month, start_time.day) + (6 - start_time.weekday) * seconds_per_day
             int_end = UTCDateTime(end_time.year, end_time.month, end_time.day) - end_time.weekday * seconds_per_day
-            n_intervals = (int_end - int_start) / length
+            n_intervals = old_div((int_end - int_start), length)
             interval_start.extend([int_start + x * length for x in range(0, int(n_intervals))])
         elif interval == 'month':
             start_year = start_time.year
@@ -390,16 +395,16 @@ class EventProcessor(object):
             end_month = end_time.month
 
             month_dict = {}
-            year_list = range(start_year, end_year + 1)
+            year_list = list(range(start_year, end_year + 1))
             for k, cur_year in enumerate(year_list):
                 if k == 0:
-                    month_dict[year_list[0]] = range(start_month, end_month)
+                    month_dict[year_list[0]] = list(range(start_month, end_month))
                 elif k == len(year_list) - 1:
-                    month_dict[year_list[0]] = range(1, end_month)
+                    month_dict[year_list[0]] = list(range(1, end_month))
                 else:
-                    month_dict[year_list[0]] = range(1, 12)
+                    month_dict[year_list[0]] = list(range(1, 12))
 
-            for cur_year, month_list in month_dict.iteritems():
+            for cur_year, month_list in month_dict.items():
                 for cur_month in month_list:
                     interval_start.append(UTCDateTime(year = cur_year, month = cur_month))
 

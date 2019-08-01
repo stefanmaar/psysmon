@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -19,6 +20,9 @@ from __future__ import print_function
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from past.utils import old_div
+from builtins import object
 import sys
 import logging
 import warnings
@@ -88,9 +92,9 @@ class OLD_PlotPanel(wx.Panel):
     """
     def __init__( self, parent, color=None, dpi=None, **kwargs ):
         # initialize Panel
-        if 'id' not in kwargs.iterkeys():
+        if 'id' not in iter(kwargs.keys()):
             kwargs['id'] = wx.ID_ANY
-        if 'style' not in kwargs.iterkeys():
+        if 'style' not in iter(kwargs.keys()):
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
         self.SetMinSize((100, 40))
@@ -276,7 +280,7 @@ class OLD_View(wx.Panel):
 
     def setEventCallbacks(self, hooks, dataManager, displayManager):
 
-        for curKey, curCallback in hooks.iteritems():
+        for curKey, curCallback in hooks.items():
             cur_cid = self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager, callback=curCallback: callback(evt, dataManager, displayManager))
             self.cids.append(cur_cid)
 
@@ -337,7 +341,7 @@ class OLD_View(wx.Panel):
 
         valid_keys = ['mode', 'parent_rid', 'key']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_artist = [x for x in ret_artist if getattr(x, cur_key) == cur_value or cur_value is None]
             else:
@@ -451,7 +455,7 @@ class ChannelAnnotationArea(wx.Panel):
         gc.FillPath(path1)
         gc.DrawPath(path)
 
-        newPos =  height/2
+        newPos =  old_div(height,2)
 
         #print winSize
         #print newPos
@@ -517,7 +521,7 @@ class OLD_ChannelContainer(wx.Panel):
     def data_plotted(self):
         ''' Indicate if the view has plotted any data.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             if cur_view.data_plotted:
                 return True
         return False
@@ -561,7 +565,7 @@ class OLD_ChannelContainer(wx.Panel):
             The name of the view to search.
         '''
         if name is None:
-            return self.views.values()
+            return list(self.views.values())
         else:
             view = self.views.get(name, None)
             if view:
@@ -595,11 +599,11 @@ class OLD_ChannelContainer(wx.Panel):
         if not self.views:
             return
 
-        for curView in self.views.values():
+        for curView in list(self.views.values()):
             self.viewSizer.Hide(curView)
             self.viewSizer.Detach(curView)
 
-        viewSize = self.views.itervalues().next().GetMinSize()
+        viewSize = iter(self.views.values()).next().GetMinSize()
         viewSize[1] = viewSize[1] * len(self.views)
         self.SetMinSize(viewSize)
 
@@ -611,21 +615,21 @@ class OLD_ChannelContainer(wx.Panel):
     def draw(self):
         ''' Draw the views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.draw()
 
 
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in all views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                            key = key, **kwargs)
 
     def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
         ''' Plot a vertical vspan in the views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.plot_annotation_vspan(x_start = x_start,
                                            x_end = x_end,
                                            parent_rid = parent_rid,
@@ -637,7 +641,7 @@ class OLD_ChannelContainer(wx.Panel):
     def clear_annotation_artist(self, **kwargs):
         ''' Delete annotation artits all views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.clear_annotation_artist(**kwargs)
 
 
@@ -733,7 +737,7 @@ class OLD_StationContainer(wx.Panel):
             The name of the channel to search.
         '''
         if name is None:
-            return self.channels.values()
+            return list(self.channels.values())
         else:
             channel = self.channels.get(name, [])
             if channel:
@@ -782,12 +786,12 @@ class OLD_StationContainer(wx.Panel):
         if not self.channels:
             return
 
-        for curChannel in self.channels.values():
+        for curChannel in list(self.channels.values()):
             self.channelSizer.Hide(curChannel)
             self.channelSizer.Detach(curChannel)
 
         #show_channels = [x for x in self.channels.itervalues() if x.show_channel]
-        show_channels = [x for x in self.channels.itervalues()]
+        show_channels = [x for x in self.channels.values()]
         if show_channels:
             stationSize = show_channels[0].GetMinSize()
             print("stationSize: %s" % stationSize)
@@ -819,21 +823,21 @@ class OLD_StationContainer(wx.Panel):
     def draw(self):
         ''' Draw all channels of the station.
         '''
-        for cur_channel in self.channels.itervalues():
+        for cur_channel in self.channels.values():
             cur_channel.draw()
 
 
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in all channels of the station.
         '''
-        for cur_channel in self.channels.itervalues():
+        for cur_channel in self.channels.values():
             cur_channel.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                               key = key, **kwargs)
 
     def clear_annotation_artist(self, **kwargs):
         ''' Delete annotation artits all views of the channel.
         '''
-        for cur_channel in self.channels.itervalues():
+        for cur_channel in self.channels.values():
             cur_channel.clear_annotation_artist(**kwargs)
 
 
@@ -939,7 +943,7 @@ class TdDatetimeInfo(wx.Panel):
         width = winSize[0]
         height = winSize[1]
         btnSize = self.durationButton.GetSize()
-        pos = (width - 100 - btnSize[1], height/2)
+        pos = (width - 100 - btnSize[1], old_div(height,2))
         self.durationButton.SetPosition(pos)
         event.Skip()
         #dc = wx.PaintDC(self)
@@ -1102,7 +1106,7 @@ class StationAnnotationArea(wx.Panel):
         gc.FillPath(path1)
         gc.DrawPath(path)
 
-        newPos =  height/2
+        newPos =  old_div(height,2)
 
         #print winSize
         #print newPos
@@ -1191,7 +1195,7 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
         valid_keys = ['name', 'network', 'location']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stations = [x for x in ret_stations if getattr(x, cur_key) == cur_value or cur_value is None]
             else:
@@ -1346,8 +1350,8 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
         '''
         for curStation in self.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
+            for curChannel in list(curStation.channels.values()):
+                for curView in list(curChannel.views.values()):
                     curView.setEventCallbacks(hooks, dataManager, displayManager)
 
 
@@ -1355,8 +1359,8 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
         ''' Clear the callbacks of the views.
         '''
         for curStation in self.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
+            for curChannel in list(curStation.channels.values()):
+                for curView in list(curChannel.views.values()):
                     curView.clearEventCallbacks()
 
 

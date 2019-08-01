@@ -28,6 +28,9 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 import os
 
 import psysmon.core.packageNodes
@@ -120,7 +123,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         start_time = process_limits[0]
         end_time = process_limits[1]
 
-        if 'event' in kwargs.iterkeys():
+        if 'event' in iter(kwargs.keys()):
             cur_event = kwargs['event']
         else:
             cur_event = None
@@ -151,9 +154,9 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 m_psd_nfft = psd_nfft
                 m_pad_to = None
                 if len(cur_trace.data) < psd_nfft:
-                    m_psd_nfft = len(cur_trace.data) / 4
+                    m_psd_nfft = old_div(len(cur_trace.data), 4)
                     m_pad_to = psd_nfft
-                n_overlap = m_psd_nfft / 100 * psd_overlap
+                n_overlap = old_div(m_psd_nfft, 100 * psd_overlap)
 
                 (P, frequ) = mlab.psd(cur_trace.data,
                                       Fs = cur_trace.stats.sampling_rate,
@@ -220,16 +223,16 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         scnl = psd['scnl']
         start_time = psd['start_time']
 
-        if scnl not in self.psd_data.iterkeys():
+        if scnl not in iter(self.psd_data.keys()):
             self.psd_data[scnl] = {}
 
-        if scnl not in self.save_day.iterkeys():
+        if scnl not in iter(self.save_day.keys()):
             self.save_day[scnl] = None
 
         if self.save_day[scnl] is None:
             self.save_day[scnl] = UTCDateTime(start_time.timestamp - start_time.timestamp % self.save_interval)
 
-        if 'event_id' in psd.iterkeys():
+        if 'event_id' in iter(psd.keys()):
             self.psd_data[scnl][psd['event_id']] = psd
         else:
             self.psd_data[scnl][start_time.isoformat()] = psd
@@ -257,8 +260,8 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         '''
         export_data = self.psd_data[scnl]
 
-        first_time = UTCDateTime(sorted(export_data.iterkeys())[0])
-        last_time = UTCDateTime(sorted(export_data.iterkeys())[-1])
+        first_time = UTCDateTime(sorted(export_data.keys())[0])
+        last_time = UTCDateTime(sorted(export_data.keys())[-1])
         #last_key = sorted(export_data.iterkeys())[-1]
         #last_time = export_data[last_key]['end_time']
         #first_time = sorted([x['start_time'] for x in export_data.values()])[0]
@@ -283,7 +286,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     def create_event_result(self, event, origin_resource = None):
         ''' Write the psd data for the given scnl to file.
         '''
-        export_data = dict((str(':'.join(key)), value) for (key, value) in self.psd_data.items())
+        export_data = dict((str(':'.join(key)), value) for (key, value) in list(self.psd_data.items()))
         export_data['event_id'] = event.db_id
 
         shelve_result = result.ShelveResult(name = 'psd',
@@ -299,13 +302,13 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                          event.end_time.isoformat())
 
         self.psd_data = {}
-        for cur_scnl in export_data.iterkeys():
+        for cur_scnl in export_data.keys():
             self.save_day[cur_scnl] = UTCDateTime(event.start_time.timestamp - event.start_time.timestamp % self.save_interval)
 
     def cleanup(self, origin_resource = None):
         ''' Publish all remaining psd data to results.
         '''
-        for cur_scnl, cur_data in self.psd_data.iteritems():
+        for cur_scnl, cur_data in self.psd_data.items():
             if cur_data:
                 self.create_result(cur_scnl, origin_resource = origin_resource)
 

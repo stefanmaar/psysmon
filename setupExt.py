@@ -29,6 +29,9 @@ Some setup helper functions.
 '''
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import sys
 import re
@@ -36,7 +39,7 @@ import fnmatch
 from textwrap import fill
 
 if sys.version_info[0] < 3:
-    import ConfigParser as configparser
+    import configparser as configparser
 else:
     import configparser
 

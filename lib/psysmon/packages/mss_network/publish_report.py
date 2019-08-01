@@ -197,9 +197,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             with open(tmp_filename, 'r') as fp:
                 reader = csv.DictReader(fp, delimiter = ';')
                 for cur_row in reader:
-                    if cur_row['Sprengnummer'] in quarry_blast.iterkeys():
+                    if cur_row['Sprengnummer'] in iter(quarry_blast.keys()):
                         cur_blast = quarry_blast[cur_row['Sprengnummer']]
-                        if 'psysmon_event_id' in cur_blast.iterkeys() and 'computed_on' in cur_blast.iterkeys():
+                        if 'psysmon_event_id' in iter(cur_blast.keys()) and 'computed_on' in iter(cur_blast.keys()):
                             cur_export_row = {}
                             cur_export_row['Sprengnummer'] = cur_row['Sprengnummer']
                             cur_export_row['ID'] = cur_blast['id']
@@ -207,15 +207,15 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                             cur_export_row['network_mag'] = round(cur_blast['magnitude']['network_mag'], 2)
                             cur_export_row['network_mag_std'] = round(cur_blast['magnitude']['network_mag_std'], 2)
                             max_pgv = max(cur_blast['max_pgv']['data'].values())
-                            max_pgv_ind = cur_blast['max_pgv']['data'].values().index(max_pgv)
+                            max_pgv_ind = list(cur_blast['max_pgv']['data'].values()).index(max_pgv)
                             cur_export_row['max_pgv [mm/s]'] = round(max_pgv * 1000, 3)
-                            cur_export_row['max_pgv_station'] = cur_blast['max_pgv']['data'].keys()[max_pgv_ind]
-                            if 'DUBA:MSSNet:00' in cur_blast['dom_stat_frequ'].keys():
+                            cur_export_row['max_pgv_station'] = list(cur_blast['max_pgv']['data'].keys())[max_pgv_ind]
+                            if 'DUBA:MSSNet:00' in list(cur_blast['dom_stat_frequ'].keys()):
                                 cur_export_row['dom_frequ_duba [Hz]'] = round(cur_blast['dom_stat_frequ']['DUBA:MSSNet:00'], 2)
                             else:
                                 cur_export_row['dom_frequ_duba [Hz]'] = ''
 
-                            if 'DUBAM:MSSNet:00' in cur_blast['dom_stat_frequ'].keys():
+                            if 'DUBAM:MSSNet:00' in list(cur_blast['dom_stat_frequ'].keys()):
                                 cur_export_row['dom_frequ_dubam [Hz]'] = round(cur_blast['dom_stat_frequ']['DUBAM:MSSNet:00'], 2)
                             else:
                                 cur_export_row['dom_frequ_dubam [Hz]'] = ''
@@ -224,20 +224,20 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                         else:
                             self.logger.info("No related result found for blast %s.", cur_row['Sprengnummer'])
         else:
-            for cur_blast_key in sorted(quarry_blast.iterkeys()):
+            for cur_blast_key in sorted(quarry_blast.keys()):
                 cur_blast = quarry_blast[cur_blast_key]
-                if 'psysmon_event_id' in cur_blast.iterkeys() and 'computed_on' in cur_blast.iterkeys():
+                if 'psysmon_event_id' in iter(cur_blast.keys()) and 'computed_on' in iter(cur_blast.keys()):
                     cur_export_row = {}
                     cur_export_row['Sprengnummer'] = cur_blast_key
                     cur_export_row['ID'] = cur_blast['id']
                     cur_export_row['time [UTC]'] = cur_blast['event_time'].isoformat()
                     cur_export_row['network_mag'] = round(cur_blast['magnitude']['network_mag'], 2)
                     cur_export_row['network_mag_std'] = round(cur_blast['magnitude']['network_mag_std'], 2)
-                    if cur_blast['max_pgv']['data'].values():
+                    if list(cur_blast['max_pgv']['data'].values()):
                         max_pgv = max(cur_blast['max_pgv']['data'].values())
-                        max_pgv_ind = cur_blast['max_pgv']['data'].values().index(max_pgv)
+                        max_pgv_ind = list(cur_blast['max_pgv']['data'].values()).index(max_pgv)
                         cur_export_row['max_pgv [mm/s]'] = round(max_pgv * 1000, 3)
-                        cur_export_row['max_pgv_station'] = cur_blast['max_pgv']['data'].keys()[max_pgv_ind]
+                        cur_export_row['max_pgv_station'] = list(cur_blast['max_pgv']['data'].keys())[max_pgv_ind]
                     else:
                         cur_export_row['max_pgv [mm/s]'] = -9999
                         cur_export_row['max_pgv_station'] = -9999
@@ -250,7 +250,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                     else:
                         cur_export_row['pgv_duba [mm/s]'] = ''
 
-                    if 'DUBA:MSSNet:00' in cur_blast['dom_stat_frequ'].keys():
+                    if 'DUBA:MSSNet:00' in list(cur_blast['dom_stat_frequ'].keys()):
                         cur_export_row['dom_frequ_duba [Hz]'] = round(cur_blast['dom_stat_frequ']['DUBA:MSSNet:00'], 2)
                     else:
                         cur_export_row['dom_frequ_duba [Hz]'] = ''
@@ -262,7 +262,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                     else:
                         cur_export_row['pgv_dubam [mm/s]'] = ''
 
-                    if 'DUBAM:MSSNet:00' in cur_blast['dom_stat_frequ'].keys():
+                    if 'DUBAM:MSSNet:00' in list(cur_blast['dom_stat_frequ'].keys()):
                         cur_export_row['dom_frequ_dubam [Hz]'] = round(cur_blast['dom_stat_frequ']['DUBAM:MSSNet:00'], 2)
                     else:
                         cur_export_row['dom_frequ_dubam [Hz]'] = ''
@@ -310,9 +310,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
                     # Check for needed upload of results.
                     save_blast_file = False
-                    for cur_blast_key in sorted(quarry_blast.iterkeys()):
+                    for cur_blast_key in sorted(quarry_blast.keys()):
                         cur_blast = quarry_blast[cur_blast_key]
-                        if 'psysmon_event_id' in cur_blast.iterkeys() and 'computed_on' in cur_blast.iterkeys() and 'uploaded_on' not in cur_blast.iterkeys():
+                        if 'psysmon_event_id' in iter(cur_blast.keys()) and 'computed_on' in iter(cur_blast.keys()) and 'uploaded_on' not in iter(cur_blast.keys()):
                             # Upload the result images to the FTP Server.
                             self.logger.info('Uploading images of %s.', cur_blast_key)
                             cur_blast_dir = os.path.join(result_dir, 'sprengung_' + cur_blast_key)

@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import logging
 import wx
 
@@ -262,7 +264,7 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
         # Compute the polarization features.
         component_data = {}
         time_array = np.arange(0, x_stream.traces[0].stats.npts)
-        time_array = time_array * 1/x_stream.traces[0].stats.sampling_rate
+        time_array = old_div(time_array * 1,x_stream.traces[0].stats.sampling_rate)
         time_array = time_array + x_stream.traces[0].stats.starttime.timestamp
         component_data['time'] = time_array
         component_data['x'] = x_stream.traces[0].data
@@ -358,7 +360,7 @@ class ParticleMotionFrame(wx.Frame):
     def clear_axes(self):
         ''' Clear all plots in the axes.
         '''
-        for cur_key, cur_axes in self.axes.iteritems():
+        for cur_key, cur_axes in self.axes.items():
             if self.lines[cur_key] is not None:
                 cur_axes.lines.remove(self.lines[cur_key])
                 del self.lines[cur_key]
@@ -437,13 +439,13 @@ class ParticleMotionFrame(wx.Frame):
         ''' Adjust the axes limits.
         '''
         max_amp = []
-        for cur_line in self.lines.itervalues():
+        for cur_line in self.lines.values():
             cur_x_max = np.max(np.abs(cur_line.get_xdata()))
             cur_y_max = np.max(np.abs(cur_line.get_ydata()))
             max_amp.append(np.max([cur_x_max, cur_y_max]))
         max_amp = np.max(max_amp)
 
-        for cur_axes in self.axes.itervalues():
+        for cur_axes in self.axes.values():
             cur_axes.set_xlim((-max_amp, max_amp))
             cur_axes.set_ylim((-max_amp, max_amp))
 

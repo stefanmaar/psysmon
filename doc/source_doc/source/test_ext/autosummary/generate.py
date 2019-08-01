@@ -94,7 +94,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
     items = find_autosummary_in_files(sources)
 
     # remove possible duplicates
-    items = dict([(item, True) for item in items]).keys()
+    items = list(dict([(item, True) for item in items]).keys())
 
     # keep track of new files
     new_files = []

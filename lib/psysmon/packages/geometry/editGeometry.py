@@ -30,7 +30,11 @@ The editGeometry module.
 This module contains the classes of the editGeometry dialog window.
 '''
 from __future__ import print_function
+from __future__ import division
 
+from builtins import zip
+from builtins import str
+from past.utils import old_div
 import logging
 from threading import Thread
 from operator import attrgetter
@@ -386,7 +390,7 @@ class EditGeometryDlg(wx.Frame):
                                           cur_station.x, cur_station.y, cur_station.z, cur_station.coord_system,
                                           cur_station.description]
                     for k, cur_value in enumerate(value_list):
-                        if isinstance(cur_value, unicode):
+                        if isinstance(cur_value, str):
                             value_list[k] = cur_value.encode('utf8')
                     export_values.append(value_list)
 
@@ -511,7 +515,7 @@ class EditGeometryDlg(wx.Frame):
                                 stage_number += 1
 
                                 decimation_stage = obs_inv.ResponseStage(stage_sequence_number = stage_number,
-                                                                         stage_gain = 1/cur_rec_parameter.bitweight,
+                                                                         stage_gain = old_div(1,cur_rec_parameter.bitweight),
                                                                          stage_gain_frequency = stage_frequency,
                                                                          input_units = 'V',
                                                                          output_units = 'COUNTS',
@@ -523,7 +527,7 @@ class EditGeometryDlg(wx.Frame):
                                 stage_number += 1
 
                             if cur_sensor_parameter and cur_rec_parameter:
-                                overall_sensitivity = obs_inv.InstrumentSensitivity(value = cur_sensor_parameter.sensitivity * cur_rec_parameter.gain / cur_rec_parameter.bitweight,
+                                overall_sensitivity = obs_inv.InstrumentSensitivity(value = old_div(cur_sensor_parameter.sensitivity * cur_rec_parameter.gain, cur_rec_parameter.bitweight),
                                                                                     frequency = stage_frequency,
                                                                                     input_units = response.response_stages[0].input_units,
                                                                                     output_units = response.response_stages[-1].output_units)
@@ -579,7 +583,7 @@ class EditGeometryDlg(wx.Frame):
     def remove_inventory(self):
         ''' Remove the selected inventory.
         '''
-        if self.selected_inventory in self.inventories.values():
+        if self.selected_inventory in list(self.inventories.values()):
             self.inventories.pop(self.selected_inventory.name)
             self.inventoryTree.updateInventoryData()
 
@@ -1002,7 +1006,7 @@ class EditGeometryDlg(wx.Frame):
     def onExit(self, event):
         self.logger.debug("onExit")
         # Check if an unsaved database inventory exists.
-        for curInventory in self.inventories.itervalues():
+        for curInventory in self.inventories.values():
             if curInventory.has_changed():
                 self.logger.warning('There are unsaved elements in the inventory.')
 
@@ -1783,7 +1787,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.DeleteChildren(self.root)
 
         # rebuild the inventory tree.
-        for curKey, curInventory in self.Parent.inventories.iteritems():
+        for curKey, curInventory in self.Parent.inventories.items():
             inventoryItem = self.AppendItem(self.root, curKey + '(' + curInventory.type + ')')
             self.SetItemPyData(inventoryItem, curInventory)
             self.SetItemBold(inventoryItem, True)
@@ -2027,7 +2031,7 @@ class ListViewPanel(wx.Panel):
         self.controlPanels['network'] = NetworkPanel(self, wx.ID_ANY)
         self.controlPanels['array'] = ArrayPanel(self, wx.ID_ANY)
 
-        for cur_panel in self.controlPanels.values():
+        for cur_panel in list(self.controlPanels.values()):
             cur_panel.Hide()
 
         #sizer.Add(self.controlPanels['station'], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
@@ -2253,7 +2257,7 @@ class MapViewPanel(wx.Panel):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
@@ -2321,7 +2325,7 @@ class MapViewPanel(wx.Panel):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
@@ -3129,7 +3133,7 @@ class RecorderPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                if field in custom_fields.iterkeys() and hasattr(object, custom_fields[field]):
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
@@ -3525,7 +3529,7 @@ class StationsPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                if field in custom_fields.iterkeys() and hasattr(object, custom_fields[field]):
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
@@ -3982,7 +3986,7 @@ class SensorsPanel(wx.Panel):
                 custom_fields['end_time'] = 'end_time_string'
                 custom_fields['tf_poles'] = 'poles_string'
                 custom_fields['tf_zeros'] = 'zeros_string'
-                if field in custom_fields.iterkeys() and hasattr(object, custom_fields[field]):
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:

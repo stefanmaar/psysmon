@@ -31,6 +31,8 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
+from builtins import str
+from builtins import object
 import itertools
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
@@ -430,7 +432,7 @@ class Inventory(object):
 
         valid_keys = ['serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_recorder = [x for x in ret_recorder if getattr(x, cur_key) == cur_value]
             else:
@@ -460,7 +462,7 @@ class Inventory(object):
 
         valid_keys = ['name', 'serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stream = [x for x in ret_stream if getattr(x, cur_key) == cur_value]
             else:
@@ -490,7 +492,7 @@ class Inventory(object):
 
         valid_keys = ['serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_sensor = [x for x in ret_sensor if getattr(x, cur_key) == cur_value]
             else:
@@ -522,7 +524,7 @@ class Inventory(object):
 
         valid_keys = ['name', 'serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_component = [x for x in ret_component if getattr(x, cur_key) == cur_value]
             else:
@@ -551,7 +553,7 @@ class Inventory(object):
 
         valid_keys = ['name', 'network', 'location']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
             else:
@@ -579,15 +581,15 @@ class Inventory(object):
         '''
 
         search_dict = {}
-        if 'network' in kwargs.iterkeys():
+        if 'network' in iter(kwargs.keys()):
             search_dict['network'] = kwargs['network']
             kwargs.pop('network')
 
-        if 'station' in kwargs.iterkeys():
+        if 'station' in iter(kwargs.keys()):
             search_dict['name'] = kwargs['station']
             kwargs.pop('station')
 
-        if 'location' in kwargs.iterkeys():
+        if 'location' in iter(kwargs.keys()):
             search_dict['location'] = kwargs['location']
             kwargs.pop('location')
 
@@ -597,7 +599,7 @@ class Inventory(object):
 
         valid_keys = ['name',]
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
             else:
@@ -630,7 +632,7 @@ class Inventory(object):
         ret_network = self.networks
 
         valid_keys = ['name', 'type']
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_network = [x for x in ret_network if getattr(x, cur_key) == cur_value]
             else:
@@ -650,7 +652,7 @@ class Inventory(object):
         ret_array = self.arrays
 
         valid_keys = ['name']
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_array = [x for x in ret_array if getattr(x, cur_key) == cur_value]
             else:
@@ -688,7 +690,7 @@ class Inventory(object):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
         return code
 
 
@@ -858,7 +860,7 @@ class Recorder(object):
 
         valid_keys = ['name', 'label', 'agency_uri', 'author_uri']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stream = [x for x in ret_stream if getattr(x, cur_key) == cur_value]
             else:
@@ -1121,7 +1123,7 @@ class RecorderStream(object):
 
         valid_keys = ['serial', 'name']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_component = [x for x in ret_component if getattr(x.item, cur_key) == cur_value]
             else:
@@ -1452,7 +1454,7 @@ class Sensor(object):
 
         valid_keys = ['name', 'agency_uri', 'author_uri']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_component = [x for x in ret_component if getattr(x, cur_key) == cur_value]
             else:
@@ -2209,7 +2211,7 @@ class Station(object):
 
         valid_keys = ['name']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
             else:
@@ -2446,7 +2448,7 @@ class Channel(object):
 
         valid_keys = ['serial', 'model', 'producer', 'name', 'id']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stream = [x for x in ret_stream if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
             else:
@@ -2630,7 +2632,7 @@ class Network(object):
 
         valid_keys = ['name', 'network', 'location', 'id', 'snl', 'snl_string']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
             else:
@@ -2829,7 +2831,7 @@ class Array(object):
 
         valid_keys = ['name', 'network', 'location', 'id', 'snl', 'snl_string']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_station = [x for x in ret_station if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
             else:

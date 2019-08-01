@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
 import psysmon
 import logging
 import wx
@@ -599,7 +600,7 @@ class EditDlg(wx.Dialog):
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
 
-            if curKey in self.data.iterkeys():
+            if curKey in iter(self.data.keys()):
                 self.edit[curKey].SetValue(str(self.data[curKey]))
 
             if curValidator == 'not_empty':

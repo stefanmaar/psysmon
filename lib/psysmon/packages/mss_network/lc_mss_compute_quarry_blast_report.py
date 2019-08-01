@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -19,6 +20,9 @@ from __future__ import absolute_import
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import zip
+from builtins import str
+from past.utils import old_div
 import json
 import os
 import pickle
@@ -228,7 +232,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         dom_frequ = {};
         dom_stat_frequ = {}
         for cur_station in res_stations:
-            cur_psd_keys = [x for x in psd_data.iterkeys() if x.startswith(cur_station.network + '.' + cur_station.name + '.')]
+            cur_psd_keys = [x for x in psd_data.keys() if x.startswith(cur_station.network + '.' + cur_station.name + '.')]
             cur_df = []
             for cur_key in cur_psd_keys:
                 cur_nfft = psd_data[cur_key]['n_fft']
@@ -244,7 +248,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Update the quarry blast information dictionary.
         export_max_pgv = dict(max_pgv)
-        export_magnitude = dict(zip([x.snl_string for x in res_stations], magnitude))
+        export_magnitude = dict(list(zip([x.snl_string for x in res_stations], magnitude)))
         quarry_blast[baumit_id]['computed_on'] = utcdatetime.UTCDateTime()
         quarry_blast[baumit_id]['event_time'] = event.start_time
         quarry_blast[baumit_id]['max_pgv'] = {}
@@ -259,7 +263,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         quarry_blast[baumit_id]['magnitude']['network_mag_std'] = np.std(magnitude)
         quarry_blast[baumit_id]['dom_frequ'] = dom_frequ
         quarry_blast[baumit_id]['dom_stat_frequ'] = dom_stat_frequ
-        quarry_blast[baumit_id]['hypo_dist'] = dict(zip([x.snl_string for x in res_stations], hypo_dist))
+        quarry_blast[baumit_id]['hypo_dist'] = dict(list(zip([x.snl_string for x in res_stations], hypo_dist)))
 
         # Save the quarry blast information.
         with open(blast_filename, 'w') as fp:
@@ -335,10 +339,10 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # This is valid for the left-sided fft.
         #
         n_fft = len(trace.data)
-        delta_t = 1 / trace.stats.sampling_rate
+        delta_t = old_div(1, trace.stats.sampling_rate)
         T = (len(trace.data) - 1) * delta_t
         Y = scipy.fft(trace.data, n_fft)
-        psd = 2 * delta_t**2 / T * np.abs(Y)**2
+        psd = old_div(2 * delta_t**2, T * np.abs(Y)**2)
         psd = 10 * np.log10(psd)
         frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
         psd_data = {}

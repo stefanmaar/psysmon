@@ -31,6 +31,7 @@ This module contains the classes needed to run the pSysmon package system.
 '''
 from __future__ import print_function
 
+from builtins import object
 import os
 import sys
 import logging
@@ -434,7 +435,7 @@ class PackageManager(object):
         '''
         for curNode in procNodes:
             curKey = curNode.nodeClass
-            if curKey in self.processingNodes.iterkeys():
+            if curKey in iter(self.processingNodes.keys()):
                 self.processingNodes[curKey].append(curNode)
             else:
                 self.processingNodes[curKey] = [curNode, ]
@@ -458,8 +459,8 @@ class PackageManager(object):
             The nodes found matching the *searchString*.
         '''
         nodesFound = {}
-        for curPkg in self.packages.itervalues():
-            for curNode in curPkg.collectionNodeTemplates.itervalues():
+        for curPkg in self.packages.values():
+            for curNode in curPkg.collectionNodeTemplates.values():
                 if searchString.lower() in ','.join([curNode.name]+curNode.tags).lower():
                     nodesFound[curNode.name] = curNode
 
@@ -487,7 +488,7 @@ class PackageManager(object):
             The node found ini the packages matching the name *name*. If no 
             collection node is found, False is returned.
         '''
-        for curPkg in self.packages.itervalues():
+        for curPkg in self.packages.values():
             tmp = curPkg.getCollectionNodeTemplate(name)
             if(tmp != False):
                 return tmp
@@ -764,7 +765,7 @@ class Package(object):
         --------
         :class:`psysmon.base.Base.scan4Package`
         '''
-        for curNode in self.collectionNodeTemplates.itervalues():
+        for curNode in self.collectionNodeTemplates.values():
             curNode.setNodePkg(pyPackage)
 
 

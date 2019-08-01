@@ -28,7 +28,11 @@ The sourcemap module.
     http://www.gnu.org/licenses/gpl-3.0.html
 '''
 from __future__ import print_function
+from __future__ import division
 
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import logging
 import numpy as np
 import obspy
@@ -232,7 +236,7 @@ class Station(inventory.Station):
         nz = self.data.shape[1]
 
         weight = np.zeros((nx, ny, nz))
-        print("weight.shape: %s; %d total points; %d MB" % (str(weight.shape), weight.size, weight.nbytes / (1024 * 1024)))
+        print("weight.shape: %s; %d total points; %d MB" % (str(weight.shape), weight.size, old_div(weight.nbytes, (1024 * 1024))))
 
         time = self.time[np.newaxis, np.newaxis,...]
         time = np.broadcast_to(time, (nx, ny, nz))
@@ -251,7 +255,7 @@ class Station(inventory.Station):
 
         weight_sum = np.sum(weight, axis = 2)
         weight_sum[weight_sum == 0] = 1.
-        weight = weight / np.broadcast_to(weight_sum[..., np.newaxis], (weight.shape[0], weight.shape[1], weight.shape[2]))
+        weight = old_div(weight, np.broadcast_to(weight_sum[..., np.newaxis], (weight.shape[0], weight.shape[1], weight.shape[2])))
 
         self.weight = weight
 
@@ -321,7 +325,7 @@ class SourceMap(object):
         ''' The minimum analyse window length.
         '''
         if self.max_station_dist is not None:
-            return self.max_station_dist / self.v_surf_min
+            return old_div(self.max_station_dist, self.v_surf_min)
         else:
             return None
 
@@ -366,7 +370,7 @@ class SourceMap(object):
         if self.map_config['hemisphere'] == 'south':
             search_dict['south'] = True
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         self.map_config['epsg'] = 'epsg:'+code[0][0]
 
@@ -463,7 +467,7 @@ class SourceMap(object):
         mean_station_height = np.mean([x.z for x in self.compute_stations])
         mean_hypo_depth = self.hypo_depth + mean_station_height
         for cur_dist in dist:
-            cur_dist_deg = obspy.geodetics.base.kilometer2degrees(cur_dist / 1000)
+            cur_dist_deg = obspy.geodetics.base.kilometer2degrees(old_div(cur_dist, 1000))
             p_arrivals = model.get_travel_times(source_depth_in_km = mean_hypo_depth / 1000.,
                                                 distance_in_degree = cur_dist_deg,
                                                 phase_list = ['ttp'])
@@ -597,7 +601,7 @@ class SourceMap(object):
         m_y = np.reshape(y_grid[:,:,0], (1, 1, -1))
         m_y = np.broadcast_to(m_y, (self.result_map.shape[0], self.result_map.shape[1], m.shape[2]))
         dist = np.sqrt((m_x - x_grid)**2 + (m_y - y_grid)**2 + hypo_depth**2)
-        pgv = 10**m / (2*np.pi) * (dist**-self.alpha)
+        pgv = old_div(10**m, (2*np.pi) * (dist**-self.alpha))
         self.max_pgv_map = np.max(pgv, axis = 2)
 
         # Compute the Modified Mercalli intensity using the mapping laws from Wald (1999).

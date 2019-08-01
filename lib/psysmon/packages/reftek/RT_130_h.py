@@ -8,6 +8,9 @@
 #
 
 from __future__ import print_function
+from builtins import hex
+from builtins import range
+from builtins import object
 import sys
 import exceptions
 import os
@@ -104,7 +107,7 @@ class PacketHeader (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -195,7 +198,7 @@ class DT (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -349,7 +352,7 @@ class EH (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -460,7 +463,7 @@ class SH (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -608,7 +611,7 @@ class SC (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -648,7 +651,7 @@ class AD (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -801,7 +804,7 @@ class CD (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -964,7 +967,7 @@ class DS (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -1068,7 +1071,7 @@ class FD (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :
@@ -1177,7 +1180,7 @@ class OM (object) :
             self.__dict__[b] = 0x00
             
     def set (self, keyval) :
-        for k in keyval.keys () :
+        for k in list(keyval.keys ()) :
             if k in self.__dict__ :
                 self.__dict__[k] = keyval[k]
             else :

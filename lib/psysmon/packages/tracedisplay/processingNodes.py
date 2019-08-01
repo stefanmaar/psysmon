@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 from psysmon.core.processingStack import ProcessingNode
 from psysmon.core.preferences_manager import SingleChoicePrefItem
 from psysmon.core.preferences_manager import FloatSpinPrefItem
@@ -377,7 +379,7 @@ class ConvertToSensorUnits(ProcessingNode):
 
             comp_param = comp_param[0]
 
-            tr.data = tr.data * rec_stream_param.bitweight / (rec_stream_param.gain * comp_param.sensitivity)
+            tr.data = old_div(tr.data * rec_stream_param.bitweight, (rec_stream_param.gain * comp_param.sensitivity))
             tr.stats.unit = component.output_unit.strip()
 
 

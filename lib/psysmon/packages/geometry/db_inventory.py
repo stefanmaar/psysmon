@@ -333,7 +333,7 @@ class DbNetwork(Network):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
 
@@ -451,7 +451,7 @@ class DbArray(Array):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
 
@@ -613,7 +613,7 @@ class DbStation(Station):
 
         self.__dict__[attr] = value
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
 
@@ -716,7 +716,7 @@ class DbRecorder(Recorder):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -829,7 +829,7 @@ class DbRecorderStream(RecorderStream):
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -1123,7 +1123,7 @@ class DbRecorderStreamParameter(RecorderStreamParameter):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 if (attr == 'start_time') or (attr == 'end_time'):
@@ -1211,7 +1211,7 @@ class DbSensor(Sensor):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -1319,7 +1319,7 @@ class DbSensorComponent(SensorComponent):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -1467,7 +1467,7 @@ class DbSensorComponentParameter(SensorComponentParameter):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 if (attr == 'start_time') or (attr == 'end_time'):
@@ -1567,7 +1567,7 @@ class DbChannel(Channel):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.iterkeys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)

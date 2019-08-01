@@ -31,6 +31,9 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
+from builtins import filter
+from builtins import str
+from builtins import object
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
@@ -337,7 +340,7 @@ class Inventory(object):
     def get_sensor_by_id(self, id):
 
         for cur_recorder in self.recorders:
-            sensor_found = filter((lambda cur_sensor: cur_sensor.id==id), cur_recorder.sensors)
+            sensor_found = list(filter((lambda cur_sensor: cur_sensor.id==id), cur_recorder.sensors))
 
             if sensor_found:
                 return sensor_found[0]
@@ -347,7 +350,7 @@ class Inventory(object):
     ## Get a sensor from the inventory by label.
     def get_sensor_by_label(self, label):
         for cur_recorder in self.recorders:
-            sensor_found = filter((lambda cur_sensor: cur_sensor.label==label), cur_recorder.sensors)
+            sensor_found = list(filter((lambda cur_sensor: cur_sensor.label==label), cur_recorder.sensors))
 
             if sensor_found:
                 return sensor_found[0]

@@ -175,7 +175,7 @@ class NotebookPrefDialog(wx.Frame):
     #
     # Update all options values and close the dialog.  
     def onOk(self, event):
-        for curContainer in self.fieldContainer.values():
+        for curContainer in list(self.fieldContainer.values()):
             curContainer.setOptionsValue()
 
         self.Destroy()
@@ -209,7 +209,7 @@ class NotebookPrefDialog(wx.Frame):
             print("No dialog pages found. Create one first.")
             return
 
-        if not pageName in self.pages.iterkeys():
+        if not pageName in iter(self.pages.keys()):
             print("The specified page is not in the container list.")
             return
 
@@ -237,7 +237,7 @@ class NotebookPrefDialog(wx.Frame):
             print("No field container found. Create one first.")
             return
 
-        if not container in self.fieldContainer.values():
+        if not container in list(self.fieldContainer.values()):
             print("The specified container is not in the container list.")
             return
 
@@ -250,7 +250,7 @@ class NotebookPrefDialog(wx.Frame):
 
     def refit(self):
         self.notebook.Fit()
-        for curContainer in self.fieldContainer.values():
+        for curContainer in list(self.fieldContainer.values()):
             curContainer.SetSize(curContainer.GetBestSize())
 
             for curField in curContainer.fieldList:

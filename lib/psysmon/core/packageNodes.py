@@ -32,6 +32,7 @@ the :mod:`~psysmon.core.packageSystem`.
 '''
 from __future__ import print_function
 
+from builtins import object
 import weakref
 import logging
 
@@ -326,7 +327,7 @@ class CollectionNode(object):
             The required keywords.
         '''
         for cur_kw in needed_keywords:
-            if cur_kw not in kwargs.iterkeys():
+            if cur_kw not in iter(kwargs.keys()):
                 return False
 
         return True
@@ -517,7 +518,7 @@ class LooperCollectionChildNode(CollectionNode):
         # The following attributes can't be pickled and therefore have
         # to be removed.
         # These values have to be reset when loading the project.
-        if 'logger' in result.iterkeys():
+        if 'logger' in iter(result.keys()):
             del result['logger']
         return result
 

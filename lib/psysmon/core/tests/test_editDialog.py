@@ -5,6 +5,7 @@ Created on May 17, 2011
 '''
 from __future__ import print_function
 
+from builtins import map
 import unittest
 import nose.plugins.attrib as nose_attrib
 import psysmon.core.guiBricks as editDialog
@@ -164,7 +165,7 @@ class EditDialogTestCase(unittest.TestCase):
 
 def suite():
     tests = ['testDlg']
-    return unittest.TestSuite(map(EditDialogTestCase, tests))
+    return unittest.TestSuite(list(map(EditDialogTestCase, tests)))
 
 
 if __name__ == '__main__':

@@ -28,6 +28,8 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
+from past.utils import old_div
 import copy
 import os
 
@@ -264,7 +266,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         # Create the obspy PAZ dictionary.
         paz = {}
         paz['gain'] = comp_param.tf_normalization_factor
-        paz['sensitivity'] = (rec_stream_param.gain * comp_param.sensitivity) / rec_stream_param.bitweight
+        paz['sensitivity'] = old_div((rec_stream_param.gain * comp_param.sensitivity), rec_stream_param.bitweight)
         paz['poles'] = comp_param.tf_poles
         paz['zeros'] = comp_param.tf_zeros
 
@@ -501,7 +503,7 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
 
     ax.semilogx()
     if xaxis_frequency:
-        xlim = map(lambda x: 1.0 / x, period_lim)
+        xlim = [1.0 / x for x in period_lim]
         ax.set_xlabel('Frequency [Hz]')
         ax.invert_xaxis()
     else:

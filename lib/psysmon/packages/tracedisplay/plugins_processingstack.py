@@ -418,7 +418,7 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         columns = {1: 'name', 2: 'mode', 3: 'category', 4: 'tags'}
 
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.nodeListCtrl.InsertColumn(colNum, name)
 
         self.fillNodeList(self.availableNodes)
@@ -496,7 +496,7 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         index = 0
         self.nodeListCtrl.DeleteAllItems()
 
-        for curNode in nodeTemplates.itervalues():
+        for curNode in nodeTemplates.values():
             self.nodeListCtrl.InsertStringItem(index, curNode.name)
             self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
             self.nodeListCtrl.SetStringItem(index, 2, curNode.category)

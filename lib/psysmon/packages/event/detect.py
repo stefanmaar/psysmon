@@ -28,8 +28,14 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
 #from profilehooks import profile
 
+from builtins import str
+from builtins import zip
+from past.builtins import basestring
+from past.utils import old_div
+from builtins import object
 import logging
 import warnings
 
@@ -231,7 +237,7 @@ class Detection(object):
                   'start_time', 'end_time',
                   'method', 'agency_uri',
                   'author_uri', 'creation_time']
-        db_dict = dict(zip(labels,
+        db_dict = dict(list(zip(labels,
                            (catalog_id,
                             self.rec_stream_id,
                             self.start_time.timestamp,
@@ -239,7 +245,7 @@ class Detection(object):
                             self.method,
                             self.agency_uri,
                             self.author_uri,
-                            creation_time)))
+                            creation_time))))
         db_detection = db_detection_orm(**db_dict)
         db_detection.id = self.db_id
         return db_detection
@@ -365,7 +371,7 @@ class Catalog(object):
 
         valid_keys = ['scnl']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_detections = [x for x in ret_detections if getattr(x, cur_key) == cur_value]
             else:
@@ -395,7 +401,7 @@ class Catalog(object):
         # Get the channels for the ids.
         channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
         channels = [x[0] if len(x) == 1 else None for x in channels]
-        channels = dict(zip(id_list, channels))
+        channels = dict(list(zip(id_list, channels)))
 
         for cur_detection in self.detections:
             cur_detection.channel = channels[cur_detection.rec_stream_id]
@@ -580,7 +586,7 @@ class Library(object):
         removed_catalog : :class:`Catalog`
             The removed catalog. None if no catalog was removed.
         '''
-        if name in self.catalogs.iterkeys():
+        if name in iter(self.catalogs.keys()):
             return self.catalogs.pop(name)
         else:
             return None
@@ -873,7 +879,7 @@ class StaLtaDetector(object):
         '''
         clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
 
-        thrf = np.ascontiguousarray(self.sta[crop_start:]/self.lta[crop_start:], dtype = np.float64)
+        thrf = np.ascontiguousarray(old_div(self.sta[crop_start:],self.lta[crop_start:]), dtype = np.float64)
         event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr, self.fine_thr, self.turn_limit)
 
         event_start_ind = crop_start + event_start

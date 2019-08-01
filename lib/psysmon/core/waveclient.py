@@ -27,7 +27,12 @@ Module for providing the waveform data from various sources.
     GNU General Public License, Version 3
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import division
 
+from builtins import zip
+from builtins import str
+from past.utils import old_div
+from builtins import object
 import fnmatch
 import logging
 import os
@@ -371,11 +376,11 @@ class PsysmonDbWaveClient(WaveClient):
                     stock_stream.merge()
                     cur_trace = stock_stream.traces[0]
                     cur_start_time = cur_trace.stats.starttime
-                    cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                    cur_end_time = cur_trace.stats.starttime + old_div(cur_trace.stats.npts, cur_trace.stats.sampling_rate)
 
                     stream += stock_stream.split()
 
-                    if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
+                    if (cur_start_time - startTime) > old_div(1,cur_trace.stats.sampling_rate):
                         self.logger.debug('Get missing data in front...')
                         self.logger.debug('Loading data from %s to %s.', startTime, cur_start_time)
                         curStream = self.load_from_file(station = stat,
@@ -386,7 +391,7 @@ class PsysmonDbWaveClient(WaveClient):
                                                         end_time = cur_start_time)
                         stream += curStream
 
-                    if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
+                    if (endTime - cur_end_time) > old_div(1,cur_trace.stats.sampling_rate):
                         self.logger.debug('Get missing data in back...')
                         self.logger.debug('Loading data from %s to %s.', cur_end_time, endTime)
                         curStream = self.load_from_file(station = stat,
@@ -489,7 +494,7 @@ class PsysmonDbWaveClient(WaveClient):
 
             # Add the startTime filter option.
             if start_time:
-                query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.timestamp)
+                query = query.filter(self.traceheader.begin_time + old_div(self.traceheader.numsamp * 1,self.traceheader.sps) > start_time.timestamp)
 
             # Add the endTime filter option.
             if end_time:
@@ -681,7 +686,7 @@ class PsysmonDbWaveClient(WaveClient):
                     # Check the file format.
                     EPS = ENTRY_POINTS['waveform']
                     file_format = None
-                    for format_ep in [x for (key, x) in EPS.items()]:
+                    for format_ep in [x for (key, x) in list(EPS.items())]:
                         # search isFormat for given entry point
                         isFormat = pkg_resources.load_entry_point(format_ep.dist.key,
                             'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
@@ -764,12 +769,12 @@ class PsysmonDbWaveClient(WaveClient):
 
         labels = ['id', 'wf_id', 'filename', 'filesize', 'file_type',
                   'orig_path', 'agency_uri', 'author_uri', 'creation_time']
-        db_data = dict(zip(labels, (None, waveform_dir.id,
+        db_data = dict(list(zip(labels, (None, waveform_dir.id,
                                  relativeFilename, filestat.st_size, file_format,
                                  os.path.dirname(filename),
                                  self.project.activeUser.author_uri,
                                  self.project.activeUser.agency_uri,
-                                 utcdatetime.UTCDateTime().isoformat())))
+                                 utcdatetime.UTCDateTime().isoformat()))))
         return self.datafile(**db_data)
 
 
@@ -778,7 +783,7 @@ class PsysmonDbWaveClient(WaveClient):
                   'recorder_serial', 'stream', 'network',
                   'sps', 'numsamp', 'begin_date', 'begin_time',
                   'agency_uri', 'author_uri', 'creation_time']
-        header2Insert = dict(zip(labels, (None, None,
+        header2Insert = dict(list(zip(labels, (None, None,
                         trace.stats.station,
                         trace.stats.location + ":" + trace.stats.channel,
                         trace.stats.network,
@@ -788,7 +793,7 @@ class PsysmonDbWaveClient(WaveClient):
                         trace.stats.starttime.timestamp,
                         self.project.activeUser.author_uri,
                         self.project.activeUser.agency_uri,
-                        utcdatetime.UTCDateTime().isoformat())))
+                        utcdatetime.UTCDateTime().isoformat()))))
 
 
         return self.traceheader(**header2Insert)
@@ -873,7 +878,7 @@ class EarthwormWaveclient(WaveClient):
             if len(stock_stream) > 0:
                 cur_trace = stock_stream.traces[0]
                 cur_start_time = cur_trace.stats.starttime
-                cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                cur_end_time = cur_trace.stats.starttime + old_div(cur_trace.stats.npts, cur_trace.stats.sampling_rate)
 
                 stream += stock_stream
 
@@ -1048,11 +1053,11 @@ class SeedlinkWaveclient(WaveClient):
             if len(stock_stream) > 0:
                 cur_trace = stock_stream.traces[0]
                 cur_start_time = cur_trace.stats.starttime
-                cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                cur_end_time = cur_trace.stats.starttime + old_div(cur_trace.stats.npts, cur_trace.stats.sampling_rate)
 
                 stream += stock_stream.split()
 
-                if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
+                if (cur_start_time - startTime) > old_div(1,cur_trace.stats.sampling_rate):
                     curStream = self.request_from_server(station = curStation,
                                                          channel = curChannel,
                                                          network = curNetwork,
@@ -1061,7 +1066,7 @@ class SeedlinkWaveclient(WaveClient):
                                                          end_time = cur_start_time)
                     stream += curStream
 
-                if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
+                if (endTime - cur_end_time) > old_div(1,cur_trace.stats.sampling_rate):
                     curStream = self.request_from_server(station = curStation,
                                                          channel = curChannel,
                                                          network = curNetwork,

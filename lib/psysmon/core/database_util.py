@@ -43,7 +43,7 @@ def db_table_migration(engine, table, prefix):
     migrate_success = False
     cur_metadata = sqa.MetaData(engine)
     cur_metadata.reflect(engine)
-    if table.__table__.name in cur_metadata.tables.iterkeys():
+    if table.__table__.name in iter(cur_metadata.tables.keys()):
         # Check for changes between the existing and the new table.
         table_updated = update_db_table(engine = engine,
                                         table = table,
@@ -72,7 +72,7 @@ def update_db_table(engine, table, metadata, prefix):
     # Check for added columns.
     new_table = table.__table__
     exist_table = metadata.tables[new_table.name]
-    columns_to_add = set(new_table.columns.iterkeys()).difference(set(exist_table.columns.iterkeys()))
+    columns_to_add = set(new_table.columns.keys()).difference(set(exist_table.columns.keys()))
     if columns_to_add:
         if not table_updated:
             logger.info('A database table migration is needed.')
@@ -87,7 +87,7 @@ def update_db_table(engine, table, metadata, prefix):
         table_updated = True
 
     # Check for columns to remove.
-    columns_to_remove = set(exist_table.columns.iterkeys()).difference(set(new_table.columns.iterkeys()))
+    columns_to_remove = set(exist_table.columns.keys()).difference(set(new_table.columns.keys()))
     if columns_to_remove:
         if not table_updated:
             logger.info('A database table migration is needed.')
@@ -101,8 +101,8 @@ def update_db_table(engine, table, metadata, prefix):
         table_updated = True
 
     # Check for changed column specifications.
-    for cur_name, cur_col in new_table.columns.items():
-        if cur_name not in exist_table.columns.iterkeys():
+    for cur_name, cur_col in list(new_table.columns.items()):
+        if cur_name not in iter(exist_table.columns.keys()):
             # The column is not existing in the database. 
             # Might have been deleted. Ignore it.
             continue

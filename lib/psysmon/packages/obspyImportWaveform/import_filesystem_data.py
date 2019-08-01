@@ -96,7 +96,7 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         # TODO: List the number of files in the data directory in the grid.
 
         # Get all database clients.
-        db_clients = sorted([x for x in self.project.waveclient.values() if x.mode == 'PsysmonDbWaveClient'])
+        db_clients = sorted([x for x in list(self.project.waveclient.values()) if x.mode == 'PsysmonDbWaveClient'])
         db_client_names = [x.name for x in db_clients]
         self.pref_manager.set_limit('waveclient', db_client_names)
         sel_client = self.pref_manager.get_value('waveclient')

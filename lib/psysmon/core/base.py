@@ -32,6 +32,10 @@ This module contains the basic classes needed to run the pSysmon program.
 '''
 from __future__ import print_function
 #test
+from builtins import zip
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import os
 import json
 import logging
@@ -275,7 +279,7 @@ class Base(object):
             # Check if the name is available at the nameserver.
             ns_list = self.pyro_nameserver.list(prefix = 'psysmon.project_server')
             if len(ns_list) > 0:
-                ps_id = sorted(ns_list.iterkeys())[-1].split('_')[-1]
+                ps_id = sorted(ns_list.keys())[-1].split('_')[-1]
                 if ps_id.isdigit() is False:
                     ps_id = 1
                 else:
@@ -454,7 +458,7 @@ class Base(object):
         # client'. Add the waveclient only, if the required packages are
         # present.
         required_packages = ['obspyImportWaveform', 'geometry']
-        available_packages = [x for x in self.packageMgr.packages.iterkeys() if x in required_packages]
+        available_packages = [x for x in self.packageMgr.packages.keys() if x in required_packages]
         if required_packages == available_packages:
             waveclient = PsysmonDbWaveClient('db client', self.project)
             self.project.addWaveClient(waveclient)
@@ -523,7 +527,7 @@ class Base(object):
         self.project.setCollectionNodeProject()
 
         # Set the project of the db_waveclient (if available).
-        for cur_waveclient in self.project.waveclient.itervalues():
+        for cur_waveclient in self.project.waveclient.values():
             if cur_waveclient.mode == 'PsysmonDbWaveClient' or cur_waveclient.mode =='SeedlinkWaveclient':
                 cur_waveclient.project = self.project
 
@@ -543,11 +547,11 @@ class Base(object):
         self.project.load_geometry_inventory()
 
         # Check if the default wave client exists.
-        if self.project.defaultWaveclient not in self.project.waveclient.iterkeys():
+        if self.project.defaultWaveclient not in iter(self.project.waveclient.keys()):
             self.project.defaultWaveclient = None
 
         # Set some variables depending on the database.
-        for cur_waveclient in self.project.waveclient.itervalues():
+        for cur_waveclient in self.project.waveclient.values():
             if cur_waveclient.mode == 'PsysmonDbWaveClient':
                 # Load the waveform directory list from database.
                 cur_waveclient.loadWaveformDirList()
@@ -618,7 +622,7 @@ class Base(object):
             self.project.checkDbVersions(self.packageMgr.packages)
 
             # Check if the default wave client exists.
-            if self.project.defaultWaveclient not in self.project.waveclient.iterkeys():
+            if self.project.defaultWaveclient not in iter(self.project.waveclient.keys()):
                 self.project.defaultWaveclient = 'main client'
 
             return True
@@ -1140,7 +1144,7 @@ class Collection(object):
 
         db = shelve.open(self.dataShelf)
         if name is not None and origin is not None:
-            if (origin+'.'+name) in db.iterkeys():
+            if (origin+'.'+name) in iter(db.keys()):
                 returnData = db[origin + '.' + name]
             else:
                 returnData = None
@@ -1149,7 +1153,7 @@ class Collection(object):
             # Return all nodeData with the specified name.
             content = self.getShelfContent()
             returnData = []
-            for curOrigin, curName in content.iterkeys():
+            for curOrigin, curName in content.keys():
                 if curName == name:
                     returnData.append(db[curOrigin + '.' + curName])
 
@@ -1157,14 +1161,14 @@ class Collection(object):
             # Return all nodeData with the specified origin.
             content = self.getShelfContent()
             returnData = []
-            for curOrigin, curName in content.iterkeys():
+            for curOrigin, curName in content.keys():
                 if curOrigin == origin:
                     returnData.append(db[curOrigin + '.' + curName])
         else:
             # Return all available nodeData
             content = self.getShelfContent()
             returnData = []
-            for curOrigin, curName in content.iterkeys():
+            for curOrigin, curName in content.keys():
                 returnData.append(db[curOrigin + '.' + curName])
 
         db.close()
@@ -1190,7 +1194,7 @@ class Collection(object):
             otherwise.
         '''
         db = shelve.open(self.dataShelf)
-        if name in db.iterkeys():
+        if name in iter(db.keys()):
             has_data = True
         else:
             has_data = False
@@ -1218,7 +1222,7 @@ class Collection(object):
         pickleData : Save data in the data shelf of the collection.
         '''
         db = shelve.open(self.dataShelf)
-        if 'nodeDataContent' in db.iterkeys():
+        if 'nodeDataContent' in iter(db.keys()):
             content = db['nodeDataContent']
         else:
             content = None

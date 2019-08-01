@@ -19,6 +19,10 @@ from __future__ import absolute_import
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import zip
+from builtins import chr
+from past.builtins import basestring
+from builtins import object
 import psysmon
 import logging
 import itertools
@@ -741,7 +745,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         if plugin.get_virtual_stations():
             # Check if the plugin needs a virtual display channel.
-            for cur_name, cur_channels in plugin.get_virtual_stations().iteritems():
+            for cur_name, cur_channels in plugin.get_virtual_stations().items():
                 self.displayManager.show_virtual_station(name = cur_name,
                                                          plugin = plugin,
                                                          channels = cur_channels)
@@ -950,7 +954,7 @@ class DisplayManager(object):
         channelNames = ['HHZ', 'HHN', 'HHE']
         colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
         self.channelColors = [tuple(x[1:4]) for x in clrList if x[0] in colorNames]
-        self.channelColors = dict(zip(channelNames, self.channelColors))
+        self.channelColors = dict(list(zip(channelNames, self.channelColors)))
 
 
 
@@ -2042,12 +2046,12 @@ class DisplayChannel(object):
         return (self.parent.name, self.name, self.parent.network, self.parent.location)
 
     def addView(self, name, viewType):
-        if name not in self.views.iterkeys():
+        if name not in iter(self.views.keys()):
             self.views[name] = (viewType, )
 
 
     def removeView(self, name, viewType):
-        if name in self.views.iterkeys():
+        if name in iter(self.views.keys()):
             self.views.pop(name)
 
     #TODO: Replace all getSCNL calls with the scnl attribute.
@@ -2087,7 +2091,7 @@ class VirtualDisplayChannel(object):
 
 
 
-class DataManager():
+class DataManager(object):
 
     def __init__(self, parent):
 

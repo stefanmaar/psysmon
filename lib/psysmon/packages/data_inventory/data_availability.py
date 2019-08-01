@@ -29,7 +29,11 @@ The importWaveform module.
 
 This module contains the classes of the importWaveform dialog window.
 '''
+from __future__ import division
 
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os
 import logging
 
@@ -279,7 +283,7 @@ class AvailabilityProcessor(object):
 
             # Compute the start times of the sliding windows.
             windowlist_start = [start_time, ]
-            n_windows = np.floor(end_time - start_time) / window_length
+            n_windows = old_div(np.floor(end_time - start_time), window_length)
             windowlist_start = np.array([start_time + x * window_length for x in range(0, int(n_windows))])
             windowlist_end = windowlist_start + window_length
         else:
@@ -342,8 +346,8 @@ class AvailabilityProcessor(object):
                         query = db_session.query(t_traceheader)
                         query = query.filter(t_traceheader.recorder_serial == cur_rec_stream.serial)
                         query = query.filter(t_traceheader.stream == cur_rec_stream.name)
-                        query = query.filter(t_traceheader.begin_time + t_traceheader.numsamp * 1/t_traceheader.sps > cur_timebox.start_time.timestamp)
-                        query = query.filter(t_traceheader.begin_time + t_traceheader.numsamp * 1/t_traceheader.sps > cur_window_start.timestamp)
+                        query = query.filter(t_traceheader.begin_time + old_div(t_traceheader.numsamp * 1,t_traceheader.sps) > cur_timebox.start_time.timestamp)
+                        query = query.filter(t_traceheader.begin_time + old_div(t_traceheader.numsamp * 1,t_traceheader.sps) > cur_window_start.timestamp)
                         if cur_timebox.end_time:
                             query = query.filter(t_traceheader.begin_time < cur_timebox.end_time.timestamp)
                         query = query.filter(t_traceheader.begin_time < cur_window_end.timestamp)
@@ -379,8 +383,8 @@ class AvailabilityProcessor(object):
         if len(traceheaders) > 0:
             traceheaders = sorted(traceheaders, key = lambda x: x.begin_time)
             header_start = np.array([UTCDateTime(x.begin_time) for x in traceheaders])
-            header_end = np.array([UTCDateTime(x.begin_time) + (x.numsamp - 1) * 1/x.sps for x in traceheaders])
-            gap = header_start[1:] - header_end[:-1] - np.array([1/x.sps for x in traceheaders])[1:]
+            header_end = np.array([UTCDateTime(x.begin_time) + old_div((x.numsamp - 1) * 1,x.sps) for x in traceheaders])
+            gap = header_start[1:] - header_end[:-1] - np.array([old_div(1,x.sps) for x in traceheaders])[1:]
             gap = np.append([0], gap)
 
             # TODO: handle overlapping data.
@@ -434,7 +438,7 @@ class AvailabilityProcessor(object):
         ax.set_xlim((start_time.datetime, end_time.datetime))
 
         plot_length = end_time - start_time
-        plot_length_days = plot_length / 86400
+        plot_length_days = old_div(plot_length, 86400)
         if plot_length_days > 14 and plot_length_days < 70:
             ax.xaxis.set_major_locator(mpl.dates.WeekdayLocator())
             ax.xaxis.set_major_formatter(mpl.dates.DateFormatter('%Y-%m-%d'))

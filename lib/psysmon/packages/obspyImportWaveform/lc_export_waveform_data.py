@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
 import os
 
 import matplotlib.pyplot as plt
@@ -72,7 +73,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         format_page = self.pref_manager.add_page('Format')
         format_group = format_page.add_group('format')
 
-        obspy_formats = obspy.core.util.base.ENTRY_POINTS['waveform'].keys()
+        obspy_formats = list(obspy.core.util.base.ENTRY_POINTS['waveform'].keys())
         obspy_formats = sorted(obspy_formats)
         item = psy_pm.SingleChoicePrefItem(name = 'file_format',
                                            label = 'file format',

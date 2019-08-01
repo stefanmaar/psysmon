@@ -28,6 +28,8 @@ Module for handling object preferences.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+from builtins import str
+from builtins import object
 import wx
 
 class PreferencesManager(object):
@@ -257,7 +259,7 @@ class PreferencesManager(object):
         # 2016-12-15: Handle the change of the prefence_manager classes.
         if isinstance(pref_manager.pages, dict):
             # The preferences manager was saved using an old class.
-            for cur_key in pref_manager.pages.iterkeys():
+            for cur_key in pref_manager.pages.keys():
                 page_names = [x.name.lower() for x in self.pages]
                 ext_pagename = cur_key.lower()
                 if ext_pagename in page_names:
@@ -265,7 +267,7 @@ class PreferencesManager(object):
                         update_item = self.get_item(cur_item.name)
                         for cur_update_item in update_item:
                             for cur_attr in attr_to_update:
-                                if cur_attr in cur_update_item.__dict__.keys():
+                                if cur_attr in list(cur_update_item.__dict__.keys()):
                                     setattr(cur_update_item, cur_attr, getattr(cur_item, cur_attr))
         else:
             # Use the uptodate version of the preference manager.
@@ -277,7 +279,7 @@ class PreferencesManager(object):
                             update_item = self.get_item(cur_ext_item.name, cur_ext_page.name)
                             for cur_update_item in update_item:
                                 for cur_attr in attr_to_update:
-                                    if cur_attr in cur_update_item.__dict__.keys():
+                                    if cur_attr in list(cur_update_item.__dict__.keys()):
                                         setattr(cur_update_item, cur_attr, getattr(cur_ext_item, cur_attr))
 
 
@@ -476,7 +478,7 @@ class PreferenceItem(object):
         # removed.
         # These values have to be reset when loading the project.
         hooks = {}
-        for cur_key, cur_hook in self.hooks.iteritems():
+        for cur_key, cur_hook in self.hooks.items():
             if isinstance(cur_hook, types.MethodType):
                 hooks[cur_key] = cur_hook.__name__
         result['hooks'] = hooks

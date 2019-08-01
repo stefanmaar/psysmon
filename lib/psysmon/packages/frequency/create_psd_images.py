@@ -28,6 +28,10 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os
 import shelve
 import logging
@@ -179,7 +183,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
 
         # The length of the plot in seconds
         plot_length = plot_length * 86400
-        plots_between = int((end_day - start_day) / plot_length)
+        plots_between = int(old_div((end_day - start_day), plot_length))
         plot_list = [start_day + x * plot_length for x in range(plots_between+1)]
 
         if plot_list[-1] == end_day:
@@ -288,7 +292,7 @@ class PSDPlotter(object):
         for cur_file in file_list:
             cur_psd_data = {}
             self.logger.info('Reading file %s.', cur_file)
-            if isinstance(cur_file, unicode):
+            if isinstance(cur_file, str):
                 cur_file = cur_file.encode(encoding = 'utf-8')
             db = shelve.open(cur_file)
             cur_psd_data.update(db)
@@ -296,7 +300,7 @@ class PSDPlotter(object):
 
 
             # Check the nfft value.
-            nfft = list(set([x['psd_nfft'] for x in cur_psd_data.itervalues()]))
+            nfft = list(set([x['psd_nfft'] for x in cur_psd_data.values()]))
             if len(nfft) != 1:
                 self.logger.error('The nfft values of the PSDs are not equal: %s', nfft)
                 continue
@@ -312,7 +316,7 @@ class PSDPlotter(object):
 
 
             # Check the window_length value.
-            cur_window_length = list(set([x['window_length'] for x in cur_psd_data.itervalues()]))
+            cur_window_length = list(set([x['window_length'] for x in cur_psd_data.values()]))
             if len(cur_window_length) != 1:
                 self.logger.error('The window_length of the PSDs are not equal: %s', cur_window_length)
                 continue
@@ -327,7 +331,7 @@ class PSDPlotter(object):
 
 
             # Check the window_overlap.
-            cur_window_overlap = list(set([x['window_overlap'] for x in cur_psd_data.itervalues()]))
+            cur_window_overlap = list(set([x['window_overlap'] for x in cur_psd_data.values()]))
             if len(cur_window_overlap) != 1:
                 self.logger.error('The window_overlap of the PSDs are not equal: %s', cur_window_overlap)
                 continue
@@ -343,7 +347,7 @@ class PSDPlotter(object):
             psd_data.update(cur_psd_data)
 
 
-        unit = [x['unit'] for x in psd_data.itervalues() if x['P'] is not None]
+        unit = [x['unit'] for x in psd_data.values() if x['P'] is not None]
         unit = list(set(unit))
 
         if len(unit) == 0:
@@ -363,7 +367,7 @@ class PSDPlotter(object):
 
         psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(psd_data)))
         frequ = None
-        time_key = sorted([x for x in psd_data.iterkeys()])
+        time_key = sorted([x for x in psd_data.keys()])
         for m, cur_psd in enumerate([psd_data[x] for x in time_key]):
             if cur_psd['frequ'] is not None:
                 psd_matrix[:,m] = cur_psd['P']
@@ -389,16 +393,16 @@ class PSDPlotter(object):
         cur_scnl = (self.station, self.channel, self.network, self.location)
         dpi = 300.
         cm_to_inch = 2.54
-        avg_width = 4 / cm_to_inch
-        psd_min_width = 10 / cm_to_inch
-        cb_width = 1 / cm_to_inch
+        avg_width = old_div(4, cm_to_inch)
+        psd_min_width = old_div(10, cm_to_inch)
+        cb_width = old_div(1, cm_to_inch)
         plot_length = self.endtime - self.starttime
         #width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
-        psd_width = len(time) / dpi
+        psd_width = old_div(len(time), dpi)
         if psd_width < psd_min_width:
             psd_width = psd_min_width
 
-        height = 8 / cm_to_inch
+        height = old_div(8, cm_to_inch)
         width = avg_width + psd_width + cb_width
 
         # TODO: Add the feature to specify the total width and height. This is
@@ -419,16 +423,16 @@ class PSDPlotter(object):
             #ax_avg = fig.add_subplot(gs[0, 0])
             #ax_psd = fig.add_subplot(gs[0, 1])
 
-            ax_avg = fig.add_axes([0, 0.15, avg_width/width, 0.75])
-            ax_psd = fig.add_axes([avg_width/width, 0.15, psd_width/width, 0.75])
+            ax_avg = fig.add_axes([0, 0.15, old_div(avg_width,width), 0.75])
+            ax_psd = fig.add_axes([old_div(avg_width,width), 0.15, old_div(psd_width,width), 0.75])
             pos = ax_psd.get_position()
-            ax_cb = fig.add_axes([pos.x1, 0.15, cb_width/width, 0.75])
+            ax_cb = fig.add_axes([pos.x1, 0.15, old_div(cb_width,width), 0.75])
             ax_avg.set_yscale('log')
             ax_avg.set_ylim((min_frequ, np.max(frequ)))
         else:
-            ax_psd = fig.add_axes([0.1, 0.15, psd_width/width, 0.75])
+            ax_psd = fig.add_axes([0.1, 0.15, old_div(psd_width,width), 0.75])
             pos = ax_psd.get_position()
-            ax_cb = fig.add_axes([pos.x1 + 0.01, 0.15, cb_width/width, 0.75])
+            ax_cb = fig.add_axes([pos.x1 + 0.01, 0.15, old_div(cb_width,width), 0.75])
 
 
         ax_psd.set_yscale('log')
@@ -457,21 +461,21 @@ class PSDPlotter(object):
             # obspy returns the NLNM and NHNM values in acceleration.
             # Convert them to the current unit (see Bormann (1998)).
             if unit == 'm':
-                nhnm = nhnm + 40 * np.log10(p_nhnm / (2 * np.pi))
-                nlnm = nlnm + 40 * np.log10(p_nlnm / (2 * np.pi))
+                nhnm = nhnm + 40 * np.log10(old_div(p_nhnm, (2 * np.pi)))
+                nlnm = nlnm + 40 * np.log10(old_div(p_nlnm, (2 * np.pi)))
             elif unit == 'm/s':
-                nhnm = nhnm + 20 * np.log10(p_nhnm / (2 * np.pi))
-                nlnm = nlnm + 20 * np.log10(p_nlnm / (2 * np.pi))
+                nhnm = nhnm + 20 * np.log10(old_div(p_nhnm, (2 * np.pi)))
+                nlnm = nlnm + 20 * np.log10(old_div(p_nlnm, (2 * np.pi)))
             elif unit != 'm/s^2':
                 nhnm = None
                 nlnm = None
                 self.logger.error('The NLNM and NHNM is not available for the unit: %s.', unit)
 
             if nlnm is not None:
-                ax_avg.plot(nlnm, 1/p_nlnm, color = 'lightgray')
+                ax_avg.plot(nlnm, old_div(1,p_nlnm), color = 'lightgray')
 
             if nhnm is not None:
-                ax_avg.plot(nhnm, 1/p_nhnm, color = 'lightgray')
+                ax_avg.plot(nhnm, old_div(1,p_nhnm), color = 'lightgray')
 
             ax_avg.plot(avg_amp_resp, frequ, color='saddlebrown', label='avg')
             ax_avg.plot(med_amp_resp, frequ, color='darkviolet', label='med')

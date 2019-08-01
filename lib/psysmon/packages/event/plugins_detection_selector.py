@@ -134,7 +134,7 @@ class SelectDetection(OptionPlugin):
         start_time = self.parent.displayManager.startTime
         end_time = self.parent.displayManager.endTime
 
-        if catalog_name not in self.library.catalogs.iterkeys():
+        if catalog_name not in iter(self.library.catalogs.keys()):
             self.library.load_catalog_from_db(project = self.parent.project,
                                               name = catalog_name)
 

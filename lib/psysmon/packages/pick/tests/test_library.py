@@ -168,7 +168,7 @@ class PickLibraryTestCase(unittest.TestCase):
                                      name = 'catalog_name_1')
 
         self.assertEqual(len(library.catalogs), 1)
-        self.assertEqual(library.catalogs.iterkeys(), ['catalog_name_1'])
+        self.assertEqual(iter(library.catalogs.keys()), ['catalog_name_1'])
         self.assertIsInstance(library.catalogs['catalog_name_1'], pick_core.Catalog)
 
         cur_catalog = library.catalogs['catalog_name_1']
@@ -181,7 +181,7 @@ class PickLibraryTestCase(unittest.TestCase):
                                      load_picks = True)
 
         self.assertEqual(len(library.catalogs), 1)
-        self.assertEqual(library.catalogs.iterkeys(), ['catalog_name_1'])
+        self.assertEqual(iter(library.catalogs.keys()), ['catalog_name_1'])
         self.assertIsInstance(library.catalogs['catalog_name_1'], pick_core.Catalog)
 
         cur_catalog = library.catalogs['catalog_name_1']
@@ -193,7 +193,7 @@ class PickLibraryTestCase(unittest.TestCase):
         catalog_names = library.get_catalogs_in_db(project = self.project)
         library.load_catalog_from_db(project = self.project, name = catalog_names)
         self.assertEqual(len(library.catalogs), 2)
-        self.assertListEqual(sorted(library.catalogs.iterkeys()), ['catalog_name_1', 'catalog_name_2'])
+        self.assertListEqual(sorted(library.catalogs.keys()), ['catalog_name_1', 'catalog_name_2'])
 
 
 

@@ -127,7 +127,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.debug('Loading the detection catalog.')
         self.detection_library.load_catalog_from_db(project = self.project,
                                                     name = catalog_name)
-        if catalog_name in self.detection_library.catalogs.iterkeys():
+        if catalog_name in iter(self.detection_library.catalogs.keys()):
             self.detection_catalog = self.detection_library.catalogs[catalog_name]
         else:
             raise RuntimeError("No detection catalog with name %s found in the database.", catalog_name)
@@ -137,7 +137,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.debug('Loading the event catalog.')
         self.event_library.load_catalog_from_db(project = self.project,
                                                 name = catalog_name)
-        if catalog_name in self.event_library.catalogs.iterkeys():
+        if catalog_name in iter(self.event_library.catalogs.keys()):
             self.event_catalog = self.event_library.catalogs[catalog_name]
         else:
             raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)
@@ -180,7 +180,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # Get the detecions at the end of the processing window which can't be
         # processed becaused of potentially missing detections outside the
         # processing window.
-        max_search_window = max([max(x.values()) for x in binder.search_windows.values()])
+        max_search_window = max([max(x.values()) for x in list(binder.search_windows.values())])
         self.logger.debug('Fixing the catalog.')
         keep_detections = self.detection_catalog.get_detections(start_time = process_limits[1] - max_search_window,
                                                                 start_inside = True)

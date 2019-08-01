@@ -19,6 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 import numpy as np
 import obspy.core.utcdatetime as utcdatetime
 
@@ -217,7 +220,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             # Check for open_end events and slice the data to the stored event
             # start. If no open_end event is found. slice the trace to the
             # original pre_stream_length.
-            if cur_trace.id in self.open_end_start.iterkeys():
+            if cur_trace.id in iter(self.open_end_start.keys()):
                 cur_oe_start = self.open_end_start.pop(cur_trace.id)
                 cur_trace = cur_trace.slice(starttime = cur_oe_start)
                 self.logger.debug("Sliced the cur_trace to the open_end start. cur_trace: %s.", cur_trace)
@@ -226,7 +229,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                 self.logger.debug("Sliced the cur_trace to the original pre_stream_length. cur_trace: %s.", cur_trace)
 
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = time_array * 1/cur_trace.stats.sampling_rate
+            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray

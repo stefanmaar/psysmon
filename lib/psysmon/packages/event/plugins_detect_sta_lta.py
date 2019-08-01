@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -19,6 +20,7 @@ from __future__ import print_function
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import logging
 import wx
 import numpy as np
@@ -268,7 +270,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
         for cur_trace in stream:
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = time_array * 1/cur_trace.stats.sampling_rate
+            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -300,7 +302,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                 elif cur_feature == 'lta_orig * thr':
                     cur_data = detector.lta_orig * detector.thr
                 elif cur_feature == 'thrf':
-                    cur_data = detector.sta / detector.lta
+                    cur_data = old_div(detector.sta, detector.lta)
                 else:
                     cur_data = getattr(detector, cur_feature)
 
@@ -336,12 +338,12 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
             if plot_detection_marker:
                 for det_start_ind, det_end_ind in detection_markers:
-                    det_start_time = cur_trace.stats.starttime + det_start_ind / cur_trace.stats.sampling_rate
+                    det_start_time = cur_trace.stats.starttime + old_div(det_start_ind, cur_trace.stats.sampling_rate)
                     cur_line = self.axes.axvline(x = det_start_time.timestamp, color = 'r')
                     self.marker_lines.append(cur_line)
 
                     if not np.isnan(det_end_ind):
-                        det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_trace.stats.sampling_rate
+                        det_end_time = det_start_time + old_div((det_end_ind - det_start_ind), cur_trace.stats.sampling_rate)
                         cur_line = self.axes.axvline(x = det_end_time.timestamp, color = 'b')
                         self.marker_lines.append(cur_line)
 
@@ -349,8 +351,8 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             if plot_lta_replace_marker:
                 for det_start_ind, det_end_ind in detector.replace_limits:
                     #det_start_time = cur_trace.stats.starttime + (n_lta - 1 + det_start_ind) / cur_trace.stats.sampling_rate
-                    det_start_time = cur_trace.stats.starttime + det_start_ind / cur_trace.stats.sampling_rate
-                    det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_trace.stats.sampling_rate
+                    det_start_time = cur_trace.stats.starttime + old_div(det_start_ind, cur_trace.stats.sampling_rate)
+                    det_end_time = det_start_time + old_div((det_end_ind - det_start_ind), cur_trace.stats.sampling_rate)
 
                     cur_line = self.axes.axvline(x = det_start_time.timestamp, color = 'y')
                     self.marker_lines.append(cur_line)
@@ -375,7 +377,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.iterkeys():
+            if 'label' in iter(kwargs.keys()):
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
                 label_artist = None

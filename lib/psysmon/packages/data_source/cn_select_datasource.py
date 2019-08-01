@@ -76,7 +76,7 @@ class SelectDataSource(psysmon.core.packageNodes.CollectionNode):
         '''
         # Get all database clients.
         #db_clients = sorted([x for x in self.project.waveclient.values() if x.mode == 'PsysmonDbWaveClient'])
-        waveclients = sorted([x for x in self.project.waveclient.values()])
+        waveclients = sorted([x for x in list(self.project.waveclient.values())])
         waveclient_names = [x.name for x in waveclients]
         self.pref_manager.set_limit('waveclient', waveclient_names)
         sel_client = self.pref_manager.get_value('waveclient')

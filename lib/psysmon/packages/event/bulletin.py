@@ -29,6 +29,8 @@ Handle earthquake bulletins.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
 '''
+from builtins import next
+from builtins import object
 import os
 import psysmon
 import logging
@@ -210,7 +212,7 @@ class ImsParser(object):
                 if cur_block != 'isf_comment':
                     continue
 
-            if cur_block in block_parser.iterkeys():
+            if cur_block in iter(block_parser.keys()):
                 block_parser[cur_block](cur_line)
 
         return False

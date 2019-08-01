@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 # LICENSE
 #
 # This file is part of psysmomat.
@@ -19,6 +20,10 @@ from __future__ import absolute_import
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import psysmon
 import os
 import os.path
@@ -180,7 +185,7 @@ class PasscalRecordingFormatParser(object):
 
         # Convert the remaining trace data to obspy traces and add them to the
         # stream.
-        for cur_key, cur_data in self.traces.iteritems():
+        for cur_key, cur_data in self.traces.items():
             tr = obspy.core.trace.Trace()
             tr.stats.station = cur_key[0]
             tr.stats.channel = cur_key[1]
@@ -209,7 +214,7 @@ class PasscalRecordingFormatParser(object):
         if packet_header.type != 'DT':
             self.logger.debug("Found a packet: %s.", packet_header.type)
 
-        if packet_header.type in self.packet_parser.iterkeys():
+        if packet_header.type in iter(self.packet_parser.keys()):
             self.packet_parser[packet_header.type](packet_header, packet_buffer)
         else:
             self.logger.error("Unknown data packet: %s.", packet_header.type)
@@ -239,13 +244,13 @@ class PasscalRecordingFormatParser(object):
         data_packet = RT_130_h.DT().decode(packet_buffer)
 
         # Get the sampling rate from the event header.
-        if packet_header.unit in self.events.iterkeys() and data_packet.event in self.events[packet_header.unit].keys():
+        if packet_header.unit in iter(self.events.keys()) and data_packet.event in list(self.events[packet_header.unit].keys()):
             cur_event = self.events[packet_header.unit][data_packet.event]
             sampling_rate = float(cur_event.SampleRate)
-        elif packet_header.unit in self.events.iterkeys():
+        elif packet_header.unit in iter(self.events.keys()):
             # TODO: Add a user flag to select the guessing of the sampling
             # rate.
-            keys = np.array(self.events[packet_header.unit].keys())
+            keys = np.array(list(self.events[packet_header.unit].keys()))
             min_ind = np.argmin(np.abs(keys - data_packet.event))
             cur_event = self.events[packet_header.unit][keys[min_ind]]
             sampling_rate = float(cur_event.SampleRate)
@@ -287,9 +292,9 @@ class PasscalRecordingFormatParser(object):
             self.start_time[cur_key] = start_time
         else:
             # Check if the data time.
-            end_time = self.start_time[cur_key] + (len(self.traces[cur_key]) - 1) / sampling_rate
+            end_time = self.start_time[cur_key] + old_div((len(self.traces[cur_key]) - 1), sampling_rate)
             dt = start_time - end_time
-            if dt > 0 and np.abs(dt - 1/sampling_rate) <= 1/(10*sampling_rate):
+            if dt > 0 and np.abs(dt - old_div(1,sampling_rate)) <= old_div(1,(10*sampling_rate)):
                 self.traces[cur_key].extend(data_packet.data)
             else:
                 # Write the trace data to the stream and clear the trace
@@ -313,7 +318,7 @@ class PasscalRecordingFormatParser(object):
         ''' Parse an event header packet.
         '''
         event_header = RT_130_h.EH().decode(packet_buffer)
-        if packet_header.unit not in self.events.iterkeys():
+        if packet_header.unit not in iter(self.events.keys()):
             self.events[packet_header.unit] = {}
         self.events[packet_header.unit][event_header.EventNumber] = event_header
         self.logger.debug("Added event of unit %s: %d.", packet_header.unit, event_header.EventNumber)
@@ -386,7 +391,7 @@ class Unit(object):
         raw_file : :class:`RawFile`
             The RawFile instance representing a reftek raw data file.
         '''
-        if raw_file.stream_num not in self.streams.iterkeys():
+        if raw_file.stream_num not in iter(self.streams.keys()):
             self.streams[raw_file.stream_num] = Stream(raw_file.stream_num, parent_unit = self)
 
         self.streams[raw_file.stream_num].add_raw_file(raw_file)
@@ -395,7 +400,7 @@ class Unit(object):
     def sort_raw_files(self):
         ''' Sort the raw data files according to their start time.
         '''
-        for cur_stream in self.streams.itervalues():
+        for cur_stream in self.streams.values():
             cur_stream.sort_raw_files()
 
 
@@ -571,8 +576,8 @@ class ArchiveController(object):
         summary = {}
         summary['scan_time'] = self.last_scan.isoformat()
         stream_list = []
-        for cur_unit in self.units.itervalues():
-            cur_stream = [(cur_unit.unit_id, x.number, x.first_data_time.isoformat(), x.last_data_time.isoformat()) for x in cur_unit.streams.itervalues()]
+        for cur_unit in self.units.values():
+            cur_stream = [(cur_unit.unit_id, x.number, x.first_data_time.isoformat(), x.last_data_time.isoformat()) for x in cur_unit.streams.values()]
             stream_list.extend(cur_stream)
         summary['stream_list'] = stream_list
         return summary
@@ -604,7 +609,7 @@ class ArchiveController(object):
 
         cur_raw_file = RawFile(filename)
 
-        if cur_raw_file.unit_id not in self.units.iterkeys():
+        if cur_raw_file.unit_id not in iter(self.units.keys()):
             self.units[cur_raw_file.unit_id] = Unit(cur_raw_file.unit_id, parent_archive = self)
 
         self.units[cur_raw_file.unit_id].add_raw_file(cur_raw_file)
@@ -613,7 +618,7 @@ class ArchiveController(object):
     def sort_raw_files(self):
         ''' Sort the raw data files according to their start time.
         '''
-        for cur_unit in self.units.itervalues():
+        for cur_unit in self.units.values():
             cur_unit.sort_raw_files()
 
 
@@ -708,7 +713,7 @@ class ArchiveController(object):
                               month = end_time.month,
                               day = end_time.day,
                               hour = end_time.hour)
-        intervals_between = int((end_day - start_day)/interval)
+        intervals_between = int(old_div((end_day - start_day),interval))
         chunk_list = [start_day + x * interval for x in range(intervals_between)]
 
         # Get the required stream.
@@ -745,7 +750,7 @@ class ArchiveController(object):
                     stats = cur_export_trace.stats
                     trace_length = int((cur_export_trace.stats.endtime - cur_export_trace.stats.starttime) * 1000)
                     filename = '%04d%03d_%02d%02d%02d%03d_%d_%s_%s_%s.msd' % (stats.starttime.year, stats.starttime.julday, 
-                        stats.starttime.hour, stats.starttime.minute, stats.starttime.second, int(stats.starttime.microsecond/1000),
+                        stats.starttime.hour, stats.starttime.minute, stats.starttime.second, int(old_div(stats.starttime.microsecond,1000)),
                         trace_length, stats.station, stats.location, stats.channel)
 
                     # Check and prepare the BUD directory structure.
@@ -827,7 +832,7 @@ class ArchiveScanEncoder(json.JSONEncoder):
                 return item
 
         if not attr:
-            attr = obj.__dict__.keys()
+            attr = list(obj.__dict__.keys())
 
         if ignore:
             attr = [x for x in attr if x not in ignore]
@@ -889,7 +894,7 @@ class ArchiveScanDecoder(json.JSONDecoder):
                                                                  last_scan = d['last_scan'])
 
         inst.units = d['units']
-        for cur_unit in inst.units.itervalues():
+        for cur_unit in inst.units.values():
             cur_unit.parent_archive = inst
 
         return inst
@@ -902,7 +907,7 @@ class ArchiveScanDecoder(json.JSONDecoder):
 
         # JSON only supports strings as keys of dictionaries.
         # Restore the streams dictionary with integers as keys.
-        for cur_key, cur_item in d['streams'].iteritems():
+        for cur_key, cur_item in d['streams'].items():
             cur_item.parent_unit = inst
             inst.streams[int(cur_key)] = cur_item
 

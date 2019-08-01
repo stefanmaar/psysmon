@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
 import csv
 import datetime
 import ftplib
@@ -178,7 +179,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         with open(tmp_filename, 'r') as fp:
             reader = csv.DictReader(fp, delimiter = ';')
             for cur_row in reader:
-                if cur_row['Sprengnummer'] not in quarry_blast.iterkeys():
+                if cur_row['Sprengnummer'] not in iter(quarry_blast.keys()):
                     tmp = {}
                     tmp['id'] = int(cur_row['ID'])
 
@@ -315,7 +316,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         # The search window for the psysmon event [s].
         # TODO: Make this a preference item.
         search_win = 600
-        for cur_key, cur_blast in quarry_blast.iteritems():
+        for cur_key, cur_blast in quarry_blast.items():
             catalog.clear_events()
             catalog.load_events(project = self.project,
                                 start_time = cur_blast['time'] - search_win,

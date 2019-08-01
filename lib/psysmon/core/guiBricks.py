@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -19,6 +20,9 @@ from __future__ import print_function
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import logging
 import obspy.core.utcdatetime as udt
 import wx
@@ -165,7 +169,7 @@ class Field(wx.Panel):
     def call_hook(self, hook_name):
         ''' Call the registerd hooks of the pref item.
         '''
-        if hook_name in self.pref_item.hooks.iterkeys():
+        if hook_name in iter(self.pref_item.hooks.keys()):
             self.pref_item.hooks[hook_name]()
 
 
@@ -208,7 +212,7 @@ class PrefPagePanel(wx.Panel):
                     cur_item.set_gui_element(gui_element)
                     cur_container.addActionField(gui_element)
                 else:
-                    if cur_item.mode in gui_elements.iterkeys():
+                    if cur_item.mode in iter(gui_elements.keys()):
                         guiclass = gui_elements[cur_item.mode]
                     else:
                         guiclass = cur_item.gui_class
@@ -1222,7 +1226,7 @@ class FileGrid(wx.grid.Grid):
     def colPopup(self, col, evt):
         """(col, evt) -> display a popup menu when a column label is
         right clicked"""
-        x = self.GetColSize(col)/2
+        x = old_div(self.GetColSize(col),2)
         menu = wx.Menu()
 
         xo, yo = evt.GetPosition()
