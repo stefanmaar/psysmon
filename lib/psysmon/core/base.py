@@ -436,11 +436,14 @@ class Base(object):
                                               )
 
         # Create the project instance.
+        # TODO: Make the database driver a project preference.
         self.project = psysmon.core.project.Project(psybase = self,
                                                     name = name,
                                                     user = admin_user,
                                                     base_dir = base_dir,
-                                                    dbHost = db_host)
+                                                    dbHost = db_host,
+                                                    dbDialect = 'mysql',
+                                                    dbDriver = 'pymysql')
 
         # When creating a project, set the active user to the user creating 
         # the project (which is the *admin* user).
@@ -948,7 +951,7 @@ class Collection(object):
         # Create the collection's data file.
         #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
         content = {}
-        db = shelve.open(self.dataShelf.encode('utf8'))
+        db = shelve.open(self.dataShelf)
         db['nodeDataContent'] = content
         db.close()
 
