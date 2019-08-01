@@ -67,15 +67,15 @@ class OLD_TdViewAnnotationPanel(wx.Panel):
         self.SetMinSize((200, -1))
 
 
-	# Create a test label.
+        # Create a test label.
         self.label = StaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
         font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.label.SetFont(font)
 
-	# Add the label to the sizer.
-	sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Add the label to the sizer.
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
-	self.SetSizer(sizer)
+        self.SetSizer(sizer)
 
         #print label.GetAlignment()
 
@@ -105,7 +105,7 @@ class OLD_PlotPanel(wx.Panel):
         self.canvas.SetMinSize((30, 10))
         self.SetBackgroundColour('white')
 
-	# Add the canvas to the sizer.
+        # Add the canvas to the sizer.
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
@@ -183,9 +183,9 @@ class OLD_View(wx.Panel):
         sizer = wx.GridBagSizer(0,0)
         sizer.Add(self.plotCanvas, pos=(0,0), flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.annotationArea, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=1)
-	sizer.AddGrowableRow(0)
-	sizer.AddGrowableCol(0)
-	self.SetSizer(sizer)
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+        self.SetSizer(sizer)
 
         self.name = name
 
@@ -395,8 +395,8 @@ class ChannelAnnotationArea(wx.Panel):
         self.color = color
         self.penColor = penColor
 
-	self.SetBackgroundColour(self.bgColor)
-	self.SetBackgroundColour('white')
+        self.SetBackgroundColour(self.bgColor)
+        self.SetBackgroundColour('white')
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
@@ -500,7 +500,7 @@ class OLD_ChannelContainer(wx.Panel):
         self.sizer = wx.GridBagSizer(0,0)
         self.viewSizer = wx.BoxSizer(wx.VERTICAL)
 
-	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.Add(self.viewSizer, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(1)
@@ -683,7 +683,7 @@ class OLD_StationContainer(wx.Panel):
         self.channelSizer = wx.BoxSizer(wx.VERTICAL)
 
         self.sizer = wx.GridBagSizer(0,0)
-	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.Add(self.channelSizer, pos = (0,1), flag=wx.ALL|wx.EXPAND, border = 0)
         self.sizer.AddGrowableCol(1)
         self.sizer.AddGrowableRow(0)
@@ -714,7 +714,7 @@ class OLD_StationContainer(wx.Panel):
     def addChannel(self, channel):
         channel.Reparent(self)
         self.channels[channel.name] = channel
-	if self.channels:
+        if self.channels:
             self.channelSizer.Add(channel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
         self.sizer.Layout()
@@ -1037,7 +1037,7 @@ class StationAnnotationArea(wx.Panel):
         self.color = color
         self.penColor = penColor
 
-	self.SetBackgroundColour(self.bgColor)
+        self.SetBackgroundColour(self.bgColor)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
@@ -1130,7 +1130,7 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
     def __init__(self, parent=None, id=wx.ID_ANY):
         scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
-        
+
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)

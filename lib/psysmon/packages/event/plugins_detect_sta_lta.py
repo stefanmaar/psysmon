@@ -240,7 +240,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
         # Create multiple axes.
         #self.set_n_axes(3)
 
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.lines = {}
         self.lines['cf'] = None

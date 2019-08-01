@@ -234,7 +234,7 @@ class PSDPlotter(object):
 
         self.data_dir = data_dir
 
-	self.output_dir = output_dir
+        self.output_dir = output_dir
 
         self.starttime = starttime
 
@@ -247,7 +247,7 @@ class PSDPlotter(object):
         ''' Scan for all files matching the unit, channel and stream in the data_dir.
 
         '''
-	file_list = []
+        file_list = []
         for (path, dirs, files) in os.walk(self.data_dir):
             namefilter = 'psd_*%s_%s_%s_%s.db' % (self.station, self.channel, self.network, self.location)
             files = fnmatch.filter(files, namefilter)

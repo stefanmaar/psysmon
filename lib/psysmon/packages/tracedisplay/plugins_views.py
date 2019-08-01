@@ -267,7 +267,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
         self.scale_bar_text = None
@@ -765,7 +765,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
 
@@ -1269,7 +1269,7 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
 
         self.t0 = None
         self.line_colors = {}
-	self.line_colors['psd'] = psdColor
+        self.line_colors['psd'] = psdColor
         self.line_colors['nhnm'] = nhnmColor
         self.line_colors['nlnm'] = nlnmColor
 
@@ -1539,7 +1539,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
 
