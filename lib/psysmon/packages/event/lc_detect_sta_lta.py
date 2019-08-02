@@ -30,7 +30,7 @@ import psysmon.core.preferences_manager as preferences_manager
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.packages.event.detect as detect
 
-from profilehooks import profile
+#from profilehooks import profile
 
 class StaLtaDetection(package_nodes.LooperCollectionChildNode):
     ''' Detect events using STA/LTA algorithm.
@@ -176,7 +176,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         dlg.ShowModal()
         dlg.Destroy()
 
-    @profile(immediate=True)
+    #@profile(immediate=True)
     def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         ''' Execute the stack node.
 
