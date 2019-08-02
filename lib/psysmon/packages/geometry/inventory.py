@@ -2142,6 +2142,8 @@ class Station(object):
         else:
             return False
 
+    def __hash__(self):
+        return id(self)
 
     def get_scnl(self):
         scnl = []
