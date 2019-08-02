@@ -28,6 +28,7 @@ The psysmomat program.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import print_function
 
 import argparse
 import getpass
@@ -152,7 +153,7 @@ def handle_import_geometry_command(args, logger):
         try:
             inventory = inventory_parser.parse(args.geometry_file)
         except Warning as w:
-            print w
+            print(w)
 
         # Clear the existing data from the geometry tables.
         project_slug = psybase.project.slug
@@ -263,13 +264,13 @@ def handle_info_command(args, logger):
 
     logger.debug('Getting information about the project ' + project_file + '.')
 
-    print str(project)
+    print(str(project))
 
     if args.listtask is True:
         # List the available tasks of the project.
-        print 'Available tasks:'
+        print('Available tasks:')
         for cur_taskclass in sorted(project.task_classes):
-            print '  ' + cur_taskclass.__name__ + '\n'
+            print('  ' + cur_taskclass.__name__ + '\n')
 
 
 def handle_edit_command(args, logger):

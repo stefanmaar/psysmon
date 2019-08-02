@@ -108,7 +108,7 @@ def run():
     #psyBase.initialize()
 
     # Create the app and run the GUI.
-    app =psygui.PSysmonApp()
+    app = psygui.PSysmonApp()
     psysmonMain = psygui.PSysmonGui(psyBase, None)
 
     handler = psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel,
