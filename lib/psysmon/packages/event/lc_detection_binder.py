@@ -67,6 +67,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         '''
         pref_page = self.pref_manager.add_page('Preferences')
         cat_group = pref_page.add_group('catalog')
+        bind_group = pref_page.add_group('binding')
 
 
         # The detection catalog to process.
@@ -87,7 +88,30 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                        )
         cat_group.add_item(item)
 
+        # The minimum length of the detecions used for binding.
+        item = preferences_manager.FloatSpinPrefItem(name = 'min_detection_length',
+                                                     label = 'min. detection length',
+                                                     value = 0.1,
+                                                     limit = (0, 1000000),
+                                                     tool_tip = 'The minimum length of the detections used for the binding [s].')
+        bind_group.add_item(item)
 
+        # The number of nearest neighbors used for searching neighboring 
+        # detections.
+        item = preferences_manager.IntegerSpinPrefItem(name = 'n_neighbors',
+                                                       label = 'neighbors to search',
+                                                       value = 2,
+                                                       limit = (0, 100),
+                                                       tool_tip = 'The number of nearest neighbors used to search for corresponding detections.')
+        bind_group.add_item(item)
+
+        # The minimum number of matching neighbors needed to declare an event.
+        item = preferences_manager.IntegerSpinPrefItem(name = 'min_match_neighbors',
+                                                       label = 'match neighbors',
+                                                       value = 2,
+                                                       limit = (0, 100),
+                                                       tool_tip = 'The minimum number of matching neighbors needed to declare an event.')
+        bind_group.add_item(item)
 
     def edit(self):
         ''' Create the preferences edit dialog.
@@ -144,7 +168,12 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
 
 
     #@profile(immediate=True)
-    def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
+    def execute(self,
+                stream,
+                process_limits = None,
+                origin_resource = None,
+                channels = None,
+                **kwargs):
         ''' Execute the stack node.
 
         Parameters
@@ -153,8 +182,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
             The data to process.
         '''
         # Load the detections for the processing timespan.
-        # TODO: Make the minimum detection length a user preference.
-        min_detection_length = 0.5
+        min_detection_length = self.pref_manager.get_value('min_detection_length')
         self.logger.info('Loading the detections.')
         self.detection_catalog.load_detections(project = self.project,
                                                start_time = process_limits[0],
@@ -172,6 +200,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                    stations = stations,
                                                    author_uri = self.project.activeUser.author_uri,
                                                    agency_uri = self.project.activeUser.agency_uri)
+
         # TODO: Make the search window velocity a user preference.
         binder.compute_search_windows(vel = 3000)
         self.logger.debug('Search windows: %s', binder.search_windows)
@@ -188,8 +217,12 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
 
         # Bind the detections
         self.logger.info('Binding the detections.')
+        n_neighbors = self.pref_manager.get_value('n_neighbors')
+        min_match_neighbors = self.pref_manager.get_value('min_match_neighbors')
         binder.bind(catalog = self.detection_catalog,
-                    channel_scnl = [x.scnl for x in channels])
+                    channel_scnl = [x.scnl for x in channels],
+                    n_neighbors = n_neighbors,
+                    min_match_neighbors = min_match_neighbors)
 
         # Store the unprocessed detection in the catalog for the next step.
         self.logger.info('Cleaning the detection catalog.')

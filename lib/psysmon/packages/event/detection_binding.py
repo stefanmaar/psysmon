@@ -77,15 +77,19 @@ class DetectionBinder(object):
 
         self.agency_uri = agency_uri
 
-
-    def bind(self, catalog, channel_scnl):
+    def bind(self,
+             catalog,
+             channel_scnl,
+             n_neighbors = 2,
+             min_match_neighbors = 2):
         ''' Bind the detections to events.
         '''
         # Get the detections of the channels and sort them according to time.
         detections = {}
         for cur_scnl in channel_scnl:
             detections[cur_scnl] = catalog.get_detections(scnl = cur_scnl)
-            detections[cur_scnl] = sorted(detections[cur_scnl], key = op.attrgetter('start_time'))
+            detections[cur_scnl] = sorted(detections[cur_scnl],
+                                          key = op.attrgetter('start_time'))
 
         # Get the earlies detection of each channel. Remove these detections
         # from the detections list.
@@ -109,7 +113,6 @@ class DetectionBinder(object):
             match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + window_extend]
             self.logger.debug('Matching detections: %s.', [(x.db_id, x.start_time, x.snl) for x in match_detections])
 
-            # TODO: Make the neighbor values a user preference.
             # TODO: Make the min_match_neighbors a user preference.
             # Check if there are matching detections on neighboring stations.
             # There have to be detections at at least min_match_neighbors.
@@ -117,10 +120,8 @@ class DetectionBinder(object):
             # detections have to be on neighbor stations.
 
             #TODO: The neighbors should contain only stations which have been
-            # selected for binding the detections. 
-            n_neighbors = 2
-            min_match_neighbors = 2
-            #max_neighbor_dist = 10000.          # The maximum distance to a neighbor station.
+            # selected for binding the detections.
+
             # TODO: Check if the neighbors have the correct length.
             neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
             #neighbors = [x for x in neighbors if x[1] <= max_neighbor_dist]
@@ -140,15 +141,11 @@ class DetectionBinder(object):
             if len(neighbors) < min_match_neighbors:
                 raise RuntimeError("Not enough neighbors found for station %s. Detection ID: %d.", first_detection.snl, first_detection.db_id)
 
-            # TODO: Remove the first if case. This overrides the
-            # min_match_neighbors in an unexpected way.
-            if match_snl and (len(match_snl) <= min_match_neighbors) and (len(match_neighbors) == len(match_snl)):
-                # Only a small amount of detections match but all of these
-                # detections are on neighboring stations.
-                # This is a valid event.
-                # Add the first detection to the match detections.
-                match_detections.append(first_detection)
-            elif len(match_neighbors) < min_match_neighbors:
+            # TODO: Maybe add the following option.
+            # Add a dedicated option to check, if a
+            # small number of neighbors have matching detections, they should
+            # all be direct neighbors to the master station.
+            if len(match_neighbors) < min_match_neighbors:
                 # There are not enough detection on neigboring stations.
                 # Reset the matched detections.
                 self.logger.debug('Not enough detections on neighboring stations. Detection ID: %d. Start time: %s', first_detection.db_id, first_detection.start_time)
@@ -157,7 +154,6 @@ class DetectionBinder(object):
                 # This is a valid event.
                 # Add the first detection to the match detections.
                 match_detections.append(first_detection)
-
 
             if match_detections:
                 # Create an event using the matching detections.
