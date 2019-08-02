@@ -1,6 +1,9 @@
 # Ignore compiled python files.
 *.pyc
 
+# Ignore temporary files.
+*.bak
+
 # Ignore the tmp folder.
 /tmp/
 
