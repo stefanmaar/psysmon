@@ -37,15 +37,9 @@ import logging
 import os
 import os.path
 
-import matplotlib as mpl
-mpl.use('Agg')
-mpl.rcParams['backend'] = 'Agg'
-import obspy.core.utcdatetime as utcdatetime
-
-import psysmon
-import psysmon.core.test_util as test_util
-import psysmon.packages.geometry as geom
-
+#import matplotlib as mpl
+#mpl.use('Agg')
+#mpl.rcParams['backend'] = 'Agg'
 
 
 def load_project(filename):
@@ -61,6 +55,7 @@ def load_project(filename):
 def handle_create_user_command(args, logger):
     logger.info('Creating a new psysmon user.')
     logger.debug(args)
+    import psysmon.core.test_util as test_util
 
     user_pwd = ''
     root_pwd = ''
@@ -87,6 +82,7 @@ def handle_create_user_command(args, logger):
 
 def handle_new_project_command(args, logger):
     logger.info('Creating a new psysmon project ' + args.name + ' for user ' + args.user +'.')
+    import psysmon.core.test_util as test_util
 
     user_pwd = ''
     if args.password:
@@ -109,6 +105,7 @@ def handle_new_project_command(args, logger):
 
 def handle_remove_project_command(args, logger):
     logger.info('Removing the project %s.', args.project_file)
+    import psysmon.core.test_util as test_util
 
     user_pwd = ''
     if args.password:
@@ -122,6 +119,8 @@ def handle_remove_project_command(args, logger):
 def handle_import_geometry_command(args, logger):
     logger.info('Importing the geometry from file %s.', args.geometry_file)
 
+    import psysmon.core.test_util as test_util
+    import psysmon.packages.geometry as geom
     user_name = args.user
 
     user_pwd = ''
@@ -186,6 +185,7 @@ def handle_import_geometry_command(args, logger):
 
 def handle_add_waveform_dir_command(args, logger):
     logger.info('Adding the waveform directory %s.', args.path)
+    import psysmon.core.test_util as test_util
 
     user_name = args.user
 
@@ -281,6 +281,9 @@ def handle_edit_command(args, logger):
 def handle_execute_command(args, logger):
     logger.info('Executing the collection %s.', args.collection)
 
+    import obspy.core.utcdatetime as utcdatetime
+    import psysmon.core.test_util as test_util
+
     user_name = args.user
 
     user_pwd = ''
@@ -333,6 +336,7 @@ def handle_execute_command(args, logger):
 
 if __name__ == '__main__':
 
+    print('Parsing in main...')
     parser = argparse.ArgumentParser(description='psysmomat')
     subparsers = parser.add_subparsers(title = 'sub commands',
                                        description = 'valid sub commands')
@@ -474,6 +478,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    print('Importing psysmon.')
+    import psysmon
     logger = logging.getLogger('psysmon')
     logger.setLevel(args.loglevel)
     shell_handler = psysmon.getLoggerHandler(log_level = args.loglevel)
