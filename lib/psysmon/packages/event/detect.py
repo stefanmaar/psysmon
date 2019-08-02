@@ -816,9 +816,8 @@ class StaLtaDetector(object):
                 self.remove_event_influence(event_start, cur_event_end)
 
             # Add the event marker.
-            # TODO: add the lta length to the event limits. Adapt the
-            # tracedisplay view accordingly.
-            event_marker.append((event_start, cur_event_end))
+            if cur_event_end > event_start + 1:
+                event_marker.append((event_start, cur_event_end))
 
             # Recompute the next event start indices.
             if np.isnan(cur_event_end):
