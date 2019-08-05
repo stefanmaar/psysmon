@@ -81,7 +81,8 @@ class DetectionBinder(object):
              catalog,
              channel_scnl,
              n_neighbors = 2,
-             min_match_neighbors = 2):
+             min_match_neighbors = 2,
+             search_win_extend = 0.1):
         ''' Bind the detections to events.
         '''
         # Get the detections of the channels and sort them according to time.
@@ -109,8 +110,7 @@ class DetectionBinder(object):
             self.logger.debug('Search windows: %s', search_windows)
 
             # Get the detections matching the search window.
-            window_extend = 1.
-            match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + window_extend]
+            match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + search_win_extend]
             self.logger.debug('Matching detections: %s.', [(x.db_id, x.start_time, x.snl) for x in match_detections])
 
             # TODO: Make the min_match_neighbors a user preference.
