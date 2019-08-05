@@ -58,6 +58,9 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # The working event catalog.
         self.event_catalog = None
 
+        # The detection binder.
+        self.binder = None
+
         # Create the preference items.
         self.create_preferences()
 
@@ -113,6 +116,22 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                        tool_tip = 'The minimum number of matching neighbors needed to declare an event.')
         bind_group.add_item(item)
 
+        # The velocity used for search window computation.
+        item = preferences_manager.IntegerSpinPrefItem(name = 'search_win_vel',
+                                                       label = 'search window velocity',
+                                                       value = 1000,
+                                                       limit = (1, 100000),
+                                                       tool_tip = 'The velocity used to compute the search window lengths [m/s].')
+        bind_group.add_item(item)
+
+        # The lenght of the search window extension.
+        item = preferences_manager.FloatSpinPrefItem(name = 'search_win_extend',
+                                                       label = 'search window extend',
+                                                       value = 0.1,
+                                                       limit = (0, 100000),
+                                                       tool_tip = 'The lenght of the time window added to the search windwo [s].')
+        bind_group.add_item(item)
+
     def edit(self):
         ''' Create the preferences edit dialog.
         '''
@@ -141,7 +160,11 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         dlg.Destroy()
 
 
-    def initialize(self):
+    def initialize(self,
+                   process_limits = None,
+                   origin_resource = None,
+                   channels = None,
+                   **kwargs):
         ''' Initialize some insance persistent attributes.
         '''
         super(DetectionBinder, self).initialize()
@@ -166,6 +189,19 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         else:
             raise RuntimeError("No event catalog with name %s found in the database.", catalog_name)
 
+        # Initialize the binder.
+        stations = [x.parent_station for x in channels]
+        stations = list(set(stations))
+        self.logger.info('Initializing the Binder.')
+        self.binder = detection_binding.DetectionBinder(event_catalog = self.event_catalog,
+                                                        stations = stations,
+                                                        author_uri = self.project.activeUser.author_uri,
+                                                        agency_uri = self.project.activeUser.agency_uri)
+
+        search_win_vel = self.pref_manager.get_value('search_win_vel')
+        self.binder.compute_search_windows(vel = search_win_vel)
+        self.logger.debug('Search windows: %s', self.binder.search_windows)
+        self.logger.debug('Epi-distances: %s', self.binder.epi_dist)
 
     #@profile(immediate=True)
     def execute(self,
@@ -191,25 +227,11 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.detection_catalog.assign_channel(inventory = self.project.geometry_inventory)
 
 
-        # Initialize the binder.
-        # TODO: This could be moved to the initialize method.
-        stations = [x.parent_station for x in channels]
-        stations = list(set(stations))
-        self.logger.info('Initializing the Binder.')
-        binder = detection_binding.DetectionBinder(event_catalog = self.event_catalog,
-                                                   stations = stations,
-                                                   author_uri = self.project.activeUser.author_uri,
-                                                   agency_uri = self.project.activeUser.agency_uri)
-
-        # TODO: Make the search window velocity a user preference.
-        binder.compute_search_windows(vel = 3000)
-        self.logger.debug('Search windows: %s', binder.search_windows)
-        self.logger.debug('Epi-distances: %s', binder.epi_dist)
 
         # Get the detecions at the end of the processing window which can't be
         # processed becaused of potentially missing detections outside the
         # processing window.
-        max_search_window = max([max(x.values()) for x in list(binder.search_windows.values())])
+        max_search_window = max([max(x.values()) for x in list(self.binder.search_windows.values())])
         self.logger.debug('Fixing the catalog.')
         keep_detections = self.detection_catalog.get_detections(start_time = process_limits[1] - max_search_window,
                                                                 start_inside = True)
@@ -219,10 +241,12 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.info('Binding the detections.')
         n_neighbors = self.pref_manager.get_value('n_neighbors')
         min_match_neighbors = self.pref_manager.get_value('min_match_neighbors')
-        binder.bind(catalog = self.detection_catalog,
-                    channel_scnl = [x.scnl for x in channels],
-                    n_neighbors = n_neighbors,
-                    min_match_neighbors = min_match_neighbors)
+        search_win_extend = self.pref_manager.get_value('search_win_extend')
+        self.binder.bind(catalog = self.detection_catalog,
+                         channel_scnl = [x.scnl for x in channels],
+                         n_neighbors = n_neighbors,
+                         min_match_neighbors = min_match_neighbors,
+                         search_win_extend = search_win_extend)
 
         # Store the unprocessed detection in the catalog for the next step.
         self.logger.info('Cleaning the detection catalog.')
@@ -232,9 +256,9 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         # Write the events of the binder to the database and clear the
         # binder event catalog.
         self.logger.info('Writing the events to the database.')
-        binder.event_catalog.write_to_database(self.project,
-                                               bulk_insert = True)
-        binder.event_catalog.clear_events()
+        self.binder.event_catalog.write_to_database(self.project,
+                                                    bulk_insert = True)
+        self.binder.event_catalog.clear_events()
 
 
 
