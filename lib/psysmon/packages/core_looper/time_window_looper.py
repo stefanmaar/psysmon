@@ -511,7 +511,9 @@ class SlidingWindowProcessor(object):
                     for cur_node in looper_nodes:
                         if not cur_node.initialized:
                             self.logger.debug("Initializing node %s.", cur_node.name)
-                            cur_node.initialize()
+                            cur_node.initialize(process_limits = process_limits,
+                                                origin_resource = resource_id,
+                                                channels = channels)
                             self.logger.debug("Finished the initialization.")
 
                         self.logger.debug("Executing node %s.", cur_node.name)
