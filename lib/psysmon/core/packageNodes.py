@@ -536,7 +536,7 @@ class LooperCollectionChildNode(CollectionNode):
             loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
             self.logger = logging.getLogger(loggerName)
 
-    def initialize(self):
+    def initialize(self, **kwargs):
         ''' Initialize the node.
 
         This method is called at the start of a loop. Use it to initialize
