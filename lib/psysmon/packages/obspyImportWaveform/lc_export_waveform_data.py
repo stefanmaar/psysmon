@@ -291,6 +291,8 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
 
                     if event:
                         dest_path = os.path.join(dest_dir,
+                                                 "{0:04d}".format(cur_start.year),
+                                                 "{0:03d}".format(cur_start.julday),
                                                  'event_%010d_%s' % (event.db_id,
                                                                      event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
                     else:
@@ -310,8 +312,11 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
 
         if event:
             dest_path = os.path.join(dest_dir,
+                                     "{0:04d}".format(cur_start.year),
+                                     "{0:03d}".format(cur_start.julday),
                                      'event_%010d_%s' % (event.db_id,
                                                          event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
+
             self.plot_data(stream,
                            dest_path,
                            event)
