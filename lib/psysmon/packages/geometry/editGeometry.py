@@ -384,24 +384,47 @@ class EditGeometryDlg(wx.Frame):
             path = dlg.GetPath()
 
             export_values = []
+
+            # Get the EPSG code for the best fitting UTM projection.
+            code = self.selected_inventory.get_utm_epsg()
+            proj = pyproj.Proj(init = 'epsg:' + code[0][0])
+
             for cur_network in self.selected_inventory.networks:
                 for cur_station in cur_network.stations:
-                    value_list = [cur_station.name, cur_station.network, cur_station.location,
-                                          cur_station.x, cur_station.y, cur_station.z, cur_station.coord_system,
-                                          cur_station.description]
-                    for k, cur_value in enumerate(value_list):
-                        if isinstance(cur_value, str):
-                            value_list[k] = cur_value.encode('utf8')
+                    x, y = proj(cur_station.get_lon_lat()[0],
+                                cur_station.get_lon_lat()[1])
+                    value_list = [cur_station.name,
+                                  cur_station.network,
+                                  cur_station.location,
+                                  cur_station.x,
+                                  cur_station.y,
+                                  cur_station.z,
+                                  cur_station.coord_system,
+                                  x,
+                                  y,
+                                  'epsg:' + code[0][0],
+                                  cur_station.description]
+                    #for k, cur_value in enumerate(value_list):
+                    #    if isinstance(cur_value, str):
+                    #        value_list[k] = cur_value.encode('utf8')
                     export_values.append(value_list)
 
-            fid = open(path, 'wt')
-            try:
-                header = ['name', 'network', 'location', 'x', 'y', 'z', 'coord_system', 'description']
-                writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
+            header = ['name',
+                      'network',
+                      'location',
+                      'x',
+                      'y',
+                      'z',
+                      'coord_system',
+                      'x_utm',
+                      'y_utm',
+                      'coord_system_utm',
+                      'description']
+            with open(path, 'w', newline='') as fid:
+                writer = csv.writer(fid,
+                                    quoting = csv.QUOTE_MINIMAL)
                 writer.writerow(header)
                 writer.writerows(export_values)
-            finally:
-                fid.close()
 
 
     def onExportStations2StationXML(self, event):
@@ -3973,6 +3996,7 @@ class SensorsPanel(wx.Panel):
             self.tfPhaseAxis.plot(np.log10(f), phase, color='k')
             self.tfPhaseAxis.set_xticks(np.log10(frequRange))
             self.tfPhaseAxis.set_xticklabels(frequRange)
+            self.tfCanvas.draw()
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
