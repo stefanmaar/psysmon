@@ -272,7 +272,10 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                             end_time = last_time,
                                             origin_name = self.name,
                                             origin_resource = origin_resource,
-                                            sub_directory = (scnl[0], scnl[1]),
+                                            sub_directory = (scnl[0],
+                                                             scnl[1],
+                                                             "{0:04d}_{1:03d}".format(first_time.year,
+                                                                                      first_time.julday)),
                                             postfix = '_'.join(scnl),
                                             db = export_data)
         self.result_bag.add(shelve_result)
