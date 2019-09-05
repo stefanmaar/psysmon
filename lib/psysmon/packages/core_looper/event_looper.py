@@ -495,7 +495,7 @@ class EventProcessor(object):
                     self.logger.info('No events found for the timespan %s to %s.', cur_start_time.isoformat(), cur_end_time.isoformat())
                 else:
                     self.logger.info('No events found for the specified event IDs: %s.', event_ids)
-                return
+                continue
 
             # Get the channels to process.
             channels = []
