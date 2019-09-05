@@ -408,7 +408,7 @@ class EventExporter(object):
                     self.logger.info('No events found for the timespan %s to %s.', cur_start_time.isoformat(), cur_end_time.isoformat())
                 else:
                     self.logger.info('No events found for the specified event IDs: %s.', event_ids)
-                return
+                continue
 
             res_columns = ['event_start_time', 'event_end_time', 'n_stations',
                            'detection_scnl', 'detection_start',
