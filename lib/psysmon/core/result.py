@@ -624,9 +624,13 @@ class ShelveResult(Result):
         db.close()
 
         # Compress the shelve file.
-        zip_filename = filename + '.gz'
-        with open(filename, 'rb') as f_in, gzip.open(zip_filename, 'wt') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+        # TODO: Opening a zipped shelve database is not working. It has to be
+        # uncompressed in advance. Don't compress the file right now.
+        #zip_filename = filename + '.gz'
+        #with open(filename, 'rb') as f_in:
+        #    with gzip.open(zip_filename, 'wb') as f_out:
+        #        shutil.copyfileobj(f_in, f_out)
+
 
 
 class JsonResult(Result):
