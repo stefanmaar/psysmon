@@ -101,7 +101,7 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                                           origin_resource=origin_resource,
                                           column_names=columns,
                                           sub_directory = ("{0:04d}".format(process_limits[0].year),
-                                                           "{0:03d}".format(process_limits[0].julday))
+                                                           "{0:03d}".format(process_limits[0].julday)))
 
         for tr in stream.traces:
             if process_limits is not None:
