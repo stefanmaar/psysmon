@@ -356,8 +356,7 @@ class TableResult(Result):
         row.add_cells(**kwargs)
         self.rows.append(row)
 
-
-    def save(self, formats = ['csv', ]):
+    def save(self, formats = None):
         ''' Save the result in the specified format.
 
         Parameters
@@ -366,9 +365,12 @@ class TableResult(Result):
             The formats in which the result should be written.
             ('csv')
         '''
+        if formats is None:
+            formats = ['csv', ]
+
         for cur_format in formats:
             if cur_format == 'csv':
-                self.filename_ext = '.csv'
+                self.filename_ext = 'csv'
                 self.save_csv()
             else:
                 # TODO: Throw an exception.
@@ -397,9 +399,9 @@ class TableResult(Result):
             #cur_values.append(id_only)
             #cur_values.append(cur_row.origin_resource)
             #cur_values.reverse()
-            for k, cur_value in enumerate(cur_values):
-                if isinstance(cur_value, str):
-                    cur_values[k] = cur_value.encode('utf8')
+            #for k, cur_value in enumerate(cur_values):
+            #    if isinstance(cur_value, str):
+            #        cur_values[k] = cur_value.encode('utf8')
             export_values.append(cur_values)
 
         # Save the export values to a csv file.
@@ -407,11 +409,10 @@ class TableResult(Result):
             os.makedirs(self.output_dir)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, str):
-            filename = filename.encode(encoding = 'utf-8')
+        #if isinstance(filename, str):
+        #    filename = filename.encode(encoding = 'utf-8')
 
-        fid = open(filename, 'wt')
-        try:
+        with open(filename, 'w') as fid:
             if self.event_id:
                 header = [self.key_name, 'event_id', 'start_time', 'end_time']
             else:
@@ -420,8 +421,6 @@ class TableResult(Result):
             writer = csv.writer(fid, quoting=csv.QUOTE_MINIMAL)
             writer.writerow(header)
             writer.writerows(export_values)
-        finally:
-            fid.close()
 
 
 
@@ -619,8 +618,6 @@ class ShelveResult(Result):
         #filename = os.path.join(output_dir, self.filename)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, str):
-            filename = filename.encode(encoding = 'utf-8')
 
         db = shelve.open(filename)
         db.update(self.db)
@@ -658,8 +655,6 @@ class JsonResult(Result):
             os.makedirs(self.output_dir)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, str):
-            filename = filename.encode(encoding = 'utf-8')
 
         # Compress the shelve file.
         with gzip.open(filename + '.gz', 'wt') as jsonfile:
