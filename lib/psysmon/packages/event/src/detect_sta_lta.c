@@ -24,7 +24,11 @@
 #include <math.h>
 
 
-int compute_event_end(const long n_sta, const double *sta, const long n_lta, const double *lta, double stop_value, double *stop_crit, const double stop_growth)
+int compute_event_end(const long n_sta, const double *sta,
+                      const long n_lta, const double *lta,
+                      double stop_value, double *stop_crit,
+                      const double stop_growth, const double stop_growth_exp,
+                      const double stop_growth_inc, const long stop_growth_inc_begin)
 {
     int k;
     int event_end = -1;
@@ -33,6 +37,7 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
     int sta_below_stop_required = 100;
     int cnt_sta_below_lta = 0;
     int cnt_sta_below_stop = 0;
+    int cnt_growth_inc = 0;
     double stop_value_orig = stop_value;
 
     for (k = 0; k < n_sta; k++)
@@ -44,12 +49,19 @@ int compute_event_end(const long n_sta, const double *sta, const long n_lta, con
         else
         {
             cnt_sta_below_lta = 0;
+            cnt_growth_inc = 0;
             stop_value = stop_value_orig;
         }
 
         if (cnt_sta_below_lta > sta_below_lta_required)
         {
-            stop_value += stop_value_orig * stop_growth;
+            double cur_stop_growth = stop_growth;
+            if (cnt_sta_below_lta >= stop_growth_inc_begin)
+            {
+                cur_stop_growth = stop_growth + cnt_growth_inc * (stop_growth * stop_growth_inc);
+                cnt_growth_inc++;
+            }
+            stop_value = stop_value_orig + pow(cnt_sta_below_lta * stop_value_orig * cur_stop_growth, stop_growth_exp);
         }
 
         stop_crit[k] = stop_value;

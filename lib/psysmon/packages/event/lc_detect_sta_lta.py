@@ -75,6 +75,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         gen_group = pref_page.add_group('general')
         thr_group = pref_page.add_group('threshold')
         sc_group = pref_page.add_group('stop criterium')
+        filter_group = pref_page.add_group('filter')
 
         out_page = self.pref_manager.add_page('Output')
         cat_group = out_page.add_group('catalog')
@@ -128,13 +129,6 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         thr_group.add_item(item)
 
 
-        # stop growth
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
-                                                     label = 'stop grow ratio',
-                                                     value = 0.001,
-                                                     digits = 5,
-                                                     limit = (0, 0.1))
-        sc_group.add_item(item)
 
         # Stop criterium delay.
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
@@ -144,6 +138,38 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                      tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
         sc_group.add_item(item)
 
+        # stop growth
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
+                                                     label = 'stop grow ratio',
+                                                     value = 0.001,
+                                                     digits = 10,
+                                                     limit = (0, 0.1))
+        sc_group.add_item(item)
+
+        # stop growth exponent
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_exp',
+                                                     label = 'stop grow exponent',
+                                                     value = 1,
+                                                     digits = 1,
+                                                     limit = (0.1, 100))
+        sc_group.add_item(item)
+
+        # stop growth increase percentage
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_inc',
+                                                     label = 'stop grow increase [%]',
+                                                     value = 0,
+                                                     digits = 10,
+                                                     limit = (0, 100))
+        sc_group.add_item(item)
+
+        # stop growth increase percentage
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_inc_begin',
+                                                     label = 'stop grow inc. begin',
+                                                     value = 10,
+                                                     digits = 3,
+                                                     limit = (0, 100000),
+                                                     tool_tip = "When to start growing the stop grow value using the stop grow increase percentage [s].")
+        sc_group.add_item(item)
 
         # The target detection catalog.
         item = preferences_manager.SingleChoicePrefItem(name = 'detection_catalog',
@@ -154,6 +180,13 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                        )
         cat_group.add_item(item)
 
+        # Detection reject length
+        item = preferences_manager.FloatSpinPrefItem(name = 'reject_length',
+                                                     label = 'reject lenght',
+                                                     value = 0.5,
+                                                     limit = (0, 10000),
+                                                     tool_tip = 'Detections with a smaller length are rejected [s].')
+        filter_group.add_item(item)
 
     def edit(self):
         ''' Create the preferences edit dialog.
@@ -197,6 +230,10 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         cf_type = self.pref_manager.get_value('cf_type')
         stop_delay = self.pref_manager.get_value('stop_delay')
         stop_growth = self.pref_manager.get_value('stop_growth')
+        stop_growth_exp = self.pref_manager.get_value('stop_growth_exp')
+        stop_growth_inc = self.pref_manager.get_value('stop_growth_inc')
+        stop_growth_inc_begin = self.pref_manager.get_value('stop_growth_inc_begin')
+        reject_length = self.pref_manager.get_value('reject_length')
 
         # Get the selected catalog id.
         catalog_name = self.pref_manager.get_value('detection_catalog')
@@ -211,7 +248,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
 
         # Initialize the detector.
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
-                                         turn_limit = turn_limit, stop_growth = stop_growth)
+                                         turn_limit = turn_limit, stop_growth = stop_growth,
+                                         stop_growth_exp = stop_growth_exp,
+                                         stop_growth_inc = stop_growth_inc)
 
         # The list to store the data to be inserted into the database.
         db_data = []
@@ -246,6 +285,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
+            detector.stop_growth_inc_begin = int(stop_growth_inc_begin * cur_trace.stats.sampling_rate)
+            detector.reject_length = reject_length * cur_trace.stats.sampling_rate
+
             detector.set_data(cur_trace.data)
             detector.compute_cf()
             detector.compute_sta_lta()

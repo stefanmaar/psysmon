@@ -656,7 +656,10 @@ class StaLtaDetector(object):
 
     def __init__(self, data = None, cf_type = 'square', n_sta = 2,
                  n_lta = 10, thr = 3, fine_thr = None, turn_limit = 0.05,
-                 stop_growth = 0.001):
+                 stop_growth = 0.001, stop_growth_exp = 1,
+                 stop_growth_inc = 0,
+                 stop_growth_inc_begin = None,
+                 reject_length = 0):
         ''' Initialize the instance.
         '''
         # The logging logger instance.
@@ -694,6 +697,18 @@ class StaLtaDetector(object):
         # The ratio with which the stop_value is grown to ensure the reaching
         # of the stop criterium.
         self.stop_growth = stop_growth
+
+        # The exponent of the stop growth.
+        self.stop_growth_exp = stop_growth_exp
+
+        # The increase of the stop_growth_value.
+        self.stop_growth_inc = stop_growth_inc
+
+        # The time when to begin growing the stop growth value.
+        self.stop_growth_inc_begin = stop_growth_inc_begin
+
+        # The length of the events to reject.
+        self.reject_length = reject_length
 
         # The data array.
         if data is None:
@@ -798,7 +813,16 @@ class StaLtaDetector(object):
             n_cur_sta = len(cur_sta)
             n_cur_lta = len(cur_lta)
             cur_stop_crit = np.empty(n_cur_sta, dtype = np.float64)
-            next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit, self.stop_growth)
+            next_end_ind = clib_detect.compute_event_end(n_cur_sta,
+                                                         cur_sta,
+                                                         n_cur_lta,
+                                                         cur_lta,
+                                                         stop_value,
+                                                         cur_stop_crit,
+                                                         self.stop_growth,
+                                                         self.stop_growth_exp,
+                                                         self.stop_growth_inc,
+                                                         self.stop_growth_inc_begin)
             self.logger.debug("next_end_ind: %d", next_end_ind)
 
             # Compute the event end.
@@ -815,9 +839,11 @@ class StaLtaDetector(object):
                 # timeseries.
                 self.remove_event_influence(event_start, cur_event_end)
 
-            # Add the event marker.
+            # Add the event marker if it is larger than the reject length.
             if cur_event_end > event_start + 1:
-                event_marker.append((event_start, cur_event_end))
+                cur_event_length = cur_event_end - event_start
+                if cur_event_length > self.reject_length:
+                    event_marker.append((event_start, cur_event_end))
 
             # Recompute the next event start indices.
             if np.isnan(cur_event_end):
