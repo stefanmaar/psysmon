@@ -292,8 +292,6 @@ class PSDPlotter(object):
         for cur_file in file_list:
             cur_psd_data = {}
             self.logger.info('Reading file %s.', cur_file)
-            if isinstance(cur_file, str):
-                cur_file = cur_file.encode(encoding = 'utf-8')
             db = shelve.open(cur_file)
             cur_psd_data.update(db)
             db.close()
