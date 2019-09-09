@@ -55,6 +55,11 @@ class ExportVisible(plugins.CommandPlugin):
         self.icons['active'] = icons.iconsBlack16.download_icon_16
 
 
+        self.exp_options = {}
+        self.exp_options['wav'] = {'rescale': True,
+                                   'width': 4}
+
+
         # Add the plugin preferences.
         pref_page = self.pref_manager.add_page('Preferences')
         exp_group = pref_page.add_group('export')
@@ -68,18 +73,19 @@ class ExportVisible(plugins.CommandPlugin):
 
         obspy_export_formats = ['GSE2', 'MSEED', 'PICKLE', 'Q',
                                 'SAC', 'SACXY', 'SEGY', 'SH_ASC', 'SLIST',
-                                'SU', 'TSPAIR']
-        self.export_format_ext = {'GSE2' : 'gse2',
-                                  'MSEED' : 'msd',
-                                  'PICKLE' : 'pkl',
-                                  'Q' : 'q',
-                                  'SAC' : 'sac',
-                                  'SACYX' : 'sacyx',
-                                  'SEGY' : 'segy',
-                                  'SH_ASC' : 'asc',
-                                  'SLIST' : 'asc',
-                                  'SU' : 'su',
-                                  'TSPAIR' : 'asc'}
+                                'SU', 'TSPAIR', 'WAV']
+        self.export_format_ext = {'GSE2': 'gse2',
+                                  'MSEED': 'msd',
+                                  'PICKLE': 'pkl',
+                                  'Q': 'q',
+                                  'SAC': 'sac',
+                                  'SACYX': 'sacyx',
+                                  'SEGY': 'segy',
+                                  'SH_ASC': 'asc',
+                                  'SLIST': 'asc',
+                                  'SU': 'su',
+                                  'TSPAIR': 'asc',
+                                  'WAV': 'wav'}
         item = preferences_manager.SingleChoicePrefItem(name = 'export_format',
                                                         label = 'export format',
                                                         value = 'TSPAIR',
@@ -126,6 +132,13 @@ class ExportVisible(plugins.CommandPlugin):
             cur_isoformat = cur_isoformat.replace('.', '_')
             cur_filename = cur_id + '_' + cur_isoformat + '.' + self.export_format_ext[export_format]
             cur_filename = os.path.join(export_dir, cur_filename)
-            cur_trace.write(cur_filename, format = export_format)
+            if export_format.lower() in self.exp_options:
+                exp_options = self.exp_options[export_format.lower()]
+
+                if export_format.lower() == 'wav':
+                    exp_options['framerate'] = cur_trace.stats.sampling_rate
+            else:
+                exp_options = {}
+            cur_trace.write(cur_filename, format = export_format, **exp_options)
             self.logger.info('Exported trace %s to file %s.', cur_trace.id, cur_filename)
 
