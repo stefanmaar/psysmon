@@ -47,4 +47,5 @@ psysmon.egg-info/
 
 # Ignore custom packages.
 lib/psysmon/packages/seismicsculpture
+lib/psysmon/packages/seismogram_intaglio
 
