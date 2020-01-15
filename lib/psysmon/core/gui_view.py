@@ -956,7 +956,7 @@ class PlotPanel(wx.Panel):
 
         # The axes.
         self._axes = []
-        axes_height = old_div(1, n_axes)
+        axes_height = 1 / n_axes
         for k in range(n_axes):
             self._axes.append(self.figure.add_axes([0, k * axes_height, 1, axes_height]))
         self.canvas.SetMinSize((30, 10))

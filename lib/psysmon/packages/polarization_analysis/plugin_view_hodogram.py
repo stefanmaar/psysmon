@@ -20,7 +20,6 @@ from __future__ import division
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from builtins import zip
-from past.utils import old_div
 import logging
 import wx
 import numpy as np
@@ -36,7 +35,7 @@ import psysmon.packages.polarization_analysis.core
 
 
 
-class PolarizationAnalysis(ViewPlugin):
+class Hodogram(ViewPlugin):
     '''
 
     '''
@@ -147,7 +146,7 @@ class PolarizationAnalysis(ViewPlugin):
         ''' Get a class object of the view.
 
         '''
-        return PolarizationAnalysisView
+        return HodogramView
 
 
 
@@ -156,7 +155,7 @@ class PolarizationAnalysis(ViewPlugin):
 
 
 
-class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
+class HodogramView(psysmon.core.gui_view.ViewNode):
     '''
     A polarization analysis view.
 
@@ -170,6 +169,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
                                                 id=id,
                                                 parent_viewport = parent_viewport,
                                                 name=name,
+                                                n_axes = 3,
                                                 **kwargs)
 
         # The logging logger instance.
@@ -178,7 +178,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         # Create multiple axes.
-        self.set_n_axes(3)
+        #self.set_n_axes(3)
 
         self.lineColor = [x / 255.0 for x in lineColor]
 
@@ -210,7 +210,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
             sps.append(cur_trace.stats.sampling_rate)
 
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
+            time_array = time_array / cur_trace.stats.sampling_rate
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -236,20 +236,21 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
         # Normalize to the station maximum.
         max_amp = np.max(np.max(np.abs(np.vstack((x_data,y_data, z_data))), axis = 1))
-        x_data = old_div(x_data, max_amp)
-        y_data = old_div(y_data, max_amp)
-        z_data = old_div(z_data, max_amp)
+        x_data = x_data / max_amp
+        y_data = y_data / max_amp
+        z_data = z_data / max_amp
 
         # Scale to the desired size in points.
         # TODO: Make the size a user preference.
         max_size = 20.
 
         win_step = np.floor(window_length_smp - (window_length_smp * overlap))
-        n_win = np.floor( old_div((len(z_data) - window_length_smp), win_step))
+        n_win = np.floor((len(z_data) - window_length_smp) / win_step)
 
         for cur_axes in self.axes:
             #cur_axes.clear()
             cur_axes.collections = []
+        #self.axes.collections = []
 
         lines_xy = []
         lines_xz = []
@@ -271,9 +272,9 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
             # Normalize to the station maximum.
             max_amp = np.max(np.max(np.abs(np.vstack((cur_x_data, cur_y_data, cur_z_data))), axis = 1))
-            cur_x_data = old_div(cur_x_data, max_amp * max_size)
-            cur_y_data = old_div(cur_y_data, max_amp * max_size)
-            cur_z_data = old_div(cur_z_data, max_amp * max_size)
+            cur_x_data = cur_x_data / max_amp * max_size
+            cur_y_data = cur_y_data / max_amp * max_size
+            cur_z_data = cur_z_data / max_amp * max_size
 
             cur_line = list(zip(cur_x_data, cur_y_data))
             lines_xy.append(cur_line)
@@ -287,7 +288,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
                                              offsets = offsets,
                                              transOffset = self.axes[2].transData)
 
-        trans = mpl.transforms.Affine2D().scale(self.axes[2].figure.dpi/72.0)
+        trans = mpl.transforms.Affine2D().scale(self.axes[2].figure.dpi / 72.0)
         col.set_transform(trans)
         self.axes[2].add_collection(col)
 
@@ -295,7 +296,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
                                              offsets = offsets,
                                              transOffset = self.axes[1].transData)
 
-        trans = mpl.transforms.Affine2D().scale(self.axes[1].figure.dpi/72.0)
+        trans = mpl.transforms.Affine2D().scale(self.axes[1].figure.dpi / 72.0)
         col.set_transform(trans)
         self.axes[1].add_collection(col)
 
@@ -303,7 +304,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
                                              offsets = offsets,
                                              transOffset = self.axes[0].transData)
 
-        trans = mpl.transforms.Affine2D().scale(self.axes[0].figure.dpi/72.0)
+        trans = mpl.transforms.Affine2D().scale(self.axes[0].figure.dpi / 72.0)
         col.set_transform(trans)
         self.axes[0].add_collection(col)
 
@@ -320,6 +321,8 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
     def setXLimits(self, left, right):
         ''' Set the limits of the x-axes.
         '''
+        #self.axes.set_xlim(left = left, right = right)
+        #return
         for cur_axes in self.axes:
             cur_axes.set_xlim(left = left, right = right)
 
