@@ -1652,7 +1652,7 @@ class CreateNewDbUserDlg(wx.Dialog):
             query_user = "CREATE USER %s@'%s' IDENTIFIED BY 'YOUR_PASSWORD';" % (userData['userName'], userData['mysqlHost'])
             query_grant = "GRANT ALL ON %s.* TO '%s'@'localhost';" % (user_db, userData['userName'])
 
-            msg = 'With new mariaDB installations, there is a restricted root acces to the database.\nPlease execute the following commands as root in the mariaDB command prompt:\n\n\n'
+            msg = "With new mariaDB installations, there is a restricted root access to the database.\nPlease execute the following commands as root in the mariaDB command prompt. Replace YOUR_PASSWORD with your desired password or an empty string ('') if no password is required.:\n\n\n"
             msg += query_db + '\n' + query_user + '\n' + query_grant
             dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, 'Error when creating the user.')
             #dlg = wx.MessageDialog(None, msg,
