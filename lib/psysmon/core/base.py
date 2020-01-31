@@ -343,7 +343,7 @@ class Base(object):
         '''
         try:
             dbDialect = 'mysql'
-            dbDriver = None
+            dbDriver = 'pymysql'
             if dbDriver:
                 dialectString = dbDialect + "+" + dbDriver
             else:
