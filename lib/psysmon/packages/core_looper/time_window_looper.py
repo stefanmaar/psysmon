@@ -29,7 +29,12 @@ The importWaveform module.
 
 This module contains the classes of the importWaveform dialog window.
 '''
+from __future__ import division
 
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os
 import copy
 import logging
@@ -80,8 +85,18 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         # Create the edit dialog.
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
 
-        # Enable/Disable the gui elements based on the pref_manager settings.
-        #self.on_select_individual()
+        # Enable/Disable the time-span elements depending on the 'set
+        # collection time-span' collection node.
+        if 'set collection time-span' in [x.name for x in self.parentCollection.nodes]:
+            item = self.pref_manager.get_item('start_time')[0]
+            item.disable_gui_element()
+            item = self.pref_manager.get_item('end_time')[0]
+            item.disable_gui_element()
+        else:
+            item = self.pref_manager.get_item('start_time')[0]
+            item.enable_gui_element()
+            item = self.pref_manager.get_item('end_time')[0]
+            item.enable_gui_element()
 
         dlg.ShowModal()
         dlg.Destroy()
@@ -99,9 +114,21 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                            parent_rid = self.rid)
 
         window_mode = self.pref_manager.get_value('window_mode')
-        start_time = self.pref_manager.get_value('start_time')
-        end_time = self.pref_manager.get_value('end_time')
-        if window_mode == 'free':
+
+        if self.parentCollection.runtime_att.start_time:
+            start_time = self.parentCollection.runtime_att.start_time
+        else:
+            start_time = self.pref_manager.get_value('start_time')
+
+        if self.parentCollection.runtime_att.end_time:
+            end_time = self.parentCollection.runtime_att.end_time
+        else:
+            end_time = self.pref_manager.get_value('end_time')
+
+        if window_mode == 'whole':
+            window_length = end_time - start_time
+            overlap = 0.
+        elif window_mode == 'free':
             window_length = self.pref_manager.get_value('window_length')
             overlap = self.pref_manager.get_value('window_overlap')
         elif window_mode == 'daily':
@@ -124,6 +151,8 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                           overlap = overlap,
                           chunked = self.pref_manager.get_value('process_chunked'),
                           chunk_window_length = self.pref_manager.get_value('chunk_win_length'))
+
+        return not processor.node_execution_error
 
 
 
@@ -149,7 +178,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
         item = psy_pm.SingleChoicePrefItem(name = 'window_mode',
                                            label = 'window mode',
-                                           limit = ('free', 'daily', 'weekly'),
+                                           limit = ('free', 'daily', 'weekly', 'whole'),
                                            value = 'free',
                                            hooks = {'on_value_change': self.on_window_mode_selected},
                                            tool_tip = 'The mode of the window computation.')
@@ -252,6 +281,8 @@ class SlidingWindowProcessor(object):
 
         self.parent_rid = parent_rid
 
+        self.node_execution_error = False
+
         if self.parent_rid is not None:
             rid_dir = self.parent_rid.replace('/', '-').replace(':', '-')
             if rid_dir.startswith('-'):
@@ -311,7 +342,7 @@ class SlidingWindowProcessor(object):
 
         # Compute the start times of the sliding windows.
         windowlist_start = [start_time, ]
-        n_windows = np.floor(end_time - start_time) / (window_length * window_step)
+        n_windows = old_div(np.floor(end_time - start_time), (window_length * window_step))
         windowlist_start = [start_time + x * (window_length * window_step) for x in range(0, int(n_windows))]
 
         try:
@@ -348,6 +379,8 @@ class SlidingWindowProcessor(object):
         chunk_length : float
             The lenght of the chunk window in seconds.
         '''
+        # Check if any of the looper nodes needs waveform data.
+        waveform_needed = np.any([x.need_waveform_data for x in looper_nodes])
 
         # Get the channels to process.
         channels = []
@@ -359,7 +392,7 @@ class SlidingWindowProcessor(object):
                                                                             location = cur_loc,
                                                                             name = cur_channel))
 
-        n_chunk_windows =  np.ceil(window_length / chunk_length)
+        n_chunk_windows =  np.ceil(old_div(window_length, chunk_length))
 
         pre_stream_length = [x.pre_stream_length for x in looper_nodes]
         post_stream_length = [x.post_stream_length for x in looper_nodes]
@@ -378,9 +411,13 @@ class SlidingWindowProcessor(object):
                         cur_chunk_end = cur_window_start + window_length
                     self.logger.info("Processing chunk for %s from %s to %s.", cur_channel.scnl_string, cur_chunk_start, cur_chunk_end)
 
-                    stream = self.request_stream(start_time = cur_chunk_start - pre_stream_length,
-                                                 end_time = cur_chunk_end + post_stream_length,
-                                                 scnl = [cur_channel.scnl,])
+
+                    if waveform_needed:
+                        stream = self.project.request_data_stream(start_time = cur_chunk_start - pre_stream_length,
+                                                                  end_time = cur_chunk_end + post_stream_length,
+                                                                  scnl = [cur_channel.scnl,])
+                    else:
+                        stream = None
 
                     # Execute the looper nodes.
                     resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
@@ -430,6 +467,9 @@ class SlidingWindowProcessor(object):
         '''
         n_windows = len(windowlist_start)
 
+        # Check if any of the looper nodes needs waveform data.
+        waveform_needed = np.any([x.need_waveform_data for x in looper_nodes])
+
         # Get the channels to process.
         channels = []
         for cur_station in station_names:
@@ -452,34 +492,50 @@ class SlidingWindowProcessor(object):
 
                 self.logger.info("Processing sliding window %d/%d.", k+1, n_windows)
 
-                self.logger.info("Initial stream request for time-span: %s to %s for scnl: %s.", cur_window_start.isoformat(),
-                                                                                    (cur_window_start + window_length).isoformat(),
-                                                                                     str(scnl))
-                stream = self.request_stream(start_time = cur_window_start - pre_stream_length,
-                                             end_time = cur_window_start + window_length + post_stream_length,
-                                             scnl = scnl)
+                if waveform_needed:
+                    self.logger.info("Initial stream request for time-span: %s to %s for scnl: %s.", cur_window_start.isoformat(),
+                                                                                        (cur_window_start + window_length).isoformat(),
+                                                                                         str(scnl))
+                    stream = self.project.request_data_stream(start_time = cur_window_start - pre_stream_length,
+                                                              end_time = cur_window_start + window_length + post_stream_length,
+                                                              scnl = scnl)
+                    stream = stream.split()
+                else:
+                    stream = None
 
                 # Execute the looper nodes.
                 resource_id = self.parent_rid + '/time_window/' + cur_window_start.isoformat() + '-' + (cur_window_start+window_length).isoformat()
                 process_limits = (cur_window_start, cur_window_start + window_length)
-                for cur_node in looper_nodes:
-                    if k == 0:
-                        cur_node.initialize()
 
-                    self.logger.debug("Executing node %s.", cur_node.name)
-                    cur_node.execute(stream = stream,
-                                     process_limits = process_limits,
-                                     origin_resource = resource_id)
-                    self.logger.debug("Finished execution of node %s.", cur_node.name)
+                try:
+                    for cur_node in looper_nodes:
+                        if not cur_node.initialized:
+                            self.logger.debug("Initializing node %s.", cur_node.name)
+                            cur_node.initialize(process_limits = process_limits,
+                                                origin_resource = resource_id,
+                                                channels = channels)
+                            self.logger.debug("Finished the initialization.")
 
-                    # Get the results of the node.
-                    if cur_node.result_bag:
-                        if len(cur_node.result_bag.results) > 0:
-                            for cur_result in cur_node.result_bag.results:
-                                cur_result.base_output_dir = self.output_dir
-                                cur_result.save()
+                        self.logger.debug("Executing node %s.", cur_node.name)
+                        cur_node.execute(stream = stream,
+                                         process_limits = process_limits,
+                                         origin_resource = resource_id,
+                                         channels = channels)
+                        self.logger.debug("Finished execution of node %s.", cur_node.name)
 
-                            cur_node.result_bag.clear()
+                        # Get the results of the node.
+                        if cur_node.result_bag:
+                            if len(cur_node.result_bag.results) > 0:
+                                self.logger.debug("Saving the results.")
+                                for cur_result in cur_node.result_bag.results:
+                                    cur_result.base_output_dir = self.output_dir
+                                    cur_result.save()
+
+                                cur_node.result_bag.clear()
+                                self.logger.debug("Finished saving of the results.")
+                except Exception:
+                    self.node_execution_error = True
+                    self.logger.exception("Error when executing a looper node. Skipping this time window.")
 
 
                 # Handle the results.
@@ -525,32 +581,3 @@ class SlidingWindowProcessor(object):
 
             cur_node.result_bag.clear()
 
-
-    def request_stream(self, start_time, end_time, scnl):
-        ''' Request a data stream from the waveclient.
-
-        '''
-        data_sources = {}
-        for cur_scnl in scnl:
-            if cur_scnl in self.project.scnlDataSources.keys():
-                if self.project.scnlDataSources[cur_scnl] not in data_sources.keys():
-                    data_sources[self.project.scnlDataSources[cur_scnl]] = [cur_scnl, ]
-                else:
-                    data_sources[self.project.scnlDataSources[cur_scnl]].append(cur_scnl)
-            else:
-                if self.project.defaultWaveclient not in data_sources.keys():
-                    data_sources[self.project.defaultWaveclient] = [cur_scnl, ]
-                else:
-                    data_sources[self.project.defaultWaveclient].append(cur_scnl)
-
-        stream = obspy.core.Stream()
-
-        for cur_name in data_sources.iterkeys():
-            curWaveclient = self.project.waveclient[cur_name]
-            curStream =  curWaveclient.getWaveform(startTime = start_time,
-                                                   endTime = end_time,
-                                                   scnl = scnl)
-            if curStream:
-                stream += curStream
-
-        return stream

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +20,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import logging
 import obspy.core.utcdatetime as udt
 import wx
@@ -118,7 +123,10 @@ class Field(wx.Panel):
         self.SetSizer(self.sizer)
 
     def __del__(self):
-        self.pref_item.remove_gui_element(self)
+        try:
+            self.pref_item.remove_gui_element(self)
+        except Exception:
+            pass
 
 
     def addLabel(self, labelElement):
@@ -161,7 +169,7 @@ class Field(wx.Panel):
     def call_hook(self, hook_name):
         ''' Call the registerd hooks of the pref item.
         '''
-        if hook_name in self.pref_item.hooks.keys():
+        if hook_name in iter(self.pref_item.hooks.keys()):
             self.pref_item.hooks[hook_name]()
 
 
@@ -204,7 +212,7 @@ class PrefPagePanel(wx.Panel):
                     cur_item.set_gui_element(gui_element)
                     cur_container.addActionField(gui_element)
                 else:
-                    if cur_item.mode in gui_elements.keys():
+                    if cur_item.mode in iter(gui_elements.keys()):
                         guiclass = gui_elements[cur_item.mode]
                     else:
                         guiclass = cur_item.gui_class
@@ -329,6 +337,14 @@ class StaticBoxContainer(wx.Panel):
         ''' The number of fields.
         '''
         return len(self.fieldList) + len(self.actionFieldList)
+
+
+    def __del__(self):
+        '''
+        '''
+        print("Deleting StaticBoxContainer.")
+        for cur_field in self.fieldList:
+            cur_field.pref_item.remove_gui_element(cur_field)
 
 
     ## Add a field to the container.
@@ -1007,7 +1023,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_selected(self, event):
         '''
         '''
-        item_data = self.controlElement.GetItemData(event.m_itemIndex)
+        item_data = self.controlElement.GetItemData(event.GetIndex())
         selected_value = self.controlElement.itemDataMap[item_data]
         if selected_value not in self.pref_item.value:
             self.pref_item.value.append(selected_value)
@@ -1018,7 +1034,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
     def on_item_deselected(self, event):
         '''
         '''
-        item_data = self.controlElement.GetItemData(event.m_itemIndex)
+        item_data = self.controlElement.GetItemData(event.GetIndex())
         selected_value = self.controlElement.itemDataMap[item_data]
         self.pref_item.value.remove(selected_value)
         self.call_hook('on_value_change')
@@ -1210,7 +1226,7 @@ class FileGrid(wx.grid.Grid):
     def colPopup(self, col, evt):
         """(col, evt) -> display a popup menu when a column label is
         right clicked"""
-        x = self.GetColSize(col)/2
+        x = old_div(self.GetColSize(col),2)
         menu = wx.Menu()
 
         xo, yo = evt.GetPosition()

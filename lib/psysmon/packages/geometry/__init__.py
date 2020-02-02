@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import obspy
+
 name = "geometry"
 version = "0.0.4"
 author = "Stefan Mertl"
@@ -86,6 +88,8 @@ def databaseFactory(base):
             self.producer = producer
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
         def __repr__(self):
@@ -129,6 +133,8 @@ def databaseFactory(base):
             self.label = label
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
 
@@ -166,34 +172,13 @@ def databaseFactory(base):
             self.bitweight = bitweight
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
 
     tables.append(GeomRecorderStreamParameter)
 
-
-
-
-    class GeomComponentToStream(base):
-        __tablename__ = 'geom_component_to_stream'
-        __table_args__ = {'mysql_engine': 'InnoDB'}
-        _version = '1.0.0'
-
-        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
-        component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
-        start_time = Column(Float(53), primary_key=True, nullable=False)
-        end_time = Column(Float(53))
-
-        component = relationship('GeomSensorComponent')
-
-        def __init__(self, stream_id, component_id, start_time, end_time):
-            self.stream_id = stream_id
-            self.component_id = component_id
-            self.start_time = start_time
-            self.end_time = end_time
-
-
-    tables.append(GeomComponentToStream)
 
 
     class GeomSensor(base):
@@ -226,6 +211,8 @@ def databaseFactory(base):
             self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
     tables.append(GeomSensor)
@@ -266,6 +253,8 @@ def databaseFactory(base):
             self.deliver_unit = deliver_unit
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
     tables.append(GeomSensorComponent)
@@ -309,6 +298,8 @@ def databaseFactory(base):
             self.sensitivity = sensitivity
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
 
@@ -337,6 +328,28 @@ def databaseFactory(base):
 
 
 
+    class GeomComponentToStream(base):
+        __tablename__ = 'geom_component_to_stream'
+        __table_args__ = {'mysql_engine': 'InnoDB'}
+        _version = '1.0.0'
+
+        stream_id = Column(Integer, ForeignKey('geom_rec_stream.id', onupdate='cascade'), primary_key=True, nullable=False)
+        component_id = Column(Integer, ForeignKey('geom_sensor_component.id', onupdate='cascade'), primary_key=True, nullable=False)
+        start_time = Column(Float(53), primary_key=True, nullable=False)
+        end_time = Column(Float(53))
+
+        component = relationship('GeomSensorComponent')
+
+        def __init__(self, stream_id, component_id, start_time, end_time):
+            self.stream_id = stream_id
+            self.component_id = component_id
+            self.start_time = start_time
+            self.end_time = end_time
+
+
+    tables.append(GeomComponentToStream)
+
+
     # Create the geom_network table mapper.
     class GeomNetwork(base):
         __tablename__ = 'geom_network'
@@ -362,6 +375,8 @@ def databaseFactory(base):
             self.type = type
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
 
@@ -405,6 +420,8 @@ def databaseFactory(base):
             self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
 
@@ -439,6 +456,8 @@ def databaseFactory(base):
             self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
     tables.append(GeomChannel)
@@ -488,6 +507,8 @@ def databaseFactory(base):
             self.description = description
             self.agency_uri = agency_uri
             self.author_uri = author_uri
+            if isinstance(creation_time, obspy.UTCDateTime):
+                creation_time = creation_time.isoformat()
             self.creation_time = creation_time
 
     tables.append(GeomArray)

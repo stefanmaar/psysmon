@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json
 import logging
 import os
@@ -53,7 +54,7 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         with open(test_file, 'r') as fid:
             project_data = json.load(fid)
 
-        if project_data.has_key('file_meta'):
+        if 'file_meta' in project_data:
             # The project file has a meta data dictionary. Use it to select the
             # correct project file decoder.
             file_meta = project_data['file_meta']
@@ -158,7 +159,7 @@ class ProjectFileDecoderTestCase(unittest.TestCase):
         project_obj = decoder.decode(json_project)
 
         # TODO: Test the project_obj for validity.
-        print project_obj.waveclient['db client'].mode
+        print(project_obj.waveclient['db client'].mode)
 
         psybase.stop_project_server()
         base_dir = project.base_dir

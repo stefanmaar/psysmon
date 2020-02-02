@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 import logging
@@ -49,13 +50,13 @@ class EventBindTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.psybase.stop_project_server()
-        print "dropping database tables...\n"
+        print("dropping database tables...\n")
         test_util.drop_project_database_tables(cls.project)
-        print "removing temporary file structure....\n"
+        print("removing temporary file structure....\n")
         test_util.remove_project_filestructure(cls.project)
-        print "removing temporary base directory....\n"
+        print("removing temporary base directory....\n")
         os.removedirs(cls.project.base_dir)
-        print "....finished cleaning up.\n"
+        print("....finished cleaning up.\n")
 
     def setUp(self):
         pass
@@ -83,7 +84,7 @@ class EventBindTestCase(unittest.TestCase):
         events['2016-01-01T03:00:00'] = [2, 1, 0, 1]
         events['2016-01-01T04:00:00'] = [3, 2, 1, 0]
 
-        for cur_start, cur_delay_list in events.iteritems():
+        for cur_start, cur_delay_list in events.items():
             for k, cur_delay in enumerate(cur_delay_list):
                 cur_scnl = channels[k]
                 cur_channel = self.project.geometry_inventory.get_channel(station = cur_scnl[0],
@@ -134,7 +135,7 @@ class EventBindTestCase(unittest.TestCase):
         try:
             result = db_session.query(db_catalog_orm).filter(db_catalog_orm.name == 'event_bind_test').all()
             loaded_catalog = ev_core.Catalog.from_db_catalog(result[0], load_events = True)
-            for cur_event_start, cur_delay in events.iteritems():
+            for cur_event_start, cur_delay in events.items():
                 cur_event_start = utcdatetime.UTCDateTime(cur_event_start)
                 selected_event = loaded_catalog.get_events(start_time = cur_event_start,
                                                            end_time = cur_event_start + 10)

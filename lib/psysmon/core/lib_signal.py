@@ -27,9 +27,10 @@ CTypes support for the libsignal C library.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import absolute_import
 
 import ctypes
-import clib_util
+from . import clib_util
 import numpy as np
 
 # Import the signal C library.

@@ -29,6 +29,7 @@ This includes the file structure and the database tables.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import print_function
 import matplotlib as mpl
 mpl.rcParams['backend'] = 'WXAgg'
 
@@ -40,7 +41,7 @@ from psysmon.core.test_util import remove_project
 
 def run():
     if len(sys.argv) <= 2:
-        print "At least 2 arguments required (project_file, username).\n"
+        print("At least 2 arguments required (project_file, username).\n")
         sys.exit()
 
     project_file = sys.argv[1]

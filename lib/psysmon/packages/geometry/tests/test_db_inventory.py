@@ -20,6 +20,7 @@
 '''
 
 '''
+from __future__ import print_function
 
 import unittest
 import nose.plugins.attrib as nose_attrib
@@ -78,19 +79,19 @@ class DbInventoryTestCase(unittest.TestCase):
         cls.project = create_empty_project(cls.psybase)
         cls.project.dbEngine.echo = False
         #cls.full_project = create_full_project(cls.psybase)
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
 
 
     @classmethod
     def tearDownClass(cls):
         cls.psybase.stop_project_server()
-        print "dropping database tables...\n"
+        print("dropping database tables...\n")
         drop_project_database_tables(cls.project)
-        print "removing temporary file structure....\n"
+        print("removing temporary file structure....\n")
         remove_project_filestructure(cls.project)
-        print "removing temporary base directory....\n"
+        print("removing temporary base directory....\n")
         os.removedirs(cls.project.base_dir)
-        print "....finished cleaning up.\n"
+        print("....finished cleaning up.\n")
 
 
     def setUp(self):
@@ -99,7 +100,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
     def tearDown(self):
         clear_project_database_tables(self.project)
-        print "Es war sehr schoen - auf Wiederseh'n.\n"
+        print("Es war sehr schoen - auf Wiederseh'n.\n")
 
 
 
@@ -502,7 +503,7 @@ class DbInventoryTestCase(unittest.TestCase):
 
 
     def test_remove_network(self):
-        print "test_remove_network\n"
+        print("test_remove_network\n")
         db_inventory = DbInventory(self.project)
 
         try:

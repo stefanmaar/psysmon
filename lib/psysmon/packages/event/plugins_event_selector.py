@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
 import logging
 import wx
 from obspy.core.utcdatetime import UTCDateTime
@@ -54,12 +55,16 @@ class SelectEvents(OptionPlugin):
 
         self.icons['active'] = icons.flag_icon_16
 
+        # The currently used event catalog.
+        self.selected_catalog = None
+
         # The currently selected event.
         self.selected_event = {}
 
         # The plot colors used by the plugin.
         self.colors = {}
-        self.colors['event_vspan'] = '0.9'
+        self.colors['event_vspan'] = '0.8'
+        self.colors['detection_vspan'] = (1, 0.7, 0.7)
 
         # Create the preferences.
         self.create_select_preferences()
@@ -266,6 +271,13 @@ class SelectEvents(OptionPlugin):
     def add_event_marker_to_channel(self, channel = None):
         ''' Add the event markers to channel plots.
         '''
+        selected_event = None
+        if self.selected_event and self.selected_catalog:
+            selected_event = self.selected_catalog.get_events(db_id = self.selected_event['id'])
+            if len(selected_event) == 1:
+                selected_event = selected_event[0]
+                selected_event.assign_channel_to_detections(self.parent.project.geometry_inventory)
+
         for cur_channel in channel:
             scnl = cur_channel.getSCNL()
             channel_nodes = self.parent.viewport.get_node(station = scnl[0],
@@ -273,13 +285,26 @@ class SelectEvents(OptionPlugin):
                                                           network = scnl[2],
                                                           location = scnl[3],
                                                           node_type = 'container')
+            if selected_event is not None:
+                channel_detections = [x for x in selected_event.detections if x.scnl == scnl]
+
             for cur_node in channel_nodes:
                 cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
-                                                                 x_end = self.selected_event['end_time'],
-                                                                 label = self.selected_event['id'],
-                                                                 parent_rid = self.rid,
-                                                                 key = self.selected_event['id'],
-                                                                 color = self.colors['event_vspan'])
+                                               x_end = self.selected_event['end_time'],
+                                               label = self.selected_event['id'],
+                                               parent_rid = self.rid,
+                                               key = self.selected_event['id'],
+                                               color = self.colors['event_vspan'])
+
+                for cur_detection in channel_detections:
+                    cur_node.plot_annotation_vspan(x_start = cur_detection.start_time,
+                                                   x_end = cur_detection.end_time,
+                                                   label = cur_detection.db_id,
+                                                   parent_rid = self.rid,
+                                                   key = cur_detection.db_id,
+                                                   color = self.colors['detection_vspan'])
+
+                cur_node.draw()
 
 
     def on_load_events(self, event):
@@ -296,7 +321,7 @@ class SelectEvents(OptionPlugin):
         start_time = self.pref_manager.get_value('start_time')
         duration = self.pref_manager.get_value('window_length')
 
-        if catalog_name not in event_library.catalogs.keys():
+        if catalog_name not in iter(event_library.catalogs.keys()):
             event_library.load_catalog_from_db(project = self.parent.project,
                                                name = catalog_name)
 
@@ -306,6 +331,7 @@ class SelectEvents(OptionPlugin):
                                 start_time = start_time,
                                 end_time = start_time + duration)
 
+        self.selected_catalog = cur_catalog
         event_list = self.convert_events_to_list(cur_catalog.events)
         self.pref_manager.set_limit('events', event_list)
 
@@ -344,9 +370,9 @@ class SelectEvents(OptionPlugin):
             event_id = float(selected_event[0])
             start_time = UTCDateTime(selected_event[1])
             end_time = start_time + float(selected_event[2])
-            self.selected_event = {'start_time':start_time,
-                                   'end_time':end_time,
-                                   'id':event_id,
+            self.selected_event = {'start_time': start_time,
+                                   'end_time': end_time,
+                                   'id': event_id,
                                    'catalog_name': self.pref_manager.get_value('event_catalog')}
             self.parent.add_shared_info(origin_rid = self.rid,
                                         name = 'selected_event',
@@ -450,9 +476,9 @@ class EventListField(wx.Panel, listmix.ColumnSorterMixin):
         self.controlElement.DeleteAllItems()
         for k, cur_event in enumerate(events):
             for n_col, cur_name in enumerate(self.columns):
-                if cur_name in self.get_method.keys():
+                if cur_name in iter(self.get_method.keys()):
                     val = self.get_method[cur_name](cur_event)
-                elif cur_name in self.convert_method.keys():
+                elif cur_name in iter(self.convert_method.keys()):
                     val = self.convert_method[cur_name](getattr(cur_event, cur_name))
                 else:
                     val = str(getattr(cur_event, cur_name))

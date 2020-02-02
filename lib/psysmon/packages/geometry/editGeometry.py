@@ -29,7 +29,12 @@ The editGeometry module.
 
 This module contains the classes of the editGeometry dialog window.
 '''
+from __future__ import print_function
+from __future__ import division
 
+from builtins import zip
+from builtins import str
+from past.utils import old_div
 import logging
 from threading import Thread
 from operator import attrgetter
@@ -244,7 +249,7 @@ class EditGeometryDlg(wx.Frame):
                           CenterPane().BestSize(wx.Size(300,300)).MinSize(wx.Size(100,-1)))
 
         # Create the status bar.
-        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(2, wx.STB_SIZEGRIP)
         self.statusbar.SetStatusWidths([-2, -3])
         self.statusbar.SetStatusText("Ready", 0)
         self.statusbar.SetStatusText("Edit the pSysmon inventory.", 1)
@@ -264,7 +269,7 @@ class EditGeometryDlg(wx.Frame):
             self.db_inventory.load()
             cur_inventory = self.db_inventory
         except Warning as w:
-                print w
+                print(w)
 
         self.inventories[cur_inventory.name] = cur_inventory
         self.inventoryTree.updateInventoryData()
@@ -308,7 +313,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
-            style=wx.OPEN | wx.CHANGE_DIR
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -321,7 +326,7 @@ class EditGeometryDlg(wx.Frame):
             try:
                 cur_inventory = inventory_parser.parse(path)
             except Warning as w:
-                    print w
+                    print(w)
 
             self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
@@ -338,7 +343,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
-            style=wx.SAVE | wx.CHANGE_DIR
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -351,7 +356,7 @@ class EditGeometryDlg(wx.Frame):
             try:
                 inventory_parser.export_xml(self.selected_inventory, path)
             except Warning as w:
-                    print w
+                    print(w)
 
 
     def onExportStations2Csv(self, event):
@@ -369,7 +374,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.csv)"\
                      "All files (*.*)|*.*",
-            style=wx.SAVE | wx.CHANGE_DIR
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -379,24 +384,47 @@ class EditGeometryDlg(wx.Frame):
             path = dlg.GetPath()
 
             export_values = []
+
+            # Get the EPSG code for the best fitting UTM projection.
+            code = self.selected_inventory.get_utm_epsg()
+            proj = pyproj.Proj(init = 'epsg:' + code[0][0])
+
             for cur_network in self.selected_inventory.networks:
                 for cur_station in cur_network.stations:
-                    value_list = [cur_station.name, cur_station.network, cur_station.location,
-                                          cur_station.x, cur_station.y, cur_station.z, cur_station.coord_system,
-                                          cur_station.description]
-                    for k, cur_value in enumerate(value_list):
-                        if isinstance(cur_value, unicode):
-                            value_list[k] = cur_value.encode('utf8')
+                    x, y = proj(cur_station.get_lon_lat()[0],
+                                cur_station.get_lon_lat()[1])
+                    value_list = [cur_station.name,
+                                  cur_station.network,
+                                  cur_station.location,
+                                  cur_station.x,
+                                  cur_station.y,
+                                  cur_station.z,
+                                  cur_station.coord_system,
+                                  x,
+                                  y,
+                                  'epsg:' + code[0][0],
+                                  cur_station.description]
+                    #for k, cur_value in enumerate(value_list):
+                    #    if isinstance(cur_value, str):
+                    #        value_list[k] = cur_value.encode('utf8')
                     export_values.append(value_list)
 
-            fid = open(path, 'wt')
-            try:
-                header = ['name', 'network', 'location', 'x', 'y', 'z', 'coord_system', 'description']
-                writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
+            header = ['name',
+                      'network',
+                      'location',
+                      'x',
+                      'y',
+                      'z',
+                      'coord_system',
+                      'x_utm',
+                      'y_utm',
+                      'coord_system_utm',
+                      'description']
+            with open(path, 'w', newline='') as fid:
+                writer = csv.writer(fid,
+                                    quoting = csv.QUOTE_MINIMAL)
                 writer.writerow(header)
                 writer.writerows(export_values)
-            finally:
-                fid.close()
 
 
     def onExportStations2StationXML(self, event):
@@ -414,7 +442,7 @@ class EditGeometryDlg(wx.Frame):
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
-            style=wx.SAVE | wx.CHANGE_DIR
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )
 
         if dlg.ShowModal() == wx.ID_OK:
@@ -510,7 +538,7 @@ class EditGeometryDlg(wx.Frame):
                                 stage_number += 1
 
                                 decimation_stage = obs_inv.ResponseStage(stage_sequence_number = stage_number,
-                                                                         stage_gain = 1/cur_rec_parameter.bitweight,
+                                                                         stage_gain = old_div(1,cur_rec_parameter.bitweight),
                                                                          stage_gain_frequency = stage_frequency,
                                                                          input_units = 'V',
                                                                          output_units = 'COUNTS',
@@ -522,7 +550,7 @@ class EditGeometryDlg(wx.Frame):
                                 stage_number += 1
 
                             if cur_sensor_parameter and cur_rec_parameter:
-                                overall_sensitivity = obs_inv.InstrumentSensitivity(value = cur_sensor_parameter.sensitivity * cur_rec_parameter.gain / cur_rec_parameter.bitweight,
+                                overall_sensitivity = obs_inv.InstrumentSensitivity(value = old_div(cur_sensor_parameter.sensitivity * cur_rec_parameter.gain, cur_rec_parameter.bitweight),
                                                                                     frequency = stage_frequency,
                                                                                     input_units = response.response_stages[0].input_units,
                                                                                     output_units = response.response_stages[-1].output_units)
@@ -578,7 +606,7 @@ class EditGeometryDlg(wx.Frame):
     def remove_inventory(self):
         ''' Remove the selected inventory.
         '''
-        if self.selected_inventory in self.inventories.values():
+        if self.selected_inventory in list(self.inventories.values()):
             self.inventories.pop(self.selected_inventory.name)
             self.inventoryTree.updateInventoryData()
 
@@ -587,10 +615,7 @@ class EditGeometryDlg(wx.Frame):
         ''' Clear all elements from the selected inventory.
         '''
         if self.selected_inventory:
-            self.selected_inventory.networks = []
-            self.selected_inventory.arrays = []
-            self.selected_inventory.recorders = []
-            self.selected_inventory.sensors = []
+            self.selected_inventory.clear()
             self.inventoryTree.updateInventoryData()
 
             if self.selected_inventory.type == 'db':
@@ -962,12 +987,14 @@ class EditGeometryDlg(wx.Frame):
 
         if self.selected_inventory.type not in 'db':
             if self.db_inventory.sensors or self.db_inventory.recorders or self.db_inventory.networks:
-                msg = "The database inventory is not empty. Adding elements to an existing database inventory is currently not working. Please clear the database inventory first and then write your new inventory to the database.."
-                dlg = wx.MessageDialog(self, msg,
-                                       'Error while updating the database inventory.',
-                                        wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                dlg.Destroy()
+                self.db_inventory.merge(self.selected_inventory)
+                self.db_inventory.commit()
+                #msg = "The database inventory is not empty. Adding elements to an existing database inventory is currently not working. Please clear the database inventory first and then write your new inventory to the database.."
+                #dlg = wx.MessageDialog(self, msg,
+                #                       'Error while updating the database inventory.',
+                #                        wx.OK | wx.ICON_INFORMATION)
+                #dlg.ShowModal()
+                #dlg.Destroy()
             else:
                 self.logger.debug("Saving a non db inventory to the database.")
 
@@ -1002,7 +1029,7 @@ class EditGeometryDlg(wx.Frame):
     def onExit(self, event):
         self.logger.debug("onExit")
         # Check if an unsaved database inventory exists.
-        for curInventory in self.inventories.itervalues():
+        for curInventory in self.inventories.values():
             if curInventory.has_changed():
                 self.logger.warning('There are unsaved elements in the inventory.')
 
@@ -1519,7 +1546,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     ## Handle the key pressed events.
     def onKeyDown(self, event):
         keycode = event.GetKeyCode()
-        source = self.GetPyData(self.GetSelection())
+        source = self.GetItemData(self.GetSelection())
 
         if keycode == wx.WXK_DELETE:
             if isinstance(source, tuple):
@@ -1783,7 +1810,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         self.DeleteChildren(self.root)
 
         # rebuild the inventory tree.
-        for curKey, curInventory in self.Parent.inventories.iteritems():
+        for curKey, curInventory in self.Parent.inventories.items():
             inventoryItem = self.AppendItem(self.root, curKey + '(' + curInventory.type + ')')
             self.SetItemPyData(inventoryItem, curInventory)
             self.SetItemBold(inventoryItem, True)
@@ -1894,7 +1921,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
                 for curStationTb in sorted(curArray.stations, key = attrgetter('name')):
                     curStationItem = self.AppendItem(curArrayItem, curStationTb.network + ':' + curStationTb.name + ':' + curStationTb.location_string)
-                    print curStationTb.item
+                    print(curStationTb.item)
                     self.SetItemPyData(curStationItem, curStationTb)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
 
@@ -2027,7 +2054,7 @@ class ListViewPanel(wx.Panel):
         self.controlPanels['network'] = NetworkPanel(self, wx.ID_ANY)
         self.controlPanels['array'] = ArrayPanel(self, wx.ID_ANY)
 
-        for cur_panel in self.controlPanels.values():
+        for cur_panel in list(self.controlPanels.values()):
             cur_panel.Hide()
 
         #sizer.Add(self.controlPanels['station'], pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
@@ -2253,7 +2280,7 @@ class MapViewPanel(wx.Panel):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
@@ -2321,7 +2348,7 @@ class MapViewPanel(wx.Panel):
             search_dict['south'] = True
 
         epsg_dict = geom_util.get_epsg_dict()
-        code = [(c, x) for c, x in epsg_dict.items() if  x == search_dict]
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
 
         # Setup the pyproj projection.projection
         #proj = pyproj.Proj(proj = 'utm', zone = self.mapConfig['utmZone'], ellps = self.mapConfig['ellips'].upper())
@@ -2525,7 +2552,7 @@ class NetworkPanel(wx.Panel):
         self.network_grid.CreateGrid(1, len(fields))
 
         # Bind the network_grid events.
-        self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onNetworkCellChange)
+        self.network_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onNetworkCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter)  in enumerate(fields):
@@ -2544,7 +2571,7 @@ class NetworkPanel(wx.Panel):
         self.station_grid.CreateGrid(5, len(fields))
 
         # Bind the stationGrid events.
-        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onSensorTimeCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter) in enumerate(fields):
@@ -2667,7 +2694,7 @@ class ArrayPanel(wx.Panel):
         self.array_grid.CreateGrid(1, len(fields))
 
         # Bind the array_grid events.
-        self.array_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onArrayCellChange)
+        self.array_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onArrayCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter)  in enumerate(fields):
@@ -2686,7 +2713,7 @@ class ArrayPanel(wx.Panel):
         self.station_grid.CreateGrid(5, len(fields))
 
         # Bind the stationGrid events.
-        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onSensorTimeCellChange)
+        #self.sensorGrid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onSensorTimeCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, converter) in enumerate(fields):
@@ -2815,7 +2842,7 @@ class RecorderPanel(wx.Panel):
         self.recorder_grid.CreateGrid(1, len(fields))
 
         # Bind the recorder_grid events.
-        self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onRecorderCellChange)
+        self.recorder_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onRecorderCellChange)
 
         # Set the column attributes.
         for k, (name, label, attr, convert)  in enumerate(fields):
@@ -2835,7 +2862,7 @@ class RecorderPanel(wx.Panel):
         self.stream_grid.CreateGrid(1, len(fields))
 
         # Bind the stream_grid events.
-        self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                               self.onStreamCellChange)
         self.stream_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
                               self.onStreamCellLeftClick)
@@ -2860,7 +2887,7 @@ class RecorderPanel(wx.Panel):
         self.stream_parameter_grid.CreateGrid(1, len(fields))
 
         # Bind the stream_parameter_grid events.
-        self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                                         self.onStreamParameterCellChange)
         self.stream_parameter_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
                                         self.onStreamParameterCellLeftClick)
@@ -2885,7 +2912,7 @@ class RecorderPanel(wx.Panel):
         self.assigned_component_grid.CreateGrid(1, len(fields))
 
         # Bind the assigned_component_grid events.
-        self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                                         self.onAssignedComponentCellChange)
         self.assigned_component_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
                                         self.onAssignedComponentCellLeftClick)
@@ -3129,7 +3156,7 @@ class RecorderPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
@@ -3267,7 +3294,7 @@ class StationsPanel(wx.Panel):
         self.station_grid.CreateGrid(1, len(fields))
 
         # Bind the stationGrid events.
-        self.station_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onStationCellChange)
+        self.station_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onStationCellChange)
 
         for k, (name, label, attr, converter)  in enumerate(fields):
             self.station_grid.SetColLabelValue(k, label)
@@ -3286,7 +3313,7 @@ class StationsPanel(wx.Panel):
         self.channel_grid.CreateGrid(1, len(fields))
 
         # Bind the channel grid events.
-        self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onChannelCellChange)
+        self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onChannelCellChange)
         self.channel_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onChannelCellLeftClick)
 
         for k, (name, label, attr, converter) in enumerate(fields):
@@ -3307,7 +3334,7 @@ class StationsPanel(wx.Panel):
         self.assigned_recorder_stream_grid.CreateGrid(1, len(fields))
 
         # Bind the assigned recorder streams grid events.
-        self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.onAssignedStreamCellChange)
+        self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.onAssignedStreamCellChange)
         self.assigned_recorder_stream_grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.onAssignedStreamCellLeftClick)
 
         # Set the column attributes.
@@ -3525,7 +3552,7 @@ class StationsPanel(wx.Panel):
                 custom_fields = {}
                 custom_fields['start_time'] = 'start_time_string'
                 custom_fields['end_time'] = 'end_time_string'
-                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:
@@ -3625,7 +3652,7 @@ class SensorsPanel(wx.Panel):
         self.sensorGrid.CreateGrid(1, len(fields))
 
         # Bind the sensorGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                   self.onSensorCellChange,
                   self.sensorGrid)
 
@@ -3646,7 +3673,7 @@ class SensorsPanel(wx.Panel):
         self.componentGrid.CreateGrid(1, len(fields))
 
         # Bind the componentGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                   self.onComponentCellChange,
                   self.componentGrid)
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK,
@@ -3674,7 +3701,7 @@ class SensorsPanel(wx.Panel):
         self.parameterGrid.CreateGrid(1, len(fields))
 
         # Bind the paramGrid events.
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE,
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
                   self.onComponentParameterCellChange,
                   self.parameterGrid)
 
@@ -3696,13 +3723,15 @@ class SensorsPanel(wx.Panel):
         self.tfFigure = Figure((8,4), dpi=75, facecolor='white')
         #rect = 0.1,0.1,0.8,0.8
         #self.tfAxis = self.tfFigure.add_axes(rect, xscale='log', axis_bgcolor='w')
-        self.tfMagAxis = self.tfFigure.add_subplot(121, xscale='linear', axis_bgcolor='w')
+        self.tfMagAxis = self.tfFigure.add_subplot(121, xscale='linear')
+        self.tfMagAxis.set_facecolor('w')
         self.tfMagAxis.set_xlabel('Frequency [Hz]', fontsize=10)
         self.tfMagAxis.set_ylabel('Amplitude', fontsize=10)
         self.tfMagAxis.set_title('Amplitude Response', fontsize=10)
         self.tfMagAxis.grid(True)
 
-        self.tfPhaseAxis = self.tfFigure.add_subplot(122, xscale='linear', axis_bgcolor='w')
+        self.tfPhaseAxis = self.tfFigure.add_subplot(122, xscale='linear')
+        self.tfPhaseAxis.set_facecolor('w')
         self.tfPhaseAxis.set_xlabel('Frequency [Hz]', fontsize=10)
         self.tfPhaseAxis.set_ylabel('Phase [rad]', fontsize=10)
         self.tfPhaseAxis.set_title('Phase Response', fontsize=10)
@@ -3967,6 +3996,7 @@ class SensorsPanel(wx.Panel):
             self.tfPhaseAxis.plot(np.log10(f), phase, color='k')
             self.tfPhaseAxis.set_xticks(np.log10(frequRange))
             self.tfPhaseAxis.set_xticklabels(frequRange)
+            self.tfCanvas.draw()
 
 
     def setGridValues(self, object, grid, fields, rowNumber):
@@ -3980,7 +4010,7 @@ class SensorsPanel(wx.Panel):
                 custom_fields['end_time'] = 'end_time_string'
                 custom_fields['tf_poles'] = 'poles_string'
                 custom_fields['tf_zeros'] = 'zeros_string'
-                if field in custom_fields.keys() and hasattr(object, custom_fields[field]):
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
                     field = custom_fields[field]
 
                 if field is not None and getattr(object, field) is not None:

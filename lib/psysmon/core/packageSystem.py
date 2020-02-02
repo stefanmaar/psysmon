@@ -29,7 +29,9 @@ The pSysmon package system module.
 
 This module contains the classes needed to run the pSysmon package system.
 '''
+from __future__ import print_function
 
+from builtins import object
 import os
 import sys
 import logging
@@ -84,11 +86,11 @@ def scan_module_for_plugins(package_name, plugin_modules, logger = None):
                         if cur_base in plugin_classes:
                             plugin_templates.append(obj)
                             break
-        except Exception, e:
+        except Exception as e:
             if logger:
                 logger.exception(e)
             else:
-                print e
+                print(e)
     return plugin_templates
 
 
@@ -123,8 +125,8 @@ def scan_module_for_collection_nodes(package_name, node_modules):
                     node_templates.append(obj)
                 elif inspect.isclass(obj) and psysmon.core.packageNodes.LooperCollectionChildNode in obj.__bases__:
                     node_templates.append(obj)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
     return node_templates
 
 
@@ -155,12 +157,12 @@ def scan_module_for_processing_nodes(package_name, node_modules):
             for name, obj in inspect.getmembers(mod):
                 if inspect.isclass(obj) and psysmon.core.processingStack.ProcessingNode in obj.__bases__:
                     node_templates.append(obj)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
     return node_templates
 
 
-class PackageManager:
+class PackageManager(object):
     '''The Package Manager keeps track of the pSysmon packages and 
     manages them. 
 
@@ -417,7 +419,7 @@ class PackageManager:
         '''
         for curPlugin in plugins:
             curKey = curPlugin.nodeClass
-            if self.plugins.has_key(curKey):
+            if curKey in self.plugins:
                 self.plugins[curKey].append(curPlugin)
             else:
                 self.plugins[curKey] = [curPlugin, ]
@@ -433,7 +435,7 @@ class PackageManager:
         '''
         for curNode in procNodes:
             curKey = curNode.nodeClass
-            if curKey in self.processingNodes.keys():
+            if curKey in iter(self.processingNodes.keys()):
                 self.processingNodes[curKey].append(curNode)
             else:
                 self.processingNodes[curKey] = [curNode, ]
@@ -457,8 +459,8 @@ class PackageManager:
             The nodes found matching the *searchString*.
         '''
         nodesFound = {}
-        for curPkg in self.packages.itervalues():
-            for curNode in curPkg.collectionNodeTemplates.itervalues():
+        for curPkg in self.packages.values():
+            for curNode in curPkg.collectionNodeTemplates.values():
                 if searchString.lower() in ','.join([curNode.name]+curNode.tags).lower():
                     nodesFound[curNode.name] = curNode
 
@@ -486,7 +488,7 @@ class PackageManager:
             The node found ini the packages matching the name *name*. If no 
             collection node is found, False is returned.
         '''
-        for curPkg in self.packages.itervalues():
+        for curPkg in self.packages.values():
             tmp = curPkg.getCollectionNodeTemplate(name)
             if(tmp != False):
                 return tmp
@@ -495,7 +497,7 @@ class PackageManager:
 
 
 
-class Package:
+class Package(object):
     '''The pSysmon Package class.
 
     A pSysmon package provides the functionality to pSysmon. A package contains 
@@ -763,7 +765,7 @@ class Package:
         --------
         :class:`psysmon.base.Base.scan4Package`
         '''
-        for curNode in self.collectionNodeTemplates.itervalues():
+        for curNode in self.collectionNodeTemplates.values():
             curNode.setNodePkg(pyPackage)
 
 
@@ -810,7 +812,7 @@ class Package:
         nodeName : String
             The name of the collection node template to fetch.
         '''
-        if(self.collectionNodeTemplates.has_key(nodeName)):
+        if(nodeName in self.collectionNodeTemplates):
             return self.collectionNodeTemplates[nodeName]
         else:
             return False

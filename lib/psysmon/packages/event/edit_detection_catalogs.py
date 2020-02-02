@@ -30,6 +30,7 @@ Detection catalog management.
 
 '''
 
+from builtins import str
 import logging
 import psysmon
 import psysmon.core.gui
@@ -363,9 +364,9 @@ class EditDlg(wx.Dialog):
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
 
-            if curKey in self.data.keys():
-                if not isinstance(self.data[curKey], (str, unicode)):
-                    value_string = unicode(self.data[curKey], encoding = 'utf8')
+            if curKey in iter(self.data.keys()):
+                if not isinstance(self.data[curKey], (str, str)):
+                    value_string = str(self.data[curKey], encoding = 'utf8')
                 elif isinstance(self.data[curKey], str):
                     value_string = self.data[curKey].decode('utf8')
                 else:
@@ -408,7 +409,7 @@ class NotEmptyValidator(wx.PyValidator):
             ctrl.Refresh()
             return False
         else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
 

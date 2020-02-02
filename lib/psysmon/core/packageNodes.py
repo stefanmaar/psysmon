@@ -30,7 +30,9 @@ The package node base classes.
 This module contains the base classes of the nodes used in 
 the :mod:`~psysmon.core.packageSystem`.
 '''
+from __future__ import print_function
 
+from builtins import object
 import weakref
 import logging
 
@@ -312,8 +314,24 @@ class CollectionNode(object):
             The names of the variables to restore from the collection's 
             shelf.
         '''
-        print "Requiring data with name: %s and origin: %s" % (name, origin)
+        print("Requiring data with name: %s and origin: %s" % (name, origin))
         return self.parentCollection.unpickleData(name=name, origin=origin)
+
+
+    def kwargs_exists(self, needed_keywords, **kwargs):
+        ''' Check if the needed keywords exist in the passed kwargs dictionar.
+
+        Paramters
+        ---------
+        needed_keywords : List of Strings
+            The required keywords.
+        '''
+        for cur_kw in needed_keywords:
+            if cur_kw not in iter(kwargs.keys()):
+                return False
+
+        return True
+
 
 
 
@@ -359,14 +377,56 @@ class LooperCollectionNode(CollectionNode):
         pass
 
 
+    def move_node_up(self, node):
+        ''' Move a node up in the looper collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.children:
+            raise RuntimeError("The node is not part of the looper.")
+
+        old_index = self.children.index(node)
+        if old_index == 0:
+            return
+        self.children.remove(node)
+        self.children.insert(old_index - 1, node)
+
+
+    def move_node_down(self, node):
+        ''' Move a node down in the looper collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.children:
+            raise RuntimeError("The node is not part of the looper.")
+
+        old_index = self.children.index(node)
+        if old_index == len(self.children) - 1:
+            return
+        self.children.remove(node)
+        self.children.insert(old_index + 1, node)
+
+
     def get_settings(self, upper_node_limit = None):
         ''' Get the settings of the nodes in the processing stack.
 
         The upper limit can be set by the upper_node_limit attribute.
         '''
         settings = {}
+        settings[self.name] = {}
+        settings[self.name]['preferences'] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
+        settings[self.name]['looper_children'] = {}
         for pos, cur_node in enumerate(self.children):
-            settings[pos+1] = cur_node.settings
+            settings[self.name]['looper_children'][pos+1] = cur_node.settings
 
             if cur_node == upper_node_limit:
                 break
@@ -397,6 +457,13 @@ class LooperCollectionChildNode(CollectionNode):
             self._parent = weakref.ref(parent)
         else:
             self._parent = None
+
+
+        # Indicate if waveform data is needed.
+        self.need_waveform_data = True
+
+        # Flag to indicate if the node has been initialized.
+        self.initialized = False
 
 
     @property
@@ -437,7 +504,9 @@ class LooperCollectionChildNode(CollectionNode):
         ''' The configuration settings of the node.
         '''
         settings = {}
-        settings[self.name] = self.pref_manager.settings
+        settings[self.name] = {}
+        settings[self.name]['preferences'] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
         return settings
 
 
@@ -449,7 +518,7 @@ class LooperCollectionChildNode(CollectionNode):
         # The following attributes can't be pickled and therefore have
         # to be removed.
         # These values have to be reset when loading the project.
-        if 'logger' in result.keys():
+        if 'logger' in iter(result.keys()):
             del result['logger']
         return result
 
@@ -467,16 +536,16 @@ class LooperCollectionChildNode(CollectionNode):
             loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
             self.logger = logging.getLogger(loggerName)
 
-    def initialize(self):
+    def initialize(self, **kwargs):
         ''' Initialize the node.
 
         This method is called at the start of a loop. Use it to initialize
         or reset persistent values of the instance.
         '''
-        pass
+        self.initialized = True
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
         ''' Execute the looper child.
 
         Parameters
@@ -489,6 +558,9 @@ class LooperCollectionChildNode(CollectionNode):
 
         origin_resource : String
             The resource ID of the looper executing the node.
+
+        channels : List of :class:`psysmon.packages.geometry.inventory.Channel`
+            The channels which should be processed.
         '''
         assert False, 'execute must be defined'
 

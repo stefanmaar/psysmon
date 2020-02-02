@@ -28,24 +28,17 @@ The pSysmon main program.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
-import matplotlib as mpl
-mpl.rcParams['backend'] = 'WXAgg'
-
-import psysmon
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
-import psysmon.core.base as psybase
-import sys
-import shelve
-import wx
 import logging
 import os
+import sys
+import shelve
 
-class ExecutionFrame(wx.Frame):
 
-    def __init__(self, collection):
-        wx.Frame.__init__(self, None, wx.ID_ANY, 'Execution frame')
-        #wx.CallAfter(collection.execute, 'halloooo')
-
+#class ExecutionFrame(wx.Frame):
+#
+#    def __init__(self, collection):
+#        wx.Frame.__init__(self, None, wx.ID_ANY, 'Execution frame')
+#        #wx.CallAfter(collection.execute, 'halloooo')
 
 
 if __name__ == "__main__":
@@ -53,12 +46,22 @@ if __name__ == "__main__":
     # The process name and the temp. file are passes as arguments. 
     filename = sys.argv[1]
     proc_name = sys.argv[2]
+    backend = sys.argv[3]
 
-    filename = filename.decode('utf8')
-    proc_name = proc_name.decode('utf8')
+    import matplotlib as mpl
+    mpl.rcParams['backend'] = backend
+
+    import psysmon
+    from psysmon.core.waveclient import PsysmonDbWaveClient
+    from psysmon.core.waveclient import EarthwormWaveclient
+    from psysmon.core.waveclient import SeedlinkWaveclient
+    import psysmon.core.base as psybase
+
+    filename = filename
+    proc_name = proc_name
 
     # Get the execution parameters from the ced file.
-    db = shelve.open(filename.encode('utf8'))
+    db = shelve.open(filename)
     package_directories = db['package_directories']
     sys.path.extend(package_directories)
     project = db['project']
@@ -106,6 +109,8 @@ if __name__ == "__main__":
                 waveclient = PsysmonDbWaveClient(curName, project)
             elif curMode == 'EarthwormWaveclient':
                 waveclient = EarthwormWaveclient(curName, **curAttributes)
+            elif curMode == 'SeedlinkWaveclient':
+                waveclient = SeedlinkWaveclient(curName, project = project, **curAttributes)
             else:
                 waveclient = None
 
@@ -114,6 +119,10 @@ if __name__ == "__main__":
 
         collection.set_project(project)
         collection.createNodeLoggers()
+        # Replace the collection in the project with the copied collection.
+        # This makes the use of the activeCollection attribute valid.
+        project.activeUser.collection[collection.name] = collection
+        project.setActiveCollection(collection.name)
 
         project.psybase = psyBase
         logger.debug('psyBase: %s', project.psybase)
@@ -121,7 +130,14 @@ if __name__ == "__main__":
         returncode = 0
         collection.setDataShelfFile(filename)
         try:
-            collection.execute()
+            if collection.runtime_att.start_time:
+                logger.info('global start time: %s', collection.runtime_att.start_time.isoformat())
+            if collection.runtime_att.end_time:
+                logger.info('global end time: %s', collection.runtime_att.end_time.isoformat())
+            exec_success = collection.execute()
+            if type(exec_success) == bool and not exec_success:
+                return_code = 5
+                logger.error('The collection execution was not successful. There have been some errors which have been handled by the collection. Check the log file for the error messages.')
             logger.info('Finished the execution. Cleaning up....')
         except:
             logger.exception("Failed to execute the collection.")
@@ -129,14 +145,18 @@ if __name__ == "__main__":
             returncode = 2
     except:
         # An error happened while preparing the execution of the collection.
+        logger.exception("Failed to prepare to exectute the collection.")
         returncode = 3
     finally:
         try:
             logger.info('Unregistering the exported data from the project server.')
-            psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
-            logger.info('Deleting data file %s.', filename)
-            os.remove(filename)
+            # TODO: Reactivate the project server again.
+            #psyBase.project_server.unregister_data(uri = collection.rid, recursive = True)
         except:
             # An error happened because basic variables couldn't be accessed.
             returncode = 4
+            logger.exception("Error when unregistering the project server data.")
+        logger.info('Deleting data file %s.', filename)
+        os.remove(filename)
+
         sys.exit(returncode)

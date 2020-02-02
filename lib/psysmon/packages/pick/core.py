@@ -18,6 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import logging
 import psysmon
 import obspy.core.utcdatetime as utcdatetime
@@ -71,7 +74,7 @@ class Library(object):
         removed_catalog : :class:`Catalog`
             The removed catalog. None if no catalog was removed.
         '''
-        if name in self.catalogs.keys():
+        if name in iter(self.catalogs.keys()):
             return self.catalogs.pop(name)
         else:
             return None
@@ -217,7 +220,7 @@ class Catalog(object):
 
         valid_keys = ['db_id', 'label', 'event_id']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_picks = [x for x in ret_picks if getattr(x, cur_key) == cur_value]
             else:

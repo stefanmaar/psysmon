@@ -31,14 +31,20 @@ This module contains the classes for the project and user management.
 '''
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import object
+import glob
 import json
 import weakref
 import logging
 import os
 import sys
-import thread
+import _thread
 import subprocess
 import copy
+import wx
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 from wx import CallAfter
@@ -312,7 +318,7 @@ class Project(object):
         # The version dictionary of the package versions.
         self.pkg_version = {}
         if pkg_version is None:
-            for cur_pkg in self.psybase.packageMgr.packages.itervalues():
+            for cur_pkg in self.psybase.packageMgr.packages.values():
                 self.pkg_version[cur_pkg.name] = cur_pkg.version
         else:
             self.pkg_version = pkg_version
@@ -476,7 +482,7 @@ class Project(object):
             name = (name,)
 
         for curName in name:
-            if curName in self.psybase.packageMgr.plugins.keys():
+            if curName in iter(self.psybase.packageMgr.plugins.keys()):
                 plugins.extend([curPlugin() for curPlugin in self.psybase.packageMgr.plugins[curName]])
         return plugins
 
@@ -493,7 +499,7 @@ class Project(object):
             selection = (selection, )
 
         for curKey in selection:
-            if curKey in self.psybase.packageMgr.processingNodes.keys():
+            if curKey in iter(self.psybase.packageMgr.processingNodes.keys()):
                 procNodes.extend([curNode() for curNode  in self.psybase.packageMgr.processingNodes[curKey]])
 
         return procNodes
@@ -506,7 +512,7 @@ class Project(object):
 
         '''
         for curUser in self.user:
-            for curCollection in curUser.collection.itervalues():
+            for curCollection in curUser.collection.values():
                 curCollection.set_project(self)
 
 
@@ -519,7 +525,7 @@ class Project(object):
             The waveclient to be added to the project. Usually this 
             is an instance of a class derived from WaveClient.
         '''
-        if waveclient.name in self.waveclient.keys():
+        if waveclient.name in iter(self.waveclient.keys()):
             self.logger.error('The waveclient with name %s already exits.\nRemove it first to avoid troubles.', waveclient.name)
             return
 
@@ -544,7 +550,7 @@ class Project(object):
         '''
         if name == 'main client':
             return None
-        if name in self.waveclient.keys():
+        if name in iter(self.waveclient.keys()):
             return self.waveclient.pop(name)
 
 
@@ -582,27 +588,29 @@ class Project(object):
             The requested waveform data. All traces are packed into one stream.
 
         '''
-        data_sources = {}
-        for cur_scnl in scnl:
-            if cur_scnl in self.scnlDataSources.keys():
-                if self.scnlDataSources[cur_scnl] not in data_sources.keys():
-                    data_sources[self.scnlDataSources[cur_scnl]] = [cur_scnl, ]
-                else:
-                    data_sources[self.scnlDataSources[cur_scnl]].append(cur_scnl)
-            else:
-                if self.defaultWaveclient not in data_sources.keys():
-                    data_sources[self.defaultWaveclient] = [cur_scnl, ]
-                else:
-                    data_sources[self.defaultWaveclient].append(cur_scnl)
+        collection = self.getActiveCollection()
+        data_sources = collection.data_sources
+
+        self.logger.debug('Requesting data for scnl: %s.', scnl)
+        self.logger.debug('data_sources: %s.', data_sources)
 
         stream = obspy.core.Stream()
 
-        for cur_name in data_sources.iterkeys():
+        waveclients = [data_sources[x] for x in scnl]
+        unique_wc = list(set(waveclients))
+        scnl_waveclients = {}
+        for cur_wc in unique_wc:
+            scnl_waveclients[cur_wc] = [x[0] for x in zip(scnl, waveclients) if x[1] == cur_wc]
+
+        self.logger.debug("Using waveclients: %s.", scnl_waveclients)
+
+        for cur_name in scnl_waveclients.keys():
             curWaveclient = self.waveclient[cur_name]
             curStream =  curWaveclient.getWaveform(startTime = start_time,
                                                    endTime = end_time,
                                                    scnl = scnl)
-            stream += curStream
+            if curStream:
+                stream += curStream
 
         return stream
 
@@ -798,7 +806,7 @@ class Project(object):
             self.connect2Db()
 
         save_needed = False
-        for _, curPkg in packages.iteritems():
+        for _, curPkg in packages.items():
             if not curPkg.databaseFactory:
                 self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
@@ -821,7 +829,7 @@ class Project(object):
                             # case that a database migration is needed.
 
                             # Check for changes of the database table.
-                            if curName not in self.db_table_version.keys():
+                            if curName not in iter(self.db_table_version.keys()):
                                 self.logger.info("%s - No table version found in the project. This is a new table.",
                                                  curName)
                                 update_success = db_util.db_table_migration(table = curTable,
@@ -870,7 +878,7 @@ class Project(object):
         db['db_version'] = self.db_version
         db['user'] = self.user
         db['createTime'] = self.createTime
-        db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.itervalues()]
+        db['waveclient'] = [(x.name, x.mode, x.options) for x in self.waveclient.values()]
         db['defaultWaveclient'] = self.defaultWaveclient
         db['scnlDataSources'] = self.scnlDataSources
         db.close()
@@ -1051,7 +1059,7 @@ class Project(object):
 # 
 # The user class holds the details of the user and the userspecific project
 # variables (e.g. collection, settings, ...).
-class User:
+class User(object):
     '''The pSysmon user class.
 
     A pSysmon project can be used by multiple users. For each user, an instance 
@@ -1229,15 +1237,16 @@ class User:
         ''' Save the collections to json files.
 
         '''
-        for cur_collection in self.collection.itervalues():
+        for cur_collection in self.collection.values():
             cur_collection.save(os.path.join(path, self.name))
 
     def load_collections(self, path):
         ''' Load the collections from json files.
 
         '''
-        for cur_name in self.collection_names:
-            cur_filename = os.path.join(path, self.name, cur_name + '.json')
+        collection_files = glob.glob(os.path.join(path, self.name, '*.json'))
+        for cur_filename in collection_files:
+            #cur_filename = os.path.join(path, self.name, cur_name + '.json')
             file_meta = psysmon.core.json_util.get_file_meta(cur_filename)
             decoder = psysmon.core.json_util.get_collection_decoder(version = file_meta['file_version'])
             with open(cur_filename, mode = 'r') as fp:
@@ -1264,7 +1273,7 @@ class User:
         if not isinstance(self.collection, dict):
             self.collection = {}
 
-        if name in self.collection.keys():
+        if name in iter(self.collection.keys()):
             self.logger.error("The collection already exists.")
             return
 
@@ -1283,7 +1292,7 @@ class User:
         name : String
             The name of the collection which should be activated.
         '''
-        if name in self.collection.keys():
+        if name in iter(self.collection.keys()):
             self.activeCollection = self.collection[name]
 
 
@@ -1511,7 +1520,7 @@ class User:
 
         if self.activeCollection is not None:
             if not project.threadMutex:
-                project.threadMutex = thread.allocate_lock()
+                project.threadMutex = _thread.allocate_lock()
 
             col2Proc = copy.deepcopy(self.activeCollection)
             curTime = datetime.now()
@@ -1541,11 +1550,12 @@ class User:
             #tmpDir = tempfile.gettempdir()
             filename = os.path.join(project.tmpDir, col2Proc.procName + '.ced')  # ced for Collection Execution Data
 
-            db = shelve.open(filename.encode('utf-8'), flag='n')
+            #db = shelve.open(filename.encode('utf-8'), flag='n')
+            db = shelve.open(filename, flag='n')
             db['project'] = project
             db['collection'] = col2Proc
             db['package_directories'] = project.psybase.packageMgr.packageDirectories
-            db['waveclient'] = [(x.name, x.mode, x.pickle_attributes) for x in project.waveclient.itervalues()]
+            db['waveclient'] = [(x.name, x.mode, x.pickle_attributes) for x in project.waveclient.values()]
             db['project_server'] = project.psybase.project_server
             db['pref_manager'] = project.psybase.pref_manager
             db.close()
@@ -1555,7 +1565,17 @@ class User:
             cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
             #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
             #                        stdout=subprocess.PIPE)
-            proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName])
+            # TODO: Handle the matplotlib backend in the cecSubProcess whether
+            # psysmon or psysmomat is used. The matplotlib backend is set in
+            # the psysmon or psysmomat script. cecSubProcess is another process
+            # and the matplotlib is set there.
+            import matplotlib as mpl
+            backend = mpl.rcParams['backend']
+            proc = subprocess.Popen([sys.executable,
+                                     os.path.join(cecPath, 'cecSubProcess.py'),
+                                     filename,
+                                     col2Proc.procName,
+                                     backend])
 
             msgTopic = "state.collection.execution"
             msg = {}
@@ -1566,10 +1586,12 @@ class User:
             msg['procName'] = col2Proc.procName
             pub.sendMessage(msgTopic, msg = msg)
 
-            thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+            # Start the process checker only if the wx GUI is running.
+            if wx.App.Get():
+                _thread.start_new_thread(processChecker, (proc, col2Proc.procName))
 
         else:
-            raise PsysmonError('No active collection found!') 
+            raise PsysmonError('No active collection found!')
 
 
 

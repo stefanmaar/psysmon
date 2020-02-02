@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import logging
 import wx
 import numpy as np
@@ -263,7 +267,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
         self.scale_bar_text = None
@@ -292,15 +296,15 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         self.logger.debug('data_plot_limit: %f', data_plot_limit)
         #data_plot_limit = 1e20
         for trace in stream:
-            if trace.stats.npts > data_plot_limit and (len(trace) / trace.stats.sampling_rate) > minmax_limit:
+            if trace.stats.npts > data_plot_limit and (old_div(len(trace), trace.stats.sampling_rate)) > minmax_limit:
                 # Plot minmax values
                 self.logger.info('Plotting in minmax mode.')
-                sample_step = 2 * np.ceil(len(trace.data) / data_plot_limit)
+                sample_step = 2 * np.ceil(old_div(len(trace.data), data_plot_limit))
                 self.logger.debug("len(trace.data): %f", len(trace.data))
                 self.logger.debug('sample_step: %f', sample_step)
                 trace_data = self.compute_minmax_data(trace.data, sample_step)
-                time_step = sample_step / trace.stats.sampling_rate
-                minmax_time = np.array([trace.stats.starttime.timestamp + x * time_step for x in range(int(np.floor(len(trace.data) / sample_step)))])
+                time_step = old_div(sample_step, trace.stats.sampling_rate)
+                minmax_time = np.array([trace.stats.starttime.timestamp + x * time_step for x in range(int(np.floor(old_div(len(trace.data), sample_step))))])
                 minmax_time = minmax_time.repeat(2)
                 timeArray = minmax_time
 
@@ -311,7 +315,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
             else:
                 self.logger.info('Plotting in FULL mode.')
                 timeArray = np.arange(0, trace.stats.npts)
-                timeArray = timeArray / trace.stats.sampling_rate
+                timeArray = old_div(timeArray, trace.stats.sampling_rate)
                 timeArray = timeArray + trace.stats.starttime.timestamp
 
                 # Check if the data is a ma.maskedarray
@@ -427,7 +431,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         elif duration == 1:
             scale_length = 0.1
         else:
-            order = len(str(int(np.floor(1/duration)))) - 1
+            order = len(str(int(np.floor(old_div(1,duration))))) - 1
             scale_length = 1 * (10.** ((order+1) * -1))
 
         if self.scaleBar:
@@ -503,10 +507,10 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         elif duration == 1:
             scale_length = 0.1
         else:
-            order = len(str(int(np.floor(1/duration)))) - 1
+            order = len(str(int(np.floor(old_div(1,duration))))) - 1
             scale_length = 1 * (10.** ((order+1) * -1))
 
-        units_per_pixel = (2*y_lim) / self.axes.get_window_extent().height
+        units_per_pixel = old_div((2*y_lim), self.axes.get_window_extent().height)
         scale_height = 5 * units_per_pixel
         if self.scaleBar:
             self.scaleBar.remove()
@@ -547,7 +551,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
         '''
 
         '''
-        n_step = np.floor(len(data) / sample_step)
+        n_step = np.floor(old_div(len(data), sample_step))
         data = data[:int(n_step * sample_step)]
         data = data.reshape(int(n_step), int(sample_step))
 
@@ -583,7 +587,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in iter(kwargs.keys()):
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
                 label_artist = None
@@ -625,7 +629,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x_start, ylim[1]))
         else:
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in iter(kwargs.keys()):
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x_start, y = ylim[1],
                                                   s = kwargs['label'],
@@ -761,7 +765,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
 
@@ -774,7 +778,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
 
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = old_div(timeArray * 1,trace.stats.sampling_rate)
             timeArray = timeArray + trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -787,7 +791,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
             else:
                 self.line.set_xdata(timeArray)
                 #self.line.set_ydata(trace.data * -1)
-                self.line.set_ydata(trace.data / np.log10(np.abs(trace.data)))
+                self.line.set_ydata(old_div(trace.data, np.log10(np.abs(trace.data))))
 
             self.axes.set_frame_on(False)
             self.axes.get_xaxis().set_visible(False)
@@ -798,7 +802,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
 
         # Add the scale bar.
         scaleLength = 10
-        unitsPerPixel = (2*yLim) / self.axes.get_window_extent().height
+        unitsPerPixel = old_div((2*yLim), self.axes.get_window_extent().height)
         scaleHeight = 3 * unitsPerPixel
         if self.scaleBar:
             self.scaleBar.remove()
@@ -852,7 +856,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in iter(kwargs.keys()):
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
@@ -890,7 +894,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x_start, ylim[1]))
         else:
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in iter(kwargs.keys()):
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x_start, y = ylim[1],
                                                   s = kwargs['label'],
@@ -1052,7 +1056,7 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
     def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal', cmap = 'viridis'):
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = old_div(timeArray * 1,trace.stats.sampling_rate)
             timeArray = timeArray + trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -1185,7 +1189,8 @@ class FrequencySpectrumPlotter(ViewPlugin):
                             )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         # Define the plugin icons.
@@ -1258,12 +1263,13 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
         psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
         self.line_colors = {}
-	self.line_colors['psd'] = psdColor
+        self.line_colors['psd'] = psdColor
         self.line_colors['nhnm'] = nhnmColor
         self.line_colors['nlnm'] = nlnmColor
 
@@ -1274,15 +1280,16 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
         self.lines['nhnm'] = None
         self.lines['nlnm'] = None
 
-        self.show_noise_model = True
+        self.show_noise_model = False
 
 
 
     def plot(self, stream):
 
         for trace in stream:
+            self.logger.debug('Computing PSD for trace %s.', trace)
             timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = old_div(timeArray * 1,trace.stats.sampling_rate)
             timeArray = timeArray + trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -1295,23 +1302,53 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
             #   P = 2* 1/T * deltaT^2 * abs(F_dft)^2
             #   
             n_fft = len(trace.data)
-            delta_t = 1 / trace.stats.sampling_rate
+            delta_t = old_div(1, trace.stats.sampling_rate)
             T = (len(trace.data) - 1) * delta_t
             Y = scipy.fft(trace.data, n_fft)
-            psd = 2 * delta_t**2 / T * np.abs(Y)**2
+            psd = old_div(2 * delta_t**2, T * np.abs(Y)**2)
             psd = 10 * np.log10(psd)
             frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
 
             left_fft = int(np.ceil(n_fft / 2.))
 
+
+            # Try the matlab psd function.
+            import matplotlib.mlab as mlab
+            m_n_fft = 8192
+            m_pad_to = None
+            m_left_fft = int(np.ceil(m_n_fft / 2.))
+            if len(trace.data) < m_n_fft:
+                m_n_fft = old_div(len(trace.data), 4)
+                m_pad_to = 8192
+                m_left_fft = int(np.ceil(m_pad_to / 2.))
+            m_overlap = m_n_fft * 0.75
+            (m_psd, m_frequ) = mlab.psd(trace.data,
+                                  Fs = trace.stats.sampling_rate,
+                                  NFFT = m_n_fft,
+                                  noverlap = m_overlap,
+                                  detrend = 'constant',
+                                  scale_by_freq = True,
+                                  pad_to = m_pad_to)
+            m_psd = 10 * np.log10(m_psd)
+            self.logger.debug('m_frequ: %s', m_frequ)
+            self.logger.debug('m_psd: %s', m_psd)
+
+
+
             # Plot the psd.
             if not self.lines['psd']:
-                self.lines['psd'], = self.axes.plot(frequ[:left_fft], psd[:left_fft], color = self.line_colors['psd'])
+                self.lines['psd'], = self.axes.plot(frequ[1:left_fft], psd[1:left_fft], color = self.line_colors['psd'])
+                self.lines['m_psd'], = self.axes.plot(m_frequ[1:m_left_fft], m_psd[1:m_left_fft], color = 'r')
             else:
-                self.lines['psd'].set_xdata(frequ[:left_fft])
-                self.lines['psd'].set_ydata(psd[:left_fft])
+                self.lines['psd'].set_xdata(frequ[1:left_fft])
+                self.lines['psd'].set_ydata(psd[1:left_fft])
+                self.lines['m_psd'].set_xdata(m_frequ[1:m_left_fft])
+                self.lines['m_psd'].set_ydata(m_psd[1:m_left_fft])
 
             cur_unit = trace.stats.unit
+
+            self.logger.info('max: %s', max(psd[1:left_fft]))
+            self.logger.info('min: %s', min(psd[1:left_fft]))
 
             # Plot the noise model.
             if self.show_noise_model:
@@ -1325,6 +1362,8 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
                 self.axes.set_ylim(bottom = -220, top = -80)
                 cur_unit_label = '(m/s^2)^2/Hz in dB'
             elif cur_unit == 'counts':
+                self.axes.set_ylim(bottom = min(psd[1:left_fft]),
+                                   top = max(psd[1:left_fft]))
                 cur_unit_label = 'counts^2/Hz in dB'
             else:
                 cur_unit_label = '???^2/Hz in dB'
@@ -1342,17 +1381,17 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
 
 
     def plot_noise_model(self, unit):
-        p_nhnm, nhnm = obspy.signal.spectral_estimation.get_NHNM()
-        p_nlnm, nlnm = obspy.signal.spectral_estimation.get_NLNM()
+        p_nhnm, nhnm = obspy.signal.spectral_estimation.get_nhnm()
+        p_nlnm, nlnm = obspy.signal.spectral_estimation.get_nlnm()
 
         # obspy returns the NLNM and NHNM values in acceleration.
         # Convert them to the current unit (see Bormann (1998)).
         if unit == 'm':
-            nhnm = nhnm + 40 * np.log10(p_nhnm/ (2 * np.pi))
-            nlnm = nlnm + 40 * np.log10(p_nlnm/ (2 * np.pi))
+            nhnm = nhnm + 40 * np.log10(old_div(p_nhnm, (2 * np.pi)))
+            nlnm = nlnm + 40 * np.log10(old_div(p_nlnm, (2 * np.pi)))
         elif unit == 'm/s':
-            nhnm = nhnm + 20 * np.log10(p_nhnm/ (2 * np.pi))
-            nlnm = nlnm + 20 * np.log10(p_nlnm/ (2 * np.pi))
+            nhnm = nhnm + 20 * np.log10(old_div(p_nhnm, (2 * np.pi)))
+            nlnm = nlnm + 20 * np.log10(old_div(p_nlnm, (2 * np.pi)))
         elif unit != 'm/s^2':
             nhnm = None
             nlnm = None
@@ -1360,20 +1399,20 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
 
         if nlnm is not None:
             if not self.lines['nlnm']:
-                self.lines['nlnm'], = self.axes.plot(1/p_nlnm, nlnm, color = self.line_colors['nlnm'])
+                self.lines['nlnm'], = self.axes.plot(old_div(1,p_nlnm), nlnm, color = self.line_colors['nlnm'])
             else:
-                self.lines['nlnm'].set_xdata(1/p_nlnm)
+                self.lines['nlnm'].set_xdata(old_div(1,p_nlnm))
                 self.lines['nlnm'].set_ydata(nlnm)
         if nhnm is not None:
             if not self.lines['nhnm']:
-                self.lines['nhnm'], = self.axes.plot(1/p_nhnm, nhnm, color = self.line_colors['nhnm'])
+                self.lines['nhnm'], = self.axes.plot(old_div(1,p_nhnm), nhnm, color = self.line_colors['nhnm'])
             else:
-                self.lines['nhnm'].set_xdata(1/p_nhnm)
+                self.lines['nhnm'].set_xdata(old_div(1,p_nhnm))
                 self.lines['nhnm'].set_ydata(nhnm)
 
 
     def clear_lines(self):
-        for cur_line in self.lines.itervalues():
+        for cur_line in self.lines.values():
             if cur_line:
                 cur_line.set_xdata([])
                 cur_line.set_ydata([])
@@ -1500,7 +1539,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
         self.logger = logging.getLogger(loggerName)
 
         self.t0 = None
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         self.scaleBar = None
 
@@ -1518,7 +1557,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
 
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
-            timeArray = timeArray * 1/trace.stats.sampling_rate
+            timeArray = old_div(timeArray * 1,trace.stats.sampling_rate)
             timeArray = timeArray + trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -1528,7 +1567,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
 
             cur_max = np.max(np.abs(trace.data))
 
-            cur_line = self.axes.plot(timeArray, trace.data / cur_max)
+            cur_line = self.axes.plot(timeArray, old_div(trace.data, cur_max))
             self.lines.extend(cur_line)
 
             self.axes.set_frame_on(False)
@@ -1579,7 +1618,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x, 0))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in iter(kwargs.keys()):
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
             else:
@@ -1617,7 +1656,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
                 label_artist.set_position((x_start, ylim[1]))
         else:
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
-            if 'label' in kwargs.keys():
+            if 'label' in iter(kwargs.keys()):
                 ylim = self.axes.get_ylim()
                 label_artist = self.axes.text(x = x_start, y = ylim[1],
                                                   s = kwargs['label'],

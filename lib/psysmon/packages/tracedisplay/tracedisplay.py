@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import zip
+from builtins import chr
+from past.builtins import basestring
+from builtins import object
 import psysmon
 import logging
 import itertools
@@ -37,7 +42,7 @@ from psysmon.core.processingStack import ProcessingStack
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
-import container
+from . import container
 import psysmon.core.preferences_manager as pref_manager
 import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 import psysmon.core.plugins
@@ -306,7 +311,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                 id = wx.ID_ANY,
                                 title = "TraceDisplay Development",
                                 plugins = plugins)
-
+        tdDlg.Show()
         app.MainLoop()
 
 
@@ -416,9 +421,6 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
 
         # Display the data.
         self.update_display()
-
-        # Show the frame. 
-        self.Show(True)
 
 
     @property
@@ -743,7 +745,7 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         '''
         if plugin.get_virtual_stations():
             # Check if the plugin needs a virtual display channel.
-            for cur_name, cur_channels in plugin.get_virtual_stations().iteritems():
+            for cur_name, cur_channels in plugin.get_virtual_stations().items():
                 self.displayManager.show_virtual_station(name = cur_name,
                                                          plugin = plugin,
                                                          channels = cur_channels)
@@ -952,7 +954,7 @@ class DisplayManager(object):
         channelNames = ['HHZ', 'HHN', 'HHE']
         colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
         self.channelColors = [tuple(x[1:4]) for x in clrList if x[0] in colorNames]
-        self.channelColors = dict(zip(channelNames, self.channelColors))
+        self.channelColors = dict(list(zip(channelNames, self.channelColors)))
 
 
 
@@ -1140,10 +1142,11 @@ class DisplayManager(object):
         # Check if the station is part of one or more arrays that are currently
         # shown.
         parent_container = []
-        for cur_array in self.availableArrays:
-            if snl in [x.snl for x in cur_array.stations]:
-                cur_container = self.createArrayContainer(array = cur_array)
-                parent_container.append(cur_container)
+        if self.display_mode == 'array':
+            for cur_array in self.availableArrays:
+                if snl in [x.snl for x in cur_array.stations]:
+                    cur_container = self.createArrayContainer(array = cur_array)
+                    parent_container.append(cur_container)
 
         if not parent_container:
             parent_container.append(self.parent.viewport)
@@ -1626,7 +1629,7 @@ class DisplayManager(object):
         chanContainer = stationContainer.get_node(channel = channel.name)
 
         if not chanContainer:
-            if self.channelColors.has_key(channel.name):
+            if channel.name in self.channelColors:
                 curColor = self.channelColors[channel.name]
             else:
                 curColor = (0, 0, 0)
@@ -2043,12 +2046,12 @@ class DisplayChannel(object):
         return (self.parent.name, self.name, self.parent.network, self.parent.location)
 
     def addView(self, name, viewType):
-        if name not in self.views.keys():
+        if name not in iter(self.views.keys()):
             self.views[name] = (viewType, )
 
 
     def removeView(self, name, viewType):
-        if name in self.views.keys():
+        if name in iter(self.views.keys()):
             self.views.pop(name)
 
     #TODO: Replace all getSCNL calls with the scnl attribute.
@@ -2088,7 +2091,7 @@ class VirtualDisplayChannel(object):
 
 
 
-class DataManager():
+class DataManager(object):
 
     def __init__(self, parent):
 
@@ -2120,29 +2123,9 @@ class DataManager():
 
         This method overwrites the existing stream.
         '''
-        dataSources = {}
-        for curScnl in scnl:
-            if curScnl in self.project.scnlDataSources.keys():
-                if self.project.scnlDataSources[curScnl] not in dataSources.keys():
-                    dataSources[self.project.scnlDataSources[curScnl]] = [curScnl, ]
-                else:
-                    dataSources[self.project.scnlDataSources[curScnl]].append(curScnl)
-            else:
-                if self.project.defaultWaveclient not in dataSources.keys():
-                    dataSources[self.project.defaultWaveclient] = [curScnl, ]
-                else:
-                    dataSources[self.project.defaultWaveclient].append(curScnl)
-
-        self.origStream = Stream()
-
-        for curName in dataSources.iterkeys():
-            self.logger.debug("curName: %s", curName)
-            curWaveclient = self.project.waveclient[curName]
-            curStream =  curWaveclient.getWaveform(startTime = startTime,
-                                                   endTime = endTime,
-                                                   scnl = scnl)
-            if curStream:
-                self.origStream += curStream
+        self.origStream = self.project.request_data_stream(start_time = startTime,
+                                                           end_time = endTime,
+                                                           scnl = scnl)
 
 
 
@@ -2167,19 +2150,15 @@ class DataManager():
         ''' Add a stream to the existing stream.
 
         '''
-        if scnl in self.project.scnlDataSources.keys():
-            dataSource = self.project.scnlDataSources[scnl] 
-        else:
-            dataSource = self.project.defaultWaveclient
+        if not isinstance(scnl, list):
+            scnl = [scnl, ]
 
-        curWaveClient = self.project.waveclient[dataSource]
+        cur_stream = self.project.request_data_stream(start_time = startTime,
+                                                      end_time = endTime,
+                                                      scnl = scnl)
 
-        curStream = curWaveClient.getWaveform(startTime = startTime,
-                                              endTime = endTime,
-                                              scnl = scnl)
-
-        self.origStream = self.origStream + curStream
-        return curStream
+        self.origStream = self.origStream + cur_stream
+        return cur_stream
 
 
     def processStream(self, stack = None, scnl = None):

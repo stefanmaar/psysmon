@@ -28,8 +28,12 @@ The view framework to visualize data.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
 '''
+from __future__ import division
 
 
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import logging
 import operator
 import warnings
@@ -109,8 +113,8 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         if group:
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
-        for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
+        for cur_key, cur_value in kwargs.items():
+            ret_nodes = [x for x in ret_nodes if cur_key in x.props and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
         if recursive:
@@ -132,7 +136,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
         for cur_node in nodes_to_remove:
             self.node_list.remove(cur_node)
-            self.sizer.Remove(cur_node)
+            self.sizer.Detach(cur_node)
             cur_node.Destroy()
 
         if recursive:
@@ -294,7 +298,7 @@ class ContainerNode(wx.Panel):
         nodes_to_remove = self.get_node(recursive = False, name = name, group = group, **kwargs)
         for cur_node in nodes_to_remove:
             self.node_list.remove(cur_node)
-            self.container_sizer.Remove(cur_node)
+            self.container_sizer.Detach(cur_node)
             cur_node.Destroy()
 
         if recursive:
@@ -325,8 +329,8 @@ class ContainerNode(wx.Panel):
         if group:
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
-        for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
+        for cur_key, cur_value in kwargs.items():
+            ret_nodes = [x for x in ret_nodes if cur_key in x.props and getattr(x.props, cur_key) == cur_value]
 
         # Add all child nodes.
         if recursive:
@@ -554,7 +558,7 @@ class ViewContainerNode(wx.Panel):
         '''
         for cur_node in [x for x in self.node_list if x.name == name]:
             self.node_list.remove(cur_node)
-            self.container_sizer.Remove(cur_node)
+            self.container_sizer.Detach(cur_node)
             cur_node.Destroy()
 
         self.rearrange_nodes()
@@ -575,8 +579,8 @@ class ViewContainerNode(wx.Panel):
         if group:
             ret_nodes = [x for x in ret_nodes if x.group == group]
 
-        for cur_key, cur_value in kwargs.iteritems():
-            ret_nodes = [x for x in ret_nodes if x.props.has_key(cur_key) and getattr(x.props, cur_key) == cur_value]
+        for cur_key, cur_value in kwargs.items():
+            ret_nodes = [x for x in ret_nodes if cur_key in x.props and getattr(x.props, cur_key) == cur_value]
 
         if node_type is not None:
             if node_type == 'view':
@@ -803,7 +807,7 @@ class ViewNode(wx.Panel):
     def set_mpl_event_callbacks(self, hooks, parent):
 
         added_cids = []
-        for cur_key, cur_callback in hooks.iteritems():
+        for cur_key, cur_callback in hooks.items():
             cur_cid = self.plot_panel.canvas.mpl_connect(cur_key, lambda evt, parent = parent, callback = cur_callback: callback(evt, parent))
             if cur_key in self.mpl_cids:
                 self.mpl_cids[cur_key].append(cur_cid)
@@ -818,10 +822,10 @@ class ViewNode(wx.Panel):
 
         cid_list = []
         if event_name is not None:
-            if event_name in self.mpl_cids.keys():
+            if event_name in iter(self.mpl_cids.keys()):
                 cid_list = self.mpl_cids[event_name]
         else:
-            for cur_key, cur_cid_list in self.mpl_cids.iteritems():
+            for cur_key, cur_cid_list in self.mpl_cids.items():
                 cid_list.extend(cur_cid_list)
 
         for cur_cid in cid_list:
@@ -877,7 +881,7 @@ class ViewNode(wx.Panel):
 
         valid_keys = ['mode', 'parent_rid', 'key']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_artist = [x for x in ret_artist if getattr(x, cur_key) == cur_value or cur_value is None]
             else:
@@ -932,9 +936,9 @@ class PlotPanel(wx.Panel):
     """
     def __init__( self, parent, name = None, color=None, dpi=None, n_axes = 1, **kwargs ):
         # initialize Panel
-        if 'id' not in kwargs.keys():
+        if 'id' not in iter(kwargs.keys()):
             kwargs['id'] = wx.ID_ANY
-        if 'style' not in kwargs.keys():
+        if 'style' not in iter(kwargs.keys()):
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
         self.SetMinSize((100, 40))
@@ -952,7 +956,7 @@ class PlotPanel(wx.Panel):
 
         # The axes.
         self._axes = []
-        axes_height = 1 / float(n_axes)
+        axes_height = 1 / n_axes
         for k in range(n_axes):
             self._axes.append(self.figure.add_axes([0, k * axes_height, 1, axes_height]))
         self.canvas.SetMinSize((30, 10))
@@ -1038,7 +1042,7 @@ class PlotPanel(wx.Panel):
         self._axes = []
 
         # Create the new number of axes.
-        axes_height = 1 / float(n_axes)
+        axes_height = old_div(1, n_axes)
         for k in range(n_axes):
             self._axes.append(self.figure.add_axes([0, k * axes_height, 1, axes_height]))
 
@@ -1098,15 +1102,15 @@ class ViewAnnotationPanel(wx.Panel):
         self.SetMinSize((200, -1))
 
 
-	# Create a test label.
+        # Create a test label.
         self.label = wx.lib.stattext.GenStaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
         font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.label.SetFont(font)
 
-	# Add the label to the sizer.
-	sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Add the label to the sizer.
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
-	self.SetSizer(sizer)
+        self.SetSizer(sizer)
 
 
     def setLabel(self, text):

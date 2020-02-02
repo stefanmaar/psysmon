@@ -24,14 +24,18 @@ The pSysmon GUI module.
     Stefan Mertl
 
 :license:
-    GNU General Public License, Version 3 
+    GNU General Public License, Version 3
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
-This module contains the graphical user interface (GUI) of the pSysmon 
+This module contains the graphical user interface (GUI) of the pSysmon
 main program.
 '''
 from __future__ import absolute_import      # Used for the signal import.
+from __future__ import print_function
 
+from builtins import str
+from builtins import range
+from builtins import object
 import logging
 import warnings
 from operator import attrgetter
@@ -43,13 +47,20 @@ import wx.grid
 from wx import Choicebook
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
+import wx.lib.dialogs
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import wx.lib.colourdb
 try:
     from agw import ribbon as ribbon
-except ImportError: # if it's not there locally, try the wxPython lib.
+except ImportError:  # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.ribbon as ribbon
+
+try:
+    from wx import SimpleHtmlListBox
+except ImportError:
+    from wx.html import SimpleHtmlListBox
+
 import os
 import signal
 from sqlalchemy.exc import SQLAlchemyError
@@ -57,7 +68,9 @@ import sqlalchemy
 import psysmon
 import psysmon.core.gui_view
 from psysmon.core.error import PsysmonError
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import EarthwormWaveclient
+from psysmon.core.waveclient import SeedlinkWaveclient
 import psysmon.core.preferences_manager as pm
 from psysmon.artwork.icons import iconsBlack10, iconsBlack16
 import datetime
@@ -281,7 +294,7 @@ class PSysmonGui(wx.Frame):
         self.enableGuiElements(False)
 
         # Create the status bar.
-        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(2, wx.STB_SIZEGRIP)
         self.statusbar.SetStatusWidths([-2, -3])
         self.statusbar.SetStatusText("Ready", 0)
         self.statusbar.SetStatusText("pSysmon is there for you!", 1)
@@ -324,7 +337,7 @@ class PSysmonGui(wx.Frame):
             defaultFile="",
             wildcard="pSysmon project (*.ppr)|*.ppr|"\
                      "All files (*.*)|*.*",
-            style=wx.OPEN | wx.CHANGE_DIR
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR
             )
 
         # Show the dialog and retrieve the user response. If it is the OK response, 
@@ -632,7 +645,7 @@ class PSysmonGui(wx.Frame):
 
 
 
-class Logger:
+class Logger(object):
 
     def __init__(self, loggingArea, psyBase):
         self.loggingArea = loggingArea
@@ -694,13 +707,13 @@ class Logger:
 
 ## The collection listbox.
 #
-class CollectionListBox(wx.SimpleHtmlListBox):
+class CollectionListBox(SimpleHtmlListBox):
 
     ## The constructor
     #
     # @param self The object pointer. 
     def __init__(self, parent, id=wx.ID_ANY):
-        wx.SimpleHtmlListBox.__init__(self, parent=parent, id=id)
+        SimpleHtmlListBox.__init__(self, parent=parent, id=id)
         cmData = (("edit node", parent.onEditNode),
                   ("remove node", parent.onRemoveNode),
                   ("new collection", parent.onCollectionNew),
@@ -800,6 +813,9 @@ class CollectionTreeCtrl(wx.TreeCtrl):
                   ("enable node", parent.onToggleNodeEnable),
                   ("remove node", parent.onRemoveNode),
                   ("separator", None),
+                  ("move up", parent.onMoveUp),
+                  ("move down", parent.onMoveDown),
+                  ("separator", None),
                   ("load collection", parent.onCollectionLoad),
                   ("new collection", parent.onCollectionNew),
                   ("delete collection", parent.onCollectionDelete))
@@ -883,7 +899,7 @@ class CollectionPanel(wx.Panel):
 
             columns = {1: 'node'}
 
-            for colNum, name in columns.iteritems():
+            for colNum, name in columns.items():
                 self.collectionListCtrl.InsertColumn(colNum, name)
 
             sizer = wx.GridBagSizer(5, 5)
@@ -987,6 +1003,37 @@ class CollectionPanel(wx.Panel):
                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal() 
 
+    def onMoveUp(self, event):
+        ''' Move a node up in the collection.
+        '''
+        collection = self.psyBase.project.getActiveCollection()
+
+        if self.selectedNodeType in ['node', 'looper']:
+            # Move the node in the collection.
+            selected_node = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            collection.moveNodeUp(selected_node)
+        elif self.selectedNodeType == 'looper_child':
+            # Move the node in the looper.
+            selected_looper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            selected_node = selected_looper.children[self.selectedLooperChildNodeIndex]
+            selected_looper.move_node_up(selected_node)
+        self.refreshCollection()
+
+    def onMoveDown(self, event):
+        ''' Move a node up in the collection.
+        '''
+        collection = self.psyBase.project.getActiveCollection()
+        if self.selectedNodeType in ['node', 'looper']:
+            # Move the node in the collection.
+            selected_node = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            collection.moveNodeDown(selected_node)
+        elif self.selectedNodeType == 'looper_child':
+            # Move the node in the looper.
+            selected_looper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
+            selected_node = selected_looper.children[self.selectedLooperChildNodeIndex]
+            selected_looper.move_node_down(selected_node)
+        self.refreshCollection()
+
 
     def onToggleNodeEnable(self, event):
         if self.selectedNodeType in ['node', 'looper']:
@@ -1030,7 +1077,7 @@ class CollectionPanel(wx.Panel):
     # @param event The event object. 
     def onCollectionLoad(self, event):
         collections = self.psyBase.project.getCollection()
-        choices = [x.name for x in collections.itervalues()]
+        choices = [x.name for x in collections.values()]
         dlg = wx.SingleChoiceDialog(None, "Select a collection",
                                     "Load collection",
                                     choices)
@@ -1169,7 +1216,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
                                       | wx.LC_SINGLE_SEL
                                       | wx.LC_SORT_ASCENDING)
         columns = {1: 'level', 2: 'message'}
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.status.InsertColumn(colNum, name)
         self.status.SetColumnWidth(0, 100)
         self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
@@ -1183,7 +1230,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
         columns = {1: 'start', 2: 'pid', 3: 'name', 4: 'status', 5: 'duration'}
 
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.processes.InsertColumn(colNum, name)
 
         # Create the context menu of the thread logging area.
@@ -1249,8 +1296,8 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
     def updateThread(self, data):
         #self.logger.debug('updating process: %s', data['procName'])
-        error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error'}
-        if data['procName'] in self.processMap.keys():
+        error_code = {1: 'general error', 2: 'collection execution error', 3: 'collection preparation error', 4: 'finalization error', 5: 'looper child error'}
+        if data['procName'] in iter(self.processMap.keys()):
             curIndex = self.processMap[data['procName']]
             #self.logger.debug('process has index: %d', curIndex)
             self.processes.SetStringItem(curIndex, 3, data['state'])
@@ -1339,7 +1386,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         columns = {1: 'name', 2: 'mode', 3: 'category', 4: 'tags'}
 
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.nodeListCtrl.InsertColumn(colNum, name)
 
         sizer.Add(self.nodeListCtrl, pos=(1, 0), flag=wx.EXPAND|wx.ALL, border=0)
@@ -1432,7 +1479,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
     def initNodeInventoryList(self):
         nodeTemplates = {}
-        for curPkg in self.psyBase.packageMgr.packages.itervalues():
+        for curPkg in self.psyBase.packageMgr.packages.values():
             nodeTemplates.update(curPkg.collectionNodeTemplates)
 
         self.updateNodeInvenotryList(nodeTemplates)
@@ -1446,7 +1493,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         index = 0
         self.nodeListCtrl.DeleteAllItems()
 
-        for curNode in nodeTemplates.itervalues():
+        for curNode in nodeTemplates.values():
             self.nodeListCtrl.InsertStringItem(index, curNode.name)
             self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
             self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
@@ -1600,11 +1647,34 @@ class CreateNewDbUserDlg(wx.Dialog):
             return True
         except SQLAlchemyError as e:
             msg = "An error occured when trying to create the pSysmon database user:\n%s" % str(e)
-            dlg = wx.MessageDialog(None, msg,
-                                   "MySQL database error.",
-                                   wx.OK | wx.ICON_ERROR)
+            user_db = "psysmon_" + userData['userName']
+            query_db = "CREATE DATABASE IF NOT EXISTS %s;" % user_db
+            query_user = "CREATE USER %s@'%s' IDENTIFIED BY 'YOUR_PASSWORD';" % (userData['userName'], userData['mysqlHost'])
+            query_grant = "GRANT ALL ON %s.* TO '%s'@'localhost';" % (user_db, userData['userName'])
+
+            msg = "With new mariaDB installations, there is a restricted root access to the database.\nPlease execute the following commands as root in the mariaDB command prompt. Replace YOUR_PASSWORD with your desired password or an empty string ('') if no password is required.:\n\n\n"
+            msg += query_db + '\n' + query_user + '\n' + query_grant
+            dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, 'Error when creating the user.')
+            #dlg = wx.MessageDialog(None, msg,
+            #                       "MySQL database error.",
+            #                       wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             return False
+
+
+class MessageBox(wx.Dialog):
+    def __init__(self, parent, title, msg, detail):
+        wx.Dialog.__init__(self, parent, title=title)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        label = wx.StaticText(self, wx.ID_ANY, msg)
+        detail_text = wx.TextCtrl(self, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.BORDER_NONE)
+        detail_text.SetValue(detail)
+        detail_text.SetBackgroundColour(wx.SystemSettings.GetColour(4))
+        sizer.Add(label, 0, wx.EXPAND)
+        sizer.Add(detail_text, 0, wx.EXPAND)
+        self.SetSizerAndFit(sizer)
+        self.ShowModal()
+        self.Destroy()
 
 
 
@@ -1751,18 +1821,20 @@ class DataSourceDlg(wx.Dialog):
 
         '''
         self.wcListCtrl.DeleteAllItems()
-        for k, (name, client) in enumerate(self.psyBase.project.waveclient.iteritems()):
+        client_names = sorted(self.psyBase.project.waveclient.keys())
+        for k, name in enumerate(client_names):
+            client = self.psyBase.project.waveclient[name]
             if name == self.psyBase.project.defaultWaveclient:
                 self.wcListCtrl.InsertImageStringItem(k, client.name, self.iconDefault)
             else:
                 self.wcListCtrl.InsertStringItem(k, client.name)
             self.wcListCtrl.SetStringItem(k, 1, client.mode)
+            self.wcListCtrl.SetStringItem(k, 2, client.description)
             #self.wcListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
-            #self.wcListCtrl.SetStringItem(k, 3, curDir.description)
 
         self.wcListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.wcListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        #self.wcListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        self.wcListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
 
 
     def addItem2WfListCtrl(self, item):
@@ -1791,8 +1863,7 @@ class DataSourceDlg(wx.Dialog):
         tableField = []
         tableField.append(('name', 'name', 'readonly'))
         tableField.append(('type', 'type', 'readonly'))
-        #tableField.append(('alias', 'alias', 'editable'))
-        #tableField.append(('description', 'description', 'editable'))
+        tableField.append(('description', 'description', 'readonly'))
         return tableField
 
 
@@ -1834,8 +1905,6 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         removeDirButton = wx.Button(self, wx.ID_ANY, "remove")
         editDirButton = wx.Button(self, wx.ID_ANY, "edit")
 
-        # Layout using sizers.
-        sizer = wx.GridBagSizer(5,5)
         gridButtonSizer = wx.BoxSizer(wx.VERTICAL)
 
         # Fill the grid button sizer
@@ -1849,11 +1918,27 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         for k, (name, label, attr) in enumerate(fields):
             self.wfListCtrl.InsertColumn(k, label)
 
-        sizer.Add(self.wfListCtrl, pos=(0,0), flag=wx.EXPAND|wx.ALL, border=5)
-        sizer.Add(gridButtonSizer, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
 
-        sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(0)
+        # Add the editing elements.
+        self.name_label= wx.StaticText(self, -1, "name:")
+        self.name_edit = wx.TextCtrl(self, -1, self.client.name, size=(100, -1))
+        self.description_label = wx.StaticText(self, -1, "description:")
+        self.description_edit = wx.TextCtrl(self, -1, self.client.description, size=(100, -1))
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+
+
+        sizer.Add(self.name_label, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.name_edit, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.description_label, pos=(1,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.description_edit, pos=(1,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.Add(self.wfListCtrl, pos=(2,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(gridButtonSizer, pos=(2,2), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.AddGrowableRow(2)
+        sizer.AddGrowableCol(1)
 
         self.SetSizer(sizer)
 
@@ -1861,8 +1946,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.onAddDirectory, addDirButton)
         self.Bind(wx.EVT_BUTTON, self.onRemoveDirectory, removeDirButton)
         self.Bind(wx.EVT_BUTTON, self.onEditDirectory, editDirButton)
-
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onDirectorySelected, self.wfListCtrl)
+
+        self.SetSizerAndFit(sizer)
 
         self.project = project
         self.wfDir = self.project.dbTables['waveform_dir']
@@ -1875,8 +1961,9 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         # A list of available waveform directories. It consits of tuples of
         self.wfDirList = self.dbSession.query(self.wfDir).join(self.wfDirAlias,
-                                                               self.wfDir.id==self.wfDirAlias.wf_id
-                                                              ).filter(self.wfDirAlias.user==self.project.activeUser.name).all()
+                                                               self.wfDir.id==self.wfDirAlias.wf_id).\
+                                                          filter(self.wfDirAlias.user==self.project.activeUser.name).\
+                                                          filter(self.wfDir.waveclient == self.client.name).all()
         self.updateWfListCtrl()
         sizer.Fit(self)
 
@@ -1961,7 +2048,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
                                  title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
-            newWfDir = self.wfDir(self.wfd_pref_manager.get_value('waveform_dir'),
+            newWfDir = self.wfDir(self.client.name,
+                                  self.wfd_pref_manager.get_value('waveform_dir'),
                                   self.wfd_pref_manager.get_value('description'),
                                   self.wfd_pref_manager.get_value('file_ext'),
                                   '',
@@ -2057,13 +2145,16 @@ class PsysmonDbWaveclientOptions(wx.Panel):
 
         self.wfListCtrl.DeleteItem(selectedRow)
 
-
     def onOk(self):
         ''' Apply the changes.
 
         This method should be called by the dialog holding the options when the user clicks 
         the ok button.
         '''
+        self.client.name = self.name_edit.GetValue()
+        self.client.description = self.description_edit.GetValue()
+        self.logger.debug(self.client.name)
+
         try:
             self.dbSession.commit()
         finally:
@@ -2071,6 +2162,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         # Reload the project's waveform directory list to make sure, that it's 
         # consistent with the database.
         self.client.loadWaveformDirList()
+
+        return self.client
 
 
     def onCancel(self):
@@ -2122,7 +2215,6 @@ class EarthwormWaveclientOptions(wx.Panel):
         self.project = project
 
 
-    
     def onOk(self):
         ''' Apply the changes.
 
@@ -2141,6 +2233,65 @@ class EarthwormWaveclientOptions(wx.Panel):
         '''
         pass
 
+
+class SeedlinkWaveclientOptions(wx.Panel):
+
+    def __init__(self, parent=None, client=None, project=None, size=(-1, -1)):
+        ''' The constructor.
+
+        '''
+        wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
+
+        # The logger.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # The waveclient holding the options.
+        self.client = client
+
+
+        self.nameLabel = wx.StaticText(self, -1, "name:")
+        self.nameEdit = wx.TextCtrl(self, -1, self.client.name, size=(100, -1))
+        self.hostLabel = wx.StaticText(self, -1, "host:")
+        self.hostEdit = wx.TextCtrl(self, -1, self.client.host, size=(100, -1))
+        self.portLabel = wx.StaticText(self, -1, "port:")
+        self.portEdit = wx.TextCtrl(self, -1, str(self.client.port), size=(100, -1))
+
+        # Layout using sizers.
+        sizer = wx.GridBagSizer(5,5)
+
+
+        sizer.Add(self.nameLabel, pos=(0,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.nameEdit, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.hostLabel, pos=(1,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.hostEdit, pos=(1,1), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.portLabel, pos=(2,0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, border=5)
+        sizer.Add(self.portEdit, pos=(2,1), flag=wx.EXPAND|wx.ALL, border=5)
+
+        sizer.AddGrowableCol(1)
+
+        self.SetSizerAndFit(sizer)
+
+        self.project = project
+
+
+    def onOk(self):
+        ''' Apply the changes.
+
+        This method should be called by the dialog holding the options when the user clicks 
+        the ok button.
+        '''
+        self.client.name = self.nameEdit.GetValue()
+        self.client.host = self.hostEdit.GetValue()
+        self.client.port = int(self.portEdit.GetValue())
+        self.logger.debug(self.client.name)
+        return self.client
+
+
+    def onCancel(self):
+        ''' Called when the dialog cancel button is clicked.
+        '''
+        pass
 
 
 
@@ -2194,8 +2345,9 @@ class EditWaveclientDlg(wx.Dialog):
 
     def getClientOptionsPanels(self):
         clientModes = {}
-        clientModes['EarthwormWaveclient'] =  ('Earthworm', EarthwormWaveclientOptions)
+        clientModes['EarthwormWaveclient'] =  ('Earthworm Waveserver', EarthwormWaveclientOptions)
         clientModes['PsysmonDbWaveClient'] =  ('pSysmon database', PsysmonDbWaveclientOptions)
+        clientModes['SeedlinkWaveClient'] =  ('Seedlink Server', SeedlinkWaveclientOptions)
         return clientModes
 
 
@@ -2254,15 +2406,19 @@ class AddDataSourceDlg(wx.Dialog):
         # Create the choicebook.
         self.modeChoiceBook = Choicebook(parent = self, id = wx.ID_ANY)
 
-        for curLabel, curClass in self.clientModes().itervalues():
+        for curLabel, curClass in self.clientModes().values():
             if curClass == PsysmonDbWaveClient:
-                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook, project=self.psyBase.project)
-                #panel.SetBackgroundColour('red')
+                panel = PsysmonDbWaveclientOptions(parent = self.modeChoiceBook,
+                                                   project = self.psyBase.project,
+                                                   client = curClass(name = 'database client'))
             elif curClass == EarthwormWaveclient:
-                panel = EarthwormWaveclientOptions(parent=self.modeChoiceBook, 
-                                                   project=self.psyBase.project,
-                                                   client=curClass(name='earthworm client'))
-                #panel.SetBackgroundColour('green')
+                panel = EarthwormWaveclientOptions(parent = self.modeChoiceBook,
+                                                   project = self.psyBase.project,
+                                                   client = curClass(name='earthworm client'))
+            elif curClass == SeedlinkWaveclient:
+                panel = SeedlinkWaveclientOptions(parent = self.modeChoiceBook,
+                                                  project = self.psyBase.project,
+                                                  client = curClass(name='seedlink client'))
 
             panel.SetMinSize((200, 200))
             self.modeChoiceBook.AddPage(panel, curLabel)
@@ -2280,20 +2436,21 @@ class AddDataSourceDlg(wx.Dialog):
         btnSizer.AddButton(cancelButton)
         btnSizer.Realize()
         sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
-        
+
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(0)
 
         self.SetSizerAndFit(sizer)
-        
+
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.onOk, okButton)
 
 
     def clientModes(self):
         clientModes = {}
-        clientModes['earthworm'] =  ('Earthworm', EarthwormWaveclient)
-        #clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
+        clientModes['earthworm'] =  ('Earthworm Waveserver', EarthwormWaveclient)
+        clientModes['psysmonDb'] =  ('pSysmon database', PsysmonDbWaveClient)
+        clientModes['seedlink'] =  ('Seedlink Server', SeedlinkWaveclient)
         return clientModes
 
 
@@ -2301,9 +2458,6 @@ class AddDataSourceDlg(wx.Dialog):
         client = self.modeChoiceBook.GetCurrentPage().onOk()
         self.psyBase.project.addWaveClient(client) 
         self.Destroy()
-
-        
-        
 
 
 
@@ -2335,15 +2489,15 @@ class EditScnlDataSourcesDlg(wx.Dialog):
 
         # Create the scnl-datasource list.
         self.scnl = []
-        for curNetwork in self.inventory.networks.itervalues():
-            for curStation in curNetwork.stations.itervalues():
+        for curNetwork in self.inventory.networks.values():
+            for curStation in curNetwork.stations.values():
                 self.scnl.extend(curStation.getScnl())
 
         # Sort the scnl list.
         self.scnl = sorted(self.scnl, key = itemgetter(0,1,2,3))
 
         for curScnl in self.scnl:
-            if curScnl not in self.psyBase.project.scnlDataSources.keys():
+            if curScnl not in iter(self.psyBase.project.scnlDataSources.keys()):
                 self.psyBase.project.scnlDataSources[curScnl] = self.psyBase.project.defaultWaveclient
 
 
@@ -2638,7 +2792,7 @@ class NotEmptyValidator(wx.PyValidator):
             ctrl.Refresh()
             return False
         else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
 
@@ -2690,7 +2844,7 @@ class IsEqualValidator(wx.PyValidator):
             ctrl.Refresh()
             return False
         else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
 
@@ -2967,7 +3121,7 @@ class FoldPanelBarSplitter(scrolled.ScrolledPanel):
 
 
     def onSashChanged(self, event):
-        print 'Changed sash: %d; %s\n' % (event.GetSashIdx(), event.GetSashPosition())
+        print('Changed sash: %d; %s\n' % (event.GetSashIdx(), event.GetSashPosition()))
 
 
     def addPanel(self, subPanel):
@@ -3113,11 +3267,11 @@ class PsysmonDockingFrame(wx.Frame):
         self.ribbonToolbars = {}
         self.foldPanels = {}
         for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = itemgetter(0,1)):
-            if curGroup not in self.ribbonPages.keys():
+            if curGroup not in iter(self.ribbonPages.keys()):
                 self.logger.debug('Creating page %s', curGroup)
                 self.ribbonPages[curGroup] = ribbon.RibbonPage(self.ribbon, wx.ID_ANY, curGroup)
 
-            if curCategory not in self.ribbonPanels.keys():
+            if curCategory not in iter(self.ribbonPanels.keys()):
                 self.ribbonPanels[curCategory] = ribbon.RibbonPanel(self.ribbonPages[curGroup],
                                                                     wx.ID_ANY,
                                                                     curCategory,
@@ -3224,7 +3378,7 @@ class PsysmonDockingFrame(wx.Frame):
 
         cur_toolbar = event.GetEventObject()
         if cur_toolbar.GetToolState(event.GetId()) != ribbon.RIBBON_TOOLBAR_TOOL_TOGGLED:
-            if plugin.name not in self.foldPanels.keys():
+            if plugin.name not in iter(self.foldPanels.keys()):
                 # The panel of the option tool does't exist. Create it and add
                 # it to the panel manager.
                 curPanel = plugin.buildFoldPanel(self)
@@ -3334,7 +3488,7 @@ class PsysmonDockingFrame(wx.Frame):
 
             # Get the hooks and register the matplotlib hooks in the viewport.
             hooks = plugin.getHooks()
-            allowed_matplotlib_hooks = self.hook_manager.view_hooks.keys()
+            allowed_matplotlib_hooks = iter(self.hook_manager.view_hooks.keys())
 
             for cur_key in hooks.keys():
                 if cur_key not in allowed_matplotlib_hooks:
@@ -3371,7 +3525,7 @@ class PsysmonDockingFrame(wx.Frame):
         '''
         self.logger.debug('Dropdown clicked -> editing preferences.')
 
-        if plugin.name not in self.foldPanels.keys():
+        if plugin.name not in iter(self.foldPanels.keys()):
             #curPanel = plugin.buildFoldPanel(self.foldPanelBar)
             #foldPanel = self.foldPanelBar.addPanel(curPanel, plugin.icons['active'])
 
@@ -3506,7 +3660,7 @@ class PsysmonDockingFrame(wx.Frame):
 
 
 
-class ShortcutManager:
+class ShortcutManager(object):
 
 
     def __init__(self):
@@ -3579,7 +3733,7 @@ class ShortcutManager:
         ret_val = self.shortcuts
 
         valid_keys = ['key_combination', 'origin_rid', 'kind']
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
             else:

@@ -30,7 +30,12 @@ The pSysmon base module.
 
 This module contains the basic classes needed to run the pSysmon program.
 '''
-
+from __future__ import print_function
+#test
+from builtins import zip
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import os
 import json
 import logging
@@ -44,7 +49,9 @@ import psysmon.core.project
 import psysmon.core.util
 import psysmon.core.json_util
 import psysmon.core.project_server
-from psysmon.core.waveclient import PsysmonDbWaveClient, EarthwormWaveclient
+from psysmon.core.waveclient import PsysmonDbWaveClient
+from psysmon.core.waveclient import EarthwormWaveclient
+from psysmon.core.waveclient import SeedlinkWaveclient
 from psysmon.core.error import PsysmonError
 import psysmon.core.preferences_manager as pm
 from sqlalchemy import create_engine
@@ -168,6 +175,8 @@ class Base(object):
         self.pyro_nameserver = None
 
         # The pyro project data server.
+        self.project_server = None
+        '''
         if project_server is None:
             self.project_server = psysmon.core.project_server.ProjectServer()
 
@@ -176,6 +185,7 @@ class Base(object):
             self.ps_thread.start()
         else:
             self.project_server = project_server
+        '''
 
 
     def __del__(self):
@@ -333,7 +343,7 @@ class Base(object):
         '''
         try:
             dbDialect = 'mysql'
-            dbDriver = None
+            dbDriver = 'pymysql'
             if dbDriver:
                 dialectString = dbDialect + "+" + dbDriver
             else:
@@ -368,7 +378,7 @@ class Base(object):
 
             conn.execute('commit')
         except SQLAlchemyError as e:
-            print e
+            print(e)
             raise
         finally:
             conn.close()
@@ -426,11 +436,14 @@ class Base(object):
                                               )
 
         # Create the project instance.
+        # TODO: Make the database driver a project preference.
         self.project = psysmon.core.project.Project(psybase = self,
                                                     name = name,
                                                     user = admin_user,
                                                     base_dir = base_dir,
-                                                    dbHost = db_host)
+                                                    dbHost = db_host,
+                                                    dbDialect = 'mysql',
+                                                    dbDriver = 'pymysql')
 
         # When creating a project, set the active user to the user creating 
         # the project (which is the *admin* user).
@@ -459,7 +472,8 @@ class Base(object):
         return True
 
 
-    def load_json_project(self, filename, user_name, user_pwd, update_db = True):
+    def load_json_project(self, filename, user_name = None, user_pwd = None,
+                          update_db = True, db_host = None):
         ''' Load a psysmon project from JSON formatted file.
 
         '''
@@ -494,6 +508,10 @@ class Base(object):
             self.logger.error("Couldn't load the project file using the decoder.")
             return False
 
+        if db_host is not None:
+            # Override the project database host name.
+            self.project.dbHost = db_host
+
         # Set some runtime dependent variables.
         self.project.psybase = self
         self.project.base_dir = os.path.dirname(project_dir)
@@ -512,33 +530,36 @@ class Base(object):
         self.project.setCollectionNodeProject()
 
         # Set the project of the db_waveclient (if available).
-        for cur_waveclient in self.project.waveclient.itervalues():
-            if cur_waveclient.mode == 'PsysmonDbWaveClient':
+        for cur_waveclient in self.project.waveclient.values():
+            if cur_waveclient.mode == 'PsysmonDbWaveClient' or cur_waveclient.mode =='SeedlinkWaveclient':
                 cur_waveclient.project = self.project
 
-        userSet = self.project.setActiveUser(user_name, user_pwd = user_pwd)
-        if not userSet:
-            self.project = None
-            return False
-        else:
-            # Load the current database structure.
-            self.project.loadDatabaseStructure(self.packageMgr.packages,
-                                               update_db = update_db)
+        # Check for a preferred user.
+        if user_name:
+            userSet = self.project.setActiveUser(user_name, user_pwd = user_pwd)
 
-            # Load the geometry inventory.
-            self.project.load_geometry_inventory()
+            if not userSet:
+                self.project = None
+                return False
 
-            # Check if the default wave client exists.
-            if self.project.defaultWaveclient not in self.project.waveclient.keys():
-                self.project.defaultWaveclient = None
+        # Load the current database structure.
+        self.project.loadDatabaseStructure(self.packageMgr.packages,
+                                           update_db = update_db)
 
-            # Set some variables depending on the database.
-            for cur_waveclient in self.project.waveclient.itervalues():
-                if cur_waveclient.mode == 'PsysmonDbWaveClient':
-                    # Load the waveform directory list from database.
-                    cur_waveclient.loadWaveformDirList()
+        # Load the geometry inventory.
+        self.project.load_geometry_inventory()
 
-            return True
+        # Check if the default wave client exists.
+        if self.project.defaultWaveclient not in iter(self.project.waveclient.keys()):
+            self.project.defaultWaveclient = None
+
+        # Set some variables depending on the database.
+        for cur_waveclient in self.project.waveclient.values():
+            if cur_waveclient.mode == 'PsysmonDbWaveClient':
+                # Load the waveform directory list from database.
+                cur_waveclient.loadWaveformDirList()
+
+        return True
 
 
 
@@ -593,6 +614,8 @@ class Base(object):
                     waveclient = PsysmonDbWaveClient(curName, self.project)
                 elif curMode == 'earthworm':
                     waveclient = EarthwormWaveclient(name=curName, **curOptions)
+                elif curMode == 'seedlink':
+                    waveclient = SeedlinkWaveclient(name = curName, **curOptions)
                 else:
                     waveclient = None
 
@@ -602,7 +625,7 @@ class Base(object):
             self.project.checkDbVersions(self.packageMgr.packages)
 
             # Check if the default wave client exists.
-            if self.project.defaultWaveclient not in self.project.waveclient.keys():
+            if self.project.defaultWaveclient not in iter(self.project.waveclient.keys()):
                 self.project.defaultWaveclient = 'main client'
 
             return True
@@ -683,8 +706,18 @@ class Collection(object):
         # Collection log files go in there.
         self.tmpDir = tmpDir
 
+        # The runtime attributes of the collection.
+        self.runtime_att = psysmon.core.util.AttribDict()
+        self.runtime_att.start_time = None
+        self.runtime_att.end_time = None
+        self.runtime_att.loop_start_times = []
+        self.runtime_att.loop_end_times = []
+
         # The collection's data file.
         self.dataShelf = None
+
+        # The datasource used for the execution of the collection.
+        self.data_sources = {}
 
 
     def __getitem__(self, index):
@@ -823,6 +856,44 @@ class Collection(object):
             return self.nodes.pop(position)
 
 
+    def moveNodeUp(self, node):
+        ''' Move a node up in the collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.nodes:
+            raise RuntimeError("The node is not part of the collection.")
+
+        old_index = self.nodes.index(node)
+        if old_index == 0:
+            return
+        self.nodes.remove(node)
+        self.nodes.insert(old_index - 1, node)
+
+
+    def moveNodeDown(self, node):
+        ''' Move a node up in the collection.
+
+        Paramters
+        ---------
+        node : :class:`~psysmon.core.packageNodes.CollectionNode`
+            The node to move.
+
+        '''
+        if node not in self.nodes:
+            raise RuntimeError("The node is not part of the collection.")
+
+        old_index = self.nodes.index(node)
+        if old_index == len(self.nodes) - 1:
+            return
+        self.nodes.remove(node)
+        self.nodes.insert(old_index + 1, node)
+
+
     def editNode(self, position):
         ''' Edit a node.
 
@@ -880,9 +951,15 @@ class Collection(object):
         # Create the collection's data file.
         #self.dataShelf = os.path.join(self.tmpDir, self.procName + ".scd")
         content = {}
-        db = shelve.open(self.dataShelf.encode('utf8'))
+        db = shelve.open(self.dataShelf)
         db['nodeDataContent'] = content
         db.close()
+
+        # Build the default data source dictionary.
+        # TODO: Implement the scnl specific data sources for a collection.
+        scnl = [x.scnl for x in self.project.geometry_inventory.get_channel()]
+        default_source = self.project.defaultWaveclient
+        self.data_sources = dict([(x, default_source) for x in scnl])
 
         # Execute each node in the collection.
         for (ind, curNode) in enumerate(self.nodes):
@@ -895,6 +972,28 @@ class Collection(object):
                 if curNode.mode != 'standalone' and curNode.enabled:
                     curNode.run(procName=self.procName,
                                 prevNodeOutput=self.nodes[ind-1].output)
+
+        # Check for a possible request of additional loops.
+        if self.runtime_att.loop_start_times:
+            for cur_start, cur_end in zip(self.runtime_att.loop_start_times, self.runtime_att.loop_end_times):
+                self.runtime_att.start_time = cur_start
+                self.runtime_att.end_time = cur_end
+                # Execute each node in the collection.
+                for (ind, curNode) in enumerate(self.nodes):
+                    # TODO: Create a smarter way to get the collection nodes to
+                    # ignore.
+                    if curNode.name == 'loop the collection':
+                        continue
+                    #pipe.send({'state': 'running', 'msg': 'Executing node %d' % ind, 'procId': self.procId})
+                    if ind == 0:
+                        if curNode.mode != 'standalone' and curNode.enabled:
+                            curNode.run(procName=self.procName)
+                    else:
+                        #curNode.run(threadId=self.threadId)
+                        if curNode.mode != 'standalone' and curNode.enabled:
+                            curNode.run(procName=self.procName,
+                                        prevNodeOutput=self.nodes[ind-1].output)
+
 
         #e.set()
         #heartbeat.join()
@@ -1048,7 +1147,7 @@ class Collection(object):
 
         db = shelve.open(self.dataShelf)
         if name is not None and origin is not None:
-            if (origin+'.'+name) in db.keys():
+            if (origin+'.'+name) in iter(db.keys()):
                 returnData = db[origin + '.' + name]
             else:
                 returnData = None
@@ -1098,7 +1197,7 @@ class Collection(object):
             otherwise.
         '''
         db = shelve.open(self.dataShelf)
-        if name in db.keys():
+        if name in iter(db.keys()):
             has_data = True
         else:
             has_data = False
@@ -1126,7 +1225,7 @@ class Collection(object):
         pickleData : Save data in the data shelf of the collection.
         '''
         db = shelve.open(self.dataShelf)
-        if 'nodeDataContent' in db.keys():
+        if 'nodeDataContent' in iter(db.keys()):
             content = db['nodeDataContent']
         else:
             content = None

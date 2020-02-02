@@ -28,6 +28,9 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
+from past.utils import old_div
+import copy
 import os
 
 import psysmon
@@ -147,7 +150,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         dlg.Destroy()
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         '''
         '''
         start_time = process_limits[0]
@@ -205,14 +208,17 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             except:
                 self.logger.warning("No PPSD data accumulated.")
 
-            if chunk_count == total_chunks:
-                self.save_ppsd()
+        if chunk_count == total_chunks:
+            self.overall_end_time = end_time
+            self.save_ppsd()
 
 
 
     def initialize_ppsd(self, trace, start_time, end_time):
         ''' Initialize the PPSD.
         '''
+        super(ComputePpsdNode, self).initialize()
+
         ppsd_length = self.pref_manager.get_value('ppsd_length')
         ppsd_overlap = self.pref_manager.get_value('ppsd_overlap') / 100.
 
@@ -260,7 +266,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         # Create the obspy PAZ dictionary.
         paz = {}
         paz['gain'] = comp_param.tf_normalization_factor
-        paz['sensitivity'] = (rec_stream_param.gain * comp_param.sensitivity) / rec_stream_param.bitweight
+        paz['sensitivity'] = old_div((rec_stream_param.gain * comp_param.sensitivity), rec_stream_param.bitweight)
         paz['poles'] = comp_param.tf_poles
         paz['zeros'] = comp_param.tf_zeros
 
@@ -287,9 +293,15 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, self.overall_start_time.isoformat().replace(':',''), self.overall_end_time.isoformat().replace(':','')))
 
 
-        # Set the viridis colomap 0 value to white.
+        # Set the viridis colomap 0 value to fully transparent white.
         cmap = plt.get_cmap('viridis')
-        cmap.colors[0] = [1, 1, 1]
+        cmap = copy.copy(cmap)
+        cmap.colors = np.array(cmap.colors)
+        cmap.colors = np.hstack([cmap.colors, np.ones(cmap.N)[:, np.newaxis]])
+        cmap.colors[0] = np.array([1, 1, 1, 0])
+        cmap.colors = list(cmap.colors)
+
+
 
 
         # TODO: make the period limit user selectable
@@ -414,6 +426,8 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
     else:
         ax = fig.add_subplot(111)
 
+    ax.set_axisbelow(True)
+
     if show_percentiles:
         # for every period look up the approximate place of the percentiles
         for percentile in percentiles:
@@ -485,10 +499,11 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
             fig.ppsd.color_limits = color_limits
 
         self._plot_histogram(fig=fig)
+        fig.ppsd.quadmesh.set_zorder(5)
 
     ax.semilogx()
     if xaxis_frequency:
-        xlim = map(lambda x: 1.0 / x, period_lim)
+        xlim = [1.0 / x for x in period_lim]
         ax.set_xlabel('Frequency [Hz]')
         ax.invert_xaxis()
     else:
@@ -497,7 +512,7 @@ def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogra
     ax.set_xlim(sorted(xlim))
     ax.set_ylim(self.db_bin_edges[0], self.db_bin_edges[-1])
     if self.special_handling is None:
-        ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]', fontsize = 8)
+        ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]', fontsize=8)
     else:
         ax.set_ylabel('Amplitude [dB]')
     ax.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))

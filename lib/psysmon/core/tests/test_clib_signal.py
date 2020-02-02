@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 import psysmon.core.lib_signal as lib_signal
@@ -16,20 +17,20 @@ class CLibSignalTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
 
 
     @classmethod
     def tearDownClass(cls):
-        print "Cleaning up....\n"
-        print "done.\n"
+        print("Cleaning up....\n")
+        print("done.\n")
 
 
     def setUp(self):
-        print "Setting up test method..."
+        print("Setting up test method...")
 
     def tearDown(self):
-        print "Tearing down test method..."
+        print("Tearing down test method...")
 
 
     def test_moving_average(self):

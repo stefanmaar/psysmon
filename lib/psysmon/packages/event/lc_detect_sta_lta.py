@@ -19,6 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 import numpy as np
 import obspy.core.utcdatetime as utcdatetime
 
@@ -27,6 +30,7 @@ import psysmon.core.preferences_manager as preferences_manager
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.packages.event.detect as detect
 
+#from profilehooks import profile
 
 class StaLtaDetection(package_nodes.LooperCollectionChildNode):
     ''' Detect events using STA/LTA algorithm.
@@ -71,6 +75,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         gen_group = pref_page.add_group('general')
         thr_group = pref_page.add_group('threshold')
         sc_group = pref_page.add_group('stop criterium')
+        filter_group = pref_page.add_group('filter')
 
         out_page = self.pref_manager.add_page('Output')
         cat_group = out_page.add_group('catalog')
@@ -124,13 +129,6 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         thr_group.add_item(item)
 
 
-        # stop growth
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
-                                                     label = 'stop grow ratio',
-                                                     value = 0.001,
-                                                     digits = 5,
-                                                     limit = (0, 0.1))
-        sc_group.add_item(item)
 
         # Stop criterium delay.
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
@@ -140,6 +138,38 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                      tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
         sc_group.add_item(item)
 
+        # stop growth
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
+                                                     label = 'stop grow ratio',
+                                                     value = 0.001,
+                                                     digits = 10,
+                                                     limit = (0, 0.1))
+        sc_group.add_item(item)
+
+        # stop growth exponent
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_exp',
+                                                     label = 'stop grow exponent',
+                                                     value = 1,
+                                                     digits = 1,
+                                                     limit = (0.1, 100))
+        sc_group.add_item(item)
+
+        # stop growth increase percentage
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_inc',
+                                                     label = 'stop grow increase [%]',
+                                                     value = 0,
+                                                     digits = 10,
+                                                     limit = (0, 100))
+        sc_group.add_item(item)
+
+        # stop growth increase percentage
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_inc_begin',
+                                                     label = 'stop grow inc. begin',
+                                                     value = 10,
+                                                     digits = 3,
+                                                     limit = (0, 100000),
+                                                     tool_tip = "When to start growing the stop grow value using the stop grow increase percentage [s].")
+        sc_group.add_item(item)
 
         # The target detection catalog.
         item = preferences_manager.SingleChoicePrefItem(name = 'detection_catalog',
@@ -150,6 +180,13 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                        )
         cat_group.add_item(item)
 
+        # Detection reject length
+        item = preferences_manager.FloatSpinPrefItem(name = 'reject_length',
+                                                     label = 'reject lenght',
+                                                     value = 0.5,
+                                                     limit = (0, 10000),
+                                                     tool_tip = 'Detections with a smaller length are rejected [s].')
+        filter_group.add_item(item)
 
     def edit(self):
         ''' Create the preferences edit dialog.
@@ -172,8 +209,8 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         dlg.ShowModal()
         dlg.Destroy()
 
-
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    #@profile(immediate=True)
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         ''' Execute the stack node.
 
         Parameters
@@ -193,13 +230,17 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         cf_type = self.pref_manager.get_value('cf_type')
         stop_delay = self.pref_manager.get_value('stop_delay')
         stop_growth = self.pref_manager.get_value('stop_growth')
+        stop_growth_exp = self.pref_manager.get_value('stop_growth_exp')
+        stop_growth_inc = self.pref_manager.get_value('stop_growth_inc')
+        stop_growth_inc_begin = self.pref_manager.get_value('stop_growth_inc_begin')
+        reject_length = self.pref_manager.get_value('reject_length')
 
         # Get the selected catalog id.
         catalog_name = self.pref_manager.get_value('detection_catalog')
         self.load_catalogs()
         selected_catalog = [x for x in self.catalogs if x.name == catalog_name]
         if len(selected_catalog) == 0:
-            raise RuntimeError("No detection datalog found with name %s in the database.", catalog_name)
+            raise RuntimeError("No detection catalog found with name %s in the database.", catalog_name)
         elif len(selected_catalog) > 1:
             raise RuntimeError("Multiple detection catalogs found with name %s: %s.", catalog_name, selected_catalog)
         else:
@@ -207,7 +248,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
 
         # Initialize the detector.
         detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
-                                         turn_limit = turn_limit, stop_growth = stop_growth)
+                                         turn_limit = turn_limit, stop_growth = stop_growth,
+                                         stop_growth_exp = stop_growth_exp,
+                                         stop_growth_inc = stop_growth_inc)
 
         # The list to store the data to be inserted into the database.
         db_data = []
@@ -217,7 +260,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             # Check for open_end events and slice the data to the stored event
             # start. If no open_end event is found. slice the trace to the
             # original pre_stream_length.
-            if cur_trace.id in self.open_end_start.keys():
+            if cur_trace.id in iter(self.open_end_start.keys()):
                 cur_oe_start = self.open_end_start.pop(cur_trace.id)
                 cur_trace = cur_trace.slice(starttime = cur_oe_start)
                 self.logger.debug("Sliced the cur_trace to the open_end start. cur_trace: %s.", cur_trace)
@@ -226,12 +269,15 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                 self.logger.debug("Sliced the cur_trace to the original pre_stream_length. cur_trace: %s.", cur_trace)
 
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = time_array * 1/cur_trace.stats.sampling_rate
+            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(cur_trace.data):
-                time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+                try:
+                    time_array = np.ma.array(time_array, mask=cur_trace.data.mask)
+                except:
+                    time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
 
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
@@ -239,6 +285,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
+            detector.stop_growth_inc_begin = int(stop_growth_inc_begin * cur_trace.stats.sampling_rate)
+            detector.reject_length = reject_length * cur_trace.stats.sampling_rate
+
             detector.set_data(cur_trace.data)
             detector.compute_cf()
             detector.compute_sta_lta()
@@ -281,8 +330,8 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                 det_end_time = time_array[det_end_ind]
                 cur_orm = detection_table(catalog_id = selected_catalog.id,
                                           rec_stream_id = cur_stream_id,
-                                          start_time = det_start_time,
-                                          end_time = det_end_time,
+                                          start_time = float(det_start_time),
+                                          end_time = float(det_end_time),
                                           method = self.name_slug,
                                           agency_uri = self.project.activeUser.agency_uri,
                                           author_uri = self.project.activeUser.author_uri,

@@ -29,6 +29,7 @@ website = "http://www.stefanmertl.com"
 plugin_modules = ['plugins_componentselectors',
                   'plugins_processingstack',
                   'plugins_views',
+                  'plugins_view_resultant',
                   'plugins_zoom',
                   'plugins_measure',
                   'plugins_export',

@@ -28,9 +28,11 @@ Module for handling object preferences.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 
+from builtins import str
+from builtins import object
 import wx
 
-class PreferencesManager:
+class PreferencesManager(object):
     ''' The preferences of the project.
 
     The PreferencesManager holds and organizes all project preferences.
@@ -57,7 +59,8 @@ class PreferencesManager:
             for cur_group in cur_page.groups:
                 settings[cur_page.name][cur_group.name] = {}
                 for cur_item in cur_group.items:
-                    settings[cur_page.name][cur_group.name][cur_item.name] = cur_item.settings
+                    if not isinstance(cur_item, ActionItem):
+                        settings[cur_page.name][cur_group.name][cur_item.name] = cur_item.settings
 
         return settings
 
@@ -264,7 +267,7 @@ class PreferencesManager:
                         update_item = self.get_item(cur_item.name)
                         for cur_update_item in update_item:
                             for cur_attr in attr_to_update:
-                                if cur_attr in cur_update_item.__dict__.keys():
+                                if cur_attr in list(cur_update_item.__dict__.keys()):
                                     setattr(cur_update_item, cur_attr, getattr(cur_item, cur_attr))
         else:
             # Use the uptodate version of the preference manager.
@@ -276,7 +279,7 @@ class PreferencesManager:
                             update_item = self.get_item(cur_ext_item.name, cur_ext_page.name)
                             for cur_update_item in update_item:
                                 for cur_attr in attr_to_update:
-                                    if cur_attr in cur_update_item.__dict__.keys():
+                                    if cur_attr in list(cur_update_item.__dict__.keys()):
                                         setattr(cur_update_item, cur_attr, getattr(cur_ext_item, cur_attr))
 
 
@@ -475,7 +478,7 @@ class PreferenceItem(object):
         # removed.
         # These values have to be reset when loading the project.
         hooks = {}
-        for cur_key, cur_hook in self.hooks.iteritems():
+        for cur_key, cur_hook in self.hooks.items():
             if isinstance(cur_hook, types.MethodType):
                 hooks[cur_key] = cur_hook.__name__
         result['hooks'] = hooks
@@ -511,7 +514,7 @@ class PreferenceItem(object):
         ''' Update the limits of the gui elements.
         '''
         for cur_element in self.gui_element:
-            cur_element.updateLimit();
+            cur_element.updateLimit()
 
     def enable_gui_element(self):
         ''' Enable the gui element to make it active for user interaction.
@@ -710,6 +713,7 @@ class ActionItem(object):
         # These values have to be reset when loading the project.
         if isinstance(self.action, types.MethodType):
             result['action'] = self.action.__name__
+        result['gui_element'] = []
 
         return result
 
@@ -726,7 +730,10 @@ class ActionItem(object):
         # TODO: Create GUI fields for the ActionItem similar to the PrefItems
         # to handle the removal of the gui_element when the GUI field is
         # deleted.
-        self.gui_element = [x for x in self.gui_element if not isinstance(x, wx._core._wxPyDeadObject)]
+
+        # Remove the gui_elements for which the C++ part has been deleted.
+        self.gui_element = [x for x in self.gui_element if x]
+
         if element not in self.gui_element:
             self.gui_element.append(element)
 

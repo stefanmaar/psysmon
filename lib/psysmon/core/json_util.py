@@ -29,10 +29,14 @@
 
 '''
 
+from builtins import str
+from builtins import object
 import json
 import logging
 
 from obspy.core import UTCDateTime
+
+import psysmon
 import psysmon.core.util as util
 import psysmon.core.preferences_manager as pm
 
@@ -208,7 +212,7 @@ class ProjectFileEncoder(json.JSONEncoder):
 
     def convert_waveclient(self, obj):
         ignore_attr = ['project', 'logger', 'stock', 'stock_lock', 'stock_data_gaps', 'preload_threads', 'waveformDirList', 'client']
-        attr = [x for x in obj.__dict__.keys() if x not in ignore_attr]
+        attr = [x for x in list(obj.__dict__.keys()) if x not in ignore_attr]
         d = self.object_to_dict(obj, attr)
         return d
 
@@ -329,7 +333,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
                                          )
         inst.collection = d['collection']
 
-        if d['activeCollection'] in inst.collection.keys():
+        if d['activeCollection'] in iter(inst.collection.keys()):
             inst.activeCollection = inst.collection[d['activeCollection']]
         return inst
 
@@ -377,7 +381,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -388,7 +392,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -399,7 +403,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -410,7 +414,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -420,10 +424,10 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -434,10 +438,10 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -448,7 +452,7 @@ class ProjectFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -562,7 +566,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         inst.collection_names = d['collection_names']
         inst.active_collection_name = d['activeCollection']
 
-        if d['activeCollection'] in inst.collection.keys():
+        if d['activeCollection'] in iter(inst.collection.keys()):
             inst.activeCollection = inst.collection[d['activeCollection']]
         return inst
 
@@ -615,7 +619,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -626,7 +630,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -637,7 +641,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -648,7 +652,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -658,10 +662,10 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -672,10 +676,10 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -686,7 +690,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -907,7 +911,7 @@ class ConfigFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -916,7 +920,7 @@ class ConfigFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         return inst
 
@@ -1099,7 +1103,7 @@ class CollectionFileEncoder(json.JSONEncoder):
 
     def convert_waveclient(self, obj):
         ignore_attr = ['project', 'logger', 'stock', 'stock_lock', 'stock_data_gaps', 'preload_threads', 'waveformDirList', 'client']
-        attr = [x for x in obj.__dict__.keys() if x not in ignore_attr]
+        attr = [x for x in list(obj.__dict__.keys()) if x not in ignore_attr]
         d = self.object_to_dict(obj, attr)
         return d
 
@@ -1221,7 +1225,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1232,7 +1236,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1243,7 +1247,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1254,7 +1258,7 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1264,10 +1268,10 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -1278,10 +1282,10 @@ class CollectionFileDecoder_0_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -1394,7 +1398,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1405,7 +1409,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1416,7 +1420,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1427,7 +1431,7 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         pref_manager = d.pop('pref_manager')
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
         inst = class_(**args)
         inst.update_pref_manager(pref_manager)
         return inst
@@ -1437,10 +1441,10 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -1451,10 +1455,10 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
         import importlib
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
-        args = dict( (key.encode('ascii'), self.decode_hinted_tuple(value)) for key, value in d.items())
+        args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
 
         # 2016-12-15: Handle the change of the preference_manager classes.
-        if 'group' in args.keys():
+        if 'group' in iter(args.keys()):
             del args['group']
 
         inst = class_(**args)
@@ -1497,7 +1501,7 @@ def get_file_meta(filename):
     with open(filename, 'r') as fid:
         container_data = json.load(fid)
 
-    if container_data.has_key('file_meta'):
+    if 'file_meta' in container_data:
         # The project file has a meta data dictionary. Use it to select the
         # correct project file decoder.
         file_meta = container_data['file_meta']
@@ -1510,4 +1514,47 @@ def get_file_meta(filename):
                      'save_date': '1970-01-01T00:00:00'}
 
     return file_meta
+
+
+class GeneralFileEncoder(json.JSONEncoder):
+    ''' A JSON encoder for the serialization of general data.
+    '''
+    version = util.Version('1.0.0')
+
+    def __init__(self, **kwarg):
+        json.JSONEncoder.__init__(self, **kwarg)
+
+        # The logger.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
+        # File format settings.
+        self.indent = 4
+        self.sort_keys = True
+
+    def default(self, obj):
+        ''' Convert pSysmon project objects to a dictionary.
+        '''
+        obj_class = obj.__class__.__name__
+        base_class = [x.__name__ for x in obj.__class__.__bases__]
+
+        self.logger.debug('obj_class: %s.', obj_class)
+        if obj_class == 'UTCDateTime':
+            d = self.convert_utcdatetime(obj)
+        elif obj_class == 'ndarray':
+            d = self.convert_ndarray(obj)
+        elif obj_class == 'type':
+            d = {}
+        else:
+            d = {'ERROR': 'MISSING CONVERTER for obj_class %s with base_class %s' % (str(obj_class), str(base_class))}
+
+        self.logger.debug('d: %s', d)
+        return d
+
+    def convert_utcdatetime(self, obj):
+        return obj.isoformat()
+
+    def convert_ndarray(self, obj):
+        return obj.tolist()
 

@@ -42,6 +42,13 @@ from setupExt import printStatus, printMessage, printLine, printRaw, \
     checkForPackage, get_data_files
 
 
+# Check the commandline argument for the headless option.
+headless = False
+if "--headless" in sys.argv:
+    headless = True
+    sys.argv.remove("--headless")
+
+
 # Get the current pSysmon version, author and description.
 for line in open('lib/psysmon/__init__.py').readlines():
     if (line.startswith('__version__') 
@@ -72,6 +79,7 @@ packages = [
 # Define the scripts to be processed.
 # TODO: Scan the scripts folder of all packages.
 scripts = ['scripts/psysmon',
+           'scripts/psysmomat',
            'lib/psysmon/packages/reftek/scripts/rt2ms']
 
 # Define some package data.
@@ -90,18 +98,20 @@ data_files = []
 #dataFiles = ('artwork', ['lib/psysmon/artwork/splash/splash.png'])
 
 # Define the package requirements.
-requirements =[('mpl_toolkits.basemap', '1.0.7'),
-               ('lxml', '2.3.2'),
+requirements =[('lxml', '2.3.2'),
                ('matplotlib', '1.3.0'),
+               #('mpl_toolkits.basemap', '1.0.7'),
                ('numpy', '1.8.1'),
-               ('MySQLdb', '1.2.3'),
+               #('MySQLdb', '1.2.3'),
+               ('pymysql', '0.9.3'),
                ('obspy', '0.9.2'),
                ('pillow', '2.3.0'),
                ('cairo', '1.8.8'),
                ('Pyro4', '4.32'),
                ('scipy', '0.13.1'),
-               ('sqlalchemy', '0.9.8'),
-               ('wx', '3.0.0')]
+               ('sqlalchemy', '0.9.8')]
+if not headless:
+    requirements.append(('wx', '3.0.0'))
 
 # Let the user know what's going on.
 printLine()
@@ -114,6 +124,7 @@ if sys.platform == 'win32':
 
 printRaw("")
 printRaw("REQUIRED DEPENDENCIES")
+printStatus("Headless", headless)
 
 
 requirements_fullfilled = True

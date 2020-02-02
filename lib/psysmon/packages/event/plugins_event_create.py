@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
 import logging
 import wx
 
@@ -274,12 +275,12 @@ class CreateEvent(InteractivePlugin):
         #            #bg = curView.plotCanvas.canvas.copy_from_bbox(curView.dataAxes.bbox)
         #            #curView.plotCanvas.canvas.restore_region(bg)
         #
-        #            if curView in self.end_line.keys():
+        #            if curView in self.end_line.iterkeys():
         #                self.end_line[curView].set_visible(False)
         #                curView.dataAxes.draw_artist(self.end_line[curView])
         #
         #
-        #           if curView in self.begin_line.keys():
+        #           if curView in self.begin_line.iterkeys():
         #               self.begin_line[curView].set_xdata(event.xdata)
         #           else:
         #               self.begin_line[curView] = curView.dataAxes.axvline(x=event.xdata)
@@ -305,7 +306,7 @@ class CreateEvent(InteractivePlugin):
                     inv = cur_view.axes.transData.inverted()
                     tmp = inv.transform((event.x, event.y))
                     event.xdata = tmp[0]
-                if cur_view not in self.bg.keys():
+                if cur_view not in iter(self.bg.keys()):
                     self.bg[cur_view] = cur_view.plot_panel.canvas.copy_from_bbox(cur_view.axes.bbox)
                 cur_view.plot_panel.canvas.restore_region(self.bg[cur_view])
 
@@ -327,11 +328,11 @@ class CreateEvent(InteractivePlugin):
 #                        self.logger.debug('xTrans: %f', tmp[0])
 #                        event.xdata = tmp[0]
 #                    canvas = curView.plotCanvas.canvas
-#                    if curView not in self.bg.keys():
+#                    if curView not in self.bg.iterkeys():
 #                        self.bg[curView] = canvas.copy_from_bbox(curView.dataAxes.bbox)
 #                    canvas.restore_region(self.bg[curView])
 #
-#                    if curView not in self.end_line.keys():
+#                    if curView not in self.end_line.iterkeys():
 #                        self.end_line[curView] = curView.dataAxes.axvline(x=event.xdata, animated=True)
 #                    else:
 #                        self.end_line[curView].set_xdata(event.xdata)
@@ -446,7 +447,7 @@ class EditDlg(wx.Dialog):
             self.edit[curKey] = wx.TextCtrl(self, size=(200, -1),
                                             style=curStyle)
 
-            if curKey in self.data.keys():
+            if curKey in iter(self.data.keys()):
                 self.edit[curKey].SetValue(str(self.data[curKey]))
 
             if curValidator == 'not_empty':

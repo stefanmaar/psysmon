@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 from psysmon.core.preferences_manager import PreferencesManager
@@ -16,13 +17,13 @@ class PreferencesManagerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
 
 
 
     @classmethod
     def tearDownClass(cls):
-        print "....in tearDownClass.\n"
+        print("....in tearDownClass.\n")
 
 
     def setUp(self):

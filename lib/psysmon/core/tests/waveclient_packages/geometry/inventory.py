@@ -31,6 +31,9 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
+from builtins import filter
+from builtins import str
+from builtins import object
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
@@ -42,7 +45,7 @@ from wx.lib.pubsub import pub
 
 ## The Inventory class.
 #
-class Inventory:
+class Inventory(object):
 
     ## The constructor.
     #
@@ -337,7 +340,7 @@ class Inventory:
     def get_sensor_by_id(self, id):
 
         for cur_recorder in self.recorders:
-            sensor_found = filter((lambda cur_sensor: cur_sensor.id==id), cur_recorder.sensors)
+            sensor_found = list(filter((lambda cur_sensor: cur_sensor.id==id), cur_recorder.sensors))
 
             if sensor_found:
                 return sensor_found[0]
@@ -347,7 +350,7 @@ class Inventory:
     ## Get a sensor from the inventory by label.
     def get_sensor_by_label(self, label):
         for cur_recorder in self.recorders:
-            sensor_found = filter((lambda cur_sensor: cur_sensor.label==label), cur_recorder.sensors)
+            sensor_found = list(filter((lambda cur_sensor: cur_sensor.label==label), cur_recorder.sensors))
 
             if sensor_found:
                 return sensor_found[0]
@@ -376,7 +379,7 @@ class Inventory:
 
 
 
-class InventoryXmlParser:
+class InventoryXmlParser(object):
     '''
     Parse a pSysmon inventory XML file.
     '''
@@ -804,7 +807,7 @@ class InventoryXmlParser:
     def keys_complete(self, node_content, required_keys):
         missing_keys = []
         for cur_key in required_keys:
-            if node_content.has_key(cur_key):
+            if cur_key in node_content:
                 continue
             else:
                 missing_keys.append(cur_key)
@@ -819,7 +822,7 @@ class InventoryXmlParser:
 # 
 # A recorder is more or less the representation of a digitizer.@n
 #     
-class Recorder:
+class Recorder(object):
 
     ## The constructor.
     #
@@ -987,7 +990,7 @@ class Recorder:
 ## The sensor class.
 #
 # 
-class Sensor:
+class Sensor(object):
 
     ## The constructor.
     #
@@ -1196,7 +1199,7 @@ class Sensor:
 
 ## The sensor parameter class.
 #
-class SensorParameter:
+class SensorParameter(object):
     ## The constructor.
     #
     # @param self The object pointer.
@@ -1328,7 +1331,7 @@ class SensorParameter:
 
 ## The station class.
 #
-class Station:
+class Station(object):
 
     ## The constructor.
     #
@@ -1685,7 +1688,7 @@ class Station:
 
 
 ## The network class.
-class Network:
+class Network(object):
 
     def __init__(self, name, description=None, type=None, parent_inventory=None):
         # The logger instance.

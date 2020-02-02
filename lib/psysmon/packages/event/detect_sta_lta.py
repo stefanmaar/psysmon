@@ -28,6 +28,11 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import logging
 import copy
 import numpy as np
@@ -269,7 +274,7 @@ class StaLtaDetector(object):
         '''
         interval = float(interval)
 
-        n_intervals = (end_time - start_time) / interval
+        n_intervals = old_div((end_time - start_time), interval)
         interval_list = [start_time + x*interval for x in range(0, int(n_intervals))]
 
         if not interval_list:
@@ -332,8 +337,8 @@ class StaLtaDetector(object):
                         detection_table = self.project.dbTables['detection']
                         event_table = self.project.dbTables['event']
                         for det_start_ind, det_end_ind in event_marker:
-                            det_start_time = cur_trace.stats.starttime + (n_lta + det_start_ind) / cur_sps
-                            det_end_time = det_start_time + (det_end_ind - det_start_ind) / cur_sps
+                            det_start_time = cur_trace.stats.starttime + old_div((n_lta + det_start_ind), cur_sps)
+                            det_end_time = det_start_time + old_div((det_end_ind - det_start_ind), cur_sps)
                             cur_orm = detection_table(catalog_id = None,
                                                       rec_stream_id = cur_stream_id,
                                                       start_time = det_start_time.timestamp,
@@ -384,7 +389,7 @@ class StaLtaDetector(object):
         '''
         data_sources = {}
         for cur_scnl in scnl:
-            if cur_scnl in self.project.scnlDataSources.keys():
+            if cur_scnl in iter(self.project.scnlDataSources.keys()):
                 data_sources[cur_scnl] = self.project.scnlDataSources[cur_scnl]
             else:
                 data_sources[cur_scnl] = self.project.defaultWaveclient

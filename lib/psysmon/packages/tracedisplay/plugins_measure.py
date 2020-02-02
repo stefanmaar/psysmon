@@ -67,7 +67,7 @@ class MeasurePoint(InteractivePlugin):
     def cleanup(self):
         ''' Remove all elements added to the views.
         '''
-        for cur_crosshair in self.crosshair.itervalues():
+        for cur_crosshair in self.crosshair.values():
             cur_crosshair[0].axes.lines.remove(cur_crosshair[0])
             cur_crosshair[1].axes.lines.remove(cur_crosshair[1])
             cur_crosshair[0].axes.figure.canvas.draw()
@@ -140,7 +140,7 @@ class MeasurePoint(InteractivePlugin):
             cur_axes = cur_measurement['axes']
 
             xy = cur_measurement['xy']
-            if (self.view, cur_axes) not in self.crosshair.keys():
+            if (self.view, cur_axes) not in iter(self.crosshair.keys()):
                 ml_x = cur_axes.axvline(x = xy[0])
                 ml_y = cur_axes.axhline(y = xy[1])
                 self.crosshair[(self.view, cur_axes)] = (ml_x, ml_y)

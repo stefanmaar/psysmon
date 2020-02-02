@@ -30,6 +30,8 @@ The inventory parser module.
 This module contains parser classes to read inventory data from files.
 '''
 
+from builtins import str
+from builtins import object
 import logging
 from lxml import etree
 
@@ -46,7 +48,7 @@ from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
 from obspy.core.utcdatetime import UTCDateTime
 
-class InventoryXmlParser:
+class InventoryXmlParser(object):
     '''
     Parse a pSysmon inventory XML file.
     '''
@@ -167,14 +169,14 @@ class InventoryXmlParser:
         element = etree.SubElement(root, name, **attrib)
 
         for cur_key in tags:
-            if cur_key in element_handler.keys():
+            if cur_key in iter(element_handler.keys()):
                 eh = element_handler[cur_key]
                 eh(name = cur_key,
                    value = getattr(instance, attr_map[cur_key]),
                    root = element)
             else:
                 tag = etree.SubElement(element, cur_key)
-                if cur_key in converter.keys():
+                if cur_key in iter(converter.keys()):
                     cur_text = converter[cur_key](getattr(instance, attr_map[cur_key]))
                 else:
                     value = getattr(instance, attr_map[cur_key])
@@ -529,7 +531,7 @@ class InventoryXmlParser:
             if self.check_completeness(cur_sensor, sensor_content, 'sensor') is False:
                 continue
 
-            if 'component' in sensor_content.keys():
+            if 'component' in iter(sensor_content.keys()):
                 sensor_content.pop('component')
 
             sensor_to_add = Sensor(serial = cur_sensor.attrib['serial'], **sensor_content)
@@ -644,7 +646,7 @@ class InventoryXmlParser:
             if self.check_completeness(cur_recorder, content, 'recorder') is False:
                 continue
 
-            if 'stream' in content.keys():
+            if 'stream' in iter(content.keys()):
                 content.pop('stream')
 
             # Create the Recorder instance.
@@ -674,10 +676,10 @@ class InventoryXmlParser:
             if self.check_completeness(cur_stream, content, 'stream') is False:
                 continue
 
-            if 'stream_parameter' in content.keys():
+            if 'stream_parameter' in iter(content.keys()):
                 content.pop('stream_parameter')
 
-            if 'assigned_component' in content.keys():
+            if 'assigned_component' in iter(content.keys()):
                 content.pop('assigned_component')
 
             # Create the stream instance.
@@ -742,7 +744,7 @@ class InventoryXmlParser:
             if self.check_completeness(cur_network, content, 'network') is False:
                 continue
 
-            if 'station' in content.keys():
+            if 'station' in iter(content.keys()):
                 content.pop('station')
 
             # Create the Recorder instance.
@@ -772,7 +774,7 @@ class InventoryXmlParser:
             content = self.parse_node(cur_array)
             self.check_completeness(cur_array, content, 'array')
 
-            if 'station' in content.keys():
+            if 'station' in iter(content.keys()):
                 content.pop('station')
 
             # Create the Array instance and add it to the inventory.
@@ -817,7 +819,7 @@ class InventoryXmlParser:
             for cur_location in locations:
                 loc_content = self.parse_node(cur_location)
 
-                if 'channel' in loc_content.keys():
+                if 'channel' in iter(loc_content.keys()):
                     loc_content.pop('channel')
 
                 station_to_add = Station(name = cur_station.attrib['name'],
@@ -848,7 +850,7 @@ class InventoryXmlParser:
             if self.check_completeness(cur_channel, content, 'channel') is False:
                 continue
 
-            if 'assigned_stream' in content.keys():
+            if 'assigned_stream' in iter(content.keys()):
                 content.pop('assigned_stream')
 
             channel_to_add = Channel(name = cur_channel.attrib['name'], **content)
@@ -907,7 +909,7 @@ class InventoryXmlParser:
     def keys_complete(self, node_content, required_keys):
         missing_keys = []
         for cur_key in required_keys:
-            if node_content.has_key(cur_key):
+            if cur_key in node_content:
                 continue
             else:
                 missing_keys.append(cur_key)

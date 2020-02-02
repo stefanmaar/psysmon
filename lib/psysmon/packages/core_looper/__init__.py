@@ -26,7 +26,8 @@ description = "The core looper collection nodes."            # The package descr
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['time_window_looper', ]
+collection_node_modules = ['time_window_looper',
+                           'event_looper']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []

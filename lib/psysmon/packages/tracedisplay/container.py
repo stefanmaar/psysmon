@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +20,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from past.utils import old_div
+from builtins import object
 import sys
 import logging
 import warnings
@@ -38,7 +43,7 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as floatspin
 
-from wx import DatePickerCtrl
+from wx.adv import DatePickerCtrl
 from wx.lib.masked import TimeCtrl
 from wx.lib.masked import TextCtrl as MaskedTextCtrl
 from psysmon.core.util import _wxdate2pydate, _pydate2wxdate
@@ -62,15 +67,15 @@ class OLD_TdViewAnnotationPanel(wx.Panel):
         self.SetMinSize((200, -1))
 
 
-	# Create a test label.
+        # Create a test label.
         self.label = StaticText(self, wx.ID_ANY, "view annotation area", (20, 10))
         font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.label.SetFont(font)
 
-	# Add the label to the sizer.
-	sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Add the label to the sizer.
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.label, 1, wx.EXPAND|wx.ALL, border=0)
-	self.SetSizer(sizer)
+        self.SetSizer(sizer)
 
         #print label.GetAlignment()
 
@@ -87,9 +92,9 @@ class OLD_PlotPanel(wx.Panel):
     """
     def __init__( self, parent, color=None, dpi=None, **kwargs ):
         # initialize Panel
-        if 'id' not in kwargs.keys():
+        if 'id' not in iter(kwargs.keys()):
             kwargs['id'] = wx.ID_ANY
-        if 'style' not in kwargs.keys():
+        if 'style' not in iter(kwargs.keys()):
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
         self.SetMinSize((100, 40))
@@ -100,7 +105,7 @@ class OLD_PlotPanel(wx.Panel):
         self.canvas.SetMinSize((30, 10))
         self.SetBackgroundColour('white')
 
-	# Add the canvas to the sizer.
+        # Add the canvas to the sizer.
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
@@ -178,9 +183,9 @@ class OLD_View(wx.Panel):
         sizer = wx.GridBagSizer(0,0)
         sizer.Add(self.plotCanvas, pos=(0,0), flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.annotationArea, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=1)
-	sizer.AddGrowableRow(0)
-	sizer.AddGrowableCol(0)
-	self.SetSizer(sizer)
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+        self.SetSizer(sizer)
 
         self.name = name
 
@@ -275,7 +280,7 @@ class OLD_View(wx.Panel):
 
     def setEventCallbacks(self, hooks, dataManager, displayManager):
 
-        for curKey, curCallback in hooks.iteritems():
+        for curKey, curCallback in hooks.items():
             cur_cid = self.plotCanvas.canvas.mpl_connect(curKey, lambda evt, dataManager=dataManager, displayManager=displayManager, callback=curCallback: callback(evt, dataManager, displayManager))
             self.cids.append(cur_cid)
 
@@ -336,7 +341,7 @@ class OLD_View(wx.Panel):
 
         valid_keys = ['mode', 'parent_rid', 'key']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_artist = [x for x in ret_artist if getattr(x, cur_key) == cur_value or cur_value is None]
             else:
@@ -390,8 +395,8 @@ class ChannelAnnotationArea(wx.Panel):
         self.color = color
         self.penColor = penColor
 
-	self.SetBackgroundColour(self.bgColor)
-	self.SetBackgroundColour('white')
+        self.SetBackgroundColour(self.bgColor)
+        self.SetBackgroundColour('white')
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
@@ -429,8 +434,9 @@ class ChannelAnnotationArea(wx.Panel):
 
         # Define the font styles.
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        color = wx.Colour('black')
         #font.SetWeight(wx.BOLD)
-        gc.SetFont(font)
+        gc.SetFont(font, color)
 
         path = gc.CreatePath()
         path.MoveToPoint(width, penSize/2.0)
@@ -449,7 +455,7 @@ class ChannelAnnotationArea(wx.Panel):
         gc.FillPath(path1)
         gc.DrawPath(path)
 
-        newPos =  height/2
+        newPos =  old_div(height,2)
 
         #print winSize
         #print newPos
@@ -494,7 +500,7 @@ class OLD_ChannelContainer(wx.Panel):
         self.sizer = wx.GridBagSizer(0,0)
         self.viewSizer = wx.BoxSizer(wx.VERTICAL)
 
-	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.Add(self.viewSizer, pos=(0,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.AddGrowableRow(0)
         self.sizer.AddGrowableCol(1)
@@ -515,23 +521,23 @@ class OLD_ChannelContainer(wx.Panel):
     def data_plotted(self):
         ''' Indicate if the view has plotted any data.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             if cur_view.data_plotted:
                 return True
         return False
 
     def onKeyDown(self, event):
-        print "onKeyDown in channel container."
+        print("onKeyDown in channel container.")
         event.ResumePropagation(30)
         event.Skip()
 
     def onEnterWindow(self, event):
-        print "Entered channel container."
+        print("Entered channel container.")
         self.SetFocus()
         self.Refresh()
 
     def onSetFocus(self, event):
-        print "onSetFocus in channel container."
+        print("onSetFocus in channel container.")
         event.Skip()
 
     def addView(self, view):
@@ -559,7 +565,7 @@ class OLD_ChannelContainer(wx.Panel):
             The name of the view to search.
         '''
         if name is None:
-            return self.views.values()
+            return list(self.views.values())
         else:
             view = self.views.get(name, None)
             if view:
@@ -593,11 +599,11 @@ class OLD_ChannelContainer(wx.Panel):
         if not self.views:
             return
 
-        for curView in self.views.values():
+        for curView in list(self.views.values()):
             self.viewSizer.Hide(curView)
             self.viewSizer.Detach(curView)
 
-        viewSize = self.views.itervalues().next().GetMinSize()
+        viewSize = iter(self.views.values()).next().GetMinSize()
         viewSize[1] = viewSize[1] * len(self.views)
         self.SetMinSize(viewSize)
 
@@ -609,21 +615,21 @@ class OLD_ChannelContainer(wx.Panel):
     def draw(self):
         ''' Draw the views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.draw()
 
 
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in all views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                            key = key, **kwargs)
 
     def plot_annotation_vspan(self, x_start, x_end, parent_rid, key, **kwargs):
         ''' Plot a vertical vspan in the views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.plot_annotation_vspan(x_start = x_start,
                                            x_end = x_end,
                                            parent_rid = parent_rid,
@@ -635,7 +641,7 @@ class OLD_ChannelContainer(wx.Panel):
     def clear_annotation_artist(self, **kwargs):
         ''' Delete annotation artits all views of the channel.
         '''
-        for cur_view in self.views.itervalues():
+        for cur_view in self.views.values():
             cur_view.clear_annotation_artist(**kwargs)
 
 
@@ -677,7 +683,7 @@ class OLD_StationContainer(wx.Panel):
         self.channelSizer = wx.BoxSizer(wx.VERTICAL)
 
         self.sizer = wx.GridBagSizer(0,0)
-	self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
+        self.sizer.Add(self.annotationArea, pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=0)
         self.sizer.Add(self.channelSizer, pos = (0,1), flag=wx.ALL|wx.EXPAND, border = 0)
         self.sizer.AddGrowableCol(1)
         self.sizer.AddGrowableRow(0)
@@ -693,22 +699,22 @@ class OLD_StationContainer(wx.Panel):
 
 
     def onKeyDown(self, event):
-        print "onKeyDown in station container."
+        print("onKeyDown in station container.")
         event.ResumePropagation(30)
         event.Skip()
 
     def onSetFocus(self, event):
-        print "onSetFocus in station container."
+        print("onSetFocus in station container.")
 
     def onEnterWindow(self, event):
-        print "Entered station container."
+        print("Entered station container.")
         self.SetFocus()
         self.Refresh()
 
     def addChannel(self, channel):
         channel.Reparent(self)
         self.channels[channel.name] = channel
-	if self.channels:
+        if self.channels:
             self.channelSizer.Add(channel, 1, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
 
         self.sizer.Layout()
@@ -731,7 +737,7 @@ class OLD_StationContainer(wx.Panel):
             The name of the channel to search.
         '''
         if name is None:
-            return self.channels.values()
+            return list(self.channels.values())
         else:
             channel = self.channels.get(name, [])
             if channel:
@@ -780,18 +786,18 @@ class OLD_StationContainer(wx.Panel):
         if not self.channels:
             return
 
-        for curChannel in self.channels.values():
+        for curChannel in list(self.channels.values()):
             self.channelSizer.Hide(curChannel)
             self.channelSizer.Detach(curChannel)
 
         #show_channels = [x for x in self.channels.itervalues() if x.show_channel]
-        show_channels = [x for x in self.channels.itervalues()]
+        show_channels = [x for x in self.channels.values()]
         if show_channels:
             stationSize = show_channels[0].GetMinSize()
-            print "stationSize: %s" % stationSize
+            print("stationSize: %s" % stationSize)
             stationSize[1] = stationSize[1] * len(show_channels)
             self.SetMinSize(stationSize)
-            print "self.MinSize: %s" % self.GetMinSize()
+            print("self.MinSize: %s" % self.GetMinSize())
 
         for curChannel in show_channels:
             if curChannel.show_channel:
@@ -817,21 +823,21 @@ class OLD_StationContainer(wx.Panel):
     def draw(self):
         ''' Draw all channels of the station.
         '''
-        for cur_channel in self.channels.itervalues():
+        for cur_channel in self.channels.values():
             cur_channel.draw()
 
 
     def plot_annotation_vline(self, x, parent_rid, key, **kwargs):
         ''' Plot a vertical line in all channels of the station.
         '''
-        for cur_channel in self.channels.itervalues():
+        for cur_channel in self.channels.values():
             cur_channel.plot_annotation_vline(x = x, parent_rid = parent_rid,
                                               key = key, **kwargs)
 
     def clear_annotation_artist(self, **kwargs):
         ''' Delete annotation artits all views of the channel.
         '''
-        for cur_channel in self.channels.itervalues():
+        for cur_channel in self.channels.values():
             cur_channel.clear_annotation_artist(**kwargs)
 
 
@@ -859,7 +865,7 @@ class TdDatetimeInfo(wx.Panel):
         #                                            style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
         #                                           )
 
-        self.startDatePicker = DatePickerCtrl(self, id=wx.ID_ANY, style=wx.DP_DEFAULT|wx.DP_SHOWCENTURY)
+        self.startDatePicker = DatePickerCtrl(self, id=wx.ID_ANY, style=wx.adv.DP_DEFAULT|wx.adv.DP_SHOWCENTURY)
 
 
         self.startTimePicker = MaskedTextCtrl( self, wx.ID_ANY, '',
@@ -937,7 +943,7 @@ class TdDatetimeInfo(wx.Panel):
         width = winSize[0]
         height = winSize[1]
         btnSize = self.durationButton.GetSize()
-        pos = (width - 100 - btnSize[1], height/2)
+        pos = (width - 100 - btnSize[1], old_div(height,2))
         self.durationButton.SetPosition(pos)
         event.Skip()
         #dc = wx.PaintDC(self)
@@ -961,10 +967,10 @@ class TdDatetimeInfo(wx.Panel):
         width = winSize[0]
         height = winSize[1]
 
-
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        color = wx.Colour('black')
         font.SetWeight(wx.BOLD)
-        gc.SetFont(font)
+        gc.SetFont(font, color)
         if self.startTime:
             gc.PushState()
             gc.Translate(80, height/2.0)
@@ -1031,7 +1037,7 @@ class StationAnnotationArea(wx.Panel):
         self.color = color
         self.penColor = penColor
 
-	self.SetBackgroundColour(self.bgColor)
+        self.SetBackgroundColour(self.bgColor)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
@@ -1045,11 +1051,11 @@ class StationAnnotationArea(wx.Panel):
         self.draw(gc)
 
     def onSetFocus(self, event):
-        print "onSetFocus in station annotation"
+        print("onSetFocus in station annotation")
 
 
     def onKeyDown(self, event):
-        print "onKeyDown in station annotation"
+        print("onKeyDown in station annotation")
         event.ResumePropagation(1)
         event.Skip()
 
@@ -1079,8 +1085,9 @@ class StationAnnotationArea(wx.Panel):
 
         # Define the font styles.
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        color = wx.Colour('black')
         font.SetWeight(wx.BOLD)
-        gc.SetFont(font)
+        gc.SetFont(font, color)
 
         path = gc.CreatePath()
         path.MoveToPoint(width, penSize/2.0)
@@ -1099,7 +1106,7 @@ class StationAnnotationArea(wx.Panel):
         gc.FillPath(path1)
         gc.DrawPath(path)
 
-        newPos =  height/2
+        newPos =  old_div(height,2)
 
         #print winSize
         #print newPos
@@ -1123,7 +1130,7 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
     def __init__(self, parent=None, id=wx.ID_ANY):
         scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
-        
+
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
@@ -1147,7 +1154,7 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
 
     def onLeftDown(self, event):
-        print "##### LEFT DOWN IN VIEWPORT #######"
+        print("##### LEFT DOWN IN VIEWPORT #######")
 
     def onStationMsg(self, msg):
         if msg.topic == ('tracedisplay', 'display', 'station', 'hide'):
@@ -1188,7 +1195,7 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
         valid_keys = ['name', 'network', 'location']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stations = [x for x in ret_stations if getattr(x, cur_key) == cur_value or cur_value is None]
             else:
@@ -1343,8 +1350,8 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
 
         '''
         for curStation in self.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
+            for curChannel in list(curStation.channels.values()):
+                for curView in list(curChannel.views.values()):
                     curView.setEventCallbacks(hooks, dataManager, displayManager)
 
 
@@ -1352,8 +1359,8 @@ class OLD_TdViewPort(scrolled.ScrolledPanel):
         ''' Clear the callbacks of the views.
         '''
         for curStation in self.stations:
-            for curChannel in curStation.channels.values():
-                for curView in curChannel.views.values():
+            for curChannel in list(curStation.channels.values()):
+                for curView in list(curChannel.views.values()):
                     curView.clearEventCallbacks()
 
 

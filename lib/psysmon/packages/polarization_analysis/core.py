@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -19,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from past.utils import old_div
 import psysmon.core.signal
 
 import numpy as np
@@ -36,7 +38,7 @@ def compute_covariance_matrix(component_data, window_length, overlap):
 
     sample_win = psysmon.core.signal.tukey(window_length, 0.01)
     win_step = np.floor(window_length - (window_length * overlap))
-    n_win = np.floor( (len(z_data) - window_length) / win_step)
+    n_win = np.floor( old_div((len(z_data) - window_length), win_step))
 
     features = {}
     features['time'] = []
@@ -85,7 +87,7 @@ def compute_covariance_matrix(component_data, window_length, overlap):
         #                                        nor planary polarized.
         # Vidale:        L=1-(ev2+ev3)/ev1       bad: could be negative!
         # -->Using definition by Hearn (=Flinn 1965)
-        cur_linearity = 1 - sv[1] / sv[0]
+        cur_linearity = 1 - old_div(sv[1], sv[0])
 
         # Compute the planarity
         # Kennett2002:   P=1-2*ev3/(ev1+ev2)     would give 1 for a linear
@@ -95,19 +97,19 @@ def compute_covariance_matrix(component_data, window_length, overlap):
         #                                        possibely this definition is
         #                                        confusing -->bad!
         # -->Using definition by Kennett
-        cur_planarity = 1 - 2 * sv[2] / (sv[0] + sv[1])
+        cur_planarity = 1 - old_div(2 * sv[2], (sv[0] + sv[1]))
 
 
         # Compute the polarization strength.
         # Vidale:       Ps = 1 - (ev2 + ev3) / ev1
-        cur_pol_strength = 1 - (sv[1] + sv[2]) / sv[0]
+        cur_pol_strength = 1 - old_div((sv[1] + sv[2]), sv[0])
 
         # Compute the apparent azimuth. Clockwise from the y-axis.
         s_vec_max = s_vec[:, 0]
-        cur_azimuth = np.arctan(np.real(s_vec_max[0]) / np.real(s_vec_max[1]))
+        cur_azimuth = np.arctan(old_div(np.real(s_vec_max[0]), np.real(s_vec_max[1])))
 
         # Compute the apparent incidence angle. Measured from the z-axis.
-        cur_incidence = np.arccos(np.abs(s_vec_max[2]) / np.linalg.norm(s_vec_max))
+        cur_incidence = np.arccos(old_div(np.abs(s_vec_max[2]), np.linalg.norm(s_vec_max)))
 
         features['linearity'].append(cur_linearity)
         features['planarity'].append(cur_planarity)
@@ -140,7 +142,7 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length = N
         window_length = len(x_data)
 
     win_step = np.floor(window_length - (window_length * overlap))
-    n_win = np.floor( (len(z_data) - window_length) / win_step)
+    n_win = np.floor( old_div((len(z_data) - window_length), win_step))
 
     features = {}
     features['time'] = []
@@ -185,16 +187,16 @@ def compute_complex_covariance_matrix_windowed(component_data, window_length = N
 
         # Compute the polarization features.
         # Use the ellipticity definition from Morozov.
-        cur_pol_strength = 1 - (sv[1] + sv[2]) / sv[0]
-        cur_ellipticity = np.linalg.norm(minor) / np.linalg.norm(major)
+        cur_pol_strength = 1 - old_div((sv[1] + sv[2]), sv[0])
+        cur_ellipticity = old_div(np.linalg.norm(minor), np.linalg.norm(major))
 
         # Compute the apparent azimuth.
-        cur_azimuth = np.arctan(np.real(major[0]) / np.real(major[1]))
+        cur_azimuth = np.arctan(old_div(np.real(major[0]), np.real(major[1])))
         #print "major: %s" % major
         #print "azimuth: %f" % np.rad2deg(cur_azimuth)
 
         # Compute the apparent incidence angle.
-        cur_incidence = np.arccos(np.abs(major[2]) / np.linalg.norm(major))
+        cur_incidence = np.arccos(old_div(np.abs(major[2]), np.linalg.norm(major)))
 
         #X = np.linalg.norm(major)
         #pe = np.sqrt(1 - X**2) / X

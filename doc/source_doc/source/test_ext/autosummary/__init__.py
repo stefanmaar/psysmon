@@ -52,7 +52,11 @@
     :copyright: Copyright 2007-2011 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
+from __future__ import absolute_import
 
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import re
 import sys
@@ -116,7 +120,7 @@ def autosummary_table_visit_html(self, node):
             par = col1_entry[0]
             for j, subnode in enumerate(list(par)):
                 if isinstance(subnode, nodes.Text):
-                    new_text = unicode(subnode.astext())
+                    new_text = str(subnode.astext())
                     new_text = new_text.replace(u" ", u"\u00a0")
                     par[j] = nodes.Text(new_text)
     except IndexError:
@@ -125,7 +129,7 @@ def autosummary_table_visit_html(self, node):
 
 # -- autodoc integration -------------------------------------------------------
 
-class FakeDirective:
+class FakeDirective(object):
     env = {}
     genopt = {}
 
@@ -156,7 +160,7 @@ def get_documenter(obj, parent):
         parent_doc = parent_doc_cls(FakeDirective(), "")
 
     # Get the corrent documenter class for *obj*
-    classes = [cls for cls in AutoDirective._registry.values()
+    classes = [cls for cls in list(AutoDirective._registry.values())
                if cls.can_document_member(obj, '', False, parent_doc)]
     if classes:
         classes.sort(key=lambda cls: cls.priority)
@@ -449,7 +453,7 @@ def _import_by_name(name):
         # ... then as MODNAME, MODNAME.OBJ1, MODNAME.OBJ1.OBJ2, ...
         last_j = 0
         modname = None
-        for j in reversed(range(1, len(name_parts)+1)):
+        for j in reversed(list(range(1, len(name_parts)+1))):
             last_j = j
             modname = '.'.join(name_parts[:j])
             try:
@@ -468,7 +472,7 @@ def _import_by_name(name):
             return obj, parent
         else:
             return sys.modules[modname], None
-    except (ValueError, ImportError, AttributeError, KeyError), e:
+    except (ValueError, ImportError, AttributeError, KeyError) as e:
         raise ImportError(*e.args)
 
 
@@ -509,7 +513,7 @@ def process_generate_options(app):
     if not genfiles:
         return
 
-    from generate import generate_autosummary_docs
+    from .generate import generate_autosummary_docs
 
     genfiles = [genfile + (not genfile.endswith(ext) and ext or '')
                 for genfile in genfiles]

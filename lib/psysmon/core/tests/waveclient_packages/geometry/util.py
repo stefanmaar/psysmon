@@ -29,6 +29,7 @@ The geometry util module.
 
 This module contains helper functions used in the geometry package.
 '''
+from __future__ import print_function
 def lon2UtmZone(lon):
     '''
     Convert a longitude to the UTM zone.
@@ -60,7 +61,7 @@ def epsg_from_srs(srs):
     '''
     l = srs.split()
     for s in l:
-        print s
+        print(s)
         try:
             k,v = s.split('=')
         except:

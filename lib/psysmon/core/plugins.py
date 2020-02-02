@@ -29,6 +29,7 @@ Extend psysmon with custom code.
 
 This module contains the pSysmon plugin system.
 '''
+from builtins import object
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
@@ -38,7 +39,7 @@ from psysmon.core.guiBricks import PrefEditPanel
 #
 # Each collection node can load plugins which provide some functionality to
 # the node. 
-class PluginNode:
+class PluginNode(object):
     ''' The base class of all plugin nodes.
 
     This class is the base class on which all plugins are built.
@@ -145,7 +146,7 @@ class PluginNode:
         if attrname in self.pref_manager.get_name():
             return self.pref_manager.get_value(attrname)
         else:
-            raise AttributeError, attrname
+            raise AttributeError(attrname)
 
 
     def register(self, parent):
@@ -515,7 +516,7 @@ class SharedInformationBag(object):
 
         ret_val = self.shared_info
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
             else:

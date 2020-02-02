@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import math
 import numpy as np
 
@@ -28,13 +30,13 @@ def tukey(N, alpha):
     w = np.ones(len(n))
 
     mask = (n >= 0) & (n <= alpha*(N-1)/2.0)
-    w[mask] = 1/2. * (1 + np.cos(np.pi * ( (2*n[mask]) / (alpha * (N-1)) - 1 )))
+    w[mask] = 1/2. * (1 + np.cos(np.pi * ( old_div((2*n[mask]), (alpha * (N-1))) - 1 )))
 
     #mask = (n > alpha*(N-1)/2.0) & (n <= (N-1)*(1-alpha/2.))
     #w[mask] = 1
 
-    mask = (n > (N-1)*(1-alpha/2)) & (n <= (N-1))
-    w[mask] = 1/2. * (1 + np.cos(np.pi * ( (2*n[mask]) / (alpha * (N-1)) - 2/alpha + 1 )))
+    mask = (n > (N-1)*(1-old_div(alpha,2))) & (n <= (N-1))
+    w[mask] = old_div(1,2 * (1 + np.cos(np.pi * ( old_div((2*n[mask]), (alpha * (N-1))) - old_div(2,alpha) + 1 ))))
 
     return w
 

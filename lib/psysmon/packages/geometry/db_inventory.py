@@ -333,7 +333,7 @@ class DbNetwork(Network):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
 
@@ -451,7 +451,7 @@ class DbArray(Array):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
 
@@ -613,7 +613,7 @@ class DbStation(Station):
 
         self.__dict__[attr] = value
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
 
@@ -716,7 +716,7 @@ class DbRecorder(Recorder):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -829,7 +829,7 @@ class DbRecorderStream(RecorderStream):
         attr_map['author_uri'] = 'author_uri'
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -913,6 +913,39 @@ class DbRecorderStream(RecorderStream):
                 self.orm.parameters.append(cur_parameter.orm)
 
         return added_parameter
+
+
+    def remove_parameter_by_instance(self, parameter_to_remove):
+        ''' Remove a parameter.
+        '''
+        RecorderStream.remove_parameter_by_instance(self, parameter_to_remove)
+        self.logger.debug('Removing DB parameter %d.', parameter_to_remove.id)
+        self.orm.parameters.remove(parameter_to_remove.orm)
+        self.parent_inventory.db_session.delete(parameter_to_remove.orm)
+
+
+    def remove_component_by_instance(self, component_to_remove):
+        ''' Remove a component from the stream.
+        '''
+        RecorderStream.remove_component_by_instance(self, component_to_remove)
+        try:
+            start_time = component_to_remove.start_time.timestamp
+        except:
+            start_time = None
+
+        try:
+            end_time = component_to_remove.end_time.timestamp
+        except:
+            end_time = None
+
+        orm_to_remove = [x for x in self.orm.components if x.component_id == component_to_remove.id \
+                                                        and x.start_time == start_time \
+                                                        and x.end_time == end_time]
+
+        for cur_orm in orm_to_remove:
+            self.parent_inventory.db_session.delete(cur_orm)
+
+
 
 
 
@@ -1090,7 +1123,7 @@ class DbRecorderStreamParameter(RecorderStreamParameter):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 if (attr == 'start_time') or (attr == 'end_time'):
@@ -1178,7 +1211,7 @@ class DbSensor(Sensor):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -1286,7 +1319,7 @@ class DbSensorComponent(SensorComponent):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -1319,6 +1352,16 @@ class DbSensorComponent(SensorComponent):
                     cur_parameter.orm.tf_pz.append(geom_tfpz_orm_class(0, cur_zero.real, cur_zero.imag))
 
         return added_parameter
+
+
+    def remove_parameter(self, parameter_to_remove):
+        ''' Remove a parameter from the component.
+        '''
+        SensorComponent.remove_parameter(self, parameter_to_remove)
+        self.orm.parameters.remove(parameter_to_remove.orm)
+        self.parent_inventory.db_session.delete(parameter_to_remove.orm)
+
+
 
 
 
@@ -1424,7 +1467,7 @@ class DbSensorComponentParameter(SensorComponentParameter):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 if (attr == 'start_time') or (attr == 'end_time'):
@@ -1524,7 +1567,7 @@ class DbChannel(Channel):
         attr_map['agency_uri'] = 'agency_uri'
         attr_map['creation_time'] = 'creation_time'
 
-        if attr in attr_map.keys():
+        if attr in iter(attr_map.keys()):
             self.__dict__[attr] = value
             if 'orm' in self.__dict__:
                 setattr(self.orm, attr_map[attr], value)
@@ -1590,4 +1633,27 @@ class DbChannel(Channel):
                 self.orm.streams.append(stream_to_channel_orm)
 
         return added_stream
+
+
+    def remove_stream_by_instance(self, stream_timebox):
+        ''' Remove a stream timebox.
+        '''
+        Channel.remove_stream_by_instance(self, stream_timebox)
+        try:
+            start_time = stream_timebox.start_time.timestamp
+        except:
+            start_time = None
+
+        try:
+            end_time = stream_timebox.end_time.timestamp
+        except:
+            end_time = None
+
+        orm_to_remove = [x for x in self.orm.streams if x.stream_id == stream_timebox.id \
+                                                     and x.start_time == start_time \
+                                                     and x.end_time == end_time]
+
+        for cur_orm in orm_to_remove:
+            self.parent_inventory.db_session.delete(cur_orm)
+
 

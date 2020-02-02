@@ -28,6 +28,7 @@ The psysmomat program.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import print_function
 
 import argparse
 import getpass
@@ -36,13 +37,9 @@ import logging
 import os
 import os.path
 
-import matplotlib as mpl
-mpl.use('Agg')
-mpl.rcParams['backend'] = 'Agg'
-
-import psysmon
-import psysmon.core.test_util as test_util
-
+#import matplotlib as mpl
+#mpl.use('Agg')
+#mpl.rcParams['backend'] = 'Agg'
 
 
 def load_project(filename):
@@ -58,6 +55,7 @@ def load_project(filename):
 def handle_create_user_command(args, logger):
     logger.info('Creating a new psysmon user.')
     logger.debug(args)
+    import psysmon.core.test_util as test_util
 
     user_pwd = ''
     root_pwd = ''
@@ -84,6 +82,7 @@ def handle_create_user_command(args, logger):
 
 def handle_new_project_command(args, logger):
     logger.info('Creating a new psysmon project ' + args.name + ' for user ' + args.user +'.')
+    import psysmon.core.test_util as test_util
 
     user_pwd = ''
     if args.password:
@@ -106,6 +105,7 @@ def handle_new_project_command(args, logger):
 
 def handle_remove_project_command(args, logger):
     logger.info('Removing the project %s.', args.project_file)
+    import psysmon.core.test_util as test_util
 
     user_pwd = ''
     if args.password:
@@ -116,6 +116,123 @@ def handle_remove_project_command(args, logger):
                              user_pwd = user_pwd)
 
 
+def handle_import_geometry_command(args, logger):
+    logger.info('Importing the geometry from file %s.', args.geometry_file)
+
+    import psysmon.core.test_util as test_util
+    import psysmon.packages.geometry as geom
+    user_name = args.user
+
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+
+    if not args.project_file:
+        # Try to get the project file from the current directory.
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
+        if len(project_files) == 1:
+            project_file = project_files[0]
+        elif len(project_files) == 0:
+            logger.error('No project file found in the current directory.')
+            return
+        else:
+            logger.error('More than one project file found in the current directory: %s', project_files)
+            return
+    else:
+        project_file = args.project_file
+
+
+    psybase = test_util.create_psybase();
+    try:
+        load_success = psybase.load_json_project(project_file,
+                                                user_name,
+                                                user_pwd)
+
+        inventory_parser = geom.inventory_parser.InventoryXmlParser()
+        try:
+            inventory = inventory_parser.parse(args.geometry_file)
+        except Warning as w:
+            print(w)
+
+        # Clear the existing data from the geometry tables.
+        project_slug = psybase.project.slug
+        tables_to_clear = [table for table in reversed(psybase.project.dbMetaData.sorted_tables) if table.key.startswith(project_slug + '_geom')]
+        for cur_table in tables_to_clear:
+            psybase.project.dbEngine.execute(cur_table.delete())
+
+        # Remove all elements from the session.
+        psybase.project.geometry_inventory.db_session.expunge_all()
+
+        db_inventory = psybase.project.geometry_inventory
+        db_inventory.clear()
+        for cur_sensor in inventory.sensors:
+            db_inventory.add_sensor(cur_sensor)
+
+        for cur_recorder in inventory.recorders:
+            db_inventory.add_recorder(cur_recorder)
+
+        for cur_network in inventory.networks:
+            db_inventory.add_network(cur_network)
+
+        for cur_array in inventory.arrays:
+            db_inventory.add_array(cur_array)
+
+        db_inventory.commit()
+    finally:
+        psybase.stop_project_server()
+
+
+
+def handle_add_waveform_dir_command(args, logger):
+    logger.info('Adding the waveform directory %s.', args.path)
+    import psysmon.core.test_util as test_util
+
+    user_name = args.user
+
+    user_pwd = ''
+    if args.password:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+
+    if not args.project_file:
+        # Try to get the project file from the current directory.
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
+        if len(project_files) == 1:
+            project_file = project_files[0]
+        else:
+            logger.error('More than one project file found in the current directory.')
+            return
+    else:
+        project_file = args.project_file
+
+    if not args.description:
+        args.description = ''
+
+
+    psybase = test_util.create_psybase();
+    try:
+        load_success = psybase.load_json_project(project_file,
+                                                user_name,
+                                                user_pwd)
+        wf_dir_orm = psybase.project.dbTables['waveform_dir']
+        wf_dir_alias_orm = psybase.project.dbTables['waveform_dir_alias']
+
+        wf_dir = wf_dir_orm(args.path,
+                            args.description,
+                            args.file_ext,
+                            '',
+                            '')
+        wf_dir_alias = wf_dir_alias_orm(psybase.project.activeUser.name,
+                                        args.path)
+        wf_dir.aliases.append(wf_dir_alias)
+
+        db_session = psybase.project.getDbSession()
+        try:
+            db_session.add(wf_dir)
+            db_session.commit()
+        finally:
+            db_session.close()
+    finally:
+        psybase.stop_project_server()
 
 
 def handle_update_command(args, logger):
@@ -125,7 +242,7 @@ def handle_update_command(args, logger):
 
 def handle_info_command(args, logger):
     if args.project is None:
-        project_files = glob.glob(os.path.join(os.getcwd(), '*.prj'))
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
 
         if len(project_files) == 0:
             logger.error('No project file found in the current directory.')
@@ -136,24 +253,24 @@ def handle_info_command(args, logger):
         else:
             project_file = project_files[0]
     else:
-        project_file = os.path.join(args.project, args.project + '.prj')
+        project_file = os.path.join(args.project, args.project + '.ppr')
 
 
     if os.path.exists(project_file):
-        project = psysmomat.core.project.load_project_from_file(project_file)
+        project = psysmon.core.project.load_project_from_file(project_file)
     else:
         logger.error("The project file %s doesn't exist.", project_file)
         return
 
     logger.debug('Getting information about the project ' + project_file + '.')
 
-    print str(project)
+    print(str(project))
 
     if args.listtask is True:
         # List the available tasks of the project.
-        print 'Available tasks:'
+        print('Available tasks:')
         for cur_taskclass in sorted(project.task_classes):
-            print '  ' + cur_taskclass.__name__ + '\n'
+            print('  ' + cur_taskclass.__name__ + '\n')
 
 
 def handle_edit_command(args, logger):
@@ -162,37 +279,64 @@ def handle_edit_command(args, logger):
 
 
 def handle_execute_command(args, logger):
-    if args.project is None:
-        project_files = glob.glob(os.path.join(os.getcwd(), '*.prj'))
+    logger.info('Executing the collection %s.', args.collection)
 
-        if len(project_files) == 0:
+    import obspy.core.utcdatetime as utcdatetime
+    import psysmon.core.test_util as test_util
+
+    user_name = args.user
+
+    user_pwd = ''
+    if args.password and not args.passphrase:
+        user_pwd = getpass.getpass(prompt = 'User password:')
+    elif args.password:
+        user_pwd = args.passphrase
+
+    if not args.project_file:
+        # TODO: Handle the search for a project file in a central function.
+        # Try to get the project file from the current directory.
+        project_files = glob.glob(os.path.join(os.getcwd(), '*.ppr'))
+        if len(project_files) == 1:
+            project_file = project_files[0]
+        elif len(project_files) == 0:
             logger.error('No project file found in the current directory.')
             return
-        elif len(project_files) > 1:
-            logger.error("Multiple project files found, don't know which one to use.")
-            return
         else:
-            project_file = project_files[0]
+            logger.error('More than one project file found in the current directory: %s', project_files)
+            return
     else:
-        project_file = os.path.join(args.project, args.project + '.prj')
+        project_file = args.project_file
 
-    # Load the project.
-    if os.path.exists(project_file):
-        project = psysmomat.core.project.load_project_from_file(project_file)
-    else:
-        logger.error("The project file %s doesn't exist.", project_file)
-        return
 
-    logger.debug('Executing the project ' + project_file + '.')
 
-    # Execute the tasklist.
-    if args.tasklist:
-        project.execute_tasklist(args.tasklist, args.starttime, args.endtime)
+    psybase = test_util.create_psybase();
+    try:
+        db_host = None
+        if args.db_host:
+            db_host = args.db_host
+        load_success = psybase.load_json_project(project_file,
+                                                user_name,
+                                                user_pwd,
+                                                db_host = db_host)
+        # Set the log level.
+        psybase.pref_manager.set_value('main_loglevel', 'DEBUG')
+        psybase.pref_manager.set_value('shell_loglevel', 'ERROR')
+        psybase.pref_manager.set_value('collection_loglevel', args.loglevel)
+        psybase.project.setActiveCollection(args.collection)
+        if args.starttime and args.endtime:
+            # Set the global time span of the collection.
+            psybase.project.getActiveCollection().runtime_att.start_time = utcdatetime.UTCDateTime(args.starttime)
+            psybase.project.getActiveCollection().runtime_att.end_time = utcdatetime.UTCDateTime(args.endtime)
+        psybase.project.executeCollection()
+    finally:
+        psybase.stop_project_server()
+
 
 
 
 if __name__ == '__main__':
 
+    print('Parsing in main...')
     parser = argparse.ArgumentParser(description='psysmomat')
     subparsers = parser.add_subparsers(title = 'sub commands',
                                        description = 'valid sub commands')
@@ -250,31 +394,64 @@ if __name__ == '__main__':
                                        action = 'store_true')
 
 
+    # Create the parser for the 'import_geometry' command.
+    parser_import_geometry = subparsers.add_parser('import_geometry', help = 'Import a psysmon geometry XML file to the database.')
+    parser_import_geometry.set_defaults(func = handle_import_geometry_command)
+    parser_import_geometry.add_argument('geometry_file', help = 'The geometry file to import.',
+                                        type = str, metavar = 'GEOMETRY_FILE')
+    parser_import_geometry.add_argument('-pf', '--project_file', help = 'The project file to work with.',
+                                        type = str, metavar = 'PROJECT_FILE')
+    parser_import_geometry.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
+                                       type = str, metavar = 'USER')
+    parser_import_geometry.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                       action = 'store_true')
 
 
-
+    # Create the parser for the 'add_waveform_directory' command.
+    parser_add_waveform_dir = subparsers.add_parser('add_waveform_dir', help = 'Add a waveform directory tothe database waveclient.')
+    parser_add_waveform_dir.set_defaults(func = handle_add_waveform_dir_command)
+    parser_add_waveform_dir.add_argument('path', help = 'The absolute path to the waveform directory.',
+                                        type = str, metavar = 'PATH')
+    parser_add_waveform_dir.add_argument('file_ext', help = 'The file extensions of the data files in the waveform directory (e.g. "*.msd,*.mseed").',
+                                        type = str, metavar = 'FILE_EXT')
+    parser_add_waveform_dir.add_argument('-d', '--description', help = 'The description of the waveform directory.',
+                                        type = str, metavar = 'DESCRIPTION')
+    parser_add_waveform_dir.add_argument('-pf', '--project_file', help = 'The project file to work with.',
+                                        type = str, metavar = 'PROJECT_FILE')
+    parser_add_waveform_dir.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
+                                       type = str, metavar = 'USER')
+    parser_add_waveform_dir.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                       action = 'store_true')
 
 
 
     # Create the parser for the 'execute' command.
-    parser_execute = subparsers.add_parser('execute', help = 'Execute tasklists of a project.')
+    parser_execute = subparsers.add_parser('execute', help = 'Execute a collection of the project.')
     parser_execute.set_defaults(func = handle_execute_command)
-    parser_execute.add_argument('project', help = 'Specifiy the project to use.',
-                            type = str, metavar = 'PROJECT_NAME', nargs = '?', default = None)
-    parser_execute.add_argument('-t', '--tasklist', help = 'The tasklist name to execute.',
-                                type = str, metavar = 'TASKLIST_NAME')
-    parser_execute.add_argument('-p', '--path', help = 'Specify the path in which the project directory is saved.',
-                            type = str, metavar = 'PROJECT_PATH')
+    parser_execute.add_argument('collection', help = 'The name of the collection to execute.',
+                                type = str, metavar = 'COLLECTION')
+    parser_execute.add_argument('-pf', '--project_file', help = 'The project file to work with.',
+                                type = str, metavar = 'PROJECT_FILE')
+    parser_execute.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
+                                type = str, metavar = 'USER')
+    parser_execute.add_argument('-p', '--password', help = 'A password is needed.',
+                                action = 'store_true')
+    parser_execute.add_argument('-pp', '--passphrase', help = 'The passphrase of the user.',
+                                type = str, metavar = 'PASSPHRASE', default = '')
     parser_execute.add_argument('-s', '--starttime', help = 'Specify the global starttime. This overrides every starttime in the tasks.',
                             type = str, metavar = 'STARTTIME')
     parser_execute.add_argument('-e', '--endtime', help = 'Specify the global endtime. This overrides every endtime in the tasks.',
                             type = str, metavar = 'ENDTIME')
+    parser_execute.add_argument('-d', '--db_host', help = 'The host on which the mysql server is running.',
+                                type = str, metavar = 'HOST', default = 'localhost')
+
 
     # Create the parser for the 'update' command.
     parser_update = subparsers.add_parser('update', help = 'Update a project.')
     parser_update.set_defaults(func = handle_update_command)
     parser_update.add_argument('project', help = 'Specifiy the project to use.',
                             type = str, metavar = 'PROJECT_NAME')
+
 
     # Create the parser for the 'info' command.
     parser_info = subparsers.add_parser('info', help = 'Get information about the project.')
@@ -290,6 +467,7 @@ if __name__ == '__main__':
     parser_info.add_argument('-tl', '--tasklist', help = 'Get information about the specified tasklist.',
                                 type = str, metavar = 'TASKLIST_NAME')
 
+
     # Create the parser for the 'edit' command.
     parser_edit = subparsers.add_parser('edit', help = 'Edit the settings of a project.')
     parser_edit.set_defaults(func = handle_edit_command)
@@ -297,11 +475,16 @@ if __name__ == '__main__':
     # Add name of the project as a positional argument. The project name
     # always has to be specified.
 
+
     args = parser.parse_args()
 
+    print('Importing psysmon.')
+    import psysmon
     logger = logging.getLogger('psysmon')
     logger.setLevel(args.loglevel)
-    logger.addHandler(psysmon.getLoggerHandler(log_level = args.loglevel))
+    shell_handler = psysmon.getLoggerHandler(log_level = args.loglevel)
+    shell_handler.setLevel(args.loglevel)
+    logger.addHandler(shell_handler)
 
     args.func(args, logger)
 

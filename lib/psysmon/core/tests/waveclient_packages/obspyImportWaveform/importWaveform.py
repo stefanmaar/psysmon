@@ -29,7 +29,13 @@ The importWaveform module.
 
 This module contains the classes of the importWaveform dialog window.
 '''
+from __future__ import print_function
+from __future__ import division
 
+from builtins import str
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import os
 import fnmatch
 import logging
@@ -71,7 +77,7 @@ class ImportWaveform(CollectionNode):
         dlg.Show()
 
     def execute(self, prevNodeOutput={}):
-        print "Executing the node %s." % self.name
+        print("Executing the node %s." % self.name)
         dbData = []
         for curFile in self.pref_manager.get_value('input_files'):
             print("Processing file " + curFile[1])
@@ -83,10 +89,10 @@ class ImportWaveform(CollectionNode):
                              format = format,
                              headonly=True)
 
-            print stream
+            print(stream)
 
             for curTrace in stream.traces:
-                print "Importing trace " + curTrace.getId()
+                print("Importing trace " + curTrace.getId())
                 cur_data = self.getDbData(curFile[1], format, curTrace)
                 if cur_data is not None:
                     dbData.append(cur_data)
@@ -111,7 +117,7 @@ class ImportWaveform(CollectionNode):
                 wfDirId = curWfDir.id
                 break
 
-        print wfDirId
+        print(wfDirId)
 
         if wfDirId:
             # Remove the waveform directory from the file path.
@@ -121,20 +127,20 @@ class ImportWaveform(CollectionNode):
                       'network', 'recorder_serial', 'channel', 'location', 
                       'sps', 'numsamp', 'begin_date', 'begin_time', 
                       'station_id', 'recorder_id', 'sensor_id']
-            header2Insert = dict(zip(labels, (None, format, wfDirId, 
+            header2Insert = dict(list(zip(labels, (None, format, wfDirId, 
                             relativeFilename, os.path.dirname(filename), 
                             Trace.stats.network, Trace.stats.station, 
                             Trace.stats.channel, Trace.stats.location, 
                             Trace.stats.sampling_rate, Trace.stats.npts, 
                             Trace.stats.starttime.isoformat(' '), 
                             Trace.stats.starttime.timestamp,
-                            None, None, None)))
+                            None, None, None))))
 
-            print header2Insert
+            print(header2Insert)
 
             return Header(**header2Insert)
         else:
-            print "File %s is not inside a waveform directory. Skipping this trace." % filename
+            print("File %s is not inside a waveform directory. Skipping this trace." % filename)
             return None
 
 
@@ -360,7 +366,7 @@ class FileGrid(wx.grid.Grid):
     def colPopup(self, col, evt):
         """(col, evt) -> display a popup menu when a column label is
         right clicked"""
-        x = self.GetColSize(col)/2
+        x = old_div(self.GetColSize(col),2)
         menu = wx.Menu()
 
         xo, yo = evt.GetPosition()
@@ -498,7 +504,7 @@ class ImportWaveformEditDlg(wx.Frame):
         wildCards = self.getWildCardData()
 
         wildCard = ""
-        for curKey in sorted(wildCards.iterkeys()):
+        for curKey in sorted(wildCards.keys()):
             wildCard = wildCard + wildCards[curKey]
 
         wildCard = wildCard + 'All files (*)|*|'
@@ -524,12 +530,12 @@ class ImportWaveformEditDlg(wx.Frame):
             for filename in paths:
                 self.logger.info('Adding file %s', filename)
                 fsize = os.path.getsize(filename);
-                fsize = fsize/(1024.0*1024.0)           # Convert to MB
+                fsize = old_div(fsize,(1024.0*1024.0))           # Convert to MB
 
                 if self.check_file_format is True:
                     # Check the file formats.
                     EPS = ENTRY_POINTS['waveform']
-                    for format_ep in [x for (key, x) in EPS.items() if key == 'MSEED']:
+                    for format_ep in [x for (key, x) in list(EPS.items()) if key == 'MSEED']:
                         # search isFormat for given entry point
                         isFormat = load_entry_point(format_ep.dist.key,
                             'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
@@ -587,12 +593,12 @@ class ImportWaveformEditDlg(wx.Frame):
                     for filename in fnmatch.filter(filenames, cur_pattern):
                         self.logger.info('Adding file %s', os.path.join(root, filename))
                         fsize = os.path.getsize(os.path.join(root, filename));
-                        fsize = fsize/(1024.0 * 1024.0)
+                        fsize = old_div(fsize,(1024.0 * 1024.0))
 
                         if self.check_file_format is True:
                             # Check the file formats.
                             EPS = ENTRY_POINTS['waveform']
-                            for format_ep in [x for (key, x) in EPS.items() if key == 'MSEED']:
+                            for format_ep in [x for (key, x) in list(EPS.items()) if key == 'MSEED']:
                                 # search isFormat for given entry point
                                 isFormat = load_entry_point(format_ep.dist.key,
                                     'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
@@ -658,6 +664,6 @@ class FileListCtrl(wx.ListCtrl):
 
         columns = {1: 'type', 2: 'name', 3: 'size'}
 
-        for colNum, name in columns.iteritems():
+        for colNum, name in columns.items():
             self.InsertColumn(colNum, name)
 

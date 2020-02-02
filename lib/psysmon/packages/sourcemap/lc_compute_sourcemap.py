@@ -95,6 +95,8 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
     def initialize(self):
         ''' Initialize the node.
         '''
+        super(ComputeSourcemap, self).initialize()
+
         # Reset the weight computation flag.
         self.compute_weight = True
 
@@ -118,7 +120,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
         station_list = []
         for cur_station in process_stations:
-            if cur_station.snl in stat_corr.keys():
+            if cur_station.snl in iter(stat_corr.keys()):
                 cur_corr = stat_corr[cur_station.snl]
             else:
                 cur_corr = 0
@@ -146,7 +148,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
 
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         ''' Execute the stack node.
 
         Parameters

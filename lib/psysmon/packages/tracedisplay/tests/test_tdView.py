@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -30,7 +31,7 @@ class EditGeometryDlgTestCase(unittest.TestCase):
     Test suite for psysmon.packages.geometry.editGeometry.EditGeometryDlg
     """
     def setUp(self):
-        print "hello"
+        print("hello")
         # Get the pSysmon base directory.
         psyBaseDir = '/home/stefan/Development/pSysmon/trunk/pSysmon/src/psysmon/'
         psyBaseDir = os.path.dirname(psyBaseDir)
@@ -52,10 +53,10 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         
 
     def tearDown(self):
-        print "Good by."
+        print("Good by.")
     
     def testDlg(self):
-        print "hello"
+        print("hello")
         self.dlg.Show()
         self.app.MainLoop()
         

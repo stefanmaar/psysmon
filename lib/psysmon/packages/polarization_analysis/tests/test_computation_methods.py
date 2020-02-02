@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +20,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import unittest
 
 import logging
@@ -46,7 +49,7 @@ class ComputationMethods(unittest.TestCase):
         # Create the test signal.
         sps = 100.
         f = 10.
-        t = np.arange(0,5, 1/sps)
+        t = np.arange(0,5, old_div(1,sps))
         win = psysmon.core.signal.tukey(len(t), 0.3)
         x_linear = np.sin(2 * np.pi * f * t) * win
         y_linear = np.zeros(len(x_linear))
@@ -67,18 +70,18 @@ class ComputationMethods(unittest.TestCase):
 
         x_rand = np.random.rand(len(t))
         x_rand = x_rand - np.mean(x_rand)
-        x_rand = x_rand / np.abs(x_rand)
+        x_rand = old_div(x_rand, np.abs(x_rand))
         y_rand = np.random.rand(len(t))
         y_rand = y_rand - np.mean(y_rand)
-        y_rand = y_rand / np.abs(y_rand)
+        y_rand = old_div(y_rand, np.abs(y_rand))
         z_rand = np.random.rand(len(t))
         z_rand = z_rand - np.mean(z_rand)
-        z_rand = z_rand / np.abs(z_rand)
+        z_rand = old_div(z_rand, np.abs(z_rand))
 
         cls.signal_x = np.hstack((x_linear, x_circ, x_ellip, x_toro, x_rand))
         cls.signal_y = np.hstack((y_linear, y_circ, y_ellip, y_toro, y_rand))
         cls.signal_z = np.hstack((z_linear, z_circ, z_ellip, z_toro, z_rand))
-        cls.time = np.arange(0, len(cls.signal_x) / sps, 1/sps)
+        cls.time = np.arange(0, old_div(len(cls.signal_x), sps), old_div(1,sps))
 
         #fig = plt.figure()
         #ax = fig.add_subplot(111, projection = '3d')
@@ -93,7 +96,7 @@ class ComputationMethods(unittest.TestCase):
         pass
 
     def tearDown(self):
-        print "Es war sehr schoen - auf Wiederseh'n.\n"
+        print("Es war sehr schoen - auf Wiederseh'n.\n")
 
 
     def test_covariance_matrix(self):

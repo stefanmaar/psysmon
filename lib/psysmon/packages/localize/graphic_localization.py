@@ -29,6 +29,7 @@ The graphical localization module.
 
 '''
 
+from builtins import object
 import logging
 import wx
 

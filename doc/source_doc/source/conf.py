@@ -333,7 +333,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
 
             def get_members(obj, typ, include_public=[]):
                 items = []
-                imp_members = [x for x in dir(obj) if x in obj.__dict__.keys()]
+                imp_members = [x for x in dir(obj) if x in list(obj.__dict__.keys())]
                 for name in imp_members:
                     try:
                         documenter = get_documenter(safe_getattr(obj, name),

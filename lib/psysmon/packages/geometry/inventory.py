@@ -31,15 +31,20 @@ This module contains the classed needed to build a pSysmon geometry
 inventory.
 '''
 
+from builtins import str
+from builtins import object
 import itertools
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
-from mpl_toolkits.basemap import pyproj
+import psysmon.packages.geometry.util as geom_util
+try:
+    import pyproj
+except:
+    from mpl_toolkits.basemap import pyproj
+import numpy as np
 import warnings
 import logging
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
 from operator import attrgetter
 
 class Inventory(object):
@@ -112,6 +117,15 @@ class Inventory(object):
             return True
         else:
             return False
+
+
+    def clear(self):
+        ''' Clear all elements in the inventory.
+        '''
+        self.networks = []
+        self.arrays = []
+        self.recorders = []
+        self.sensors = []
 
 
     def add_recorder(self, recorder):
@@ -308,8 +322,69 @@ class Inventory(object):
         return False
 
 
+    def merge(self, merge_inventory):
+        ''' Merge two inventories.
+        '''
+        # Merge the sensors.
+        for cur_sensor in merge_inventory.sensors:
+            self.logger.debug('Checking sensor %s.', cur_sensor.serial)
+            exist_sensor = self.get_sensor(serial = cur_sensor.serial,
+                                   model = cur_sensor.model,
+                                   producer = cur_sensor.producer)
+            if not exist_sensor:
+                self.logger.debug('Adding the sensor to the inventory.')
+                self.add_sensor(cur_sensor)
+            else:
+                exist_sensor = exist_sensor[0]
+                self.logger.debug('Merging the sensor with existing sensor %s.', exist_sensor.serial)
+                exist_sensor.merge(cur_sensor)
+
+        # Merge the recorders.
+        for cur_recorder in merge_inventory.recorders:
+            self.logger.debug('Checking recorder %s.', cur_recorder.serial)
+            exist_recorder = self.get_recorder(serial = cur_recorder.serial,
+                                               model = cur_recorder.model,
+                                               producer = cur_recorder.producer)
+            if not exist_recorder:
+                self.logger.debug('Adding the recorder to the inventory.')
+                self.add_recorder(cur_recorder)
+            else:
+                exist_recorder = exist_recorder[0]
+                self.logger.debug('Merging the recorder with existing recorder %s.', exist_recorder.serial)
+                exist_recorder.merge(cur_recorder)
+
+        # Merge the networks.
+        for cur_network in merge_inventory.networks:
+            self.logger.debug('Checking network %s.', cur_network.name)
+
+            exist_network = self.get_network(name = cur_network.name)
+
+            if not exist_network:
+                self.logger.debug('Adding the network to the inventory.')
+                self.add_network(cur_network)
+            else:
+                exist_network = exist_network[0]
+                self.logger.debug('Merging the network with existing network %s.', exist_network.name)
+                exist_network.merge(cur_network)
+
+
+        # Merge the arrays.
+        for cur_array in merge_inventory.arrays:
+            self.logger.debug('Checking array %s.', cur_array.name)
+
+            exist_array = self.get_array(name = cur_array.name)
+
+            if not exist_array:
+                self.logger.debug('Adding the array to the inventory.')
+                self.add_array(cur_array)
+            else:
+                exist_array = exist_array[0]
+                self.logger.debug('Merging the array with existing array %s.', exist_array.name)
+                exist_array.merge(cur_array)
+
+
     ## Refresh the inventory networks.
-    def refresh_networks(self):
+    def update_networks(self):
         for cur_network in self.networks:
             cur_network.refresh_stations(self.stations)
 
@@ -357,7 +432,7 @@ class Inventory(object):
 
         valid_keys = ['serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_recorder = [x for x in ret_recorder if getattr(x, cur_key) == cur_value]
             else:
@@ -387,7 +462,7 @@ class Inventory(object):
 
         valid_keys = ['name', 'serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stream = [x for x in ret_stream if getattr(x, cur_key) == cur_value]
             else:
@@ -417,7 +492,7 @@ class Inventory(object):
 
         valid_keys = ['serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_sensor = [x for x in ret_sensor if getattr(x, cur_key) == cur_value]
             else:
@@ -449,7 +524,7 @@ class Inventory(object):
 
         valid_keys = ['name', 'serial', 'model', 'producer']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_component = [x for x in ret_component if getattr(x, cur_key) == cur_value]
             else:
@@ -478,7 +553,7 @@ class Inventory(object):
 
         valid_keys = ['name', 'network', 'location']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
             else:
@@ -506,15 +581,15 @@ class Inventory(object):
         '''
 
         search_dict = {}
-        if 'network' in kwargs.keys():
+        if 'network' in iter(kwargs.keys()):
             search_dict['network'] = kwargs['network']
             kwargs.pop('network')
 
-        if 'station' in kwargs.keys():
+        if 'station' in iter(kwargs.keys()):
             search_dict['name'] = kwargs['station']
             kwargs.pop('station')
 
-        if 'location' in kwargs.keys():
+        if 'location' in iter(kwargs.keys()):
             search_dict['location'] = kwargs['location']
             kwargs.pop('location')
 
@@ -524,7 +599,7 @@ class Inventory(object):
 
         valid_keys = ['name',]
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
             else:
@@ -557,7 +632,7 @@ class Inventory(object):
         ret_network = self.networks
 
         valid_keys = ['name', 'type']
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_network = [x for x in ret_network if getattr(x, cur_key) == cur_value]
             else:
@@ -577,13 +652,46 @@ class Inventory(object):
         ret_array = self.arrays
 
         valid_keys = ['name']
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_array = [x for x in ret_array if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_array
+
+
+    def get_utm_epsg(self):
+        ''' Compute a the epsg code of the best fitting UTM coordinate system.
+        '''
+        # Get the lon/lat limits of the inventory.
+        lonLat = []
+        for curNet in self.networks:
+            lonLat.extend([stat.get_lon_lat() for stat in curNet.stations])
+
+        if len(lonLat) == 0:
+            return
+
+        lonLatMin = np.min(lonLat, 0)
+        lonLatMax = np.max(lonLat, 0)
+        utm_zone = geom_util.lon2UtmZone(np.mean([lonLatMin[0], lonLatMax[0]]))
+        if np.mean([lonLatMin[1], lonLatMax[1]]) >= 0:
+            hemisphere = 'north'
+        else:
+            hemisphere = 'south'
+
+        # Get the epsg code of the UTM projection.
+        search_dict = {'projection': 'utm',
+                       'ellps': 'WGS84',
+                       'zone': utm_zone,
+                       'no_defs': True,
+                       'units': 'm'}
+        if hemisphere == 'south':
+            search_dict['south'] = True
+
+        epsg_dict = geom_util.get_epsg_dict()
+        code = [(c, x) for c, x in list(epsg_dict.items()) if  x == search_dict]
+        return code
 
 
     @classmethod
@@ -601,6 +709,11 @@ class Recorder(object):
         ''' Initialize the instance.
 
         '''
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+
         ## The recorder database id.
         self.id = id
 
@@ -747,13 +860,32 @@ class Recorder(object):
 
         valid_keys = ['name', 'label', 'agency_uri', 'author_uri']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stream = [x for x in ret_stream if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_stream
+
+
+    def merge(self, merge_recorder):
+        ''' Merge a recorder with the existing.
+        '''
+        # Update the attributes.
+        self.description = merge_recorder.description
+
+        # Merge the streams.
+        for cur_stream in merge_recorder.streams:
+            exist_stream = self.get_stream(name = cur_stream.name)
+            if not exist_stream:
+                self.add_stream(cur_stream)
+            else:
+                exist_stream = exist_stream[0]
+                self.logger.debug('Merging db stream %s (id: %d) with %s.', '-'.join([exist_stream.model, exist_stream.name]), exist_stream.id, '-'.join([cur_stream.model, cur_stream.name]))
+                exist_stream.merge(cur_stream)
+
+
 
 
 
@@ -854,9 +986,11 @@ class RecorderStream(object):
             self.parent_recorder.has_changed =  True
 
         # Send an inventory update event.
-        msgTopic = 'inventory.update.stream'
-        msg = (self, name, value)
-        pub.sendMessage(msgTopic, msg)
+        # TODO: The sending of the pub messages should be done somewhere else.
+        # A GUI related method should be used for that.
+        #msgTopic = 'inventory.update.stream'
+        #msg = (self, name, value)
+        #pub.sendMessage(msgTopic, msg)
 
 
     def __eq__(self, other):
@@ -989,7 +1123,7 @@ class RecorderStream(object):
 
         valid_keys = ['serial', 'name']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_component = [x for x in ret_component if getattr(x.item, cur_key) == cur_value]
             else:
@@ -1114,6 +1248,37 @@ class RecorderStream(object):
                 raise ValueError('Use either back, front or both for the pos argument.')
         else:
             return (None, None)
+
+
+    def merge(self, merge_stream):
+        ''' Merge a stream.
+        '''
+        # Update the attributes.
+        self.label = merge_stream.label
+
+        # Replace existing parameters with the new ones.
+        for cur_parameter in [x for x in self.parameters]:
+            self.logger.debug('Removing parameter %d.', cur_parameter.id)
+            self.remove_parameter_by_instance(cur_parameter)
+
+        for cur_parameter in merge_stream.parameters:
+            self.logger.debug('Adding parameter %s - %s.',
+                              cur_parameter.start_time_string,
+                              cur_parameter.end_time_string)
+            self.add_parameter(cur_parameter)
+
+
+        # Replace existing components with the new ones.
+        for cur_component in [x for x in self.components]:
+            self.remove_component_by_instance(cur_component)
+
+        for cur_component in merge_stream.components:
+            self.add_component(serial = cur_component.serial,
+                               model = cur_component.model,
+                               producer = cur_component.producer,
+                               name = cur_component.name,
+                               start_time = cur_component.start_time,
+                               end_time = cur_component.end_time)
 
 
 class RecorderStreamParameter(object):
@@ -1289,7 +1454,7 @@ class Sensor(object):
 
         valid_keys = ['name', 'agency_uri', 'author_uri']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_component = [x for x in ret_component if getattr(x, cur_key) == cur_value]
             else:
@@ -1338,6 +1503,27 @@ class Sensor(object):
             components_popped.append(self.components.pop(self.components.index(cur_component)))
 
         return components_popped
+
+
+    def merge(self, merge_sensor):
+        ''' Merge a sensor to the existing.
+        '''
+        # Update the attributes.
+        self.description = merge_sensor.description
+
+        # Update the components.
+        for cur_component in merge_sensor.components:
+            self.logger.debug('Checking component %s.', cur_component.name)
+            exist_component = self.get_component(name = cur_component.name)
+            if not exist_component:
+                self.logger.debug('Adding component %s.', cur_component.name)
+                self.add_component(cur_component)
+            else:
+                exist_component = exist_component[0]
+                self.logger.debug('Merging component %s.', cur_component.name)
+                exist_component.merge(cur_component)
+
+
 
 
 
@@ -1444,9 +1630,9 @@ class SensorComponent(object):
         self.logger.debug('Changing attribute %s of sensor %d', name, self.id)
 
         # Send an inventory update event.
-        msgTopic = 'inventory.update.sensor'
-        msg = (self, name, value)
-        pub.sendMessage(msgTopic, msg)
+        #msgTopic = 'inventory.update.sensor'
+        #msg = (self, name, value)
+        #pub.sendMessage(msgTopic, msg)
 
 
     def __eq__(self, other):
@@ -1511,7 +1697,7 @@ class SensorComponent(object):
 
 
     def change_parameter_start_time(self, position, start_time):
-        msg = ''    
+        msg = ''
         cur_row = self.parameters[position]
 
         if not isinstance(start_time, UTCDateTime):
@@ -1533,7 +1719,7 @@ class SensorComponent(object):
 
 
     def change_parameter_end_time(self, position, end_time):
-        msg = ''    
+        msg = ''
         cur_row = self.parameters[position]
 
         if end_time == 'running':
@@ -1562,6 +1748,25 @@ class SensorComponent(object):
                 msg = "The end-time has to be larger than the begin time."
 
         return (end_time, msg)
+
+
+    def merge(self, merge_component):
+        ''' Merge the components.
+        '''
+        # Update the attributes.
+        self.description = merge_component.description
+        self.input_unit = merge_component.input_unit
+        self.output_unit = merge_component.output_unit
+        self.deliver_unit = merge_component.deliver_unit
+
+        # Replace the existing parameters with the new ones.
+        for cur_parameter in [x for x in self.parameters]:
+            self.remove_parameter(cur_parameter)
+
+        for cur_parameter in merge_component.parameters:
+            self.add_parameter(cur_parameter)
+
+
 
 
 
@@ -1937,6 +2142,8 @@ class Station(object):
         else:
             return False
 
+    def __hash__(self):
+        return id(self)
 
     def get_scnl(self):
         scnl = []
@@ -2006,7 +2213,7 @@ class Station(object):
 
         valid_keys = ['name']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_channel = [x for x in ret_channel if getattr(x, cur_key) == cur_value]
             else:
@@ -2023,6 +2230,27 @@ class Station(object):
                 channel_names.append(cur_channel.name)
 
         return channel_names
+
+
+    def merge(self, merge_station):
+        ''' Merge a station into the existing one.
+        '''
+        # Update the attributes.
+        self.description = merge_station.description
+        self.x = merge_station.x
+        self.y = merge_station.y
+        self.z = merge_station.z
+        self.coord_system = merge_station.coord_system
+
+        # Merge the channels.
+        for cur_channel in merge_station.channels:
+            exist_channel = self.get_channel(name = cur_channel.name)
+            if not exist_channel:
+                self.add_channel(cur_channel)
+            else:
+                exist_channel = exist_channel[0]
+                exist_channel.merge(cur_channel)
+
 
 
 
@@ -2222,7 +2450,7 @@ class Channel(object):
 
         valid_keys = ['serial', 'model', 'producer', 'name', 'id']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_stream = [x for x in ret_stream if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
             else:
@@ -2237,11 +2465,31 @@ class Channel(object):
         return ret_stream
 
 
+    def merge(self, merge_channel):
+        ''' Merge a channel with the existing one.
+        '''
+        # Update the attributes.
+        self.description = merge_channel.description
+
+        # Replace existing streams with the new ones.
+        for cur_stream in [x for x in self.streams]:
+            self.remove_stream_by_instance(cur_stream)
+
+        for cur_stream in merge_channel.streams:
+            self.add_stream(serial = cur_stream.serial,
+                            model = cur_stream.model,
+                            producer = cur_stream.producer,
+                            name = cur_stream.name,
+                            start_time = cur_stream.start_time,
+                            end_time = cur_stream.end_time)
+
     # TODO: Implement the methods to change the stream start- and end-time.
     # This will be analog to the sensors in the streams. It would be great to
     # have these methods in the TimeBox class.
     # Keep in mind, that in the DbInventory, the ORM mapper values of the 
     # time-spans have to be changed as well.
+
+
 
 
 class Network(object):
@@ -2303,6 +2551,8 @@ class Network(object):
             return True
         else:
             return False
+
+
 
 
     def add_station(self, station):
@@ -2384,13 +2634,31 @@ class Network(object):
 
         valid_keys = ['name', 'network', 'location', 'id', 'snl', 'snl_string']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         return ret_station
+
+
+    def merge(self, merge_network):
+        ''' Merge a network with the existing.
+        '''
+        # Update the attributes.
+        self.description = merge_network.description
+        self.type = merge_network.type
+
+        # Merge the stations.
+        for cur_station in merge_network.stations:
+            exist_station = self.get_station(name = cur_station.name,
+                                             location = cur_station.location)
+            if not exist_station:
+                self.add_station(cur_station)
+            else:
+                exist_station = exist_station[0]
+                exist_station.merge(cur_station)
 
 
 
@@ -2565,7 +2833,7 @@ class Array(object):
 
         valid_keys = ['name', 'network', 'location', 'id', 'snl', 'snl_string']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_station = [x for x in ret_station if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
             else:
@@ -2579,6 +2847,23 @@ class Array(object):
 
 
         return ret_station
+
+
+    def merge(self, merge_station):
+        ''' Merge an array with the existing one.
+        '''
+        # Update the attributes.
+        self.description = merge_station.description
+
+        # Replace the assigned stations with the new ones.
+        for cur_station in [x for x in self.stations]:
+            self.remove_station_by_instance(cur_station)
+
+        for cur_station in merge_station.stations:
+            self.add_station(station = cur_station.item,
+                             start_time = cur_station.start_time,
+                             end_time = cur_station.end_time)
+
 
 
 

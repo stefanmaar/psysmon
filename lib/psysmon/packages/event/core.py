@@ -18,6 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import zip
+from past.builtins import basestring
+from builtins import object
+import itertools
 import logging
 import warnings
 
@@ -25,6 +30,8 @@ import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
 import psysmon.packages.event.detect as detect
+
+#from profilehooks import profile
 
 class Event(object):
 
@@ -126,6 +133,22 @@ class Event(object):
         return self.end_time - self.start_time
 
 
+    def assign_channel_to_detections(self, inventory):
+        ''' Set the channels according to the rec_stream_ids.
+        '''
+        # Get the unique stream ids.
+        id_list = [x.rec_stream_id for x in self.detections]
+        id_list = list(set(id_list))
+        # Get the channels for the ids.
+        channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
+        channels = [x[0] if len(x) == 1 else None for x in channels]
+        channels = dict(list(zip(id_list, channels)))
+
+        for cur_detection in self.detections:
+            cur_detection.channel = channels[cur_detection.rec_stream_id]
+
+
+    #@profile(immediate=True)
     def write_to_database(self, project):
         ''' Write the event to the pSysmon database.
         '''
@@ -197,6 +220,7 @@ class Event(object):
                 #db_event.pref_focmec_id = self.pref_focmec_id
                 db_event.ev_type = self.event_type
                 db_event.ev_type_certainty = self.event_type_certainty
+                db_event.tags = ','.join(self.tags)
                 db_event.agency_uri = self.agency_uri
                 db_event.author_uri = self.author_uri
                 if self.creation_time is not None:
@@ -213,6 +237,54 @@ class Event(object):
             else:
                 raise RuntimeError("The event with ID=%d was not found in the database.", self.db_id)
 
+    def get_db_orm(self, project):
+        ''' Get an orm representation to use it for bulk insertion into
+        the database.
+        '''
+        db_event_orm_class = project.dbTables['event']
+        d2e_orm_class = project.dbTables['detection_to_event']
+
+        if self.creation_time is not None:
+            cur_creation_time = self.creation_time.isoformat()
+        else:
+            cur_creation_time = None
+
+        if self.parent is not None:
+            catalog_id = self.parent.db_id
+        else:
+            catalog_id = None
+
+        labels = ['ev_catalog_id', 'start_time', 'end_time',
+                  'public_id', 'description', 'comment', 'tags',
+                  'ev_type_id', 'ev_type_certainty', 'pref_origin_id',
+                  'pref_magnitude_id', 'pref_focmec_id', 'agency_uri',
+                  'author_uri', 'creation_time']
+        db_dict = dict(list(zip(labels,
+                           (catalog_id,
+                            self.start_time.timestamp,
+                            self.end_time.timestamp,
+                            self.public_id,
+                            self.description,
+                            self.comment,
+                            ','.join(self.tags),
+                            self.event_type,
+                            self.event_type_certainty,
+                            None,
+                            None,
+                            None,
+                            self.agency_uri,
+                            self.author_uri,
+                            cur_creation_time))))
+        db_event = db_event_orm_class(**db_dict)
+
+        for cur_detection in self.detections:
+            cur_d2e_orm = d2e_orm_class(ev_id = None,
+                                        det_id = cur_detection.db_id)
+            #cur_d2e_orm.detection = cur_detection.get_db_orm(project)
+            db_event.detections.append(cur_d2e_orm)
+
+        return db_event
+
     @classmethod
     def from_db_event(cls, db_event):
         ''' Convert a database orm mapper event to a event.
@@ -222,14 +294,18 @@ class Event(object):
         db_event : SQLAlchemy ORM
             The ORM of the events database table.
         '''
+        if db_event.tags:
+            event_tags = db_event.tags.split(',')
+        else:
+            event_tags = []
         event = cls(start_time = db_event.start_time,
                     end_time = db_event.end_time,
                     db_id = db_event.id,
                     public_id = db_event.public_id,
-                    event_type = None,
+                    event_type = db_event.event_type,
                     event_type_certainty = db_event.ev_type_certainty,
                     description = db_event.description,
-                    tags = db_event.tags,
+                    tags = event_tags,
                     agency_uri = db_event.agency_uri,
                     author_uri = db_event.author_uri,
                     creation_time = db_event.creation_time,
@@ -311,7 +387,7 @@ class Catalog(object):
 
         valid_keys = ['db_id', 'public_id', 'event_type', 'changed']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_events = [x for x in ret_events if getattr(x, cur_key) == cur_value]
             else:
@@ -326,9 +402,10 @@ class Catalog(object):
         return ret_events
 
 
-
-
-    def write_to_database(self, project, only_changed_events = True):
+    #@profile(immediate=True)
+    def write_to_database(self, project,
+                          only_changed_events = True,
+                          bulk_insert = False):
         ''' Write the catalog to the database.
 
         '''
@@ -376,12 +453,38 @@ class Catalog(object):
 
 
         # Write or update all events of the catalog to the database.
-        for cur_event in [x for x in self.events if x.changed is True]:
-            cur_event.write_to_database(project)
+        if bulk_insert:
+            db_data = self.get_events_db_data(project = project)
+            db_session = project.getDbSession()
+            try:
+                assigned_detections = [x.detections for x in db_data]
+
+                for cur_db_data in db_data:
+                    cur_db_data.detections = []
+
+                db_session.add_all(db_data)
+                db_session.flush()
+
+                for k, cur_db_data in enumerate(db_data):
+                    for cur_detection in assigned_detections[k]:
+                        cur_detection.ev_id = cur_db_data.id
+                db_session.add_all(itertools.chain.from_iterable(assigned_detections))
+                db_session.commit()
+            finally:
+                db_session.close()
+        else:
+            for cur_event in [x for x in self.events if x.changed is True]:
+                cur_event.write_to_database(project)
+
+    def get_events_db_data(self, project):
+        ''' Get a dictionary to bulk insert into the dabase.
+        '''
+        db_data = [x.get_db_orm(project) for x in self.events]
+        return db_data
 
 
     def load_events(self, project, start_time = None, end_time = None, event_id = None,
-            min_event_length = None):
+            min_event_length = None, event_types = None, event_tags = None):
         ''' Load events from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -415,6 +518,10 @@ class Catalog(object):
             if min_event_length:
                 query = query.filter(events_table.end_time - events_table.start_time >= min_event_length)
 
+            if event_tags:
+                for cur_tag in event_tags:
+                    query = query.filter(events_table.tags.like('%' + cur_tag + '%'))
+
             events_to_add = []
             for cur_orm in query:
                 try:
@@ -432,6 +539,12 @@ class Catalog(object):
         ''' Clear the events list.
         '''
         self.events = []
+
+
+    def write_to_csv(self, filepath):
+        ''' Write the events in the catalog to CSV file.
+        '''
+        pass
 
 
     @classmethod
@@ -509,7 +622,7 @@ class Library(object):
         removed_catalog : :class:`Catalog`
             The removed catalog. None if no catalog was removed.
         '''
-        if name in self.catalogs.keys():
+        if name in iter(self.catalogs.keys()):
             return self.catalogs.pop(name)
         else:
             return None

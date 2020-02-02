@@ -30,11 +30,18 @@ The pSysmon result module.
 This module contains the pSysmon result system.
 '''
 
-import os
+from builtins import str
+from builtins import object
+import gzip
 import itertools
+import json
+import os
+import shutil
 import warnings
 
 import numpy as np
+
+import psysmon.core.json_util as json_util
 
 
 class ResultBag(object):
@@ -86,7 +93,7 @@ class ResultBag(object):
         import csv
 
         if group_by == 'result':
-            result_rids = list(set(list(itertools.chain.from_iterable(self.results.values()))))
+            result_rids = list(set(list(itertools.chain.from_iterable(list(self.results.values())))))
             for cur_result_rid in result_rids:
                 results_to_export = self.get_results(result_rid = cur_result_rid)
                 export_values = []
@@ -142,7 +149,7 @@ class ResultBag(object):
 
         valid_keys = ['resource_id', 'result_rid', 'name']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_val = [x for x in ret_val if getattr(x, cur_key) == cur_value]
             else:
@@ -170,7 +177,7 @@ class Result(object):
     def __init__(self, name, origin_name, origin_pos = None,
                  origin_resource = None, metadata = None,
                  start_time = None, end_time = None, postfix = None,
-                 sub_directory = None):
+                 sub_directory = None, event_id = None):
         ''' Initialize the instance.
         '''
         # The name of the result.
@@ -191,6 +198,8 @@ class Result(object):
         # The end time of the time window to which the result is associated.
         self.end_time = end_time
 
+        # The id of the event to which the result is related to.
+        self.event_id = event_id
 
         # The directory structure created for the result.
         self.sub_directory = sub_directory
@@ -227,7 +236,10 @@ class Result(object):
     def filename(self):
         ''' The filename of the result.
         '''
-        filename = self.name.lower() + '_' \
+        filename = self.name.lower()
+        if self.event_id:
+            filename += '_' + str(self.event_id)
+        filename += '_' \
                    + self.start_time.isoformat().replace(':', '').replace('.', '').replace('-','') \
                    + '_' \
                    + self.end_time.isoformat().replace(':', '').replace('.', '').replace('-','')
@@ -248,6 +260,12 @@ class Result(object):
 
         if self.sub_directory:
             output_dir = os.path.join(output_dir, *self.sub_directory)
+
+        # TODO: Make the sub-directory structure user
+        # selectable.
+        year = str(self.start_time.year)
+        doy = str(self.start_time.julday)
+        #output_dir = os.path.join(output_dir, year, doy)
 
         return output_dir
 
@@ -299,7 +317,7 @@ class ValueResult(Result):
         A list of results in the order of the scnl list.
         '''
         if scnl is None:
-            scnl = self.values.keys()
+            scnl = iter(self.values.keys())
 
         return scnl, [self.values.get(key, None) for key in scnl]
 
@@ -338,8 +356,7 @@ class TableResult(Result):
         row.add_cells(**kwargs)
         self.rows.append(row)
 
-
-    def save(self, formats = ['csv', ]):
+    def save(self, formats = None):
         ''' Save the result in the specified format.
 
         Parameters
@@ -348,9 +365,12 @@ class TableResult(Result):
             The formats in which the result should be written.
             ('csv')
         '''
+        if formats is None:
+            formats = ['csv', ]
+
         for cur_format in formats:
             if cur_format == 'csv':
-                self.filename_ext = '.csv'
+                self.filename_ext = 'csv'
                 self.save_csv()
             else:
                 # TODO: Throw an exception.
@@ -363,8 +383,11 @@ class TableResult(Result):
 
 
         export_values = []
-        for cur_row in self.rows:
-            cur_values = [cur_row.key, self.start_time.isoformat(), self.end_time.isoformat()]
+        for cur_row in sorted(self.rows, key=lambda x: x.key):
+            if self.event_id:
+                cur_values = [cur_row.key, self.event_id, self.start_time.isoformat(), self.end_time.isoformat()]
+            else:
+                cur_values = [cur_row.key, self.start_time.isoformat(), self.end_time.isoformat()]
             cur_values.extend([cur_row[key] for key in self.column_names])
             #cur_values.reverse()
             #try:
@@ -376,9 +399,9 @@ class TableResult(Result):
             #cur_values.append(id_only)
             #cur_values.append(cur_row.origin_resource)
             #cur_values.reverse()
-            for k, cur_value in enumerate(cur_values):
-                if isinstance(cur_value, unicode):
-                    cur_values[k] = cur_value.encode('utf8')
+            #for k, cur_value in enumerate(cur_values):
+            #    if isinstance(cur_value, str):
+            #        cur_values[k] = cur_value.encode('utf8')
             export_values.append(cur_values)
 
         # Save the export values to a csv file.
@@ -386,18 +409,18 @@ class TableResult(Result):
             os.makedirs(self.output_dir)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, unicode):
-            filename = filename.encode(encoding = 'utf-8')
+        #if isinstance(filename, str):
+        #    filename = filename.encode(encoding = 'utf-8')
 
-        fid = open(filename, 'wt')
-        try:
-            header = [self.key_name, 'start_time', 'end_time']
+        with open(filename, 'w') as fid:
+            if self.event_id:
+                header = [self.key_name, 'event_id', 'start_time', 'end_time']
+            else:
+                header = [self.key_name, 'start_time', 'end_time']
             header.extend(self.column_names)
-            writer = csv.writer(fid, quoting = csv.QUOTE_MINIMAL)
+            writer = csv.writer(fid, quoting=csv.QUOTE_MINIMAL)
             writer.writerow(header)
             writer.writerows(export_values)
-        finally:
-            fid.close()
 
 
 
@@ -429,11 +452,11 @@ class TableResultRow(object):
     def add_cells(self, **kwargs):
         ''' Add values to the row.
         '''
-        for cur_key, cur_value in kwargs.iteritems():
-            if cur_key in self.cells.keys():
+        for cur_key, cur_value in kwargs.items():
+            if cur_key in iter(self.cells.keys()):
                 self.cells[cur_key] = cur_value
             else:
-                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, self.cells.keys()), RuntimeWarning)
+                warnings.warn('The specified key %s was not found in the row columns %s.' % (cur_key, iter(self.cells.keys())), RuntimeWarning)
 
 
 
@@ -595,18 +618,51 @@ class ShelveResult(Result):
         #filename = os.path.join(output_dir, self.filename)
 
         filename = os.path.join(self.output_dir, self.filename)
-        if isinstance(filename, unicode):
-            filename = filename.encode(encoding = 'utf-8')
 
         db = shelve.open(filename)
         db.update(self.db)
         db.close()
 
+        # Compress the shelve file.
+        # TODO: Opening a zipped shelve database is not working. It has to be
+        # uncompressed in advance. Don't compress the file right now.
+        #zip_filename = filename + '.gz'
+        #with open(filename, 'rb') as f_in:
+        #    with gzip.open(zip_filename, 'wb') as f_out:
+        #        shutil.copyfileobj(f_in, f_out)
 
 
 
+class JsonResult(Result):
+    ''' A json dictionary result.
+    '''
+    def __init__(self, data, **kwargs):
+        ''' Initialize the instance.
+
+        Parameters
+        ----------
+        db : Dictionary
+            The pickle-able instances.
+        '''
+        Result.__init__(self, **kwargs)
+
+        # TODO: Add a check if the data is serializable with json.
+        self.data = data
+
+        self.filename_ext = 'json'
 
 
+    def save(self):
+        ''' Save the result as a shelve file.
+        '''
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
+        filename = os.path.join(self.output_dir, self.filename)
 
+        # Compress the shelve file.
+        with gzip.open(filename + '.gz', 'wt') as jsonfile:
+            json.dump(self.data,
+                      fp = jsonfile,
+                      cls = json_util.GeneralFileEncoder)
 

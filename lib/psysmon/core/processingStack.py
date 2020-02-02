@@ -30,6 +30,7 @@ The pSysmon processingStack module.
 This module contains the pSysmon processingStack system.
 '''
 
+from builtins import object
 import copy
 import itertools
 import weakref
@@ -40,7 +41,7 @@ from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.guiBricks import PrefEditPanel
 
 
-class ProcessingStack:
+class ProcessingStack(object):
     ''' The ProcessingStack class.
 
     The processing stack handles the editing and execution of the processing nodes.
@@ -193,14 +194,14 @@ class ProcessingStack:
     def get_results(self):
         ''' Get all results of the processing nodes.
         '''
-        return list(itertools.chain.from_iterable([x.results.values() for x in self.nodes]))
+        return list(itertools.chain.from_iterable([list(x.results.values()) for x in self.nodes]))
 
 
 
 
 
 
-class ProcessingNode:
+class ProcessingNode(object):
     ''' The ProcessingNode class.
 
     The processing node gets data from the processing stack, does some computation with 
@@ -253,6 +254,7 @@ class ProcessingNode:
         '''
         settings = {}
         settings[self.name] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
         return settings
 
 
@@ -264,7 +266,7 @@ class ProcessingNode:
         # The following attributes can't be pickled and therefore have
         # to be removed.
         # These values have to be reset when loading the project.
-        if 'logger' in result.keys():
+        if 'logger' in iter(result.keys()):
             del result['logger']
         return result
 
@@ -349,7 +351,7 @@ class ProcessingNode:
         custom_class : class inhereted from :class:`ProcessingResult`
             The custom class of a result of kind 'custom'.
         '''
-        if name not in self.results.keys():
+        if name not in iter(self.results.keys()):
             if res_type == 'value':
                 self.results[name] = ValueResult(name = name,
                                                  origin_name = self.name,

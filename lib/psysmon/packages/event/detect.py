@@ -28,8 +28,14 @@
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
+from __future__ import division
 #from profilehooks import profile
 
+from builtins import str
+from builtins import zip
+from past.builtins import basestring
+from past.utils import old_div
+from builtins import object
 import logging
 import warnings
 
@@ -211,6 +217,39 @@ class Detection(object):
             else:
                 raise RuntimeError("The detection with ID=%d was not found in the database.", self.db_id)
 
+    def get_db_orm(self, project):
+        ''' Get an orm representation to use it for bulk insertion into
+        the database.
+        '''
+        db_detection_orm = project.dbTables['detection']
+
+        if self.creation_time is not None:
+            creation_time = self.creation_time.isoformat()
+        else:
+            creation_time = None
+
+        if self.parent is not None:
+            catalog_id = self.parent.db_id
+        else:
+            catalog_id = None
+
+        labels = ['catalog_id', 'rec_stream_id',
+                  'start_time', 'end_time',
+                  'method', 'agency_uri',
+                  'author_uri', 'creation_time']
+        db_dict = dict(list(zip(labels,
+                           (catalog_id,
+                            self.rec_stream_id,
+                            self.start_time.timestamp,
+                            self.end_time.timestamp,
+                            self.method,
+                            self.agency_uri,
+                            self.author_uri,
+                            creation_time))))
+        db_detection = db_detection_orm(**db_dict)
+        db_detection.id = self.db_id
+        return db_detection
+
     @classmethod
     def from_db_detection(cls, detection_orm):
         ''' Convert a database orm mapper detection to a detection.
@@ -275,7 +314,25 @@ class Catalog(object):
 
 
     def add_detections(self, detections):
-        ''' Add one or more events to the detections.
+        ''' Add one or more detections to the catalog.
+
+        Parameters
+        ----------
+        detections : list of :class:`Detection`
+            The detections to add to the catalog.
+        '''
+        # Check for potential duplicates.
+        # TODO: add a compare method for the detection class.
+        db_ids = [x.db_id for x in self.detections]
+        detections = [x for x in detections if x.db_id is None or x.db_id not in db_ids]
+
+        for cur_detection in detections:
+            cur_detection.parent = self
+        self.detections.extend(detections)
+
+
+    def remove_detections(self, detections):
+        ''' Remove the detections from the catalog.
 
         Parameters
         ----------
@@ -283,11 +340,12 @@ class Catalog(object):
             The detections to add to the catalog.
         '''
         for cur_detection in detections:
-            cur_detection.parent = self
-        self.detections.extend(detections)
+            if cur_detection in self.detections:
+                self.detections.remove(cur_detection)
 
 
-    def get_detections(self, start_time = None, end_time = None, **kwargs):
+    def get_detections(self, start_time = None, end_time = None,
+                       start_inside = False, end_inside = False, **kwargs):
         ''' Get detections using search criteria passed as keywords.
 
         Parameters
@@ -298,6 +356,14 @@ class Catalog(object):
         end_time : class:`~obspy.core.utcdatetime.UTCDateTime`
             The maximum end_time of the detections.
 
+        start_inside : Boolean
+            If True, select only those detection with a start time
+            inside the search window.
+
+        end_inside : Boolean
+            If True, select only those detection with an end time
+            inside the search window.
+
         scnl : tuple of Strings
             The scnl code of the channel (e.g. ('GILA, 'HHZ', 'XX', '00')).
         '''
@@ -305,17 +371,23 @@ class Catalog(object):
 
         valid_keys = ['scnl']
 
-        for cur_key, cur_value in kwargs.iteritems():
+        for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
                 ret_detections = [x for x in ret_detections if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
 
         if start_time is not None:
-            ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.end_time > start_time)]
+            if start_inside:
+                ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.start_time >= start_time)]
+            else:
+                ret_detections = [x for x in ret_detections if (x.end_time is None) or (x.end_time > start_time)]
 
         if end_time is not None:
-            ret_detections = [x for x in ret_detections if x.start_time < end_time]
+            if end_inside:
+                ret_detections = [x for x in ret_detections if x.end_time <= end_time]
+            else:
+                ret_detections = [x for x in ret_detections if x.start_time < end_time]
 
         return ret_detections
 
@@ -329,12 +401,13 @@ class Catalog(object):
         # Get the channels for the ids.
         channels = [inventory.get_channel_from_stream(id = x) for x in id_list]
         channels = [x[0] if len(x) == 1 else None for x in channels]
-        channels = dict(zip(id_list, channels))
+        channels = dict(list(zip(id_list, channels)))
 
         for cur_detection in self.detections:
             cur_detection.channel = channels[cur_detection.rec_stream_id]
 
 
+    #@profile(immediate=True)
     def load_detections(self, project, start_time = None, end_time = None,
                         min_detection_length = None):
         ''' Load detections from the database.
@@ -356,7 +429,8 @@ class Catalog(object):
         try:
             detection_table = project.dbTables['detection']
             query = db_session.query(detection_table).\
-                    filter(detection_table.catalog_id == self.db_id)
+                    filter(detection_table.catalog_id == self.db_id).\
+                    filter(detection_table.end_time > detection_table.start_time)
 
             if start_time:
                 query = query.filter(detection_table.start_time >= start_time.timestamp)
@@ -512,7 +586,7 @@ class Library(object):
         removed_catalog : :class:`Catalog`
             The removed catalog. None if no catalog was removed.
         '''
-        if name in self.catalogs.keys():
+        if name in iter(self.catalogs.keys()):
             return self.catalogs.pop(name)
         else:
             return None
@@ -576,13 +650,16 @@ class Library(object):
             db_session.close()
 
 
-class StaLtaDetector:
+class StaLtaDetector(object):
     ''' Run a standard STA/LTA Detection.
     '''
 
     def __init__(self, data = None, cf_type = 'square', n_sta = 2,
                  n_lta = 10, thr = 3, fine_thr = None, turn_limit = 0.05,
-                 stop_growth = 0.001):
+                 stop_growth = 0.001, stop_growth_exp = 1,
+                 stop_growth_inc = 0,
+                 stop_growth_inc_begin = None,
+                 reject_length = 0):
         ''' Initialize the instance.
         '''
         # The logging logger instance.
@@ -620,6 +697,18 @@ class StaLtaDetector:
         # The ratio with which the stop_value is grown to ensure the reaching
         # of the stop criterium.
         self.stop_growth = stop_growth
+
+        # The exponent of the stop growth.
+        self.stop_growth_exp = stop_growth_exp
+
+        # The increase of the stop_growth_value.
+        self.stop_growth_inc = stop_growth_inc
+
+        # The time when to begin growing the stop growth value.
+        self.stop_growth_inc_begin = stop_growth_inc_begin
+
+        # The length of the events to reject.
+        self.reject_length = reject_length
 
         # The data array.
         if data is None:
@@ -687,7 +776,6 @@ class StaLtaDetector:
         self.valid_ind = self.n_lta + self.n_sta
 
 
-    #@profile
     def compute_event_limits(self, stop_delay = 0):
         ''' Compute the event start and end times based on the detection functions.
 
@@ -725,7 +813,16 @@ class StaLtaDetector:
             n_cur_sta = len(cur_sta)
             n_cur_lta = len(cur_lta)
             cur_stop_crit = np.empty(n_cur_sta, dtype = np.float64)
-            next_end_ind = clib_detect.compute_event_end(n_cur_sta, cur_sta, n_cur_lta, cur_lta, stop_value, cur_stop_crit, self.stop_growth)
+            next_end_ind = clib_detect.compute_event_end(n_cur_sta,
+                                                         cur_sta,
+                                                         n_cur_lta,
+                                                         cur_lta,
+                                                         stop_value,
+                                                         cur_stop_crit,
+                                                         self.stop_growth,
+                                                         self.stop_growth_exp,
+                                                         self.stop_growth_inc,
+                                                         self.stop_growth_inc_begin)
             self.logger.debug("next_end_ind: %d", next_end_ind)
 
             # Compute the event end.
@@ -742,10 +839,11 @@ class StaLtaDetector:
                 # timeseries.
                 self.remove_event_influence(event_start, cur_event_end)
 
-            # Add the event marker.
-            # TODO: add the lta length to the event limits. Adapt the
-            # tracedisplay view accordingly.
-            event_marker.append((event_start, cur_event_end))
+            # Add the event marker if it is larger than the reject length.
+            if cur_event_end > event_start + 1:
+                cur_event_length = cur_event_end - event_start
+                if cur_event_length > self.reject_length:
+                    event_marker.append((event_start, cur_event_end))
 
             # Recompute the next event start indices.
             if np.isnan(cur_event_end):
@@ -806,7 +904,7 @@ class StaLtaDetector:
         '''
         clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
 
-        thrf = np.ascontiguousarray(self.sta[crop_start:]/self.lta[crop_start:], dtype = np.float64)
+        thrf = np.ascontiguousarray(old_div(self.sta[crop_start:],self.lta[crop_start:]), dtype = np.float64)
         event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr, self.fine_thr, self.turn_limit)
 
         event_start_ind = crop_start + event_start

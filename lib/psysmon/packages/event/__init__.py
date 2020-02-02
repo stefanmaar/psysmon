@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name = "events"                                 # The package name.
-version = "0.0.1"                               # The package version.
+version = "0.0.2"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
 description = "The events core package"            # The package description.
@@ -29,9 +29,11 @@ website = "http://www.stefanmertl.com"          # The package website.
 collection_node_modules = ['import_bulletin',
                            'detect_sta_lta',
                            'edit_event_catalogs',
-                           'event_processor',
                            'lc_detect_sta_lta',
-                           'edit_detection_catalogs']
+                           'edit_detection_catalogs',
+                           'lc_detection_binder',
+                           'lc_event_type_filter',
+                           'cn_export_events']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugins_event_selector',
@@ -43,6 +45,16 @@ plugin_modules = ['plugins_event_selector',
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
 
+
+'''
+Database change history.
+version 0.0.1 - 2018-03-15
+Added the event_type database.
+Added the foreign key relationship to the event database.
+
+'''
+
+
 def databaseFactory(base):
     from sqlalchemy import Column
     from sqlalchemy import Integer
@@ -52,6 +64,7 @@ def databaseFactory(base):
     from sqlalchemy import ForeignKey
     from sqlalchemy import UniqueConstraint
     from sqlalchemy.orm import relationship
+    from sqlalchemy.orm import backref
 
     tables = []
 
@@ -67,7 +80,7 @@ def databaseFactory(base):
         _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
-        name = Column(String(255), nullable = False)
+        name = Column(String(191), nullable = False)
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
@@ -98,7 +111,7 @@ def databaseFactory(base):
         __table_args__ = (
                           {'mysql_engine': 'InnoDB'}
                          )
-        _version = '1.0.0'
+        _version = '1.0.1'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         ev_catalog_id = Column(Integer,
@@ -112,7 +125,11 @@ def databaseFactory(base):
         description = Column(Text, nullable = True)
         comment = Column(Text, nullable = True)
         tags = Column(String(255), nullable = True)
-        ev_type_id = Column(Integer, nullable = True)
+        ev_type_id = Column(Integer,
+                            ForeignKey('event_type.id',
+                                       onupdate = 'cascade',
+                                       ondelete = 'set null'),
+                            nullable = True)
         ev_type_certainty = Column(String(50), nullable = True)
         pref_origin_id = Column(Integer, nullable = True)
         pref_magnitude_id = Column(Integer, nullable = True)
@@ -122,6 +139,7 @@ def databaseFactory(base):
         creation_time = Column(String(30), nullable = True)
 
         detections = relationship('DetectionToEventDb')
+        event_type = relationship('EventTypeDb')
 
 
         def __init__(self, ev_catalog_id, start_time, end_time,
@@ -145,35 +163,48 @@ def databaseFactory(base):
             self.author_uri = author_uri
             self.creation_time = creation_time
 
-
     tables.append(EventDb)
 
 
+
+
     ###########################################################################
-    # DETECTION_TO_EVENT table mapper class
-    class DetectionToEventDb(base):
-        __tablename__  = 'detection_to_event'
+    # EVENT_TYPE table mapper class
+    class EventTypeDb(base):
+        __tablename__  = 'event_type'
         __table_args__ = (
+                          UniqueConstraint('name'),
                           {'mysql_engine': 'InnoDB'}
                          )
         _version = '1.0.0'
 
-        ev_id = Column(Integer,
-                       ForeignKey('event.id', onupdate = 'cascade'),
-                       primary_key = True,
-                       nullable = False)
-        det_id = Column(Integer,
-                        ForeignKey('detection.id', onupdate = 'cascade'),
-                        primary_key = True,
-                        nullable = False)
+        id = Column(Integer, primary_key = True, autoincrement = True)
+        parent_id = Column(Integer,
+                           ForeignKey('event_type.id',
+                                      onupdate = 'cascade',
+                                      ondelete = 'cascade'),
+                           nullable = True)
+        name = Column(String(191), nullable = False)
+        description = Column(Text, nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
+        creation_time = Column(String(30), nullable = True)
 
-        detection = relationship('DetectionDb')
+        children = relationship('EventTypeDb',
+                                cascade = 'all',
+                                backref = backref('parent', remote_side = [id]))
 
-        def __init(self, ev_id, det_id):
-            self.ev_id = ev_id
-            self.det_id = det_id
 
-    tables.append(DetectionToEventDb)
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+
+    tables.append(EventTypeDb)
 
 
     ###########################################################################
@@ -187,7 +218,7 @@ def databaseFactory(base):
         _version = '1.0.0'
 
         id = Column(Integer, primary_key = True, autoincrement = True)
-        name = Column(String(255), nullable = False)
+        name = Column(String(191), nullable = False)
         description = Column(Text, nullable = True)
         agency_uri = Column(String(255), nullable = True)
         author_uri = Column(String(255), nullable = True)
@@ -196,7 +227,7 @@ def databaseFactory(base):
         detections = relationship('DetectionDb',
                                   cascade = 'all',
                                   backref = 'parent',
-                                  lazy = 'subquery')
+                                  lazy = 'noload')
 
         def __init__(self, name, description, agency_uri,
                      author_uri, creation_time):
@@ -248,6 +279,48 @@ def databaseFactory(base):
             self.creation_time = creation_time
 
     tables.append(DetectionDb)
+
+
+
+    ###########################################################################
+    # DETECTION_TO_EVENT table mapper class
+    class DetectionToEventDb(base):
+        ''' The traceheader database table mapper.
+
+        History
+        -------
+        1.1.0 - 2018-03-29
+        Cascade the deletes of events and detections.
+        '''
+        __tablename__  = 'detection_to_event'
+        __table_args__ = (
+                          {'mysql_engine': 'InnoDB'}
+                         )
+        _version = '1.1.0'
+
+
+
+        ev_id = Column(Integer,
+                       ForeignKey('event.id',
+                                   onupdate = 'cascade',
+                                   ondelete = 'cascade'),
+                       primary_key = True,
+                       nullable = False)
+        det_id = Column(Integer,
+                        ForeignKey('detection.id',
+                                   onupdate = 'cascade',
+                                   ondelete = 'cascade'),
+                        primary_key = True,
+                        nullable = False)
+
+        detection = relationship('DetectionDb')
+
+        def __init(self, ev_id, det_id):
+            self.ev_id = ev_id
+            self.det_id = det_id
+
+    tables.append(DetectionToEventDb)
+
 
 
     return tables

@@ -30,6 +30,7 @@ The pSysmon GUI module.
 This module contains the graphical user interface (GUI) of the pSysmon 
 main program.
 '''
+from __future__ import print_function
 
 import wx
 import logging
@@ -174,7 +175,7 @@ class NotebookPrefDialog(wx.Frame):
     #
     # Update all options values and close the dialog.  
     def onOk(self, event):
-        for curContainer in self.fieldContainer.values():
+        for curContainer in list(self.fieldContainer.values()):
             curContainer.setOptionsValue()
 
         self.Destroy()
@@ -205,22 +206,22 @@ class NotebookPrefDialog(wx.Frame):
 
     def addContainer(self, container, pageName):
         if not self.pages:
-            print "No dialog pages found. Create one first."
+            print("No dialog pages found. Create one first.")
             return
 
-        if not pageName in self.pages.keys():
-            print "The specified page is not in the container list."
+        if not pageName in iter(self.pages.keys()):
+            print("The specified page is not in the container list.")
             return
 
         container.Reparent(self.pages[pageName])
         row = len(self.fieldContainer)
 
-        print "Adding container at row %d" % row
+        print("Adding container at row %d" % row)
         self.pageSizers[pageName].Add(container, pos=(row, 0), flag=wx.EXPAND|wx.ALL, border=4)
 
         container.options = self.options
 
-        print "Adding container with name %s to the dictionary" % container.GetName()
+        print("Adding container with name %s to the dictionary" % container.GetName())
         self.fieldContainer[container.GetName()] = container
 
         self.notebook.Fit()
@@ -233,11 +234,11 @@ class NotebookPrefDialog(wx.Frame):
     def addField(self, field, container):
 
         if not self.fieldContainer:
-            print "No field container found. Create one first."
+            print("No field container found. Create one first.")
             return
 
-        if not container in self.fieldContainer.values():
-            print "The specified container is not in the container list."
+        if not container in list(self.fieldContainer.values()):
+            print("The specified container is not in the container list.")
             return
 
         container.addField(field)
@@ -249,7 +250,7 @@ class NotebookPrefDialog(wx.Frame):
 
     def refit(self):
         self.notebook.Fit()
-        for curContainer in self.fieldContainer.values():
+        for curContainer in list(self.fieldContainer.values()):
             curContainer.SetSize(curContainer.GetBestSize())
 
             for curField in curContainer.fieldList:

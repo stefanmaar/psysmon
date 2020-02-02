@@ -32,7 +32,11 @@ __license__ = "GNU General Public Licence version 3"
 __keywords__ = "seismological prototyping prototype data processing earthquake obspy"
 
 import logging
-import wx
+try:
+    import wx
+    wx_available = True
+except Exception:
+    wx_available = False
 import os
 
 logConfig = {}
@@ -51,17 +55,18 @@ class LoggingMainProcessFilter(logging.Filter):
         return rec.processName == 'MainProcess'
 
 
-class LoggingRedirectHandler(logging.Handler):
-        def __init__(self, window):
-            # run the regular Handler __init__
-            logging.Handler.__init__(self)
+if wx_available:
+    class LoggingRedirectHandler(logging.Handler):
+            def __init__(self, window):
+                # run the regular Handler __init__
+                logging.Handler.__init__(self)
 
-            self.logArea = window
+                self.logArea = window
 
-        def emit(self, record):
-            msg = self.format(record)+'\n'
-            wx.CallAfter(self.logArea.log, msg, record.levelname)
-            #print "REDIRECT :: %s" % msg
+            def emit(self, record):
+                msg = self.format(record)+'\n'
+                wx.CallAfter(self.logArea.log, msg, record.levelname)
+                #print "REDIRECT :: %s" % msg
 
 
 def getLoggerHandler(mode='console', log_level = None):

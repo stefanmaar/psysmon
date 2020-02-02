@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -32,12 +33,12 @@ class DisplayStationTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setUpClass...\n"
+        print("In setUpClass...\n")
 
 
     @classmethod
     def tearDownClass(cls):
-        print "....in tearDownClass.\n"
+        print("....in tearDownClass.\n")
         #os.removedir(cls.base_dir)
 
 

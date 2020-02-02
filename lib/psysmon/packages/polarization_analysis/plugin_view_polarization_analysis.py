@@ -1,3 +1,4 @@
+from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -18,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from past.utils import old_div
 import logging
 import wx
 import numpy as np
@@ -95,7 +97,7 @@ class PolarizationAnalysis(ViewPlugin):
         ''' This plugin needs to create a virtual channel.
         '''
         # TODO: Get the needed channels from preference items.
-        return self.channel_map.values()
+        return list(self.channel_map.values())
 
 
 
@@ -178,7 +180,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         # Create multiple axes.
         self.set_n_axes(4)
 
-	self.lineColor = [x/255.0 for x in lineColor]
+        self.lineColor = [x/255.0 for x in lineColor]
 
         #self.lines = {'z': None, 'ns': None, 'ew': None}
         #self.lines = {'linearity': None, 'planarity': None}
@@ -201,13 +203,13 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         component_data = {}
         sps = []
         # Get the data of the three components.
-        for component, channel_name in channel_map.iteritems():
+        for component, channel_name in channel_map.items():
             cur_stream = stream.select(channel = channel_name)
             cur_trace = cur_stream.traces[0]
             sps.append(cur_trace.stats.sampling_rate)
 
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = time_array * 1/cur_trace.stats.sampling_rate
+            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
@@ -234,7 +236,7 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
         plot_features = ['incidence', 'azimuth', 'ellipticity', 'pol_strength']
         axes_limits = [(0, np.pi/2.), (-np.pi/2., np.pi/2.), (0 ,1), (0, 1)]
         for k, cur_feature_name in enumerate(plot_features):
-            if cur_feature_name in self.lines.keys():
+            if cur_feature_name in iter(self.lines.keys()):
                 self.axes[k].collections.remove(self.lines[cur_feature_name])
             cur_data = features[cur_feature_name]
             self.lines[cur_feature_name] = self.axes[k].fill_between(x = time_array,

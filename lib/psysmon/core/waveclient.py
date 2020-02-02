@@ -27,7 +27,12 @@ Module for providing the waveform data from various sources.
     GNU General Public License, Version 3
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import division
 
+from builtins import zip
+from builtins import str
+from past.utils import old_div
+from builtins import object
 import fnmatch
 import logging
 import os
@@ -38,8 +43,9 @@ import numpy as np
 from obspy.core import read, Stream
 import obspy.clients.earthworm as earthworm
 import obspy.core.utcdatetime as utcdatetime
+import obspy.clients.seedlink.basic_client as sl_basic_client
 from obspy.core.util.base import ENTRY_POINTS
-import sqlalchemy
+
 
 class WaveClient(object):
     '''The WaveClient class.
@@ -50,7 +56,7 @@ class WaveClient(object):
 
     '''
 
-    def __init__(self, name, stock_window = 3600):
+    def __init__(self, name, description = '', stock_window = 3600):
         '''The constructor.
 
         Create an instance of the Project class.
@@ -70,6 +76,9 @@ class WaveClient(object):
 
         # The name of the waveclient.
         self.name = name
+
+        # The description of the waveclient.
+        self.description = description
 
         # The available data of the waveclient. This includes the
         # currently displayed time period and the preloaded data in
@@ -367,11 +376,11 @@ class PsysmonDbWaveClient(WaveClient):
                     stock_stream.merge()
                     cur_trace = stock_stream.traces[0]
                     cur_start_time = cur_trace.stats.starttime
-                    cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                    cur_end_time = cur_trace.stats.starttime + old_div(cur_trace.stats.npts, cur_trace.stats.sampling_rate)
 
                     stream += stock_stream.split()
 
-                    if (cur_start_time - startTime) > 1/cur_trace.stats.sampling_rate:
+                    if (cur_start_time - startTime) > old_div(1,cur_trace.stats.sampling_rate):
                         self.logger.debug('Get missing data in front...')
                         self.logger.debug('Loading data from %s to %s.', startTime, cur_start_time)
                         curStream = self.load_from_file(station = stat,
@@ -382,7 +391,7 @@ class PsysmonDbWaveClient(WaveClient):
                                                         end_time = cur_start_time)
                         stream += curStream
 
-                    if (endTime - cur_end_time) > 1/cur_trace.stats.sampling_rate:
+                    if (endTime - cur_end_time) > old_div(1,cur_trace.stats.sampling_rate):
                         self.logger.debug('Get missing data in back...')
                         self.logger.debug('Loading data from %s to %s.', cur_end_time, endTime)
                         curStream = self.load_from_file(station = stat,
@@ -480,11 +489,12 @@ class PsysmonDbWaveClient(WaveClient):
                                     filter(self.traceheader.datafile_id == self.datafile.id).\
                                     filter(self.datafile.wf_id ==self.waveformDir.id).\
                                     filter(self.waveformDir.id == self.waveformDirAlias.wf_id).\
-                                    filter(self.waveformDirAlias.user == self.project.activeUser.name)
+                                    filter(self.waveformDirAlias.user == self.project.activeUser.name).\
+                                    filter(self.waveformDir.waveclient == self.name)
 
             # Add the startTime filter option.
             if start_time:
-                query = query.filter(self.traceheader.begin_time + self.traceheader.numsamp * 1/self.traceheader.sps > start_time.timestamp)
+                query = query.filter(self.traceheader.begin_time + old_div(self.traceheader.numsamp * 1,self.traceheader.sps) > start_time.timestamp)
 
             # Add the endTime filter option.
             if end_time:
@@ -518,9 +528,15 @@ class PsysmonDbWaveClient(WaveClient):
                     #                       starttime = start_time,
                     #                       endtime = end_time,
                     #                       dtype = 'float64')
-                    cur_data_stream = read(pathname_or_url = filename,
-                                           format = curHeader.file_type,
-                                           dtype = 'float64')
+                    try:
+                        cur_data_stream = read(pathname_or_url = filename,
+                                               format = curHeader.file_type,
+                                               dtype = 'float64')
+                    except Exception:
+                        self.logger.exception("Error loading the data file %s."
+                                              " Skipping this file.",
+                                              filename)
+                        continue
 
                     # If multiple channels are combined in one file, the
                     # read data stream might contain these channels. Select
@@ -556,6 +572,7 @@ class PsysmonDbWaveClient(WaveClient):
         self.logger.debug("Loaded data stream: %s.", str(data_stream))
         return data_stream
 
+
     def loadWaveformDirList(self):
         '''Load the waveform directories from the database table.
 
@@ -570,15 +587,17 @@ class PsysmonDbWaveClient(WaveClient):
         # TODO: make the waveform dir list a dynamic property.
         dbSession = self.project.getDbSession()
         self.waveformDirList = dbSession.query(wfDir.id,
+                                               wfDir.waveclient,
                                                wfDir.directory,
                                                wfDirAlias.alias,
                                                wfDir.description,
                                                wfDir.file_ext,
                                                wfDir.first_import,
-                                               wfDir.last_scan
-                                              ).join(wfDirAlias,
-                                                     wfDir.id==wfDirAlias.wf_id
-                                                    ).filter(wfDirAlias.user==self.project.activeUser.name).all()
+                                               wfDir.last_scan).\
+                                         join(wfDirAlias,
+                                              wfDir.id==wfDirAlias.wf_id).\
+                                         filter(wfDirAlias.user==self.project.activeUser.name).\
+                                         filter(wfDir.waveclient==self.name).all()
 
         dbSession.close()
 
@@ -667,7 +686,7 @@ class PsysmonDbWaveClient(WaveClient):
                     # Check the file format.
                     EPS = ENTRY_POINTS['waveform']
                     file_format = None
-                    for format_ep in [x for (key, x) in EPS.items()]:
+                    for format_ep in [x for (key, x) in list(EPS.items())]:
                         # search isFormat for given entry point
                         isFormat = pkg_resources.load_entry_point(format_ep.dist.key,
                             'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
@@ -688,14 +707,25 @@ class PsysmonDbWaveClient(WaveClient):
                                                              waveform_dir = selected_wf_dir)
 
                     if not cur_datafile:
-                        self.logger.error("Couldn't create the datafile database data. Skipping this file.")
+                        self.logger.error("Couldn't create the datafile database data. Skipping file %s.",
+                                          file_path)
                         continue
 
-                    stream = read(pathname_or_url = file_path,
-                                  format = file_format,
-                                  headonly = True)
+                    try:
+                        stream = read(pathname_or_url = file_path,
+                                      format = file_format,
+                                      headonly = True)
+                    except Exception:
+                        self.logger.exception("Error while reading the header from file %s. Skipping this file",
+                                              file_path)
+                        continue
+
                     for cur_trace in stream.traces:
-                        cur_data = self.get_traceheader_db_data(trace = cur_trace)
+                        try:
+                            cur_data = self.get_traceheader_db_data(trace = cur_trace)
+                        except Exception:
+                            self.logger.exception("Error while getting the database data for trace %s. Skipping this trace.", cur_trace)
+                            continue
                         if cur_data:
                             cur_datafile.traceheaders.append(cur_data)
 
@@ -739,12 +769,12 @@ class PsysmonDbWaveClient(WaveClient):
 
         labels = ['id', 'wf_id', 'filename', 'filesize', 'file_type',
                   'orig_path', 'agency_uri', 'author_uri', 'creation_time']
-        db_data = dict(zip(labels, (None, waveform_dir.id,
+        db_data = dict(list(zip(labels, (None, waveform_dir.id,
                                  relativeFilename, filestat.st_size, file_format,
                                  os.path.dirname(filename),
                                  self.project.activeUser.author_uri,
                                  self.project.activeUser.agency_uri,
-                                 utcdatetime.UTCDateTime().isoformat())))
+                                 utcdatetime.UTCDateTime().isoformat()))))
         return self.datafile(**db_data)
 
 
@@ -753,7 +783,7 @@ class PsysmonDbWaveClient(WaveClient):
                   'recorder_serial', 'stream', 'network',
                   'sps', 'numsamp', 'begin_date', 'begin_time',
                   'agency_uri', 'author_uri', 'creation_time']
-        header2Insert = dict(zip(labels, (None, None,
+        header2Insert = dict(list(zip(labels, (None, None,
                         trace.stats.station,
                         trace.stats.location + ":" + trace.stats.channel,
                         trace.stats.network,
@@ -763,7 +793,7 @@ class PsysmonDbWaveClient(WaveClient):
                         trace.stats.starttime.timestamp,
                         self.project.activeUser.author_uri,
                         self.project.activeUser.agency_uri,
-                        utcdatetime.UTCDateTime().isoformat())))
+                        utcdatetime.UTCDateTime().isoformat()))))
 
 
         return self.traceheader(**header2Insert)
@@ -788,8 +818,8 @@ class EarthwormWaveclient(WaveClient):
 
         # The obspy earthworm waveserver client instance.
         self.client = earthworm.Client(self.host,
-                             	       self.port,
-                             	       timeout=2)
+                                       self.port,
+                                       timeout=2)
 
     @property
     def pickle_attributes(self):
@@ -848,7 +878,7 @@ class EarthwormWaveclient(WaveClient):
             if len(stock_stream) > 0:
                 cur_trace = stock_stream.traces[0]
                 cur_start_time = cur_trace.stats.starttime
-                cur_end_time = cur_trace.stats.starttime + cur_trace.stats.npts / cur_trace.stats.sampling_rate
+                cur_end_time = cur_trace.stats.starttime + old_div(cur_trace.stats.npts, cur_trace.stats.sampling_rate)
 
                 stream += stock_stream
 
@@ -931,4 +961,216 @@ class EarthwormWaveclient(WaveClient):
 
 
 
+class SeedlinkWaveclient(WaveClient):
+    ''' The seedlink waveserver client.
+
+    Request data for timewindows from a seedlink server.
+    The client uses :class:`obspy.clients.seedlink.basic_client.Client`.
+    '''
+
+    def __init__(self, name = 'seedlink waveserver client', host='localhost', port=18000, project = None, **kwargs):
+        WaveClient.__init__(self, name=name, **kwargs)
+
+        # The psysmon project owning the waveclient.
+        self.project = project
+
+        # The Earthworm waveserver host to which the client should connect.
+        self.host = host
+
+        # The port on which the Eartworm waveserver is running on host.
+        self.port = port
+
+        # The obspy earthworm waveserver client instance.
+        self.client = sl_basic_client.Client(self.host,
+                                             self.port,
+                                             timeout = 5)
+
+        # In obspy.clients.seedlink.slclient.SLClient the logging.basicConfig
+        # is called which creates a default stream handler in the
+        # logging.Logger.root root-logger. Clear this handler.
+        # TODO: Check if current versions of obspy still have this issue.
+        if logging.Logger.root.handlers:
+            logging.Logger.root.removeHandler(logging.Logger.root.handlers[0])
+
+
+    @property
+    def pickle_attributes(self):
+        ''' The attributes which can be pickled.
+        '''
+        d = super(SeedlinkWaveclient, self).pickle_attributes
+        d['host'] = self.host
+        d['port'] = self.port
+        return d
+
+
+    def getWaveform(self, startTime, endTime, scnl):
+        ''' Get the waveform data for the specified parameters.
+
+        Parameters
+        ----------
+        startTime : UTCDateTime
+            The begin datetime of the data to fetch.
+
+        endTime : UTCDateTime
+            The end datetime of the data to fetch.
+
+        scnl : List of tuples
+            The SCNL codes of the data to request.
+
+
+        Returns
+        -------
+        stream : :class:`obspy.core.Stream`
+            The requested waveform data. All traces are packed into one stream.
+        '''
+        from obspy.core import Stream
+
+        #self.logger.debug("Querying...")
+        #self.logger.debug('startTime: %s', startTime)
+        #self.logger.debug('endTime: %s', endTime)
+        #self.logger.debug("%s", scnl)
+        self.logger.debug("Getting the waveform for SCNL: %s from %s to %s...", scnl, startTime.isoformat(), endTime.isoformat())
+
+        stream = Stream()
+
+        # Trim the stock stream to new limits.
+        self.trim_stock(start_time = startTime, end_time = endTime)
+
+        for curScnl in scnl:
+            curStation = curScnl[0]
+            curChannel = curScnl[1]
+            curNetwork = curScnl[2]
+            curLocation = curScnl[3]
+
+
+            stock_stream = self.get_from_stock(station = curStation,
+                                               channel = curChannel,
+                                               network = curNetwork,
+                                               location = curLocation,
+                                               start_time = startTime,
+                                               end_time = endTime)
+
+            if len(stock_stream) > 0:
+                cur_trace = stock_stream.traces[0]
+                cur_start_time = cur_trace.stats.starttime
+                cur_end_time = cur_trace.stats.starttime + old_div(cur_trace.stats.npts, cur_trace.stats.sampling_rate)
+
+                stream += stock_stream.split()
+
+                if (cur_start_time - startTime) > old_div(1,cur_trace.stats.sampling_rate):
+                    curStream = self.request_from_server(station = curStation,
+                                                         channel = curChannel,
+                                                         network = curNetwork,
+                                                         location = curLocation,
+                                                         start_time = startTime,
+                                                         end_time = cur_start_time)
+                    stream += curStream
+
+                if (endTime - cur_end_time) > old_div(1,cur_trace.stats.sampling_rate):
+                    curStream = self.request_from_server(station = curStation,
+                                                         channel = curChannel,
+                                                         network = curNetwork,
+                                                         location = curLocation,
+                                                         start_time = cur_end_time,
+                                                         end_time = endTime)
+                    stream += curStream
+
+            else:
+                curStream = self.request_from_server(station = curStation,
+                                                     channel = curChannel,
+                                                     network = curNetwork,
+                                                     location = curLocation,
+                                                     start_time = startTime,
+                                                     end_time = endTime)
+                stream += curStream
+
+            self.logger.debug('Merging stream.')
+            stream.merge()
+
+        # Trim the stream to the requested time span using only the samples
+        # inside the time span.
+        stream = stream.trim(starttime = startTime,
+                             endtime = endTime,
+                             nearest_sample = False)
+
+        return stream
+
+
+
+    def request_from_server(self, station, network, channel, location, start_time, end_time):
+        ''' Request the data from a seedlink server.
+        '''
+        # Get the channel from the inventory. It's expected, that only one
+        # channel is returned. If more than one channels are returned, then
+        # there is an error in the geometry inventory.
+        cur_channel = self.project.geometry_inventory.get_channel(network = network,
+                                                                  station = station,
+                                                                  location = location,
+                                                                  name = channel)
+
+        stream = Stream()
+        if cur_channel:
+            if len(cur_channel) > 1:
+                raise RuntimeError('More than 1 channel returned for SCNL: %s:%s:%s:%s. Check the geometry inventory for duplicate entries.' % (station, channel, network, location))
+
+            cur_channel = cur_channel[0]
+
+            # Get the streams assigned to the channel for the requested
+            # time-span.
+            assigned_streams = cur_channel.get_stream(start_time = start_time,
+                                                      end_time = end_time)
+
+            if len(assigned_streams) == 0:
+                self.logger.warning("No assigned streams found for SCNL %s.", cur_channel.scnl_string)
+
+            for cur_timebox in assigned_streams:
+                cur_rec_stream = cur_timebox.item
+                orig_location, orig_channel = cur_rec_stream.name.split(':')
+
+                try:
+                    self.logger.debug('get_waveforms for %s, %s, %s', cur_rec_stream.serial, orig_location, orig_channel)
+                    # TODO: The network has to be taken from the database. This
+                    # is tricky, because the original network as stated in the
+                    # miniseed headers is most likely not equal to the station
+                    # network in the psysmon geometry. I have to adapt the
+                    # inventory to keep the original network string. The best
+                    # way will be to to use the stream name as
+                    # NETWORK:LOCATION:CHANNEL as listed in the miniseed
+                    # header.
+                    if cur_rec_stream.serial.startswith('AT'):
+                        orig_network = 'AT'
+                    elif cur_rec_stream.serial == 'DUBAM':
+                        orig_network = 'AT'
+                    else:
+                        orig_network = 'XX'
+                    stream = self.client.get_waveforms(network = orig_network,
+                                                       station = cur_rec_stream.serial,
+                                                       location = orig_location,
+                                                       channel = orig_channel,
+                                                       starttime = start_time,
+                                                       endtime = end_time)
+                    #stream = self.client.get_waveforms(network = 'AT',
+                    #                                   station = 'AT11',
+                    #                                   location = '00',
+                    #                                   channel = 'HOI',
+                    #                                   starttime = start_time,
+                    #                                   endtime = end_time)
+                    self.logger.debug("Received seedlink stream: %s.", str(stream))
+                    for cur_trace in stream:
+                        cur_trace.stats.network = network
+                        cur_trace.stats.station = station
+                        cur_trace.stats.location = location
+                        cur_trace.stats.channel = channel
+                        cur_trace.stats.unit = 'counts'
+                    self.logger.debug('Changed stream header: %s', stream)
+
+                    # Add the stream to the stock.
+                    self.logger.debug('Adding to stock.')
+                    self.add_to_stock(stream)
+
+                    self.logger.debug('leave try')
+                except Exception as e:
+                    self.logger.exception("Error connecting to waveserver: %s", e)
+
+        return stream
 

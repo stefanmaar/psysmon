@@ -43,7 +43,7 @@ def db_table_migration(engine, table, prefix):
     migrate_success = False
     cur_metadata = sqa.MetaData(engine)
     cur_metadata.reflect(engine)
-    if table.__table__.name in cur_metadata.tables.keys():
+    if table.__table__.name in iter(cur_metadata.tables.keys()):
         # Check for changes between the existing and the new table.
         table_updated = update_db_table(engine = engine,
                                         table = table,
@@ -60,7 +60,7 @@ def db_table_migration(engine, table, prefix):
             table.__table__.create()
             migrate_success = True
         except:
-            logger.error('Error creating the table %s.', table.__table__.name)
+            logger.exception('Error creating the table %s.', table.__table__.name)
 
     return migrate_success
 
@@ -101,8 +101,8 @@ def update_db_table(engine, table, metadata, prefix):
         table_updated = True
 
     # Check for changed column specifications.
-    for cur_name, cur_col in new_table.columns.items():
-        if cur_name not in exist_table.columns.keys():
+    for cur_name, cur_col in list(new_table.columns.items()):
+        if cur_name not in iter(exist_table.columns.keys()):
             # The column is not existing in the database. 
             # Might have been deleted. Ignore it.
             continue

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -56,7 +57,7 @@ class InventoryTestCase(unittest.TestCase):
         pass
 
     def tearDown(self):
-        print "Es war sehr schoen - auf Wiederseh'n.\n"
+        print("Es war sehr schoen - auf Wiederseh'n.\n")
 
     def test_station_creation(self):
         ''' Test the creation of a station.

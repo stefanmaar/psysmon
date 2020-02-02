@@ -31,6 +31,7 @@ The projectserver module.
 This module contains the classes to run the psysmon project server system
 '''
 
+from builtins import object
 import logging
 import re
 
@@ -61,7 +62,7 @@ class ProjectServer(object):
         '''
         if uri is None:
             return self.data
-        elif exact is True and uri in self.data.keys():
+        elif exact is True and uri in iter(self.data.keys()):
             return self.data[uri]
         elif exact is False:
             keys_to_return = [x for x in self.data.keys() if re.search(uri, x) is not None]
@@ -73,7 +74,7 @@ class ProjectServer(object):
     def list_data(self):
         ''' Return a list of uri of the available data.
         '''
-        return self.data.keys()
+        return iter(self.data.keys())
 
 
     @pyro.expose
@@ -89,14 +90,14 @@ class ProjectServer(object):
         ''' Remove selected data from the the server.
         '''
         if uri is None:
-            data_to_remove = self.data.keys()
+            data_to_remove = iter(self.data.keys())
         elif recursive is True:
             data_to_remove = [x for x in self.data.keys() if x.startswith(uri)]
         else:
             data_to_remove = [uri,]
 
         for cur_key in data_to_remove:
-            if cur_key in self.data.keys():
+            if cur_key in iter(self.data.keys()):
                 self.data.pop(cur_key)
 
 

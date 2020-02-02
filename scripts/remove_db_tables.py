@@ -28,6 +28,7 @@ Remove the database tables of a psysmon project.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+from __future__ import print_function
 import matplotlib as mpl
 mpl.rcParams['backend'] = 'WXAgg'
 
@@ -36,7 +37,7 @@ from psysmon.core.test_util import drop_database_tables
 
 def run():
     if len(sys.argv) <= 5:
-        print "8 arguments required (db_dialect, db_user, db_host, db_name, project_name, db_pwd, db_driver).\n"
+        print("8 arguments required (db_dialect, db_user, db_host, db_name, project_name, db_pwd, db_driver).\n")
         sys.exit()
 
     db_dialect = sys.argv[1]

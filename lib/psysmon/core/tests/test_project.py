@@ -3,7 +3,9 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
+from builtins import str
 import unittest
 import logging
 import psysmon.core.project
@@ -90,9 +92,9 @@ class ProjectTestCase(unittest.TestCase):
         import shelve
         import psysmon.core.waveclient
 
-        print self.db_project.db_version
+        print(self.db_project.db_version)
         self.db_project.createDirectoryStructure()
-        print self.db_project.db_version
+        print(self.db_project.db_version)
         self.db_project.save()
 
         self.assertTrue(os.path.isfile(os.path.join(self.db_project.projectDir, self.db_project.projectFile)))
@@ -104,10 +106,10 @@ class ProjectTestCase(unittest.TestCase):
                          'waveclient', 'defaultWaveclient',
                          'scnlDataSources']
         for cur_key in required_keys:
-            self.assertTrue(cur_key in db.keys())
+            self.assertTrue(cur_key in iter(db.keys()))
 
         pkg_version = {}
-        for cur_pkg in self.psybase.packageMgr.packages.itervalues():
+        for cur_pkg in self.psybase.packageMgr.packages.values():
             pkg_version[cur_pkg.name] = cur_pkg.version
 
         self.assertEquals(db['name'], 'Unit Test')
@@ -130,7 +132,7 @@ class ProjectTestCase(unittest.TestCase):
         self.db_project.save()
 
         db = shelve.open(os.path.join(self.db_project.projectDir, self.db_project.projectFile))
-        print db
+        print(db)
         self.assertEquals(db['waveclient'], [('main client', 'psysmonDb', {}),])
         db.close()
 

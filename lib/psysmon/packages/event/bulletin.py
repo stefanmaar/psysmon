@@ -29,6 +29,8 @@ Handle earthquake bulletins.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 
 '''
+from builtins import next
+from builtins import object
 import os
 import psysmon
 import logging
@@ -210,7 +212,7 @@ class ImsParser(object):
                 if cur_block != 'isf_comment':
                     continue
 
-            if cur_block in block_parser.keys():
+            if cur_block in iter(block_parser.keys()):
                 block_parser[cur_block](cur_line)
 
         return False
@@ -514,7 +516,7 @@ class CsvParser(object):
 
         with open(filename, 'rb') as event_file:
             csv_reader = csv.reader(event_file, delimiter = ',', quotechar = '"')
-            header_line = csv_reader.next()
+            header_line = next(csv_reader)
             for cur_row in csv_reader:
                 if cur_row:
                     cur_event = ev_core.Event(public_id = cur_row[0],

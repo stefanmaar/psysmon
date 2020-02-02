@@ -3,6 +3,7 @@ Created on May 17, 2011
 
 @author: Stefan Mertl
 '''
+from __future__ import print_function
 
 import unittest
 import psysmon.core.test_util as test_util
@@ -44,7 +45,7 @@ class ProjectFileEncoderTestCase(unittest.TestCase):
         '''
         encoder = json_util.ProjectFileEncoder()
         d = encoder.default(self.db_project)
-        print d
+        print(d)
 
 
     def test_json_serialization(self):
