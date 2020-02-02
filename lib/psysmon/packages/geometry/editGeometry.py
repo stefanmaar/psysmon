@@ -1546,7 +1546,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
     ## Handle the key pressed events.
     def onKeyDown(self, event):
         keycode = event.GetKeyCode()
-        source = self.GetPyData(self.GetSelection())
+        source = self.GetItemData(self.GetSelection())
 
         if keycode == wx.WXK_DELETE:
             if isinstance(source, tuple):
