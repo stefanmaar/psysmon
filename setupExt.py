@@ -95,13 +95,20 @@ def checkForPackage(name, requiredVersion):
 
     try:
         if name == 'pillow':
-            mod = __import__('PIL', globals(), locals(), ['VERSION'], 0)
-            __version__ = mod.PILLOW_VERSION
+            mod = __import__('PIL', globals(), locals(), [], 0)
+            try:
+                __version__ = mod.__version__
+            except Exception as e:
+                __version__ = mod.PILLOW_VERSION
         elif name == 'cairo':
-            mod = __import__('cairo', globals(), locals(), ['version'], 0)
-            __version__ = mod.version
+            mod = __import__('cairo', globals(), locals(), [], 0)
+            try:
+                __version__ = mod.__version__
+            except Exception as e:
+                __version__ = mod.version
         elif name == 'lxml':
-            mod = __import__('lxml.etree', globals(), locals(), ['__version__'], 0)
+            mod = __import__('lxml.etree', globals(), locals(),
+                             ['__version__'], 0)
             __version__ = mod.__version__
         else:
             mod = __import__(name, globals(), locals(), ['__version__'], 0)
