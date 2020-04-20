@@ -34,15 +34,17 @@ from __future__ import division
 from builtins import str
 from builtins import range
 from builtins import object
-from past.utils import old_div
-import os
 import copy
+import json
 import logging
+import os
+from past.utils import old_div
 
 import numpy as np
 import psysmon
 import psysmon.core.packageNodes as package_nodes
 import obspy.core
+import psysmon.core.json_util as json_util
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
 from psysmon.core.gui_preference_dialog import ListbookPrefDialog
@@ -113,6 +115,22 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
                                            output_dir = output_dir,
                                            parent_rid = self.rid)
 
+        # Save the collection settings to the processor output
+        # directory if it exists.
+        # TODO: Place the creation of the execution metadata dictionary
+        # to the CollectionNode class. 
+        if os.path.exists(processor.output_dir):
+            exec_meta = {}
+            exec_meta['rid'] = self.rid
+            exec_meta['execution_time'] = UTCDateTime().isoformat()
+            exec_meta['node_settings'] = self.get_settings()
+            settings_filename = 'execution_metadata.json'
+            settings_filepath = os.path.join(processor.output_dir, settings_filename)
+            with open(settings_filepath, 'w') as fp:
+                json.dump(exec_meta,
+                          fp = fp,
+                          cls = json_util.GeneralFileEncoder)
+
         window_mode = self.pref_manager.get_value('window_mode')
 
         if self.parentCollection.runtime_att.start_time:
@@ -141,6 +159,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
             end_time = UTCDateTime(end_time.year, end_time.month, end_time.day) +  (7 - end_time.weekday) * 86400
             window_length = 86400. * 7
             overlap = 0.
+
 
         processor.process(looper_nodes = self.children,
                           start_time = start_time,
@@ -292,6 +311,9 @@ class SlidingWindowProcessor(object):
             self.output_dir = os.path.join(output_dir, rid_dir)
         else:
             self.output_dir = output_dir
+
+        # Create the output directory.
+        os.makedirs(self.output_dir)
 
 
 
