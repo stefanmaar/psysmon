@@ -131,6 +131,26 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
                                        tool_tip = 'Add the temporal average with noise models to the PSD plot.')
         plot_group.add_item(pref_item)
 
+        pref_item = psy_pm.FloatSpinPrefItem(name = 'lower_frequ',
+                                               label = 'lower frequency [Hz]',
+                                               value = 0.1,
+                                               limit = [1e-6, 1e9],
+                                               tool_tip = 'The lower frequency limit of the plot.')
+        plot_group.add_item(pref_item)
+
+        pref_item = psy_pm.CheckBoxPrefItem(name = 'use_upper_frequ',
+                                            label = 'use upper frequency',
+                                            value = False,
+                                            tool_tip = 'Use the upper frequency value to set the upper frequency limit of the plot.',
+                                            hooks = {'on_value_change': self.on_use_upper_frequ_changed})
+        plot_group.add_item(pref_item)
+
+        pref_item = psy_pm.FloatSpinPrefItem(name = 'upper_frequ',
+                                               label = 'upper frequency [Hz]',
+                                               value = 100,
+                                               limit = [1e-6, 1e9],
+                                               tool_tip = 'The upper frequency limit of the plot.')
+        plot_group.add_item(pref_item)
 
 
     def create_output_prefs(self):
@@ -146,8 +166,15 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
                                             )
         files_group.add_item(pref_item)
 
-
-
+    def on_use_upper_frequ_changed(self):
+        '''
+        '''
+        if self.pref_manager.get_value('use_upper_frequ'):
+            item = self.pref_manager.get_item('upper_frequ')[0]
+            item.enable_gui_element()
+        else:
+            item = self.pref_manager.get_item('upper_frequ')[0]
+            item.disable_gui_element()
 
 
     def edit(self):
@@ -157,6 +184,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
             self.pref_manager.set_limit('scnl_list', channels)
 
         dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        self.on_use_upper_frequ_changed()
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -167,6 +195,12 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
         start_time = self.pref_manager.get_value('start_time')
         end_time = self.pref_manager.get_value('end_time')
         plot_length = self.pref_manager.get_value('plot_length')
+        lower_frequ = self.pref_manager.get_value('lower_frequ')
+        use_upper_frequ = self.pref_manager.get_value('use_upper_frequ')
+        if use_upper_frequ:
+            upper_frequ = self.pref_manager.get_value('upper_frequ')
+        else:
+            upper_frequ = None
 
         # Round the times to days.
         start_day = UTCDateTime(year = start_time.year,
@@ -205,7 +239,9 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
                                          endtime = cur_end,
                                          data_dir = self.pref_manager.get_value('data_dir'),
                                          output_dir = self.pref_manager.get_value('output_dir'),
-                                         with_average_plot = self.pref_manager.get_value('with_average_plot'))
+                                         with_average_plot = self.pref_manager.get_value('with_average_plot'),
+                                         min_frequ = lower_frequ,
+                                         max_frequ = upper_frequ)
 
                 psd_plotter.plot()
 
@@ -215,7 +251,9 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
 
 class PSDPlotter(object):
 
-    def __init__(self, station, channel, network, location, data_dir, output_dir, starttime = None, endtime = None, with_average_plot = False):
+    def __init__(self, station, channel, network, location,
+                 data_dir, output_dir, starttime = None, endtime = None,
+                 with_average_plot = False, min_frequ = 0.1, max_frequ = None):
         ''' The constructor.
 
         '''
@@ -241,6 +279,10 @@ class PSDPlotter(object):
         self.endtime = endtime
 
         self.with_average_plot = with_average_plot
+
+        self.min_frequ = min_frequ
+
+        self.max_frequ = max_frequ
 
 
     def scan_for_files(self):
@@ -287,6 +329,7 @@ class PSDPlotter(object):
         self.logger.debug('Preparing the PSD data.')
         psd_data = {}
         psd_nfft = None
+        psd_max_frequ = None
         window_length = None
         window_overlap = None
         for cur_file in file_list:
@@ -310,13 +353,28 @@ class PSDPlotter(object):
                 # must have the same nfft.
                 psd_nfft = nfft
             elif nfft != psd_nfft:
-                self.logger.error('The nfft (%d) differs from the initial nfft (%d).', nfft, psd_nfft)
+                self.logger.error('The nfft (%d) differs from the initial nfft (%d). Skipping this PSD file.', nfft, psd_nfft)
+                continue
+
+            # Check the frequency array.
+            max_frequ = list(set([x['frequ'][-1] for x in cur_psd_data.values()]))
+            if len(max_frequ) != 1:
+                self.logger.error("The maximum frequency value of the PSDs ar not equal: %s. Skipping this PSD file.", max_frequ)
+                continue
+            else:
+                max_frequ = max_frequ[0]
+
+            if psd_max_frequ is None:
+                psd_max_frequ = max_frequ
+            elif max_frequ != psd_max_frequ:
+                self.logger.error("The maximum frequency value (%f) differs from the initial value (%f). Skipping this PSD file.", max_frequ, psd_max_frequ)
+                continue
 
 
             # Check the window_length value.
             cur_window_length = list(set([x['window_length'] for x in cur_psd_data.values()]))
             if len(cur_window_length) != 1:
-                self.logger.error('The window_length of the PSDs are not equal: %s', cur_window_length)
+                self.logger.error('The window_length of the PSDs are not equal: %s. Skipping this PSD file.', cur_window_length)
                 continue
             else:
                 cur_window_length = cur_window_length[0]
@@ -324,14 +382,15 @@ class PSDPlotter(object):
             if window_length is None:
                 window_length = cur_window_length
             elif cur_window_length != window_length:
-                self.logger.error('The window_length (%d) differs from the initial window_length (%d).', cur_window_length, window_length)
+                self.logger.error('The window_length (%d) differs from the initial window_length (%d). Skippin this PSD file.', cur_window_length, window_length)
+                continue
 
 
 
             # Check the window_overlap.
             cur_window_overlap = list(set([x['window_overlap'] for x in cur_psd_data.values()]))
             if len(cur_window_overlap) != 1:
-                self.logger.error('The window_overlap of the PSDs are not equal: %s', cur_window_overlap)
+                self.logger.error('The window_overlap of the PSDs are not equal: %s. Skipping this PSD file.', cur_window_overlap)
                 continue
             else:
                 cur_window_overlap = cur_window_overlap[0]
@@ -339,7 +398,8 @@ class PSDPlotter(object):
             if window_overlap is None:
                 window_overlap = cur_window_overlap
             elif cur_window_overlap != window_overlap:
-                self.logger.error('The window_overlap (%d) differs from the initial window_overlap (%d).', cur_window_overlap, window_overlap)
+                self.logger.error('The window_overlap (%d) differs from the initial window_overlap (%d). Skipping this PSD file.', cur_window_overlap, window_overlap)
+                continue
 
             # All checks passed, update the dictionary.
             psd_data.update(cur_psd_data)
@@ -359,7 +419,6 @@ class PSDPlotter(object):
 
         # Plot the psd data to file.
         self.logger.info("Creating the images.")
-        min_frequ = 0.1
 
 
 
@@ -379,6 +438,11 @@ class PSDPlotter(object):
             # There was no valid data found at all. Don't create an image.
             self.logger.warning("No data found.")
             return
+
+        # Set the frequency limits of the plot.
+        min_frequ = self.min_frequ
+        if self.max_frequ is None:
+            max_frequ = np.max(frequ)
 
         psd_matrix = np.ma.masked_where(np.isnan(psd_matrix), psd_matrix)
 
@@ -426,7 +490,7 @@ class PSDPlotter(object):
             pos = ax_psd.get_position()
             ax_cb = fig.add_axes([pos.x1, 0.15, old_div(cb_width,width), 0.75])
             ax_avg.set_yscale('log')
-            ax_avg.set_ylim((min_frequ, np.max(frequ)))
+            ax_avg.set_ylim((min_frequ, max_frequ))
         else:
             ax_psd = fig.add_axes([0.1, 0.15, old_div(psd_width,width), 0.75])
             pos = ax_psd.get_position()
@@ -434,7 +498,7 @@ class PSDPlotter(object):
 
 
         ax_psd.set_yscale('log')
-        ax_psd.set_ylim((min_frequ, np.max(frequ)))
+        ax_psd.set_ylim((min_frequ, max_frequ))
         ax_psd.set_xlim((0, (self.endtime - self.starttime)/3600.))
         amp_resp = 10 * np.log10(np.abs(psd_matrix))
         if unit == 'm/s':
