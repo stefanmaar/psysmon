@@ -92,7 +92,6 @@ class MultilineMessagesFormatter(logging.Formatter):
             record.asctime = self.formatTime(record, self.datefmt)
         if '\n' in record.message:
             splitted = record.message.splitlines()
-            print(splitted)
             output = self._fmt % dict(record.__dict__, message=splitted.pop(0)) + '\n'
             output += '\n'.join(
                 multiline_fmt % dict(record.__dict__, message=line)
