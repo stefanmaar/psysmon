@@ -54,7 +54,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         psysmon.core.packageNodes.LooperCollectionChildNode.__init__(self, **args)
 
         self.create_parameters_prefs()
-        self.create_output_prefs()
 
         # The computed psd data.
         self.psd_data = {}
@@ -89,21 +88,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                              tool_tip = 'The overlap of the fft windows [%].'
                                              )
         psd_group.add_item(pref_item)
-
-
-    def create_output_prefs(self):
-        ''' Create the output preference items.
-        '''
-        out_page = self.pref_manager.add_page('output')
-        out_group = out_page.add_group('output')
-
-        pref_item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
-                                             label = 'output directory',
-                                             value = '',
-                                             tool_tip = 'Specify a directory where to save the PSD files.')
-
-        out_group.add_item(pref_item)
-
 
 
     def edit(self):
@@ -173,6 +157,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 unit = cur_trace.stats.unit
 
                 cur_psd = {}
+                cur_psd['sps'] = cur_trace.stats.sampling_rate
                 cur_psd['frequ'] = frequ
                 cur_psd['P'] = P
                 cur_psd['window_length'] = self.parent.pref_manager.get_value('window_length')
@@ -186,6 +171,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 psd_data[start_time.isoformat()] = cur_psd
             else:
                 cur_psd = {}
+                cur_psd['sps'] = None
                 cur_psd['frequ'] = None
                 cur_psd['P'] = None
                 cur_psd['window_length'] = self.parent.pref_manager.get_value('window_length')
