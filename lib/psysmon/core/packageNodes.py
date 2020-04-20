@@ -362,7 +362,11 @@ class LooperCollectionNode(CollectionNode):
             for cur_child in children:
                 self.add_child(cur_child)
 
-
+    @property
+    def settings(self):
+        ''' The configuration settings of the node.
+        '''
+        return self.get_settings()
 
 
     def add_child(self, child_node, position = None):
