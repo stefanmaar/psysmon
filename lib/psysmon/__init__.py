@@ -106,7 +106,8 @@ class MultilineMessagesFormatter(logging.Formatter):
             if not record.exc_text:
                 record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
-            output += ' ' + self.multiline_marker % record.__dict__ + '\n'
+            #output += ' ' + multiline_fmt % record.__dict__ + '\n'
+            output += '\n'
             try:
                 output += '\n'.join(
                     multiline_fmt % dict(record.__dict__, message=line)
