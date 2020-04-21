@@ -443,6 +443,8 @@ class PSDPlotter(object):
         min_frequ = self.min_frequ
         if self.max_frequ is None:
             max_frequ = np.max(frequ)
+        else:
+            max_frequ = self.max_frequ
 
         psd_matrix = np.ma.masked_where(np.isnan(psd_matrix), psd_matrix)
 
