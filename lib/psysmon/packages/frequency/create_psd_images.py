@@ -32,6 +32,7 @@ from __future__ import division
 from builtins import range
 from builtins import object
 from past.utils import old_div
+import pdb
 import os
 import shelve
 import logging
@@ -422,22 +423,39 @@ class PSDPlotter(object):
 
 
 
-        psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(psd_data)))
         frequ = None
         time_key = sorted([x for x in psd_data.keys()])
-        for m, cur_psd in enumerate([psd_data[x] for x in time_key]):
+
+        # Find gaps in the data and add a time entry after each gap to create a
+        # column in the PSD matrix that is filled with NaN values. This
+        # prevents that the PSD column is extended to the next valid data
+        # column.
+        time = np.array([UTCDateTime(x) for x in time_key])
+        dt = np.diff(time)
+        gaps = dt > window_length
+        gap_times = time[:-1][gaps]
+        time_key.extend([(x + window_length).isoformat() for x in gap_times])
+        time_key = sorted(time_key)
+
+        # Create the PSD matrix used for plotting.
+        psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(time_key)))
+        psd_matrix[:] = np.nan
+
+        for m, cur_psd in enumerate([psd_data.get(x, None) for x in time_key]):
+            if cur_psd is None:
+                continue
+
             if cur_psd['frequ'] is not None:
                 psd_matrix[:,m] = cur_psd['P']
                 if frequ is None:
                     frequ = cur_psd['frequ']
 
-            else:
-                psd_matrix[:,m] = np.nan
 
         if frequ is None:
             # There was no valid data found at all. Don't create an image.
             self.logger.warning("No data found.")
             return
+
 
         # Set the frequency limits of the plot.
         min_frequ = self.min_frequ
@@ -453,6 +471,9 @@ class PSDPlotter(object):
         time = np.array([UTCDateTime(x) for x in time_key])
         time = time - self.starttime
         time = time / 3600.
+
+
+
 
         cur_scnl = (self.station, self.channel, self.network, self.location)
         dpi = 300.
