@@ -128,7 +128,14 @@ class CreateEvent(InteractivePlugin):
     def activate(self):
         ''' Extend the plugin activate method.
         '''
+        self.logger.debug("Activating the create event plugin.")
         InteractivePlugin.activate(self)
+
+        if not self.selected_catalog_name:
+            catalog_names = self.library.get_catalogs_in_db(self.parent.project)
+            self.pref_manager.set_limit('event_catalog', catalog_names)
+            if catalog_names:
+                self.pref_manager.set_value('event_catalog', catalog_names[0])
 
         # Load the event catalog.
         self.on_select_catalog()
@@ -138,7 +145,7 @@ class CreateEvent(InteractivePlugin):
         ''' Deactivate the plugin.
         '''
         self.cleanup()
-        self.active = False
+        InteractivePlugin.deactivate(self)
 
 
     def on_after_plot(self):
