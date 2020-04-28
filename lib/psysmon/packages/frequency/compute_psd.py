@@ -118,6 +118,10 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             cur_scnl = (cur_trace.stats.station, cur_trace.stats.channel,
                         cur_trace.stats.network, cur_trace.stats.location)
 
+            # Check if a result has to be created.
+            if not cur_event:
+                self.check_result_needed(cur_scnl, start_time)
+
             # Get the channel instance from the inventory.
             cur_channel = self.project.geometry_inventory.get_channel(station = cur_trace.stats.station,
                                                                       name = cur_trace.stats.channel,
@@ -190,10 +194,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             self.save_psd_data(psd = cur_psd,
                                origin_resource = origin_resource)
 
-            # Check if a result has to be created.
-            if not cur_event:
-                self.check_result_needed(cur_scnl, start_time)
-
         if cur_event:
             self.create_event_result(event = cur_event,
                                      origin_resource = origin_resource)
@@ -229,6 +229,9 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                             origin_resource = None):
         ''' Check if a result has to be created for the given SCNL.
         '''
+        if scnl not in self.save_day.keys():
+            return
+
         last_save_day = self.save_day[scnl]
 
         # Create a result if the current start time extends the save interval.
