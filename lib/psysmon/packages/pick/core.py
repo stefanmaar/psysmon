@@ -193,7 +193,8 @@ class Catalog(object):
         self.picks.extend(picks)
 
 
-    def get_pick(self, start_time = None, end_time = None, station = None, **kwargs):
+    def get_pick(self, start_time = None, end_time = None,
+            station = None, location = None, **kwargs):
         ''' Get picks from the catalog.
 
         Parameters
@@ -234,6 +235,9 @@ class Catalog(object):
 
         if station is not None:
             ret_picks = [x for x in ret_picks if x.channel.parent_station.name == station]
+
+        if location is not None:
+            ret_picks = [x for x in ret_picks if x.channel.parent_station.location == location]
 
         return ret_picks
 
@@ -509,10 +513,10 @@ class Pick(object):
                                       ev_id = self.event_id,
                                       label = self.label,
                                       time = self.time.timestamp,
-                                      amp1 = self.amp1,
-                                      amp2 = self.amp2,
-                                      first_motion = self.first_motion,
-                                      error = self.error,
+                                      amp1 = float(self.amp1) if self.amp1 else None,
+                                      amp2 = float(self.amp2) if self.amp2 else None,
+                                      first_motion = int(self.first_motion) if self.first_motion else None,
+                                      error = flaot(self.error) if self.error else None,
                                       agency_uri = self.agency_uri,
                                       author_uri = self.author_uri,
                                       creation_time = creation_time
@@ -536,10 +540,10 @@ class Pick(object):
                 pick_orm.ev_id = self.event_id
                 pick_orm.label = self.label
                 pick_orm.time = self.time.timestamp
-                pick_orm.amp1 = self.amp1
-                pick_orm.amp2 = self.amp2
-                pick_orm.first_motion = self.first_motion
-                pick_orm.error = self.error
+                pick_orm.amp1 = float(self.amp1) if self.amp1 else None
+                pick_orm.amp2 = float(self.amp2) if self.amp2 else None
+                pick_orm.first_motion = int(self.first_motion) if self.first_motion else None
+                pick_orm.error = float(self.error) if self.error else None
                 pick_orm.agency_uri = self.agency_uri
                 pick_orm.author_uri = self.author_uri
                 if self.creation_time is not None:
