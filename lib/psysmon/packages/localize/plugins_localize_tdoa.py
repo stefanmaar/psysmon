@@ -204,38 +204,42 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
 
         used_picks = []
         epidist = {}
+        computed_hyp = {}
         for k, cur_master in enumerate(stations):
             for m in range(k+1, len(stations)):
                 cur_slave = stations[m]
                 for cur_phase in phases:
                     cur_master_pick = pick_catalog.get_pick(event_id = event_id,
                                                             label = cur_phase,
-                                                            station = cur_master.name)
+                                                            station = cur_master.name,
+                                                            location = cur_master.location)
                     cur_slave_pick = pick_catalog.get_pick(event_id = event_id,
                                                             label = cur_phase,
-                                                            station = cur_slave.name)
+                                                            station = cur_slave.name,
+                                                            location = cur_slave.location)
                     if not cur_master_pick:
-                        self.logger.info("No pick found for event_id %d, station %s and label %s. Can't compute the S-P difference.", event_id, cur_master.name, cur_phase)
+                        self.logger.info("No pick found for event_id %d, station %s:%s and label %s. Can't compute the S-P difference.", event_id, cur_master.name, cur_master.location, cur_phase)
                         continue
 
                     if not cur_slave_pick:
-                        self.logger.info("No pick found for event_id %d, station %s and label %s. Can't compute the S-P difference.", event_id, cur_slave.name, cur_phase)
+                        self.logger.info("No pick found for event_id %d, station %s:%s and label %s. Can't compute the S-P difference.", event_id, cur_slave.name, cur_slave.location, cur_phase)
                         continue
 
                     if len(cur_master_pick) > 1:
-                        raise RuntimeError("More than one phase was returned for station %s, event_id %d and label %s. This shouldn't happen." % (cur_master.name, event_id, cur_phase))
+                        raise RuntimeError("More than one phase was returned for station %s:%s, event_id %d and label %s. This shouldn't happen." % (cur_master.name, cur_master.location, event_id, cur_phase))
                     cur_master_pick = cur_master_pick[0]
 
                     if len(cur_slave_pick) > 1:
-                        raise RuntimeError("More than one phase was returned for station %s, event_id %d and label %s. This shouldn't happen." % (cur_slave.name, event_id, cur_phase))
+                        raise RuntimeError("More than one phase was returned for station %s:%s, event_id %d and label %s. This shouldn't happen." % (cur_slave.name, cur_slave.location, event_id, cur_phase))
                     cur_slave_pick = cur_slave_pick[0]
 
                     try:
-                        self.plot_hyperbola(cur_master, cur_slave, cur_master_pick, cur_slave_pick)
+                        hyp = self.plot_hyperbola(cur_master, cur_slave, cur_master_pick, cur_slave_pick)
+                        computed_hyp.update(hyp)
                         used_picks.append(cur_master_pick)
                         used_picks.append(cur_slave_pick)
                     except:
-                        self.logger.exception("Couldn't plot the hyperbola. Skipping this combination %s-%s phase %s.", cur_master.name, cur_slave.name, cur_phase)
+                        self.logger.exception("Couldn't plot the hyperbola. Skipping this combination %s:%s-%s:%s phase %s.", cur_master.name, cur_master.location, cur_slave.name, cur_slave.location, cur_phase)
 
         # Update the map view axes.
         for cur_view in map_view:
@@ -248,6 +252,12 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
                                     name = 'used_data',
                                     value = used_data)
 
+        computed_data = {}
+        computed_data['hyperbola'] = computed_hyp
+        self.parent.add_shared_info(origin_rid = self.rid,
+                                    name = 'computed_data',
+                                    value = computed_data)
+
         return epidist
 
 
@@ -258,6 +268,12 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
         v = self.pref_manager.get_value('p_velocity')
         dd = v * (t1 - t2)
         D = np.sqrt(np.sum((r1 - r2)**2))
+
+        # Check for a valid velocity or time-differences.
+        if dd >= D:
+            self.logger.error("The computed difference distance of the two observations is larger than the distance between the two focal points. No hyperbola can't be computed for this case. Either the velocity is too high or the time picks are not correct.")
+            return np.array([np.nan, np.nan])
+
         alpha = np.arctan2(r2[1] - r1[1], r2[0] - r1[0])
         M = (r1 + r2) / 2.
 
@@ -265,7 +281,7 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
         a = dd/2.
         b = np.sqrt((D/2.)**2 - (dd/2.)**2)
 
-        x = np.arange(0, x_max, x_max/100.)
+        x = np.arange(0, x_max, 10)
 
         if a < 0:
             x = a - x
@@ -295,6 +311,7 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
         map_view_name = self.rid[:self.rid.rfind('/') + 1] + 'map_view'
         map_view = self.parent.viewport.get_node(name = map_view_name)
 
+        computed_hyp = {}
         for cur_view in map_view:
             proj = basemap.pyproj.Proj(init = cur_view.map_config['epsg'])
 
@@ -306,14 +323,17 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
             r1 = np.array([master_x, master_y])
             r2 = np.array([slave_x, slave_y])
             try:
-                label = master.name + ':' + slave.name + ':' + master_pick.label
-                hyp = self.compute_hyperbola(r1, r2, master_pick.time, slave_pick.time, 10000)
+                label = master.name + ':' + master.location + '-' + slave.name + ':' + slave.location + '-' + master_pick.label
+                hyp = self.compute_hyperbola(r1, r2, master_pick.time, slave_pick.time, 3000)
+                computed_hyp[label] = hyp
                 if np.all(np.isnan(hyp)):
                     self.logger.warning("Couldn't compute any hyperbola points for %s in view %s.", label, cur_view)
                 cur_view.axes.autoscale(False)
                 cur_view.axes.plot(hyp[:,0], hyp[:,1], gid = self.rid, label = label)
             except:
                 self.logger.exception("Couldn't plot the hyperbola. Skipping the hyperbola for %s in view %s.", label, cur_view)
+
+        return computed_hyp
 
 
 
