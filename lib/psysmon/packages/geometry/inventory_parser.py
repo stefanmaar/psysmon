@@ -921,6 +921,8 @@ class InventoryXmlParser(object):
             missing_attrib = self.keys_complete(node.attrib, self.required_attributes[node_type])
             missing_keys = self.keys_complete(content, self.required_tags[node_type]);
             if not missing_keys and not missing_attrib:
+                self.logger.debug(node_type + " xml attributes:")
+                self.logger.debug("%s", node.attrib)
                 self.logger.debug(node_type + " xml content:")
                 self.logger.debug("%s", content)
                 return True
