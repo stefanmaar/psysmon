@@ -1042,7 +1042,7 @@ class RecorderStream(object):
                                                             producer = producer,
                                                             name = name)
         if not cur_component:
-            msg = 'The specified component (serial = %s, name = %s) was not found in the inventory.' % (serial, name)
+            msg = 'The specified component (serial = %s, model = %s, producer = %s, name = %s) was not found in the inventory.' % (serial, model, producer, name)
             raise RuntimeError(msg)
         elif len(cur_component) == 1:
             cur_component = cur_component[0]
