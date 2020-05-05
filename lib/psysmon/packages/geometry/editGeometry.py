@@ -326,7 +326,9 @@ class EditGeometryDlg(wx.Frame):
             try:
                 cur_inventory = inventory_parser.parse(path)
             except Warning as w:
-                    print(w)
+                self.logger.warning(w)
+            except Exception:
+                self.logger.exception("Error while parsing file %s.", path)
 
             self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
@@ -356,7 +358,9 @@ class EditGeometryDlg(wx.Frame):
             try:
                 inventory_parser.export_xml(self.selected_inventory, path)
             except Warning as w:
-                    print(w)
+                self.logger.warning(w)
+            except Exception:
+                self.logger.exception("Error while parsing file %s.", path)
 
 
     def onExportStations2Csv(self, event):
