@@ -184,6 +184,16 @@ class CollectionNode(object):
 
         return rid
 
+    @property
+    def settings(self):
+        ''' The configuration settings of the node.
+        '''
+        settings = {}
+        settings[self.name] = {}
+        settings[self.name]['preferences'] = self.pref_manager.settings
+        settings[self.name]['enabled'] = self.enabled
+        return settings
+
 
     ## The __getstate__ method.
     #
@@ -352,7 +362,11 @@ class LooperCollectionNode(CollectionNode):
             for cur_child in children:
                 self.add_child(cur_child)
 
-
+    @property
+    def settings(self):
+        ''' The configuration settings of the node.
+        '''
+        return self.get_settings()
 
 
     def add_child(self, child_node, position = None):
@@ -497,17 +511,6 @@ class LooperCollectionChildNode(CollectionNode):
             self._parent = weakref.ref(value)
         else:
             self._parent = None
-
-
-    @property
-    def settings(self):
-        ''' The configuration settings of the node.
-        '''
-        settings = {}
-        settings[self.name] = {}
-        settings[self.name]['preferences'] = self.pref_manager.settings
-        settings[self.name]['enabled'] = self.enabled
-        return settings
 
 
     def __getstate__(self):

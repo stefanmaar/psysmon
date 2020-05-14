@@ -54,7 +54,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         psysmon.core.packageNodes.LooperCollectionChildNode.__init__(self, **args)
 
         self.create_parameters_prefs()
-        self.create_output_prefs()
 
         # The computed psd data.
         self.psd_data = {}
@@ -91,21 +90,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         psd_group.add_item(pref_item)
 
 
-    def create_output_prefs(self):
-        ''' Create the output preference items.
-        '''
-        out_page = self.pref_manager.add_page('output')
-        out_group = out_page.add_group('output')
-
-        pref_item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
-                                             label = 'output directory',
-                                             value = '',
-                                             tool_tip = 'Specify a directory where to save the PSD files.')
-
-        out_group.add_item(pref_item)
-
-
-
     def edit(self):
         ''' Show the node edit dialog.
         '''
@@ -133,6 +117,10 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
             cur_scnl = (cur_trace.stats.station, cur_trace.stats.channel,
                         cur_trace.stats.network, cur_trace.stats.location)
+
+            # Check if a result has to be created.
+            if not cur_event:
+                self.check_result_needed(cur_scnl, start_time)
 
             # Get the channel instance from the inventory.
             cur_channel = self.project.geometry_inventory.get_channel(station = cur_trace.stats.station,
@@ -173,6 +161,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 unit = cur_trace.stats.unit
 
                 cur_psd = {}
+                cur_psd['sps'] = cur_trace.stats.sampling_rate
                 cur_psd['frequ'] = frequ
                 cur_psd['P'] = P
                 cur_psd['window_length'] = self.parent.pref_manager.get_value('window_length')
@@ -186,6 +175,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 psd_data[start_time.isoformat()] = cur_psd
             else:
                 cur_psd = {}
+                cur_psd['sps'] = None
                 cur_psd['frequ'] = None
                 cur_psd['P'] = None
                 cur_psd['window_length'] = self.parent.pref_manager.get_value('window_length')
@@ -203,10 +193,6 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             # Store the psd data in the psd dictionary.
             self.save_psd_data(psd = cur_psd,
                                origin_resource = origin_resource)
-
-            # Check if a result has to be created.
-            if not cur_event:
-                self.check_result_needed(cur_scnl, start_time)
 
         if cur_event:
             self.create_event_result(event = cur_event,
@@ -243,6 +229,9 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                             origin_resource = None):
         ''' Check if a result has to be created for the given SCNL.
         '''
+        if scnl not in self.save_day.keys():
+            return
+
         last_save_day = self.save_day[scnl]
 
         # Create a result if the current start time extends the save interval.

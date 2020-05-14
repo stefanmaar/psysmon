@@ -412,3 +412,47 @@ class ScaleLog10(ProcessingNode):
         '''
         for tr in stream.traces:
             tr.data = np.sign(tr.data) * np.log10(np.abs(tr.data))
+
+
+class Resample(ProcessingNode):
+    ''' Resample a timeseries.
+
+    This node uses the resample method of the obspy trace to resample
+    the trace data to the desired sampling rate.
+    '''
+    nodeClass = 'common'
+
+    def __init__(self, **kwargs):
+        ''' The constructor
+
+        '''
+        ProcessingNode.__init__(self,
+                                name = 'resample',
+                                mode = 'editable',
+                                category = 'sampling',
+                                tags = ['resample', 'sps'],
+                                **kwargs
+                               )
+
+        pref_page = self.pref_manager.add_page('Preferences')
+        gen_group = pref_page.add_group('General')
+        # Add a single_choice field.
+        # Add an float_spin field.
+        item = FloatSpinPrefItem(name = 'sps',
+                              value = 100,
+                              limit = (1e-3, 100000))
+        gen_group.add_item(item)
+
+    def execute(self, stream, process_limits = None, origin_resource = None):
+        ''' Execute the stack node.
+
+        Parameters
+        ----------
+        stream : :class:`obspy.core.Stream`
+            The data to process.
+        '''
+        for cur_trace in stream:
+            resamp_trace = cur_trace.resample(self.pref_manager.get_value('sps'))
+            cur_trace.data = resamp_trace.data
+            cur_trace.stats.sampling_rate = resamp_trace.stats.sampling_rate
+

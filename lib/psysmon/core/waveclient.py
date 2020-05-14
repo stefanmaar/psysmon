@@ -167,7 +167,12 @@ class WaveClient(object):
 
         '''
         # Merge and split the stream to handle overlapping data.
-        stream.merge()
+        try:
+            stream.merge()
+        except Exception:
+            self.logger.exception("Error when merging the loaded stream: \n%s", stream)
+            return
+
         stream = stream.split()
         self.stock_data_gaps.extend(stream.get_gaps())
 
@@ -175,7 +180,10 @@ class WaveClient(object):
         self.logger.debug("stockstream: %s", self.stock)
         self.logger.debug("add stream: %s", stream)
         self.stock = self.stock + stream.copy()
-        self.stock.merge()
+        try:
+            self.stock.merge()
+        except Exception:
+            self.logger.exception("Error when merging the stock stream: \n%s", self.stock)
         self.logger.debug("stockstream: %s", self.stock)
         self.stock_lock.release()
 

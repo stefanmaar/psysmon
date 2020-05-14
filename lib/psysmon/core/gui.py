@@ -3490,9 +3490,8 @@ class PsysmonDockingFrame(wx.Frame):
             hooks = plugin.getHooks()
             allowed_matplotlib_hooks = iter(self.hook_manager.view_hooks.keys())
 
-            for cur_key in hooks.keys():
-                if cur_key not in allowed_matplotlib_hooks:
-                    hooks.pop(cur_key)
+            for cur_key in [x for x in hooks.keys() if x not in allowed_matplotlib_hooks]:
+                del hooks[cur_key]
 
             # Set the callbacks of the views.
             self.viewport.clear_mpl_event_callbacks()

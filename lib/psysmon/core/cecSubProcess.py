@@ -30,6 +30,7 @@ The pSysmon main program.
 
 import logging
 import os
+import pprint
 import sys
 import shelve
 
@@ -126,6 +127,10 @@ if __name__ == "__main__":
 
         project.psybase = psyBase
         logger.debug('psyBase: %s', project.psybase)
+
+        # Write the collection settings to the log file.
+        pp = pprint.PrettyPrinter(indent = 2)
+        logger.info('The collection settings used:\n%s', pp.pformat(collection.get_settings()))
 
         returncode = 0
         collection.setDataShelfFile(filename)

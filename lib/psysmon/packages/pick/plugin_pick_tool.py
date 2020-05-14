@@ -255,7 +255,8 @@ class PickTool(InteractivePlugin):
                 search_win_end = self.parent.displayManager.endTime
                 picks = cur_catalog.get_pick(start_time = search_win_start,
                                              end_time = search_win_end,
-                                             station = scnl[0])
+                                             station = scnl[0],
+                                             location = scnl[3])
 
                 for cur_pick in picks:
                     # Create the pick line in all channels of the station.
@@ -338,12 +339,14 @@ class PickTool(InteractivePlugin):
                                              end_time = search_win_end,
                                              label = self.pref_manager.get_value('label'),
                                              station = props.station,
+                                             location = props.location,
                                              event_id = event_id)
             else:
                 picks = cur_catalog.get_pick(start_time = search_win_start,
                                              end_time = search_win_end,
                                              label = self.pref_manager.get_value('label'),
-                                             station = props.station)
+                                             station = props.station,
+                                             location = props.location)
 
             if len(picks) == 0:
                 cur_channel = cur_channel[0]
@@ -641,7 +644,7 @@ class NotEmptyValidator(wx.PyValidator):
             ctrl.Refresh()
             return False
         else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             ctrl.Refresh()
             return True
 

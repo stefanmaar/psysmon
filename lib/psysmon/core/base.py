@@ -1248,3 +1248,23 @@ class Collection(object):
         #db['content'] = {}
         #db.close()
 
+
+    def get_settings(self, upper_node_limit = None):
+        ''' Get the settings of the nodes in the collection.
+
+        The upper limit can be set by the upper_node_limit attribute.
+        '''
+        settings = {}
+        settings[self.name] = {}
+        settings[self.name]['nodes'] = {}
+        for pos, cur_node in enumerate(self.nodes):
+            try:
+                settings[self.name]['nodes'][pos+1] = cur_node.settings
+            except:
+                settings[self.name]['nodes'][pos+1] = cur_node.get_settings()
+
+            if cur_node == upper_node_limit:
+                break
+
+        return settings
+
