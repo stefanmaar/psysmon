@@ -117,8 +117,8 @@ class CreateEvent(InteractivePlugin):
     def getHooks(self):
         hooks = {}
 
-        hooks['after_plot'] = self.on_after_plot
-        hooks['after_plot_station'] = self.on_after_plot_station
+        #hooks['after_plot'] = self.on_after_plot
+        #hooks['after_plot_station'] = self.on_after_plot_station
         hooks['button_press_event'] = self.on_button_press
         hooks['button_release_event'] = self.on_button_release
 
@@ -256,6 +256,8 @@ class CreateEvent(InteractivePlugin):
             return
         elif event.button == 3:
             return
+
+        self.logger.debug("on_button_press")
 
         #self.logger.debug('dataManager: %s\ndisplayManager: %s', dataManager, displayManager)
 
