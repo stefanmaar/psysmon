@@ -35,8 +35,11 @@ import csv
 import operator as op
 import time
 
+import geojson
+import numpy as np
 import psysmon
 import psysmon.core.preferences_manager as preferences_manager
+import pyproj
 
 
 class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
@@ -90,8 +93,32 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
         if map_view:
             prefix = 'loc_result_'
             postfix = ''
+            time_str = time.strftime('%Y%m%d_%H%M%S')
 
-            # Create a new folder for the view
+            # TODO: Create a new folder for the view
+
+            # Get the currently selected event id and create a dedicated output
+            # directory for the event.
+            # TODO: Check if it is possible, that the currently selected event
+            # id and the event ids of the computed results (circle, tdoa) don't
+            # match.
+            selected_event_info = self.parent.get_shared_info(origin_rid = self.parent.collection_node.rid + '/plugin/select_event',
+                                                              name = 'selected_event')
+            if selected_event_info:
+                if len(selected_event_info) > 1:
+                    raise RuntimeError("More than one event info was returned. This shouldn't happen.")
+                selected_event_info = selected_event_info[0]
+                map_event_id = selected_event_info.value['id']
+            else:
+                self.logger.error("No selected event available. Can't continue the localization.")
+                return
+
+            # Create an output directory for the event.
+            map_event_dir_name = 'event_%d_%s' % (int(map_event_id), time_str)
+            map_output_dir = os.path.join(output_dir, map_event_dir_name)
+            if not os.path.exists(map_output_dir):
+                os.makedirs(map_output_dir)
+
 
             # Export the shared data of the circle method.
             used_data_info = self.parent.get_shared_info(origin_rid = self.parent.collection_node.rid + '/plugin/circle_method',
@@ -103,14 +130,20 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
                 used_picks = used_data_info.value['picks']
                 event_id = used_data_info.value['event_id']
 
-                time_str = time.strftime('%Y%m%d_%H%M%S')
                 postfix = '_event_%d_%s' % (int(event_id), time_str)
                 exp_type = 'circle-picks'
                 ext = 'csv'
                 used_picks = sorted(used_picks, key = op.attrgetter('label'))
                 pick_rows = [(x.event_id, x.channel.scnl_string, x.label, x.time.isoformat()) for x in used_picks]
+
+                # Create an output directory for the event.
+                cur_event_dir_name = 'event_%d_%s' % (int(event_id), time_str)
+                cur_output_dir = os.path.join(output_dir, cur_event_dir_name)
+                if not os.path.exists(cur_output_dir):
+                    os.makedirs(cur_output_dir)
+
                 # Write the pick data to a csv file.
-                filename = os.path.join(output_dir, prefix + exp_type + postfix + '.' + ext)
+                filename = os.path.join(cur_output_dir, prefix + exp_type + postfix + '.' + ext)
                 with open(filename, 'wb') as export_file:
                     csv_writer = csv.writer(export_file, delimiter = ',', quoting = csv.QUOTE_MINIMAL)
                     csv_writer.writerow(['event_id', 'scnl', 'label', 'time'])
@@ -119,6 +152,8 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
                 self.logger.info("No circle method results found. ")
 
             # Export the shared data of the TDOA method.
+            # TODO: Add the parameters of the tdoa method (velocity, used
+            # picks) as feature properties to the geojson output.
             used_data_info = self.parent.get_shared_info(origin_rid = self.parent.collection_node.rid + '/plugin/tdoa_method',
                                                                                name = 'used_data')
             if used_data_info:
@@ -128,14 +163,20 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
                 used_picks = used_data_info.value['picks']
                 event_id = used_data_info.value['event_id']
 
-                time_str = time.strftime('%Y%m%d_%H%M%S')
                 postfix = '_event_%d_%s' % (int(event_id), time_str)
                 exp_type = 'tdoa-picks'
                 ext = 'csv'
                 used_picks = sorted(used_picks, key = op.attrgetter('label'))
                 pick_rows = [(x.event_id, x.channel.scnl_string, x.label, x.time.isoformat()) for x in used_picks]
+
+                # Create an output directory for the event.
+                cur_event_dir_name = 'event_%d_%s' % (int(event_id), time_str)
+                cur_output_dir = os.path.join(output_dir, cur_event_dir_name)
+                if not os.path.exists(cur_output_dir):
+                    os.makedirs(cur_output_dir)
+
                 # Write the pick data to a csv file.
-                filename = os.path.join(output_dir, prefix + exp_type + postfix + '.' + ext)
+                filename = os.path.join(cur_output_dir, prefix + exp_type + postfix + '.' + ext)
                 with open(filename, 'w') as export_file:
                     csv_writer = csv.writer(export_file, delimiter = ',', quoting = csv.QUOTE_MINIMAL)
                     csv_writer.writerow(['event_id', 'scnl', 'label', 'time'])
@@ -150,34 +191,52 @@ class ExportLocalizationResut(psysmon.core.plugins.CommandPlugin):
                     raise RuntimeError("More than one used_data info was returned. This shouldn't happen.")
                 computed_data_info = computed_data_info[0]
 
-                time_str = time.strftime('%Y%m%d_%H%M%S')
                 postfix = '_event_%d_%s' % (int(event_id), time_str)
-                exp_type_base = 'tdoa-hyperbola-'
-                ext = 'csv'
+                exp_type = 'tdoa-hyperbola-'
+                ext = 'json'
+                cur_featurelist = []
                 for cur_key, cur_hyp in computed_data_info.value['hyperbola'].items():
-                    exp_type = exp_type_base + cur_key.replace(':', '-')
-                    # Write the pick data to a csv file.
-                    filename = os.path.join(output_dir, prefix + exp_type + postfix + '.' + ext)
-                    with open(filename, 'w') as export_file:
-                        csv_writer = csv.writer(export_file, delimiter = ',', quoting = csv.QUOTE_MINIMAL)
-                        csv_writer.writerow(['# Computed localization hyperbola.'])
-                        csv_writer.writerow(['# coordinate projection: {0:s}'.format(map_view.map_config['epsg'])])
-                        csv_writer.writerow(['x', 'y'])
-                        csv_writer.writerows(cur_hyp)
+                    # Convert the projected xy to lonlat.
+                    lonlat = self.xy_to_lonlat(xy = cur_hyp,
+                                               src_sys = map_view.map_config['epsg'])
+
+                    # Create the geojson feature.
+                    cur_linestring = geojson.LineString(lonlat.tolist())
+                    cur_props = {'key': cur_key}
+                    cur_feature = geojson.Feature(geometry = cur_linestring,
+                                                  properties = cur_props)
+                    cur_featurelist.append(cur_feature)
+
+                cur_fc = geojson.FeatureCollection(cur_featurelist)
+
+                # Create an output directory for the event.
+                cur_event_dir_name = 'event_%d_%s' % (int(event_id), time_str)
+                cur_output_dir = os.path.join(output_dir, cur_event_dir_name)
+                if not os.path.exists(cur_output_dir):
+                    os.makedirs(cur_output_dir)
+
+                # Write the feature collection to a geojson file.
+                json_filename = os.path.join(cur_output_dir, prefix + exp_type + postfix + '.' + ext)
+                with open(json_filename, 'w') as json_file:
+                    geojson.dump(cur_fc, json_file)
             else:
                 self.logger.info("No tdoa method results found. ")
-
 
             # Export the map image.
             exp_type = 'map-image'
             ext = 'png'
-            filename = os.path.join(output_dir, prefix + exp_type + postfix + '.' + ext)
+            filename = os.path.join(map_output_dir, prefix + exp_type + postfix + '.' + ext)
             map_view.plot_panel.figure.savefig(filename, dpi = 300)
 
 
+    def xy_to_lonlat(self, xy, src_sys):
+        ''' Convert xy coordinates to WGS84 longitude and latitude (epsg:4326).
+        '''
+        dest_sys = "epsg:4326"
 
+        src_proj = pyproj.Proj(init = src_sys)
+        dst_proj = pyproj.Proj(init = dest_sys)
 
-
-
-
-
+        lon, lat = pyproj.transform(src_proj, dst_proj, xy[:, 0], xy[:, 1])
+        lonlat = np.array(list(zip(lon, lat)))
+        return lonlat
