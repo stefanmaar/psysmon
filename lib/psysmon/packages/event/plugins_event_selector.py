@@ -20,8 +20,10 @@
 
 from builtins import str
 import logging
-import wx
+
 from obspy.core.utcdatetime import UTCDateTime
+import sqlalchemy.orm
+import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.stattext import GenStaticText as StaticText
 
@@ -61,6 +63,9 @@ class SelectEvents(OptionPlugin):
         # The currently selected event.
         self.selected_event = {}
 
+        # The id of the selected event type.
+        self.selected_event_type_id = None
+
         # The plot colors used by the plugin.
         self.colors = {}
         self.colors['event_vspan'] = '0.8'
@@ -77,6 +82,7 @@ class SelectEvents(OptionPlugin):
         select_page = self.pref_manager.add_page('Select')
         dts_group = select_page.add_group('detection time span')
         es_group = select_page.add_group('event selection')
+        cl_group = select_page.add_group('classify')
 
         item = psy_pm.DateTimeEditPrefItem(name = 'start_time',
                                            label = 'start time',
@@ -122,6 +128,21 @@ class SelectEvents(OptionPlugin):
         es_group.add_item(item)
 
 
+        item = psy_pm.SingleChoicePrefItem(name = 'event_type',
+                                           label = 'event type',
+                                           limit = [],
+                                           value = None,
+                                           tool_tip = 'The default event type when creating a new event.',
+                                           hooks = {'on_value_change': self.on_select_event_type})
+        cl_group.add_item(item)
+
+        item = psy_pm.ActionItem(name = 'classify_event',
+                                 label = 'classify',
+                                 mode = 'button',
+                                 action = self.on_classify_event)
+        cl_group.add_item(item)
+
+
 
     def create_display_preferences(self):
         ''' Create the display preferences.
@@ -162,6 +183,11 @@ class SelectEvents(OptionPlugin):
         fold_panel = PrefEditPanel(pref = self.pref_manager,
                                   parent = panelBar)
 
+        self.event_types = self.load_event_types()
+        event_type_limit = ['undefined']
+        event_type_limit.extend([x.name for x in self.event_types])
+        self.pref_manager.set_limit('event_type', event_type_limit)
+        self.pref_manager.set_value('event_type', 'undefined')
 
         # Customize the events field.
         #pref_item = self.pref_manager.get_item('events')[0]
@@ -200,6 +226,9 @@ class SelectEvents(OptionPlugin):
                                                      endTime = end_time)
             self.clear_annotation()
             self.parent.update_display()
+
+        # Initialize the event type selection.
+        self.on_select_event_type()
 
 
     def deactivate(self):
@@ -396,6 +425,46 @@ class SelectEvents(OptionPlugin):
             cur_node.clear_annotation_artist(mode = 'vspan',
                                              parent_rid = self.rid)
             cur_node.draw()
+
+    def load_event_types(self):
+        ''' Load the available event types from the database.
+        '''
+        db_session = self.parent.project.getDbSession()
+        event_types = []
+        try:
+            event_type_table = self.parent.project.dbTables['event_type']
+            query = db_session.query(event_type_table)
+            query = query.options(sqlalchemy.orm.immediateload(event_type_table.children))
+            query = query.options(sqlalchemy.orm.immediateload(event_type_table.parent))
+            event_types = query.all()
+        finally:
+            db_session.close()
+
+        return event_types
+
+    def on_select_event_type(self):
+        ''' Handle the default event type selection.
+        '''
+        selected_event_type_name = self.pref_manager.get_value('event_type')
+
+        if selected_event_type_name == 'undefined':
+            self.selected_event_type_id = None
+        else:
+            event_type_id = [x.id for x in self.event_types if x.name.lower() == selected_event_type_name.lower()]
+            if len(event_type_id) == 1:
+                self.selected_event_type_id = event_type_id[0]
+            else:
+                self.selected_event_type_id = None
+
+    def on_classify_event(self, event):
+        '''
+        '''
+        self.logger.info(self.selected_event)
+        cur_event = self.selected_catalog.get_events(db_id = self.selected_event['id'])
+        if len(cur_event) == 1:
+            cur_event = cur_event[0]
+            cur_event.event_type = self.selected_event_type_id
+            cur_event.write_to_database(self.parent.project)
 
 
 
