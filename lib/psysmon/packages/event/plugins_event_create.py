@@ -20,6 +20,8 @@
 
 from builtins import str
 import logging
+
+import sqlalchemy.orm
 import wx
 
 import psysmon
@@ -75,15 +77,24 @@ class CreateEvent(InteractivePlugin):
 
         # Add the pages to the preferences manager.
         options_page = self.pref_manager.add_page('tool options')
+        event_group = options_page.add_group('event')
         catalog_group = options_page.add_group('catalog')
+
+        item = psy_pm.SingleChoicePrefItem(name = 'default_event_type',
+                                           label = 'defaul event type',
+                                           limit = [],
+                                           value = None,
+                                           tool_tip = 'The default event type when creating a new event.',
+                                           hooks = {'on_value_change': self.on_select_default_event_type})
+        event_group.add_item(item)
 
         # Add the plugin preferences.
         item = psy_pm.SingleChoicePrefItem(name = 'event_catalog',
-                                          label = 'event catalog',
-                                          value = '',
-                                          limit = [],
-                                          tool_tip = 'Select an event catalog to work on.',
-                                          hooks = {'on_value_change': self.on_select_catalog})
+                                           label = 'event catalog',
+                                           value = '',
+                                           limit = [],
+                                           tool_tip = 'Select an event catalog to work on.',
+                                           hooks = {'on_value_change': self.on_select_catalog})
         catalog_group.add_item(item)
 
         item = psy_pm.ActionItem(name = 'create_new_catalog',
@@ -103,8 +114,14 @@ class CreateEvent(InteractivePlugin):
         if catalog_names:
             self.pref_manager.set_value('event_catalog', catalog_names[0])
 
+        self.event_types = self.load_event_types()
+        event_type_limit = ['undefined']
+        event_type_limit.extend([x.name for x in self.event_types])
+        self.pref_manager.set_limit('default_event_type', event_type_limit)
+        self.pref_manager.set_value('default_event_type', 'undefined')
+
         fold_panel = PrefEditPanel(pref = self.pref_manager,
-                                  parent = panelBar)
+                                   parent = panelBar)
 
         # Customize the catalog field.
         #pref_item = self.pref_manager.get_item('pick_catalog')[0]
@@ -139,6 +156,9 @@ class CreateEvent(InteractivePlugin):
 
         # Load the event catalog.
         self.on_select_catalog()
+
+        # Set the event_type.
+        self.on_select_default_event_type()
 
 
     def deactivate(self):
@@ -182,6 +202,20 @@ class CreateEvent(InteractivePlugin):
         # Update the pick lines.
         #self.add_pick_lines()
 
+    def on_select_default_event_type(self):
+        ''' Handle the default event type selection.
+        '''
+        selected_event_type_name = self.pref_manager.get_value('default_event_type')
+
+        if selected_event_type_name == 'undefined':
+            self.selected_event_type_id = None
+        else:
+            event_type_id = [x.id for x in self.event_types if x.name.lower() == selected_event_type_name.lower()]
+            if len(event_type_id) == 1:
+                self.selected_event_type_id = event_type_id[0]
+            else:
+                self.selected_event_type_id = None
+
 
     def load_events(self):
         ''' Load the events for the current timespan of the tracedisplay.
@@ -191,6 +225,23 @@ class CreateEvent(InteractivePlugin):
         cur_catalog.load_events(project = self.parent.project,
                                 start_time = self.parent.displayManager.startTime,
                                 end_time = self.parent.displayManager.endTime)
+
+    def load_event_types(self):
+        ''' Load the available event types from the database.
+        '''
+        db_session = self.parent.project.getDbSession()
+        event_types = []
+        try:
+            event_type_table = self.parent.project.dbTables['event_type']
+            query = db_session.query(event_type_table)
+            query = query.options(sqlalchemy.orm.immediateload(event_type_table.children))
+            query = query.options(sqlalchemy.orm.immediateload(event_type_table.parent))
+            event_types = query.all()
+        finally:
+            db_session.close()
+
+        return event_types
+
 
 
     def add_event_marker_to_station(self, station = None):
@@ -372,6 +423,7 @@ class CreateEvent(InteractivePlugin):
         cur_catalog = self.library.catalogs[self.selected_catalog_name]
         event = event_core.Event(start_time = UTCDateTime(start_time),
                                  end_time = UTCDateTime(end_time),
+                                 event_type = self.selected_event_type_id,
                                  agency_uri = self.parent.project.activeUser.agency_uri,
                                  author_uri = self.parent.project.activeUser.author_uri,
                                  creation_time = UTCDateTime().isoformat())
