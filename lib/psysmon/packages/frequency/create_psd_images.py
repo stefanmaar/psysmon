@@ -32,7 +32,6 @@ from __future__ import division
 from builtins import range
 from builtins import object
 from past.utils import old_div
-import pdb
 import os
 import shelve
 import logging
@@ -44,7 +43,7 @@ import psysmon
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-plt.style.use(psysmon.plot_style)
+#plt.style.use(psysmon.plot_style)
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
@@ -53,7 +52,7 @@ from obspy.core.utcdatetime import UTCDateTime
 import obspy.signal
 
 # Set the matplotlib general settings.
-plt.style.use(['seaborn', 'seaborn-paper'])
+#plt.style.use(['seaborn', 'seaborn-paper'])
 
 
 class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
@@ -316,19 +315,12 @@ class PSDPlotter(object):
         return sorted(file_list)
 
 
-    def plot(self):
-        ''' Plot the psd data and save it to an file.
+    def collect_psd_data(self, file_list):
+        ''' Create the PSD data dictionary.
         '''
-        # Get the files containing the PSD data.
-        self.logger.info('Scanning for files in %s.', self.data_dir)
-        file_list = self.scan_for_files()
-
-        if len(file_list) == 0:
-            self.logger.error('No files found.')
-            return
-
-        self.logger.debug('Preparing the PSD data.')
         psd_data = {}
+        psd_data['meta'] = {}
+        psd_data['data'] = {}
         psd_nfft = None
         psd_max_frequ = None
         window_length = None
@@ -403,10 +395,73 @@ class PSDPlotter(object):
                 continue
 
             # All checks passed, update the dictionary.
-            psd_data.update(cur_psd_data)
+            psd_data['data'].update(cur_psd_data)
+
+        psd_data['meta']['overall_nfft'] = psd_nfft
+        psd_data['meta']['overall_max_frequ'] = psd_max_frequ
+        psd_data['meta']['overall_window_length'] = window_length
+        psd_data['meta']['overall_window_overlap'] = window_overlap
+
+        return psd_data
+
+    def create_psd_array(self, psd_data):
+        ''' Create a regular numpy array of the PSD data.
+        '''
+        window_length = psd_data['meta']['overall_window_length']
+        psd_nfft = psd_data['meta']['overall_nfft']
+        win_limit = window_length * psd_data['meta']['overall_window_overlap'] / 100
+        frequ = None
+        time_key = sorted([x for x in psd_data['data'].keys()])
+
+        # Find gaps in the data and add a time entry after each gap to create a
+        # column in the PSD matrix that is filled with NaN values. This
+        # prevents that the PSD column is extended to the next valid data
+        # column.
+        time = np.array([UTCDateTime(x) for x in time_key])
+        dt = np.diff(time)
+        gaps = dt > win_limit
+        gap_times = time[:-1][gaps]
+        n_gaps = dt[gaps] / win_limit
+        gap_fill = [(x + win_limit * (y + 1)).isoformat() for (k, x) in enumerate(gap_times) for y in range(int(n_gaps[k]) - 1)]
+        #time_key.extend([(x + window_length).isoformat() for x in gap_times])
+        time_key.extend(gap_fill)
+        time_key = sorted(time_key)
+
+        # Create the PSD matrix used for plotting.
+        psd_matrix = np.zeros((int(psd_nfft / 2 + 1), len(time_key)))
+        psd_matrix[:] = np.nan
+
+        for m, cur_psd in enumerate([psd_data['data'].get(x, None) for x in time_key]):
+            if cur_psd is None:
+                continue
+
+            if cur_psd['frequ'] is not None:
+                psd_matrix[:, m] = cur_psd['P']
+                if frequ is None:
+                    frequ = cur_psd['frequ']
+
+        time = np.array([UTCDateTime(x) for x in time_key])
+        time = time - self.starttime
+
+        return time, frequ, psd_matrix
 
 
-        unit = [x['unit'] for x in psd_data.values() if x['P'] is not None]
+    def plot(self):
+        ''' Plot the psd data and save it to an file.
+        '''
+        # Get the files containing the PSD data.
+        self.logger.info('Scanning for files in %s.', self.data_dir)
+        file_list = self.scan_for_files()
+
+        if len(file_list) == 0:
+            self.logger.error('No files found.')
+            return
+
+        # Get the PSD data from the files.
+        self.logger.debug('Preparing the PSD data.')
+        psd_data = self.collect_psd_data(file_list = file_list)
+
+        unit = [x['unit'] for x in psd_data['data'].values() if x['P'] is not None]
         unit = list(set(unit))
 
         if len(unit) == 0:
@@ -418,44 +473,19 @@ class PSDPlotter(object):
             self.logger.error('More than one unit specifier were found: %s. I set the unit to undefined.', unit)
             unit = 'undefined'
 
-        # Plot the psd data to file.
-        self.logger.info("Creating the images.")
-
-
-
-        frequ = None
-        time_key = sorted([x for x in psd_data.keys()])
-
-        # Find gaps in the data and add a time entry after each gap to create a
-        # column in the PSD matrix that is filled with NaN values. This
-        # prevents that the PSD column is extended to the next valid data
-        # column.
-        time = np.array([UTCDateTime(x) for x in time_key])
-        dt = np.diff(time)
-        gaps = dt > window_length
-        gap_times = time[:-1][gaps]
-        time_key.extend([(x + window_length).isoformat() for x in gap_times])
-        time_key = sorted(time_key)
-
-        # Create the PSD matrix used for plotting.
-        psd_matrix = np.zeros((int(psd_nfft/2. + 1), len(time_key)))
-        psd_matrix[:] = np.nan
-
-        for m, cur_psd in enumerate([psd_data.get(x, None) for x in time_key]):
-            if cur_psd is None:
-                continue
-
-            if cur_psd['frequ'] is not None:
-                psd_matrix[:,m] = cur_psd['P']
-                if frequ is None:
-                    frequ = cur_psd['frequ']
-
+        # Create the regular PSD array.
+        time, frequ, psd_matrix = self.create_psd_array(psd_data = psd_data)
 
         if frequ is None:
             # There was no valid data found at all. Don't create an image.
             self.logger.warning("No data found.")
             return
 
+        # Plot the psd data to file.
+        self.logger.info("Creating the images.")
+
+        # Convert the time to hours.
+        time = time / 3600.
 
         # Set the frequency limits of the plot.
         min_frequ = self.min_frequ
@@ -466,15 +496,6 @@ class PSDPlotter(object):
 
         psd_matrix = np.ma.masked_where(np.isnan(psd_matrix), psd_matrix)
 
-        #psd_matrix = psd_matrix[frequ >= min_frequ, :]
-
-        time = np.array([UTCDateTime(x) for x in time_key])
-        time = time - self.starttime
-        time = time / 3600.
-
-
-
-
         cur_scnl = (self.station, self.channel, self.network, self.location)
         dpi = 300.
         cm_to_inch = 2.54
@@ -483,7 +504,8 @@ class PSDPlotter(object):
         cb_width = old_div(1, cm_to_inch)
         plot_length = self.endtime - self.starttime
         #width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
-        psd_width = old_div(len(time), dpi)
+        #psd_width = old_div(len(time), dpi)
+        psd_width = (plot_length / (np.median(np.diff(time)) * 3600)) / dpi
         if psd_width < psd_min_width:
             psd_width = psd_min_width
 
@@ -501,6 +523,7 @@ class PSDPlotter(object):
         tick_label_size = 6
         title_size = 8
 
+        plt.style.use('classic')
         fig = plt.figure(figsize=(width, height), dpi = dpi)
         if self.with_average_plot:
             #gs = gridspec.GridSpec(1, 2,
@@ -577,7 +600,8 @@ class PSDPlotter(object):
             ax_avg.set_xlabel('PSD [dB]', fontsize=axes_label_size)
             ax_avg.legend(loc='lower left', fontsize=tick_label_size)
 
-        cb = fig.colorbar(pcm, ax = ax_psd, cax = ax_cb)
+
+        cb = fig.colorbar(pcm, cax = ax_cb)
         cb.set_label('PSD ' + unit_label + ' in dB', fontsize = axes_label_size)
         cb.ax.tick_params(axis = 'both', labelsize = tick_label_size)
 
@@ -589,7 +613,7 @@ class PSDPlotter(object):
             tick_interval = 12
         else:
             tick_interval = 24
-        xticks = np.arange(xlim[0],xlim[1], tick_interval)
+        xticks = np.arange(xlim[0], xlim[1], tick_interval)
         xticks = np.append(xticks, xlim[1])
         ax_psd.set_xticks(xticks)
         ax_psd.set_xlabel('Time since %s [h]' % self.starttime.isoformat(), fontsize = axes_label_size)
@@ -601,6 +625,8 @@ class PSDPlotter(object):
             ax_psd.yaxis.tick_right()
             ax_psd.yaxis.set_ticks_position('both')
         else:
+            ax_psd.xaxis.set_ticks_position('both')
+            ax_psd.yaxis.set_ticks_position('both')
             ax_psd.set_ylabel('Frequency [Hz]', fontsize = axes_label_size)
 
         ax_psd.set_title('PSD %s %s' % (self.starttime.isoformat(), ':'.join(cur_scnl)), fontsize = title_size)
