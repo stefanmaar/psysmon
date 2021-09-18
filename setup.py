@@ -30,15 +30,19 @@ The pSysmon setup script.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+import sys
+from setupExt import printStatus, printMessage, printLine, printRaw, \
+    checkForPackage, get_data_files
 
 try:
     import numpy  # @UnusedImport # NOQA
 except ImportError:
-    msg = ("Module numpy not found."
-           "Please install numpy first, it is needed to to run the psysmon setup script.")
-    raise ImportError(msg)
+    printLine()
+    printRaw("REQUIREMENTS")
+    printStatus('numpy', 'Missing module')
+    printMessage('Numpy is needed to run the psysmon setup script. Please install it first.')
+    sys.exit(-1)
 
-import sys
 import os
 #import glob
 import inspect
@@ -46,8 +50,7 @@ import inspect
 #import setuptools
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
-from setupExt import printStatus, printMessage, printLine, printRaw, \
-    checkForPackage, get_data_files
+
 
 
 # Check the commandline argument for the headless option.
