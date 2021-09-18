@@ -30,12 +30,20 @@ The pSysmon setup script.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+
+try:
+    import numpy  # @UnusedImport # NOQA
+except ImportError:
+    msg = ("Module numpy not found."
+           "Please install numpy first, it is needed to to run the psysmon setup script.")
+    raise ImportError(msg)
+
 import sys
 import os
-import glob
+#import glob
 import inspect
 #import distutil
-import setuptools
+#import setuptools
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 from setupExt import printStatus, printMessage, printLine, printRaw, \
@@ -98,20 +106,34 @@ data_files = []
 #dataFiles = ('artwork', ['lib/psysmon/artwork/splash/splash.png'])
 
 # Define the package requirements.
-requirements =[('lxml', '2.3.2'),
-               ('matplotlib', '1.3.0'),
-               #('mpl_toolkits.basemap', '1.0.7'),
-               ('numpy', '1.8.1'),
-               #('MySQLdb', '1.2.3'),
-               ('pymysql', '0.9.3'),
-               ('obspy', '0.9.2'),
-               ('pillow', '2.3.0'),
-               ('cairo', '1.8.8'),
-               ('Pyro4', '4.32'),
-               ('scipy', '0.13.1'),
-               ('sqlalchemy', '0.9.8')]
+install_requires = [
+    'cairo>=1.8.8',
+    'lxml>=2.3.2',
+    'matplotlib>=3.2.0',
+    'obspy>=1.1.1',
+    'pillow>=2.3.0',
+    'pymysql>=0.9.3',
+    'Pyro4>=4.32',
+    'scipy>=1.0.0',
+    'sqlalchemy>=0.9.8'
+]
+
 if not headless:
-    requirements.append(('wx', '3.0.0'))
+    install_requires.append('wx>=3.0.0')
+
+#requirements =[('lxml', '2.3.2'),
+#               ('matplotlib', '1.3.0'),
+#               #('mpl_toolkits.basemap', '1.0.7'),
+#               ('numpy', '1.8.1'),
+#               #('MySQLdb', '1.2.3'),
+#               ('pymysql', '0.9.3'),
+#               ('obspy', '0.9.2'),
+#               ('pillow', '2.3.0'),
+#               ('cairo', '1.8.8'),
+#               ('Pyro4', '4.32'),
+#               ('scipy', '0.13.1'),
+#               ('sqlalchemy', '0.9.8')]
+
 
 # Let the user know what's going on.
 printLine()
@@ -173,7 +195,7 @@ def configuration(parent_package = '', top_path = None):
 
     # LIBDETECT
     path = os.path.join(root_dir, 'packages', 'event', 'src')
-    files = [os.path.join(path, 'detect_sta_lta.c'),]
+    files = [os.path.join(path, 'detect_sta_lta.c')]
     printRaw(files)
     config.add_extension(get_lib_name('detect_sta_lta'),
                          sources = files)
@@ -202,6 +224,6 @@ setup(name = 'psysmon',
       package_data = packageData,
       data_files = data_files,
       ext_package = 'psysmon.lib',
+      install_requires = install_requires,
       configuration = configuration
-     )
-
+)
