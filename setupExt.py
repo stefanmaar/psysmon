@@ -27,10 +27,10 @@ Some setup helper functions.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
-from __future__ import print_function
+#from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
+#from future import standard_library
+#standard_library.install_aliases()
 from builtins import str
 import os
 import sys
