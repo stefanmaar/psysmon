@@ -31,17 +31,44 @@ The pSysmon setup script.
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
 import sys
+from pkg_resources import parse_version
 from setupExt import printStatus, printMessage, printLine, printRaw, \
     checkForPackage, get_data_files
 
+# Check the commandline argument for the headless option.
+headless = False
+if "--headless" in sys.argv:
+    headless = True
+    sys.argv.remove("--headless")
+
+    
+# Check for mandatory modules.
 try:
     import numpy  # @UnusedImport # NOQA
 except ImportError:
     printLine()
-    printRaw("REQUIREMENTS")
+    printRaw("MISSING REQUIREMENT")
     printStatus('numpy', 'Missing module')
     printMessage('Numpy is needed to run the psysmon setup script. Please install it first.')
-    sys.exit(-1)
+    raise ImportError('Numpy is needed to run the psysmon setup script. Please install it first.')
+
+
+if not headless:
+    wx_required_version = '4.0.6'
+    try:
+        import wx
+        if parse_version(wx.__version__) < parse_version(wx_required_version):
+            printRaw("MISSING REQUIREMENT")
+            printStatus('wxPython', 'Missing module')
+            printMessage('You have to install wxPxthon >= ' + wx_required_version)
+            sys.exit(1)
+    except ImportError:
+        printRaw("MISSING REQUIREMENT")
+        printStatus('wxPython', 'Missing module')
+        printMessage('You have to install wxPxthon >= ' + wx_required_version)
+        printMessage('See https://www.wxpython.org/pages/downloads/ how to install it using a Wheel package.')
+        raise ImportError('Missing wxPython module.')
+
 
 import os
 #import glob
@@ -53,11 +80,6 @@ from numpy.distutils.misc_util import Configuration
 
 
 
-# Check the commandline argument for the headless option.
-headless = False
-if "--headless" in sys.argv:
-    headless = True
-    sys.argv.remove("--headless")
 
 
 # Get the current pSysmon version, author and description.
@@ -110,19 +132,21 @@ data_files = []
 
 # Define the package requirements.
 install_requires = [
-    'cairo>=1.8.8',
+    'construct>=2.9.45',
+    'geojson>=2.5.0',
     'lxml>=2.3.2',
     'matplotlib>=3.2.0',
     'obspy>=1.1.1',
     'pillow>=2.3.0',
+    'pycairo>=1.18.1',
     'pymysql>=0.9.3',
+    'pyproj>=2.2.1',
     'Pyro4>=4.32',
+    'pytz>=2019.2',
     'scipy>=1.0.0',
+    'seaborn>=0.9.0',
     'sqlalchemy>=0.9.8'
 ]
-
-if not headless:
-    install_requires.append('wx>=3.0.0')
 
 #requirements =[('lxml', '2.3.2'),
 #               ('matplotlib', '1.3.0'),
@@ -152,13 +176,13 @@ printRaw("REQUIRED DEPENDENCIES")
 printStatus("Headless", headless)
 
 
-requirements_fullfilled = True
-for cur_name, cur_version in requirements:
-    if not checkForPackage(cur_name, cur_version):
-        requirements_fullfilled = False
-
-if not requirements_fullfilled:
-    sys.exit(1)
+#requirements_fullfilled = True
+#for cur_name, cur_version in requirements:
+#    if not checkForPackage(cur_name, cur_version):
+#        requirements_fullfilled = False
+#
+#if not requirements_fullfilled:
+#    sys.exit(1)
 
 
 printRaw("")
