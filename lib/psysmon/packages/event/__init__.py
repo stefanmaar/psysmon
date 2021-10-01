@@ -40,7 +40,8 @@ plugin_modules = ['plugins_event_selector',
                   'plugins_event_create',
                   'plugins_event_change_limits',
                   'plugins_detect_sta_lta',
-                  'plugins_detection_selector']
+                  'plugins_detection_selector',
+                  'plugin_detection_add']
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
