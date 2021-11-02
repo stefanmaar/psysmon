@@ -74,6 +74,7 @@ from psysmon.core.gui import psyContextMenu
 import psysmon.core.guiBricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
 import seaborn as sns
+import scipy.signal
 sns.set_style('whitegrid')
 
 
@@ -3727,14 +3728,14 @@ class SensorsPanel(wx.Panel):
         self.tfFigure = Figure((8,4), dpi=75, facecolor='white')
         #rect = 0.1,0.1,0.8,0.8
         #self.tfAxis = self.tfFigure.add_axes(rect, xscale='log', axis_bgcolor='w')
-        self.tfMagAxis = self.tfFigure.add_subplot(121, xscale='linear')
+        self.tfMagAxis = self.tfFigure.add_subplot(121, xscale='log', yscale='linear')
         self.tfMagAxis.set_facecolor('w')
         self.tfMagAxis.set_xlabel('Frequency [Hz]', fontsize=10)
-        self.tfMagAxis.set_ylabel('Amplitude', fontsize=10)
+        self.tfMagAxis.set_ylabel('Amplitude [dB, 20*log10(A)]', fontsize=10)
         self.tfMagAxis.set_title('Amplitude Response', fontsize=10)
         self.tfMagAxis.grid(True)
 
-        self.tfPhaseAxis = self.tfFigure.add_subplot(122, xscale='linear')
+        self.tfPhaseAxis = self.tfFigure.add_subplot(122, xscale='log', yscale = 'linear')
         self.tfPhaseAxis.set_facecolor('w')
         self.tfPhaseAxis.set_xlabel('Frequency [Hz]', fontsize=10)
         self.tfPhaseAxis.set_ylabel('Phase [rad]', fontsize=10)
@@ -3974,8 +3975,13 @@ class SensorsPanel(wx.Panel):
                 return
 
 
-            h,f = obspy.signal.invsim.paz_to_freq_resp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
+            #h,f = obspy.signal.invsim.paz_to_freq_resp(self.displayedComponentParameters.tf_poles, self.displayedComponentParameters.tf_zeros, self.displayedComponentParameters.tf_normalization_factor, 0.005, 8192, freq=True)
             #h,f = obspy.signal.invsim.paz_to_freq_resp(paz['poles'], paz['zeros'], paz['gain'], 0.005, 8192, freq=True)
+            b, a = scipy.signal.zpk2tf(self.displayedComponentParameters.tf_zeros,
+                                       self.displayedComponentParameters.tf_poles,
+                                       self.displayedComponentParameters.tf_normalization_factor)
+            w, h = scipy.signal.freqs(b, a)
+            f = w / (2 * np.pi)
             phase = np.unwrap(np.arctan2(-h.imag, h.real)) #take negative of imaginary part
 
             lines = self.tfMagAxis.get_lines()
@@ -3988,18 +3994,18 @@ class SensorsPanel(wx.Panel):
             f = f[mask]
             h = h[mask]
             phase = phase[mask]
-            frequRange = [0.1,1,10,100,1000]
-            self.tfMagAxis.plot(np.log10(f), 20*np.log10(abs(h)), color='k')
-            self.tfMagAxis.set_xticks(np.log10(frequRange))
-            self.tfMagAxis.set_xticklabels(frequRange)
+            #frequRange = [0.1,1,10,100,1000]
+            self.tfMagAxis.plot(f, 20 * np.log10(np.abs(h)), color='k')
+            #self.tfMagAxis.set_xticks(np.log10(frequRange))
+            #self.tfMagAxis.set_xticklabels(frequRange)
 
             lines = self.tfPhaseAxis.get_lines()
             if lines:
                 for curLine in lines:
                     curLine.remove()
-            self.tfPhaseAxis.plot(np.log10(f), phase, color='k')
-            self.tfPhaseAxis.set_xticks(np.log10(frequRange))
-            self.tfPhaseAxis.set_xticklabels(frequRange)
+            self.tfPhaseAxis.plot(f, phase, color='k')
+            #self.tfPhaseAxis.set_xticks(np.log10(frequRange))
+            #self.tfPhaseAxis.set_xticklabels(frequRange)
             self.tfCanvas.draw()
 
 
