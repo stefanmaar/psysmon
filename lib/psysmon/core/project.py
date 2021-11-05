@@ -56,6 +56,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import obspy.core
 import obspy.core.utcdatetime as utcdatetime
+import psysmon.cec
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.util as psy_util
 import psysmon.core.json_util
@@ -1562,7 +1563,7 @@ class User(object):
 
 
             # Start the collection using the cecClient as a subprocess.
-            cecPath = os.path.dirname(os.path.abspath(psysmon.core.__file__))
+            cecPath = os.path.dirname(os.path.abspath(psysmon.cec.__file__))
             #proc = subprocess.Popen([sys.executable, os.path.join(cecPath, 'cecSubProcess.py'), filename, col2Proc.procName], 
             #                        stdout=subprocess.PIPE)
             # TODO: Handle the matplotlib backend in the cecSubProcess whether
