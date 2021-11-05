@@ -55,8 +55,18 @@ from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import numpy as np
 import obspy.signal.invsim
-from mpl_toolkits.basemap import pyproj
-from mpl_toolkits.basemap import Basemap
+try:
+    import pyproj
+except Exception:
+    from mpl_toolkits.basemap import pyproj
+
+# TODO: Remove all methods related to the mpl_toolkits Basemap.
+#try:
+#    from mpl_toolkits.basemap import Basemap
+#    mpltk_basemap_available = True
+#except Exception:
+#    mpltk_basemap_available = False
+    
 from matplotlib.patches import Polygon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.packages.geometry.inventory import Inventory

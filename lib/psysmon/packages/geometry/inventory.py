@@ -41,7 +41,7 @@ from psysmon.core.error import PsysmonError
 import psysmon.packages.geometry.util as geom_util
 try:
     import pyproj
-except:
+except Exception:
     from mpl_toolkits.basemap import pyproj
 import numpy as np
 import warnings
