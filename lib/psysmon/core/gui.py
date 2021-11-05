@@ -1317,9 +1317,13 @@ class LoggingPanel(wx.aui.AuiNotebook):
     def onViewLogFile(self, event):
         selectedRow = self.processes.GetFirstSelected()
         procName = self.processes.GetItem(selectedRow, 2).GetText()
-        logFile = os.path.join(self.GetParent().psyBase.project.tmpDir, procName + ".log")
-        webbrowser.open(logFile)
+        logFile = os.path.join(self.GetParent().psyBase.project.tmpDir,
+                               procName + ".log")
         self.logger.info("Showing the log file %s.", logFile)
+        try:
+            psysmon.core.util.display_file(logFile)
+        except Exception:
+            webbrowser.open(logFile)
 
 
     def onKillProcess(self, event):
