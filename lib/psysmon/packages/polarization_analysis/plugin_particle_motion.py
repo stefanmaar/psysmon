@@ -146,7 +146,13 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
     def cleanup(self):
         ''' Remove all elements added to the views.
         '''
-        self.frame.Destroy()
+        try:
+            self.frame.Destroy()
+        except Exception:
+            self.logger.exception("Couldn't destroy the particle motion "
+                                  "frame. Maybe it has already been closed "
+                                  "by the user.")
+
         self.station_container.clear_annotation_artist(parent_rid = self.rid)
         self.station_container.draw()
 
