@@ -59,7 +59,9 @@ class Hodogram(ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.emotion_smile_icon_16
 
-        self.channel_map = {'z': 'HHZ', 'y':'HHN', 'x':'HHE'}
+        self.channel_map = {'z': 'HHZ',
+                            'y': 'HHN',
+                            'x': 'HHE'}
 
         # TODO: Somehow make it possible to add multiple views to the virtual
         # channel. Each view should contain a certain polarization feature. The
@@ -73,6 +75,7 @@ class Hodogram(ViewPlugin):
         # Create the preferences.
         pref_page = self.pref_manager.add_page('Preferences')
         win_group = pref_page.add_group('window')
+        cm_group = pref_page.add_group('channel map')
 
         # The window length.
         item = preferences_manager.FloatSpinPrefItem(name = 'window_length',
@@ -89,6 +92,61 @@ class Hodogram(ViewPlugin):
                                                      limit = (0, 0.99),
                                                      spin_format = '%f')
         win_group.add_item(item)
+
+        item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_x',
+                                          label = 'x',
+                                          value = '',
+                                          limit = ['HHE', 'HHN', 'HHZ'],
+                                          tool_tip = 'Select the x component channel.')
+        cm_group.add_item(item)
+
+        item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_y',
+                                          label = 'y',
+                                          value = '',
+                                          limit = ['HHE', 'HHN', 'HHZ'],
+                                          tool_tip = 'Select the y component channel.')
+        cm_group.add_item(item)
+
+        item = psysmon.core.preferences_manager.SingleChoicePrefItem(name = 'channel_map_z',
+                                          label = 'z',
+                                          value = '',
+                                          limit = ['HHE', 'HHN', 'HHZ'],
+                                          tool_tip = 'Select the z component channel.')
+        cm_group.add_item(item)
+
+        
+    def initialize_preferences(self):
+        ''' Intitialize the preferences depending on runtime variables.
+        '''
+        # Set the limits of the event_catalog field.
+        channels = sorted(self.parent.displayManager.availableChannels)
+        self.pref_manager.set_limit('channel_map_x', channels)
+        self.pref_manager.set_limit('channel_map_y', channels)
+        self.pref_manager.set_limit('channel_map_z', channels)
+
+        east_channels = [x for x in channels if x.lower().endswith('e')]
+        north_channels = [x for x in channels if x.lower().endswith('n')]
+        vertical_channels = [x for x in channels if x.lower().endswith('z')]
+        if 'HHE' in channels:
+            self.pref_manager.set_value('channel_map_x', 'HHE')
+        elif len(east_channels) > 0:
+            self.pref_manager.set_value('channel_map_x', east_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_x', channels[0])
+
+        if 'HHN' in channels:
+            self.pref_manager.set_value('channel_map_y', 'HHN')
+        elif len(north_channels) > 0:
+            self.pref_manager.set_value('channel_map_y', north_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_y', channels[0])
+
+        if 'HHZ' in channels:
+            self.pref_manager.set_value('channel_map_z', 'HHZ')
+        elif len(vertical_channels) > 0:
+            self.pref_manager.set_value('channel_map_z', vertical_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_z', channels[0])
 
 
     @property
