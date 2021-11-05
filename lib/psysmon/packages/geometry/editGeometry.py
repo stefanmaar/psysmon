@@ -994,7 +994,7 @@ class EditGeometryDlg(wx.Frame):
             self.logger.info("No inventory selected.")
             return
 
-        if self.selected_inventory.__class__.__name__ is not 'Inventory'  and self.selected_inventory.__class__.__name__ is not 'DbInventory':
+        if (self.selected_inventory.__class__.__name__ != 'Inventory') and (self.selected_inventory.__class__.__name__ != 'DbInventory'):
             self.logger.info("Please select the inventory to be written to the database.")
             return
 
