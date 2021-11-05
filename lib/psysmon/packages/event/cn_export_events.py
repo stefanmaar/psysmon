@@ -38,6 +38,7 @@ import logging
 import os
 
 import obspy.core.utcdatetime as utcdatetime
+import sqlalchemy
 
 import psysmon
 import psysmon.core.gui_preference_dialog as gui_pref_dialog
@@ -46,6 +47,7 @@ import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
 import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 import psysmon.packages.event.core as event_core
+
 
 
 class ExportEvents(package_nodes.CollectionNode):
@@ -358,6 +360,23 @@ class EventExporter(object):
         return interval_start
 
 
+    def load_event_types(self):
+        ''' Load the available event types from the database.
+        '''
+        db_session = self.project.getDbSession()
+        event_types = []
+        try:
+            event_type_table = self.project.dbTables['event_type']
+            query = db_session.query(event_type_table)
+            query = query.options(sqlalchemy.orm.immediateload(event_type_table.children))
+            query = query.options(sqlalchemy.orm.immediateload(event_type_table.parent))
+            event_types = query.all()
+        finally:
+            db_session.close()
+
+        return event_types
+
+    
     def export(self, start_time, end_time, output_interval,
                event_catalog, event_ids = None,
                event_types = None, event_tags = None):
@@ -380,6 +399,8 @@ class EventExporter(object):
         event_lib = event_core.Library('events')
         event_lib.load_catalog_from_db(self.project, name = event_catalog)
         catalog = event_lib.catalogs[event_catalog]
+
+        available_event_types = self.load_event_types()
 
         for k, cur_start_time in enumerate(interval_start[:-1]):
             cur_end_time = interval_start[k + 1]
@@ -412,7 +433,8 @@ class EventExporter(object):
 
             res_columns = ['event_start_time', 'event_end_time', 'n_stations',
                            'detection_scnl', 'detection_start',
-                           'detection_end']
+                           'detection_end', 'catalog_name', 'event_type_id',
+                           'event_type']
             # Create the result.
             cur_res = result.TableResult(name = 'event',
                                          key_name = 'id',
@@ -430,6 +452,17 @@ class EventExporter(object):
                 # Assign the channel instance to the detections.
                 cur_event.assign_channel_to_detections(self.project.geometry_inventory)
 
+                # TODO: Load the event type from the database when loading the event.
+                # Get the related event_type name.
+                cur_event_type = None
+                if cur_event.event_type is not None:
+                    cur_event_type = [x.name for x in available_event_types if x.id == cur_event.event_type]
+                    if len(cur_event_type) == 1:
+                        cur_event_type = cur_event_type[0]
+                    else:
+                        cur_event_type = None
+                
+
                 detection_scnl = [str(x.channel.scnl_string) for x in cur_event.detections]
                 detection_start = [str(x.start_time.timestamp) for x in cur_event.detections]
                 detection_end = [str(x.end_time.timestamp) for x in cur_event.detections]
@@ -439,7 +472,10 @@ class EventExporter(object):
                                 n_stations = len(cur_event.detections),
                                 detection_scnl = ','.join(detection_scnl),
                                 detection_start = ','.join(detection_start),
-                                detection_end = ','.join(detection_end))
+                                detection_end = ','.join(detection_end),
+                                catalog_name = catalog.name,
+                                event_type_id = cur_event.event_type,
+                                event_type = cur_event_type)
 
             cur_res.base_output_dir = self.output_dir
             cur_res.save()
