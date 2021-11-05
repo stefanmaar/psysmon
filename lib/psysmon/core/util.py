@@ -1,4 +1,3 @@
-from __future__ import print_function
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -57,20 +56,35 @@ from __future__ import print_function
 #    GNU Lesser General Public License, Version 3
 #    (http://www.gnu.org/copyleft/lesser.html)
 #
+
 from builtins import map
 from builtins import str
 from builtins import range
 from builtins import object
 import copy
+import os
 import re
+import subprocess
+import sys
 
 from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
 
 
+def display_file(filename):
+    ''' Display a file using the user selected program.
+    '''
+    if sys.platform == "win32":
+        os.startfile(filename)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.call([opener, filename])
+
+
+
 def _wxdate2pydate(date):
      if date is None:
-         return None
+          return None
 
      assert isinstance(date, DateTime)
      if date.IsValid():
@@ -96,7 +110,6 @@ def version_tuple(version_string):
 
     '''
     return tuple(map(int, version_string.split('.')))
-
 
 
 def traceid_to_scnl(trace_id):
@@ -157,7 +170,7 @@ def add_month(date):
         date.month += 1
 
     return date
-
+     
 
 class AttribDict(dict, object):
 
@@ -336,8 +349,6 @@ class ActionHistory(object):
 
         # Remove the trailing comma from the string.            
         return updateString[:-1]
-
-
 
 
 class Action(object):
@@ -548,5 +559,3 @@ class Version(object):
                     nn[k] = 0
 
         return tuple(nn)
-
-
