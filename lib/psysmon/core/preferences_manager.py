@@ -159,6 +159,8 @@ class PreferencesManager(object):
         if len(values) == 1:
             values = values[0]
 
+        #print("pref name: {}; value: {}".format(name, values))
+
         return values
 
 
