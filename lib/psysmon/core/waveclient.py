@@ -339,8 +339,10 @@ class PsysmonDbWaveClient(WaveClient):
         else:
             return None
 
-
-
+    @property
+    def waveformDirDict(self):
+        # The waveformDirList as a dictionary.
+        return [x._asdict() for x in self.waveformDirList]
 
 
     def getWaveform(self, startTime, endTime, scnl):
@@ -594,18 +596,20 @@ class PsysmonDbWaveClient(WaveClient):
 
         # TODO: make the waveform dir list a dynamic property.
         dbSession = self.project.getDbSession()
-        self.waveformDirList = dbSession.query(wfDir.id,
-                                               wfDir.waveclient,
-                                               wfDir.directory,
-                                               wfDirAlias.alias,
-                                               wfDir.description,
-                                               wfDir.file_ext,
-                                               wfDir.first_import,
-                                               wfDir.last_scan).\
-                                         join(wfDirAlias,
-                                              wfDir.id==wfDirAlias.wf_id).\
-                                         filter(wfDirAlias.user==self.project.activeUser.name).\
-                                         filter(wfDir.waveclient==self.name).all()
+        res = dbSession.query(wfDir.id,
+                              wfDir.waveclient,
+                              wfDir.directory,
+                              wfDirAlias.alias,
+                              wfDir.description,
+                              wfDir.file_ext,
+                              wfDir.first_import,
+                              wfDir.last_scan).\
+            join(wfDirAlias,
+                 wfDir.id == wfDirAlias.wf_id).\
+            filter(wfDirAlias.user == self.project.activeUser.name).\
+            filter(wfDir.waveclient == self.name).all()
+
+        self.waveformDirList = res
 
         dbSession.close()
 
