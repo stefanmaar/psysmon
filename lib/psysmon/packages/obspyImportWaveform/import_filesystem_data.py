@@ -29,10 +29,12 @@ The import filesystem data module.
 
 
 '''
+import logging
 
 import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
+
 
 class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
     ''' Import data from the filesystem using the DB Waveclient.
@@ -43,8 +45,13 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
     tags = ['stable']
 
     def __init__(self, **args):
+        # Initialize the instance.
         psysmon.core.packageNodes.CollectionNode.__init__(self, **args)
 
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+        
         select_page = self.pref_manager.add_page('Select')
         wfdir_group = select_page.add_group('waveform directory')
         import_group = select_page.add_group('import options')
@@ -140,8 +147,8 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
         item = self.pref_manager.get_item('search_path')[0]
         control_element = item.gui_element[0].controlElement
-        item.start_directory = selected_wf_dir.alias
-        control_element.startDirectory = selected_wf_dir.alias
+        item.start_directory = selected_wf_dir[3]
+        control_element.startDirectory = selected_wf_dir[3]
 
 
     def on_waveclient_selected(self):
@@ -153,15 +160,29 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
         client = self.project.waveclient[selected_waveclient]
         client.loadWaveformDirList()
-        waveform_dir_list = client.waveformDirList
+        waveform_dir_list = client.waveformDirDict
+
+        # Convert the dictionaries to lists.
+        waveform_dir_list = [[x['id'],
+                              x['waveclient'],
+                              x['directory'],
+                              x['alias'],
+                              x['description'],
+                              x['file_ext'],
+                              x['first_import'],
+                              x['last_scan']] for x in waveform_dir_list]
+
         self.pref_manager.set_limit('wf_dir', waveform_dir_list)
 
         # Select existing values based on the waveform dir id.
-        values = self.pref_manager.get_value('wf_dir')
-        value_ids = [x[0] for x in values]
-        values = [x for x in waveform_dir_list if x[0] in value_ids]
-        values = list(set(values))
-        self.pref_manager.set_value('wf_dir', values)
-
-
-
+        try:
+            values = self.pref_manager.get_value('wf_dir')
+            # Ignore None values which might be caused
+            # by bad preference value settings.
+            values = [x for x in values if x is not None]
+            value_ids = [x[0] for x in values]
+            value_ids = list(set(value_ids))
+            values = [x for x in waveform_dir_list if x[0] in value_ids]
+            self.pref_manager.set_value('wf_dir', values)
+        except Exception:
+            self.logger.exception("Couldn't set the selected waveform directories.")
