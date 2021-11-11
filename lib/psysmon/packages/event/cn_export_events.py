@@ -421,7 +421,8 @@ class EventExporter(object):
             else:
                 # Load the events with the given ids from the database. Ignore the
                 # time-span.
-                catalog.load_events(event_id = event_ids)
+                catalog.load_events(project = self.project,
+                                    event_id = event_ids)
 
             # Abort the execution if no events are available for the time span.
             if not catalog.events:
