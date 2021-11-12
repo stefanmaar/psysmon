@@ -59,10 +59,6 @@ class Hodogram(ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.emotion_smile_icon_16
 
-        self.channel_map = {'z': 'HHZ',
-                            'y': 'HHN',
-                            'x': 'HHE'}
-
         # TODO: Somehow make it possible to add multiple views to the virtual
         # channel. Each view should contain a certain polarization feature. The
         # features can change depending on the selected computation method. The
@@ -114,6 +110,23 @@ class Hodogram(ViewPlugin):
                                           tool_tip = 'Select the z component channel.')
         cm_group.add_item(item)
 
+    @property
+    def channel_map(self):
+        ''' The channels used for the x, y, z components.
+        '''
+        channel_map = {'x': self.pref_manager.get_value('channel_map_x'),
+                       'y': self.pref_manager.get_value('channel_map_y'),
+                       'z': self.pref_manager.get_value('channel_map_z')}
+        return channel_map
+
+
+    @property
+    def required_data_channels(self):
+        ''' This plugin needs to create a virtual channel.
+        '''
+        # TODO: Get the needed channels from preference items.
+        return list(self.channel_map.values())
+
         
     def initialize_preferences(self):
         ''' Intitialize the preferences depending on runtime variables.
@@ -149,14 +162,6 @@ class Hodogram(ViewPlugin):
             self.pref_manager.set_value('channel_map_z', channels[0])
 
 
-    @property
-    def required_data_channels(self):
-        ''' This plugin needs to create a virtual channel.
-        '''
-        # TODO: Get the needed channels from preference items.
-        return list(self.channel_map.values())
-
-
 
     def plot(self, displayManager, dataManager):
         ''' Plot all available stations.
@@ -189,7 +194,8 @@ class Hodogram(ViewPlugin):
 
             for cur_view in views:
                 if cur_stream:
-                    cur_view.plot(cur_stream, self.channel_map,
+                    cur_view.plot(cur_stream,
+                                  self.channel_map,
                                   window_length = window_length,
                                   overlap = overlap)
 
