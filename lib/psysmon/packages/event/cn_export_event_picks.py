@@ -472,7 +472,9 @@ class EventPickExporter(object):
                                         end_time = cur_event.end_time)
 
                 event_picks = pick_catalog.get_pick(start_time = cur_event.start_time,
-                                                  end_time = cur_event.end_time)
+                                                    end_time = cur_event.end_time)
+
+                self.logger.debug("event_picks: %s", event_picks)
 
                 for cur_pick in event_picks:
                     cur_res.add_row(key = cur_event.db_id,
@@ -485,5 +487,7 @@ class EventPickExporter(object):
                                     pick_label = cur_pick.label,
                                     time = cur_pick.time)
 
-            cur_res.base_output_dir = self.output_dir
-            cur_res.save()
+                cur_res.base_output_dir = self.output_dir
+                
+                if len(event_picks) > 0:
+                    cur_res.save()
