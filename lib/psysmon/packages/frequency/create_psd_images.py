@@ -640,29 +640,29 @@ class PSDPlotter(object):
         if self.with_average_plot:
             # Fix the average axes.
             bbox = ax_avg.yaxis.get_tightbbox(fig.canvas.get_renderer())
-            bbox_i = bbox.inverse_transformed(fig.transFigure)
+            bbox_i = bbox.transformed(fig.transFigure.inverted())
             pos = ax_avg.get_position()
             pos.x0 = pos.x0 + np.abs(bbox_i.x0)
             ax_avg.set_position(pos)
 
             # Reposition the avg x-axes label.
             bbox = ax_avg.xaxis.get_tightbbox(fig.canvas.get_renderer())
-            bbox_i = bbox.inverse_transformed(ax_avg.transAxes)
+            bbox_i = bbox.transformed(ax_avg.transAxes.inverted())
             ax_avg.xaxis.set_label_coords(0.5, bbox_i.y1)
 
 
             # Shift the colorbar to the right of the psd axis labels.
             bbox = ax_psd.yaxis.get_tightbbox(fig.canvas.get_renderer())
-            bbox_i = bbox.inverse_transformed(fig.transFigure)
+            bbox_i = bbox.transformed(fig.transFigure.inverted())
             pos = cb.ax.get_position()
-            pos.x0 = bbox_i.x1 + 0.25/cm_to_inch/width
-            pos.x1 = pos.x0 + 0.5/cm_to_inch/width
+            pos.x0 = bbox_i.x1 + 0.25 / cm_to_inch / width
+            pos.x1 = pos.x0 + 0.5 / cm_to_inch / width
             cb.ax.set_position(pos)
 
             # Change the right border of the psd plot to make space for the
             # colorbar.
             bbox = ax_cb.yaxis.get_tightbbox(fig.canvas.get_renderer())
-            bbox_i = bbox.inverse_transformed(fig.transFigure)
+            bbox_i = bbox.transformed(fig.transFigure.inverted())
             pos = ax_psd.get_position()
             pos.x1 = pos.x1 - (bbox_i.x1 - 1)
             ax_psd.set_position(pos)
