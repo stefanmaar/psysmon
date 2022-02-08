@@ -30,18 +30,24 @@ The pSysmon setup script.
     GNU General Public License, Version 3 
     (http://www.gnu.org/licenses/gpl-3.0.html)
 '''
+import os
 import sys
 from pkg_resources import parse_version
 from setupExt import printStatus, printMessage, printLine, printRaw, \
     checkForPackage, get_data_files
 
-# Check the commandline argument for the headless option.
-headless = False
-if "--headless" in sys.argv:
-    headless = True
-    sys.argv.remove("--headless")
 
-    
+# Check the environment variables for the headless option.
+# Install psysmon in development mode without GUI support using the command "psysmon_headless=1 pip install -e ./psysmon"
+headless = False
+headless_var = os.environ.get("psysmon_headless", None)
+printRaw("headless_var: ")
+printRaw(headless_var)
+if headless_var is not None and (int(headless_var) == 1):
+    printMessage("Installing in headless mode.")
+    headless = True
+
+                              
 # Check for mandatory modules.
 try:
     import numpy  # @UnusedImport # NOQA
@@ -253,4 +259,4 @@ setup(name = 'psysmon',
       ext_package = 'psysmon.lib',
       install_requires = install_requires,
       configuration = configuration
-)
+      )
