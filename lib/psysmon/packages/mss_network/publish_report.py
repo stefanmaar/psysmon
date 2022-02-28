@@ -26,7 +26,6 @@ import os
 import tempfile
 
 import matplotlib.pyplot as plt
-import mpl_toolkits.basemap as basemap
 import numpy as np
 import obspy.core.utcdatetime as utcdatetime
 

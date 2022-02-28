@@ -513,7 +513,7 @@ class Grid2dResult(Result):
         # that can be combined in a spreadsheet like the value results. The
         # saving currently is not consistent. See also the todo note in
         # window_processor modul in the process method.
-        from mpl_toolkits.basemap import pyproj
+        import pyproj
         import matplotlib.pyplot as plt
 
         map_config = self.metadata['map_config']

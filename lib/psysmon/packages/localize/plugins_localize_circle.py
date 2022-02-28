@@ -41,7 +41,7 @@ import psysmon.core.preferences_manager as preferences_manager
 
 import matplotlib as mpl
 import matplotlib.patches
-import mpl_toolkits.basemap as basemap
+import pyproj
 
 
 class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
@@ -254,7 +254,7 @@ class LocalizeCircle(psysmon.core.plugins.CommandPlugin):
         map_view = self.parent.viewport.get_node(name = map_view_name)
 
         for cur_view in map_view:
-            proj = basemap.pyproj.Proj(init = cur_view.map_config['epsg'])
+            proj = pyproj.Proj(init = cur_view.map_config['epsg'])
 
             # Remove existing circles from the view.
             circles_to_delete = [x for x in cur_view.axes.patches if x.get_gid() == self.rid]

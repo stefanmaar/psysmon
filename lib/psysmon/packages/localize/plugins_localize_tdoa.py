@@ -41,7 +41,7 @@ import psysmon.core.preferences_manager as preferences_manager
 
 import matplotlib as mpl
 import matplotlib.patches
-import mpl_toolkits.basemap as basemap
+import pyproj
 
 
 class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
@@ -313,7 +313,7 @@ class LocalizeTdoa(psysmon.core.plugins.CommandPlugin):
 
         computed_hyp = {}
         for cur_view in map_view:
-            proj = basemap.pyproj.Proj(init = cur_view.map_config['epsg'])
+            proj = pyproj.Proj(init = cur_view.map_config['epsg'])
 
             master_lon, master_lat = master.get_lon_lat()
             master_x, master_y = proj(master_lon, master_lat)

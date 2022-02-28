@@ -24,7 +24,7 @@ import csv
 
 import matplotlib.pyplot as plt
 import matplotlib.patches
-from mpl_toolkits.basemap import pyproj
+import pyproj
 import numpy as np
 import scipy as sp
 

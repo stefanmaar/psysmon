@@ -37,7 +37,7 @@ from builtins import object
 import psysmon
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
-from mpl_toolkits.basemap import pyproj
+import pyproj
 import warnings
 import logging
 from wx.lib.pubsub import setupkwargs
