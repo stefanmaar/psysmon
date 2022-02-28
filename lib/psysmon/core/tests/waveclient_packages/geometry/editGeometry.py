@@ -52,7 +52,7 @@ from matplotlib.figure import Figure
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import numpy as np
-from mpl_toolkits.basemap import pyproj
+import pyproj
 from mpl_toolkits.basemap import Basemap
 from matplotlib.patches import Polygon
 from obspy.signal import pazToFreqResp

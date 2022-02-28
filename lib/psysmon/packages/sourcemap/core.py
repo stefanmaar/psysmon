@@ -43,7 +43,7 @@ import obspy.taup
 import psysmon
 import psysmon.packages.geometry.inventory as inventory
 import psysmon.packages.geometry.util as geom_util
-from mpl_toolkits.basemap import pyproj
+import pyproj
 
 
 # TODO: Make the number of data components (e.g. Z, N, E) flexible. Use

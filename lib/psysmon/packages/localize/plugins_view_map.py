@@ -29,8 +29,7 @@ import psysmon.artwork.icons as icons
 import psysmon.packages.geometry.util as geom_util
 import psysmon.core.preferences_manager as preferences_manager
 
-import mpl_toolkits.basemap as basemap
-
+import pyproj
 
 
 class MapPlotter(psysmon.core.plugins.ViewPlugin):
@@ -160,7 +159,7 @@ class MapView(psysmon.core.gui_view.ViewNode):
 
         '''
         # Get the lon/lat limits of the inventory.
-        proj = basemap.pyproj.Proj(init = self.map_config['epsg'])
+        proj = pyproj.Proj(init = self.map_config['epsg'])
 
         # Plot the stations.
         x,y = proj(lon, lat)

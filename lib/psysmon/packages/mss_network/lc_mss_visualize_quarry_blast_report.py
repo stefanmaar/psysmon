@@ -29,10 +29,10 @@ import pickle
 
 import matplotlib
 import matplotlib.pyplot as plt
-import mpl_toolkits.basemap as basemap
 import numpy as np
 import obspy.core
 import obspy.core.utcdatetime as utcdatetime
+import pyproj
 import seaborn as sns
 import scipy
 
@@ -193,7 +193,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             # Get the epidistance, pgv, magnitude pairs for the red_pgv plots.
             # Compute the epidistance and sort the stations according to it.
             stations = []
-            proj = basemap.pyproj.Proj(init = 'epsg:' + cur_blast['epsg'])
+            proj = pyproj.Proj(init = 'epsg:' + cur_blast['epsg'])
             ref_x = cur_blast['x']
             ref_y = cur_blast['y']
 
@@ -309,7 +309,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Sort the stations according to the reference location.
         stations = []
-        proj = basemap.pyproj.Proj(init = 'epsg:' + epsg)
+        proj = pyproj.Proj(init = 'epsg:' + epsg)
         ref_x = -21514.445
         ref_y = 301766.29
 
@@ -392,7 +392,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Compute the epidistance and sort the stations according to it.
         stations = []
-        proj = basemap.pyproj.Proj(init = 'epsg:' + epsg)
+        proj = pyproj.Proj(init = 'epsg:' + epsg)
         ref_x = epi[0]
         ref_y = epi[1]
 

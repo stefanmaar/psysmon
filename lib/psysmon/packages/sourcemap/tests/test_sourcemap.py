@@ -339,7 +339,7 @@ class SourceMapTestCase(unittest.TestCase):
         sm.compute_sourcemap()
 
         # Plot the map.
-        from mpl_toolkits.basemap import pyproj
+        import pyproj
         import matplotlib.pyplot as plt
         proj = pyproj.Proj(init = sm.map_config['epsg'])
         hypo_x, hypo_y = proj(db['hypo_lon_lat'][0], db['hypo_lon_lat'][1])

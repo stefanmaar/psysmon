@@ -55,10 +55,7 @@ from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 import numpy as np
 import obspy.signal.invsim
-try:
-    import pyproj
-except Exception:
-    from mpl_toolkits.basemap import pyproj
+import pyproj
 
 # TODO: Remove all methods related to the mpl_toolkits Basemap.
 #try:

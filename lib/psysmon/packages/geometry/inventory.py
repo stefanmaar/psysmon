@@ -39,10 +39,7 @@ import obspy.core.inventory as obs_inv
 from obspy.core.utcdatetime import UTCDateTime
 from psysmon.core.error import PsysmonError
 import psysmon.packages.geometry.util as geom_util
-try:
-    import pyproj
-except Exception:
-    from mpl_toolkits.basemap import pyproj
+import pyproj
 import numpy as np
 import warnings
 import logging
