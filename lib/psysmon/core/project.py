@@ -708,7 +708,8 @@ class Project(object):
                 os.makedirs(os.path.join(self.collectionDir, cur_user.name))
 
         else:
-            msg = "Cannot create the directory structure."
+            msg = "Cannot create the directory structure, the project directory {:s} doesn't exist.".format(self.projectDir)
+            self.logger.error(msg)
             raise Exception(msg)
 
 
@@ -751,7 +752,8 @@ class Project(object):
                     os.makedirs(user_dir)
 
         else:
-            msg = "Cannot create the directory structure."
+            msg = "Cannot update the directory structure, the project directory {:s} doesn't exist.".format(self.projectDir)
+            self.logger.error(msg)
             raise Exception(msg)
 
 
@@ -1206,7 +1208,6 @@ class User(object):
 
         # The logger can't be pickled. Remove it.
         del result['logger']
-
         return result
 
 
