@@ -28,6 +28,7 @@ import tempfile
 import matplotlib.pyplot as plt
 import numpy as np
 import obspy.core.utcdatetime as utcdatetime
+import paramiko
 
 from . import quarry_blast_validation
 import psysmon.core.gui_preference_dialog as gui_preference_dialog
@@ -137,9 +138,9 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
 
         # The quarry blast information file.
         item = psy_pm.DirBrowsePrefItem(name = 'result_dir',
-                                         label = 'result directory',
-                                         value = '',
-                                         tool_tip = 'The directory where to store the result file.')
+                                        label = 'result directory',
+                                        value = '',
+                                        tool_tip = 'The directory where to store the result file.')
         res_group.add_item(item)
 
 
@@ -182,15 +183,22 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             # Download the quarry information file.
             src_filename = self.pref_manager.get_value('filename')
             tmp_fid, tmp_filename = tempfile.mkstemp(prefix = 'quarry_validation',
-                                            dir = self.project.tmpDir)
-            ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
-                             user = self.pref_manager.get_value('username'),
-                             passwd = self.pref_manager.get_value('password'))
+                                                     dir = self.project.tmpDir)
+            host = self.pref_manager.get_value('host')
+            port = 22
+            transport = paramiko.Transport((host, port))
+            transport.connect(username = self.pref_manager.get_value('username'),
+                              password = self.pref_manager.get_value('password'))
             try:
-                with open(tmp_filename, 'wb') as fp:
-                    ftp.retrbinary('RETR ' + src_filename, fp.write)
+                sftp = paramiko.SFTPCLIENT.from_transport(transport)
+                try:
+                    sftp.get(src_filename, tmp_filename)
+                finally:
+                    sftp.close()
+            except Exception:
+                self.logger.error("Couldn't download the blast exchange file %s from %s.", src_filename, host)
             finally:
-                ftp.quit()
+                transport.close()
                 os.close(tmp_fid)
 
             with open(tmp_filename, 'r') as fp:
@@ -299,62 +307,77 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             # TODO: Make this a user preference.
             upload = True
             if upload:
-                ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
-                                 user = self.pref_manager.get_value('username'),
-                                 passwd = self.pref_manager.get_value('password'))
+                transport = paramiko.Transport((host, port))
+                transport.connect(username = self.pref_manager.get_value('username'),
+                                  password = self.pref_manager.get_value('password'))
                 try:
-                    self.logger.info("Uploading the result file %s.", export_filepath)
-                    with open(export_filepath, 'r') as fp:
-                        ftp.storbinary('STOR ' + os.path.basename(export_filepath), fp)
+                    sftp = paramiko.SFTPCLIENT.from_transport(transport)
+                    try:
+                        self.logger.info("Uploading the result file %s.",
+                                         export_filepath)
+                        sftp.put(export_filepath,
+                                 os.path.basename(export_filepath))
 
-                    # Check for needed upload of results.
-                    save_blast_file = False
-                    for cur_blast_key in sorted(quarry_blast.keys()):
-                        cur_blast = quarry_blast[cur_blast_key]
-                        if 'psysmon_event_id' in iter(cur_blast.keys()) and 'computed_on' in iter(cur_blast.keys()) and 'uploaded_on' not in iter(cur_blast.keys()):
-                            # Upload the result images to the FTP Server.
-                            self.logger.info('Uploading images of %s.', cur_blast_key)
-                            cur_blast_dir = os.path.join(result_dir, 'sprengung_' + cur_blast_key)
+                        # Check for needed upload of results.
+                        save_blast_file = False
+                        for cur_blast_key in sorted(quarry_blast.keys()):
+                            cur_blast = quarry_blast[cur_blast_key]
+                            if 'psysmon_event_id' in iter(cur_blast.keys()) and 'computed_on' in iter(cur_blast.keys()) and 'uploaded_on' not in iter(cur_blast.keys()):
+                                # Upload the result images to the FTP Server.
+                                self.logger.info('Uploading images of %s.',
+                                                 cur_blast_key)
+                                cur_blast_dir = os.path.join(result_dir,
+                                                             'sprengung_' + cur_blast_key)
 
-                            # Upload the pgv file.
-                            cur_file = os.path.join(cur_blast_dir, 'pgv', 'sprengung_' + cur_blast_key + '_pgv.png')
-                            if os.path.exists(cur_file):
-                                with open(cur_file) as fp:
-                                    ftp.storbinary('STOR images/pgv/' + os.path.basename(cur_file), fp)
-                            else:
-                                self.logger.error('File %s does not exist.', cur_file)
+                                # Upload the pgv file.
+                                cur_file = os.path.join(cur_blast_dir,
+                                                        'pgv',
+                                                        'sprengung_' + cur_blast_key + '_pgv.png')
+                                if os.path.exists(cur_file):
+                                    sftp.put(cur_file,
+                                             'images/pgv/' + os.path.basename(cur_file))
+                                else:
+                                    self.logger.error('File %s does not exist.',
+                                                      cur_file)
 
-                            # Upload the pgv_red file.
-                            cur_file = os.path.join(cur_blast_dir, 'pgv_red', 'sprengung_' + cur_blast_key + '_pgv_red.png')
-                            if os.path.exists(cur_file):
-                                with open(cur_file) as fp:
-                                    ftp.storbinary('STOR images/pgv_red/' + os.path.basename(cur_file), fp)
-                            else:
-                                self.logger.error('File %s does not exist.', cur_file)
+                                # Upload the pgv_red file.
+                                cur_file = os.path.join(cur_blast_dir,
+                                                        'pgv_red',
+                                                        'sprengung_' + cur_blast_key + '_pgv_red.png')
+                                if os.path.exists(cur_file):
+                                    sftp.put(cur_file,
+                                             'images/pgv_red/' + os.path.basename(cur_file))
+                                else:
+                                    self.logger.error('File %s does not exist.',
+                                                      cur_file)
 
-                            # Upload the psd file of station DUBA.
-                            cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBA.png')
-                            if os.path.exists(cur_file):
-                                with open(cur_file) as fp:
-                                    ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
-                            else:
-                                self.logger.error('File %s does not exist.', cur_file)
+                                # Upload the psd file of station DUBA.
+                                cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBA.png')
+                                if os.path.exists(cur_file):
+                                    sftp.put(cur_file,
+                                             'images/psd/' + os.path.basename(cur_file))
+                                else:
+                                    self.logger.error('File %s does not exist.',
+                                                      cur_file)
 
-                            # Upload the psd file of station DUBAM.
-                            cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBAM.png')
-                            if os.path.exists(cur_file):
-                                with open(cur_file) as fp:
-                                    ftp.storbinary('STOR images/psd/' + os.path.basename(cur_file), fp)
-                            else:
-                                self.logger.error('File %s does not exist.', cur_file)
+                                # Upload the psd file of station DUBAM.
+                                cur_file = os.path.join(cur_blast_dir, 'psd', 'sprengung_' + cur_blast_key + '_psd_DUBAM.png')
+                                if os.path.exists(cur_file):
+                                    sftp.put(cur_file,
+                                             'images/psd/' + os.path.basename(cur_file))
+                                else:
+                                    self.logger.error('File %s does not exist.',
+                                                      cur_file)
 
-                            # Add the uploaded_on flag.
-                            quarry_blast[cur_blast_key]['uploaded_on'] = utcdatetime.UTCDateTime()
-                            save_blast_file = True
-                except:
-                    self.logger.exception("Problems when uploading the result files.")
+                                # Add the uploaded_on flag.
+                                quarry_blast[cur_blast_key]['uploaded_on'] = utcdatetime.UTCDateTime()
+                                save_blast_file = True
+                    except Exception:
+                        self.logger.exception("Problems when uploading the result files.")
+                    finally:
+                        sftp.close()
                 finally:
-                    ftp.quit()
+                    transport.close()
 
                 # Save the quarry blast information.
                 if save_blast_file:
@@ -371,11 +394,12 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                                  user = self.pref_manager.get_value('mss_username'),
                                  passwd = self.pref_manager.get_value('mss_password'))
                 try:
-                    self.logger.info("Uploading the json file %s.", blast_filename)
+                    self.logger.info("Uploading the json file %s.",
+                                     blast_filename)
                     with open(blast_filename, 'r') as fp:
                         ftp.storbinary('STOR msn_ergebnisse/' + os.path.basename(blast_filename), fp)
 
-                except:
+                except Exception:
                     self.logger.exception("Problems when uploading the json file to the MSS homepage.")
                 finally:
                     ftp.quit()

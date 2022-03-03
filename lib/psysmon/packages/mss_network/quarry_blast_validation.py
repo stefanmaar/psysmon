@@ -21,7 +21,6 @@
 from builtins import str
 import csv
 import datetime
-import ftplib
 import json
 import os
 import pytz
@@ -29,6 +28,7 @@ import tempfile
 
 import numpy as np
 import obspy.core.utcdatetime as utcdatetime
+import paramiko
 import sqlalchemy.orm
 
 import psysmon.core.packageNodes as package_nodes
@@ -155,17 +155,28 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         # Download the quarry information file.
         src_filename = self.pref_manager.get_value('filename')
         tmp_fid, tmp_filename = tempfile.mkstemp(prefix = 'quarry_validation',
-                                        dir = self.project.tmpDir)
-        ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
-                         user = self.pref_manager.get_value('username'),
-                         passwd = self.pref_manager.get_value('password'))
+                                                 dir = self.project.tmpDir)
+
+        host = self.pref_manager.get_value('host')
+        port = 22
+        transport = paramiko.Transport((host, port))
+        transport.connect(username = self.pref_manager.get_value('username'),
+                          password = self.pref_manager.get_value('password'))
+        
+        #ftp = ftplib.FTP(host = self.pref_manager.get_value('host'),
+        #                 user = self.pref_manager.get_value('username'),
+        #                 passwd = self.pref_manager.get_value('password'))
         try:
-            with open(tmp_filename, 'wb') as fp:
-                ftp.retrbinary('RETR ' + src_filename, fp.write)
-        except:
-            self.logger.error("Couldn't download the blast exchange file %s from %s.", src_filename, ftp.host)
+            sftp = paramiko.SFTPCLIENT.from_transport(transport)
+            try:
+                sftp.get(src_filename, tmp_filename)
+            finally:
+                sftp.close()
+        except Exception:
+            self.logger.error("Couldn't download the blast exchange file %s from %s.", src_filename, host)
         finally:
-            ftp.quit()
+            #ftp.quit()
+            transport.close()
             os.close(tmp_fid)
 
         if os.path.exists(blast_filename):
