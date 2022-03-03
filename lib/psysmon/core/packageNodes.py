@@ -201,6 +201,10 @@ class CollectionNode(object):
     def __getstate__(self):
         result = self.__dict__.copy()
         del result['project']
+
+        if 'logger' in result.keys():
+            del result['logger']
+            
         return result
 
     ## The __setstate__ method.
