@@ -38,6 +38,8 @@ import logging
 import weakref
 from sqlalchemy import MetaData
 
+import psysmon
+
 
 def scan_module_for_plugins(package_name, plugin_modules, logger = None):
     ''' Scan a module file for classes inherited from a plugin node class.
@@ -86,6 +88,12 @@ def scan_module_for_plugins(package_name, plugin_modules, logger = None):
                         if cur_base in plugin_classes:
                             plugin_templates.append(obj)
                             break
+        except ImportError as e:
+            if not psysmon.wx_available and e.msg.lower().strip() == "no module named 'wx'":
+                logger.warning("psysmon is running in headless mode. Ignoring plugin %s which requires wxPython.",
+                               package_name + '.' + cur_plugin_module)
+            else:
+                logger.exception(e)
         except Exception as e:
             if logger:
                 logger.exception(e)
@@ -94,7 +102,7 @@ def scan_module_for_plugins(package_name, plugin_modules, logger = None):
     return plugin_templates
 
 
-def scan_module_for_collection_nodes(package_name, node_modules):
+def scan_module_for_collection_nodes(package_name, node_modules, logger = None):
     ''' Scan a module file for classes inherited from the :class:`~psysmon.core.packageNodes.CollectionNode` class.
 
     Parameters
@@ -125,12 +133,21 @@ def scan_module_for_collection_nodes(package_name, node_modules):
                     node_templates.append(obj)
                 elif inspect.isclass(obj) and psysmon.core.packageNodes.LooperCollectionChildNode in obj.__bases__:
                     node_templates.append(obj)
+        except ImportError as e:
+            if not psysmon.wx_available and e.msg.lower().strip() == "no module named 'wx'":
+                logger.warning("psysmon is running in headless mode. Ignoring collection_node %s which requires wxPython.",
+                               package_name + '.' + cur_node_module)
+            else:
+                logger.exception(e)
         except Exception as e:
-            print(e)
+            if logger:
+                logger.exception(e)
+            else:
+                print(e)
     return node_templates
 
 
-def scan_module_for_processing_nodes(package_name, node_modules):
+def scan_module_for_processing_nodes(package_name, node_modules, logger = None):
     ''' Scan a module file for classes inherited from the :class:`~psysmon.core.processingStack.ProcessingNode` class.
 
     Parameters
@@ -157,8 +174,17 @@ def scan_module_for_processing_nodes(package_name, node_modules):
             for name, obj in inspect.getmembers(mod):
                 if inspect.isclass(obj) and psysmon.core.processingStack.ProcessingNode in obj.__bases__:
                     node_templates.append(obj)
+        except ImportError as e:
+            if not psysmon.wx_available and e.msg.lower().strip() == "no module named 'wx'":
+                logger.warning("psysmon is running in headless mode. Ignoring processing node %s which requires wxPython.",
+                               package_name + '.' + cur_node_module)
+            else:
+                logger.exception(e)
         except Exception as e:
-            print(e)
+            if logger:
+                logger.exception(e)
+            else:
+                print(e)
     return node_templates
 
 
@@ -299,9 +325,15 @@ class PackageManager(object):
                         self.logger.debug("Package check failed!")
 
                 except IndexError:
-                    self.logger.exception("No init file found for package %s.", pkgName)
-                except ImportError:
-                    self.logger.exception("Can't import package %s.", pkgName)
+                    self.logger.exception("No init file found for package %s.",
+                                          pkgName)
+                except ImportError as e:
+                    if not psysmon.wx_available and e.msg.lower().strip() == "no module named 'wx'":
+                        self.logger.warning("psysmon is running in headless mode. Ignoring package %s which requires wxPython.",
+                                            pkgName)
+                    else:
+                        self.logger.exception("Can't import package %s.",
+                                              pkgName)
 
 
 
@@ -388,7 +420,8 @@ class PackageManager(object):
         # Get the collection node templates.
         if 'collection_node_modules' in dir(pkgModule):
             self.logger.debug('Getting the collection nodes.')
-            node_templates = scan_module_for_collection_nodes(pkgModule.__name__, pkgModule.collection_node_modules)
+            node_templates = scan_module_for_collection_nodes(pkgModule.__name__, pkgModule.collection_node_modules,
+                                                              logger = self.logger)
             for cur_node in node_templates:
                 cur_node.parent = pkgName
             curPkg.addCollectionNodeTemplate(node_templates)
@@ -396,13 +429,15 @@ class PackageManager(object):
         # Get the plugins provided by the package.
         if 'plugin_modules' in dir(pkgModule):
             self.logger.debug('Getting the plugins.')
-            plugin_templates = scan_module_for_plugins(pkgModule.__name__, pkgModule.plugin_modules, logger = self.logger)
+            plugin_templates = scan_module_for_plugins(pkgModule.__name__, pkgModule.plugin_modules,
+                                                       logger = self.logger)
             self.addPlugins(plugin_templates)
 
         # Get the processing nodes provided by the package.
         if 'processing_node_modules' in dir(pkgModule):
             self.logger.debug('Getting the processing node templates')
-            proc_nodes = scan_module_for_processing_nodes(pkgModule.__name__, pkgModule.processing_node_modules)
+            proc_nodes = scan_module_for_processing_nodes(pkgModule.__name__, pkgModule.processing_node_modules,
+                                                          logger = self.logger)
             self.addProcessingNodes(proc_nodes)
 
         # Add the package to the packages list.
