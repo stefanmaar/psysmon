@@ -486,6 +486,9 @@ if __name__ == '__main__':
     shell_handler.setLevel(args.loglevel)
     logger.addHandler(shell_handler)
 
-    args.func(args, logger)
-
+    try:
+        args.func(args, logger)
+    except Exception:
+        parser.print_help()
+        parser.exit()
 
