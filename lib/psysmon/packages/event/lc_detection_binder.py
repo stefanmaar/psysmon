@@ -19,12 +19,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
+import psysmon
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.event.detect as detect
 import psysmon.packages.event.detection_binding as detection_binding
 import psysmon.packages.event.core as event_core
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as gui_preference_dialog
 
 #from profilehooks import profile
 

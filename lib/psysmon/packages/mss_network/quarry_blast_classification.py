@@ -26,9 +26,13 @@ import numpy as np
 import obspy.geodetics as geodetics
 import sqlalchemy.orm
 
+import psysmon
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as gui_preference_dialog
 
 
 class QuarryBlastClassification(package_nodes.LooperCollectionChildNode):

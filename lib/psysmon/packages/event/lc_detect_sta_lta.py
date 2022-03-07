@@ -25,11 +25,15 @@ from past.utils import old_div
 import numpy as np
 import obspy.core.utcdatetime as utcdatetime
 
+import psysmon
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as preferences_manager
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.packages.event.detect as detect
 
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+    
 #from profilehooks import profile
 
 class StaLtaDetection(package_nodes.LooperCollectionChildNode):

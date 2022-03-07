@@ -30,9 +30,13 @@ import numpy as np
 import obspy.core.utcdatetime as utcdatetime
 
 from . import quarry_blast_validation
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
+import psysmon
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as gui_preference_dialog
 
 
 class MssPublishBlastReport(package_nodes.CollectionNode):

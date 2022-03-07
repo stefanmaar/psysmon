@@ -47,10 +47,11 @@ import obspy.core
 import psysmon.core.json_util as json_util
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
-from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.result import ResultBag
 
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    from psysmon.core.gui_preference_dialog import ListbookPrefDialog
 
 ## Documentation for class WindowProcessorNode
 # 
