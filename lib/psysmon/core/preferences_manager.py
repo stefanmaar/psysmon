@@ -30,7 +30,7 @@ Module for handling object preferences.
 
 from builtins import str
 from builtins import object
-import wx
+
 
 class PreferencesManager(object):
     ''' The preferences of the project.
