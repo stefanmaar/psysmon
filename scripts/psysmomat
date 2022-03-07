@@ -338,6 +338,7 @@ if __name__ == '__main__':
 
     print('Parsing in main...')
     parser = argparse.ArgumentParser(description='psysmomat')
+    parser.set_defaults(func = lambda args,logger: parser.print_help())
     subparsers = parser.add_subparsers(title = 'sub commands',
                                        description = 'valid sub commands')
 
@@ -486,9 +487,4 @@ if __name__ == '__main__':
     shell_handler.setLevel(args.loglevel)
     logger.addHandler(shell_handler)
 
-    try:
-        args.func(args, logger)
-    except Exception:
-        parser.print_help()
-        parser.exit()
-
+    args.func(args, logger)
