@@ -46,7 +46,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 from wx.adv import DatePickerCtrl
 from wx.lib.masked import TimeCtrl
 from wx.lib.masked import TextCtrl as MaskedTextCtrl
-from psysmon.core.util import _wxdate2pydate, _pydate2wxdate
+from psysmon.core.gui_util import _wxdate2pydate, _pydate2wxdate
 from obspy.core import UTCDateTime
 import matplotlib as mpl
 

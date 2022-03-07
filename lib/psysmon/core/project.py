@@ -31,8 +31,8 @@ This module contains the classes for the project and user management.
 '''
 
 
-from future import standard_library
-standard_library.install_aliases()
+#from future import standard_library
+#standard_library.install_aliases()
 from builtins import zip
 from builtins import object
 import glob
@@ -44,10 +44,14 @@ import sys
 import _thread
 import subprocess
 import copy
-import wx
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
-from wx import CallAfter
+try:
+    import wx
+    from wx.lib.pubsub import pub
+    from wx import CallAfter
+except Exception:
+    # psysmon has been installed in headless mode.
+    pass
+    
 from datetime import datetime
 import psysmon.core.base
 from psysmon.core.error import PsysmonError
@@ -1053,7 +1057,6 @@ class Project(object):
             The log message to send.
         '''
         msgTopic = "log.general." + mode
-        #pub.sendMessage(msgTopic, msg)
 
 
 
@@ -1589,8 +1592,9 @@ class User(object):
             pub.sendMessage(msgTopic, msg = msg)
 
             # Start the process checker only if the wx GUI is running.
-            if wx.App.Get():
-                _thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+            if psysmon.wx_available and wx.App.Get():
+                _thread.start_new_thread(processChecker,
+                                         (proc, col2Proc.procName))
 
         else:
             raise PsysmonError('No active collection found!')
