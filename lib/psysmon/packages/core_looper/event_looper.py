@@ -49,15 +49,14 @@ import obspy.core
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.json_util as json_util
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
-from psysmon.packages.event.plugins_event_selector import EventListField
-from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
-from psysmon.core.processingStack import ProcessingStack
 #from psysmon.core.processingStack import ResultBag
 import psysmon.packages.event.core as event_core
 
-
-
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+    import psysmon.packages.event.plugins_event_selector as plugins_event_selector
+    
 ## Documentation for class importWaveform
 # 
 # 
@@ -204,10 +203,15 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
                                  tool_tip = 'Load events from the database.')
         event_group.add_item(item)
 
+        # Check for headless option when assigning the GUI class to the custom field.
+        if psysmon.wx_available:
+            gui_class = plugins_event_selector.EventListField
+        else:
+            gui_class = None
         item = psy_pm.CustomPrefItem(name = 'events',
                                      label = 'events',
                                      value = [],
-                                     gui_class = EventListField,
+                                     gui_class = gui_class,
                                      tool_tip = 'The available events. Selected events will be used for processing.')
         event_group.add_item(item)
 
