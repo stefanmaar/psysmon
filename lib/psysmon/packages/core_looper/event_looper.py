@@ -94,7 +94,7 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
             self.pref_manager.set_limit('scnl_list', channels)
 
         # Create the edit dialog.
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         self.on_select_individual()
@@ -579,7 +579,7 @@ class EventProcessor(object):
 
         # Call the cleanup method for all nodes.
         for cur_node in looper_nodes:
-            cur_node.cleanup(origin_resource = resource_id)
+            cur_node.cleanup(origin_resource = self.parent_rid)
 
             # Get the remaining results of the node and save them.
             if cur_node.result_bag:

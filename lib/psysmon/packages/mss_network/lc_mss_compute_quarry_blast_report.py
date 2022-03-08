@@ -283,7 +283,7 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         report_data['baumit_id'] = baumit_id
         report_data['blast_data'] = quarry_blast[baumit_id]
         report_data['psd_data'] = psd_data
-        with open(os.path.join(output_dir, filename), 'w') as fp:
+        with open(os.path.join(output_dir, filename), 'wb') as fp:
             pickle.dump(report_data, fp)
 
         # Clear the computation request flag in the event database.

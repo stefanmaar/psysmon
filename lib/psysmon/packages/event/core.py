@@ -178,7 +178,7 @@ class Event(object):
                                     # event_type attribute holds the event type
                                     # id.
                                     tags = ','.join(self.tags),
-                                    ev_type_id = self.event_type,
+                                    ev_type_id = self.event_type.id,
                                     ev_type_certainty = self.event_type_certainty,
                                     description = self.description,
                                     agency_uri = self.agency_uri,
@@ -223,7 +223,7 @@ class Event(object):
                 #db_event.pref_origin_id = self.pref_origin_id
                 #db_event.pref_magnitude_id = self.pref_magnitude_id
                 #db_event.pref_focmec_id = self.pref_focmec_id
-                db_event.ev_type_id = self.event_type
+                db_event.ev_type_id = self.event_type.id
                 db_event.ev_type_certainty = self.event_type_certainty
                 db_event.tags = ','.join(self.tags)
                 db_event.agency_uri = self.agency_uri

@@ -311,6 +311,8 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             # TODO: Make this a user preference.
             upload = True
             if upload:
+                host = self.pref_manager.get_value('host')
+                port = 22
                 transport = paramiko.Transport((host, port))
                 transport.connect(username = self.pref_manager.get_value('username'),
                                   password = self.pref_manager.get_value('password'))
@@ -400,7 +402,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 try:
                     self.logger.info("Uploading the json file %s.",
                                      blast_filename)
-                    with open(blast_filename, 'r') as fp:
+                    with open(blast_filename, 'rb') as fp:
                         ftp.storbinary('STOR msn_ergebnisse/' + os.path.basename(blast_filename), fp)
 
                 except Exception:
