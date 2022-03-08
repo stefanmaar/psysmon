@@ -308,16 +308,22 @@ def handle_execute_command(args, logger):
         project_file = args.project_file
 
 
-
-    psybase = test_util.create_psybase();
+    # Load the psysmon configuration.
+    config = load_config()
+    if 'pref_manager' in config.keys():
+        pref_manager = config['pref_manager']
+    else:
+        pref_manager = None
+        
+    psybase = test_util.create_psybase(pref_manager = pref_manager)
     try:
         db_host = None
         if args.db_host:
             db_host = args.db_host
         load_success = psybase.load_json_project(project_file,
-                                                user_name,
-                                                user_pwd,
-                                                db_host = db_host)
+                                                 user_name,
+                                                 user_pwd,
+                                                 db_host = db_host)
         # Set the log level.
         psybase.pref_manager.set_value('main_loglevel', 'DEBUG')
         psybase.pref_manager.set_value('shell_loglevel', 'ERROR')
@@ -331,6 +337,37 @@ def handle_execute_command(args, logger):
     finally:
         psybase.stop_project_server()
 
+def load_config():
+    ''' Load the configuration data from the config file.
+    '''
+    import platform
+    import json
+
+    config = {}
+
+    if platform.system() == 'Linux':
+        config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
+        config_file = os.path.join(config_dir, 'psysmon.cfg')
+    elif platform.system() == 'Windows':
+        if 'APPDATA' in os.environ:
+            config_dir = os.path.join(os.environ['APPDATA'], 'psysmon')
+            config_file = os.path.join(config_dir, 'psysmon.cfg')
+        else:
+            raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+    else:
+        raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+
+    if os.path.exists(config_file):
+        try:
+            file_meta = psysmon.core.json_util.get_file_meta(config_file)
+            decoder = psysmon.core.json_util.get_config_decoder(file_meta['file_version'])
+            with open(config_file, 'r') as fid:
+                config = json.load(fid, cls = decoder)
+        except:
+            config = {}
+
+
+    return config
 
 
 
@@ -478,8 +515,7 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-
-    print('Importing psysmon.')
+        
     import psysmon
     logger = logging.getLogger('psysmon')
     logger.setLevel(args.loglevel)
