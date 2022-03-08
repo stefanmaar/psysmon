@@ -329,8 +329,8 @@ class PackageManager(object):
                                           pkgName)
                 except ImportError as e:
                     if not psysmon.wx_available and e.msg.lower().strip() == "no module named 'wx'":
-                        self.logger.warning("psysmon is running in headless mode. Ignoring package %s which requires wxPython.",
-                                            pkgName)
+                        self.logger.exception("psysmon is running in headless mode. Ignoring package %s which requires wxPython.",
+                                              pkgName)
                     else:
                         self.logger.exception("Can't import package %s.",
                                               pkgName)
