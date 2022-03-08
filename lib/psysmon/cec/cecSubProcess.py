@@ -78,7 +78,7 @@ if __name__ == "__main__":
     logger = logging.getLogger('psysmon')
     # Don't propagete the messages to the root logger to avoid logging
     # using the default console logger.
-    logger.propaget = False
+    logger.propagate = False
     logger.setLevel(pref_manager.get_value('main_loglevel'))
     file_handler = psysmon.getLoggerFileHandler(logfileName)
     file_handler.setLevel(pref_manager.get_value('collection_loglevel'))
