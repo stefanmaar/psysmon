@@ -126,9 +126,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # Load the report data.
         data_dir = self.pref_manager.get_value('report_data_dir')
         filename = 'blast_report_data_event_%010d.pkl' % event.db_id
-        with open(os.path.join(data_dir, filename), 'r') as fp:
+        with open(os.path.join(data_dir, filename), 'rb') as fp:
             report_data = pickle.load(fp)
-
 
         # Load the pgv boxplot data.
         overall_data = self.load_overall_data()
