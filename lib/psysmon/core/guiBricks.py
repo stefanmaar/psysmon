@@ -28,7 +28,7 @@ import obspy.core.utcdatetime as udt
 import wx
 import wx.grid
 from wx.lib.stattext import GenStaticText as StaticText
-import  wx.lib.filebrowsebutton as filebrowse
+import wx.lib.filebrowsebutton as filebrowse
 import wx.lib.intctrl as intctrl
 try:
     from agw import floatspin as FS
@@ -39,6 +39,11 @@ import psysmon.core.preferences_manager as psy_pm
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
 
+# TODO: The processing stack defines custom fields. Setting the gui_class in the
+# preference item doesn't work for the headless option without wxPython support.
+# Add a clean way to create custom preference items and related gui classes to
+# the gui bricks handling.
+import psysmon.packages.tracedisplay.plugins_processingstack as plugins_processingstack
 
 
 ## The Field class.
@@ -1385,3 +1390,4 @@ gui_elements['datetime'] = DateTimeEditField
 gui_elements['checkbox'] = CheckBoxField
 gui_elements['list_ctrl'] = ListCtrlEditField
 gui_elements['list_grid'] = ListGridEditField
+gui_elements['processing_stack'] = plugins_processingstack.PStackEditField
