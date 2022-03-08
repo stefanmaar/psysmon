@@ -171,13 +171,13 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         #                 user = self.pref_manager.get_value('username'),
         #                 passwd = self.pref_manager.get_value('password'))
         try:
-            sftp = paramiko.SFTPCLIENT.from_transport(transport)
+            sftp = paramiko.SFTPClient.from_transport(transport)
             try:
                 sftp.get(src_filename, tmp_filename)
             finally:
                 sftp.close()
         except Exception:
-            self.logger.error("Couldn't download the blast exchange file %s from %s.", src_filename, host)
+            self.logger.exception("Couldn't download the blast exchange file %s from %s.", src_filename, host)
         finally:
             #ftp.quit()
             transport.close()

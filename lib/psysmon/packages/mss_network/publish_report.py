@@ -194,7 +194,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             transport.connect(username = self.pref_manager.get_value('username'),
                               password = self.pref_manager.get_value('password'))
             try:
-                sftp = paramiko.SFTPCLIENT.from_transport(transport)
+                sftp = paramiko.SFTPClient.from_transport(transport)
                 try:
                     sftp.get(src_filename, tmp_filename)
                 finally:
@@ -315,7 +315,7 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
                 transport.connect(username = self.pref_manager.get_value('username'),
                                   password = self.pref_manager.get_value('password'))
                 try:
-                    sftp = paramiko.SFTPCLIENT.from_transport(transport)
+                    sftp = paramiko.SFTPClient.from_transport(transport)
                     try:
                         self.logger.info("Uploading the result file %s.",
                                          export_filepath)
