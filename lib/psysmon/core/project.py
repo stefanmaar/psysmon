@@ -31,8 +31,8 @@ This module contains the classes for the project and user management.
 '''
 
 
-from future import standard_library
-standard_library.install_aliases()
+#from future import standard_library
+#standard_library.install_aliases()
 from builtins import zip
 from builtins import object
 import glob
@@ -44,10 +44,16 @@ import sys
 import _thread
 import subprocess
 import copy
-import wx
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
-from wx import CallAfter
+try:
+    import wx
+    from wx.lib.pubsub import pub
+    from wx import CallAfter
+    use_pub = True
+except Exception:
+    # psysmon has been installed in headless mode.
+    use_pub = False
+    pass
+    
 from datetime import datetime
 import psysmon.core.base
 from psysmon.core.error import PsysmonError
@@ -708,7 +714,8 @@ class Project(object):
                 os.makedirs(os.path.join(self.collectionDir, cur_user.name))
 
         else:
-            msg = "Cannot create the directory structure."
+            msg = "Cannot create the directory structure, the project directory {:s} doesn't exist.".format(self.projectDir)
+            self.logger.error(msg)
             raise Exception(msg)
 
 
@@ -751,7 +758,8 @@ class Project(object):
                     os.makedirs(user_dir)
 
         else:
-            msg = "Cannot create the directory structure."
+            msg = "Cannot update the directory structure, the project directory {:s} doesn't exist.".format(self.projectDir)
+            self.logger.error(msg)
             raise Exception(msg)
 
 
@@ -1051,7 +1059,6 @@ class Project(object):
             The log message to send.
         '''
         msgTopic = "log.general." + mode
-        #pub.sendMessage(msgTopic, msg)
 
 
 
@@ -1206,7 +1213,6 @@ class User(object):
 
         # The logger can't be pickled. Remove it.
         del result['logger']
-
         return result
 
 
@@ -1247,6 +1253,7 @@ class User(object):
         '''
         collection_files = glob.glob(os.path.join(path, self.name, '*.json'))
         for cur_filename in collection_files:
+            self.logger.info('Loading collection file {:s}.'.format(cur_filename))
             #cur_filename = os.path.join(path, self.name, cur_name + '.json')
             file_meta = psysmon.core.json_util.get_file_meta(cur_filename)
             decoder = psysmon.core.json_util.get_collection_decoder(version = file_meta['file_version'])
@@ -1532,14 +1539,15 @@ class User(object):
             msg = "Executing collection " + col2Proc.name + "with process name: " + processName + "."
             self.logger.info(msg)
 
-            msgTopic = "state.collection.execution"
-            msg = {}
-            msg['state'] = 'starting'
-            msg['startTime'] = curTime
-            msg['isError'] = False
-            msg['pid'] = None
-            msg['procName'] = col2Proc.procName
-            pub.sendMessage(msgTopic, msg = msg)
+            if use_pub:
+                msgTopic = "state.collection.execution"
+                msg = {}
+                msg['state'] = 'starting'
+                msg['startTime'] = curTime
+                msg['isError'] = False
+                msg['pid'] = None
+                msg['procName'] = col2Proc.procName
+                pub.sendMessage(msgTopic, msg = msg)
 
             #(parentEnd, childEnd) = multiprocessing.Pipe()
             self.logger.debug("process name: %s" % col2Proc.procName)
@@ -1578,18 +1586,20 @@ class User(object):
                                      col2Proc.procName,
                                      backend])
 
-            msgTopic = "state.collection.execution"
-            msg = {}
-            msg['state'] = 'started'
-            msg['startTime'] = curTime
-            msg['isError'] = False
-            msg['pid'] = proc.pid
-            msg['procName'] = col2Proc.procName
-            pub.sendMessage(msgTopic, msg = msg)
+            if use_pub:
+                msgTopic = "state.collection.execution"
+                msg = {}
+                msg['state'] = 'started'
+                msg['startTime'] = curTime
+                msg['isError'] = False
+                msg['pid'] = proc.pid
+                msg['procName'] = col2Proc.procName
+                pub.sendMessage(msgTopic, msg = msg)
 
             # Start the process checker only if the wx GUI is running.
-            if wx.App.Get():
-                _thread.start_new_thread(processChecker, (proc, col2Proc.procName))
+            if psysmon.wx_available and wx.App.Get():
+                _thread.start_new_thread(processChecker,
+                                         (proc, col2Proc.procName))
 
         else:
             raise PsysmonError('No active collection found!')

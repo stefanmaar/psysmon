@@ -30,7 +30,7 @@ Module for handling object preferences.
 
 from builtins import str
 from builtins import object
-import wx
+
 
 class PreferencesManager(object):
     ''' The preferences of the project.
@@ -544,7 +544,6 @@ class SingleChoicePrefItem(PreferenceItem):
 
 
 
-
 class MultiChoicePrefItem(PreferenceItem):
     '''
     '''
@@ -672,7 +671,26 @@ class ListGridEditPrefItem(PreferenceItem):
         self.column_labels = column_labels
 
 
+class ProcessingStackPrefItem(PreferenceItem):
+    '''
+    '''
+    def __init__(self, name, value, **kwargs):
+        PreferenceItem.__init__(self, name = name, value = value,
+                                mode = 'processing_stack', **kwargs)
 
+
+    @property
+    def settings(self):
+        '''
+        '''
+        settings = []
+        if self.value:
+            for cur_node in self.value:
+                settings.append(cur_node.settings)
+
+        return settings
+
+    
 
 class CustomPrefItem(PreferenceItem):
     '''

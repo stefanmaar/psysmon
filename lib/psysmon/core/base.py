@@ -499,7 +499,7 @@ class Base(object):
                     self.project = file_data['project']
                 else:
                     self.project = file_data
-        except:
+        except Exception:
             self.logger.exception("Error while decoding the project file.")
             self.project = None
 
@@ -507,6 +507,8 @@ class Base(object):
         if not self.project:
             self.logger.error("Couldn't load the project file using the decoder.")
             return False
+        else:
+            self.logger.info("Loaded the project file successfully.")
 
         if db_host is not None:
             # Override the project database host name.

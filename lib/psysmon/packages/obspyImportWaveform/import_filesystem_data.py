@@ -31,9 +31,13 @@ The import filesystem data module.
 '''
 import logging
 
-import psysmon.core.gui_preference_dialog as psy_guiprefdlg
+import psysmon
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 
 
 class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):

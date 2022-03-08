@@ -21,10 +21,15 @@
 import copy
 
 import psysmon.core.preferences_manager as preferences_manager
-import psysmon.packages.tracedisplay.plugins_processingstack as plugins_processingstack
+import psysmon
 import psysmon.core.packageNodes as package_nodes
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
 import psysmon.core.processingStack as ps
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+
+
 
 
 class ProcessingStackLooperChild(package_nodes.LooperCollectionChildNode):
@@ -90,7 +95,7 @@ class ProcessingStackLooperChild(package_nodes.LooperCollectionChildNode):
         '''
         ps_page = self.pref_manager.add_page('processing stack')
         ep_group = ps_page.add_group('processing stack')
-        item = plugins_processingstack.ProcessingStackPrefItem(name = 'processing_stack',
+        item = preferences_manager.ProcessingStackPrefItem(name = 'processing_stack',
                                                            label = 'processing stack',
                                                            value = None,
                                                            tool_tip = 'Edit the processing stack nodes.')

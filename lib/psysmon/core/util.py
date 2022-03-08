@@ -68,7 +68,6 @@ import subprocess
 import sys
 
 from obspy.core import UTCDateTime
-from wx import DateTime, DateTimeFromDMY
 
 
 def display_file(filename):
@@ -79,30 +78,6 @@ def display_file(filename):
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, filename])
-
-
-
-def _wxdate2pydate(date):
-     if date is None:
-          return None
-
-     assert isinstance(date, DateTime)
-     if date.IsValid():
-         ymd = list(map(int, date.FormatISODate().split('-')))
-         return UTCDateTime(*ymd)
-     else:
-         return None 
-
-
-
-def _pydate2wxdate(date):
-     if date is None:
-         return None
-
-     assert isinstance(date, UTCDateTime)
-     tt = date.timetuple()
-     dmy = (tt[2], tt[1]-1, tt[0])
-     return DateTimeFromDMY(*dmy)
 
 
 def version_tuple(version_string):

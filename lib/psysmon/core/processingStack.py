@@ -38,8 +38,11 @@ import logging
 
 import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
-from psysmon.core.guiBricks import PrefEditPanel
 
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    from psysmon.core.guiBricks import PrefEditPanel
+    
 
 class ProcessingStack(object):
     ''' The ProcessingStack class.
