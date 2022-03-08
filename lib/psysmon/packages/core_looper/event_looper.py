@@ -579,7 +579,7 @@ class EventProcessor(object):
 
         # Call the cleanup method for all nodes.
         for cur_node in looper_nodes:
-            cur_node.cleanup(origin_resource = resource_id)
+            cur_node.cleanup(origin_resource = self.rid)
 
             # Get the remaining results of the node and save them.
             if cur_node.result_bag:
