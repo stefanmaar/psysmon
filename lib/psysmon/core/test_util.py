@@ -40,7 +40,7 @@ from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
 
 
-def create_psybase(package_directory = None):
+def create_psybase(package_directory = None, **kwargs):
     ''' Create the psysmon base instance.
 
     '''
@@ -49,7 +49,9 @@ def create_psybase(package_directory = None):
     psyBaseDir = os.path.dirname(psyBaseDir)
 
     # Initialize the pSysmon base object.
-    psyBase = psysmon.core.base.Base(psyBaseDir, package_directory = package_directory)
+    psyBase = psysmon.core.base.Base(psyBaseDir,
+                                     package_directory = package_directory,
+                                     **kwargs)
 
     return psyBase
 
