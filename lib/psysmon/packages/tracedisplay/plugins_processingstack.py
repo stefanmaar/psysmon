@@ -23,7 +23,7 @@ import wx
 from psysmon.core.plugins import OptionPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import wx.lib.mixins.listctrl as listmix
-from psysmon.core.gui import psyContextMenu
+import psysmon.core.gui
 from wx.lib.stattext import GenStaticText as StaticText
 import copy
 
@@ -489,7 +489,7 @@ class NodeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         cmData = (("help", parent.onCollectionNodeHelp),)
 
         # create the context menu.
-        self.contextMenu = psyContextMenu(cmData)
+        self.contextMenu = psysmon.core.gui.psyContextMenu(cmData)
 
         self.Bind(wx.EVT_CONTEXT_MENU, self.onShowContextMenu)
 

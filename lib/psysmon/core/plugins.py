@@ -30,9 +30,11 @@ Extend psysmon with custom code.
 This module contains the pSysmon plugin system.
 '''
 from builtins import object
+import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
-from psysmon.core.guiBricks import PrefEditPanel
 
+if psysmon.wx_available:
+    import psysmon.core.guiBricks
 
 
 ## The PluginNode class.
@@ -189,8 +191,8 @@ class PluginNode(object):
         ''' Create the foldpanel GUI.
 
         '''
-        return PrefEditPanel(pref = self.pref_manager,
-                             parent = panelBar)
+        return psysmon.core.guiBricks.PrefEditPanel(pref = self.pref_manager,
+                                                    parent = panelBar)
 
 
     def getHooks(self):

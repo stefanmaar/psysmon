@@ -94,7 +94,7 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
             self.pref_manager.set_limit('scnl_list', channels)
 
         # Create the edit dialog.
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         self.on_select_individual()

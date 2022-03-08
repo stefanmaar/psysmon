@@ -81,7 +81,7 @@ import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
 import wx.lib.platebtn as platebtn
 
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+import psysmon.core.gui_preference_dialog
 
 try:
     from agw import advancedsplash as splash
@@ -556,7 +556,7 @@ class PSysmonGui(wx.Frame):
         event :
             The event passed to the callback.
         '''
-        dlg = ListbookPrefDialog(preferences = self.psyBase.pref_manager)
+        dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.psyBase.pref_manager)
         if dlg.ShowModal() == wx.ID_OK:
             # Set the log levels of the loggers.
             root_logger = logging.getLogger('psysmon')
@@ -616,7 +616,7 @@ class PSysmonGui(wx.Frame):
             The event passed to the callback.
         '''
         if self.psyBase.project:
-            dlg = ListbookPrefDialog(preferences = self.psyBase.project.pref)
+            dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.psyBase.project.pref)
             dlg.ShowModal()
         else:
             self.logger.warning('You have to open a project first to edit the preferences.')
@@ -2027,8 +2027,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.wfd_pref_manager.get_item('waveform_dir')[0].visible = False
         self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = True
 
-        dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
-                                 title = 'edit waveform directory')
+        dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.wfd_pref_manager,
+                                                                    title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
             self.selected_waveform_dir.description = self.wfd_pref_manager.get_value('description')
             self.selected_waveform_dir.file_ext = self.wfd_pref_manager.get_value('file_ext')
@@ -2049,8 +2049,8 @@ class PsysmonDbWaveclientOptions(wx.Panel):
         self.initPreferenceValues()
         self.wfd_pref_manager.get_item('waveform_dir')[0].visible = True
         self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = False
-        dlg = ListbookPrefDialog(preferences = self.wfd_pref_manager,
-                                 title = 'edit waveform directory')
+        dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.wfd_pref_manager,
+                                                                    title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
             newWfDir = self.wfDir(self.client.name,
                                   self.wfd_pref_manager.get_value('waveform_dir'),
