@@ -311,6 +311,8 @@ class MssPublishBlastReport(package_nodes.CollectionNode):
             # TODO: Make this a user preference.
             upload = True
             if upload:
+                host = self.pref_manager.get_value('host')
+                port = 22
                 transport = paramiko.Transport((host, port))
                 transport.connect(username = self.pref_manager.get_value('username'),
                                   password = self.pref_manager.get_value('password'))
