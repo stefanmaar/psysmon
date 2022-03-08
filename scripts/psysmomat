@@ -319,10 +319,7 @@ def handle_execute_command(args, logger):
                                                  user_name,
                                                  user_pwd,
                                                  db_host = db_host)
-        # Set the log level.
-        #psybase.pref_manager.set_value('main_loglevel', 'DEBUG')
-        #psybase.pref_manager.set_value('shell_loglevel', 'ERROR')
-        #psybase.pref_manager.set_value('collection_loglevel', args.loglevel)
+
         psybase.project.setActiveCollection(args.collection)
         if args.starttime and args.endtime:
             # Set the global time span of the collection.
@@ -512,13 +509,14 @@ if __name__ == '__main__':
 
     # Load the psysmon configuration.
     config = load_config()
-    print(config)
     if 'pref_manager' in config.keys():
         pref_manager = config['pref_manager']
         main_loglevel = pref_manager.get_value('main_loglevel')
+        shell_loglevel = pref_manager.get_value('shell_loglevel')
     else:
         pref_manager = None
         main_loglevel = 'INFO'
+        shell_loglevel = 'INFO'
     args.psysmon_pref_manager = pref_manager
 
     # If a loglevel option has been set, override the psysmon configuration values.
@@ -536,8 +534,8 @@ if __name__ == '__main__':
     import psysmon
     logger = logging.getLogger('psysmon')
     logger.setLevel(main_loglevel)
-    shell_handler = psysmon.getLoggerHandler(log_level = main_loglevel)
-    shell_handler.setLevel(main_loglevel)
+    shell_handler = psysmon.getLoggerHandler(log_level = shell_loglevel)
+    shell_handler.setLevel(shell_loglevel)
     logger.addHandler(shell_handler)
 
     args.func(args, logger)
