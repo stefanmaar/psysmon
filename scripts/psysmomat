@@ -37,6 +37,8 @@ import logging
 import os
 import os.path
 
+import psysmon.core.json_util
+
 #import matplotlib as mpl
 #mpl.use('Agg')
 #mpl.rcParams['backend'] = 'Agg'
@@ -307,14 +309,7 @@ def handle_execute_command(args, logger):
     else:
         project_file = args.project_file
 
-
-    # Load the psysmon configuration.
-    config = load_config()
-    if 'pref_manager' in config.keys():
-        pref_manager = config['pref_manager']
-    else:
-        pref_manager = None
-        
+    pref_manager = args.psysmon_pref_manager
     psybase = test_util.create_psybase(pref_manager = pref_manager)
     try:
         db_host = None
@@ -363,9 +358,8 @@ def load_config():
             decoder = psysmon.core.json_util.get_config_decoder(file_meta['file_version'])
             with open(config_file, 'r') as fid:
                 config = json.load(fid, cls = decoder)
-        except:
+        except Exception:
             config = {}
-
 
     return config
 
@@ -381,7 +375,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--loglevel', help = 'Specify the log level.',
                         type = str, choices = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'NOTSET'],
-                        default = 'WARNING')
+                        default = None)
 
     # Create the parser for the create_user command.
     parser_new_user = subparsers.add_parser('new_user', help = 'Create a new psysmon database user.')
@@ -515,12 +509,35 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
+
+    # Load the psysmon configuration.
+    config = load_config()
+    print(config)
+    if 'pref_manager' in config.keys():
+        pref_manager = config['pref_manager']
+        main_loglevel = pref_manager.get_value('main_loglevel')
+    else:
+        pref_manager = None
+        main_loglevel = 'INFO'
+    args.psysmon_pref_manager = pref_manager
+
+    # If a loglevel option has been set, override the psysmon configuration values.
+    if args.loglevel is not None:
+        main_loglevel = args.loglevel
+        pref_manager.set_value('main_loglevel',
+                               main_loglevel)
+        pref_manager.set_value('shell_loglevel',
+                               main_loglevel)
+        pref_manager.set_value('gui_status_loglevel',
+                               main_loglevel)
+        pref_manager.set_value('collection_loglevel',
+                               main_loglevel)
         
     import psysmon
     logger = logging.getLogger('psysmon')
-    logger.setLevel(args.loglevel)
-    shell_handler = psysmon.getLoggerHandler(log_level = args.loglevel)
-    shell_handler.setLevel(args.loglevel)
+    logger.setLevel(main_loglevel)
+    shell_handler = psysmon.getLoggerHandler(log_level = main_loglevel)
+    shell_handler.setLevel(main_loglevel)
     logger.addHandler(shell_handler)
 
     args.func(args, logger)
