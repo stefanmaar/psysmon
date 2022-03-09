@@ -1453,6 +1453,15 @@ class CollectionFileDecoder_1_0_0(json.JSONDecoder):
 
     def convert_preferenceitem(self, d, class_name, module_name):
         import importlib
+        
+        # Check for old ProcessingStackPrefItem modules.
+        # The ProcessingStackPrefItem class has been moved to
+        # psysmon.core.preferences_manager.
+        target_mod = 'psysmon.packages.tracedisplay.plugins_processingstack'
+        target_class = 'ProcessingStackPrefItem'
+        if module_name == target_mod and class_name == target_class:
+            module_name = 'psysmon.core.preferences_manager'
+            
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         args = dict( (key, self.decode_hinted_tuple(value)) for key, value in list(d.items()))
