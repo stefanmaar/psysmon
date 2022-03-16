@@ -783,7 +783,12 @@ class DemoView(psysmon.core.gui_view.ViewNode):
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+                try:
+                    timeArray = np.ma.array(timeArray,
+                                            mask = trace.data.mask)
+                except Exception:
+                    timeArray = np.ma.array(timeArray[:-1],
+                                            mask=trace.data.mask)
 
 
             if not self.line:
@@ -1056,12 +1061,17 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
     def plot(self, stream, win_length = 1.0, overlap = 0.5, amp_mode = 'normal', cmap = 'viridis'):
         for trace in stream:
             timeArray = np.arange(0, trace.stats.npts)
-            timeArray = old_div(timeArray * 1,trace.stats.sampling_rate)
+            timeArray = timeArray / trace.stats.sampling_rate
             timeArray = timeArray + trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+                try:
+                    timeArray = np.ma.array(timeArray,
+                                            mask = trace.data.mask)
+                except Exception:
+                    timeArray = np.ma.array(timeArray[:-1],
+                                            mask=trace.data.mask)
 
             if self.axes.images:
                 self.axes.images.pop()
@@ -1294,7 +1304,12 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
+                try:
+                    timeArray = np.ma.array(timeArray,
+                                            mask = trace.data.mask)
+                except Exception:
+                    timeArray = np.ma.array(timeArray[:-1],
+                                            mask=trace.data.mask)
 
             # Compute the power amplitude density spectrum.
             # As defined by Havskov and Alguacil (page 164), the power density spectrum can be
@@ -1562,8 +1577,12 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(trace.data):
-                timeArray = np.ma.array(timeArray[:-1], mask=trace.data.mask)
-
+                try:
+                    timeArray = np.ma.array(timeArray,
+                                            mask = trace.data.mask)
+                except Exception:
+                    timeArray = np.ma.array(timeArray[:-1],
+                                            mask=trace.data.mask)
 
             cur_max = np.max(np.abs(trace.data))
 
