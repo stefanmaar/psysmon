@@ -209,12 +209,17 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
             sps.append(cur_trace.stats.sampling_rate)
 
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
+            time_array = time_array / cur_trace.stats.sampling_rate
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(cur_trace.data):
-                time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+                try:
+                    time_array = np.ma.array(time_array,
+                                             mask=cur_trace.data.mask)
+                except Exception:
+                    time_array = np.ma.array(time_array[:-1],
+                                             mask=cur_trace.data.mask)
 
             if component == 'z':
                 component_data['time'] = time_array
@@ -249,33 +254,6 @@ class PolarizationAnalysisView(psysmon.core.gui_view.ViewNode):
 
         msg = '\n'.join(plot_features[::-1])
         self.set_annotation(msg)
-
-
-
-
-#        for component, channel_name in channel_map.iteritems():
-#            cur_stream = stream.select(channel = channel_name)
-#
-#            for cur_trace in cur_stream:
-#                time_array = np.arange(0, cur_trace.stats.npts)
-#                time_array = time_array * 1/cur_trace.stats.sampling_rate
-#                time_array = time_array + cur_trace.stats.starttime.timestamp
-#
-#                # Check if the data is a ma.maskedarray
-#                if np.ma.count_masked(cur_trace.data):
-#                    time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
-#
-#                if self.lines[component] is None:
-#                    self.lines[component], = self.axes.plot(time_array, cur_trace.data)
-#                else:
-#                    self.lines[component].set_xdata(time_array)
-#                    self.lines[component].set_ydata(cur_trace.data)
-#
-#                self.axes.set_frame_on(False)
-#                self.axes.get_xaxis().set_visible(False)
-#                self.axes.get_yaxis().set_visible(False)
-#                yLim = np.max(np.abs(cur_trace.data))
-#                self.axes.set_ylim(bottom = -yLim, top = yLim)
 
 
     def setYLimits(self, bottom, top):
