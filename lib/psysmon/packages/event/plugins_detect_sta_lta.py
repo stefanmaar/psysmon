@@ -316,12 +316,17 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
 
         for cur_trace in stream:
             time_array = np.arange(0, cur_trace.stats.npts)
-            time_array = old_div(time_array * 1,cur_trace.stats.sampling_rate)
+            time_array = time_array / cur_trace.stats.sampling_rate
             time_array = time_array + cur_trace.stats.starttime.timestamp
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(cur_trace.data):
-                time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+                try:
+                    time_array = np.ma.array(time_array,
+                                             mask=cur_trace.data.mask)
+                except Exception:
+                    time_array = np.ma.array(time_array[:-1],
+                                             mask=cur_trace.data.mask)
 
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
