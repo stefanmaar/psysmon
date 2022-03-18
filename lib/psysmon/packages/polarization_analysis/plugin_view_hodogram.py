@@ -279,7 +279,12 @@ class HodogramView(psysmon.core.gui_view.ViewNode):
 
             # Check if the data is a ma.maskedarray
             if np.ma.count_masked(cur_trace.data):
-                time_array = np.ma.array(time_array[:-1], mask=cur_trace.data.mask)
+                try:
+                    time_array = np.ma.array(time_array,
+                                             mask=cur_trace.data.mask)
+                except Exception:
+                    time_array = np.ma.array(time_array[:-1],
+                                             mask=cur_trace.data.mask)
 
             if component == 'z':
                 component_data['time'] = time_array

@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import str
 import os
 
 import matplotlib.pyplot as plt
@@ -246,13 +245,15 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         if destination == 'folder':
             self.export_to_folder(stream = stream,
                                   channels = channels,
-                                  event = event)
+                                  event = event,
+                                  process_limits = process_limits)
         elif destination == 'data source':
             self.export_to_data_source(stream = stream)
 
 
 
-    def export_to_folder(self, stream, channels, event = None):
+    def export_to_folder(self, stream, channels, process_limits = None,
+                         event = None):
         ''' Write the data stream to a folder.
         '''
         export_format = self.pref_manager.get_value('file_format')
@@ -263,8 +264,27 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         self.logger.debug("The channels to export: %s.", channels)
         self.logger.debug("The event to export: %s.", event)
 
+        self.logger.debug('process_limits: %s', process_limits)
+
+        if len(stream) == 0:
+            self.logger.error('No waveform data available.')
+            return
+
+        if process_limits:
+            start_time = process_limits[0]
+            end_time = process_limits[1]
+        else:
+            start_time = None
+            end_time = None
+
         for cur_channel in channels:
-            for cur_rec_stream_tb in cur_channel.streams:
+            if start_time:
+                active_streams = cur_channel.get_stream(start_time = start_time,
+                                                        end_time = end_time)
+            else:
+                active_streams = cur_channel.get_stream()
+                                                        
+            for cur_rec_stream_tb in active_streams:
                 cur_rec_stream = cur_rec_stream_tb.item
                 orig_serial = cur_rec_stream.serial
                 tmp = cur_rec_stream.name.split(':')
@@ -284,14 +304,14 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     cur_trace.stats.channel = orig_channel
                     cur_start = cur_trace.stats.starttime
                     filename = '%d_%03d_%02d%02d%02d_%s_%s_%s_%s.msd' % (cur_start.year,
-                                                               cur_start.julday,
-                                                               cur_start.hour,
-                                                               cur_start.minute,
-                                                               cur_start.second,
-                                                               orig_net,
-                                                               orig_serial,
-                                                               orig_loc,
-                                                               orig_channel)
+                                                                         cur_start.julday,
+                                                                         cur_start.hour,
+                                                                         cur_start.minute,
+                                                                         cur_start.second,
+                                                                         orig_net,
+                                                                         orig_serial,
+                                                                         orig_loc,
+                                                                         orig_channel)
 
                     if event:
                         dest_path = os.path.join(dest_dir,
@@ -302,7 +322,11 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     else:
                         dest_path = dest_dir
 
-                    dest_path = os.path.join(dest_path, str(cur_start.year), str(cur_start.julday), orig_serial)
+                    dest_path = os.path.join(dest_path,
+                                             '{0:04d}'.format(cur_start.year),
+                                             '{0:03d}'.format(cur_start.julday),
+                                             orig_serial)
+                                             
 
 
                     if not os.path.exists(dest_path):
