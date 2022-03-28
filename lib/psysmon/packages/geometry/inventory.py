@@ -34,6 +34,8 @@ inventory.
 from builtins import str
 from builtins import object
 import itertools
+
+import pandas as pd
 import psysmon
 import obspy.core.inventory as obs_inv
 from obspy.core.utcdatetime import UTCDateTime
@@ -859,7 +861,119 @@ class Inventory(object):
             cur_station.x_utm = x
             cur_station.y_utm = y
 
+            
+    def to_dataframe(self, level = 'station'):
+        ''' Convert the inventory to pandas dataframe.
+        '''
+        df = None
+        export_values = []
 
+        # Get the EPSG code for the best fitting UTM projection.
+        code = self.get_utm_epsg()
+        proj = pyproj.Proj(init = 'epsg:' + code[0][0])
+            
+        if level == 'station':
+            for cur_network in self.networks:
+                for cur_station in cur_network.stations:
+                    x, y = proj(cur_station.get_lon_lat()[0],
+                                cur_station.get_lon_lat()[1])
+                    value_list = [cur_station.name,
+                                  cur_station.network,
+                                  cur_station.location,
+                                  cur_station.x,
+                                  cur_station.y,
+                                  cur_station.z,
+                                  cur_station.coord_system,
+                                  x,
+                                  y,
+                                  'epsg:' + code[0][0],
+                                  cur_station.description]
+                    export_values.append(value_list)
+
+            columns = ['name',
+                       'network',
+                       'location',
+                       'x',
+                       'y',
+                       'z',
+                       'coord_system',
+                       'x_utm',
+                       'y_utm',
+                       'coord_system_utm',
+                       'description']
+
+            df = pd.DataFrame(export_values,
+                              columns = columns)
+
+        elif level == 'channel':
+            now = UTCDateTime()
+            for cur_network in self.networks:
+                for cur_station in cur_network.stations:
+                    x, y = proj(cur_station.get_lon_lat()[0],
+                                cur_station.get_lon_lat()[1])
+                    for cur_channel in cur_station.channels:
+                        active_streams = cur_channel.get_stream(start_time = now)
+                        for cur_stream in active_streams:
+                            stream_parameter = cur_stream.get_parameter(start_time = now)
+                            component = cur_stream.get_component(start_time = now)
+
+                            stream_parameter = stream_parameter[0]
+                            component = component[0]
+                            comp_parameter = component.get_parameter(start_time = now)
+                            comp_parameter = comp_parameter[0]
+
+                            overall_sensitivity = (stream_parameter.gain * comp_parameter.sensitivity) / stream_parameter.bitweight
+
+                            value_list = [cur_station.name,
+                                          cur_station.network,
+                                          cur_station.location,
+                                          cur_channel.name,
+                                          cur_station.x,
+                                          cur_station.y,
+                                          cur_station.z,
+                                          cur_station.coord_system,
+                                          x,
+                                          y,
+                                          'epsg:' + code[0][0],
+                                          cur_station.description,
+                                          cur_stream.parent_recorder.model,
+                                          cur_stream.parent_recorder.serial,
+                                          stream_parameter.bitweight,
+                                          stream_parameter.gain,
+                                          component.model,
+                                          component.serial,
+                                          comp_parameter.sensitivity,
+                                          overall_sensitivity]
+                            export_values.append(value_list)
+
+            columns = ['name',
+                       'network',
+                       'location',
+                       'channel',
+                       'x',
+                       'y',
+                       'z',
+                       'coord_system',
+                       'x_utm',
+                       'y_utm',
+                       'coord_system_utm',
+                       'description',
+                       'recorder_model',
+                       'recorder_serial',
+                       'adc_bitweight [V/count]',
+                       'adc_preamp_gain',
+                       'sensor_model',
+                       'sensor_serial',
+                       'sensor_sensitivity [V/m/s]',
+                       'overall_sensitivity [count/m/s]']
+        
+
+            df = pd.DataFrame(export_values,
+                              columns = columns)
+
+        return df
+
+    
     def to_stationxml(self):
         ''' Convert the inventory to StationXML format.
 
@@ -882,6 +996,10 @@ class Inventory(object):
 
                 for cur_channel in cur_station.channels:
                     for cur_stream_timebox in cur_channel.streams:
+                        # Include only the currently running streams.
+                        if cur_stream_timebox.end_time:
+                            continue
+                        
                         cur_rec_stream = cur_stream_timebox.item
                         sx_datalogger = obs_inv.Equipment(type = ' - '.join((cur_rec_stream.producer, cur_rec_stream.model)),
                                                           manufacturer = cur_rec_stream.producer,
@@ -917,25 +1035,38 @@ class Inventory(object):
 
 
                             stage_number = 1
-                            stage_frequency = 10
+                            stage_frequency = 0
                             response = obs_inv.Response()
                             if cur_sensor_parameter:
-                                sensor_stage = obs_inv.PolesZerosResponseStage(stage_sequence_number = stage_number,
-                                                                               stage_gain = cur_sensor_parameter.sensitivity,
-                                                                               stage_gain_frequency = stage_frequency,
-                                                                               input_units = cur_component.output_unit,
-                                                                               output_units = cur_component.deliver_unit,
-                                                                               pz_transfer_function_type = 'LAPLACE (RADIANS/SECOND)',
-                                                                               normalization_frequency = cur_sensor_parameter.tf_normalization_frequency,
-                                                                               normalization_factor = cur_sensor_parameter.tf_normalization_factor,
-                                                                               zeros = cur_sensor_parameter.tf_zeros,
-                                                                               poles = cur_sensor_parameter.tf_poles,
-                                                                               description = ','.join((cur_component.producer,
-                                                                                                       cur_component.model,
-                                                                                                       cur_component.serial,
-                                                                                                       cur_component.name)))
-                                response.response_stages.append(sensor_stage)
-                                stage_number += 1
+                                if cur_sensor_parameter.tf_zeros and cur_sensor_parameter.tf_poles:
+                                    sensor_stage = obs_inv.PolesZerosResponseStage(stage_sequence_number = stage_number,
+                                                                                   stage_gain = cur_sensor_parameter.sensitivity,
+                                                                                   stage_gain_frequency = stage_frequency,
+                                                                                   input_units = cur_component.output_unit,
+                                                                                   output_units = cur_component.deliver_unit,
+                                                                                   pz_transfer_function_type = 'LAPLACE (RADIANS/SECOND)',
+                                                                                   normalization_frequency = cur_sensor_parameter.tf_normalization_frequency,
+                                                                                   normalization_factor = cur_sensor_parameter.tf_normalization_factor,
+                                                                                   zeros = cur_sensor_parameter.tf_zeros,
+                                                                                   poles = cur_sensor_parameter.tf_poles,
+                                                                                   description = ','.join((cur_component.producer,
+                                                                                                           cur_component.model,
+                                                                                                           cur_component.serial,
+                                                                                                           cur_component.name)))
+                                    response.response_stages.append(sensor_stage)
+                                    stage_number += 1
+                                else:
+                                    sensor_stage = obs_inv.ResponseStage(stage_sequence_number = stage_number,
+                                                                         stage_gain = cur_sensor_parameter.sensitivity,
+                                                                         stage_gain_frequency = stage_frequency,
+                                                                         input_units = cur_component.output_unit,
+                                                                         output_units = cur_component.deliver_unit,
+                                                                         description = ','.join((cur_component.producer,
+                                                                                                 cur_component.model,
+                                                                                                 cur_component.serial,
+                                                                                                 cur_component.name)))
+                                    response.response_stages.append(sensor_stage)
+                                    stage_number += 1
 
                             if cur_rec_parameter:
                                 recorder_stage = obs_inv.ResponseStage(stage_sequence_number = stage_number,
