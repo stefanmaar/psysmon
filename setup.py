@@ -139,6 +139,7 @@ data_files = []
 # Define the package requirements.
 install_requires = [
     'construct>=2.9.45',
+    'future>=0.18.2',
     'geojson>=2.5.0',
     'lxml>=2.3.2',
     'matplotlib>=3.2.0',
