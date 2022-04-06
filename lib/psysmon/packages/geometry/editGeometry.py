@@ -295,6 +295,7 @@ class EditGeometryDlg(wx.Frame):
                  ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml),
                  ("", "", ""),
                  ("Export stations to CSV", "Export the stations of the selected inventory to a CSV file.", self.onExportStations2Csv),
+                 ("Export channels to CSV", "Export the channels of the selected inventory to a CSV file.", self.onExportChannels2Csv),
                  ("Export stations to StationXML", "Export the stations of the selected inventory to a StationXML file.", self.onExportStations2StationXML),
                  ("", "", ""),
                  ("&Exit", "Exit pSysmon.", self.onExit)),
@@ -372,6 +373,61 @@ class EditGeometryDlg(wx.Frame):
 
 
     def onExportStations2Csv(self, event):
+        ''' Export the stations to a CSV formatted file.
+        '''
+        if not self.selected_inventory:
+            self.logger.info("No inventory selected.")
+            return
+
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="csv file (*.csv)"\
+                     "All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
+        )
+
+        # Show the dialog and retrieve the user response. If it is the OK
+        # response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            path = dlg.GetPath()
+
+            df = self.selected_inventory.to_dataframe(level = 'station')
+
+            df.to_csv(path,
+                      index = False)
+            
+    def onExportChannels2Csv(self, event):
+        ''' Export the channels to a CSV formatted file.
+        '''
+        if not self.selected_inventory:
+            self.logger.info("No inventory selected.")
+            return
+
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="csv file (*.csv)"\
+                     "All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_CHANGE_DIR
+        )
+
+        # Show the dialog and retrieve the user response. If it is the OK
+        # response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            path = dlg.GetPath()
+
+            df = self.selected_inventory.to_dataframe(level = 'channel')
+
+            df.to_csv(path,
+                      index = False)
+
+            
+    def onExportStations2Csv_old(self, event):
         ''' Import the stations to a CSV formatted file.
         '''
         import csv
@@ -384,7 +440,7 @@ class EditGeometryDlg(wx.Frame):
             self, message="Choose a file",
             defaultDir=os.getcwd(),
             defaultFile="",
-            wildcard="xml file (*.csv)"\
+            wildcard="csv file (*.csv)"\
                      "All files (*.*)|*.*",
             style=wx.FD_SAVE | wx.FD_CHANGE_DIR
             )

@@ -143,12 +143,11 @@ def handle_import_geometry_command(args, logger):
     else:
         project_file = args.project_file
 
-
-    psybase = test_util.create_psybase();
+    psybase = test_util.create_psybase()
     try:
         load_success = psybase.load_json_project(project_file,
-                                                user_name,
-                                                user_pwd)
+                                                 user_name,
+                                                 user_pwd)
 
         inventory_parser = geom.inventory_parser.InventoryXmlParser()
         try:
@@ -156,32 +155,70 @@ def handle_import_geometry_command(args, logger):
         except Warning as w:
             print(w)
 
-        # Clear the existing data from the geometry tables.
-        project_slug = psybase.project.slug
-        tables_to_clear = [table for table in reversed(psybase.project.dbMetaData.sorted_tables) if table.key.startswith(project_slug + '_geom')]
-        for cur_table in tables_to_clear:
-            psybase.project.dbEngine.execute(cur_table.delete())
-
-        # Remove all elements from the session.
-        psybase.project.geometry_inventory.db_session.expunge_all()
-
-        db_inventory = psybase.project.geometry_inventory
-        db_inventory.clear()
-        for cur_sensor in inventory.sensors:
-            db_inventory.add_sensor(cur_sensor)
-
-        for cur_recorder in inventory.recorders:
-            db_inventory.add_recorder(cur_recorder)
-
-        for cur_network in inventory.networks:
-            db_inventory.add_network(cur_network)
-
-        for cur_array in inventory.arrays:
-            db_inventory.add_array(cur_array)
-
-        db_inventory.commit()
+        if args.replace:
+            write_geom_replace(psybase = psybase,
+                               inventory = inventory,
+                               logger = logger)
+        else:
+            write_geom_update(psybase = psybase,
+                              inventory = inventory,
+                              logger = logger)
     finally:
         psybase.stop_project_server()
+
+
+def write_geom_update(psybase, inventory, logger):
+    ''' Write an inventory to the database, updating an existing inventory.
+    '''
+    logger.info('Write inventory, update existing database inventory.')
+    # Load the geometry from the database to get a valid DB Session assigned to the inventory.
+    db_inventory = psysmon.packages.geometry.db_inventory.DbInventory(project = psybase.project)
+    db_inventory.load()
+    db_stations = sorted([x.name for x in db_inventory.get_station()])
+    xml_stations = sorted([x.name for x in inventory.get_station()])
+    logger.info('db_stations: %s', db_stations)
+    logger.info('xml_stations: %s', xml_stations)
+    db_inventory.merge(inventory)
+    db_stations = sorted([x.name for x in db_inventory.get_station()])
+    logger.info('merged db_stations: %s', db_stations)
+    #logger.info('db_inventory: %s', db_inventory)
+    new_stat = db_inventory.get_station(name = 'HAHN')
+    logger.info('new station: %s', new_stat)
+    psybase.project.dbEngine.echo = True
+    db_inventory.commit()
+    db_inventory.close()
+    
+
+def write_geom_replace(psybase, inventory, logger):
+    ''' Write an inventory to the database, replacing an existing inventory.
+    '''
+    logger.info('Write inventory, replace existing database inventory.')
+    # Clear the existing data from the geometry tables.
+    project_slug = psybase.project.slug
+    sorted_tables = psybase.project.dbMetaData.sorted_tables
+    tables_to_clear = [table for table in reversed(sorted_tables) if table.key.startswith(project_slug + '_geom')]
+    for cur_table in tables_to_clear:
+        psybase.project.dbEngine.execute(cur_table.delete())
+
+    # Remove all elements from the session.
+    psybase.project.geometry_inventory.db_session.expunge_all()
+
+    db_inventory = psybase.project.geometry_inventory
+    db_inventory.clear()
+    for cur_sensor in inventory.sensors:
+        db_inventory.add_sensor(cur_sensor)
+
+    for cur_recorder in inventory.recorders:
+        db_inventory.add_recorder(cur_recorder)
+
+    for cur_network in inventory.networks:
+        db_inventory.add_network(cur_network)
+
+    for cur_array in inventory.arrays:
+        db_inventory.add_array(cur_array)
+
+    db_inventory.commit()
+    
 
 
 
@@ -424,7 +461,7 @@ if __name__ == '__main__':
 
 
     # Create the parser for the 'import_geometry' command.
-    parser_import_geometry = subparsers.add_parser('import_geometry', help = 'Import a psysmon geometry XML file to the database.')
+    parser_import_geometry = subparsers.add_parser('import_geometry', help = 'Import a psysmon geometry XML file to the database. By default, an existing geometry is updated.')
     parser_import_geometry.set_defaults(func = handle_import_geometry_command)
     parser_import_geometry.add_argument('geometry_file', help = 'The geometry file to import.',
                                         type = str, metavar = 'GEOMETRY_FILE')
@@ -433,6 +470,8 @@ if __name__ == '__main__':
     parser_import_geometry.add_argument('-u', '--user', help = 'The user owning the project to which to import the geometry.',
                                        type = str, metavar = 'USER')
     parser_import_geometry.add_argument('-p', '--password', help = 'Specify the password for the user.',
+                                       action = 'store_true')
+    parser_import_geometry.add_argument('-r', '--replace', help = 'Replace the existing geometry instead of updating it.',
                                        action = 'store_true')
 
 
