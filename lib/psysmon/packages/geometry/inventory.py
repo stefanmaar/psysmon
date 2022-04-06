@@ -1222,7 +1222,7 @@ class Recorder(object):
         self.has_changed = False
 
         # A list of Stream instances related to the recorder.
-        self.streams = [];
+        self.streams = []
 
         ## The parent inventory.
         self.parent_inventory = parent_inventory
@@ -1243,7 +1243,7 @@ class Recorder(object):
     def __str__(self):
         ''' Returns a readable representation of the Recorder instance.
         '''
-        out = 'id:\t%s\nserial:\t%s\nmodel:\t%s\n%d sensor(s):\n' % (str(self.id), self.serial, self.model, len(self.sensors))
+        out = 'id:\t%s\nserial:\t%s\nmodel:\t%s\n%d streams(s):\n' % (str(self.id), self.serial, self.model, len(self.streams))
         return out
 
 
