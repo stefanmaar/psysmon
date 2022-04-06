@@ -53,7 +53,7 @@ class DbInventory(Inventory):
         Inventory.__init__(self, name = name, type = 'db')
 
         # The pSysmon project containing the inventory.
-        self.project = project;
+        self.project = project
 
         # The pSysmon database session.
         self.db_session = self.project.getDbSession()
