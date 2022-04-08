@@ -3075,6 +3075,44 @@ class Station(object):
         else:
             return ''
 
+    @property
+    def start_time(self):
+        ''' :class:`obspy.UTCDateTime`: The start time of the station.
+        '''
+        start_list = [x.start_time for x in self.channels]
+        if None in start_list:
+            return None
+        else:
+            return min(start_list)
+
+    @property
+    def end_time(self):
+        ''' :class:`obspy.UTCDateTime`: The end time of the station.
+        '''
+        end_list = [x.end_time for x in self.channels]
+        if None in end_list:
+            return None
+        else:
+            return max(end_list)
+
+    @property
+    def start_time_string(self):
+        ''' str: The string representation of the start time.
+        '''
+        if self.start_time is None:
+            return 'big bang'
+        else:
+            return self.start_time.isoformat()
+
+    @property
+    def end_time_string(self):
+        ''' str: The string representation of the end time.
+        '''
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
+        
 
     def __setitem__(self, name, value):
         self.logger.debug("Setting the %s attribute to %s.", name, value)
@@ -3310,12 +3348,12 @@ class Channel(object):
 
     Attributes
     ----------
-    streams: :obj:`list` of :class:`RecorderStream`
+    streams: :obj:`list` of :class:`TimeBox`
         The recorder streams assigned to a channel.
     '''
     def __init__(self, name, description = None, id = None,
-            agency_uri = None, author_uri = None, creation_time = None,
-            parent_station = None):
+                 agency_uri = None, author_uri = None, creation_time = None,
+                 parent_station = None):
         ''' Initialize the instance
 
         Parameters
@@ -3356,10 +3394,10 @@ class Channel(object):
         self.agency_uri = agency_uri
 
         # The datetime of the creation.
-        if creation_time == None:
-            self.creation_time = UTCDateTime();
+        if creation_time is None:
+            self.creation_time = UTCDateTime()
         else:
-            self.creation_time = UTCDateTime(creation_time);
+            self.creation_time = UTCDateTime(creation_time)
 
     @property
     def parent_inventory(self):
@@ -3390,6 +3428,43 @@ class Channel(object):
         '''
         return list(set([x.item.serial for x in self.streams]))
 
+    @property
+    def start_time(self):
+        ''' :class:`obspy.UTCDateTime`: The start time of the channel.
+        '''
+        start_list = [x.start_time for x in self.streams]
+        if None in start_list:
+            return None
+        else:
+            return min(start_list)
+
+    @property
+    def end_time(self):
+        ''' :class:`obspy.UTCDateTime`: The start time of the channel.
+        '''
+        end_list = [x.end_time for x in self.streams]
+        if None in end_list:
+            return None
+        else:
+            return max(end_list)
+
+    @property
+    def start_time_string(self):
+        ''' str: The string representation of the start time.
+        '''
+        if self.start_time is None:
+            return 'big bang'
+        else:
+            return self.start_time.isoformat()
+
+    @property
+    def end_time_string(self):
+        ''' str: The string representation of the end time.
+        '''
+        if self.end_time is None:
+            return 'running'
+        else:
+            return self.end_time.isoformat()
 
     def as_dict(self, style = None):
         ''' Get a dictionary representation of the instance.
