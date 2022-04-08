@@ -2550,9 +2550,11 @@ class NetworkPanel(wx.Panel):
     def getStationFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('network', 'network', 'readonly', str))
         tableField.append(('name', 'name', 'readonly', str))
         tableField.append(('location', 'location', 'readonly', str))
-        tableField.append(('network', 'network', 'readonly',str))
+        tableField.append(('start_time', 'start', 'readonly', str))
+        tableField.append(('end_time', 'end', 'readonly', str))
         tableField.append(('x', 'x', 'readonly', float))
         tableField.append(('y', 'y', 'readonly', float))
         tableField.append(('z', 'z', 'readonly', float))
@@ -2590,13 +2592,20 @@ class NetworkPanel(wx.Panel):
         ''' Set the grid values of the specified grid.
         '''
         for pos, (field, label, attr, converter) in enumerate(fields):
-            if field is not None and getattr(object, field) is not None:
-                try:
+            try:
+                # Take care of fields with custom strings. 
+                custom_fields = {}
+                custom_fields['start_time'] = 'start_time_string'
+                custom_fields['end_time'] = 'end_time_string'
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
+                    field = custom_fields[field]
+
+                if field is not None and getattr(object, field) is not None:
                     grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
-                except:
-                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field).encode("utf8")))
-            else:
-                grid.SetCellValue(rowNumber, pos, '')
+                else:
+                    grid.SetCellValue(rowNumber, pos, '')
+            except Exception:
+                pass
 
             grid.AutoSizeColumns()
 
@@ -2732,16 +2741,21 @@ class ArrayPanel(wx.Panel):
         ''' Set the grid values of the specified grid.
         '''
         for pos, (field, label, attr, converter) in enumerate(fields):
-            if field is not None and getattr(object, field) is not None:
-                #if field in ['start_time', 'end_time']:
-                #    continue
-                try:
-                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
-                except:
-                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field).encode("utf8")))
-            else:
-                grid.SetCellValue(rowNumber, pos, '')
+            try:
+                # Take care of fields with custom strings. 
+                custom_fields = {}
+                custom_fields['start_time'] = 'start_time_string'
+                custom_fields['end_time'] = 'end_time_string'
+                if field in iter(custom_fields.keys()) and hasattr(object, custom_fields[field]):
+                    field = custom_fields[field]
 
+                if field is not None and getattr(object, field) is not None:
+                    grid.SetCellValue(rowNumber, pos, str(getattr(object, field)))
+                else:
+                    grid.SetCellValue(rowNumber, pos, '')
+            except Exception:
+                pass
+            
             grid.AutoSizeColumns()
 
 
@@ -3522,9 +3536,11 @@ class StationsPanel(wx.Panel):
     def getStationFields(self):
         tableField = []
         tableField.append(('id', 'id', 'readonly', int))
+        tableField.append(('network', 'network', 'readonly', str))
         tableField.append(('name', 'name', 'editable', str))
         tableField.append(('location', 'location', 'editable', str))
-        tableField.append(('network', 'network', 'readonly', str))
+        tableField.append(('start_time', 'start', 'readonly', str))
+        tableField.append(('end_time', 'end', 'readonly', str))
         tableField.append(('x', 'x', 'editable', float))
         tableField.append(('y', 'y', 'editable', float))
         tableField.append(('z', 'z', 'editable', float))
@@ -3539,6 +3555,8 @@ class StationsPanel(wx.Panel):
         tableField.append(('id', 'id', 'readonly', int))
         tableField.append(('name', 'name', 'editable', str))
         tableField.append(('description', 'description', 'editable', str))
+        tableField.append(('start_time', 'start', 'readonly', str))
+        tableField.append(('end_time', 'end', 'readonly', str))
         return tableField
 
 
