@@ -35,6 +35,7 @@ from wx import CallAfter
 import wx.aui
 import wx.lib.colourdb
 from obspy.core import Stream
+import obspy.geodetics.base
 import psysmon.core.gui as psygui
 import psysmon.core.packageNodes
 from psysmon.core.packageNodes import CollectionNode
@@ -783,6 +784,9 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
             self.displayManager.stationsChanged = False
             self.logger.debug("Resetting stationsChanged to False.")
 
+        # Update the sorting of the components.
+        self.displayManager.sort_show_stations()
+
         # Update the viewport to show the changes.
         self.viewport.SetupScrolling()
         self.viewport.Refresh()
@@ -854,6 +858,10 @@ class DisplayManager(object):
 
         # The display mode (network, array).
         self.display_mode = self.pref_manager.get_value('display_mode')
+
+        # The sort mode.
+        self.sort_mode = {'station': {'mode': 'name',
+                                      'order': 'ascending'}}
 
 
         # All arrays contained in the inventory.
@@ -1175,6 +1183,7 @@ class DisplayManager(object):
         # channels.
         station2Show = self.getAvailableStation(snl)
         self.addShowStation(station2Show)
+        sort_index = self.showStations.index(station2Show)
 
         # Check if the station has the demanded channels.
         station_channels = self.inventory.get_channel(station = snl[0],
@@ -1190,7 +1199,9 @@ class DisplayManager(object):
                     curChannel.addView(curPlugin.name, view_class)
 
         # Create the necessary channel containers.
-        stationContainer = self.createStationContainer(station2Show, parent_container = parent_container)
+        stationContainer = self.createStationContainer(station2Show,
+                                                       parent_container = parent_container,
+                                                       position = sort_index)
         for curChannel in station2Show.channels:
             curChanContainer = self.createChannelContainer(stationContainer, curChannel)
             for cur_plugin in viewPlugins:
@@ -1512,13 +1523,48 @@ class DisplayManager(object):
         self.logger.debug("Setting stationsChanged to True.")
 
 
-    def sort_show_stations(self):
-        ''' Sort the showen stations.
+    def set_station_sort_mode(self, mode, order = 'ascending'):
+        ''' Set the sort mode of the stations.
         '''
-        sort_mode = self.pref_manager.get_value('sort_stations')
-        if sort_mode == 'by name':
+        self.sort_mode['station']['mode'] = mode
+        self.sort_mode['station']['order'] = order
+        self.logger.info("Set station sort mode to %s.",
+                         self.sort_mode['station'])
+
+        if mode == 'rel_distance':
+            ref_station = self.showStations[0].station
+            ref_lonlat = ref_station.get_lon_lat()
+            lon1 = ref_lonlat[0]
+            lat1 = ref_lonlat[1]
+            for cur_disp_station in self.availableStations:
+                cur_station = cur_disp_station.station
+                cur_lonlat = cur_station.get_lon_lat()
+                lon2 = cur_lonlat[0]
+                lat2 = cur_lonlat[1]
+                cur_dist = obspy.geodetics.base.locations2degrees(lat1,
+                                                                  lon1,
+                                                                  lat2,
+                                                                  lon2)
+                cur_disp_station.rel_distance = cur_dist
+        
+        
+    def sort_show_stations(self):
+        ''' Sort the shown stations.
+        '''
+        print("sort_show_stations")
+        #sort_mode = self.pref_manager.get_value('sort_stations')
+        sort_mode = self.sort_mode['station']['mode']
+        sort_order = self.sort_mode['station']['order']
+        print(sort_mode)
+        if sort_mode == 'name':
+            # Sort the stations by name.
             self.showStations = sorted(self.showStations, key = attrgetter('name'))
             self.availableStations = sorted(self.availableStations, key = attrgetter('name'))
+        elif sort_mode == 'rel_distance':
+            # Sort the stations by relative distance to a reference station.
+            self.showStations = sorted(self.showStations, key = attrgetter('rel_distance'))
+            self.availableStations = sorted(self.availableStations, key = attrgetter('rel_distance'))
+            print([(x.name, x.rel_distance) for x in self.showStations])
 
 
 
@@ -1586,7 +1632,10 @@ class DisplayManager(object):
         return array_container
 
 
-    def createStationContainer(self, station, parent_container = None, group = 'station_container'):
+    def createStationContainer(self, station,
+                               parent_container = None,
+                               group = 'station_container',
+                               position = None):
         ''' Create the station container of the specified station.
 
         '''
@@ -1612,7 +1661,8 @@ class DisplayManager(object):
                                                                 annotation_area = annotation_area,
                                                                 color = 'white',
                                                                 group = group)
-            parent_container.add_node(statContainer)
+            parent_container.add_node(statContainer,
+                                      position = position)
             statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
             statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:

@@ -95,7 +95,18 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         '''
         node.Reparent(self)
         self.node_list.append(node)
-        self.sizer.Add(node, 1, flag = wx.EXPAND|wx.TOP|wx.BOTTOM, border = 1)
+        if position is not None:
+            print("INSERT")
+            self.sizer.Insert(index = position,
+                              window = node,
+                              proportion = 1,
+                              flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
+                              border = 1)
+        else:
+            print("ADD")
+            self.sizer.Add(node, 1,
+                           flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
+                           border = 1)
         self.SetupScrolling()
 
 

@@ -22,6 +22,7 @@ import logging
 
 import psysmon
 from psysmon.core.plugins import OptionPlugin
+import psysmon.core.preferences_manager as preferences_manager
 from psysmon.artwork.icons import iconsBlack16 as icons
 import wx
 
@@ -105,8 +106,7 @@ class SelectStation(OptionPlugin):
         OptionPlugin.__init__(self,
                               name = 'select station',
                               category = 'view',
-                              tags = ['station', 'view', 'select']
-                             )
+                              tags = ['station', 'view', 'select'])
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -123,6 +123,7 @@ class SelectStation(OptionPlugin):
         #self.parent.shortcutManager.addAction(('WXK_DOWN',), self.next_station)
         #self.parent.shortcutManager.addAction(('WXK_UP', ), self.prev_station)
         pass
+    
 
     def buildFoldPanel(self, parent):
         self.logger.debug('Building the fold panel.')
@@ -146,7 +147,7 @@ class SelectStation(OptionPlugin):
                              id = wx.ID_ANY,
                              choices = stationListString)
 
-        ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
+        ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
         lb.SetChecked(ind)
 
         # Bind the events.
@@ -174,7 +175,7 @@ class SelectStation(OptionPlugin):
         else:
             self.parent.displayManager.showStation(self.stationList[index])
 
-
+            
     def next_station(self):
         ''' Display the next station.
         '''
