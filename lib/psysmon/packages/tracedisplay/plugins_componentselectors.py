@@ -148,7 +148,7 @@ class SelectStation(OptionPlugin):
                              choices = stationListString)
 
         ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
-        lb.SetChecked(ind)
+        lb.SetCheckedItems(ind)
 
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
@@ -160,6 +160,30 @@ class SelectStation(OptionPlugin):
         self.lb = lb
 
         return foldPanel
+
+    
+    def getHooks(self):
+        ''' The callback hooks.
+        '''
+        hooks = {}
+        hooks['station_sort_order_changed'] = self.on_td_sort_order_changed
+
+        return hooks
+
+
+    def on_td_sort_order_changed(self):
+        ''' Handle the station_sort_order_changed hook of tracedisplay.
+        '''
+        displayedStations = self.parent.displayManager.getSNL('show')
+
+        # Create a unique list containing SNL. Preserve the sort order.
+        self.stationList = self.parent.displayManager.getSNL('available')
+        stationListString = [":".join(x) for x in self.stationList]
+        
+        self.lb.Clear()
+        self.lb.Append(stationListString)
+        ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
+        self.lb.SetCheckedItems(ind)
 
 
     def onBoxChecked(self, event):
