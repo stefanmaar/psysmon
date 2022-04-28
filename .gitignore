@@ -33,6 +33,11 @@ MANIFEST
 *.so
 *.dll
 
+# Emacs backup and temp files.
+*~
+\#*\#
+.#*
+
 # Ignore some doc folders
 /doc/source_doc/build/
 /doc/source_doc/source/autogen/
