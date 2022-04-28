@@ -433,7 +433,9 @@ class HookManager(object):
             The objects for which the hooks are called.
         '''
         if hook_name not in iter(self.hooks.keys()):
-            raise RuntimeError('The name %s is not available in the allowed hooks.' % hook_name)
+            msg = 'The name {:s} is not available in the allowed hooks.\nAvailable hooks: {:s}.'.format(hook_name,
+                                                                                                        list(self.hooks.keys()))
+            raise RuntimeError(msg)
 
         for cur_receiver in receivers:
             hooks = cur_receiver.getHooks()
