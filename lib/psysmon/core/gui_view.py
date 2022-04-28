@@ -48,6 +48,8 @@ try:
 except:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 
+import numpy as np
+
 import psysmon.core.util
 
 
@@ -189,18 +191,21 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
                 cur_node.create_plugin_view(plugin, limit_group = limit_group)
 
 
-    def sort_nodes(self, keys = None, order = None):
+    def sort_nodes(self, keys, order):
         ''' Sort the containers nodes.
         '''
-        if order:
-            sorted_nodes = []
-            for cur_order in order:
-                cur_node = self.get_node(recursive = False, **cur_order)
-                sorted_nodes.extend(cur_node)
+        sorted_nodes = []
+        order = np.array(order)
+        for k in np.arange(order.shape[1]):
+            cur_values = order[:, k]
+            request = dict(zip(keys, cur_values))
+            cur_node = self.get_node(recursive = False,
+                                     **request)
+            sorted_nodes.extend(cur_node)
 
+        if sorted_nodes:
             self.node_list = sorted_nodes
             self.rearrange_nodes()
-            sorted_nodes = []
 
 
 
