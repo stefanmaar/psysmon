@@ -25,6 +25,7 @@ import logging
 import os
 import psysmon.core.test_util as test_util
 import psysmon.core.gui as psygui
+import psysmon.gui.main.app as psy_app
 
 
 @nose_attrib.attr('interactive')
@@ -55,7 +56,7 @@ class DataInventoryStatisticsDlgTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app =psygui.PSysmonApp()
+        self.app =psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('data inventory statistics')
         self.node = nodeTemplate()

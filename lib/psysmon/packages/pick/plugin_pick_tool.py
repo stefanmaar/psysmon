@@ -30,6 +30,9 @@ import psysmon.packages.pick.core as pick_core
 from obspy.core.utcdatetime import UTCDateTime
 import numpy as np
 
+import psysmon.gui.validator as psy_val
+
+
 class PickTool(InteractivePlugin):
     '''
 
@@ -607,51 +610,10 @@ class EditDlg(wx.Dialog):
                 self.edit[curKey].SetValue(str(self.data[curKey]))
 
             if curValidator == 'not_empty':
-                self.edit[curKey].SetValidator(NotEmptyValidator())
+                self.edit[curKey].SetValidator(psy_val.NotEmptyValidator())
 
             fgSizer.Add(self.label[curKey], 0, wx.ALIGN_RIGHT)
             fgSizer.Add(self.edit[curKey], 0, wx.EXPAND)
 
         fgSizer.AddGrowableCol(1)
         return fgSizer
-
-
-class NotEmptyValidator(wx.PyValidator):
-    ## The constructor
-    #
-    # @param self The object pointer.
-    def __init__(self):
-        wx.PyValidator.__init__(self)
-
-
-    ## The default clone method.    
-    def Clone(self):
-        return NotEmptyValidator()
-
-
-    ## The method run when validating the field.
-    #
-    # This method checks if the control has a value. If not, it returns False.
-    # @param self The object pointer.
-    def Validate(self, win):
-        ctrl = self.GetWindow()
-        value = ctrl.GetValue()
-
-        if len(value) == 0:
-            wx.MessageBox("This field must contain some text!", "Error")
-            ctrl.SetBackgroundColour("pink")
-            ctrl.SetFocus()
-            ctrl.Refresh()
-            return False
-        else:
-            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-            ctrl.Refresh()
-            return True
-
-    ## The method called when entering the dialog.      
-    def TransferToWindow(self):
-        return True
-
-    ## The method called when leaving the dialog.  
-    def TransferFromWindow(self):
-        return True

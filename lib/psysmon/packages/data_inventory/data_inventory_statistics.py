@@ -40,6 +40,9 @@ import psysmon.core.preferences_manager as psy_preferences_manager
 import sqlalchemy as sqa
 import wx
 
+import psysmon.gui.main.app as psy_app
+
+
 class DataInventoryStatistics(psy_packageNodes.CollectionNode):
     ''' Display statistics of the available data inventory.
 
@@ -65,7 +68,7 @@ class DataInventoryStatistics(psy_packageNodes.CollectionNode):
         ''' Execute the collection node.
 
         '''
-        app = psysmon.core.gui.PSysmonApp()
+        app = psy_app.PsysmonApp()
         dlg = DataInventoryStatisticsDlg(self, self.project)
         dlg.Show()
         app.MainLoop()

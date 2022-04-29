@@ -12,7 +12,7 @@ import wx
 
 import psysmon
 import psysmon.core.gui_view
-from psysmon.core.gui import PSysmonApp
+import psysmon.gui.main.app as psy_app
 
 
 
@@ -35,7 +35,7 @@ class ViewportTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = PSysmonApp()
+        self.app = psy_app.PsysmonApp()
         self.app.Init()                 # The widget inspection tool can be called using CTRL+ALT+i
 
 

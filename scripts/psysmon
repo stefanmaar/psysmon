@@ -54,6 +54,8 @@ import psysmon.core.json_util
 import os
 import logging
 
+import psysmon.gui.main.app as psy_app
+
 
 def run():
     '''
@@ -108,7 +110,7 @@ def run():
     #psyBase.initialize()
 
     # Create the app and run the GUI.
-    app = psygui.PSysmonApp()
+    app = psy_app.PsysmonApp()
     psysmonMain = psygui.PSysmonGui(psyBase, None)
 
     handler = psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel,

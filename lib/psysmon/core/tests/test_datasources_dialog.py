@@ -41,6 +41,8 @@ from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import clear_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 
+import psysmon.gui.main.app as psy_app
+
 @nose_attrib.attr('interactive')
 class EditDialogTestCase(unittest.TestCase):
     """
@@ -75,7 +77,7 @@ class EditDialogTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = psysmon.core.gui.PSysmonApp()
+        self.app = psy_app.PsysmonApp()()
 
 
     def tearDown(self):

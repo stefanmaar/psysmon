@@ -31,7 +31,7 @@ from psysmon.core.test_util import remove_project_filestructure
 from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
 from obspy.core.utcdatetime import UTCDateTime
-
+import psysmon.gui.main.app as psy_app
 
 class EventProcessorTestCase(unittest.TestCase):
     """
@@ -72,7 +72,7 @@ class EventProcessorTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app =psygui.PSysmonApp()
+        self.app =psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('event processor')
         self.node = nodeTemplate()

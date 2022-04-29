@@ -10,7 +10,7 @@ import unittest
 import nose.plugins.attrib as nose_attrib
 import psysmon.core.guiBricks as editDialog
 import psysmon.core.gui as psygui
-
+import psysmon.gui.main.app as psy_app
 
 @nose_attrib.attr('interactive')
 class EditDialogTestCase(unittest.TestCase):
@@ -18,7 +18,7 @@ class EditDialogTestCase(unittest.TestCase):
     Test suite for psysmon.core.editDialog.EditDialog
     """
     def setUp(self):
-        self.app =psygui.PSysmonApp()
+        self.app =psy_app.PsysmonApp()()
         self.app.Init()                 # The widget inspection tool can be called using CTRL+ALT+i
 
         self.property = {}

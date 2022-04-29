@@ -31,6 +31,7 @@ from psysmon.core.test_util import remove_project_filestructure
 from psysmon.core.test_util import drop_database_tables
 import psysmon.core.gui as psygui
 import obspy.core.utcdatetime as utcdatetime
+import psysmon.gui.main.app as psy_app
 
 
 @nose_attrib.attr('interactive')
@@ -74,7 +75,7 @@ class TracedisplayTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app =psygui.PSysmonApp()
+        self.app =psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('tracedisplay')
         self.node = nodeTemplate()

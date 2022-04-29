@@ -39,6 +39,7 @@ from matplotlib.figure import Figure
 import psysmon
 import psysmon.core.packageNodes as packageNodes
 import psysmon.core.gui as gui
+import psysmon.gui.main.app as psy_app
 
 
 class GraphicLocalizationNode(packageNodes.CollectionNode):
@@ -62,7 +63,7 @@ class GraphicLocalizationNode(packageNodes.CollectionNode):
     def execute(self, prevNodeOutput = {}):
         ''' Execute the collection node.
         '''
-        app = gui.PSysmonApp()
+        app = psy_app.PsysmonApp()
 
         dlg = GraphicLocalizerDialog(collection_node = self,
                                      project = self.project,

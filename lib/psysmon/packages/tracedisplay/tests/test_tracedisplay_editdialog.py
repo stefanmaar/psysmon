@@ -29,6 +29,7 @@ from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 from psysmon.core.test_util import clean_unittest_database
 import psysmon.core.gui as psygui
+import psysmon.gui.main.app as psy_app
 
 
 class TracedisplayEditDialogTestCase(unittest.TestCase):
@@ -63,7 +64,7 @@ class TracedisplayEditDialogTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app =psygui.PSysmonApp()
+        self.app =psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('tracedisplay')
         self.node = nodeTemplate()

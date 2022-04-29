@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     import psysmon
     from psysmon.core.waveclient import PsysmonDbWaveClient
-    from psysmon.core.waveclient import EarthwormWaveclient
-    from psysmon.core.waveclient import SeedlinkWaveclient
+    from psysmon.core.waveclient import EarthwormWaveClient
+    from psysmon.core.waveclient import SeedlinkWaveClient
     import psysmon.core.base as psybase
 
     filename = filename
@@ -111,10 +111,10 @@ if __name__ == "__main__":
         for curName, curMode, curAttributes in waveclients:
             if curMode == 'PsysmonDbWaveClient':
                 waveclient = PsysmonDbWaveClient(curName, project)
-            elif curMode == 'EarthwormWaveclient':
-                waveclient = EarthwormWaveclient(curName, **curAttributes)
-            elif curMode == 'SeedlinkWaveclient':
-                waveclient = SeedlinkWaveclient(curName, project = project, **curAttributes)
+            elif curMode == 'EarthwormWaveClient':
+                waveclient = EarthwormWaveClient(curName, **curAttributes)
+            elif curMode == 'SeedlinkWaveClient':
+                waveclient = SeedlinkWaveClient(curName, project = project, **curAttributes)
             else:
                 waveclient = None
 

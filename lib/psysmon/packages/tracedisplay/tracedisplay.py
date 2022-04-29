@@ -51,6 +51,9 @@ import psysmon.core.util
 import psysmon.packages.event.core as ev_core
 import psysmon.core.gui
 import psysmon.core.gui_view
+import psysmon.gui.docking_frame
+
+import psysmon.gui.main.app as psy_app
 
 try:
     from agw import foldpanelbar as fpb
@@ -301,7 +304,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         self.logger.debug('Executing TraceDisplay')
 
 
-        app = psygui.PSysmonApp()
+        app = psy_app.PsysmonApp()
 
         # Get the plugins for this class.
         plugins = self.project.getPlugins(('common', self.__class__.__name__))
@@ -343,7 +346,7 @@ class TraceDisplayEditDlg(wx.Frame):
 
 
 
-class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
+class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     ''' The TraceDisplay main window.
 
 
@@ -360,10 +363,10 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         ''' The constructor.
 
         '''
-        psysmon.core.gui.PsysmonDockingFrame.__init__(self,
-                                                      parent = parent,
-                                                      id = id,
-                                                      title = title)
+        psysmon.gui.docking_frame.DockingFrame.__init__(self,
+                                                        parent = parent,
+                                                        id = id,
+                                                        title = title)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
