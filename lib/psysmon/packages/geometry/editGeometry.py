@@ -76,16 +76,15 @@ from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
-import psysmon.core.gui
 from psysmon.gui.context_menu import psyContextMenu
 import psysmon.core.guiBricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
 import seaborn as sns
 import scipy.signal
-sns.set_style('whitegrid')
 
 import psysmon.gui.main.app as psy_app
 
+sns.set_style('whitegrid')
 
 
 class EditGeometry(CollectionNode):

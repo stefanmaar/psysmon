@@ -38,7 +38,6 @@ from matplotlib.figure import Figure
 
 import psysmon
 import psysmon.core.packageNodes as packageNodes
-import psysmon.core.gui as gui
 import psysmon.gui.main.app as psy_app
 
 

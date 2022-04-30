@@ -34,9 +34,7 @@ import pprint
 import logging
 
 import obspy.core.utcdatetime as udt
-import psysmon.core.gui
 import psysmon.core.packageNodes as psy_packageNodes
-import psysmon.core.preferences_manager as psy_preferences_manager
 import sqlalchemy as sqa
 import wx
 

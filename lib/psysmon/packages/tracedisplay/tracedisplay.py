@@ -36,7 +36,6 @@ import wx.aui
 import wx.lib.colourdb
 from obspy.core import Stream
 import obspy.geodetics.base
-import psysmon.core.gui as psygui
 import psysmon.core.packageNodes
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.processingStack import ProcessingStack
@@ -49,7 +48,6 @@ import psysmon.core.gui_preference_dialog as psy_guiprefdlg
 import psysmon.core.plugins
 import psysmon.core.util
 import psysmon.packages.event.core as ev_core
-import psysmon.core.gui
 import psysmon.core.gui_view
 import psysmon.gui.docking_frame
 

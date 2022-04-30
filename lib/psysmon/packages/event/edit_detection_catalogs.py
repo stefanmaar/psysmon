@@ -33,7 +33,6 @@ Detection catalog management.
 from builtins import str
 import logging
 import psysmon
-import psysmon.core.gui
 from psysmon.core.packageNodes import CollectionNode
 import wx
 import wx.aui
