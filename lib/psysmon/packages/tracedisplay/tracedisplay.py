@@ -48,7 +48,7 @@ import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.plugins
 import psysmon.core.util
 import psysmon.packages.event.core as ev_core
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
 import psysmon.gui.docking_frame
 
 import psysmon.gui.main.app as psy_app
@@ -1669,7 +1669,7 @@ class DisplayManager(object):
                                                               label = array.name,
                                                               color = 'white')
 
-            array_container = psysmon.core.gui_view.ContainerNode(parent = viewport,
+            array_container = psy_view.containernode.ContainerNode(parent = viewport,
                                                                   name = array.name,
                                                                   props = props,
                                                                   annotation_area = annotation_area,
@@ -1707,7 +1707,7 @@ class DisplayManager(object):
                                                               id = wx.ID_ANY,
                                                               label = ':'.join(station.getSNL()),
                                                               color = 'white')
-            statContainer = psysmon.core.gui_view.ContainerNode(parent = self.parent.viewport,
+            statContainer = psy_view.containernode.ContainerNode(parent = self.parent.viewport,
                                                                 name = ':'.join(station.getSNL()),
                                                                 props = props,
                                                                 annotation_area = annotation_area,
@@ -1745,7 +1745,7 @@ class DisplayManager(object):
             annotation_area = container.ChannelAnnotationArea(parent = stationContainer,
                                                               label = channel.name,
                                                               color = curColor)
-            chanContainer = psysmon.core.gui_view.ViewContainerNode(parent = stationContainer,
+            chanContainer = psy_view.view_containernode.ViewContainerNode(parent = stationContainer,
                                                                     name = channel.name,
                                                                     props = props,
                                                                     annotation_area = annotation_area,

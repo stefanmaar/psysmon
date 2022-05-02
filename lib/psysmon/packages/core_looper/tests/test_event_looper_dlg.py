@@ -60,7 +60,7 @@ class EventLooperNodeEditDlgTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = psy_app.PsysmonApp()()
+        self.app = psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('event looper')
         self.node = nodeTemplate()

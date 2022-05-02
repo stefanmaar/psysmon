@@ -131,7 +131,7 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         # Add a default view container.
         # TODO: For the future, for each selected event a view container could
         # be created - don't know if that makes sense.
-        container_node = psysmon.core.gui_view.ViewContainerNode(name = 'default',
+        container_node = psy_view.view_containernode.ViewContainerNode(name = 'default',
                                                                  parent = self.viewport,
                                                                  color = 'lightgrey')
         self.viewport.add_node(container_node)

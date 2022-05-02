@@ -8,7 +8,7 @@ from __future__ import print_function
 import unittest
 from psysmon.core.preferences_manager import PreferencesManager
 from psysmon.core.preferences_manager import PreferenceItem
-from psysmon.core.guiBricks import SingleChoiceField
+from psysmon.gui.bricks import SingleChoiceField
 
 class PreferencesManagerTestCase(unittest.TestCase):
     """

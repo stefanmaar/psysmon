@@ -8,7 +8,7 @@ from __future__ import print_function
 from builtins import map
 import unittest
 import nose.plugins.attrib as nose_attrib
-import psysmon.core.guiBricks as editDialog
+import psysmon.gui.bricks as editDialog
 import psysmon.core.gui as psygui
 import psysmon.gui.main.app as psy_app
 
@@ -18,7 +18,7 @@ class EditDialogTestCase(unittest.TestCase):
     Test suite for psysmon.core.editDialog.EditDialog
     """
     def setUp(self):
-        self.app =psy_app.PsysmonApp()()
+        self.app =psy_app.PsysmonApp()
         self.app.Init()                 # The widget inspection tool can be called using CTRL+ALT+i
 
         self.property = {}

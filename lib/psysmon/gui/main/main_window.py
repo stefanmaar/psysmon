@@ -50,7 +50,7 @@ except ImportError:
     import wx.lib.agw.advancedsplash as splash
 
 import psysmon
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
 import psysmon.gui
 import psysmon.gui.dialog as psy_dlg
 import psysmon.gui.dialog.data_source

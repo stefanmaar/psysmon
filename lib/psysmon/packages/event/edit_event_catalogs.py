@@ -66,7 +66,7 @@ class EditEventCatalogs(CollectionNode):
     def execute(self, prevNodeOutput={}):
         ''' Execute the node.
         '''
-        app = psy_app.PsysmonApp()()
+        app = psy_app.PsysmonApp()
         dlg = EditEventCatalogsDlg(collection_node = self,
                                    project = self.project)
         dlg.Show()

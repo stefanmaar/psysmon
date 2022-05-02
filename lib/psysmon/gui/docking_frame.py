@@ -25,6 +25,8 @@ import wx.lib.agw.ribbon as ribbon
 
 import psysmon
 import psysmon.core
+import psysmon.gui.view as psy_view
+import psysmon.gui.view.viewport
 import psysmon.gui.shortcut as psy_shortcut
 
 
@@ -100,7 +102,7 @@ class DockingFrame(wx.Frame):
         '''
         self.center_panel = wx.Panel(parent = self, id = wx.ID_ANY)
         self.viewport_sizer = wx.GridBagSizer()
-        self.viewport = psysmon.core.gui_view.Viewport(parent = self.center_panel)
+        self.viewport = psy_view.viewport.Viewport(parent = self.center_panel)
         self.viewport_sizer.Add(self.viewport,
                                 pos = (0, 0),
                                 flag = wx.EXPAND|wx.ALL,

@@ -28,7 +28,7 @@ import numpy as np
 import psysmon
 from psysmon.core.plugins import ViewPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
 import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.event.detect as detect
 
@@ -257,7 +257,7 @@ class DetectStaLta(ViewPlugin):
 
 
 
-class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
+class DetectStaLtaView(psy_view.viewnode.ViewNode):
     '''
     A STA/LTA detection features view.
 
@@ -266,7 +266,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
         ''' Initialize the instance.
         '''
-        psysmon.core.gui_view.ViewNode.__init__(self,
+        psy_view.viewnode.ViewNode.__init__(self,
                                                 parent=parent,
                                                 id=id,
                                                 parent_viewport = parent_viewport,
@@ -435,7 +435,7 @@ class DetectStaLtaView(psysmon.core.gui_view.ViewNode):
             else:
                 label_artist = None
 
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vline',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             annotation_artist.add_artist([line_artist, label_artist])

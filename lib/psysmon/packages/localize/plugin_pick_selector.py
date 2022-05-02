@@ -26,7 +26,7 @@ import psysmon.core.plugins
 import psysmon.artwork.icons
 import psysmon.packages.pick.core
 import psysmon.core.preferences_manager
-import psysmon.core.guiBricks
+import psysmon.gui.bricks
 import psysmon.artwork.icons as icons
 
 import obspy.core.utcdatetime as utcdatetime
@@ -104,7 +104,7 @@ class SelectPicks(psysmon.core.plugins.OptionPlugin):
         #if catalog_names:
         #    self.pref_manager.set_value('pick_catalog', catalog_names[0])
 
-        fold_panel = psysmon.core.guiBricks.PrefEditPanel(pref = self.pref_manager,
+        fold_panel = psysmon.gui.bricks.PrefEditPanel(pref = self.pref_manager,
                                                           parent = panelBar)
 
         # Customize the catalog field.

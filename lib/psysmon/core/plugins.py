@@ -34,7 +34,7 @@ import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
 
 if psysmon.wx_available:
-    import psysmon.core.guiBricks
+    import psysmon.gui.bricks
 
 
 ## The PluginNode class.
@@ -191,7 +191,7 @@ class PluginNode(object):
         ''' Create the foldpanel GUI.
 
         '''
-        return psysmon.core.guiBricks.PrefEditPanel(pref = self.pref_manager,
+        return psysmon.gui.bricks.PrefEditPanel(pref = self.pref_manager,
                                                     parent = panelBar)
 
 

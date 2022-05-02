@@ -77,7 +77,7 @@ class EditDialogTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = psy_app.PsysmonApp()()
+        self.app = psy_app.PsysmonApp()
 
 
     def tearDown(self):

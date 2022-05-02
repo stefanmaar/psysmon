@@ -27,7 +27,7 @@ from wx.lib.stattext import GenStaticText as StaticText
 
 import psysmon
 from psysmon.core.plugins import OptionPlugin
-from psysmon.core.guiBricks import PrefEditPanel
+from psysmon.gui.bricks import PrefEditPanel
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.packages.event.core as ev_core

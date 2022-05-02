@@ -41,7 +41,7 @@ from psysmon.core.preferences_manager import PreferencesManager
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    from psysmon.core.guiBricks import PrefEditPanel
+    from psysmon.gui.bricks import PrefEditPanel
     
 
 class ProcessingStack(object):

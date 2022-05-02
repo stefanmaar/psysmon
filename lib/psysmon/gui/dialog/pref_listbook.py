@@ -22,7 +22,7 @@ import logging
 
 import wx
 
-from psysmon.core.guiBricks import PrefPagePanel
+from psysmon.gui.bricks import PrefPagePanel
 
 
 class ListbookPrefDialog(wx.Dialog):
