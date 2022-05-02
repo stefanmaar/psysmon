@@ -409,9 +409,17 @@ class PSDPlotter(object):
         '''
         window_length = psd_data['meta']['overall_window_length']
         psd_nfft = psd_data['meta']['overall_nfft']
-        win_limit = window_length * psd_data['meta']['overall_window_overlap'] / 100
+        overlap = psd_data['meta']['overall_window_overlap'] / 100
+        # The length of the gap between two successive data windows.
+        win_limit = window_length * (1 - overlap)
         frequ = None
         time_key = sorted([x for x in psd_data['data'].keys()])
+
+        if win_limit == 0:
+            msg = "The overlap of the data window is 100%. " \
+                  "Can't create the spectrogram plots with this data."
+            self.logger.error(msg)
+            raise RuntimeError(msg)
 
         # Find gaps in the data and add a time entry after each gap to create a
         # column in the PSD matrix that is filled with NaN values. This
