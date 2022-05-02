@@ -44,7 +44,7 @@ import psysmon.core.preferences_manager as psy_pm
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.lib_signal as lib_signal
 
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
 from psysmon.core.processingStack import ProcessingStack
 
@@ -195,7 +195,7 @@ class StaLtaDetectionNode(CollectionNode):
 
         self.pref_manager.set_limit('processing_stack', processing_nodes)
 
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

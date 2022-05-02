@@ -36,7 +36,7 @@ import os
 import psysmon
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 
 import matplotlib.pyplot as plt
 plt.style.use(psysmon.plot_style)
@@ -145,7 +145,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     def edit(self):
         ''' Show the node edit dialog.
         '''
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

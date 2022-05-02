@@ -62,8 +62,8 @@ from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorParameter
-from psysmon.core.gui import psyContextMenu
-import psysmon.core.guiBricks as guibricks
+from psysmon.gui.context_menu import psyContextMenu
+import psysmon.gui.bricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
 
 

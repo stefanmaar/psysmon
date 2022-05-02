@@ -46,7 +46,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 from wx.adv import DatePickerCtrl
 from wx.lib.masked import TimeCtrl
 from wx.lib.masked import TextCtrl as MaskedTextCtrl
-from psysmon.core.gui_util import _wxdate2pydate, _pydate2wxdate
+import psysmon.gui.util as gui_util
 from obspy.core import UTCDateTime
 import matplotlib as mpl
 
@@ -909,7 +909,7 @@ class TdDatetimeInfo(wx.Panel):
 
     def onStartTimeGo(self, event):
         self.logger.debug('GO startTime GO')
-        curDate = _wxdate2pydate(self.startDatePicker.GetValue())
+        curDate = gui_util.wxdate2pydate(self.startDatePicker.GetValue())
         if self.startTimePicker.IsValid():
             curTime = self.startTimePicker.GetValue().replace('.', ':').split(':')
             curDateTime = UTCDateTime(curDate.year, curDate.month, curDate.day,
@@ -1013,7 +1013,7 @@ class TdDatetimeInfo(wx.Panel):
         self.scale = scale
 
         # Set the datePicker value.
-        self.startDatePicker.SetValue(_pydate2wxdate(self.startTime))
+        self.startDatePicker.SetValue(gui_util.pydate2wxdate(self.startTime))
         self.startTimePicker.SetValue(self.startTime.strftime('%H%M%S%f'))
 
         #self.startTimeButton.SetLabel(str(self.startTime))

@@ -29,7 +29,7 @@ from psysmon.core.test_util import create_empty_project
 from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 import psysmon.core.gui as psygui
-
+import psysmon.gui.main.app as psy_app
 
 @nose_attrib.attr('interactive')
 class EventLooperNodeEditDlgTestCase(unittest.TestCase):
@@ -60,7 +60,7 @@ class EventLooperNodeEditDlgTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = psygui.PSysmonApp()
+        self.app = psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('event looper')
         self.node = nodeTemplate()

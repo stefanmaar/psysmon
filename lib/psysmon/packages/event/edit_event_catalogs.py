@@ -34,8 +34,7 @@ from builtins import str
 import os
 import fnmatch
 import logging
-import psysmon.core.gui
-from psysmon.core.gui import psyContextMenu
+from psysmon.gui.context_menu import psyContextMenu
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
 import wx
@@ -44,6 +43,8 @@ from obspy.core import read, Trace, Stream
 import obspy.core.utcdatetime as op_utcdatetime
 from operator import itemgetter
 
+import psysmon.gui.validator as psy_val
+import psysmon.gui.main.app as psy_app
 
 
 ## Documentation for class importWaveform
@@ -65,7 +66,7 @@ class EditEventCatalogs(CollectionNode):
     def execute(self, prevNodeOutput={}):
         ''' Execute the node.
         '''
-        app = psysmon.core.gui.PSysmonApp()
+        app = psy_app.PsysmonApp()
         dlg = EditEventCatalogsDlg(collection_node = self,
                                    project = self.project)
         dlg.Show()
@@ -339,7 +340,7 @@ class EditDlg(wx.Dialog):
         sizer.Fit(self)
 
         # Add the validators.
-        self.edit['name'].SetValidator(NotEmptyValidator())         # Not empty.
+        self.edit['name'].SetValidator(psy_val.NotEmptyValidator())         # Not empty.
 
         # Bind the events.
         self.Bind(wx.EVT_BUTTON, self.on_ok, ok_button)
@@ -378,44 +379,3 @@ class EditDlg(wx.Dialog):
 
         fgSizer.AddGrowableCol(1)
         return fgSizer
-
-
-class NotEmptyValidator(wx.PyValidator):
-    ## The constructor
-    #
-    # @param self The object pointer.
-    def __init__(self):
-        wx.PyValidator.__init__(self)
-
-
-    ## The default clone method.    
-    def Clone(self):
-        return NotEmptyValidator()
-
-
-    ## The method run when validating the field.
-    #
-    # This method checks if the control has a value. If not, it returns False.
-    # @param self The object pointer.
-    def Validate(self, win):
-        ctrl = self.GetWindow()
-        value = ctrl.GetValue()
-
-        if len(value) == 0:
-            wx.MessageBox("This field must contain some text!", "Error")
-            ctrl.SetBackgroundColour("pink")
-            ctrl.SetFocus()
-            ctrl.Refresh()
-            return False
-        else:
-            ctrl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-            ctrl.Refresh()
-            return True
-
-    ## The method called when entering the dialog.      
-    def TransferToWindow(self):
-        return True
-
-    ## The method called when leaving the dialog.  
-    def TransferFromWindow(self):
-        return True

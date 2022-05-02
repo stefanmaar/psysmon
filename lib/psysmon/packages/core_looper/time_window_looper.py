@@ -51,11 +51,9 @@ from psysmon.core.result import ResultBag
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
-## Documentation for class WindowProcessorNode
-# 
-# 
+
 class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
     name = 'time window looper'
@@ -86,7 +84,7 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
         self.on_window_mode_selected()
 
         # Create the edit dialog.
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the time-span elements depending on the 'set
         # collection time-span' collection node.

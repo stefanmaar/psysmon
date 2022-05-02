@@ -33,7 +33,7 @@ import psysmon
 from psysmon.core.plugins import ViewPlugin
 from psysmon.core.plugins import CommandPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
 import psysmon.core.preferences_manager as preferences_manager
 import psysmon.core.signal
 import obspy.signal
@@ -244,7 +244,7 @@ class SeismogramPlotter(ViewPlugin):
 
 
 
-class SeismogramView(psysmon.core.gui_view.ViewNode):
+class SeismogramView(psy_view.viewnode.ViewNode):
     '''
     A standard seismogram view.
 
@@ -254,7 +254,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
         ''' Initialize the instance.
         '''
-        psysmon.core.gui_view.ViewNode.__init__(self,
+        psy_view.viewnode.ViewNode.__init__(self,
                                                 parent=parent,
                                                 id=id,
                                                 parent_viewport = parent_viewport,
@@ -592,7 +592,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
             else:
                 label_artist = None
 
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vline',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             if label_artist is not None:
@@ -636,7 +636,7 @@ class SeismogramView(psysmon.core.gui_view.ViewNode):
                                                   verticalalignment = 'top')
             else:
                 label_artist = None
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vspan',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vspan',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             annotation_artist.add_artist([vspan_artist, label_artist])
@@ -750,7 +750,7 @@ class DemoPlotter(ViewPlugin):
 
 
 
-class DemoView(psysmon.core.gui_view.ViewNode):
+class DemoView(psy_view.viewnode.ViewNode):
     '''
     A standard seismogram view.
 
@@ -758,7 +758,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
+        psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -867,7 +867,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
             else:
                 label_artist = None
 
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vline',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             annotation_artist.add_artist([line_artist, label_artist])
@@ -906,7 +906,7 @@ class DemoView(psysmon.core.gui_view.ViewNode):
                                                   verticalalignment = 'top')
             else:
                 label_artist = None
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vspan',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vspan',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             annotation_artist.add_artist([vspan_artist, label_artist])
@@ -1038,7 +1038,7 @@ class SpectrogramPlotter(ViewPlugin):
 
 
 
-class SpectrogramView(psysmon.core.gui_view.ViewNode):
+class SpectrogramView(psy_view.viewnode.ViewNode):
     '''
     A standard seismogram view.
 
@@ -1046,7 +1046,7 @@ class SpectrogramView(psysmon.core.gui_view.ViewNode):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
+        psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # Create the logging logger instance with the correct name.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -1262,7 +1262,7 @@ class FrequencySpectrumPlotter(ViewPlugin):
 
 
 
-class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
+class FrequencySpectrumView(psy_view.viewnode.ViewNode):
     '''
     A standard seismogram view.
 
@@ -1270,7 +1270,7 @@ class FrequencySpectrumView(psysmon.core.gui_view.ViewNode):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, psdColor=(0, 0, 0), nhnmColor = (1, 0, 0), nlnmColor = (0, 1, 0), **kwargs):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
+        psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -1539,7 +1539,7 @@ class ArrayDemoPlotter(ViewPlugin):
 
 
 
-class ArrayDemoView(psysmon.core.gui_view.ViewNode):
+class ArrayDemoView(psy_view.viewnode.ViewNode):
     '''
     A standard seismogram view.
 
@@ -1547,7 +1547,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
     '''
 
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
-        psysmon.core.gui_view.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
+        psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -1643,7 +1643,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
             else:
                 label_artist = None
 
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vline',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vline',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             annotation_artist.add_artist([line_artist, label_artist])
@@ -1682,7 +1682,7 @@ class ArrayDemoView(psysmon.core.gui_view.ViewNode):
                                                   verticalalignment = 'top')
             else:
                 label_artist = None
-            annotation_artist = psysmon.core.gui_view.AnnotationArtist(mode = 'vspan',
+            annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vspan',
                                                                        parent_rid = parent_rid,
                                                                        key = key)
             annotation_artist.add_artist([vspan_artist, label_artist])

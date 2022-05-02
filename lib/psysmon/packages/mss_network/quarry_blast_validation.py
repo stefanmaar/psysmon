@@ -38,7 +38,7 @@ import psysmon.packages.event.core as event_core
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class QuarryBlastValidation(package_nodes.CollectionNode):
@@ -142,7 +142,7 @@ class QuarryBlastValidation(package_nodes.CollectionNode):
         #quarry_event = [x for x in event_types if x.name == 'quarry'][0]
         #self.pref_manager.set_limit('event_type', [x.name for x in quarry_event.children])
 
-        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

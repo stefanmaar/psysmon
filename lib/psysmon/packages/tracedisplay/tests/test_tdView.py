@@ -24,6 +24,7 @@ from psysmon.packages.geometry.editGeometry import EditGeometryDlg
 from psysmon.core.base import Base
 import psysmon.core.gui as psygui
 import os
+import psysmon.gui.main.app as psy_app
 
 
 class EditGeometryDlgTestCase(unittest.TestCase):
@@ -47,7 +48,7 @@ class EditGeometryDlgTestCase(unittest.TestCase):
         # Quest for the user and the database password.
         psyBase.project.setActiveUser('psysmon', 'psysmon')
            
-        self.app =psygui.PSysmonApp()
+        self.app =psy_app.PsysmonApp()
         self.dlg = EditGeometryDlg(None, psyBase.project)
         #self.dlg.Show()
         

@@ -37,7 +37,7 @@ import os
 import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
-import psysmon.core.gui_preference_dialog as gui_pref_dialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
@@ -87,7 +87,7 @@ class ExportEventPicks(package_nodes.CollectionNode):
             self.pref_manager.set_limit('scnl_list', channels)
 
         # Create the edit dialog.
-        dlg = gui_pref_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         self.on_select_individual()

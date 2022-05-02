@@ -38,7 +38,7 @@ from matplotlib.figure import Figure
 
 import psysmon
 import psysmon.core.packageNodes as packageNodes
-import psysmon.core.gui as gui
+import psysmon.gui.main.app as psy_app
 
 
 class GraphicLocalizationNode(packageNodes.CollectionNode):
@@ -62,7 +62,7 @@ class GraphicLocalizationNode(packageNodes.CollectionNode):
     def execute(self, prevNodeOutput = {}):
         ''' Execute the collection node.
         '''
-        app = gui.PSysmonApp()
+        app = psy_app.PsysmonApp()
 
         dlg = GraphicLocalizerDialog(collection_node = self,
                                      project = self.project,
@@ -131,7 +131,7 @@ class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
         # Add a default view container.
         # TODO: For the future, for each selected event a view container could
         # be created - don't know if that makes sense.
-        container_node = psysmon.core.gui_view.ViewContainerNode(name = 'default',
+        container_node = psy_view.view_containernode.ViewContainerNode(name = 'default',
                                                                  parent = self.viewport,
                                                                  color = 'lightgrey')
         self.viewport.add_node(container_node)

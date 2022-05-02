@@ -28,7 +28,7 @@ import psysmon.packages.event.core as event_core
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 #from profilehooks import profile
 
@@ -155,7 +155,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
 
 
         # Create the edit dialog.
-        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         #self.on_select_individual()

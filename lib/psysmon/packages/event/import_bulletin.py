@@ -38,7 +38,7 @@ import psysmon
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.core.guiBricks as psy_guibricks
+import psysmon.gui.bricks as psy_guibricks
 
 import os
 import wx

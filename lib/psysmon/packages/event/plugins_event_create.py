@@ -26,7 +26,7 @@ import wx
 
 import psysmon
 from psysmon.core.plugins import InteractivePlugin
-from psysmon.core.guiBricks import PrefEditPanel
+from psysmon.gui.bricks import PrefEditPanel
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.preferences_manager as psy_pm
 from obspy.core.utcdatetime import UTCDateTime
@@ -34,6 +34,7 @@ import wx.lib.mixins.listctrl as listmix
 from wx.lib.stattext import GenStaticText as StaticText
 import psysmon.packages.event.core as event_core
 
+import psysmon.gui.validator as psy_val
 
 class CreateEvent(InteractivePlugin):
     '''
@@ -512,51 +513,10 @@ class EditDlg(wx.Dialog):
                 self.edit[curKey].SetValue(str(self.data[curKey]))
 
             if curValidator == 'not_empty':
-                self.edit[curKey].SetValidator(NotEmptyValidator())
+                self.edit[curKey].SetValidator(psy_val.NotEmptyValidator())
 
             fgSizer.Add(self.label[curKey], 0, wx.ALIGN_RIGHT)
             fgSizer.Add(self.edit[curKey], 0, wx.EXPAND)
 
         fgSizer.AddGrowableCol(1)
         return fgSizer
-
-
-class NotEmptyValidator(wx.PyValidator):
-    ## The constructor
-    #
-    # @param self The object pointer.
-    def __init__(self):
-        wx.PyValidator.__init__(self)
-
-
-    ## The default clone method.    
-    def Clone(self):
-        return NotEmptyValidator()
-
-
-    ## The method run when validating the field.
-    #
-    # This method checks if the control has a value. If not, it returns False.
-    # @param self The object pointer.
-    def Validate(self, win):
-        ctrl = self.GetWindow()
-        value = ctrl.GetValue()
-
-        if len(value) == 0:
-            wx.MessageBox("This field must contain some text!", "Error")
-            ctrl.SetBackgroundColour("pink")
-            ctrl.SetFocus()
-            ctrl.Refresh()
-            return False
-        else:
-            ctrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
-            ctrl.Refresh()
-            return True
-
-    ## The method called when entering the dialog.      
-    def TransferToWindow(self):
-        return True
-
-    ## The method called when leaving the dialog.  
-    def TransferFromWindow(self):
-        return True

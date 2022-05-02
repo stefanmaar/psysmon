@@ -44,7 +44,7 @@ import psysmon.core.preferences_manager as psy_pm
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 
@@ -103,7 +103,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         ''' Create the preferences edit dialog.
         '''
         # Create the edit dialog.
-        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         dlg.ShowModal()
         dlg.Destroy()

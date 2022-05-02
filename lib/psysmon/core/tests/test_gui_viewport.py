@@ -11,8 +11,8 @@ import nose.plugins.attrib as nose_attrib
 import wx
 
 import psysmon
-import psysmon.core.gui_view
-from psysmon.core.gui import PSysmonApp
+import psysmon.gui.view as psy_view
+import psysmon.gui.main.app as psy_app
 
 
 
@@ -35,7 +35,7 @@ class ViewportTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = PSysmonApp()
+        self.app = psy_app.PsysmonApp()
         self.app.Init()                 # The widget inspection tool can be called using CTRL+ALT+i
 
 
@@ -48,19 +48,19 @@ class ViewportTestCase(unittest.TestCase):
         frame = wx.Frame(parent = None)
 
         # Create the first container.
-        viewport = psysmon.core.gui_view.Viewport(parent = frame)
-        container_node = psysmon.core.gui_view.ContainerNode(name = "Container 1",
+        viewport = psy_view.viewport.Viewport(parent = frame)
+        container_node = psy_view.containernode.ContainerNode(name = "Container 1",
                                                              parent = viewport)
         viewport.add_node(container_node)
 
 
         # Create the second container.
-        view_container_node = psysmon.core.gui_view.ViewContainerNode(name = "View Container 2",
+        view_container_node = psy_view.view_containernode.ViewContainerNode(name = "View Container 2",
                                                              parent = viewport)
         viewport.add_node(view_container_node)
 
         # Add a view to the container.
-        view_node = psysmon.core.gui_view.ViewNode(name = "View C2",
+        view_node = psy_view.viewnode.ViewNode(name = "View C2",
                                                parent = view_container_node,
                                                color = 'red')
         view_container_node.add_node(view_node)
@@ -79,46 +79,46 @@ class ViewportTestCase(unittest.TestCase):
         frame = wx.Frame(parent = None)
 
         # Create a container.
-        viewport = psysmon.core.gui_view.Viewport(parent = frame)
-        container_node = psysmon.core.gui_view.ViewContainerNode(name = "Container 1",
+        viewport = psy_view.viewport.Viewport(parent = frame)
+        container_node = psy_view.view_containernode.ViewContainerNode(name = "Container 1",
                                                              parent = viewport)
         viewport.add_node(container_node)
 
         # Add a view to the container.
-        view_node = psysmon.core.gui_view.ViewNode(name = "View C1",
+        view_node = psy_view.viewnode.ViewNode(name = "View C1",
                                                parent = container_node,
                                                color = 'green')
         container_node.add_node(view_node)
 
 
-        container_node = psysmon.core.gui_view.ContainerNode(name = "Container 2",
+        container_node = psy_view.containernode.ContainerNode(name = "Container 2",
                                                              parent = viewport)
         viewport.add_node(container_node)
 
-        child_node = psysmon.core.gui_view.ViewContainerNode(name = "Child Container 1",
+        child_node = psy_view.view_containernode.ViewContainerNode(name = "Child Container 1",
                                                              parent = container_node,
                                                              color = 'yellow')
         container_node.add_node(child_node)
 
         # Add a view to the container to the first child node.
-        view_node = psysmon.core.gui_view.ViewNode(name = "View 1 Child C1",
+        view_node = psy_view.viewnode.ViewNode(name = "View 1 Child C1",
                                                parent = container_node,
                                                color = 'green')
         child_node.add_node(view_node)
 
-        child_node = psysmon.core.gui_view.ViewContainerNode(name = "Child Container 2",
+        child_node = psy_view.view_containernode.ViewContainerNode(name = "Child Container 2",
                                                              parent = container_node,
                                                              color = 'green')
         container_node.add_node(child_node)
 
         # Add a view to the container to the second child node.
-        view_node = psysmon.core.gui_view.ViewNode(name = "View 1 Child C2",
+        view_node = psy_view.viewnode.ViewNode(name = "View 1 Child C2",
                                                parent = container_node,
                                                color = 'green')
         child_node.add_node(view_node)
 
         # Add a view to the container to the second child node.
-        view_node = psysmon.core.gui_view.ViewNode(name = "View 2 Child C2",
+        view_node = psy_view.viewnode.ViewNode(name = "View 2 Child C2",
                                                parent = container_node,
                                                color = 'green')
         child_node.add_node(view_node)

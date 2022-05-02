@@ -34,7 +34,7 @@ from psysmon.core.test_util import drop_project_database_tables
 from psysmon.core.test_util import remove_project_filestructure
 import psysmon.core.gui as psygui
 from obspy.core.utcdatetime import UTCDateTime
-
+import psysmon.gui.main.app as psy_app
 
 @nose_attrib.attr('interactive')
 class ComputePpsdEditDlgTestCase(unittest.TestCase):
@@ -65,7 +65,7 @@ class ComputePpsdEditDlgTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = psygui.PSysmonApp()
+        self.app = psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('compute PPSD')
         self.node = nodeTemplate()

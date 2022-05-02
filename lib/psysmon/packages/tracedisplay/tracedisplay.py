@@ -36,7 +36,6 @@ import wx.aui
 import wx.lib.colourdb
 from obspy.core import Stream
 import obspy.geodetics.base
-import psysmon.core.gui as psygui
 import psysmon.core.packageNodes
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.processingStack import ProcessingStack
@@ -45,12 +44,14 @@ from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
 from . import container
 import psysmon.core.preferences_manager as pref_manager
-import psysmon.core.gui_preference_dialog as psy_guiprefdlg
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.plugins
 import psysmon.core.util
 import psysmon.packages.event.core as ev_core
-import psysmon.core.gui
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
+import psysmon.gui.docking_frame
+
+import psysmon.gui.main.app as psy_app
 
 try:
     from agw import foldpanelbar as fpb
@@ -291,7 +292,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         self.pref_manager.set_limit('show_channels', channels)
 
 
-        dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
         self.on_display_mode_changed()
         dlg.ShowModal()
         dlg.Destroy()
@@ -301,7 +302,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         self.logger.debug('Executing TraceDisplay')
 
 
-        app = psygui.PSysmonApp()
+        app = psy_app.PsysmonApp()
 
         # Get the plugins for this class.
         plugins = self.project.getPlugins(('common', self.__class__.__name__))
@@ -343,7 +344,7 @@ class TraceDisplayEditDlg(wx.Frame):
 
 
 
-class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
+class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     ''' The TraceDisplay main window.
 
 
@@ -360,10 +361,10 @@ class TraceDisplayDlg(psysmon.core.gui.PsysmonDockingFrame):
         ''' The constructor.
 
         '''
-        psysmon.core.gui.PsysmonDockingFrame.__init__(self,
-                                                      parent = parent,
-                                                      id = id,
-                                                      title = title)
+        psysmon.gui.docking_frame.DockingFrame.__init__(self,
+                                                        parent = parent,
+                                                        id = id,
+                                                        title = title)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -1668,7 +1669,7 @@ class DisplayManager(object):
                                                               label = array.name,
                                                               color = 'white')
 
-            array_container = psysmon.core.gui_view.ContainerNode(parent = viewport,
+            array_container = psy_view.containernode.ContainerNode(parent = viewport,
                                                                   name = array.name,
                                                                   props = props,
                                                                   annotation_area = annotation_area,
@@ -1706,7 +1707,7 @@ class DisplayManager(object):
                                                               id = wx.ID_ANY,
                                                               label = ':'.join(station.getSNL()),
                                                               color = 'white')
-            statContainer = psysmon.core.gui_view.ContainerNode(parent = self.parent.viewport,
+            statContainer = psy_view.containernode.ContainerNode(parent = self.parent.viewport,
                                                                 name = ':'.join(station.getSNL()),
                                                                 props = props,
                                                                 annotation_area = annotation_area,
@@ -1744,7 +1745,7 @@ class DisplayManager(object):
             annotation_area = container.ChannelAnnotationArea(parent = stationContainer,
                                                               label = channel.name,
                                                               color = curColor)
-            chanContainer = psysmon.core.gui_view.ViewContainerNode(parent = stationContainer,
+            chanContainer = psy_view.view_containernode.ViewContainerNode(parent = stationContainer,
                                                                     name = channel.name,
                                                                     props = props,
                                                                     annotation_area = annotation_area,

@@ -39,7 +39,7 @@ import os
 import fnmatch
 import logging
 import psysmon
-from psysmon.core.gui import psyContextMenu
+from psysmon.gui.context_menu import psyContextMenu
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
 import wx

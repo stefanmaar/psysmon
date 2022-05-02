@@ -812,7 +812,7 @@ class PsysmonDbWaveClient(WaveClient):
 
 
 
-class EarthwormWaveclient(WaveClient):
+class EarthwormWaveClient(WaveClient):
     ''' The earthworm waveserver client.
 
     This class provides the connector to a Earthworm waveserver.
@@ -837,7 +837,7 @@ class EarthwormWaveclient(WaveClient):
     def pickle_attributes(self):
         ''' The attributes which can be pickled.
         '''
-        d = super(EarthwormWaveclient, self).pickle_attributes
+        d = super(EarthwormWaveClient, self).pickle_attributes
         d['host'] = self.host
         d['port'] = self.port
         return d
@@ -973,7 +973,7 @@ class EarthwormWaveclient(WaveClient):
 
 
 
-class SeedlinkWaveclient(WaveClient):
+class SeedlinkWaveClient(WaveClient):
     ''' The seedlink waveserver client.
 
     Request data for timewindows from a seedlink server.
@@ -1009,7 +1009,7 @@ class SeedlinkWaveclient(WaveClient):
     def pickle_attributes(self):
         ''' The attributes which can be pickled.
         '''
-        d = super(SeedlinkWaveclient, self).pickle_attributes
+        d = super(SeedlinkWaveClient, self).pickle_attributes
         d['host'] = self.host
         d['port'] = self.port
         return d

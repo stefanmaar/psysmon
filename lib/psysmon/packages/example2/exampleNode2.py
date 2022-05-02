@@ -20,7 +20,7 @@
 
 from builtins import str
 from psysmon.core.packageNodes import CollectionNode
-from psysmon.core.gui import PSysmonApp
+import psysmon.gui.main.app as psy_app
 import wx
 
 class ExampleNode2(CollectionNode):
@@ -57,7 +57,7 @@ class ExampleNode2(CollectionNode):
 
         requiredData = self.requireData(origin = 'example node')
 
-        app = PSysmonApp()
+        app = psy_app.PsysmonApp()
 
         dlg = wx.MessageDialog(None, str(requiredData),
                                'Echo Echo',

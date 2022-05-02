@@ -24,7 +24,7 @@ import wx
 import numpy as np
 import psysmon
 import psysmon.core.plugins
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
 import psysmon.artwork.icons as icons
 import psysmon.packages.geometry.util as geom_util
 import psysmon.core.preferences_manager as preferences_manager
@@ -92,7 +92,7 @@ class MapPlotter(psysmon.core.plugins.ViewPlugin):
 
 
 
-class MapView(psysmon.core.gui_view.ViewNode):
+class MapView(psy_view.viewnode.ViewNode):
     ''' A 2D map view.
 
     '''
@@ -100,7 +100,7 @@ class MapView(psysmon.core.gui_view.ViewNode):
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, **kwargs):
         ''' Initialize the instance.
         '''
-        psysmon.core.gui_view.ViewNode.__init__(self,
+        psy_view.viewnode.ViewNode.__init__(self,
                                                 parent=parent,
                                                 id=id,
                                                 parent_viewport = parent_viewport,

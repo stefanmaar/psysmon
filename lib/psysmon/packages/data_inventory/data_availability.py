@@ -45,7 +45,7 @@ import psysmon.core.packageNodes as package_nodes
 import psysmon.core.util as util
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import seaborn as sns
 
 sns.set_style('whitegrid')
@@ -84,7 +84,7 @@ class DataAvailabilityNode(package_nodes.CollectionNode):
         self.on_window_mode_selected()
 
         # Create the edit dialog.
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         #self.on_select_individual()

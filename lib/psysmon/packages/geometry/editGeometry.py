@@ -76,14 +76,15 @@ from psysmon.packages.geometry.inventory import Channel
 from psysmon.packages.geometry.inventory import Sensor
 from psysmon.packages.geometry.inventory import SensorComponent
 from psysmon.packages.geometry.inventory import SensorComponentParameter
-import psysmon.core.gui
-from psysmon.core.gui import psyContextMenu
-import psysmon.core.guiBricks as guibricks
+from psysmon.gui.context_menu import psyContextMenu
+import psysmon.gui.bricks as guibricks
 import psysmon.core.preferences_manager as pref_manager
 import seaborn as sns
 import scipy.signal
-sns.set_style('whitegrid')
 
+import psysmon.gui.main.app as psy_app
+
+sns.set_style('whitegrid')
 
 
 class EditGeometry(CollectionNode):
@@ -120,7 +121,7 @@ class EditGeometry(CollectionNode):
     def execute(self, prevNodeOutput={}):
         ''' Execute the node.
         '''
-        app = psysmon.core.gui.PSysmonApp()
+        app = psy_app.PsysmonApp()
         dlg = EditGeometryDlg(self, self.project)
         dlg.Show()
         app.MainLoop()

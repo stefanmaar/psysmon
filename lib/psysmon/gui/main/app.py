@@ -18,27 +18,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from obspy.core import UTCDateTime
-from wx import DateTime, DateTimeFromDMY
+import wx
+import wx.lib.mixins.inspection as wit
 
 
-def _wxdate2pydate(date):
-    if date is None:
-        return None
+class PsysmonApp(wx.App, wit.InspectionMixin):
+    ''' The pSysmon wxPython App class.
+    '''
+    #def __init__(self, redirect=False, filename=None,
+    #             useBestVisual=False, clearSigInt=True):
+    #    wx.App.__init__(self, redirect, filename, useBestVisual,
+    #                    clearSigInt)
 
-    assert isinstance(date, DateTime)
-    if date.IsValid():
-        ymd = list(map(int, date.FormatISODate().split('-')))
-        return UTCDateTime(*ymd)
-    else:
-        return None
-    
-
-def _pydate2wxdate(date):
-    if date is None:
-        return None
-
-    assert isinstance(date, UTCDateTime)
-    tt = date.timetuple()
-    dmy = (tt[2], tt[1] - 1, tt[0])
-    return DateTimeFromDMY(*dmy)
+    def OnInit(self):
+        # The widget inspection tool can be called using CTRL+ALT+i
+        self.Init()
+        return True

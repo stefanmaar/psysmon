@@ -85,8 +85,8 @@ class WaveclientTestCase(unittest.TestCase):
     def test_earthworm_waveclient(self):
         ''' Test the earthworm waveclient.
         '''
-        from psysmon.core.waveclient import EarthwormWaveclient
-        client = EarthwormWaveclient('test client', 'pubavo1.wr.usgs.gov', 16022)
+        from psysmon.core.waveclient import EarthwormWaveClient
+        client = EarthwormWaveClient('test client', 'pubavo1.wr.usgs.gov', 16022)
         # Request the available stations.
         av_stat = client.client.availability('AV', channel = 'BHZ')
         cur_stat = av_stat[0]

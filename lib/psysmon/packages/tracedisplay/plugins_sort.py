@@ -20,7 +20,7 @@
 
 import logging
 
-import psysmon.core.guiBricks as gui_bricks
+import psysmon.gui.bricks as gui_bricks
 import psysmon.core.plugins as plugins
 import psysmon.artwork.icons as icons
 import psysmon.core.preferences_manager as preferences_manager

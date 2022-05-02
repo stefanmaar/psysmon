@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import psysmon
 from psysmon.core.plugins import ViewPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
-import psysmon.core.gui_view
+import psysmon.gui.view as psy_view
 import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.polarization_analysis.core
 
@@ -146,7 +146,7 @@ class Resultant(ViewPlugin):
         return ResultantView
 
 
-class ResultantView(psysmon.core.gui_view.ViewNode):
+class ResultantView(psy_view.viewnode.ViewNode):
     '''
     A resultant view.
 
@@ -155,7 +155,7 @@ class ResultantView(psysmon.core.gui_view.ViewNode):
     def __init__(self, parent=None, id=wx.ID_ANY, parent_viewport=None, name=None, lineColor=(1,0,0), **kwargs):
         ''' Initialize the instance.
         '''
-        psysmon.core.gui_view.ViewNode.__init__(self,
+        psy_view.viewnode.ViewNode.__init__(self,
                                                 parent=parent,
                                                 id=id,
                                                 parent_viewport = parent_viewport,

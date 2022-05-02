@@ -33,6 +33,7 @@ import psysmon
 import psysmon.core.gui as psygui
 from psysmon.core.test_util import create_psybase
 from obspy.core.utcdatetime import UTCDateTime
+import psysmon.gui.main.app as psy_app
 
 
 @nose_attrib.attr('interactive')
@@ -57,7 +58,7 @@ class ConvertArchiveToMiniseedEditDlgTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = psygui.PSysmonApp()
+        self.app = psy_app.PsysmonApp()
 
         nodeTemplate = self.psybase.packageMgr.getCollectionNodeTemplate('reftek archive to miniseed')
         self.node = nodeTemplate()

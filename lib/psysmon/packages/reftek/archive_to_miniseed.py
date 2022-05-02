@@ -30,15 +30,13 @@ The convert reftek archive to miniseed module.
 '''
 import os.path
 import json
-import logging
+
+import obspy.core.utcdatetime as utcdatetime
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.core.gui_preference_dialog
-
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.packages.reftek.archive
-
-import obspy.core.utcdatetime as utcdatetime
 
 
 class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
@@ -134,7 +132,7 @@ class ConvertArchiveToMiniseed(psysmon.core.packageNodes.CollectionNode):
         self.load_scan_summary()
         self.update_units_list()
 
-        dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

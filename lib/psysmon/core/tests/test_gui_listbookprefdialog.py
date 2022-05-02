@@ -20,8 +20,8 @@ from psysmon.core.preferences_manager import DirBrowsePrefItem
 from psysmon.core.preferences_manager import DateTimeEditPrefItem
 from psysmon.core.preferences_manager import ListCtrlEditPrefItem
 from psysmon.core.preferences_manager import ListGridEditPrefItem
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
-from psysmon.core.gui import PSysmonApp
+import psysmon.gui.dialog.pref_listbook as psy_lb
+import psysmon.gui.main.app as psy_app
 
 
 @nose_attrib.attr('interactive')
@@ -42,7 +42,7 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.app = PSysmonApp()
+        self.app = psy_app.PsysmonApp()
         self.app.Init()                 # The widget inspection tool can be called using CTRL+ALT+i
 
         self.pref = PreferencesManager()
@@ -168,7 +168,7 @@ class ListbookPrefDialogTestCase(unittest.TestCase):
     def test_dialog_creation(self):
         ''' Test the creation of the dialog window.
         '''
-        dlg = ListbookPrefDialog(preferences = self.pref)
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref)
         dlg.ShowModal()
         dlg.Destroy()
         print(self.pref)

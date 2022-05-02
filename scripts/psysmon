@@ -45,14 +45,17 @@ Examples
     >>> python psysmon
 '''
 import matplotlib as mpl
-mpl.rcParams['backend'] = 'WXAgg'
 
 import psysmon
-import psysmon.core.gui as psygui
 import psysmon.core.base as psybase
 import psysmon.core.json_util
 import os
 import logging
+
+import psysmon.gui.main.main_window as psy_main
+import psysmon.gui.main.app as psy_app
+
+mpl.rcParams['backend'] = 'WXAgg'
 
 
 def run():
@@ -108,8 +111,8 @@ def run():
     #psyBase.initialize()
 
     # Create the app and run the GUI.
-    app = psygui.PSysmonApp()
-    psysmonMain = psygui.PSysmonGui(psyBase, None)
+    app = psy_app.PsysmonApp()
+    psysmonMain = psy_main.PsysmonGui(psyBase, None)
 
     handler = psysmon.getLoggerWxRedirectHandler(psysmonMain.loggingPanel,
                                                  log_level = status_loglevel)
