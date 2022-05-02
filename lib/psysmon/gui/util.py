@@ -22,7 +22,7 @@ from obspy.core import UTCDateTime
 from wx import DateTime, DateTimeFromDMY
 
 
-def _wxdate2pydate(date):
+def wxdate2pydate(date):
     if date is None:
         return None
 
@@ -32,9 +32,9 @@ def _wxdate2pydate(date):
         return UTCDateTime(*ymd)
     else:
         return None
-    
 
-def _pydate2wxdate(date):
+
+def pydate2wxdate(date):
     if date is None:
         return None
 
