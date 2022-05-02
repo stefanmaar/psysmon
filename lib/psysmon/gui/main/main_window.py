@@ -51,13 +51,13 @@ except ImportError:
 
 import psysmon
 import psysmon.core.gui_view
-import psysmon.core.gui_preference_dialog
 import psysmon.gui
 import psysmon.gui.dialog as psy_dlg
 import psysmon.gui.dialog.data_source
 import psysmon.gui.dialog.login
 import psysmon.gui.dialog.new_project
 import psysmon.gui.dialog.new_user
+import psysmon.gui.dialog.pref_listbook
 import psysmon.gui.main.logging_panel as psy_gmlp
 import psysmon.gui.main.collection_panel as psy_gmcp
 import psysmon.gui.main.inventory_panel as psy_gmip
@@ -513,7 +513,7 @@ class PsysmonGui(wx.Frame):
         event :
             The event passed to the callback.
         '''
-        dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.psyBase.pref_manager)
+        dlg = psy_dlg.pref_listbook.ListbookPrefDialog(preferences = self.psyBase.pref_manager)
         if dlg.ShowModal() == wx.ID_OK:
             # Set the log levels of the loggers.
             root_logger = logging.getLogger('psysmon')
@@ -576,7 +576,7 @@ class PsysmonGui(wx.Frame):
             The event passed to the callback.
         '''
         if self.psyBase.project:
-            dlg = psysmon.core.gui_preference_dialog.ListbookPrefDialog(preferences = self.psyBase.project.pref)
+            dlg = psy_dlg.pref_listbook.ListbookPrefDialog(preferences = self.psyBase.project.pref)
             dlg.ShowModal()
         else:
             self.logger.warning('You have to open a project first to edit the preferences.')

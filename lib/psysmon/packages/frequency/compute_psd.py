@@ -36,7 +36,7 @@ import os
 import psysmon.core.packageNodes
 import psysmon.core.result as result
 import psysmon.core.preferences_manager as psy_pm
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 
 from obspy.core.utcdatetime import UTCDateTime
 import matplotlib.mlab as mlab
@@ -93,7 +93,7 @@ class ComputePsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     def edit(self):
         ''' Show the node edit dialog.
         '''
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

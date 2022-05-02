@@ -22,7 +22,7 @@ import obspy.core.utcdatetime as utcdatetime
 
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class CollectionTimespan(package_nodes.CollectionNode):
@@ -61,7 +61,7 @@ class CollectionTimespan(package_nodes.CollectionNode):
 
 
     def edit(self):
-        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

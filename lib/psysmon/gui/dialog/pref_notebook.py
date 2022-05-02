@@ -17,90 +17,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-'''
-The pSysmon GUI module.
-
-:copyright:
-    Stefan Mertl
-
-:license:
-    GNU General Public License, Version 3 
-    (http://www.gnu.org/licenses/gpl-3.0.html)
-
-This module contains the graphical user interface (GUI) of the pSysmon 
-main program.
-'''
-from __future__ import print_function
 
 import wx
-import logging
-from psysmon.core.guiBricks import PrefPagePanel
-
-class ListbookPrefDialog(wx.Dialog):
-
-    def __init__(self, parent = None, preferences = None, size = (400, 600), title = 'preferences'):
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, title = title, style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER, size = size)
-
-        # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        self.pref = preferences
-
-        # Create the dialog buttons.
-        okButton = wx.Button(self, wx.ID_OK)
-        cancelButton = wx.Button(self, wx.ID_CANCEL)
-        okButton.SetDefault()
-
-        # Create the client's options pane.
-        #(curLabel, curPanel) = self.clientOptionPanels[client.mode]
-        #self.optionsPanel = curPanel(parent=self, client=client, project=self.psyBase.project)
-
-        # The main dialog sizer.
-        sizer = wx.GridBagSizer(5,5)
-
-        #sizer.Add(self.optionsPanel, pos=(0,0), flag=wx.EXPAND|wx.ALL, border = 5)
-        self.listbook = wx.Listbook(parent = self,
-                                    id = wx.ID_ANY,
-                                    style = wx.BK_LEFT)
-        self.build_pref_listbook()
-        sizer.Add(self.listbook, pos = (0,0),
-                  flag = wx.ALL|wx.EXPAND, border = 5)
-
-        # The button sizer.
-        btnSizer = wx.StdDialogButtonSizer()
-        btnSizer.AddButton(okButton)
-        btnSizer.AddButton(cancelButton)
-        btnSizer.Realize()
-        sizer.Add(btnSizer, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALL, border=5)
-
-        sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(0)
-
-        self.SetSizerAndFit(sizer)
 
 
-    def build_pref_listbook(self):
-        ''' Build the listbook based on the project preferences.
-
-        '''
-        # Create pages only for pages with groups
-        pages = [x for x in self.pref.pages if len(x) > 0]
-
-        for cur_page in pages:
-            panel = PrefPagePanel(parent = self,
-                                  id = wx.ID_ANY,
-                                  page = cur_page
-                                 )
-            self.listbook.AddPage(panel, cur_page.name)
-
-
-
-## The EditDialog class.
-#
-# This class provides an easy to use edit dialog for pSysmon collection nodes.
-# One can choose from a set of fields which can be used to change the values 
-# of the collection node properties.        
 class NotebookPrefDialog(wx.Frame):
 
     ## The constructor

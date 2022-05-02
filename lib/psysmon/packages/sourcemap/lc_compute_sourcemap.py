@@ -29,7 +29,7 @@ import numpy as np
 import scipy as sp
 
 import psysmon.core.packageNodes as package_nodes
-import psysmon.core.gui_preference_dialog as gui_preference_dialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.preferences_manager as pm
 import psysmon.core.result as result
 import psysmon.packages.sourcemap as sourcemap
@@ -83,7 +83,7 @@ class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
         ''' Create the preferences edit dialog.
         '''
         # Create the edit dialog.
-        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         #self.on_select_individual()

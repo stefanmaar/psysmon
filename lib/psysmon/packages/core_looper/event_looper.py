@@ -54,12 +54,10 @@ import psysmon.packages.event.core as event_core
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    import psysmon.core.gui_preference_dialog as gui_preference_dialog
+    import psysmon.gui.dialog.pref_listbook as psy_lb
     import psysmon.packages.event.plugins_event_selector as plugins_event_selector
     
-## Documentation for class importWaveform
-# 
-# 
+
 class EventLooperNode(package_nodes.LooperCollectionNode):
 
     name = 'event looper'
@@ -94,7 +92,7 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
             self.pref_manager.set_limit('scnl_list', channels)
 
         # Create the edit dialog.
-        dlg = gui_preference_dialog.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         self.on_select_individual()

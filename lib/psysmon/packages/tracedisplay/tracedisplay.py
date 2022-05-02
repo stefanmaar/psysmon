@@ -44,7 +44,7 @@ from psysmon.packages.geometry.db_inventory import DbInventory
 from obspy.core.utcdatetime import UTCDateTime
 from . import container
 import psysmon.core.preferences_manager as pref_manager
-import psysmon.core.gui_preference_dialog as psy_guiprefdlg
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.plugins
 import psysmon.core.util
 import psysmon.packages.event.core as ev_core
@@ -292,7 +292,7 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
         self.pref_manager.set_limit('show_channels', channels)
 
 
-        dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
         self.on_display_mode_changed()
         dlg.ShowModal()
         dlg.Destroy()

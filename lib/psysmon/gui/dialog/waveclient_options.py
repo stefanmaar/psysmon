@@ -24,7 +24,7 @@ import sqlalchemy
 import wx
 
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.core.gui_preference_dialog as psy_gpd
+import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class PsysmonDbWaveClientOptions(wx.Panel):
@@ -185,7 +185,7 @@ class PsysmonDbWaveClientOptions(wx.Panel):
         self.wfd_pref_manager.get_item('waveform_dir')[0].visible = False
         self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = True
 
-        dlg = psy_gpd.ListbookPrefDialog(preferences = self.wfd_pref_manager,
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.wfd_pref_manager,
                                          title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
             self.selected_waveform_dir.description = self.wfd_pref_manager.get_value('description')
@@ -207,7 +207,7 @@ class PsysmonDbWaveClientOptions(wx.Panel):
         self.initPreferenceValues()
         self.wfd_pref_manager.get_item('waveform_dir')[0].visible = True
         self.wfd_pref_manager.get_item('waveform_dir_alias')[0].visible = False
-        dlg = psy_gpd.ListbookPrefDialog(preferences = self.wfd_pref_manager,
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.wfd_pref_manager,
                                          title = 'edit waveform directory')
         if dlg.ShowModal() == wx.ID_OK:
             newWfDir = self.wfDir(self.client.name,

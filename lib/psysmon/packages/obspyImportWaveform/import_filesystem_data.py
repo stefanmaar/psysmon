@@ -37,7 +37,7 @@ import psysmon.core.preferences_manager as psy_pm
 
 # Import GUI related modules only if wxPython is available.
 if psysmon.wx_available:
-    import psysmon.core.gui_preference_dialog as psy_guiprefdlg
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
@@ -117,7 +117,7 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
 
         self.on_waveclient_selected()
 
-        dlg = psy_guiprefdlg.ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
 

@@ -47,7 +47,7 @@ import matplotlib.gridspec as gridspec
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
-from psysmon.core.gui_preference_dialog import ListbookPrefDialog
+import psysmon.gui.dialog.pref_listbook as psy_lb
 from obspy.core.utcdatetime import UTCDateTime
 import obspy.signal
 
@@ -183,7 +183,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
             channels = sorted([x.scnl for x in self.project.geometry_inventory.get_channel()])
             self.pref_manager.set_limit('scnl_list', channels)
 
-        dlg = ListbookPrefDialog(preferences = self.pref_manager)
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
         self.on_use_upper_frequ_changed()
         dlg.ShowModal()
         dlg.Destroy()
