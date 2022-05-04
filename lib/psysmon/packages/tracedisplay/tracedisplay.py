@@ -456,8 +456,8 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def init_user_interface(self):
         ''' Create the graphical user interface.
         '''
-        # Initialize the ribbon bar using the loaded plugins.
-        self.init_ribbon_bar()
+        # Initialize the menubar using the loaded plugins.
+        self.init_menus()
 
         # Add the datetime info to the viewport sizer.
         # TODO: Add a method in the PsysmonDockingFrame class to insert
@@ -607,6 +607,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
             raise RuntimeError('Only one interactive tool can be active.')
 
         active_plugin = active_plugin[0]
+        self.uncheck_menu_checkitem(active_plugin)
         self.deactivate_interactive_plugin(active_plugin)
 
 
