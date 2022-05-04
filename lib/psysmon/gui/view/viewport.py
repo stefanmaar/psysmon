@@ -22,6 +22,7 @@ import logging
 
 import numpy as np
 import wx
+import wx.lib.scrolledpanel
 
 from psysmon.gui.view.viewnode import ViewNode
 from psysmon.gui.view.containernode import ContainerNode
