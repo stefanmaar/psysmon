@@ -42,7 +42,7 @@ class ProcessingStack(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'processing stack',
-                              category = 'proc',
+                              category = 'processing',
                               tags = ['process', 'data']
                              )
 
