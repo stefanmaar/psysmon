@@ -59,7 +59,9 @@ class PluginNode(object):
     # argument.
     nodeClass = 'common'
 
-    def __init__(self, name, mode, category, tags, group = 'general', icons = None, parent=None, docEntryPoint=None, position_pref = 0, *kwargs):
+    def __init__(self, name, mode, category, tags, group = 'general',
+                 icons = None, parent=None, docEntryPoint=None,
+                 position_pref = 0, *kwargs):
         ''' The constructor.
 
         Create an instance of the PluginNode.
@@ -122,6 +124,18 @@ class PluginNode(object):
         # plugin node. The icons icons['active'] and icons['inactive']
         # should be set.
         self.icons = {}
+
+        # The accelerator string used for wxPython shortcuts.
+        self.accelerator_string = None
+
+        # The preferences dialog accelerator string used for wxPython
+        # shortcuts.
+        # This shortcut is used only, if the plugin has preferences in the
+        # preferences manager.
+        self.pref_accelerator_string = None
+
+        # Plugin shortcuts without a related menu item.
+        self.shortcuts = {}
 
         # The activation state of the tool. This is used by view- and
         # interactive tools. For other tool modes, the active state is
