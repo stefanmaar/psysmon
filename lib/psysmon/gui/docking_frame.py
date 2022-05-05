@@ -126,6 +126,37 @@ class DockingFrame(wx.Frame):
         self.SetMenuBar(self.menubar)
 
 
+    def add_menu(self, title):
+        ''' Add a menu to the menu bar.
+        '''
+        menu_id = self.menubar.FindMenu(title)
+
+        if menu_id == wx.NOT_FOUND:
+            menu = wx.Menu()
+            self.menubar.Append(menu = menu,
+                                title = title)
+
+
+    def add_menu_item(self, parent_menu, title,
+                      help_string, handler, accelerator_string = None):
+        ''' Add a menu item to the menu bar.
+
+        If the parent menu doesn't exist, it is created.
+        '''
+        menu_id = self.menubar.FindMenu(parent_menu)
+        if menu_id != wx.NOT_FOUND:
+            menu = self.menubar.GetMenu(menu_id)
+            if accelerator_string:
+                title += '\t' + accelerator_string
+            item = menu.Append(id = wx.ID_ANY,
+                               item = title,
+                               helpString = help_string)
+
+            self.Bind(event = wx.EVT_MENU,
+                      handler = handler,
+                      id = item.GetId())
+
+
     def init_menus(self):
         ''' Initialize the menus in the menu bar.
         '''
@@ -160,7 +191,29 @@ class DockingFrame(wx.Frame):
                 self.create_pref_menu_item(menu = submenu,
                                            item_id = item_id,
                                            plugin = cur_plugin)
-  
+
+
+    def init_plugin_accelerators(self):
+        ''' Initialize the shortcuts not related to menu items. 
+        '''
+        plugins_with_sc = [x for x in self.plugins if x.shortcuts]
+
+        entries = []
+        for plugin in plugins_with_sc:
+            for key, sc in plugin.shortcuts.items():
+                print("Registering shortcut {:s}.".format(key))
+                handler = sc['handler']
+                accel_string = sc['accelerator_string']
+                accel_id = wx.NewId()
+                self.Bind(wx.EVT_MENU,
+                          handler,
+                          id = accel_id)
+                entry = wx.AcceleratorEntry(cmd = accel_id)
+                entry.FromString(accel_string)
+                entries.append(entry)
+        accel = wx.AcceleratorTable(entries)
+        self.SetAcceleratorTable(accel)
+
 
     def create_menu_item(self, menu, item_id, plugin):
         ''' Create a menu item for a plugin.
@@ -190,10 +243,13 @@ class DockingFrame(wx.Frame):
         ''' Create a plugin preferences menu item in a submenu.
         '''
         help_msg = "Preferences for the {:s} plugin.".format(plugin.name)
+        title = plugin.name
+        if plugin.pref_accelerator_string:
+            title += '\t' + plugin.pref_accelerator_string
+            
         menu.Append(id = item_id,
-                    item = plugin.name,
+                    item = title,
                     helpString = help_msg)
-
 
         self.Bind(event = wx.EVT_MENU,
                   handler = lambda evt, plugin=plugin: self.on_edit_tool_preferences(evt,
@@ -205,9 +261,14 @@ class DockingFrame(wx.Frame):
         ''' Create a commund plugin menu item.
         '''
         help_msg = plugin.name
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
+
         menu.Append(id = item_id,
-                    item = plugin.name,
+                    item = title,
                     helpString = help_msg)
+
         self.Bind(event = wx.EVT_MENU,
                   handler = lambda evt, plugin = plugin: self.on_mb_command_tool_clicked(evt,
                                                                                          plugin),
@@ -228,9 +289,12 @@ class DockingFrame(wx.Frame):
 
     def create_view_menu_item(self, menu, item_id, plugin):
         ''' Create a view plugin menu item.
-        '''            
+        '''
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
         menu.AppendCheckItem(id = item_id,
-                             item = plugin.name,
+                             item = title,
                              help = plugin.name)
         self.Bind(event = wx.EVT_MENU,
                   handler = lambda evt, plugin = plugin: self.on_mb_view_tool_clicked(evt,
@@ -241,9 +305,12 @@ class DockingFrame(wx.Frame):
     def create_interactive_menu_item(self, menu, item_id, plugin):
         ''' Create an interactive plugin menu item.
         '''
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
         help_msg = plugin.name
         menu.AppendCheckItem(id = item_id,
-                             item = plugin.name,
+                             item = title,
                              help = help_msg)
         self.Bind(event = wx.EVT_MENU,
                   handler = lambda evt, plugin = plugin: self.on_mb_interactive_tool_clicked(evt,
