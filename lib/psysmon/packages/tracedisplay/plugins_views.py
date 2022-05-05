@@ -56,7 +56,7 @@ class Refresh(CommandPlugin):
                                name = 'refresh views',
                                category = 'visualize',
                                tags = ['view', 'refresh'],
-                               position_pref = 1
+                               position_pref = 1,
                                )
 
         # Create the logging logger instance.
@@ -64,6 +64,9 @@ class Refresh(CommandPlugin):
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.refresh_icon_16
+
+        # Set the shortcut string.
+        self.accelerator_string = 'CTRL+R'
 
 
     def run(self):
@@ -84,7 +87,7 @@ class SeismogramPlotter(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'plot seismogram',
+                             name = 'seismogram',
                              category = 'visualize',
                              tags = None
                             )
@@ -96,6 +99,10 @@ class SeismogramPlotter(ViewPlugin):
 
         # Define the plugin icons.
         self.icons['active'] = icons.waveform_icon_16
+
+        # Set the shortcut string.
+        self.accelerator_string = 'CTRL+S'
+        self.pref_accelerator_string = 'ALT+S'
 
         # Add the plugin preferences.
         pref_page = self.pref_manager.add_page('Preferences')
@@ -927,7 +934,7 @@ class SpectrogramPlotter(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'spectrogram plotter',
+                             name = 'spectrogram',
                              category = 'visualize',
                              tags = None
                             )
@@ -939,6 +946,10 @@ class SpectrogramPlotter(ViewPlugin):
 
         # Define the plugin icons.
         self.icons['active'] = icons._3x3_grid_2_icon_16
+
+        # Set the shortcut string.
+        self.accelerator_string = 'CTRL+P'
+        self.pref_accelerator_string = 'ALT+P'
 
         # Add the plugin preferences.
         pref_page = self.pref_manager.add_page('Preferences')

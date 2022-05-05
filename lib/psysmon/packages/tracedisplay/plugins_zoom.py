@@ -18,13 +18,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import str
 import logging
+import functools as ft
+
+from obspy.core import UTCDateTime
 import wx
+
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
-from obspy.core import UTCDateTime
 import psysmon.core.preferences_manager as preferences_manager
+
 
 class Zoom(InteractivePlugin):
     '''
@@ -54,6 +57,45 @@ class Zoom(InteractivePlugin):
         self.startTime = None
         self.endTime = None
 
+        # Set the shortcut string.
+        self.accelerator_string = 'CTRL+Z'
+        self.pref_accelerator_string = 'ALT+Z'
+
+        # Accelerators for shortcuts not bound to a menu item.
+        handler = ft.partial(self.on_zoom_out, ratio = 50)
+        self.shortcuts['zoom_out_50'] = {'accelerator_string': '-',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_zoom_out, ratio = 25)
+        self.shortcuts['zoom_out_25'] = {'accelerator_string': 'SHIFT+-',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_zoom_out, ratio = 10)
+        self.shortcuts['zoom_out_10'] = {'accelerator_string': 'CTRL+-',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_zoom_out, ratio = 1)
+        self.shortcuts['zoom_out_1'] = {'accelerator_string': 'ALT+-',
+                                        'handler': handler}
+
+        handler = ft.partial(self.on_zoom_in, ratio = 50)
+        self.shortcuts['zoom_in_50'] = {'accelerator_string': '+',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_zoom_in, ratio = 25)
+        self.shortcuts['zoom_in_25'] = {'accelerator_string': 'SHIFT++',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_zoom_in, ratio = 10)
+        self.shortcuts['zoom_in_10'] = {'accelerator_string': 'CTRL++',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_zoom_in, ratio = 1)
+        self.shortcuts['zoom_in_1'] = {'accelerator_string': 'ALT++',
+                                        'handler': handler}
+        
+        
+
         # Add the plugin preferences.
         pref_page = self.pref_manager.add_page('Preferences')
         resp_group = pref_page.add_group('response')
@@ -71,6 +113,18 @@ class Zoom(InteractivePlugin):
         hooks['button_release_event'] = self.onButtonRelease
 
         return hooks
+
+
+    def on_zoom_out(self, evt, ratio):
+        '''
+        '''
+        self.parent.growTimePeriod(ratio = ratio)
+
+
+    def on_zoom_in(self, evt, ratio):
+        '''
+        '''
+        self.parent.shrinkTimePeriod(ratio = ratio)
 
 
     def activate(self):
