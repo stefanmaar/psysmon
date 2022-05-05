@@ -456,8 +456,22 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def init_user_interface(self):
         ''' Create the graphical user interface.
         '''
+        # Add the tracedisplay main window menu items.
+        self.add_menu(title = 'Control')
+        
+        self.add_menu_item(parent_menu = 'Control',
+                           title = 'Deactivate Tool',
+                           help_string = "Disable the currently active tool.",
+                           handler = self.on_deactivate_tool,
+                           accelerator_string = 'ESC')
+
+        
         # Initialize the menubar using the loaded plugins.
         self.init_menus()
+
+        # Initialize the plugin shortcuts which are not related
+        # to a menu item.
+        self.init_plugin_accelerators()
 
         # Add the datetime info to the viewport sizer.
         # TODO: Add a method in the PsysmonDockingFrame class to insert
@@ -479,6 +493,12 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
 
         # Tell the docking manager to commit all changes.
         self.mgr.Update()
+
+
+    def on_deactivate_tool(self, event):
+        ''' Handle a click of the deactivate tool menu item.
+        '''
+        self.deactivate_tool()
 
 
     def initKeyEvents(self):
@@ -1677,8 +1697,8 @@ class DisplayManager(object):
                                                                   color = 'white',
                                                                   group = 'array_container')
             viewport.add_node(array_container)
-            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyUp)
+            #array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            #array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyUp)
         else:
             array_container = array_container[0]
 
@@ -1716,8 +1736,8 @@ class DisplayManager(object):
                                                                 group = group)
             parent_container.add_node(statContainer,
                                       position = position)
-            statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
+            #statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            #statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:
             statContainer = statContainer[0]
 
@@ -1758,27 +1778,6 @@ class DisplayManager(object):
             chanContainer = chanContainer[0]
 
         return chanContainer
-
-
-
-    def OLD_createViewContainer(self, channelContainer, name, viewClass):
-        '''
-
-        '''
-        # Check if the container already exists in the channel.
-        viewContainer = channelContainer.get_node(name = name)
-
-        if not viewContainer:
-            viewContainer = viewClass(channelContainer,
-                                      id = wx.ID_ANY,
-                                      props = channelContainer.props,
-                                      name = name)
-
-            channelContainer.add_node(viewContainer)
-            channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            channelContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
-
-        return viewContainer
 
 
     def getViewContainer(self, **kwargs):
