@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import wx
 
 import psysmon.core.util
@@ -33,6 +35,10 @@ class ViewContainerNode(wx.Panel):
                  annotation_area = None, color = 'red'):
         wx.Panel.__init__(self, parent=parent, id=id)
 
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+        
         # The name of the container.
         self.name = name
 
@@ -67,7 +73,7 @@ class ViewContainerNode(wx.Panel):
             annotation_area.Reparent(self)
             self.sizer.Add(self.annotation_area,
                            pos = (0, 0),
-                           span = (2, 1),
+                           # span = (2, 1),
                            flag = wx.ALL | wx.EXPAND,
                            border = 0)
             self.sizer.Add(self.container_sizer,
@@ -86,6 +92,31 @@ class ViewContainerNode(wx.Panel):
             self.sizer.AddGrowableRow(0)
             self.SetSizer(self.sizer)
 
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        #self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
+        #self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter_window)
+
+                  
+    def on_key_down(self, event):
+        self.logger.debug("on_key_down in view container %s. id: %s; event: %s", self.name, self.GetId(), event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+    def on_set_focus(self, event):
+        self.logger.debug("on_set_focus in view container node %s. event: %s", self.name, event)
+        print("ON_SET_FOCUS")
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_enter_window(self, event):
+        self.logger.debug("on_enter_window in view container node %s. event: %s", self.name, event)
+
+
+    def on_left_down(self, event):
+        self.logger.debug("on_left_down in view containter node %s. event: %s", self.name, event)
+   
 
     def add_node(self, node):
         ''' Add a view node.

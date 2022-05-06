@@ -54,12 +54,27 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
 
         self.SetupScrolling()
 
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
-
+        #self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
 
     def on_left_down(self, event):
-        self.logger.debug("##### LEFT DOWN IN GENERIC VIEWPORT #######")
+        self.logger.debug("on_left_down in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_set_focus(self, event):
+        self.logger.debug("on_set_focus in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_key_down(self, event):
+        self.logger.debug("on_key_down in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
 
 
     def add_node(self, node, position=None):
