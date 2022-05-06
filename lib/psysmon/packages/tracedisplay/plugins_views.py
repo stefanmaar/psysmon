@@ -41,38 +41,7 @@ from obspy.imaging.spectrogram import spectrogram
 import obspy.imaging
 
 
-class Refresh(CommandPlugin):
-    ''' Refresh all views.
 
-    '''
-    nodeClass = 'TraceDisplay'
-
-
-    def __init__(self):
-        ''' Initialize the instance.
-
-        '''
-        CommandPlugin.__init__(self,
-                               name = 'refresh views',
-                               category = 'visualize',
-                               tags = ['view', 'refresh'],
-                               position_pref = 1,
-                               )
-
-        # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
-        self.icons['active'] = icons.refresh_icon_16
-
-        # Set the shortcut string.
-        self.accelerator_string = 'CTRL+R'
-
-
-    def run(self):
-        ''' Export the visible data to the project server.
-        '''
-        self.parent.update_display()
 
 
 
