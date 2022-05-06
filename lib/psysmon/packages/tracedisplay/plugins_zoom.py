@@ -58,7 +58,8 @@ class Zoom(InteractivePlugin):
         self.endTime = None
 
         # Set the shortcut string.
-        self.accelerator_string = 'CTRL+Z'
+        self.accelerator_string = 'Z'
+        self.menu_accelerator_string = 'Z'
         self.pref_accelerator_string = 'ALT+Z'
 
         # Accelerators for shortcuts not bound to a menu item.
