@@ -43,8 +43,7 @@ class ProcessingStack(OptionPlugin):
         OptionPlugin.__init__(self,
                               name = 'processing stack',
                               category = 'processing',
-                              tags = ['process', 'data']
-                             )
+                              tags = ['process', 'data'])
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -53,6 +52,10 @@ class ProcessingStack(OptionPlugin):
         self.icons['active'] = icons.layers_1_icon_16
 
         self.with_run_button = with_run_button
+
+        # Set the shortcut string.
+        self.accelerator_string = 'A'
+        self.menu_accelerator_string = 'A'
 
 
 
@@ -80,7 +83,7 @@ class ProcessingStack(OptionPlugin):
 
         # Fill the nodes list with the nodes in the processing stack.
         nodeNames = [x.name for x in self.processingStack.nodes]
-        isActive = [m for m,x in enumerate(self.processingStack) if x.isEnabled() == True]
+        isActive = [m for m, x in enumerate(self.processingStack) if x.isEnabled() == True]
 
         self.nodeListBox = wx.CheckListBox(parent = foldPanel,
                                            id = wx.ID_ANY,
@@ -93,9 +96,15 @@ class ProcessingStack(OptionPlugin):
         self.nodeOptions = self.processingStack[0].getEditPanel(foldPanel)
 
         # Add the elements to the main sizer.
-        sizer.Add(self.nodeListBox, pos=(0,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
-        sizer.Add(buttonSizer, pos=(0,1), flag=wx.TOP|wx.BOTTOM, border=1)
-        sizer.Add(self.nodeOptions, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeListBox, pos = (0, 0),
+                  flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
+                  border = 1)
+        sizer.Add(buttonSizer, pos = (0, 1),
+                  flag = wx.TOP | wx.BOTTOM,
+                  border=1)
+        sizer.Add(self.nodeOptions, pos = (1, 0),
+                  flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
+                  border=1)
 
         sizer.AddGrowableRow(0)
         sizer.AddGrowableRow(1)
@@ -104,7 +113,9 @@ class ProcessingStack(OptionPlugin):
         # Bind the events.
         foldPanel.Bind(wx.EVT_BUTTON, self.onAdd, addButton)
         foldPanel.Bind(wx.EVT_LISTBOX, self.onNodeSelected, self.nodeListBox)
-        foldPanel.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, self.nodeListBox)
+        foldPanel.Bind(wx.EVT_CHECKLISTBOX,
+                       self.onBoxChecked,
+                       self.nodeListBox)
         if self.with_run_button is True:
             foldPanel.Bind(wx.EVT_BUTTON, self.onRun, runButton)
 
@@ -118,7 +129,7 @@ class ProcessingStack(OptionPlugin):
     def updateNodeList(self):
         self.nodeListBox.Clear()
         nodeNames = [x.name for x in self.processingStack.nodes]
-        isActive = [m for m,x in enumerate(self.processingStack) if x.isEnabled() == True]
+        isActive = [m for m, x in enumerate(self.processingStack) if x.isEnabled() == True]
         self.nodeListBox.AppendItems(nodeNames)
         self.nodeListBox.SetChecked(isActive)
 
@@ -135,12 +146,14 @@ class ProcessingStack(OptionPlugin):
 
         Open a dialog field to select from the available processing nodes.
         '''
-        dlg = PStackAddNodeDialog(parent = self.foldPanel, availableNodes = self.parent.processingNodes)
+        dlg = PStackAddNodeDialog(parent = self.foldPanel,
+                                  availableNodes = self.parent.processingNodes)
         val = dlg.ShowModal()
 
         if val == wx.ID_OK:
             node2Add = dlg.getSelection()
-            self.processingStack.addNode(node2Add, self.nodeListBox.GetSelection()+1) 
+            self.processingStack.addNode(node2Add,
+                                         self.nodeListBox.GetSelection() + 1)
             self.updateNodeList()
 
         dlg.Destroy()
@@ -153,7 +166,9 @@ class ProcessingStack(OptionPlugin):
         sizer.Detach(self.nodeOptions)
         self.nodeOptions.Destroy()
         self.nodeOptions = self.processingStack[index].getEditPanel(self.foldPanel)
-        sizer.Add(self.nodeOptions, pos=(1,0), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=1)
+        sizer.Add(self.nodeOptions, pos = (1, 0),
+                  flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
+                  border=1)
         sizer.Layout() 
 
 
@@ -194,12 +209,16 @@ class PStackEditField(wx.Panel):
                                        label=self.label,
                                        style=wx.ALIGN_LEFT)
 
-        self.sizer.Add(self.labelElement, pos = (0,0), flag = wx.EXPAND|wx.ALL, border = 0)
+        self.sizer.Add(self.labelElement, pos = (0, 0),
+                       flag = wx.EXPAND | wx.ALL,
+                       border = 0)
 
         self.controlElement = PStackEditPanel(parent = self,
                                               size = (-1, 300))
 
-        self.sizer.Add(self.controlElement, pos = (1,0), flag = wx.EXPAND|wx.ALL, border = 0)
+        self.sizer.Add(self.controlElement, pos = (1, 0),
+                       flag = wx.EXPAND | wx.ALL,
+                       border = 0)
         self.sizer.AddGrowableCol(0)
         self.sizer.AddGrowableRow(1)
 
@@ -217,7 +236,7 @@ class PStackEditPanel(wx.Panel):
         wx.Panel.__init__(self, parent = parent, id = id, size = size)
 
         # Layout using sizers.
-        sizer = wx.GridBagSizer(5,5)
+        sizer = wx.GridBagSizer(5, 5)
         buttonSizer = wx.BoxSizer(wx.VERTICAL)
 
         # Create the buttons to control the stack.
@@ -231,7 +250,7 @@ class PStackEditPanel(wx.Panel):
         # Fill the nodes list with the nodes in the processing stack.
         self.selected_nodes = self.GetParent().pref_item.value
         node_names = [x.name for x in self.selected_nodes]
-        is_active = [m for m,x in enumerate(self.selected_nodes) if x.isEnabled() == True]
+        is_active = [m for m, x in enumerate(self.selected_nodes) if x.isEnabled() == True]
 
         self.nodeListBox = wx.CheckListBox(parent = self,
                                            id = wx.ID_ANY,
