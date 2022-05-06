@@ -134,6 +134,8 @@ class PluginNode(object):
         # preferences manager.
         self.pref_accelerator_string = None
 
+        self.menu_accelerator_string = None
+
         # Plugin shortcuts without a related menu item.
         self.shortcuts = {}
 
