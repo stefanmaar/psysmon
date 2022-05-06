@@ -94,6 +94,22 @@ class DockingFrame(wx.Frame):
                                         description = 'The matplotlib motion_notify_event in the view axes.')
 
 
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
+        
+    def on_set_focus(self, event):
+        self.logger.debug("on_set_focus in docking frame. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_key_down(self, event):
+        self.logger.debug("on_key_down in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+        
+
     def init_viewport(self):
         ''' Initialize the viewport.
         '''
@@ -135,6 +151,10 @@ class DockingFrame(wx.Frame):
             menu = wx.Menu()
             self.menubar.Append(menu = menu,
                                 title = title)
+        else:
+            menu = self.menubar.GetMenu(menu_id)
+
+        return menu
 
 
     def add_menu_item(self, parent_menu, title,
@@ -156,6 +176,8 @@ class DockingFrame(wx.Frame):
                       handler = handler,
                       id = item.GetId())
 
+        return item
+
 
     def init_menus(self):
         ''' Initialize the menus in the menu bar.
@@ -166,8 +188,8 @@ class DockingFrame(wx.Frame):
         category_list = sorted(category_list)
         
         for k, cur_category in enumerate(category_list):
-            cur_menu = wx.Menu()
-            self.menubar.Append(cur_menu, cur_category)
+            menu_title = cur_category.capitalize()
+            cur_menu = self.add_menu(title = menu_title)
             plugins = [x for x in self.plugins if x.category == cur_category]
             for m, cur_plugin in enumerate(plugins):
                 item_id = k * 100 + m
@@ -211,6 +233,20 @@ class DockingFrame(wx.Frame):
                 entry = wx.AcceleratorEntry(cmd = accel_id)
                 entry.FromString(accel_string)
                 entries.append(entry)
+
+        plugins_with_test = [x for x in self.plugins if x.menu_accelerator_string]
+
+        for plugin in plugins_with_test:
+            for accel_string in plugin.menu_accelerator_string:
+                print("Registering shortcut {:s}.".format(accel_string))
+                menu_name = plugin.category.capitalize()
+                item_name = plugin.name
+                item_id = self.menubar.FindMenuItem(menu_name, item_name)
+                print(item_id)
+                entry = wx.AcceleratorEntry(cmd = item_id)
+                entry.FromString(accel_string)
+                entries.append(entry)
+            
         accel = wx.AcceleratorTable(entries)
         self.SetAcceleratorTable(accel)
 
@@ -278,8 +314,11 @@ class DockingFrame(wx.Frame):
     def create_option_menu_item(self, menu, item_id, plugin):
         ''' Create an option menu item.
         '''
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
         menu.AppendCheckItem(id = item_id,
-                             item = plugin.name,
+                             item = title,
                              help = plugin.name)
         self.Bind(event = wx.EVT_MENU,
                   handler = lambda evt, plugin = plugin: self.on_mb_option_tool_clicked(evt,
@@ -472,43 +511,47 @@ class DockingFrame(wx.Frame):
 
         menu_id = event.GetId()
         menu_item = self.menubar.FindItemById(menu_id)
-        if menu_item.IsChecked():
-            if plugin.name not in iter(self.foldPanels.keys()):
-                # The panel of the option tool does't exist. Create it and add
-                # it to the panel manager.
-                curPanel = plugin.buildFoldPanel(self)
-                self.mgr.AddPane(curPanel,
-                                 wx.aui.AuiPaneInfo().Right().
-                                 Name(plugin.name).
-                                 Caption(plugin.name).
-                                 Layer(2).
-                                 Row(0).
-                                 Position(0).
-                                 BestSize(wx.Size(300, -1)).
-                                 MinSize(wx.Size(200, 100)).
-                                 MinimizeButton(True).
-                                 MaximizeButton(True).
-                                 CloseButton(False))
-                # TODO: Add a onOptionToolPanelClose method to handle clicks of
-                # the CloseButton in the AUI pane of the option tools. If the
-                # pane is closed, the toggle state of the ribbonbar button has
-                # be changed. The according event is aui.EVT_AUI_PANE_CLOSE.
-                self.mgr.Update()
-                self.foldPanels[plugin.name] = curPanel
-            else:
-                if not self.foldPanels[plugin.name].IsShown():
-                    curPanel = self.foldPanels[plugin.name]
-                    self.mgr.GetPane(curPanel).Show()
-                    self.mgr.Update()
+
+        # The panel of the option tool does't exist. Create it and add
+        # it to the panel manager.
+        if plugin.name not in iter(self.foldPanels.keys()):
+            self.logger.debug("Creating the foldpanel.")
+            curPanel = plugin.buildFoldPanel(self)
+            self.mgr.AddPane(curPanel,
+                             wx.aui.AuiPaneInfo().Right().
+                             Name(plugin.name).
+                             Caption(plugin.name).
+                             Layer(2).
+                             Row(0).
+                             Position(0).
+                             BestSize(wx.Size(300, -1)).
+                             MinSize(wx.Size(200, 100)).
+                             MinimizeButton(True).
+                             MaximizeButton(True).
+                             CloseButton(False))
+            self.mgr.GetPane(curPanel).Hide()
+            # TODO: Add a onOptionToolPanelClose method to handle clicks of
+            # the CloseButton in the AUI pane of the option tools. If the
+            # pane is closed, the toggle state of the ribbonbar button has
+            # be changed. The according event is aui.EVT_AUI_PANE_CLOSE.
+            self.mgr.Update()
+            self.foldPanels[plugin.name] = curPanel
+ 
+        if not self.foldPanels[plugin.name].IsShown():
+            self.logger.debug("Showing the foldpanel.")
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Show()
+            self.mgr.Update()
             plugin.activate()
+            menu_item.Check()
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
         else:
-            if self.foldPanels[plugin.name].IsShown():
-                curPanel = self.foldPanels[plugin.name]
-                self.mgr.GetPane(curPanel).Hide()
-                self.mgr.Update()
-
+            self.logger.debug("Hiding the foldpanel.")
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Hide()
+            self.mgr.Update()
             plugin.deactivate()
+            menu_item.Check(False)
             self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
 
 
@@ -556,7 +599,8 @@ class DockingFrame(wx.Frame):
     def uncheck_menu_checkitem(self, plugin):
         ''' Uncheck a menu checkitem related to a plugin.
         '''
-        cat_menu_id = self.menubar.FindMenu(plugin.category)
+        menu_title = plugin.category.capitalize()
+        cat_menu_id = self.menubar.FindMenu(menu_title)
         cat_menu = self.menubar.GetMenu(cat_menu_id)
         if cat_menu:
             menu_item_id = cat_menu.FindItem(plugin.name)
