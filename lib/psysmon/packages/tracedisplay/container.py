@@ -34,13 +34,20 @@ except ImportError:
     # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as floatspin
 
+import psysmon
 import psysmon.gui.util as gui_util
 
 
 class ChannelAnnotationArea(wx.Panel):
 
-    def __init__(self, parent=None, id=wx.ID_ANY, label="channel name", bgColor="white", color="indianred", penColor="black"):
+    def __init__(self, parent=None, id=wx.ID_ANY, label="channel name", bgColor="yellow", color="black", penColor="black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+        
         self.SetMinSize((40, -1))
 
         self.bgColor = bgColor
@@ -49,9 +56,15 @@ class ChannelAnnotationArea(wx.Panel):
         self.penColor = penColor
 
         self.SetBackgroundColour(self.bgColor)
-        self.SetBackgroundColour('white')
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+
+        
+    def onSetFocus(self, event):
+        self.logger.debug("onSetFocus in channel annotation")
+        event.ResumePropagation(30)
+        event.Skip()
 
 
     def OnPaint(self, event):
@@ -78,7 +91,7 @@ class ChannelAnnotationArea(wx.Panel):
         height = winSize[1]
 
         # Define the drawing  pen.
-        penSize = 2;
+        penSize = 2
         pen = wx.Pen(self.penColor, penSize)
         pen.SetJoin(wx.JOIN_ROUND)
 
@@ -129,7 +142,8 @@ class TdDatetimeInfo(wx.Panel):
         self.SetMaxSize((-1, 30))
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.startTime = None
@@ -307,9 +321,14 @@ class TdDatetimeInfo(wx.Panel):
 
 class StationAnnotationArea(wx.Panel):
 
-    def __init__(self, parent=None, id=wx.ID_ANY, label="station name", bgColor="white", color="indianred", penColor="black"):
+    def __init__(self, parent=None, id=wx.ID_ANY, label="station name", bgColor="red", color="black", penColor="black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
         self.SetMinSize((40, -1))
+
+        # The logging logger instance.
+        logger_prefix = psysmon.logConfig['package_prefix']
+        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
 
         self.bgColor = bgColor
         self.label = label
@@ -320,7 +339,7 @@ class StationAnnotationArea(wx.Panel):
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
-        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+        #self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
 
     def OnPaint(self, event):
         #print "OnPaint"
@@ -330,7 +349,9 @@ class StationAnnotationArea(wx.Panel):
         self.draw(gc)
 
     def onSetFocus(self, event):
-        print("onSetFocus in station annotation")
+        self.logger.debug("onSetFocus in station annotation")
+        event.ResumePropagation(30)
+        event.Skip()
 
 
     def onKeyDown(self, event):
