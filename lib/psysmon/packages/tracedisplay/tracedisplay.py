@@ -421,7 +421,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
             curPlugin.initialize_preferences()
 
 
-        self.initKeyEvents()
+        #self.initKeyEvents()
 
         # Display the data.
         self.update_display()
@@ -490,7 +490,6 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         self.viewport_sizer.RemoveGrowableRow(0)
         self.viewport_sizer.AddGrowableRow(1)
 
-
         # Tell the docking manager to commit all changes.
         self.mgr.Update()
 
@@ -520,20 +519,20 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def advanceTime(self, time_step = None):
         ''' Advance the display time by one step. 
         '''
-        oldFocus = wx.Window.FindFocus()
+        #oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTime(time_step = time_step)
         self.update_display()
-        if oldFocus is not None:
-            oldFocus.SetFocus()
+        #if oldFocus is not None:
+        #    oldFocus.SetFocus()
 
 
     def advanceTimePercentage(self, step = 100):
         ''' Decrease the display time by one step.
         '''
-        oldFocus = wx.Window.FindFocus()
+        #oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTimePercentage(step)
         self.update_display()
-        oldFocus.SetFocus()
+        #oldFocus.SetFocus()
 
 
     def decreaseTime(self):
@@ -548,10 +547,10 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def decreaseTimePercentage(self, step = 100):
         ''' Decrease the display time by one step.
         '''
-        oldFocus = wx.Window.FindFocus()
+        #oldFocus = wx.Window.FindFocus()
         self.displayManager.decreaseTimePercentage(step)
         self.update_display()
-        oldFocus.SetFocus()
+        #oldFocus.SetFocus()
 
 
     def growTimePeriod(self, ratio = 50):
@@ -643,7 +642,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         ''' Set the new start time of the displayed time period.
         '''
         self.displayManager.setStartTime(startTime)
-        self.update_display()
+        #self.update_display()
 
 
     def onKeyDown(self, event):
@@ -803,7 +802,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         # Create the necessary containers.
         # TODO: Call these method only, if the displayed stations or
         if self.displayManager.stationsChanged:
-            self.displayManager.createContainers() 
+            self.displayManager.createContainers()
             #self.viewport.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
             self.displayManager.stationsChanged = False
             self.logger.debug("Resetting stationsChanged to False.")
@@ -819,6 +818,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         focused_win = wx.Window.FindFocus()
         self.viewport.sort_nodes(keys = keys,
                                  order = sort_order)
+        
         # Reset the focus to the one prior to the resorting of the viewport nodes.
         if focused_win:
             focused_win.SetFocus()
@@ -1302,7 +1302,7 @@ class DisplayManager(object):
         if len(interactive_plugins) == 1:
             cur_plugin = interactive_plugins[0]
             self.parent.viewport.register_mpl_event_callbacks(cur_plugin.getHooks())
-        self.parent.viewport.SetFocus()
+        #self.parent.viewport.SetFocus()
 
 
     def showChannel(self, channel):
@@ -1767,11 +1767,11 @@ class DisplayManager(object):
                                                               label = channel.name,
                                                               color = curColor)
             chanContainer = psy_view.view_containernode.ViewContainerNode(parent = stationContainer,
-                                                                    name = channel.name,
-                                                                    props = props,
-                                                                    annotation_area = annotation_area,
-                                                                    color = 'white',
-                                                                    group = group)
+                                                                          name = channel.name,
+                                                                          props = props,
+                                                                          annotation_area = annotation_area,
+                                                                          color = 'green',
+                                                                          group = group)
             stationContainer.add_node(chanContainer)
             #channel.container = chanContainer
         else:
