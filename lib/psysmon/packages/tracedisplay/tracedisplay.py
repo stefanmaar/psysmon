@@ -314,6 +314,8 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                 title = "TraceDisplay Development",
                                 plugins = plugins)
         tdDlg.Show()
+        tdDlg.Maximize()
+        wx.CallAfter(tdDlg.update_display)
         app.MainLoop()
 
 
@@ -356,7 +358,8 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
 
     '''
 
-    def __init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay",
+    def __init__(self, collection_node, project, parent = None,
+                 id = wx.ID_ANY, title = "tracedisplay",
                  plugins = None, size=(1000, 600)):
         ''' The constructor.
 
@@ -364,7 +367,8 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         psysmon.gui.docking_frame.DockingFrame.__init__(self,
                                                         parent = parent,
                                                         id = id,
-                                                        title = title)
+                                                        title = title,
+                                                        size = size)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -412,19 +416,23 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         # A temporary plugin register to swap two plugins.
         self.plugin_to_restore = None
 
-        # Register the plugin shortcuts. This has to be done after the various
-        # manager instances were created.
-        # TODO: register the keyboard shortcuts when the plugin is actevated.
-        # TODO: unregister the shortcuts when deactivating the plugin.
-        for curPlugin in self.plugins:
-            curPlugin.register_keyboard_shortcuts()
-            curPlugin.initialize_preferences()
-
-
-        #self.initKeyEvents()
-
-        # Display the data.
+        # Update the display to create all necessary containers.
         self.update_display()
+
+        # Initialize the plugin preferences and activate default plugins.
+        plugins_to_activate = [('view', 'seismogram')]
+        for cur_plugin in self.plugins:
+            cur_plugin.initialize_preferences()
+            search_tuple = (cur_plugin.mode,
+                            cur_plugin.name)
+            if search_tuple in plugins_to_activate:
+                self.logger.debug("Activating plugin {:s}.".format(cur_plugin.name))
+                cur_plugin.activate()
+                if cur_plugin.mode == 'view':
+                    self.register_view_plugin(cur_plugin)
+                    self.check_menu_checkitem(cur_plugin)
+                self.call_hook('plugin_activated',
+                               plugin_rid = cur_plugin.rid)
 
 
     @property
@@ -777,9 +785,10 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
             # Check if the plugin needs a virtual display channel.
             # Create the virtual display channel.
             self.displayManager.show_virtual_channel(plugin)
-            self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid,])
+            self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid])
         else:
-            self.viewport.register_view_plugin(plugin, limit_group = ['channel_container',])
+            self.viewport.register_view_plugin(plugin,
+                                               limit_group = ['channel_container'])
 
 
     def unregister_view_plugin(self, plugin):
@@ -842,6 +851,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         viewPlugins = [x for x in self.plugins if x.mode == 'view' and x.active]
 
         for curPlugin in viewPlugins:
+            print('Plotting plugin {:s}.'.format(curPlugin.name))
             curPlugin.plot(self.displayManager, self.dataManager)
 
         # Hide those views which don't contain any data.
@@ -996,7 +1006,8 @@ class DisplayManager(object):
         # The trace color settings.
         clrList = wx.lib.colourdb.getColourInfoList()
         channelNames = ['HHZ', 'HHN', 'HHE']
-        colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
+        #colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
+        colorNames = ['black', 'black', 'black']
         self.channelColors = [tuple(x[1:4]) for x in clrList if x[0] in colorNames]
         self.channelColors = dict(list(zip(channelNames, self.channelColors)))
 
@@ -1772,7 +1783,7 @@ class DisplayManager(object):
                                                                           name = channel.name,
                                                                           props = props,
                                                                           annotation_area = annotation_area,
-                                                                          color = 'green',
+                                                                          color = 'white',
                                                                           group = group)
             stationContainer.add_node(chanContainer)
             #channel.container = chanContainer
