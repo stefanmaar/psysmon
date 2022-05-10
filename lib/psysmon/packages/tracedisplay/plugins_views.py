@@ -226,11 +226,11 @@ class SeismogramView(psy_view.viewnode.ViewNode):
         ''' Initialize the instance.
         '''
         psy_view.viewnode.ViewNode.__init__(self,
-                                                parent=parent,
-                                                id=id,
-                                                parent_viewport = parent_viewport,
-                                                name=name,
-                                                **kwargs)
+                                            parent=parent,
+                                            id=id,
+                                            parent_viewport = parent_viewport,
+                                            name=name,
+                                            **kwargs)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
