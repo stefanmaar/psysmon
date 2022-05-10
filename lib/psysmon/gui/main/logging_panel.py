@@ -98,9 +98,9 @@ class LoggingPanel(wx.aui.AuiNotebook):
         item = self.status.InsertItem(0, levelname)
         self.status.SetItem(0, 1, msg)
         if levelname.lower() == 'warning':
-            self.status.SetItemBackgroundColour(item, wx.NamedColour('orange1'))
+            self.status.SetItemBackgroundColour(item, wx.Colour('orange1'))
         elif levelname.lower() == 'error' or levelname.lower() == 'critical':
-            self.status.SetItemBackgroundColour(item, wx.NamedColour('orangered1'))
+            self.status.SetItemBackgroundColour(item, wx.Colour('orangered1'))
 
         self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
         n_rows = self.status.GetItemCount()
