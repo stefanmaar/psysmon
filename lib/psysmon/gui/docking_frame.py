@@ -540,8 +540,10 @@ class DockingFrame(wx.Frame):
                              BestSize(wx.Size(300, -1)).
                              MinSize(wx.Size(200, 100)).
                              MinimizeButton(True).
-                             MaximizeButton(True).
-                             CloseButton(False))
+                             MaximizeButton(True))
+            self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
+                      handler = lambda evt, plugin = plugin: self.on_optiontool_aui_pane_close(evt,
+                                                                                               plugin))
             self.mgr.GetPane(curPanel).Hide()
             # TODO: Add a onOptionToolPanelClose method to handle clicks of
             # the CloseButton in the AUI pane of the option tools. If the
@@ -556,7 +558,7 @@ class DockingFrame(wx.Frame):
             self.mgr.GetPane(curPanel).Show()
             self.mgr.Update()
             plugin.activate()
-            menu_item.Check()
+            self.check_menu_checkitem(plugin)
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
         else:
             self.logger.debug("Hiding the foldpanel.")
@@ -564,7 +566,7 @@ class DockingFrame(wx.Frame):
             self.mgr.GetPane(curPanel).Hide()
             self.mgr.Update()
             plugin.deactivate()
-            menu_item.Check(False)
+            self.uncheck_menu_checkitem(plugin)
             self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
 
 
@@ -577,10 +579,12 @@ class DockingFrame(wx.Frame):
 
         if plugin.active is True:
             plugin.deactivate()
+            self.uncheck_menu_checkitem(plugin)
             self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
             self.unregister_view_plugin(plugin)
         else:
             plugin.activate()
+            self.check_menu_checkitem(plugin)
             self.call_hook('plugin_activated', plugin_rid = plugin.rid)
             self.register_view_plugin(plugin)
 
@@ -607,6 +611,7 @@ class DockingFrame(wx.Frame):
             self.uncheck_menu_checkitem(active_plugin)
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
+        self.check_menu_checkitem(plugin)
 
 
     def get_menu_item(self, plugin):
@@ -644,12 +649,27 @@ class DockingFrame(wx.Frame):
         return menu_item
 
 
+    def check_menu_checkitem(self, plugin):
+        ''' Uncheck a menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_menu_item(plugin)
+        if menu_item:
+            menu_item.Check()
+            
     def uncheck_menu_checkitem(self, plugin):
         ''' Uncheck a menu checkitem related to a plugin.
         '''
         menu_item = self.get_menu_item(plugin)
         if menu_item:
             menu_item.Check(False)
+
+
+    def check_pref_menu_checkitem(self, plugin):
+        ''' Uncheck a preferences menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_pref_menu_item(plugin)
+        if menu_item:
+            menu_item.Check()
 
 
     def uncheck_pref_menu_checkitem(self, plugin):
@@ -832,8 +852,8 @@ class DockingFrame(wx.Frame):
                                                   MinimizeButton(True).
                                                   MaximizeButton(True))
             self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
-                      handler = lambda evt, plugin = plugin: self.on_aui_prefpane_close(evt,
-                                                                                        plugin))
+                      handler = lambda evt, plugin = plugin: self.on_pref_aui_pane_close(evt,
+                                                                                         plugin))
             self.mgr.Update()
             self.foldPanels[plugin.name] = curPanel
         else:
@@ -843,11 +863,18 @@ class DockingFrame(wx.Frame):
                 self.mgr.Update()
 
 
-    def on_aui_prefpane_close(self, event, plugin):
+    def on_pref_aui_pane_close(self, event, plugin):
         ''' Handle the closing of a plugins panel.
         '''
         print("closing the pane of {:s}".format(plugin.name))
         self.uncheck_pref_menu_checkitem(plugin)
+
+
+    def on_optiontool_aui_pane_close(self, event, plugin):
+        ''' Handle the closing of a plugins panel.
+        '''
+        print("closing the option pane of {:s}".format(plugin.name))
+        self.uncheck_menu_checkitem(plugin)
 
 
     def on_view_tool_clicked(self, event, plugin):
