@@ -46,10 +46,9 @@ class Hodogram(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'hodogram',
-                             category = 'visualize',
-                             tags = None
-                            )
+                            name = 'hodogram',
+                            category = 'view',
+                            tags = None)
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

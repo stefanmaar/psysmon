@@ -41,10 +41,11 @@ class CreateEvent(InteractivePlugin):
 
         '''
         InteractivePlugin.__init__(self,
-                              name = 'change event limits',
-                              category = 'edit',
-                              tags = ['event', 'modify', 'change', 'limit', 'start', 'end']
-                             )
+                                   name = 'change event limits',
+                                   category = 'tools',
+                                   tags = ['event', 'modify',
+                                           'change', 'limit',
+                                           'start', 'end'])
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

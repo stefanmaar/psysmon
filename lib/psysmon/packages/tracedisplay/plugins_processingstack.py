@@ -54,9 +54,7 @@ class ProcessingStack(OptionPlugin):
         self.with_run_button = with_run_button
 
         # Set the shortcut string.
-        self.accelerator_string = 'A'
-        self.menu_accelerator_string = 'A'
-
+        self.accelerator_string = 'CTRL+P'
 
 
     def buildFoldPanel(self, parent):

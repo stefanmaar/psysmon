@@ -49,7 +49,7 @@ class Refresh(CommandPlugin):
         self.icons['active'] = icons.refresh_icon_16
 
         # Set the shortcut string.
-        self.accelerator_string = 'CTRL+R'
+        self.accelerator_string = 'R'
 
 
     def run(self):

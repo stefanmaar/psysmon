@@ -36,6 +36,7 @@ import psysmon.packages.event.core as event_core
 
 import psysmon.gui.validator as psy_val
 
+
 class CreateEvent(InteractivePlugin):
     '''
 
@@ -47,10 +48,9 @@ class CreateEvent(InteractivePlugin):
 
         '''
         InteractivePlugin.__init__(self,
-                              name = 'create event',
-                              category = 'edit',
-                              tags = ['create', 'event']
-                             )
+                                   name = 'create event',
+                                   category = 'tools',
+                                   tags = ['create', 'event'])
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

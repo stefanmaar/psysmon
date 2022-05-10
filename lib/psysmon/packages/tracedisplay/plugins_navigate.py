@@ -39,7 +39,7 @@ class Navigate(InteractivePlugin):
         '''
         InteractivePlugin.__init__(self,
                                    name = 'navigate',
-                                   category = 'view',
+                                   category = 'tools',
                                    tags = None)
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -49,7 +49,7 @@ class Navigate(InteractivePlugin):
         self.cursor = wx.CURSOR_HAND
 
         # Set the shortcut string.
-        self.accelerator_string = 'CTRL+N'
+        self.accelerator_string = 'N'
 
         # Accelerators for shortcuts not bound to a menu item.
         handler = ft.partial(self.on_time_advance, step = 100)

@@ -41,9 +41,9 @@ class Zoom(InteractivePlugin):
         '''
         InteractivePlugin.__init__(self,
                                    name = 'zoom',
-                                   category = 'view',
-                                   tags = None
-                                  )
+                                   category = 'tools',
+                                   tags = None)
+        
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
@@ -59,7 +59,6 @@ class Zoom(InteractivePlugin):
 
         # Set the shortcut string.
         self.accelerator_string = 'Z'
-        self.menu_accelerator_string = 'Z'
         self.pref_accelerator_string = 'ALT+Z'
 
         # Accelerators for shortcuts not bound to a menu item.
@@ -81,19 +80,19 @@ class Zoom(InteractivePlugin):
 
         handler = ft.partial(self.on_zoom_in, ratio = 50)
         self.shortcuts['zoom_in_50'] = {'accelerator_string': '+',
-                                         'handler': handler}
+                                        'handler': handler}
 
         handler = ft.partial(self.on_zoom_in, ratio = 25)
         self.shortcuts['zoom_in_25'] = {'accelerator_string': 'SHIFT++',
-                                         'handler': handler}
+                                        'handler': handler}
 
         handler = ft.partial(self.on_zoom_in, ratio = 10)
         self.shortcuts['zoom_in_10'] = {'accelerator_string': 'CTRL++',
-                                         'handler': handler}
+                                        'handler': handler}
 
         handler = ft.partial(self.on_zoom_in, ratio = 1)
         self.shortcuts['zoom_in_1'] = {'accelerator_string': 'ALT++',
-                                        'handler': handler}
+                                       'handler': handler}
         
         
 

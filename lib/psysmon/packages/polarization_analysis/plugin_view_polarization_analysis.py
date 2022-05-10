@@ -35,7 +35,6 @@ import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.polarization_analysis.core
 
 
-
 class PolarizationAnalysis(ViewPlugin):
     '''
 
@@ -47,10 +46,9 @@ class PolarizationAnalysis(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'polarization analysis',
-                             category = 'visualize',
-                             tags = None
-                            )
+                            name = 'polarization analysis',
+                            category = 'view',
+                            tags = None)
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

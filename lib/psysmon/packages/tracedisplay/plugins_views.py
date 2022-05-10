@@ -41,10 +41,6 @@ from obspy.imaging.spectrogram import spectrogram
 import obspy.imaging
 
 
-
-
-
-
 class SeismogramPlotter(ViewPlugin):
     '''
 
@@ -56,10 +52,9 @@ class SeismogramPlotter(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'seismogram',
-                             category = 'visualize',
-                             tags = None
-                            )
+                            name = 'seismogram',
+                            category = 'view',
+                            tags = None)
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -661,7 +656,7 @@ class DemoPlotter(ViewPlugin):
         '''
         ViewPlugin.__init__(self,
                              name = 'demo plotter',
-                             category = 'visualize',
+                             category = 'view',
                              tags = None
                             )
 
@@ -903,10 +898,9 @@ class SpectrogramPlotter(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'spectrogram',
-                             category = 'visualize',
-                             tags = None
-                            )
+                            name = 'spectrogram',
+                            category = 'view',
+                            tags = None)
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -917,8 +911,8 @@ class SpectrogramPlotter(ViewPlugin):
         self.icons['active'] = icons._3x3_grid_2_icon_16
 
         # Set the shortcut string.
-        self.accelerator_string = 'CTRL+P'
-        self.pref_accelerator_string = 'ALT+P'
+        self.accelerator_string = 'CTRL+E'
+        self.pref_accelerator_string = 'ALT+E'
 
         # Add the plugin preferences.
         pref_page = self.pref_manager.add_page('Preferences')
@@ -1174,7 +1168,7 @@ class FrequencySpectrumPlotter(ViewPlugin):
         '''
         ViewPlugin.__init__(self,
                              name = 'frequency spectrum view',
-                             category = 'visualize',
+                             category = 'view',
                              tags = None
                             )
 
@@ -1443,7 +1437,7 @@ class ArrayDemoPlotter(ViewPlugin):
         '''
         ViewPlugin.__init__(self,
                              name = 'array_demo plotter',
-                             category = 'visualize',
+                             category = 'view',
                              tags = None
                             )
 
