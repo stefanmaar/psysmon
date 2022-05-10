@@ -186,11 +186,14 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         self.nodeListCtrl.DeleteAllItems()
 
         for curNode in nodeTemplates.values():
-            self.nodeListCtrl.InsertStringItem(index, curNode.name)
-            self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
-            self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
-            self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
-            self.itemDataMap[index] = (curNode.name, curNode.mode, curNode.category, ', '.join(curNode.tags))
+            self.nodeListCtrl.InsertItem(index, curNode.name)
+            self.nodeListCtrl.SetItem(index, 1, curNode.mode)
+            self.nodeListCtrl.SetItem(index, 2, curNode.category)
+            self.nodeListCtrl.SetItem(index, 3, ', '.join(curNode.tags))
+            self.itemDataMap[index] = (curNode.name,
+                                       curNode.mode,
+                                       curNode.category,
+                                       ', '.join(curNode.tags))
             self.nodeListCtrl.SetItemData(index, index)
             index += 1
 
