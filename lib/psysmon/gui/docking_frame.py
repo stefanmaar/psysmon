@@ -193,6 +193,7 @@ class DockingFrame(wx.Frame):
             plugins = [x for x in self.plugins if x.category == cur_category]
             for m, cur_plugin in enumerate(plugins):
                 item_id = k * 100 + m
+                item_id = wx.NewId()
                 self.create_menu_item(menu = cur_menu,
                                       item_id = item_id,
                                       plugin = cur_plugin)
@@ -200,6 +201,8 @@ class DockingFrame(wx.Frame):
 
             # Handle the preferences of a plugin.
             plugins_with_pref = [x for x in plugins if len(x.pref_manager) > 0]
+            # Don't create the preferences menu for option plugins.
+            plugins_with_pref = [x for x in plugins_with_pref if x.mode != 'option']
             if plugins_with_pref:
                 # Create the preferences submenu.
                 cur_menu.AppendSeparator()
@@ -210,6 +213,7 @@ class DockingFrame(wx.Frame):
                 
             for m, cur_plugin in enumerate(plugins_with_pref):
                 item_id = last_item_id + m + 1
+                item_id = wx.NewId()
                 self.create_pref_menu_item(menu = submenu,
                                            item_id = item_id,
                                            plugin = cur_plugin)
@@ -223,9 +227,10 @@ class DockingFrame(wx.Frame):
         entries = []
         for plugin in plugins_with_sc:
             for key, sc in plugin.shortcuts.items():
-                print("Registering shortcut {:s}.".format(key))
                 handler = sc['handler']
                 accel_string = sc['accelerator_string']
+                print("Registering shortcut {:s} ({:s}).".format(key,
+                                                                 accel_string))
                 accel_id = wx.NewId()
                 self.Bind(wx.EVT_MENU,
                           handler,
@@ -234,19 +239,22 @@ class DockingFrame(wx.Frame):
                 entry.FromString(accel_string)
                 entries.append(entry)
 
-        plugins_with_test = [x for x in self.plugins if x.menu_accelerator_string]
+        plugins_with_mac = [x for x in self.plugins if x.accelerator_string]
 
-        for plugin in plugins_with_test:
-            for accel_string in plugin.menu_accelerator_string:
-                print("Registering shortcut {:s}.".format(accel_string))
-                menu_name = plugin.category.capitalize()
-                item_name = plugin.name
-                item_id = self.menubar.FindMenuItem(menu_name, item_name)
-                print(item_id)
-                entry = wx.AcceleratorEntry(cmd = item_id)
-                entry.FromString(accel_string)
-                entries.append(entry)
-            
+        # Add the menu accelerator strings to the accelerator table.
+        # If not added, the single character accelerators (e.g. Z) don't work
+        # as expected).
+        for plugin in plugins_with_mac:
+            accel_string = plugin.accelerator_string
+            print("Registering accelerator string {:s}.".format(accel_string))
+            menu_name = plugin.category.capitalize()
+            item_name = plugin.name
+            item_id = self.menubar.FindMenuItem(menu_name, item_name)
+            print("item_id: {}".format(item_id))
+            entry = wx.AcceleratorEntry(cmd = item_id)
+            entry.FromString(accel_string)
+            entries.append(entry)
+
         accel = wx.AcceleratorTable(entries)
         self.SetAcceleratorTable(accel)
 
@@ -317,6 +325,7 @@ class DockingFrame(wx.Frame):
         title = plugin.name
         if plugin.accelerator_string:
             title += '\t' + plugin.accelerator_string
+        print("Creating menu {:s}. item_id: {:d}".format(title, item_id))
         menu.AppendCheckItem(id = item_id,
                              item = title,
                              help = plugin.name)
