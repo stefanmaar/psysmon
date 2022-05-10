@@ -1611,31 +1611,33 @@ class DisplayManager(object):
     def sort_show_stations(self):
         ''' Sort the shown stations.
         '''
-        print("sort_show_stations")
-        #sort_mode = self.pref_manager.get_value('sort_stations')
         sort_mode = self.sort_mode['station']['mode']
-        sort_order = self.sort_mode['station']['order']
-        print(sort_mode)
+        # sort_order = self.sort_mode['station']['order']
         if sort_mode == 'name':
             # Sort the stations by name.
             self.showStations = sorted(self.showStations,
                                        key = attrgetter('label'))
             self.availableStations = sorted(self.availableStations,
                                             key = attrgetter('label'))
+            self.logger.debug('Sorting by name.')
         elif sort_mode == 'rel_distance':
             # Sort the stations by relative distance to a reference station.
             self.showStations = sorted(self.showStations,
                                        key = attrgetter('rel_distance'))
             self.availableStations = sorted(self.availableStations,
                                             key = attrgetter('rel_distance'))
-            print([(x.name, x.rel_distance) for x in self.showStations])
+            self.logger.debug('Sorting by relative distance.')
+            msg = [(x.name, x.rel_distance) for x in self.showStations]
+            self.logger.debug(msg)
         elif sort_mode == 'custom_epicenter':
             # Sort the stations by epicentral distance to a reference epicenter.
             self.showStations = sorted(self.showStations,
                                        key = attrgetter('epi_distance'))
             self.availableStations = sorted(self.availableStations,
                                             key = attrgetter('epi_distance'))
-            print([(x.name, x.epi_distance) for x in self.showStations])
+            self.logger.debug('Sorting by custom distance.')
+            msg = [(x.name, x.epi_distance) for x in self.showStations]
+            self.logger.debug(msg)
 
         self.parent.call_hook('station_sort_order_changed')
 
