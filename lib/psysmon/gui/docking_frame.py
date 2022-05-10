@@ -291,9 +291,13 @@ class DockingFrame(wx.Frame):
         if plugin.pref_accelerator_string:
             title += '\t' + plugin.pref_accelerator_string
             
-        menu.Append(id = item_id,
-                    item = title,
-                    helpString = help_msg)
+        #menu.Append(id = item_id,
+        #            item = title,
+        #            helpString = help_msg)
+
+        menu.AppendCheckItem(id = item_id,
+                             item = title,
+                             help = help_msg)
 
         self.Bind(event = wx.EVT_MENU,
                   handler = lambda evt, plugin=plugin: self.on_edit_tool_preferences(evt,
@@ -604,18 +608,56 @@ class DockingFrame(wx.Frame):
             self.deactivate_interactive_plugin(active_plugin)
         self.activate_interactive_plugin(plugin)
 
-        
-    def uncheck_menu_checkitem(self, plugin):
-        ''' Uncheck a menu checkitem related to a plugin.
+
+    def get_menu_item(self, plugin):
+        ''' Get the menu item of a plugin. 
         '''
+        menu_item = None
         menu_title = plugin.category.capitalize()
         cat_menu_id = self.menubar.FindMenu(menu_title)
         cat_menu = self.menubar.GetMenu(cat_menu_id)
+
         if cat_menu:
             menu_item_id = cat_menu.FindItem(plugin.name)
             menu_item = cat_menu.FindItemById(menu_item_id)
+
+        return menu_item
+
+
+    def get_pref_menu_item(self, plugin):
+        ''' Get the preferences menu item of a plugin. 
+        '''
+        menu_item = None
+        menu_title = plugin.category.capitalize()
+        cat_menu_id = self.menubar.FindMenu(menu_title)
+        cat_menu = self.menubar.GetMenu(cat_menu_id)
+
+        if cat_menu:
+            pref_title = 'Preferences'
+            pref_menu_id = cat_menu.FindItem(pref_title)
+            pref_menu_item = cat_menu.FindItemById(pref_menu_id)
+            pref_menu = pref_menu_item.GetSubMenu()
+            if pref_menu:
+                menu_item_id = pref_menu.FindItem(plugin.name)
+                menu_item = pref_menu.FindItemById(menu_item_id)
+
+        return menu_item
+
+
+    def uncheck_menu_checkitem(self, plugin):
+        ''' Uncheck a menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_menu_item(plugin)
+        if menu_item:
             menu_item.Check(False)
-        
+
+
+    def uncheck_pref_menu_checkitem(self, plugin):
+        ''' Uncheck a preferences menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_pref_menu_item(plugin)
+        if menu_item:
+            menu_item.Check(False)
 
 
     def on_option_tool_clicked(self, event, plugin):
@@ -789,6 +831,9 @@ class DockingFrame(wx.Frame):
                                                   MinSize(wx.Size(200, 100)).
                                                   MinimizeButton(True).
                                                   MaximizeButton(True))
+            self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
+                      handler = lambda evt, plugin = plugin: self.on_aui_prefpane_close(evt,
+                                                                                        plugin))
             self.mgr.Update()
             self.foldPanels[plugin.name] = curPanel
         else:
@@ -796,6 +841,13 @@ class DockingFrame(wx.Frame):
                 curPanel = self.foldPanels[plugin.name]
                 self.mgr.GetPane(curPanel).Show()
                 self.mgr.Update()
+
+
+    def on_aui_prefpane_close(self, event, plugin):
+        ''' Handle the closing of a plugins panel.
+        '''
+        print("closing the pane of {:s}".format(plugin.name))
+        self.uncheck_pref_menu_checkitem(plugin)
 
 
     def on_view_tool_clicked(self, event, plugin):
