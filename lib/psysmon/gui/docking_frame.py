@@ -182,7 +182,7 @@ class DockingFrame(wx.Frame):
     def init_menus(self):
         ''' Initialize the menus in the menu bar.
         '''
-        print("Initializing the menus.")
+        self.logger.debug("Initializing the menus.")
         self.menus = {}
         category_list = list(set([x.category for x in self.plugins]))
         category_list = sorted(category_list)
@@ -229,8 +229,9 @@ class DockingFrame(wx.Frame):
             for key, sc in plugin.shortcuts.items():
                 handler = sc['handler']
                 accel_string = sc['accelerator_string']
-                print("Registering shortcut {:s} ({:s}).".format(key,
-                                                                 accel_string))
+                log_msg = "Registering shortcut {:s} ({:s}).".format(key,
+                                                                     accel_string)
+                self.logger.debug(log_msg)
                 accel_id = wx.NewId()
                 self.Bind(wx.EVT_MENU,
                           handler,
@@ -246,11 +247,11 @@ class DockingFrame(wx.Frame):
         # as expected).
         for plugin in plugins_with_mac:
             accel_string = plugin.accelerator_string
-            print("Registering accelerator string {:s}.".format(accel_string))
+            log_msg = "Registering accelerator string {:s}.".format(accel_string)
+            self.logger.debug(log_msg)
             menu_name = plugin.category.capitalize()
             item_name = plugin.name
             item_id = self.menubar.FindMenuItem(menu_name, item_name)
-            print("item_id: {}".format(item_id))
             entry = wx.AcceleratorEntry(cmd = item_id)
             entry.FromString(accel_string)
             entries.append(entry)
@@ -329,7 +330,9 @@ class DockingFrame(wx.Frame):
         title = plugin.name
         if plugin.accelerator_string:
             title += '\t' + plugin.accelerator_string
-        print("Creating menu {:s}. item_id: {:d}".format(title, item_id))
+        log_msg = ("Creating menu {:s}. item_id: {:d}".format(title,
+                                                              item_id))
+        self.logger.debug(log_msg)
         menu.AppendCheckItem(id = item_id,
                              item = title,
                              help = plugin.name)
@@ -603,7 +606,6 @@ class DockingFrame(wx.Frame):
         menu_item = self.menubar.FindItemById(menu_id)
         menu_item.Check()
         active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
-        print(active_plugin)
         if len(active_plugin) > 1:
             raise RuntimeError('Only one interactive tool can be active.')
         elif len(active_plugin) == 1:
@@ -866,14 +868,12 @@ class DockingFrame(wx.Frame):
     def on_pref_aui_pane_close(self, event, plugin):
         ''' Handle the closing of a plugins panel.
         '''
-        print("closing the pane of {:s}".format(plugin.name))
         self.uncheck_pref_menu_checkitem(plugin)
 
 
     def on_optiontool_aui_pane_close(self, event, plugin):
         ''' Handle the closing of a plugins panel.
         '''
-        print("closing the option pane of {:s}".format(plugin.name))
         self.uncheck_menu_checkitem(plugin)
 
 
