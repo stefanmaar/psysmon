@@ -40,7 +40,12 @@ import psysmon.gui.util as gui_util
 
 class ChannelAnnotationArea(wx.Panel):
 
-    def __init__(self, parent=None, id=wx.ID_ANY, label="channel name", bgColor="yellow", color="black", penColor="black"):
+    def __init__(self, parent = None,
+                 id = wx.ID_ANY,
+                 label = "channel name",
+                 bgColor = "white",
+                 color = "black",
+                 penColor = "black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
 
         # The logging logger instance.
@@ -321,7 +326,7 @@ class TdDatetimeInfo(wx.Panel):
 
 class StationAnnotationArea(wx.Panel):
 
-    def __init__(self, parent=None, id=wx.ID_ANY, label="station name", bgColor="red", color="black", penColor="black"):
+    def __init__(self, parent=None, id=wx.ID_ANY, label="station name", bgColor="white", color="black", penColor="black"):
         wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
         self.SetMinSize((40, -1))
 
