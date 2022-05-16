@@ -1,5 +1,5 @@
-from __future__ import absolute_import
-from __future__ import division
+#from __future__ import absolute_import
+#from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -20,9 +20,8 @@ from __future__ import division
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import zip
-from builtins import str
-from past.utils import old_div
+#from builtins import zip
+#from builtins import str
 import json
 import os
 import pickle
@@ -343,12 +342,12 @@ class MssComputeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
         # This is valid for the left-sided fft.
         #
         n_fft = len(trace.data)
-        delta_t = old_div(1, trace.stats.sampling_rate)
+        delta_t = 1 / trace.stats.sampling_rate
         T = (len(trace.data) - 1) * delta_t
         Y = scipy.fft(trace.data, n_fft)
-        psd = old_div(2 * delta_t**2, T * np.abs(Y)**2)
+        psd = 2 * delta_t**2 / T * np.abs(Y)**2
         psd = 10 * np.log10(psd)
-        frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
+        frequ = trace.stats.sampling_rate * np.arange(0, n_fft) / float(n_fft)
         psd_data = {}
         psd_data['n_fft'] = n_fft
         psd_data['psd'] = psd

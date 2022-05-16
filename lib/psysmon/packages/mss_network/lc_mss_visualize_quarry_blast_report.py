@@ -1,5 +1,5 @@
-from __future__ import absolute_import
-from __future__ import division
+#from __future__ import absolute_import
+#from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -20,9 +20,8 @@ from __future__ import division
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import str
-from builtins import zip
-from past.utils import old_div
+#from builtins import str
+#from builtins import zip
 import json
 import os
 import pickle
@@ -270,10 +269,10 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
             # Smooth the psd.
             win_len = 21
             op = np.ones(win_len)
-            op = old_div(op, np.sum(op))
+            op = op / np.sum(op)
             cur_psd_smooth = np.convolve(op, cur_psd, mode = 'same')
-            cur_frequ_smooth = cur_frequ[int(np.ceil(old_div(win_len,2))):]
-            cur_psd_smooth = cur_psd_smooth[int(np.ceil(old_div(win_len,2))):]
+            cur_frequ_smooth = cur_frequ[int(np.ceil(win_len / 2)):]
+            cur_psd_smooth = cur_psd_smooth[int(np.ceil(win_len / 2)):]
 
             ax.plot(cur_frequ, cur_psd, color = sns.xkcd_rgb['light grey'])
             ax.plot(cur_frequ_smooth[10:-10], cur_psd_smooth[10:-10], label = cur_key, zorder = 20)
@@ -295,10 +294,10 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # obspy returns the NLNM and NHNM values in acceleration.
         # Convert them to the current unit (see Bormann (1998)).
-        nhnm = nhnm + 20 * np.log10(old_div(p_nhnm, (2 * np.pi)))
-        nlnm = nlnm + 20 * np.log10(old_div(p_nlnm, (2 * np.pi)))
+        nhnm = nhnm + 20 * np.log10(p_nhnm / (2 * np.pi))
+        nlnm = nlnm + 20 * np.log10(p_nlnm / (2 * np.pi))
         #ax.plot(1/p_nlnm, nlnm, color = self.line_colors['nlnm'])
-        ax.plot(old_div(1,p_nhnm), nhnm, color = sns.xkcd_rgb['very light blue'], linestyle = '--')
+        ax.plot(1 / p_nhnm, nhnm, color = sns.xkcd_rgb['very light blue'], linestyle = '--')
 
 
 
@@ -391,7 +390,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Convert the past pgv-distance data to mm/s.
         past_pgv_dist[:,1] = past_pgv_dist[:,1] * 1000
-        past_pgv_dist[:,1] = old_div(past_pgv_dist[:,1], (10**(past_pgv_dist[:,2] - m_ref)))
+        past_pgv_dist[:,1] = past_pgv_dist[:,1] / (10**(past_pgv_dist[:, 2] - m_ref))
 
         # Compute the epidistance and sort the stations according to it.
         stations = []
@@ -421,7 +420,7 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Normalize the data to M_ref.
         m_fac = 10**(mag - m_ref)
-        blast_pgv = old_div(blast_pgv, m_fac)
+        blast_pgv = blast_pgv / m_fac
 
 
 
