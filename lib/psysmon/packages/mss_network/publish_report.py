@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+#from __future__ import absolute_import
 # LICENSE
 #
 # This file is part of pSysmon.
