@@ -294,8 +294,8 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # obspy returns the NLNM and NHNM values in acceleration.
         # Convert them to the current unit (see Bormann (1998)).
-        nhnm = nhnm + 20 * np.log10(p_nhnm / (2 * np.pi)))
-        nlnm = nlnm + 20 * np.log10(p_nlnm / (2 * np.pi)))
+        nhnm = nhnm + 20 * np.log10(p_nhnm / (2 * np.pi))
+        nlnm = nlnm + 20 * np.log10(p_nlnm / (2 * np.pi))
         #ax.plot(1/p_nlnm, nlnm, color = self.line_colors['nlnm'])
         ax.plot(1 / p_nhnm, nhnm, color = sns.xkcd_rgb['very light blue'], linestyle = '--')
 
