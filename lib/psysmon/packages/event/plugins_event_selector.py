@@ -46,9 +46,8 @@ class SelectEvents(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'show events',
-                              category = 'view',
-                              tags = ['show', 'events']
-                             )
+                              category = 'display',
+                              tags = ['show', 'events'])
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

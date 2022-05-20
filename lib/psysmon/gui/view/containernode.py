@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import wx
 
 import psysmon.core.util
@@ -34,6 +36,10 @@ class ContainerNode(wx.Panel):
                  color = 'red'):
         wx.Panel.__init__(self, parent=parent, id=id)
 
+        # The logging logger instance.
+        loggerName = __name__ + "." + self.__class__.__name__
+        self.logger = logging.getLogger(loggerName)
+        
         # The name of the container.
         self.name = name
 
@@ -86,7 +92,22 @@ class ContainerNode(wx.Panel):
             self.sizer.AddGrowableRow(0)
             self.SetSizer(self.sizer)
 
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
+
+    def on_set_focus(self, event):
+        self.logger.debug("on_set_focus in container node %s. event: %s", self.name, event)
+        event.ResumePropagation(30)
+        event.Skip()
+        
+
+    def on_key_down(self, event):
+        self.logger.debug("on_key_down in container node %s. event: %s", self.name, event)
+        event.ResumePropagation(30)
+        event.Skip()
+        
+        
     def add_node(self, node):
         ''' Add a container node.
 

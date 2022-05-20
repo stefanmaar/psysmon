@@ -44,9 +44,8 @@ class SelectDetection(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'show detections',
-                              category = 'view',
-                              tags = ['show', 'detection']
-                             )
+                              category = 'display',
+                              tags = ['show', 'detection'])
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

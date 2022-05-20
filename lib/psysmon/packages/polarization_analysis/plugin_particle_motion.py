@@ -32,10 +32,9 @@ except:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import mpl_toolkits.axes_grid1 as axesgrid
 
-
-
 import psysmon.core.plugins
 import psysmon.artwork.icons as icons
+
 
 class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
     '''
@@ -49,7 +48,7 @@ class ParticleMotion(psysmon.core.plugins.InteractivePlugin):
         '''
         psysmon.core.plugins.InteractivePlugin.__init__(self,
                                                         name = 'particle motion',
-                                                        category = 'analyze',
+                                                        category = 'tools',
                                                         tags = None)
 
         # Create the logging logger instance.

@@ -314,6 +314,8 @@ class TraceDisplay(psysmon.core.packageNodes.CollectionNode):
                                 title = "TraceDisplay Development",
                                 plugins = plugins)
         tdDlg.Show()
+        tdDlg.Maximize()
+        wx.CallAfter(tdDlg.update_display)
         app.MainLoop()
 
 
@@ -356,7 +358,8 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
 
     '''
 
-    def __init__(self, collection_node, project, parent = None, id = wx.ID_ANY, title = "tracedisplay",
+    def __init__(self, collection_node, project, parent = None,
+                 id = wx.ID_ANY, title = "tracedisplay",
                  plugins = None, size=(1000, 600)):
         ''' The constructor.
 
@@ -364,7 +367,8 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         psysmon.gui.docking_frame.DockingFrame.__init__(self,
                                                         parent = parent,
                                                         id = id,
-                                                        title = title)
+                                                        title = title,
+                                                        size = size)
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -412,19 +416,23 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         # A temporary plugin register to swap two plugins.
         self.plugin_to_restore = None
 
-        # Register the plugin shortcuts. This has to be done after the various
-        # manager instances were created.
-        # TODO: register the keyboard shortcuts when the plugin is actevated.
-        # TODO: unregister the shortcuts when deactivating the plugin.
-        for curPlugin in self.plugins:
-            curPlugin.register_keyboard_shortcuts()
-            curPlugin.initialize_preferences()
-
-
-        self.initKeyEvents()
-
-        # Display the data.
+        # Update the display to create all necessary containers.
         self.update_display()
+
+        # Initialize the plugin preferences and activate default plugins.
+        plugins_to_activate = [('view', 'seismogram')]
+        for cur_plugin in self.plugins:
+            cur_plugin.initialize_preferences()
+            search_tuple = (cur_plugin.mode,
+                            cur_plugin.name)
+            if search_tuple in plugins_to_activate:
+                self.logger.debug("Activating plugin {:s}.".format(cur_plugin.name))
+                cur_plugin.activate()
+                if cur_plugin.mode == 'view':
+                    self.register_view_plugin(cur_plugin)
+                    self.check_menu_checkitem(cur_plugin)
+                self.call_hook('plugin_activated',
+                               plugin_rid = cur_plugin.rid)
 
 
     @property
@@ -456,8 +464,22 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def init_user_interface(self):
         ''' Create the graphical user interface.
         '''
-        # Initialize the ribbon bar using the loaded plugins.
-        self.init_ribbon_bar()
+        # Add the tracedisplay main window menu items.
+        self.add_menu(title = 'Control')
+        
+        self.add_menu_item(parent_menu = 'Control',
+                           title = 'Deactivate Tool',
+                           help_string = "Disable the currently active tool.",
+                           handler = self.on_deactivate_tool,
+                           accelerator_string = 'ESC')
+
+        
+        # Initialize the menubar using the loaded plugins.
+        self.init_menus()
+
+        # Initialize the plugin shortcuts which are not related
+        # to a menu item.
+        self.init_plugin_accelerators()
 
         # Add the datetime info to the viewport sizer.
         # TODO: Add a method in the PsysmonDockingFrame class to insert
@@ -476,9 +498,14 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         self.viewport_sizer.RemoveGrowableRow(0)
         self.viewport_sizer.AddGrowableRow(1)
 
-
         # Tell the docking manager to commit all changes.
         self.mgr.Update()
+
+
+    def on_deactivate_tool(self, event):
+        ''' Handle a click of the deactivate tool menu item.
+        '''
+        self.deactivate_tool()
 
 
     def initKeyEvents(self):
@@ -500,20 +527,20 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def advanceTime(self, time_step = None):
         ''' Advance the display time by one step. 
         '''
-        oldFocus = wx.Window.FindFocus()
+        #oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTime(time_step = time_step)
         self.update_display()
-        if oldFocus is not None:
-            oldFocus.SetFocus()
+        #if oldFocus is not None:
+        #    oldFocus.SetFocus()
 
 
     def advanceTimePercentage(self, step = 100):
         ''' Decrease the display time by one step.
         '''
-        oldFocus = wx.Window.FindFocus()
+        #oldFocus = wx.Window.FindFocus()
         self.displayManager.advanceTimePercentage(step)
         self.update_display()
-        oldFocus.SetFocus()
+        #oldFocus.SetFocus()
 
 
     def decreaseTime(self):
@@ -528,10 +555,10 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
     def decreaseTimePercentage(self, step = 100):
         ''' Decrease the display time by one step.
         '''
-        oldFocus = wx.Window.FindFocus()
+        #oldFocus = wx.Window.FindFocus()
         self.displayManager.decreaseTimePercentage(step)
         self.update_display()
-        oldFocus.SetFocus()
+        #oldFocus.SetFocus()
 
 
     def growTimePeriod(self, ratio = 50):
@@ -607,6 +634,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
             raise RuntimeError('Only one interactive tool can be active.')
 
         active_plugin = active_plugin[0]
+        self.uncheck_menu_checkitem(active_plugin)
         self.deactivate_interactive_plugin(active_plugin)
 
 
@@ -622,7 +650,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         ''' Set the new start time of the displayed time period.
         '''
         self.displayManager.setStartTime(startTime)
-        self.update_display()
+        #self.update_display()
 
 
     def onKeyDown(self, event):
@@ -757,9 +785,10 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
             # Check if the plugin needs a virtual display channel.
             # Create the virtual display channel.
             self.displayManager.show_virtual_channel(plugin)
-            self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid,])
+            self.viewport.register_view_plugin(plugin, limit_group = [plugin.rid])
         else:
-            self.viewport.register_view_plugin(plugin, limit_group = ['channel_container',])
+            self.viewport.register_view_plugin(plugin,
+                                               limit_group = ['channel_container'])
 
 
     def unregister_view_plugin(self, plugin):
@@ -782,7 +811,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         # Create the necessary containers.
         # TODO: Call these method only, if the displayed stations or
         if self.displayManager.stationsChanged:
-            self.displayManager.createContainers() 
+            self.displayManager.createContainers()
             #self.viewport.sortStations(snl=[(x[0],x[2],x[3]) for x in self.displayManager.getSCNL('show')])
             self.displayManager.stationsChanged = False
             self.logger.debug("Resetting stationsChanged to False.")
@@ -798,6 +827,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         focused_win = wx.Window.FindFocus()
         self.viewport.sort_nodes(keys = keys,
                                  order = sort_order)
+        
         # Reset the focus to the one prior to the resorting of the viewport nodes.
         if focused_win:
             focused_win.SetFocus()
@@ -821,6 +851,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         viewPlugins = [x for x in self.plugins if x.mode == 'view' and x.active]
 
         for curPlugin in viewPlugins:
+            print('Plotting plugin {:s}.'.format(curPlugin.name))
             curPlugin.plot(self.displayManager, self.dataManager)
 
         # Hide those views which don't contain any data.
@@ -975,7 +1006,8 @@ class DisplayManager(object):
         # The trace color settings.
         clrList = wx.lib.colourdb.getColourInfoList()
         channelNames = ['HHZ', 'HHN', 'HHE']
-        colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
+        #colorNames = ['TURQUOISE', 'CADETBLUE', 'SEAGREEN']
+        colorNames = ['black', 'black', 'black']
         self.channelColors = [tuple(x[1:4]) for x in clrList if x[0] in colorNames]
         self.channelColors = dict(list(zip(channelNames, self.channelColors)))
 
@@ -1281,7 +1313,7 @@ class DisplayManager(object):
         if len(interactive_plugins) == 1:
             cur_plugin = interactive_plugins[0]
             self.parent.viewport.register_mpl_event_callbacks(cur_plugin.getHooks())
-        self.parent.viewport.SetFocus()
+        #self.parent.viewport.SetFocus()
 
 
     def showChannel(self, channel):
@@ -1590,31 +1622,33 @@ class DisplayManager(object):
     def sort_show_stations(self):
         ''' Sort the shown stations.
         '''
-        print("sort_show_stations")
-        #sort_mode = self.pref_manager.get_value('sort_stations')
         sort_mode = self.sort_mode['station']['mode']
-        sort_order = self.sort_mode['station']['order']
-        print(sort_mode)
+        # sort_order = self.sort_mode['station']['order']
         if sort_mode == 'name':
             # Sort the stations by name.
             self.showStations = sorted(self.showStations,
                                        key = attrgetter('label'))
             self.availableStations = sorted(self.availableStations,
                                             key = attrgetter('label'))
+            self.logger.debug('Sorting by name.')
         elif sort_mode == 'rel_distance':
             # Sort the stations by relative distance to a reference station.
             self.showStations = sorted(self.showStations,
                                        key = attrgetter('rel_distance'))
             self.availableStations = sorted(self.availableStations,
                                             key = attrgetter('rel_distance'))
-            print([(x.name, x.rel_distance) for x in self.showStations])
+            self.logger.debug('Sorting by relative distance.')
+            msg = [(x.name, x.rel_distance) for x in self.showStations]
+            self.logger.debug(msg)
         elif sort_mode == 'custom_epicenter':
             # Sort the stations by epicentral distance to a reference epicenter.
             self.showStations = sorted(self.showStations,
                                        key = attrgetter('epi_distance'))
             self.availableStations = sorted(self.availableStations,
                                             key = attrgetter('epi_distance'))
-            print([(x.name, x.epi_distance) for x in self.showStations])
+            self.logger.debug('Sorting by custom distance.')
+            msg = [(x.name, x.epi_distance) for x in self.showStations]
+            self.logger.debug(msg)
 
         self.parent.call_hook('station_sort_order_changed')
 
@@ -1676,8 +1710,8 @@ class DisplayManager(object):
                                                                   color = 'white',
                                                                   group = 'array_container')
             viewport.add_node(array_container)
-            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyUp)
+            #array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            #array_container.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyUp)
         else:
             array_container = array_container[0]
 
@@ -1715,8 +1749,8 @@ class DisplayManager(object):
                                                                 group = group)
             parent_container.add_node(statContainer,
                                       position = position)
-            statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
+            #statContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
+            #statContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
         else:
             statContainer = statContainer[0]
 
@@ -1746,38 +1780,17 @@ class DisplayManager(object):
                                                               label = channel.name,
                                                               color = curColor)
             chanContainer = psy_view.view_containernode.ViewContainerNode(parent = stationContainer,
-                                                                    name = channel.name,
-                                                                    props = props,
-                                                                    annotation_area = annotation_area,
-                                                                    color = 'white',
-                                                                    group = group)
+                                                                          name = channel.name,
+                                                                          props = props,
+                                                                          annotation_area = annotation_area,
+                                                                          color = 'white',
+                                                                          group = group)
             stationContainer.add_node(chanContainer)
             #channel.container = chanContainer
         else:
             chanContainer = chanContainer[0]
 
         return chanContainer
-
-
-
-    def OLD_createViewContainer(self, channelContainer, name, viewClass):
-        '''
-
-        '''
-        # Check if the container already exists in the channel.
-        viewContainer = channelContainer.get_node(name = name)
-
-        if not viewContainer:
-            viewContainer = viewClass(channelContainer,
-                                      id = wx.ID_ANY,
-                                      props = channelContainer.props,
-                                      name = name)
-
-            channelContainer.add_node(viewContainer)
-            channelContainer.Bind(wx.EVT_KEY_DOWN, self.parent.onKeyDown)
-            channelContainer.Bind(wx.EVT_KEY_UP, self.parent.onKeyUp)
-
-        return viewContainer
 
 
     def getViewContainer(self, **kwargs):

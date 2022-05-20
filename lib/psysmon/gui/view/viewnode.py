@@ -27,6 +27,7 @@ import psysmon.core.util
 from psysmon.gui.view.plotpanel import PlotPanel
 from psysmon.gui.view.plotpanel import ViewAnnotationPanel
 
+
 class ViewNode(wx.Panel):
     ''' A view.
 
@@ -61,7 +62,8 @@ class ViewNode(wx.Panel):
         self.color = color
         self.SetBackgroundColour(self.color)
 
-        self.plot_panel = PlotPanel(self, color='violet', n_axes = n_axes)
+        self.plot_panel = PlotPanel(self, color='violet', n_axes = n_axes,
+                                    name = name)
         self.annotation_area = ViewAnnotationPanel(parent = self,
                                                    color = 'grey80')
 
@@ -90,11 +92,11 @@ class ViewNode(wx.Panel):
 
         # Bind the events.
         self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter_window)
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave_window)
+        #self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave_window)
         self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
+        #self.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        #self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
 
     @property
     def axes(self):
@@ -112,8 +114,8 @@ class ViewNode(wx.Panel):
     def on_enter_window(self, event):
         self.logger.debug("on_enter_window in view %s. event: %s", self.name, event)
         #self.SetBackgroundColour('blue')
-        self.SetFocus()
-        self.Refresh()
+        #self.SetFocus()
+        #self.Refresh()
 
     def on_leave_window(self, event):
         self.logger.debug("on_leave_window in view %s. event: %s", self.name, event)
@@ -122,15 +124,17 @@ class ViewNode(wx.Panel):
 
     def on_set_focus(self, event):
         self.logger.debug("on_set_focus in view %s. event: %s", self.name, event)
+        event.ResumePropagation(30)
+        event.Skip()
 
     def on_key_down(self, event):
         self.logger.debug("on_key_down in view %s. event: %s", self.name, event)
-        event.ResumePropagation(2)
+        event.ResumePropagation(30)
         event.Skip()
 
     def on_key_up(self, event):
         self.logger.debug("on_key_up in view %s. event: %s", self.name, event)
-        event.ResumePropagation(2)
+        event.ResumePropagation(30)
         event.Skip()
 
     def on_left_down(self, event):

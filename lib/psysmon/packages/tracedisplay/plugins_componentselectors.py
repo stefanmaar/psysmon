@@ -39,9 +39,8 @@ class SelectArray(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'select array',
-                              category = 'view',
-                              tags = ['array', 'view', 'select']
-                             )
+                              category = 'display',
+                              tags = ['array', 'view', 'select'])
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
@@ -105,7 +104,7 @@ class SelectStation(OptionPlugin):
         '''
         OptionPlugin.__init__(self,
                               name = 'select station',
-                              category = 'view',
+                              category = 'display',
                               tags = ['station', 'view', 'select'])
 
         # Create the logging logger instance.
@@ -236,9 +235,8 @@ class SelectChannel(OptionPlugin):
 
         OptionPlugin.__init__(self,
                               name = 'select channel',
-                              category = 'view',
-                              tags = ['channel', 'view', 'select'],
-                             )
+                              category = 'display',
+                              tags = ['channel', 'view', 'select'],)
 
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
@@ -278,9 +276,6 @@ class SelectChannel(OptionPlugin):
         foldPanel.SetMinSize(lb.GetBestSize())
 
         return foldPanel
-
-
-
 
 
     def onBoxChecked(self, event):

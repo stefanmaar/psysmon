@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from obspy.core import UTCDateTime
-from wx import DateTime, DateTimeFromDMY
+from wx import DateTime
 
 
 def wxdate2pydate(date):
@@ -41,4 +41,4 @@ def pydate2wxdate(date):
     assert isinstance(date, UTCDateTime)
     tt = date.timetuple()
     dmy = (tt[2], tt[1] - 1, tt[0])
-    return DateTimeFromDMY(*dmy)
+    return DateTime.FromDMY(*dmy)

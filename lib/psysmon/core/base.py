@@ -191,7 +191,8 @@ class Base(object):
     def __del__(self):
         '''
         '''
-        self.logger.debug("__del__ method: cleaning instance")
+        # self.logger.debug("__del__ method: cleaning instance")
+        pass
 
 
     @property

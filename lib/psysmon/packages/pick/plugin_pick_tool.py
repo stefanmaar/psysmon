@@ -45,9 +45,9 @@ class PickTool(InteractivePlugin):
         '''
         InteractivePlugin.__init__(self,
                                    name = 'pick',
-                                   category = 'edit',
-                                   tags = None
-                                  )
+                                   category = 'tools',
+                                   tags = None)
+        
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__

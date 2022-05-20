@@ -26,6 +26,7 @@ from psysmon.artwork.icons import iconsBlack16 as icons
 import obspy.core.utcdatetime as utcdatetime
 import numpy as np
 
+
 class MeasurePoint(InteractivePlugin):
     '''
 
@@ -38,9 +39,8 @@ class MeasurePoint(InteractivePlugin):
         '''
         InteractivePlugin.__init__(self,
                                    name = 'measure point',
-                                   category = 'analyze',
-                                   tags = None
-                                  )
+                                   category = 'tools',
+                                   tags = None)
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
         loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
@@ -50,6 +50,10 @@ class MeasurePoint(InteractivePlugin):
         self.cursor = wx.CURSOR_CROSS
         #self.cursor = icons.zoom_icon_16
         #self.cursor_hotspot = (0.5, 0.5)
+
+        # Set the shortcut string.
+        self.accelerator_string = 'M'
+        #self.menu_accelerator_string = 'M'
 
         self.start_time = None
         self.end_time = None

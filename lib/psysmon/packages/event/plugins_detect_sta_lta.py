@@ -33,8 +33,6 @@ import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.event.detect as detect
 
 
-
-
 class DetectStaLta(ViewPlugin):
     '''
 
@@ -46,10 +44,9 @@ class DetectStaLta(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'STA/LTA detection',
-                             category = 'visualize',
-                             tags = None
-                            )
+                            name = 'STA/LTA detection',
+                            category = 'view',
+                            tags = None)
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']

@@ -18,14 +18,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import functools as ft
 import logging
+
 import wx
+
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
-from obspy.core import UTCDateTime
-import psysmon.core.preferences_manager as preferences_manager
 
-class Zoom(InteractivePlugin):
+
+class Navigate(InteractivePlugin):
     '''
 
     '''
@@ -37,15 +39,50 @@ class Zoom(InteractivePlugin):
         '''
         InteractivePlugin.__init__(self,
                                    name = 'navigate',
-                                   category = 'view',
-                                   tags = None
-                                  )
+                                   category = 'tools',
+                                   tags = None)
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
 
         self.icons['active'] = icons.star_icon_16
         self.cursor = wx.CURSOR_HAND
+
+        # Set the shortcut string.
+        self.accelerator_string = 'N'
+
+        # Accelerators for shortcuts not bound to a menu item.
+        handler = ft.partial(self.on_time_advance, step = 100)
+        self.shortcuts['advance_100'] = {'accelerator_string': 'Right',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_time_advance, step = 25)
+        self.shortcuts['advance_25'] = {'accelerator_string': 'SHIFT+Right',
+                                        'handler': handler}
+
+        handler = ft.partial(self.on_time_advance, step = 10)
+        self.shortcuts['advance_10'] = {'accelerator_string': 'CTRL+Right',
+                                        'handler': handler}
+
+        handler = ft.partial(self.on_time_advance, step = 1)
+        self.shortcuts['advance_1'] = {'accelerator_string': 'ALT+Right',
+                                       'handler': handler}
+
+        handler = ft.partial(self.on_time_regress, step = 100)
+        self.shortcuts['regress_100'] = {'accelerator_string': 'Left',
+                                         'handler': handler}
+
+        handler = ft.partial(self.on_time_regress, step = 25)
+        self.shortcuts['regress_25'] = {'accelerator_string': 'SHIFT+Left',
+                                        'handler': handler}
+
+        handler = ft.partial(self.on_time_regress, step = 10)
+        self.shortcuts['regress_10'] = {'accelerator_string': 'CTRL+Left',
+                                        'handler': handler}
+
+        handler = ft.partial(self.on_time_regress, step = 1)
+        self.shortcuts['regress_1'] = {'accelerator_string': 'ALT+Left',
+                                       'handler': handler}
 
 
     def getHooks(self):
@@ -55,6 +92,18 @@ class Zoom(InteractivePlugin):
         #hooks['button_release_event'] = self.onButtonRelease
 
         return hooks
+
+
+    def on_time_advance(self, evt, step):
+        '''
+        '''
+        self.parent.advanceTimePercentage(step = step)
+
+
+    def on_time_regress(self, evt, step):
+        '''
+        '''
+        self.parent.decreaseTimePercentage(step = step)
 
 
     def activate(self):

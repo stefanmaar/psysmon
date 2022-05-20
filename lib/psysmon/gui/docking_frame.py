@@ -49,22 +49,19 @@ class DockingFrame(wx.Frame):
         # The docking manager.
         self.mgr = wx.aui.AuiManager(self)
 
-        # Create the tool ribbon bar instance.
-        # The ribbon bar itself is filled using the init_ribbon_bar method
-        # by the instance inheriting the PsysmonDockingFrame.
-        self.ribbon = ribbon.RibbonBar(self, wx.ID_ANY)
-
         # Initialize the viewport.
         self.init_viewport()
 
-        # Initialize the ribbon bar aui manager pane.
-        self.init_ribbon_pane()
+        # Create the menubar.
+        self.init_menu_bar()
 
         #TODO: Add a status bar.
         self.statusbar = DockingFrameStatusBar(self)
         self.statusbar.set_error_log_msg("Last error message.")
         self.SetStatusBar(self.statusbar)
 
+        # The preferences foldpanels.
+        self.foldPanels = {}
 
         # Create the shortcut manager.
         self.shortcut_manager = psy_shortcut.ShortcutManager()
@@ -97,6 +94,22 @@ class DockingFrame(wx.Frame):
                                         description = 'The matplotlib motion_notify_event in the view axes.')
 
 
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
+        
+    def on_set_focus(self, event):
+        self.logger.debug("on_set_focus in docking frame. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_key_down(self, event):
+        self.logger.debug("on_key_down in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+        
+
     def init_viewport(self):
         ''' Initialize the viewport.
         '''
@@ -119,14 +132,247 @@ class DockingFrame(wx.Frame):
         ''' Initialize the menu bar.
         '''
         self.menubar = wx.MenuBar()
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_EXIT)
+        self.Bind(event = wx.EVT_MENU,
+                  handler = self.on_close,
+                  id = item.GetId())
+        self.menubar.Append(menu = menu,
+                            title = 'File')
+        self.SetMenuBar(self.menubar)
+
+
+    def add_menu(self, title):
+        ''' Add a menu to the menu bar.
+        '''
+        menu_id = self.menubar.FindMenu(title)
+
+        if menu_id == wx.NOT_FOUND:
+            menu = wx.Menu()
+            self.menubar.Append(menu = menu,
+                                title = title)
+        else:
+            menu = self.menubar.GetMenu(menu_id)
+
+        return menu
+
+
+    def add_menu_item(self, parent_menu, title,
+                      help_string, handler, accelerator_string = None):
+        ''' Add a menu item to the menu bar.
+
+        If the parent menu doesn't exist, it is created.
+        '''
+        menu_id = self.menubar.FindMenu(parent_menu)
+        if menu_id != wx.NOT_FOUND:
+            menu = self.menubar.GetMenu(menu_id)
+            if accelerator_string:
+                title += '\t' + accelerator_string
+            item = menu.Append(id = wx.ID_ANY,
+                               item = title,
+                               helpString = help_string)
+
+            self.Bind(event = wx.EVT_MENU,
+                      handler = handler,
+                      id = item.GetId())
+
+        return item
+
+
+    def init_menus(self):
+        ''' Initialize the menus in the menu bar.
+        '''
+        self.logger.debug("Initializing the menus.")
+        self.menus = {}
         category_list = list(set([x.category for x in self.plugins]))
         category_list = sorted(category_list)
+        
+        for k, cur_category in enumerate(category_list):
+            menu_title = cur_category.capitalize()
+            cur_menu = self.add_menu(title = menu_title)
+            plugins = [x for x in self.plugins if x.category == cur_category]
+            for m, cur_plugin in enumerate(plugins):
+                item_id = k * 100 + m
+                item_id = wx.NewId()
+                self.create_menu_item(menu = cur_menu,
+                                      item_id = item_id,
+                                      plugin = cur_plugin)
+            last_item_id = item_id
 
-        for cur_category in category_list:
-            pass
-           
+            # Handle the preferences of a plugin.
+            plugins_with_pref = [x for x in plugins if len(x.pref_manager) > 0]
+            # Don't create the preferences menu for option plugins.
+            plugins_with_pref = [x for x in plugins_with_pref if x.mode != 'option']
+            if plugins_with_pref:
+                # Create the preferences submenu.
+                cur_menu.AppendSeparator()
+                submenu = wx.Menu()
+                cur_menu.AppendSubMenu(text = 'Preferences',
+                                       submenu = submenu,
+                                       help = 'Toggle plugin preferences.')
+                
+            for m, cur_plugin in enumerate(plugins_with_pref):
+                item_id = last_item_id + m + 1
+                item_id = wx.NewId()
+                self.create_pref_menu_item(menu = submenu,
+                                           item_id = item_id,
+                                           plugin = cur_plugin)
+
+
+    def init_plugin_accelerators(self):
+        ''' Initialize the shortcuts not related to menu items. 
+        '''
+        plugins_with_sc = [x for x in self.plugins if x.shortcuts]
+
+        entries = []
+        for plugin in plugins_with_sc:
+            for key, sc in plugin.shortcuts.items():
+                handler = sc['handler']
+                accel_string = sc['accelerator_string']
+                log_msg = "Registering shortcut {:s} ({:s}).".format(key,
+                                                                     accel_string)
+                self.logger.debug(log_msg)
+                accel_id = wx.NewId()
+                self.Bind(wx.EVT_MENU,
+                          handler,
+                          id = accel_id)
+                entry = wx.AcceleratorEntry(cmd = accel_id)
+                entry.FromString(accel_string)
+                entries.append(entry)
+
+        plugins_with_mac = [x for x in self.plugins if x.accelerator_string]
+
+        # Add the menu accelerator strings to the accelerator table.
+        # If not added, the single character accelerators (e.g. Z) don't work
+        # as expected).
+        for plugin in plugins_with_mac:
+            accel_string = plugin.accelerator_string
+            log_msg = "Registering accelerator string {:s}.".format(accel_string)
+            self.logger.debug(log_msg)
+            menu_name = plugin.category.capitalize()
+            item_name = plugin.name
+            item_id = self.menubar.FindMenuItem(menu_name, item_name)
+            entry = wx.AcceleratorEntry(cmd = item_id)
+            entry.FromString(accel_string)
+            entries.append(entry)
+
+        accel = wx.AcceleratorTable(entries)
+        self.SetAcceleratorTable(accel)
+
+
+    def create_menu_item(self, menu, item_id, plugin):
+        ''' Create a menu item for a plugin.
+        '''
+        if plugin.mode == 'option':
+            self.create_option_menu_item(menu = menu,
+                                         item_id = item_id,
+                                         plugin = plugin)
+        elif plugin.mode == 'view':
+            self.create_view_menu_item(menu = menu,
+                                       item_id = item_id,
+                                       plugin = plugin)
+
+        elif plugin.mode == 'command':
+            self.create_command_menu_item(menu = menu,
+                                          item_id = item_id,
+                                          plugin = plugin)
+
+        elif plugin.mode == 'interactive':
+            self.create_interactive_menu_item(menu = menu,
+                                              item_id = item_id,
+                                              plugin = plugin)
+            
+
+            
+    def create_pref_menu_item(self, menu, item_id, plugin):
+        ''' Create a plugin preferences menu item in a submenu.
+        '''
+        help_msg = "Preferences for the {:s} plugin.".format(plugin.name)
+        title = plugin.name
+        if plugin.pref_accelerator_string:
+            title += '\t' + plugin.pref_accelerator_string
+            
+        #menu.Append(id = item_id,
+        #            item = title,
+        #            helpString = help_msg)
+
+        menu.AppendCheckItem(id = item_id,
+                             item = title,
+                             help = help_msg)
+
+        self.Bind(event = wx.EVT_MENU,
+                  handler = lambda evt, plugin=plugin: self.on_edit_tool_preferences(evt,
+                                                                                     plugin),
+                  id = item_id)
+
         
-        
+    def create_command_menu_item(self, menu, item_id, plugin):
+        ''' Create a commund plugin menu item.
+        '''
+        help_msg = plugin.name
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
+
+        menu.Append(id = item_id,
+                    item = title,
+                    helpString = help_msg)
+
+        self.Bind(event = wx.EVT_MENU,
+                  handler = lambda evt, plugin = plugin: self.on_mb_command_tool_clicked(evt,
+                                                                                         plugin),
+                  id = item_id)
+            
+
+    def create_option_menu_item(self, menu, item_id, plugin):
+        ''' Create an option menu item.
+        '''
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
+        log_msg = ("Creating menu {:s}. item_id: {:d}".format(title,
+                                                              item_id))
+        self.logger.debug(log_msg)
+        menu.AppendCheckItem(id = item_id,
+                             item = title,
+                             help = plugin.name)
+        self.Bind(event = wx.EVT_MENU,
+                  handler = lambda evt, plugin = plugin: self.on_mb_option_tool_clicked(evt,
+                                                                                        plugin),
+                  id = item_id)
+
+
+    def create_view_menu_item(self, menu, item_id, plugin):
+        ''' Create a view plugin menu item.
+        '''
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
+        menu.AppendCheckItem(id = item_id,
+                             item = title,
+                             help = plugin.name)
+        self.Bind(event = wx.EVT_MENU,
+                  handler = lambda evt, plugin = plugin: self.on_mb_view_tool_clicked(evt,
+                                                                                      plugin),
+                  id = item_id)
+
+
+    def create_interactive_menu_item(self, menu, item_id, plugin):
+        ''' Create an interactive plugin menu item.
+        '''
+        title = plugin.name
+        if plugin.accelerator_string:
+            title += '\t' + plugin.accelerator_string
+        help_msg = plugin.name
+        menu.AppendCheckItem(id = item_id,
+                             item = title,
+                             help = help_msg)
+        self.Bind(event = wx.EVT_MENU,
+                  handler = lambda evt, plugin = plugin: self.on_mb_interactive_tool_clicked(evt,
+                                                                                             plugin),
+                  id = item_id)
+
+
     def init_ribbon_pane(self):
         ''' Initialize the aui manager pane for the ribbon bar.
         '''
@@ -151,7 +397,6 @@ class DockingFrame(wx.Frame):
         self.ribbonPages = {}
         self.ribbonPanels = {}
         self.ribbonToolbars = {}
-        self.foldPanels = {}
         for curGroup, curCategory in sorted([(x.group, x.category) for x in self.plugins], key = op.itemgetter(0, 1)):
             if curGroup not in iter(self.ribbonPages.keys()):
                 self.logger.debug('Creating page %s', curGroup)
@@ -253,6 +498,188 @@ class DockingFrame(wx.Frame):
 
         self.ribbon.Realize()
 
+
+    def on_close(self, event):
+        ''' Close the window.
+        '''
+        # deinitialize the frame manager
+        self.mgr.UnInit()
+        
+        # delete the frame
+        self.Destroy()
+        
+        
+    def on_mb_command_tool_clicked(self, event, plugin):
+        ''' Handle the click of a command plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the command tool: %s', plugin.name)
+        plugin.run()
+
+
+    def on_mb_option_tool_clicked(self, event, plugin):
+        ''' Handle the click of an option plugin toolbar button.
+
+        Show or hide the foldpanel of the plugin.
+        '''
+        self.logger.debug('Clicked the menubar option tool: %s', plugin.name)
+
+        menu_id = event.GetId()
+        menu_item = self.menubar.FindItemById(menu_id)
+
+        # The panel of the option tool does't exist. Create it and add
+        # it to the panel manager.
+        if plugin.name not in iter(self.foldPanels.keys()):
+            self.logger.debug("Creating the foldpanel.")
+            curPanel = plugin.buildFoldPanel(self)
+            self.mgr.AddPane(curPanel,
+                             wx.aui.AuiPaneInfo().Right().
+                             Name(plugin.name).
+                             Caption(plugin.name).
+                             Layer(2).
+                             Row(0).
+                             Position(0).
+                             BestSize(wx.Size(300, -1)).
+                             MinSize(wx.Size(200, 100)).
+                             MinimizeButton(True).
+                             MaximizeButton(True))
+            self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
+                      handler = lambda evt, plugin = plugin: self.on_optiontool_aui_pane_close(evt,
+                                                                                               plugin))
+            self.mgr.GetPane(curPanel).Hide()
+            # TODO: Add a onOptionToolPanelClose method to handle clicks of
+            # the CloseButton in the AUI pane of the option tools. If the
+            # pane is closed, the toggle state of the ribbonbar button has
+            # be changed. The according event is aui.EVT_AUI_PANE_CLOSE.
+            self.mgr.Update()
+            self.foldPanels[plugin.name] = curPanel
+ 
+        if not self.foldPanels[plugin.name].IsShown():
+            self.logger.debug("Showing the foldpanel.")
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Show()
+            self.mgr.Update()
+            plugin.activate()
+            self.check_menu_checkitem(plugin)
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
+        else:
+            self.logger.debug("Hiding the foldpanel.")
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Hide()
+            self.mgr.Update()
+            plugin.deactivate()
+            self.uncheck_menu_checkitem(plugin)
+            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
+
+
+    def on_mb_view_tool_clicked(self, event, plugin):
+        ''' Handle the click of an view plugin toolbar button.
+
+        Activate the tool.
+        '''
+        self.logger.debug('Clicked the view tool: %s', plugin.name)
+
+        if plugin.active is True:
+            plugin.deactivate()
+            self.uncheck_menu_checkitem(plugin)
+            self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
+            self.unregister_view_plugin(plugin)
+        else:
+            plugin.activate()
+            self.check_menu_checkitem(plugin)
+            self.call_hook('plugin_activated', plugin_rid = plugin.rid)
+            self.register_view_plugin(plugin)
+
+        self.viewport.Refresh()
+        self.viewport.Update()
+
+        self.update_display()
+
+
+    def on_mb_interactive_tool_clicked(self, event, plugin):
+        ''' Handle the click of an interactive plugin toolbar button.
+
+        Activate the tool.
+        '''
+        menu_id = event.GetId()
+        menu_item = self.menubar.FindItemById(menu_id)
+        menu_item.Check()
+        active_plugin = [x for x in self.plugins if x.active is True and x.mode == 'interactive']
+        if len(active_plugin) > 1:
+            raise RuntimeError('Only one interactive tool can be active.')
+        elif len(active_plugin) == 1:
+            active_plugin = active_plugin[0]
+            self.uncheck_menu_checkitem(active_plugin)
+            self.deactivate_interactive_plugin(active_plugin)
+        self.activate_interactive_plugin(plugin)
+        self.check_menu_checkitem(plugin)
+
+
+    def get_menu_item(self, plugin):
+        ''' Get the menu item of a plugin. 
+        '''
+        menu_item = None
+        menu_title = plugin.category.capitalize()
+        cat_menu_id = self.menubar.FindMenu(menu_title)
+        cat_menu = self.menubar.GetMenu(cat_menu_id)
+
+        if cat_menu:
+            menu_item_id = cat_menu.FindItem(plugin.name)
+            menu_item = cat_menu.FindItemById(menu_item_id)
+
+        return menu_item
+
+
+    def get_pref_menu_item(self, plugin):
+        ''' Get the preferences menu item of a plugin. 
+        '''
+        menu_item = None
+        menu_title = plugin.category.capitalize()
+        cat_menu_id = self.menubar.FindMenu(menu_title)
+        cat_menu = self.menubar.GetMenu(cat_menu_id)
+
+        if cat_menu:
+            pref_title = 'Preferences'
+            pref_menu_id = cat_menu.FindItem(pref_title)
+            pref_menu_item = cat_menu.FindItemById(pref_menu_id)
+            pref_menu = pref_menu_item.GetSubMenu()
+            if pref_menu:
+                menu_item_id = pref_menu.FindItem(plugin.name)
+                menu_item = pref_menu.FindItemById(menu_item_id)
+
+        return menu_item
+
+
+    def check_menu_checkitem(self, plugin):
+        ''' Uncheck a menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_menu_item(plugin)
+        if menu_item:
+            menu_item.Check()
+            
+    def uncheck_menu_checkitem(self, plugin):
+        ''' Uncheck a menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_menu_item(plugin)
+        if menu_item:
+            menu_item.Check(False)
+
+
+    def check_pref_menu_checkitem(self, plugin):
+        ''' Uncheck a preferences menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_pref_menu_item(plugin)
+        if menu_item:
+            menu_item.Check()
+
+
+    def uncheck_pref_menu_checkitem(self, plugin):
+        ''' Uncheck a preferences menu checkitem related to a plugin.
+        '''
+        menu_item = self.get_pref_menu_item(plugin)
+        if menu_item:
+            menu_item.Check(False)
 
 
     def on_option_tool_clicked(self, event, plugin):
@@ -426,6 +853,9 @@ class DockingFrame(wx.Frame):
                                                   MinSize(wx.Size(200, 100)).
                                                   MinimizeButton(True).
                                                   MaximizeButton(True))
+            self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
+                      handler = lambda evt, plugin = plugin: self.on_pref_aui_pane_close(evt,
+                                                                                         plugin))
             self.mgr.Update()
             self.foldPanels[plugin.name] = curPanel
         else:
@@ -433,6 +863,18 @@ class DockingFrame(wx.Frame):
                 curPanel = self.foldPanels[plugin.name]
                 self.mgr.GetPane(curPanel).Show()
                 self.mgr.Update()
+
+
+    def on_pref_aui_pane_close(self, event, plugin):
+        ''' Handle the closing of a plugins panel.
+        '''
+        self.uncheck_pref_menu_checkitem(plugin)
+
+
+    def on_optiontool_aui_pane_close(self, event, plugin):
+        ''' Handle the closing of a plugins panel.
+        '''
+        self.uncheck_menu_checkitem(plugin)
 
 
     def on_view_tool_clicked(self, event, plugin):

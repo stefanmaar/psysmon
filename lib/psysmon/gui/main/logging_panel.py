@@ -95,12 +95,12 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
 
     def log(self, msg, levelname = None):
-        item = self.status.InsertStringItem(0, levelname)
-        self.status.SetStringItem(0, 1, msg)
+        item = self.status.InsertItem(0, levelname)
+        self.status.SetItem(0, 1, msg)
         if levelname.lower() == 'warning':
-            self.status.SetItemBackgroundColour(item, wx.NamedColour('orange1'))
+            self.status.SetItemBackgroundColour(item, wx.Colour('orange1'))
         elif levelname.lower() == 'error' or levelname.lower() == 'critical':
-            self.status.SetItemBackgroundColour(item, wx.NamedColour('orangered1'))
+            self.status.SetItemBackgroundColour(item, wx.Colour('orangered1'))
 
         self.status.SetColumnWidth(1, wx.LIST_AUTOSIZE)
         n_rows = self.status.GetItemCount()
@@ -123,14 +123,15 @@ class LoggingPanel(wx.aui.AuiNotebook):
 
 
     def addThread(self, data):
-        #index = self.threads.GetItemCount()
+        # index = self.threads.GetItemCount()
         index = 0
-        self.processes.InsertStringItem(index,
-                                        datetime.datetime.strftime(data['startTime'],
-                                                                   '%Y-%m-%d %H:%M:%S'))
-        self.processes.SetStringItem(index, 1, str(data['pid']))
-        self.processes.SetStringItem(index, 2, data['procName'])
-        self.processes.SetStringItem(index, 3, data['state'])
+        date_str = datetime.datetime.strftime(data['startTime'],
+                                              '%Y-%m-%d %H:%M:%S')
+        self.processes.InsertItem(index,
+                                  date_str)
+        self.processes.SetItem(index, 1, str(data['pid']))
+        self.processes.SetItem(index, 2, data['procName'])
+        self.processes.SetItem(index, 3, data['state'])
         self.processes.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.processes.SetColumnWidth(4, wx.LIST_AUTOSIZE)
 
@@ -140,6 +141,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
             self.processMap[curKey] += 1
 
         self.processMap[data['procName']] = index
+        
 
     def updateThread(self, data):
         #self.logger.debug('updating process: %s', data['procName'])
@@ -147,16 +149,17 @@ class LoggingPanel(wx.aui.AuiNotebook):
         if data['procName'] in iter(self.processMap.keys()):
             curIndex = self.processMap[data['procName']]
             #self.logger.debug('process has index: %d', curIndex)
-            self.processes.SetStringItem(curIndex, 3, data['state'])
+            self.processes.SetItem(curIndex, 3, data['state'])
             duration = data['curTime'] - data['startTime']
             duration -= datetime.timedelta(microseconds = duration.microseconds)
-            self.processes.SetStringItem(curIndex, 4, str(duration))
+            self.processes.SetItem(curIndex, 4, str(duration))
             if data['state'].lower() == 'stopped' and data['returncode'] > 0:
-                self.processes.SetStringItem(curIndex, 3, 'error')
+                self.processes.SetItem(curIndex, 3, 'error')
                 self.processes.SetItemTextColour(curIndex, wx.NamedColour('orangered1'))
                 self.logger.error("Error while executing process %s: %s.\nSee the log file of the process for more details.", data['procName'], error_code[data['returncode']].upper())
             elif data['state'].lower() == 'stopped':
-                self.processes.SetItemTextColour(curIndex, wx.NamedColour('grey70'))
+                self.processes.SetItemTextColour(curIndex,
+                                                 wx.Colour('grey70'))
 
     def onShowContextMenu(self, event):
         self.PopupMenu(self.contextMenu)

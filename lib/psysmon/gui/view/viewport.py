@@ -54,12 +54,27 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
 
         self.SetupScrolling()
 
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
-
+        #self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
 
     def on_left_down(self, event):
-        self.logger.debug("##### LEFT DOWN IN GENERIC VIEWPORT #######")
+        self.logger.debug("on_left_down in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_set_focus(self, event):
+        self.logger.debug("on_set_focus in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
+
+
+    def on_key_down(self, event):
+        self.logger.debug("on_key_down in viewport. event: %s", event)
+        event.ResumePropagation(30)
+        event.Skip()
 
 
     def add_node(self, node, position=None):
@@ -76,14 +91,12 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
         node.Reparent(self)
         self.node_list.append(node)
         if position is not None:
-            print("INSERT")
             self.sizer.Insert(index = position,
                               window = node,
                               proportion = 1,
                               flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
                               border = 1)
         else:
-            print("ADD")
             self.sizer.Add(node, 1,
                            flag = wx.EXPAND | wx.TOP | wx.BOTTOM,
                            border = 1)

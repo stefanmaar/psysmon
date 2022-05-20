@@ -28,6 +28,7 @@ website = "http://www.stefanmertl.com"
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = ['plugins_componentselectors',
                   'plugins_processingstack',
+                  'plugins_refresh_views',
                   'plugins_views',
                   'plugins_view_resultant',
                   'plugins_zoom',

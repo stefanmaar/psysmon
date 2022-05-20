@@ -46,9 +46,8 @@ class Resultant(ViewPlugin):
         '''
         ViewPlugin.__init__(self,
                              name = 'resultant',
-                             category = 'visualize',
-                             tags = None
-                            )
+                             category = 'view',
+                             tags = None)
 
         # Create the logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -58,7 +57,8 @@ class Resultant(ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.emotion_smile_icon_16
 
-        self.channel_map = {'x':'Hnormal', 'y':'Hparallel'}
+        self.channel_map = {'x': 'Hnormal',
+                            'y': 'Hparallel'}
 
         # TODO: Somehow make it possible to add multiple views to the virtual
         # channel. Each view should contain a certain polarization feature. The

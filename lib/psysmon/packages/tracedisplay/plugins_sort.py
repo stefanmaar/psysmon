@@ -40,10 +40,8 @@ class SortMode(plugins.OptionPlugin):
         '''
         plugins.OptionPlugin.__init__(self,
                                       name = 'sort mode',
-                                      category = 'view',
-                                      tags = ['sort']
-                                      )
-
+                                      category = 'display',
+                                      tags = ['sort'])
         # Create the logging logger instance.
         loggerName = __name__ + "." + self.__class__.__name__
         self.logger = logging.getLogger(loggerName)
