@@ -141,10 +141,14 @@ class ChannelAnnotationArea(wx.Panel):
 
 
 class TdDatetimeInfo(wx.Panel):
-    def __init__(self, parent=None, id=wx.ID_ANY, bgColor="ghostwhite", penColor="black"):
-        wx.Panel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
+    def __init__(self, parent=None, id=wx.ID_ANY, bgColor="ghostwhite",
+                 penColor="black"):
+        wx.Panel.__init__(self,
+                          parent=parent,
+                          id=id,
+                          style=wx.FULL_REPAINT_ON_RESIZE)
         self.SetMinSize((-1, 30))
-        self.SetMaxSize((-1, 30))
+        self.SetMaxSize((-1, 150))
 
         # The logging logger instance.
         logger_prefix = psysmon.logConfig['package_prefix']
@@ -155,52 +159,90 @@ class TdDatetimeInfo(wx.Panel):
         self.endTime = None
         self.scale = None
 
-        sizer = wx.GridBagSizer(0,0)
+        sizer = wx.GridBagSizer(vgap = 0,
+                                hgap = 5)
 
-        self.dummy80 = wx.StaticText(self, wx.ID_ANY, '', size=(80, 10))
-        self.dummy100 = wx.StaticText(self, wx.ID_ANY, '', size=(100, 10))
-        #self.startTimeButton = platebtn.PlateButton(self, wx.ID_ANY, str(self.startTime), 
-        #                                            style=platebtn.PB_STYLE_DEFAULT|platebtn.PB_STYLE_SQUARE
-        #                                           )
+        self.dummy10 = wx.StaticText(self, wx.ID_ANY, '', size=(10, -1))
+        self.dummy80 = wx.StaticText(self, wx.ID_ANY, '', size=(80, -1))
+        self.dummy100 = wx.StaticText(self, wx.ID_ANY, '', size=(100, -1))
 
-        self.startDatePicker = DatePickerCtrl(self, id=wx.ID_ANY, style=wx.adv.DP_DEFAULT|wx.adv.DP_SHOWCENTURY)
+        style = wx.adv.DP_DEFAULT | wx.adv.DP_SHOWCENTURY
+        self.startDatePicker = DatePickerCtrl(self,
+                                              id = wx.ID_ANY,
+                                              style = style)
 
 
         self.startTimePicker = MaskedTextCtrl(self, wx.ID_ANY, '',
                                               mask = '##:##:##.######',
                                               excludeChars = '',
                                               formatcodes = 'F!',
-                                              includeChars = '')
+                                              includeChars = '',
+                                              size = (-1, -1))
 
 
         size = self.startTimePicker.GetSize()
-        self.startTimeGoButton = wx.Button(self, id=wx.ID_ANY, label="go", size=(40, size[1]))
+        self.startTimeGoButton = wx.Button(self,
+                                           id = wx.ID_ANY,
+                                           label = "go",
+                                           size = (-1, size[1]))
 
 
-        self.durationFloatSpin = floatspin.FloatSpin(self, wx.ID_ANY, min_val=0, max_val=None,
-                                              increment=1, value=60, agwStyle=floatspin.FS_RIGHT)
+        fs = floatspin.FloatSpin(self,
+                                 wx.ID_ANY,
+                                 min_val = 0,
+                                 max_val = None,
+                                 increment = 1,
+                                 value = 60,
+                                 agwStyle = floatspin.FS_RIGHT,
+                                 size = (-1, -1))
+        self.durationFloatSpin = fs
         self.durationFloatSpin.SetDigits(3)
         self.durationFloatSpin.SetFormat('%f')
-        self.durationFloatSpin.SetRange(min_val=0.1, max_val=None)
+        self.durationFloatSpin.SetRange(min_val=0.1,
+                                        max_val=None)
+        self.durationFloatSpin.SetMinSize((150, -1))
 
-        sizer.Add(self.dummy80, pos=(0,0), flag=wx.ALL, border=0)
-        sizer.Add(self.startDatePicker, pos=(0,1), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.startTimePicker, pos=(0,2), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.startTimeGoButton, pos=(0,3), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.durationFloatSpin, pos=(0,4), flag=wx.ALL|wx.ALIGN_BOTTOM, border=0)
-        sizer.Add(self.dummy100, pos=(0,5), flag=wx.ALL, border=0)
+        sizer.Add(self.dummy80,
+                  pos = (0, 0),
+                  flag = wx.ALL,
+                  border = 0)
+        sizer.Add(self.startDatePicker, pos=(0, 1),
+                  flag = wx.ALL | wx.ALIGN_BOTTOM | wx.EXPAND,
+                  border=0)
+        sizer.Add(self.startTimePicker,
+                  pos = (0, 2),
+                  flag = wx.ALL | wx.ALIGN_BOTTOM | wx.EXPAND,
+                  border = 0)
+        sizer.Add(self.startTimeGoButton,
+                  pos = (0, 3),
+                  flag = wx.ALL | wx.ALIGN_BOTTOM | wx.EXPAND,
+                  border = 0)
+        sizer.Add(self.durationFloatSpin,
+                  pos = (0, 5),
+                  flag = wx.ALL | wx.ALIGN_BOTTOM | wx.EXPAND,
+                  border = 0)
+        sizer.Add(self.dummy10,
+                  pos = (0, 6),
+                  flag = wx.ALL,
+                  border = 0)
 
         sizer.AddGrowableRow(0)
-        sizer.AddGrowableCol(3)
+        sizer.AddGrowableCol(4)
 
-        self.SetSizer(sizer)
+        print("Sizes: ")
+        print(self.durationFloatSpin.GetMinSize())
+        print(self.durationFloatSpin.GetBestSize())
+        print(self.durationFloatSpin.DoGetBestClientSize())
+
+        self.SetSizerAndFit(sizer)
 
         self.SetBackgroundColour(bgColor)
 
-        self.Bind(floatspin.EVT_FLOATSPIN, self.onDurationFloatSpin, self.durationFloatSpin)
-        #self.Bind(wx.EVT_TEXT, self.onStartTimePicker, self.startTimePicker)
+        self.Bind(floatspin.EVT_FLOATSPIN,
+                  self.onDurationFloatSpin,
+                  self.durationFloatSpin)
         self.Bind(wx.EVT_BUTTON, self.onStartTimeGo, self.startTimeGoButton)
-        #self.Bind(wx.EVT_PAINT, self.onPaint)
+        
 
     def onStartTimePicker(self, event):
         self.logger.debug('onStartTimePicker')
