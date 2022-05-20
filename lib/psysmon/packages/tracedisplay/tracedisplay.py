@@ -484,7 +484,8 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         # Add the datetime info to the viewport sizer.
         # TODO: Add a method in the PsysmonDockingFrame class to insert
         # elements into the viewport_sizer.
-        self.datetimeInfo = container.TdDatetimeInfo(parent=self.center_panel)
+        self.datetimeInfo = container.TdDatetimeInfo(parent=self.center_panel,
+                                                     bgColor = 'ghostwhite')
         #self.viewport_sizer.SetItemPosition(self.viewport, wx.GBPosition(0,1))
         self.viewport_sizer.Detach(self.viewport)
         self.viewport_sizer.Add(self.datetimeInfo,
