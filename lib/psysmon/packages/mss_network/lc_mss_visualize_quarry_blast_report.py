@@ -326,6 +326,9 @@ class MssVisualizeQuarryBlastReport(package_nodes.LooperCollectionChildNode):
 
         # Get the PGV boxplot data related to the sorted stations.
         bp_data = [np.array(pgv_boxplot_data[x.snl_string]) * 1000 if x.snl_string in iter(pgv_boxplot_data.keys()) else np.empty(0) for x in stations]
+        # Remove the nan values from the arrays. They cause problems
+        # when plotting the boxplots.
+        bp_data = [x[~np.isnan(x)] for x in bp_data]
 
         # Get the PGV data related to the sorted stations.
         sorted_pgv = []
