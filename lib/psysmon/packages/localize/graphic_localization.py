@@ -38,6 +38,7 @@ from matplotlib.figure import Figure
 
 import psysmon
 import psysmon.core.packageNodes as packageNodes
+import psysmon.gui.docking_frame
 import psysmon.gui.main.app as psy_app
 
 
@@ -77,7 +78,7 @@ class GraphicLocalizationNode(packageNodes.CollectionNode):
 
 
 
-class GraphicLocalizerDialog(gui.PsysmonDockingFrame):
+class GraphicLocalizerDialog(psysmon.gui.docking_frame.DockingFrame):
     ''' The dialog window of the graphical localization plugin.
 
     Similar to the tracedisplay it uses the AUI Manager and plugins.

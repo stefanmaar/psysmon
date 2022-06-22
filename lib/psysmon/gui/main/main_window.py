@@ -39,7 +39,7 @@ import wx.aui
 import wx.html
 import wx.grid
 import wx.lib.dialogs
-from wx.lib.pubsub import pub
+from pubsub import pub
 import wx.lib.colourdb
 
 
@@ -185,7 +185,7 @@ class PsysmonGui(wx.Frame):
                 continue
             elif is_submenu:
                 cur_sub_menu = self.createMenu(submenu_data)
-                menuItem = menu.AppendMenu(wx.ID_ANY, curLabel, cur_sub_menu)
+                menuItem = menu.Append(wx.ID_ANY, curLabel, cur_sub_menu)
                 # Add the filehistory to the menu.
                 if curLabel.lower() == 'open recent':
                     self.filehistory = wx.FileHistory()

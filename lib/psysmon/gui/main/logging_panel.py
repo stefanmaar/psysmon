@@ -26,7 +26,7 @@ import webbrowser
 
 import wx
 import wx.lib.mixins.listctrl as listmix
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 import psysmon.core.util as psy_util
 import psysmon.gui.context_menu as psy_cm
