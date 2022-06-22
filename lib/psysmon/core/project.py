@@ -46,7 +46,7 @@ import subprocess
 import copy
 try:
     import wx
-    from wx.lib.pubsub import pub
+    from pubsub import pub
     from wx import CallAfter
     use_pub = True
 except Exception:

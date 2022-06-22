@@ -49,8 +49,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
+from pubsub import pub
 import numpy as np
 import pyproj
 from mpl_toolkits.basemap import Basemap

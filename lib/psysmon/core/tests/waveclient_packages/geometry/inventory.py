@@ -40,8 +40,7 @@ from psysmon.core.error import PsysmonError
 import pyproj
 import warnings
 import logging
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 ## The Inventory class.
 #

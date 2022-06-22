@@ -148,6 +148,7 @@ install_requires = [
     'pycairo>=1.18.1',
     'pymysql>=0.9.3',
     'pyproj>=2.2.1',
+    'PyPubSub>=4.0.3',
     'Pyro4>=4.32',
     'pytz>=2019.2',
     'scipy>=1.0.0',
