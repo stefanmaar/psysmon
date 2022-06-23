@@ -105,7 +105,8 @@ def run():
     logger.debug("psyBaseDir: %s", psyBaseDir)
 
     # Initialize the pSysmon base object.
-    psyBase = psybase.Base(psyBaseDir, pref_manager = pref_manager)
+    psyBase = psybase.Base(psyBaseDir,
+                           pref_manager = pref_manager)
 
     # Scan for available pSysmon packages.
     #psyBase.initialize()
