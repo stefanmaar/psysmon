@@ -166,7 +166,6 @@ def get_logger(inst):
     else:
         loggerName = inst.__module__ + "." + inst.__class__.__name__
         
-    print("loggerName: " + loggerName)
     return logging.getLogger(loggerName)
     
                 
