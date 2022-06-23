@@ -31,13 +31,17 @@ __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
 __license__ = "GNU General Public Licence version 3"
 __keywords__ = "seismological prototyping prototype data processing earthquake obspy"
 
+import inspect
 import logging
+import os
+import sys
+
 try:
     import wx
     wx_available = True
 except Exception:
     wx_available = False
-import os
+
 
 logConfig = {}
 logConfig['level'] = 'INFO'
@@ -142,6 +146,30 @@ if wx_available:
                 #print "REDIRECT :: %s" % msg
 
 
+def get_logger(inst):
+    ''' Get a logger for the passed instance.
+    '''
+    base_path = os.path.dirname(__file__)
+    pkg_path = os.path.join(base_path,
+                            'packages')
+    mod_name = inst.__module__
+    mod = sys.modules[mod_name]
+    mod_file = mod.__file__
+
+    if not mod_name.startswith('psysmon'):
+        log_prefix = 'psysmon.unknown'
+        if mod_file.startswith(pkg_path):
+            log_prefix = 'psysmon.packages'
+        else:
+            log_prefix = 'psysmon.externalPackage'
+        loggerName = log_prefix + '.' + inst.__module__ + "." + inst.__class__.__name__
+    else:
+        loggerName = inst.__module__ + "." + inst.__class__.__name__
+        
+    print("loggerName: " + loggerName)
+    return logging.getLogger(loggerName)
+    
+                
 def getLoggerHandler(mode='console', log_level = None):
     ch = logging.StreamHandler()
     if log_level is None:
