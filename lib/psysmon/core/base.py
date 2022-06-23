@@ -127,17 +127,8 @@ class Base(object):
         # The psysmon base directory.
         self.baseDirectory = baseDir
 
-        # The search path for psysmon packages.
-        if package_directory is None:
-            self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
-        else:
-            self.packageDirectory = package_directory
-
-        # Add a third party packages directory for testing.
-        self.packageDirectory.append('/home/stefan/01_gtd/04_aktuelleProjekte/2012-0007_pSysmon/04_third_party_packages')
-
         # The currently loaded pSysmon project.
-        self.project = ""
+        self.project = None
 
         # The pSysmon version.
         self.version = version
@@ -150,6 +141,18 @@ class Base(object):
         # This one is usually loaded from the psysmon config file.
         if pref_manager is not None:
             self.pref_manager.update(pref_manager)
+
+            # The search path for psysmon packages.
+        if package_directory is None:
+            self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
+        else:
+            self.packageDirectory = package_directory
+
+        # Add the external packages directory.
+        ext_dir = self.pref_manager.get_value('ext_pkg_dir')
+        self.packageDirectory.append(ext_dir)
+        self.logger.debug("Added the external packages directory %s", ext_dir)
+        self.logger.debug('Using the package directories %s.', self.packageDirectory)
 
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self,
@@ -228,7 +231,11 @@ class Base(object):
         log_levels_group = logging_page.add_group('log levels')
         status_group = logging_page.add_group('status')
 
+        package_page = self.pref_manager.add_page('packages')
+        ext_pkg_group = package_page.add_group('external')
 
+
+        # The logging page
         # The log levels group items.
         pref_item = pm.SingleChoicePrefItem(name = 'main_loglevel',
                                             label = 'main log level',
@@ -270,6 +277,16 @@ class Base(object):
                                             value = 100,
                                             tool_tip = 'The number of messages to show in the log area status.')
         status_group.add_item(item = pref_item)
+
+
+        # The packages page.
+        # The external group item.
+        pref_item = pm.DirBrowsePrefItem(name = 'ext_pkg_dir',
+                                         label = 'external directory',
+                                         value = '',
+                                         tool_tip = 'The directory containing external psysmon packages.')
+        ext_pkg_group.add_item(item = pref_item)
+        
 
 
 
