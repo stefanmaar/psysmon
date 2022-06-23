@@ -133,6 +133,9 @@ class Base(object):
         else:
             self.packageDirectory = package_directory
 
+        # Add a third party packages directory for testing.
+        self.packageDirectory.append('/home/stefan/01_gtd/04_aktuelleProjekte/2012-0007_pSysmon/04_third_party_packages')
+
         # The currently loaded pSysmon project.
         self.project = ""
 
