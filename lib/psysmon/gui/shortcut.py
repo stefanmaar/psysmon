@@ -38,9 +38,7 @@ class ShortcutManager(object):
 
         '''
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.shortcuts = []
 
@@ -143,9 +141,7 @@ class Shortcut(object):
 
         self.action_kwargs = action_kwargs
 
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.shortcuts = []
 

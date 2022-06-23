@@ -22,6 +22,8 @@ import logging
 
 import wx
 
+import psysmon
+
 
 class psyContextMenu(wx.Menu):
 
@@ -29,8 +31,7 @@ class psyContextMenu(wx.Menu):
             wx.Menu.__init__(self)
 
             # The logger.
-            loggerName = __name__ + "." + self.__class__.__name__
-            self.logger = logging.getLogger(loggerName)
+            self.logger = psysmon.get_logger(self)
 
             for cmLabel, cmHandler in cmData:
                 if cmLabel.lower() == "separator":

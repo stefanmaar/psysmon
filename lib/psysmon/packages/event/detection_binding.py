@@ -56,9 +56,7 @@ class DetectionBinder(object):
 
         '''
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The event catalog to which the events should be added.
         self.event_catalog = event_catalog

@@ -24,6 +24,7 @@ import functools as ft
 from obspy.core import UTCDateTime
 import wx
 
+import psysmon
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.core.preferences_manager as preferences_manager
@@ -45,8 +46,7 @@ class Zoom(InteractivePlugin):
                                    tags = None)
         
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.zoom_icon_16
         self.cursor = wx.CURSOR_MAGNIFIER

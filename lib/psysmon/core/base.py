@@ -43,6 +43,7 @@ import shelve
 import threading
 from datetime import datetime
 from psysmon import __version__ as version
+import psysmon
 import psysmon.core.packageSystem
 import psysmon.core.packageNodes
 import psysmon.core.project
@@ -112,8 +113,7 @@ class Base(object):
         '''
 
         # The system logger used for debugging and system wide error logging.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Check the baseDir parameter for errors.
         if not isinstance(baseDir, basestring):
@@ -145,6 +145,9 @@ class Base(object):
         # The psysmon preferences.
         self.pref_manager = pm.PreferencesManager()
         self.create_preferences()
+
+        # Update the pref_manager with the one passed to the init function.
+        # This one is usually loaded from the psysmon config file.
         if pref_manager is not None:
             self.pref_manager.update(pref_manager)
 
@@ -693,6 +696,9 @@ class Collection(object):
         tmpDir : String
             The project's temporary directory.
         '''
+        # The system logger used for debugging and system wide error logging.
+        self.logger = psysmon.get_logger(self)
+        
         # The parent instance holding the collection.
         self.project = project
 
@@ -1046,10 +1052,7 @@ class Collection(object):
         For each node in the collection create a :class:`logging.logger` instance.
         '''
         for curNode in self.nodes:
-            # Create the logger instance.
-            loggerName = __name__ + "." + curNode.__class__.__name__
-            curNode.logger = logging.getLogger(loggerName)
-
+            curNode.logger = psysmon.get_logger(curNode)
 
 
     def log(self, nodeName, mode, msg):

@@ -23,6 +23,7 @@ import logging
 import wx
 import wx.lib.mixins.listctrl as listmix
 
+import psysmon
 import psysmon.artwork.icons as psy_icon
 import psysmon.core.error as psy_error
 import psysmon.core.packageNodes as psy_pn
@@ -41,8 +42,7 @@ class CollectionPanel(wx.Panel):
         wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.psyBase = psyBase
 

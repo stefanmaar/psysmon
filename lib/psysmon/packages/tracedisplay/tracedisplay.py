@@ -331,8 +331,7 @@ class TraceDisplayEditDlg(wx.Frame):
                            style=wx.DEFAULT_FRAME_STYLE|wx.RESIZE_BORDER)
 
         # Create the logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.collectionNode = collectionNode
         self.psyProject = psyProject
@@ -370,9 +369,10 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
                                                         size = size)
 
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        #logger_prefix = psysmon.logConfig['package_prefix']
+        #loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
+        #self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The parent collection node.
         self.collection_node = collection_node
@@ -884,9 +884,7 @@ class DisplayManager(object):
     def __init__(self, parent, inventory):
 
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The parent tracedisplay instance.
         self.parent = parent
@@ -2211,8 +2209,7 @@ class DataManager(object):
     def __init__(self, parent):
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.parent = parent
 

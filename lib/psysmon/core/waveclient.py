@@ -46,6 +46,8 @@ import obspy.core.utcdatetime as utcdatetime
 import obspy.clients.seedlink.basic_client as sl_basic_client
 from obspy.core.util.base import ENTRY_POINTS
 
+import psysmon
+
 
 class WaveClient(object):
     '''The WaveClient class.
@@ -71,8 +73,7 @@ class WaveClient(object):
             - css (A CSS formatted flat file database)
         '''
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The name of the waveclient.
         self.name = name

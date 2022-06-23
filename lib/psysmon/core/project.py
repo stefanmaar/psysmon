@@ -55,6 +55,7 @@ except Exception:
     pass
     
 from datetime import datetime
+import psysmon
 import psysmon.core.base
 from psysmon.core.error import PsysmonError
 from sqlalchemy import create_engine, MetaData
@@ -271,8 +272,7 @@ class Project(object):
         '''
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The parent psysmon base.
         if psybase is not None:
@@ -441,8 +441,7 @@ class Project(object):
 
         # Track some instance attribute changes.
         if not "logger" in dir(self):
-            loggerName = __name__ + "." + self.__class__.__name__
-            self.logger = logging.getLogger(loggerName)
+            self.logger = psysmon.get_logger(self)
 
 
     def export_data(self, uri, data):
@@ -1171,8 +1170,7 @@ class User(object):
         '''
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         ## The user name.
         self.name = user_name
@@ -1225,8 +1223,7 @@ class User(object):
 
         # Track some instance attribute changes.
         if not "logger" in dir(self):
-            loggerName = __name__ + "." + self.__class__.__name__
-            self.logger = logging.getLogger(loggerName)
+            self.logger = psysmon.get_logger(self)
 
     # TODO: Change this method to a property.
     def get_rid(self):

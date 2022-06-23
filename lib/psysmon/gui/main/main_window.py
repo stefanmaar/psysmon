@@ -88,8 +88,7 @@ class PsysmonGui(wx.Frame):
         self.psyBase = psyBase
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         #self.CreateStatusBar()  # A statusbar at the bottom of the window.
         #self.buildMenu()

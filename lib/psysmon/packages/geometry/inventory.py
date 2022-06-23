@@ -83,8 +83,7 @@ class Inventory(object):
         '''
 
         # The logger.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The name of the inventory.
         self.name = name
@@ -1199,9 +1198,7 @@ class Recorder(object):
 
         '''
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         ## The recorder database id.
         self.id = id
@@ -1435,9 +1432,7 @@ class RecorderStream(object):
         ''' Initialization of the instance.
         '''
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The name of the stream.
         self.name = name
@@ -1957,8 +1952,7 @@ class RecorderStreamParameter(object):
         ''' Initialize the instance.
         '''
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The gain of the stream.
         try:
@@ -2083,8 +2077,7 @@ class Sensor(object):
 
         '''
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The serial number of the sensor.
         self.serial = str(serial)
@@ -2310,8 +2303,7 @@ class SensorComponent(object):
 
         '''
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The name of the component.
         self.name = name
@@ -2651,8 +2643,7 @@ class SensorComponentParameter(object):
                  agency_uri = None, creation_time = None):
 
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The sensor sensitivity.
         try:
@@ -2906,8 +2897,7 @@ class Station(object):
             author_uri = None, agency_uri = None, creation_time = None):
 
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The station id.
         self.id = id
@@ -3366,8 +3356,7 @@ class Channel(object):
 
         '''
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The database id of the channel.
         self.id = id
@@ -3775,8 +3764,7 @@ class Network(object):
         ''' Initialize the instance.
         '''
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The parent inventory.
         self.parent_inventory = parent_inventory
@@ -4026,9 +4014,7 @@ class Array(object):
         ''' Initialization of the instance.
         '''
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The unique name of the array.
         self.name = name

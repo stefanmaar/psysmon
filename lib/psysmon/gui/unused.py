@@ -29,6 +29,7 @@ import wx.lib.platebtn as platebtn
 import wx.lib.scrolledpanel as scrolled
 from wx.lib.splitter import MultiSplitterWindow
 
+import psysmon
 from psysmon.artwork.icons import iconsBlack10
 
 
@@ -41,8 +42,7 @@ class FoldPanelBar(scrolled.ScrolledPanel):
         scrolled.ScrolledPanel.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.sizer = wx.GridBagSizer(0, 0)
         self.sizer.AddGrowableCol(0)
@@ -204,8 +204,7 @@ class FoldPanelBarSplitter(scrolled.ScrolledPanel):
         #wx.ScrolledWindow.__init__(self, parent=parent, id=id, style=wx.FULL_REPAINT_ON_RESIZE)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 

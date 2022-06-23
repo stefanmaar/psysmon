@@ -23,6 +23,7 @@ import warnings
 
 import wx
 
+import psysmon
 import psysmon.core.util
 from psysmon.gui.view.plotpanel import PlotPanel
 from psysmon.gui.view.plotpanel import ViewAnnotationPanel
@@ -38,8 +39,7 @@ class ViewNode(wx.Panel):
         wx.Panel.__init__(self, parent=parent, id=id)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The name of the container.
         self.name = name

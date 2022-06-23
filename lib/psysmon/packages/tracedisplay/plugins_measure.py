@@ -42,9 +42,7 @@ class MeasurePoint(InteractivePlugin):
                                    category = 'tools',
                                    tags = None)
         # Create the logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.measure_icon_16
         self.cursor = wx.CURSOR_CROSS

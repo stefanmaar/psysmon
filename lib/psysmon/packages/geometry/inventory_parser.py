@@ -35,6 +35,7 @@ from builtins import object
 import logging
 from lxml import etree
 
+import psysmon
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Array
@@ -55,8 +56,7 @@ class InventoryXmlParser(object):
     def __init__(self):
 
         # the logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The required attributes which have to be present in the tags.
         self.required_attributes = {}

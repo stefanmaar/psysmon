@@ -23,6 +23,7 @@ import logging
 import sqlalchemy
 import wx
 
+import psysmon
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.gui.dialog.pref_listbook as psy_lb
 
@@ -36,8 +37,7 @@ class PsysmonDbWaveClientOptions(wx.Panel):
         wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The waveclient holding the options.
         self.client = client
@@ -340,8 +340,7 @@ class SeedlinkWaveClientOptions(wx.Panel):
         wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The waveclient holding the options.
         self.client = client
@@ -410,8 +409,7 @@ class EarthwormWaveClientOptions(wx.Panel):
         wx.Panel.__init__(self, parent, wx.ID_ANY, size = size)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The waveclient holding the options.
         self.client = client

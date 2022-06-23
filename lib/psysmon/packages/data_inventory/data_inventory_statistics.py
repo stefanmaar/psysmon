@@ -38,6 +38,7 @@ import psysmon.core.packageNodes as psy_packageNodes
 import sqlalchemy as sqa
 import wx
 
+import psysmon
 import psysmon.gui.main.app as psy_app
 
 
@@ -89,8 +90,7 @@ class DataInventoryStatisticsDlg(wx.Frame):
 
 
         # The logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The current pSysmon project.
         self.project = project

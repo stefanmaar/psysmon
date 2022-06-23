@@ -57,9 +57,7 @@ class SeismogramPlotter(ViewPlugin):
                             tags = None)
 
         # Create the logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Define the plugin icons.
         self.icons['active'] = icons.waveform_icon_16
@@ -233,9 +231,7 @@ class SeismogramView(psy_view.viewnode.ViewNode):
                                             **kwargs)
 
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.t0 = None
         self.lineColor = [x/255.0 for x in lineColor]
@@ -661,8 +657,7 @@ class DemoPlotter(ViewPlugin):
                             )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Define the plugin icons.
         self.icons['active'] = icons.attention_icon_16
@@ -732,8 +727,7 @@ class DemoView(psy_view.viewnode.ViewNode):
         psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.t0 = None
         self.lineColor = [x/255.0 for x in lineColor]
@@ -903,9 +897,7 @@ class SpectrogramPlotter(ViewPlugin):
                             tags = None)
 
         # Create the logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Define the plugin icons.
         self.icons['active'] = icons._3x3_grid_2_icon_16
@@ -1023,9 +1015,7 @@ class SpectrogramView(psy_view.viewnode.ViewNode):
         psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # Create the logging logger instance with the correct name.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.axes.set_frame_on(False)
         self.axes.get_xaxis().set_visible(False)
@@ -1173,9 +1163,7 @@ class FrequencySpectrumPlotter(ViewPlugin):
                             )
 
         # Create the logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Define the plugin icons.
         self.icons['active'] = icons.chart_bar_icon_16
@@ -1247,9 +1235,7 @@ class FrequencySpectrumView(psy_view.viewnode.ViewNode):
         psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.t0 = None
         self.line_colors = {}
@@ -1442,8 +1428,7 @@ class ArrayDemoPlotter(ViewPlugin):
                             )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Define the plugin icons.
         self.icons['active'] = icons.burst_icon_16
@@ -1524,8 +1509,7 @@ class ArrayDemoView(psy_view.viewnode.ViewNode):
         psy_view.viewnode.ViewNode.__init__(self, parent=parent, id=id, parent_viewport=parent_viewport, name=name, **kwargs)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.t0 = None
         self.lineColor = [x/255.0 for x in lineColor]

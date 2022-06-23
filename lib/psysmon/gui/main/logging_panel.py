@@ -28,6 +28,7 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from pubsub import pub
 
+import psysmon
 import psysmon.core.util as psy_util
 import psysmon.gui.context_menu as psy_cm
 
@@ -38,8 +39,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
         self.SetMinSize((200, 120))
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         ## The threadId map.
         #

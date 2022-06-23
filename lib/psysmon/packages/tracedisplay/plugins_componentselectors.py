@@ -42,9 +42,7 @@ class SelectArray(OptionPlugin):
                               category = 'display',
                               tags = ['array', 'view', 'select'])
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons._2x2_grid_icon_16
 
@@ -108,9 +106,8 @@ class SelectStation(OptionPlugin):
                               tags = ['station', 'view', 'select'])
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
+        self.logger = psysmon.get_logger(self)
+        
         self.icons['active'] = icons.pin_map_icon_16
 
         self.lb = None
@@ -239,8 +236,7 @@ class SelectChannel(OptionPlugin):
                               tags = ['channel', 'view', 'select'],)
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.pin_sq_right_icon_16
 

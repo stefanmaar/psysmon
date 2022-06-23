@@ -59,8 +59,7 @@ class ProjectFileEncoder(json.JSONEncoder):
         json.JSONEncoder.__init__(self, **kwarg)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # File format settings.
         self.indent = 4
@@ -466,8 +465,7 @@ class ProjectFileDecoder_1_0_0(json.JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook = self.convert_object)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
 
     def convert_object(self, d):
@@ -1534,9 +1532,7 @@ class GeneralFileEncoder(json.JSONEncoder):
         json.JSONEncoder.__init__(self, **kwarg)
 
         # The logger.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # File format settings.
         self.indent = 4
