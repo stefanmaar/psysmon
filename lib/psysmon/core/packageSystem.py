@@ -312,13 +312,11 @@ class PackageManager(object):
             for curPkg in packages2Register:
                 self.logger.debug("Registering package " + curPkg + ".")
                 pkgName = os.path.basename(curPkg)
-                self.logger.debug(pkgName)
                 try:
                     if curDir not in sys.path:
                         sys.path.append(curDir)
                     pkgModule = __import__(pkgName)
                     pkgModule = sys.modules[pkgName]
-                    self.logger.debug(pkgModule)
                     isOk = self.checkPackage(pkgModule)
 
                     if isOk:
