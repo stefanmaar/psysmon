@@ -43,6 +43,7 @@ from obspy.core import read, Trace, Stream
 import obspy.core.utcdatetime as op_utcdatetime
 from operator import itemgetter
 
+import psysmon
 import psysmon.gui.validator as psy_val
 import psysmon.gui.main.app as psy_app
 
@@ -88,8 +89,7 @@ class EditEventCatalogsDlg(wx.Frame):
                            style=wx.DEFAULT_FRAME_STYLE|wx.RESIZE_BORDER)
 
         # Create the logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.collection_node = collection_node
 

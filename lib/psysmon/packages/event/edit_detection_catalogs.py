@@ -81,9 +81,7 @@ class EditDetectionCatalogsDlg(wx.Frame):
                            style=wx.DEFAULT_FRAME_STYLE|wx.RESIZE_BORDER)
 
         # Create the logger.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.collection_node = collection_node
 

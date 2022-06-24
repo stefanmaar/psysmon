@@ -34,6 +34,8 @@ from __future__ import print_function
 
 from builtins import str
 import logging
+
+import psysmon
 from psysmon.packages.geometry.inventory import Inventory
 from psysmon.packages.geometry.inventory import Network
 from psysmon.packages.geometry.inventory import Station
@@ -47,8 +49,7 @@ class DbInventory(Inventory):
 
     def __init__(self, name, project):
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.name = name
 

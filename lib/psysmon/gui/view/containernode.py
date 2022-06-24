@@ -22,6 +22,7 @@ import logging
 
 import wx
 
+import psysmon
 import psysmon.core.util
 from psysmon.gui.view.viewnode import ViewNode
 from psysmon.gui.view.view_containernode import ViewContainerNode
@@ -37,8 +38,7 @@ class ContainerNode(wx.Panel):
         wx.Panel.__init__(self, parent=parent, id=id)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
         
         # The name of the container.
         self.name = name

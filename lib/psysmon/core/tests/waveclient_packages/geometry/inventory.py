@@ -53,8 +53,7 @@ class Inventory(object):
     def __init__(self, name, type = None):
 
         # The logger.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The name of the inventory.
         self.name = name
@@ -385,8 +384,7 @@ class InventoryXmlParser(object):
     def __init__(self):
 
         # the logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The required attributes which have to be present in the tags.
         self.required_attributes = {}
@@ -998,8 +996,7 @@ class Sensor(object):
                  rec_channel_name, channel_name, label, id=None, 
                  parent_recorder=None):
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The database id of the sensor.
         self.id = id
@@ -1208,8 +1205,7 @@ class SensorParameter(object):
                  tf_normalization_frequency=None, tf_poles = None, tf_zeros = None,
                  id=None, parent_sensor = None):
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The sensor gain.
         self.gain = gain
@@ -1338,8 +1334,7 @@ class Station(object):
     def __init__(self, name, location, x, y, z, parent_network=None, coord_system=None, description=None, network=None, id=None):
 
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The station id.
         self.id = id
@@ -1691,8 +1686,7 @@ class Network(object):
 
     def __init__(self, name, description=None, type=None, parent_inventory=None):
         # The logger instance.
-        logger_name = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         ## The parent inventory.
         self.parent_inventory = parent_inventory

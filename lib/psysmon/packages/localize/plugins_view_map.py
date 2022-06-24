@@ -48,9 +48,7 @@ class MapPlotter(psysmon.core.plugins.ViewPlugin):
                                          tags = None)
 
         # Create the logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Define the plugin icons.
         self.icons['active'] = icons.iconsBlack16.globe_1_icon_16
@@ -108,9 +106,7 @@ class MapView(psy_view.viewnode.ViewNode):
                                                 **kwargs)
 
         # The logging logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Setup the axes.
         self.axes.set_aspect('equal')

@@ -43,6 +43,7 @@ import shelve
 import threading
 from datetime import datetime
 from psysmon import __version__ as version
+import psysmon
 import psysmon.core.packageSystem
 import psysmon.core.packageNodes
 import psysmon.core.project
@@ -112,8 +113,7 @@ class Base(object):
         '''
 
         # The system logger used for debugging and system wide error logging.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Check the baseDir parameter for errors.
         if not isinstance(baseDir, basestring):
@@ -127,14 +127,8 @@ class Base(object):
         # The psysmon base directory.
         self.baseDirectory = baseDir
 
-        # The search path for psysmon packages.
-        if package_directory is None:
-            self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
-        else:
-            self.packageDirectory = package_directory
-
         # The currently loaded pSysmon project.
-        self.project = ""
+        self.project = None
 
         # The pSysmon version.
         self.version = version
@@ -142,8 +136,23 @@ class Base(object):
         # The psysmon preferences.
         self.pref_manager = pm.PreferencesManager()
         self.create_preferences()
+
+        # Update the pref_manager with the one passed to the init function.
+        # This one is usually loaded from the psysmon config file.
         if pref_manager is not None:
             self.pref_manager.update(pref_manager)
+
+            # The search path for psysmon packages.
+        if package_directory is None:
+            self.packageDirectory = [os.path.join(self.baseDirectory, "packages"), ]
+        else:
+            self.packageDirectory = package_directory
+
+        # Add the external packages directory.
+        ext_dir = self.pref_manager.get_value('ext_pkg_dir')
+        self.packageDirectory.append(ext_dir)
+        self.logger.debug("Added the external packages directory %s", ext_dir)
+        self.logger.debug('Using the package directories %s.', self.packageDirectory)
 
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self,
@@ -222,7 +231,11 @@ class Base(object):
         log_levels_group = logging_page.add_group('log levels')
         status_group = logging_page.add_group('status')
 
+        package_page = self.pref_manager.add_page('packages')
+        ext_pkg_group = package_page.add_group('external')
 
+
+        # The logging page
         # The log levels group items.
         pref_item = pm.SingleChoicePrefItem(name = 'main_loglevel',
                                             label = 'main log level',
@@ -264,6 +277,16 @@ class Base(object):
                                             value = 100,
                                             tool_tip = 'The number of messages to show in the log area status.')
         status_group.add_item(item = pref_item)
+
+
+        # The packages page.
+        # The external group item.
+        pref_item = pm.DirBrowsePrefItem(name = 'ext_pkg_dir',
+                                         label = 'external directory',
+                                         value = '',
+                                         tool_tip = 'The directory containing external psysmon packages.')
+        ext_pkg_group.add_item(item = pref_item)
+        
 
 
 
@@ -690,6 +713,9 @@ class Collection(object):
         tmpDir : String
             The project's temporary directory.
         '''
+        # The system logger used for debugging and system wide error logging.
+        self.logger = psysmon.get_logger(self)
+        
         # The parent instance holding the collection.
         self.project = project
 
@@ -1043,10 +1069,7 @@ class Collection(object):
         For each node in the collection create a :class:`logging.logger` instance.
         '''
         for curNode in self.nodes:
-            # Create the logger instance.
-            loggerName = __name__ + "." + curNode.__class__.__name__
-            curNode.logger = logging.getLogger(loggerName)
-
+            curNode.logger = psysmon.get_logger(curNode)
 
 
     def log(self, nodeName, mode, msg):

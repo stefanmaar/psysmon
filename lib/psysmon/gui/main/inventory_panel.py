@@ -38,8 +38,7 @@ class CollectionNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.itemDataMap = {}
 

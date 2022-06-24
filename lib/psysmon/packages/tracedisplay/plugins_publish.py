@@ -23,6 +23,7 @@ import os
 
 import wx
 
+import psysmon
 import psysmon.core.plugins as plugins
 import psysmon.artwork.icons as icons
 import psysmon.core.preferences_manager as preferences_manager
@@ -47,8 +48,7 @@ class PublishVisible(plugins.CommandPlugin):
                                        )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.iconsBlack16.export_icon_16
 
@@ -79,8 +79,7 @@ class PublishOriginal(plugins.CommandPlugin):
                                        )
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.iconsBlack16.export_icon_16
 

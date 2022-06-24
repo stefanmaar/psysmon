@@ -24,6 +24,7 @@ import numpy as np
 import wx
 import wx.lib.scrolledpanel
 
+import psysmon
 from psysmon.gui.view.viewnode import ViewNode
 from psysmon.gui.view.containernode import ContainerNode
 from psysmon.gui.view.view_containernode import ViewContainerNode
@@ -41,8 +42,7 @@ class Viewport(wx.lib.scrolledpanel.ScrolledPanel):
                                                     style=wx.FULL_REPAINT_ON_RESIZE)
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)

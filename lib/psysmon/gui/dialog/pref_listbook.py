@@ -22,6 +22,7 @@ import logging
 
 import wx
 
+import psysmon
 from psysmon.gui.bricks import PrefPagePanel
 
 
@@ -36,8 +37,7 @@ class ListbookPrefDialog(wx.Dialog):
                            size = size)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.pref = preferences
 

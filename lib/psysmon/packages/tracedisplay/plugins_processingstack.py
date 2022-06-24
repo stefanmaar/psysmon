@@ -25,6 +25,7 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.stattext import GenStaticText as StaticText
 
+import psysmon
 from psysmon.artwork.icons import iconsBlack16 as icons
 from psysmon.core.plugins import OptionPlugin
 import psysmon.gui.context_menu as psy_cm
@@ -46,8 +47,9 @@ class ProcessingStack(OptionPlugin):
                               tags = ['process', 'data'])
 
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        #loggerName = __name__ + "." + self.__class__.__name__
+        #self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.layers_1_icon_16
 

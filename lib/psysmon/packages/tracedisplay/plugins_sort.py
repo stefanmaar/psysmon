@@ -20,6 +20,7 @@
 
 import logging
 
+import psysmon
 import psysmon.gui.bricks as gui_bricks
 import psysmon.core.plugins as plugins
 import psysmon.artwork.icons as icons
@@ -43,8 +44,7 @@ class SortMode(plugins.OptionPlugin):
                                       category = 'display',
                                       tags = ['sort'])
         # Create the logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.iconsBlack16.list_num_icon_16
 

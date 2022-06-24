@@ -39,6 +39,7 @@ from past.utils import old_div
 import os
 import fnmatch
 import logging
+import psysmon
 from psysmon.gui.context_menu import psyContextMenu
 from psysmon.core.packageNodes import CollectionNode
 from psysmon.core.preferences_manager import CustomPrefItem
@@ -404,8 +405,7 @@ class ImportWaveformEditDlg(wx.Frame):
                            style=wx.DEFAULT_FRAME_STYLE|wx.RESIZE_BORDER)
 
         # Create the logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.collectionNode = collectionNode
         self.psyProject = psyProject

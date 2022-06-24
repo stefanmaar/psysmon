@@ -35,6 +35,8 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.floatspin as FS
 #import wx.lib.rcsizer  as rcs
+
+import psysmon
 import psysmon.core.preferences_manager as psy_pm
 from operator import itemgetter
 import wx.lib.mixins.listctrl as listmix
@@ -253,8 +255,7 @@ class PrefEditPanel(wx.Panel):
                           id=id)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The node options being edited with the dialog.
         self.pref = pref

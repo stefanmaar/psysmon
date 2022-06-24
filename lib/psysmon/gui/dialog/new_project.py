@@ -23,6 +23,7 @@ import os
 
 import wx
 
+import psysmon
 import psysmon.gui.validator as psy_val
 
 
@@ -41,9 +42,8 @@ class CreateNewProjectDlg(wx.Dialog):
                            style=wx.DEFAULT_DIALOG_STYLE)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
-
+        self.logger = psysmon.get_logger(self)
+        
         self.psyBase = psyBase
 
         # Use standard button IDs.

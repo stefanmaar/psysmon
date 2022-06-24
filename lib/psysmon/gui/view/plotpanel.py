@@ -27,6 +27,8 @@ except Exception:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import wx
 
+import psysmon
+
 
 class PlotPanel(wx.Panel):
     """
@@ -43,8 +45,7 @@ class PlotPanel(wx.Panel):
         self.SetMinSize((100, 40))
 
         # The logging logger instance.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The name of the plot panel.
         self.name = name

@@ -23,6 +23,7 @@ import operator as op
 
 import wx
 
+import psysmon
 import psysmon.artwork.icons as psy_icon
 import psysmon.core.waveclient as psy_wc
 import psysmon.gui.dialog.waveclient_options as psy_wcopt
@@ -49,8 +50,7 @@ class DataSourceDlg(wx.Dialog):
         self.psyBase = psyBase
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Use standard button IDs.
         okButton = wx.Button(self, wx.ID_OK)
@@ -255,8 +255,7 @@ class EditWaveclientDlg(wx.Dialog):
                            size = size)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.psyBase = psyBase
 
@@ -353,8 +352,7 @@ class AddDataSourceDlg(wx.Dialog):
                            size = size)
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         self.psyBase = psyBase
 
@@ -454,8 +452,7 @@ class EditScnlDataSourcesDlg(wx.Dialog):
         self.psyBase = psyBase
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # Get the inventory from the database.
         inventoryDbController = InventoryDatabaseController(self.psyBase.project)

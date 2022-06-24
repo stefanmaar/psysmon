@@ -52,9 +52,7 @@ class ImportFilesystemData(psysmon.core.packageNodes.CollectionNode):
         # Initialize the instance.
         psysmon.core.packageNodes.CollectionNode.__init__(self, **args)
 
-        logger_prefix = psysmon.logConfig['package_prefix']
-        loggerName = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
         
         select_page = self.pref_manager.add_page('Select')
         wfdir_group = select_page.add_group('waveform directory')

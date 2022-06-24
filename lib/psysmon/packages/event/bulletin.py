@@ -40,6 +40,7 @@ import gzip
 
 import obspy.core.utcdatetime as utcdatetime
 
+import psysmon
 import psysmon.packages.event.core as ev_core
 
 
@@ -50,9 +51,7 @@ class ImsParser(object):
 
     def __init__(self):
         # the logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        logger_name = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         # The bulletin file handle.
         self.b_file = None
@@ -486,9 +485,7 @@ class CsvParser(object):
 
     def __init__(self):
         # the logger instance.
-        logger_prefix = psysmon.logConfig['package_prefix']
-        logger_name = logger_prefix + "." + __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(logger_name)
+        self.logger = psysmon.get_logger(self)
 
         self.events = []
 

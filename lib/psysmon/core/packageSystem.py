@@ -242,8 +242,7 @@ class PackageManager(object):
         '''
 
         # The logger.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The parent object holding the package manager.
         if parent is not None:
@@ -314,7 +313,8 @@ class PackageManager(object):
                 self.logger.debug("Registering package " + curPkg + ".")
                 pkgName = os.path.basename(curPkg)
                 try:
-                    sys.path.append(curDir)
+                    if curDir not in sys.path:
+                        sys.path.append(curDir)
                     pkgModule = __import__(pkgName)
                     pkgModule = sys.modules[pkgName]
                     isOk = self.checkPackage(pkgModule)
@@ -756,8 +756,7 @@ class Package(object):
             A list of other packages needed to run this package.     
         '''
         # The system logger used for debugging and system wide error logging.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The python package name.
         self.pyPackage = ""

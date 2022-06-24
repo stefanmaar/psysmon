@@ -36,6 +36,9 @@ import logging
 import re
 
 import Pyro4 as pyro
+
+import psysmon
+
 pyro.config.REQUIRE_EXPOSE = True
 pyro.config.SERIALIZERS_ACCEPTED = set(('pickle', ))
 pyro.config.SERIALIZER = 'pickle'
@@ -49,8 +52,7 @@ class ProjectServer(object):
         ''' The instance initialization.
         '''
         # The system logger used for debugging and system wide error logging.
-        loggerName = __name__ + "." + self.__class__.__name__
-        self.logger = logging.getLogger(loggerName)
+        self.logger = psysmon.get_logger(self)
 
         # The data managed by the server.
         self.data = {}
