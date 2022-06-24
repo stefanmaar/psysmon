@@ -118,8 +118,7 @@ packages = [
 # Define the scripts to be processed.
 # TODO: Scan the scripts folder of all packages.
 scripts = ['scripts/psysmon',
-           'scripts/psysmomat',
-           'lib/psysmon/packages/reftek/scripts/rt2ms']
+           'scripts/psysmomat']
 
 # Define some package data.
 packageDir = {'': 'lib',
@@ -222,12 +221,12 @@ def configuration(parent_package = '', top_path = None):
                          sources = files)
 
     # LIBRT130
-    path = os.path.join(root_dir, 'packages', 'reftek', 'src')
-    files = [os.path.join(path, 'rt_130wrapper_py.c'),
-             os.path.join(path, 'rt_130_py.c')]
-    printRaw(files)
-    config.add_extension('rt_130_py',
-                         sources = files)
+    #path = os.path.join(root_dir, 'packages', 'reftek', 'src')
+    #files = [os.path.join(path, 'rt_130wrapper_py.c'),
+    #         os.path.join(path, 'rt_130_py.c')]
+    #printRaw(files)
+    #config.add_extension('rt_130_py',
+    #                     sources = files)
 
     # LIBDETECT
     path = os.path.join(root_dir, 'packages', 'event', 'src')
