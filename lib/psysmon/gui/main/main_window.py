@@ -99,31 +99,12 @@ class PsysmonGui(wx.Frame):
         # Load new colour names into the colour database.
         wx.lib.colourdb.updateColourDB()
 
-
+        
     def save_config(self):
-        ''' Save the configuration data to the config file.
+        ''' Save the psysmon configuration to file.
         '''
-        import json
-        import platform
-        if platform.system() == 'Linux':
-            config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
-            if not os.path.exists(config_dir):
-                os.mkdir(config_dir)
-            config_file = os.path.join(config_dir, 'psysmon.cfg')
-            config = {}
-            config['recent_files'] = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
-            config['pref_manager'] = self.psyBase.pref_manager
-
-            file_container = psysmon.core.json_util.FileContainer(config)
-            try:
-                with open(config_file, mode = 'w') as fid:
-                    json.dump(file_container,
-                              fp = fid,
-                              cls = psysmon.core.json_util.ConfigFileEncoder)
-            except:
-                pass
-
-
+        recent_files = [self.filehistory.GetHistoryFile(x) for x in range(self.filehistory.GetCount())]
+        self.psyBase.save_config(recent_files = recent_files)
 
 
     ## Define the PSysmonGui menus.  
@@ -527,6 +508,8 @@ class PsysmonGui(wx.Frame):
             shell_handler = [x for x in handlers if x.get_name() == 'shell']
             for cur_handler in shell_handler:
                 cur_handler.setLevel(self.psyBase.pref_manager.get_value('shell_loglevel'))
+
+            self.save_config()
 
         dlg.Destroy()
 

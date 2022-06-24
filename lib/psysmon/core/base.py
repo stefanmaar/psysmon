@@ -96,7 +96,11 @@ class Base(object):
 
     '''
 
-    def __init__(self, baseDir, package_directory = None, project_server = None, pref_manager = None):
+    def __init__(self, baseDir,
+                 package_directory = None,
+                 project_server = None,
+                 pref_manager = None,
+                 config_file = None):
         '''The constructor.
 
         Create an instance of the Base class.
@@ -134,6 +138,11 @@ class Base(object):
         self.version = version
 
         # The psysmon preferences.
+        if not config_file:
+            self.config_file = psysmon.get_config_file()
+        else:
+            self.config_file = config_file
+        self.config_file = os.path.abspath(self.config_file)
         self.pref_manager = pm.PreferencesManager()
         self.create_preferences()
 
@@ -150,9 +159,12 @@ class Base(object):
 
         # Add the external packages directory.
         ext_dir = self.pref_manager.get_value('ext_pkg_dir')
-        self.packageDirectory.append(ext_dir)
-        self.logger.debug("Added the external packages directory %s", ext_dir)
-        self.logger.debug('Using the package directories %s.', self.packageDirectory)
+        if ext_dir:
+            self.packageDirectory.append(ext_dir)
+            self.logger.debug("Added the external packages directory %s",
+                              ext_dir)
+        self.logger.debug('Using the package directories %s.',
+                          self.packageDirectory)
 
         # The package manager handling the dynamically loaded packages.
         self.packageMgr = psysmon.core.packageSystem.PackageManager(parent = self,
@@ -288,8 +300,31 @@ class Base(object):
         ext_pkg_group.add_item(item = pref_item)
         
 
+    def save_config(self, recent_files):
+        ''' Save the configuration data to the config file.
+        '''
+        config_file = self.config_file
+        config_dir = os.path.dirname(self.config_file)
+        if not os.path.exists(config_dir):
+            os.mkdir(config_dir)
+            
+        config = {}
+        config['recent_files'] = recent_files
+        config['pref_manager'] = self.pref_manager
 
+        file_container = psysmon.core.json_util.FileContainer(config)
+        try:
+            with open(config_file, mode = 'w') as fid:
+                json.dump(file_container,
+                          fp = fid,
+                          cls = psysmon.core.json_util.ConfigFileEncoder)
+            self.logger.debug("Saved psysmon preferences to %s.",
+                              config_file)
+        except Exception:
+            self.logger.exception()
+            pass
 
+        
     def start_project_server(self):
         ''' Start the pyro project server.
         '''
