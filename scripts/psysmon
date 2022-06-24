@@ -44,43 +44,35 @@ Examples
 
     >>> python psysmon
 '''
+import json
+import logging
+import os
+
+import click
 import matplotlib as mpl
 
 import psysmon
 import psysmon.core.base as psybase
 import psysmon.core.json_util
-import os
-import logging
-
 import psysmon.gui.main.main_window as psy_main
 import psysmon.gui.main.app as psy_app
 
 mpl.rcParams['backend'] = 'WXAgg'
 
 
-def run():
+@click.command()
+@click.option('--config',
+              type = str,
+              default = None,
+              help = 'The psysmon configuration file to use.')
+def run(config):
     '''
-    Start the pSysmon main program.
-
-    Basic Usage
-    -----------
-
-    **Starting from the command line**
-
-        To start pSysmon from the command line, change into the psysmon directory 
-        where the file pSysmon.py is located and type the following command in your 
-        linux shell or your window command prompt:
-        python pSysmon.py:
-
-    **Starting from a python shell**
-
-        To start psysmon from a python shell (e.g. ipython) use the following 
-        commands:
-
-        >>> import psysmon.pSysmon as psysmon
-        >>> psysmon.run
+    Start the psysmon program.
     '''
-    config = load_config()
+    config_file = config
+    if config_file is not None:
+        config_file = os.path.abspath(config_file)
+    config = load_config(config_file = config_file)
 
     if 'pref_manager' in config.keys():
         pref_manager = config['pref_manager']
@@ -100,13 +92,18 @@ def run():
     handler.set_name('shell')
     logger.addHandler(handler)
 
+    if pref_manager is None:
+        logger.warning("Couldn't load the configuration from file %s.",
+                       config_file)
+
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
     logger.debug("psyBaseDir: %s", psyBaseDir)
 
     # Initialize the pSysmon base object.
     psyBase = psybase.Base(psyBaseDir,
-                           pref_manager = pref_manager)
+                           pref_manager = pref_manager,
+                           config_file = config_file)
 
     # Scan for available pSysmon packages.
     #psyBase.initialize()
@@ -133,41 +130,26 @@ def run():
     psyBase.stop_project_server()
 
 
-def load_config():
+def load_config(config_file = None):
     ''' Load the configuration data from the config file.
     '''
-    import platform
-    import json
-
     config = {}
 
-    if platform.system() == 'Linux':
-        config_dir = os.path.join(os.path.expanduser('~'), '.config', 'psysmon')
-        config_file = os.path.join(config_dir, 'psysmon.cfg')
-    elif platform.system() == 'Windows':
-        if 'APPDATA' in os.environ:
-            config_dir = os.path.join(os.environ['APPDATA'], 'psysmon')
-            config_file = os.path.join(config_dir, 'psysmon.cfg')
-        else:
-            raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
-    else:
-        raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+    if not config_file:
+        config_file = psysmon.get_config_file()
 
     if os.path.exists(config_file):
         try:
             file_meta = psysmon.core.json_util.get_file_meta(config_file)
             decoder = psysmon.core.json_util.get_config_decoder(file_meta['file_version'])
             with open(config_file, 'r') as fid:
-                config = json.load(fid, cls = decoder)
-        except:
+                config = json.load(fid,
+                                   cls = decoder)
+        except Exception:
             config = {}
-
 
     return config
 
+
 if __name__ == '__main__':
     run()
-
-
-
-
