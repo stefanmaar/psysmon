@@ -31,9 +31,9 @@ __downloadUrl__ = "http://repo.or.cz/w/psysmon.git"
 __license__ = "GNU General Public Licence version 3"
 __keywords__ = "seismological prototyping prototype data processing earthquake obspy"
 
-import inspect
 import logging
 import os
+import platform
 import sys
 
 try:
@@ -212,6 +212,22 @@ def getLoggerWxRedirectHandler(window, log_level = None):
     return ch
 
 
-
-
-
+def get_config_file():
+    ''' Get the default psysmon configuration file.
+    '''
+    config_file = None
+    if platform.system() == 'Linux':
+        config_dir = os.path.join(os.path.expanduser('~'),
+                                  '.config',
+                                  'psysmon')
+        config_file = os.path.join(config_dir,
+                                   'psysmon.cfg')
+    elif platform.system() == 'Windows':
+        if 'APPDATA' in os.environ:
+            config_dir = os.path.join(os.environ['APPDATA'], 'psysmon')
+            config_file = os.path.join(config_dir, 'psysmon.cfg')
+        else:
+            raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+    else:
+        raise RuntimeError("Couldn't find the user defined folder. Can't create the config file.")
+    return config_file
