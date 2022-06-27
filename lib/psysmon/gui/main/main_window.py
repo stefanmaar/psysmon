@@ -130,7 +130,7 @@ class PsysmonGui(wx.Frame):
                  ("", "", "", True, False, None),
                  ("Project preferences","Edit the project preferences", self.onEditProjectPreferences, False, False, None)),
                 ("Help",
-                 ("&Help", "psysmon help", self.onHelp, True, False, None),
+                 ("&Help", "psysmon help", self.onHelp, False, False, None),
                  ("&About", "About pSysmon", self.onAbout, True, False, None))
                )
 
@@ -465,8 +465,10 @@ class PsysmonGui(wx.Frame):
 
         if mode == 'project':
             # Enable the project menu.
+            #labels_to_enable = ('Close project', 'Save project', 
+            #                    'Data sources', 'SCNL data sources', 'Project preferences')
             labels_to_enable = ('Close project', 'Save project', 
-                                'Data sources', 'SCNL data sources', 'Project preferences')
+                                'Data sources')
             mb = self.GetMenuBar()
             for cur_menu, cur_label in mb.GetMenus():
                 m_items = cur_menu.GetMenuItems()
