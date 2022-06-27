@@ -123,7 +123,11 @@ class EditGeometry(CollectionNode):
         app = psy_app.PsysmonApp()
         dlg = EditGeometryDlg(self, self.project)
         dlg.Show()
-        app.MainLoop()
+        try:
+            app.MainLoop()
+        except wx._core.wxAssertionError as e:
+            self.logger.warning("Catched an wxAssertionError when closing the dialog. The error is related to the grids in the list view Grids. Couldn't fix it yet. Error msg:  %s.", e)
+            
 
 
 
