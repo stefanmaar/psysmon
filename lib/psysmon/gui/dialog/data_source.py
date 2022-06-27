@@ -187,7 +187,7 @@ class DataSourceDlg(wx.Dialog):
             if name == self.psyBase.project.defaultWaveclient:
                 self.wcListCtrl.InsertImageStringItem(k, client.name, self.iconDefault)
             else:
-                self.wcListCtrl.InsertStringItem(k, client.name)
+                self.wcListCtrl.InsertItem(k, client.name)
             self.wcListCtrl.SetStringItem(k, 1, client.mode)
             self.wcListCtrl.SetStringItem(k, 2, client.description)
             #self.wcListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
@@ -206,7 +206,7 @@ class DataSourceDlg(wx.Dialog):
             The waveformDir mapper instance to be added to the list control.
         '''
         k = self.wfListCtrl.GetItemCount()
-        self.wfListCtrl.InsertStringItem(k, str(item.id))
+        self.wfListCtrl.InsertItem(k, str(item.id))
         self.wfListCtrl.SetStringItem(k, 1, item.directory)
         self.wfListCtrl.SetStringItem(k, 2, item.aliases[0].alias)
         self.wfListCtrl.SetStringItem(k, 3, item.description)

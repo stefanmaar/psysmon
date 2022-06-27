@@ -1013,7 +1013,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
         for cur_row in data:
             for k, cur_data in enumerate(cur_row):
                 if k == 0:
-                    self.controlElement.InsertStringItem(index, str(cur_data))
+                    self.controlElement.InsertItem(index, str(cur_data))
                 else:
                     self.controlElement.SetStringItem(index, k, str(cur_data))
 

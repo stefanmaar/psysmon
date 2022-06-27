@@ -474,7 +474,7 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         self.nodeListCtrl.DeleteAllItems()
 
         for curNode in nodeTemplates:
-            self.nodeListCtrl.InsertStringItem(index, curNode.name)
+            self.nodeListCtrl.InsertItem(index, curNode.name)
             self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
             self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
             self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
@@ -488,7 +488,7 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
         self.nodeListCtrl.DeleteAllItems()
 
         for curNode in nodeTemplates.values():
-            self.nodeListCtrl.InsertStringItem(index, curNode.name)
+            self.nodeListCtrl.InsertItem(index, curNode.name)
             self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
             self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
             self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))

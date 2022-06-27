@@ -177,7 +177,7 @@ class EditGeometryDlg(wx.Frame):
             for curFile in self.collectionNode.property['inputFiles']:
                 fSize = os.path.getsize(curFile['filename']);
                 fSize = fSize/1024.0
-                self.fileListCtrl.InsertStringItem(index, curFile['format'])
+                self.fileListCtrl.InsertItem(index, curFile['format'])
                 self.fileListCtrl.SetStringItem(index, 1, curFile['filename'])
                 self.fileListCtrl.SetStringItem(index, 2, "%.2f" % fSize)
                 index += 1

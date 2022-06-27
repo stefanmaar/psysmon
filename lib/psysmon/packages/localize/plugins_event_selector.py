@@ -319,7 +319,7 @@ class EventListField(wx.Panel, listmix.ColumnSorterMixin):
                     val = str(getattr(cur_event, cur_name))
 
                 if n_col == 0:
-                    self.controlElement.InsertStringItem(k, val)
+                    self.controlElement.InsertItem(k, val)
                 else:
                     self.controlElement.SetStringItem(k, n_col, val)
 

@@ -183,7 +183,7 @@ class EditEventCatalogsDlg(wx.Frame):
         self.list_ctrl.DeleteAllItems()
 
         for cur_catalog in self.catalogs:
-            self.list_ctrl.InsertStringItem(index, str(cur_catalog.id))
+            self.list_ctrl.InsertItem(index, str(cur_catalog.id))
             self.list_ctrl.SetStringItem(index, 1, cur_catalog.name)
             self.list_ctrl.SetStringItem(index, 2, cur_catalog.description)
             self.list_ctrl.SetStringItem(index, 3, cur_catalog.agency_uri)

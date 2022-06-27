@@ -277,7 +277,7 @@ class PsysmonDbWaveClientOptions(wx.Panel):
             else:
                 last_scan = curDir.last_scan
 
-            self.wfListCtrl.InsertStringItem(k, str(curDir.id))
+            self.wfListCtrl.InsertItem(k, str(curDir.id))
             self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
             self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
             self.wfListCtrl.SetStringItem(k, 3, curDir.description)
