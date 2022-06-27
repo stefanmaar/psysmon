@@ -312,9 +312,12 @@ class HodogramView(psy_view.viewnode.ViewNode):
         n_win = np.floor((len(z_data) - window_length_smp) / win_step)
 
         for cur_axes in self.axes:
-            #cur_axes.clear()
-            cur_axes.collections = []
-        #self.axes.collections = []
+            try:
+                artists_to_remove = cur_axes.collections
+                for cur_artist in artists_to_remove:
+                    cur_artist.remove()
+            except Exception:
+                self.logger.exception("Error removing the axes collections.")
 
         lines_xy = []
         lines_xz = []
