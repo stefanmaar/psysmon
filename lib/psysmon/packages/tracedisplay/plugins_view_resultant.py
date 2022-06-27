@@ -45,9 +45,9 @@ class Resultant(ViewPlugin):
 
         '''
         ViewPlugin.__init__(self,
-                             name = 'resultant',
-                             category = 'view',
-                             tags = None)
+                            name = 'resultant',
+                            category = 'view',
+                            tags = None)
 
         # Create the logging logger instance.
         self.logger = psysmon.get_logger(self)
@@ -55,39 +55,42 @@ class Resultant(ViewPlugin):
         # Define the plugin icons.
         self.icons['active'] = icons.emotion_smile_icon_16
 
-        self.channel_map = {'x': 'Hnormal',
-                            'y': 'Hparallel'}
-
-        # TODO: Somehow make it possible to add multiple views to the virtual
-        # channel. Each view should contain a certain polarization feature. The
-        # features can change depending on the selected computation method. The
-        # created views therefore have to be created dynamically. Maybe use the
-        # shared information for that?
-
-        # TODO: Add the possibility to define an azimuth offset from north.
-        # TODO: Add the possibility to define an inclination offset.
-
         # Create the preferences.
-        #pref_page = self.pref_manager.add_page('Preferences')
-        #win_group = pref_page.add_group('window')
+        pref_page = self.pref_manager.add_page('Preferences')
+        cm_group = pref_page.add_group('channel map')
 
-        # The window length.
-        #item = preferences_manager.FloatSpinPrefItem(name = 'window_length',
-        #                                             label = 'window length [s]',
-        #                                             value = 0.5,
-        #                                             limit = (0, 3600))
-        #win_group.add_item(item)
+        SingleChoicePrefItem = psysmon.core.preferences_manager.SingleChoicePrefItem
+        item = SingleChoicePrefItem(name = 'channel_map_x',
+                                    label = 'x',
+                                    value = '',
+                                    limit = ['HHE', 'HHN', 'HHZ'],
+                                    tool_tip = 'Select the x component channel.')
+        cm_group.add_item(item)
 
+        item = SingleChoicePrefItem(name = 'channel_map_y',
+                                    label = 'y',
+                                    value = '',
+                                    limit = ['HHE', 'HHN', 'HHZ'],
+                                    tool_tip = 'Select the y component channel.')
+        cm_group.add_item(item)
 
-        # The window overlap.
-        #item = preferences_manager.FloatSpinPrefItem(name = 'window_overlap',
-        #                                             label = 'window overlap',
-        #                                             value = 0.5,
-        #                                             limit = (0, 0.99),
-        #                                             spin_format = '%f')
-        #win_group.add_item(item)
-
-
+        item = SingleChoicePrefItem(name = 'channel_map_z',
+                                    label = 'z',
+                                    value = '',
+                                    limit = ['HHE', 'HHN', 'HHZ'],
+                                    tool_tip = 'Select the z component channel.')
+        cm_group.add_item(item)
+        
+        
+    @property
+    def channel_map(self):
+        ''' The channels used for the x, y, z components.
+        '''
+        channel_map = {'x': self.pref_manager.get_value('channel_map_x'),
+                       'y': self.pref_manager.get_value('channel_map_y'),
+                       'z': self.pref_manager.get_value('channel_map_z')}
+        return channel_map
+        
     @property
     def required_data_channels(self):
         ''' This plugin needs to create a virtual channel.
@@ -95,6 +98,39 @@ class Resultant(ViewPlugin):
         # TODO: Get the needed channels from preference items.
         return list(self.channel_map.values())
 
+
+    def initialize_preferences(self):
+        ''' Intitialize the preferences depending on runtime variables.
+        '''
+        # Set the limits of the event_catalog field.
+        channels = sorted(self.parent.displayManager.availableChannels)
+        self.pref_manager.set_limit('channel_map_x', channels)
+        self.pref_manager.set_limit('channel_map_y', channels)
+        self.pref_manager.set_limit('channel_map_z', channels)
+
+        east_channels = [x for x in channels if x.lower().endswith('e')]
+        north_channels = [x for x in channels if x.lower().endswith('n')]
+        vertical_channels = [x for x in channels if x.lower().endswith('z')]
+        if 'HHE' in channels:
+            self.pref_manager.set_value('channel_map_x', 'HHE')
+        elif len(east_channels) > 0:
+            self.pref_manager.set_value('channel_map_x', east_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_x', channels[0])
+
+        if 'HHN' in channels:
+            self.pref_manager.set_value('channel_map_y', 'HHN')
+        elif len(north_channels) > 0:
+            self.pref_manager.set_value('channel_map_y', north_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_y', channels[0])
+
+        if 'HHZ' in channels:
+            self.pref_manager.set_value('channel_map_z', 'HHZ')
+        elif len(vertical_channels) > 0:
+            self.pref_manager.set_value('channel_map_z', vertical_channels[0])
+        elif len(channels) > 1:
+            self.pref_manager.set_value('channel_map_z', channels[0])
 
 
     def plot(self, displayManager, dataManager):
