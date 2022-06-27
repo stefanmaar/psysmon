@@ -105,7 +105,6 @@ class ViewContainerNode(wx.Panel):
 
     def on_set_focus(self, event):
         self.logger.debug("on_set_focus in view container node %s. event: %s", self.name, event)
-        print("ON_SET_FOCUS")
         event.ResumePropagation(30)
         event.Skip()
 
