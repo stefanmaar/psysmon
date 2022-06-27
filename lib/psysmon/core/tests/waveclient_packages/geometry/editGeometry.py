@@ -873,70 +873,70 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         # rebuild the inventory tree.
         for curKey, curInventory in self.Parent.inventories.items():
             inventoryItem = self.AppendItem(self.root, curKey + '(' + curInventory.type + ')')
-            self.SetItemPyData(inventoryItem, curInventory)
+            self.SetItemData(inventoryItem, curInventory)
             self.SetItemBold(inventoryItem, True)
             self.SetItemImage(inventoryItem, self.icons['xmlInventory'], wx.TreeItemIcon_Normal)
 
             recorderItem = self.AppendItem(inventoryItem, 'Recorders')
-            self.SetItemPyData(recorderItem, curInventory.recorders)
+            self.SetItemData(recorderItem, curInventory.recorders)
             self.SetItemBold(recorderItem, True)
             self.SetItemImage(recorderItem, self.icons['recorderList'], wx.TreeItemIcon_Normal)
 
             networkItem = self.AppendItem(inventoryItem, 'Networks')
-            self.SetItemPyData(networkItem, curInventory.stations)
+            self.SetItemData(networkItem, curInventory.stations)
             self.SetItemBold(networkItem, True)
             self.SetItemImage(networkItem, self.icons['networkList'], wx.TreeItemIcon_Normal)
 
             stationItem = self.AppendItem(inventoryItem, 'unassigned stations')
-            self.SetItemPyData(stationItem, curInventory.stations)
+            self.SetItemData(stationItem, curInventory.stations)
             self.SetItemBold(stationItem, True)
             self.SetItemImage(stationItem, self.icons['stationList'], wx.TreeItemIcon_Normal)
 
             unassignedSensorItem = self.AppendItem(inventoryItem, 'unassigned sensors')
-            self.SetItemPyData(unassignedSensorItem, curInventory.sensors)
+            self.SetItemData(unassignedSensorItem, curInventory.sensors)
             self.SetItemBold(unassignedSensorItem, True)
             self.SetItemImage(unassignedSensorItem, self.icons['sensorList'], wx.TreeItemIcon_Normal)
 
             # Fill the recorders.
             for curRecorder in sorted(curInventory.recorders, key=lambda recorder: recorder.serial):
                 curRecorderItem = self.AppendItem(recorderItem, curRecorder.serial + '(' + curRecorder.type + ')')
-                self.SetItemPyData(curRecorderItem, curRecorder)
+                self.SetItemData(curRecorderItem, curRecorder)
                 self.SetItemImage(curRecorderItem, self.icons['recorder'], wx.TreeItemIcon_Normal)
                 for curSensor in sorted(curRecorder.sensors, key=lambda sensor: (sensor.serial, sensor.channel_name)):
                     item = self.AppendItem(curRecorderItem, curSensor.serial + ':' +curSensor.rec_channel_name + ':' + curSensor.channel_name + ':' + curSensor.type)
 
-                    self.SetItemPyData(item, curSensor)
+                    self.SetItemData(item, curSensor)
                     self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
             # Fill the unasigned stations.
             for curStation in curInventory.stations:
                 curStationItem = self.AppendItem(stationItem, curStation.name+':'+curStation.location)
-                self.SetItemPyData(curStationItem, curStation)
+                self.SetItemData(curStationItem, curStation)
                 self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
                 for (curSensor, curBegin, curEnd) in curStation.sensors:
                     item = self.AppendItem(curStationItem, curSensor.recorderSerial + ':' + curSensor.serial + ':' + curSensor.recChannelName)
-                    self.SetItemPyData(item, (curSensor, curBegin, curEnd))
+                    self.SetItemData(item, (curSensor, curBegin, curEnd))
                     self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
             # Fill the unassigned sensors.
             for curSensor in curInventory.sensors:
                     item = self.AppendItem(unassignedSensorItem, curSensor.serial + '(' + curSensor.type + ')')
-                    self.SetItemPyData(item, curSensor)
+                    self.SetItemData(item, curSensor)
                     self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
             # Fill the networks.
             for curNetwork in curInventory.networks:
                 curNetworkItem = self.AppendItem(networkItem, curNetwork.name)
-                self.SetItemPyData(curNetworkItem, curNetwork)
+                self.SetItemData(curNetworkItem, curNetwork)
                 self.SetItemImage(curNetworkItem, self.icons['network'], wx.TreeItemIcon_Normal)
 
                 for curStation in curNetwork.stations:
                     curStationItem = self.AppendItem(curNetworkItem, curStation.name+':'+curStation.location)
-                    self.SetItemPyData(curStationItem, curStation)
+                    self.SetItemData(curStationItem, curStation)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
                     for (curSensor, curBegin, curEnd) in sorted(curStation.sensors, key = lambda sensor: (sensor[0].recorder_serial, sensor[0].serial, sensor[0].rec_channel_name)):
                         item = self.AppendItem(curStationItem, curSensor.recorder_serial + ':' + curSensor.serial + ':' + curSensor.rec_channel_name)
-                        self.SetItemPyData(item, (curSensor, curBegin, curEnd))
+                        self.SetItemData(item, (curSensor, curBegin, curEnd))
                         self.SetItemImage(item, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
 

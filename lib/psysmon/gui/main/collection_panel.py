@@ -298,7 +298,7 @@ class CollectionPanel(wx.Panel):
                     looper_node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
                     item_data = {'node_pos': k,
                                  'node_type': 'looper'}
-                    self.collectionTreeCtrl.SetItemPyData(looper_node_item, item_data)
+                    self.collectionTreeCtrl.SetItemData(looper_node_item, item_data)
                     self.collectionTreeCtrl.SetItemImage(looper_node_item, self.collectionTreeCtrl.icons['looper_node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(looper_node_item)
@@ -311,7 +311,7 @@ class CollectionPanel(wx.Panel):
                         item_data = {'node_pos': k,
                                      'child_pos': child_pos,
                                      'node_type': 'looper_child'}
-                        self.collectionTreeCtrl.SetItemPyData(node_item, item_data)
+                        self.collectionTreeCtrl.SetItemData(node_item, item_data)
                         self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['looper_node_child'], wx.TreeItemIcon_Normal)
                         if not curNode.enabled:
                             self.collectionTreeCtrl.SetItemTextColour(node_item, wx.TheColourDatabase.Find('GREY70'))
@@ -320,7 +320,7 @@ class CollectionPanel(wx.Panel):
                     node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
                     item_data = {'node_pos': k,
                                  'node_type': 'node'}
-                    self.collectionTreeCtrl.SetItemPyData(node_item, item_data)
+                    self.collectionTreeCtrl.SetItemData(node_item, item_data)
                     self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(node_item)
