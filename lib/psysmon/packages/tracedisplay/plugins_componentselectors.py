@@ -144,7 +144,7 @@ class SelectStation(OptionPlugin):
                              choices = stationListString)
 
         ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
-        lb.SetCheckedItems(ind)
+        lb.SetChecked(ind)
 
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
@@ -179,7 +179,7 @@ class SelectStation(OptionPlugin):
         self.lb.Clear()
         self.lb.Append(stationListString)
         ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
-        self.lb.SetCheckedItems(ind)
+        self.lb.SetChecked(ind)
 
 
     def onBoxChecked(self, event):
