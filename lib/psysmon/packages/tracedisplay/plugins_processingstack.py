@@ -475,9 +475,9 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         for curNode in nodeTemplates:
             self.nodeListCtrl.InsertItem(index, curNode.name)
-            self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
-            self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
-            self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
+            self.nodeListCtrl.SetItem(index, 1, curNode.mode)
+            self.nodeListCtrl.SetItem(index, 2, curNode.category)
+            self.nodeListCtrl.SetItem(index, 3, ', '.join(curNode.tags))
             self.itemDataMap[index] = (curNode.name, curNode.mode, curNode.category, ', '.join(curNode.tags))
             self.nodeListCtrl.SetItemData(index, index)
             index += 1
@@ -489,9 +489,9 @@ class PStackNodeInventoryPanel(wx.Panel, listmix.ColumnSorterMixin):
 
         for curNode in nodeTemplates.values():
             self.nodeListCtrl.InsertItem(index, curNode.name)
-            self.nodeListCtrl.SetStringItem(index, 1, curNode.mode)
-            self.nodeListCtrl.SetStringItem(index, 2, curNode.category)
-            self.nodeListCtrl.SetStringItem(index, 3, ', '.join(curNode.tags))
+            self.nodeListCtrl.SetItem(index, 1, curNode.mode)
+            self.nodeListCtrl.SetItem(index, 2, curNode.category)
+            self.nodeListCtrl.SetItem(index, 3, ', '.join(curNode.tags))
             self.itemDataMap[index] = (curNode.name, curNode.mode, curNode.category, ', '.join(curNode.tags))
             self.nodeListCtrl.SetItemData(index, index)
             index += 1

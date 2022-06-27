@@ -428,8 +428,8 @@ class ImportWaveformEditDlg(wx.Frame):
             #    fSize = os.path.getsize(curFile['filename']);
             #    fSize = fSize/1024.0
             #    self.fileListCtrl.InsertItem(k, curFile['format'])
-            #    self.fileListCtrl.SetStringItem(k, 1, curFile['filename'])
-            #    self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fSize)
+            #    self.fileListCtrl.SetItem(k, 1, curFile['filename'])
+            #    self.fileListCtrl.SetItem(k, 2, "%.2f" % fSize)
 
 
     def initUI(self):

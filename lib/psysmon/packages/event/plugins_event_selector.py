@@ -552,7 +552,7 @@ class EventListField(wx.Panel, listmix.ColumnSorterMixin):
                 if n_col == 0:
                     self.controlElement.InsertItem(k, val)
                 else:
-                    self.controlElement.SetStringItem(k, n_col, val)
+                    self.controlElement.SetItem(k, n_col, val)
 
 
     def convert_to_isoformat(self, val):

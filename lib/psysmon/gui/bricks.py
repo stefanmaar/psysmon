@@ -1015,7 +1015,7 @@ class ListCtrlEditField(Field, listmix.ColumnSorterMixin):
                 if k == 0:
                     self.controlElement.InsertItem(index, str(cur_data))
                 else:
-                    self.controlElement.SetStringItem(index, k, str(cur_data))
+                    self.controlElement.SetItem(index, k, str(cur_data))
 
             self.controlElement.itemDataMap[index] = cur_row
             self.controlElement.SetItemData(index, index)
