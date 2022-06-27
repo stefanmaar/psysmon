@@ -650,7 +650,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         ''' Set the new start time of the displayed time period.
         '''
         self.displayManager.setStartTime(startTime)
-        #self.update_display()
+        self.update_display()
 
 
     def onKeyDown(self, event):
