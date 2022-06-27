@@ -20,6 +20,8 @@
 
 import wx
 
+import psysmon
+
 
 class NotebookPrefDialog(wx.Frame):
 
@@ -38,7 +40,10 @@ class NotebookPrefDialog(wx.Frame):
                           title=title, 
                           pos=wx.DefaultPosition,
                           style=wx.DEFAULT_FRAME_STYLE)
-        self.SetMinSize(size)  
+        self.SetMinSize(size)
+
+        # The logger.
+        self.logger = psysmon.get_logger(self)
 
         ## The node options being edited with the dialog.
         #
@@ -126,22 +131,22 @@ class NotebookPrefDialog(wx.Frame):
 
     def addContainer(self, container, pageName):
         if not self.pages:
-            print("No dialog pages found. Create one first.")
+            self.logger.debug("No dialog pages found. Create one first.")
             return
 
         if not pageName in iter(self.pages.keys()):
-            print("The specified page is not in the container list.")
+            self.logger.debug("The specified page is not in the container list.")
             return
 
         container.Reparent(self.pages[pageName])
         row = len(self.fieldContainer)
 
-        print("Adding container at row %d" % row)
+        self.logger.debug("Adding container at row %d" % row)
         self.pageSizers[pageName].Add(container, pos=(row, 0), flag=wx.EXPAND|wx.ALL, border=4)
 
         container.options = self.options
 
-        print("Adding container with name %s to the dictionary" % container.GetName())
+        self.logger.debug("Adding container with name %s to the dictionary" % container.GetName())
         self.fieldContainer[container.GetName()] = container
 
         self.notebook.Fit()
@@ -154,11 +159,11 @@ class NotebookPrefDialog(wx.Frame):
     def addField(self, field, container):
 
         if not self.fieldContainer:
-            print("No field container found. Create one first.")
+            self.logger.debug("No field container found. Create one first.")
             return
 
-        if not container in list(self.fieldContainer.values()):
-            print("The specified container is not in the container list.")
+        if container not in list(self.fieldContainer.values()):
+            self.logger.debug("The specified container is not in the container list.")
             return
 
         container.addField(field)

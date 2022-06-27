@@ -437,7 +437,7 @@ class Base(object):
 
             conn.execute('commit')
         except SQLAlchemyError as e:
-            print(e)
+            self.logger.exception(e)
             raise
         finally:
             conn.close()

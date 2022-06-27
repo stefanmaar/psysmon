@@ -328,7 +328,7 @@ class CollectionNode(object):
             The names of the variables to restore from the collection's 
             shelf.
         '''
-        print("Requiring data with name: %s and origin: %s" % (name, origin))
+        self.logger.debug("Requiring data with name: %s and origin: %s" % (name, origin))
         return self.parentCollection.unpickleData(name=name, origin=origin)
 
 
