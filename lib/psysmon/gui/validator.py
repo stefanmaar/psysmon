@@ -21,13 +21,13 @@
 import wx
 
 
-class NotEmptyValidator(wx.PyValidator):
+class NotEmptyValidator(wx.Validator):
     '''  A dialog field validator which doesn't allow empty field values.
     '''
     def __init__(self):
         ''' Initialize the instance.
         '''
-        wx.PyValidator.__init__(self)
+        wx.Validator.__init__(self)
 
         
     def Clone(self):
@@ -64,7 +64,7 @@ class NotEmptyValidator(wx.PyValidator):
         return True
 
 
-class IsEqualValidator(wx.PyValidator):
+class IsEqualValidator(wx.Validator):
     ''' A dialog field validator which checks for field entry equality.
 
     This validator can be used to check if the value entered in the field is 
@@ -79,7 +79,7 @@ class IsEqualValidator(wx.PyValidator):
     def __init__(self, ctrl2Compare):
         ''' Initialize the instance.
         '''
-        wx.PyValidator.__init__(self)
+        wx.Validator.__init__(self)
 
         ## The control to which the field to be validated should be compared to.
         self.ctrl2Compare = ctrl2Compare
@@ -116,4 +116,3 @@ class IsEqualValidator(wx.PyValidator):
     ## The method called when leaving the dialog.
     def TransferFromWindow(self):
         return True
-
