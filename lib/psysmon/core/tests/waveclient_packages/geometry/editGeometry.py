@@ -1013,10 +1013,10 @@ class InventoryViewNotebook(wx.Notebook):
         self.logger.debug("Initializing the mapview")
 
         def init_map(panel, cur_inventory):
-            panel.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+            panel.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
             panel.mapViewPanel.initMap(cur_inventory)
             panel.inventory = cur_inventory
-            panel.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            panel.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
         if inventory != self.inventory:
             #t = Thread(target = init_map, args = (self, inventory))

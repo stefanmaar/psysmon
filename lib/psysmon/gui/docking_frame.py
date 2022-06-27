@@ -793,7 +793,7 @@ class DockingFrame(wx.Frame):
                     self.viewport.SetCursor(wx.CursorFromImage(image))
                 else:
                     try:
-                        self.viewport.SetCursor(wx.StockCursor(plugin.cursor))
+                        self.viewport.SetCursor(wx.Cursor(plugin.cursor))
                     except Exception:
                         pass
 
@@ -823,7 +823,7 @@ class DockingFrame(wx.Frame):
         if plugin.mode != 'interactive':
             return
         self.viewport.clear_mpl_event_callbacks()
-        self.viewport.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        self.viewport.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         plugin.deactivate()
         self.shortcut_manager.remove_shortcut(origin_rid = plugin.rid)
         self.call_hook('plugin_deactivated', plugin_rid = plugin.rid)
