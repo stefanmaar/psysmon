@@ -89,7 +89,7 @@ class ProcessingStack(OptionPlugin):
                                            id = wx.ID_ANY,
                                            choices = nodeNames,
                                            size = (100, -1))
-        self.nodeListBox.SetChecked(isActive)
+        self.nodeListBox.SetCheckedItems(isActive)
 
         # By default select the first processing node.
         self.nodeListBox.SetSelection(0)
@@ -131,7 +131,7 @@ class ProcessingStack(OptionPlugin):
         nodeNames = [x.name for x in self.processingStack.nodes]
         isActive = [m for m, x in enumerate(self.processingStack) if x.isEnabled() == True]
         self.nodeListBox.AppendItems(nodeNames)
-        self.nodeListBox.SetChecked(isActive)
+        self.nodeListBox.SetCheckedItems(isActive)
 
 
 
@@ -256,7 +256,7 @@ class PStackEditPanel(wx.Panel):
                                            id = wx.ID_ANY,
                                            choices = node_names,
                                            size = (100, -1))
-        self.nodeListBox.SetChecked(is_active)
+        self.nodeListBox.SetCheckedItems(is_active)
 
         # By default select the first processing node.
         self.nodeListBox.SetSelection(0)
@@ -318,7 +318,7 @@ class PStackEditPanel(wx.Panel):
         node_names = [x.name for x in self.selected_nodes]
         is_active = [m for m,x in enumerate(self.selected_nodes) if x.isEnabled() == True]
         self.nodeListBox.AppendItems(node_names)
-        self.nodeListBox.SetChecked(is_active)
+        self.nodeListBox.SetCheckedItems(is_active)
 
 
     def on_node_checked(self, event):
