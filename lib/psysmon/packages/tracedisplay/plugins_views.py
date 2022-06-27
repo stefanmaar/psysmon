@@ -1277,12 +1277,13 @@ class FrequencySpectrumView(psy_view.viewnode.ViewNode):
             #   P = 2* 1/T * deltaT^2 * abs(F_dft)^2
             #   
             n_fft = len(trace.data)
-            delta_t = old_div(1, trace.stats.sampling_rate)
+            delta_t = 1 / trace.stats.sampling_rate
             T = (len(trace.data) - 1) * delta_t
-            Y = scipy.fft(trace.data, n_fft)
-            psd = old_div(2 * delta_t**2, T * np.abs(Y)**2)
+            Y = scipy.fft.fft(trace.data,
+                              n = n_fft)
+            psd = (2 * delta_t**2 / T) * np.abs(Y)**2
             psd = 10 * np.log10(psd)
-            frequ = trace.stats.sampling_rate * np.arange(0,n_fft) / float(n_fft)
+            frequ = trace.stats.sampling_rate * np.arange(0, n_fft) / float(n_fft)
 
             left_fft = int(np.ceil(n_fft / 2.))
 
@@ -1298,32 +1299,48 @@ class FrequencySpectrumView(psy_view.viewnode.ViewNode):
                 m_left_fft = int(np.ceil(m_pad_to / 2.))
             m_overlap = m_n_fft * 0.75
             (m_psd, m_frequ) = mlab.psd(trace.data,
-                                  Fs = trace.stats.sampling_rate,
-                                  NFFT = m_n_fft,
-                                  noverlap = m_overlap,
-                                  detrend = 'constant',
-                                  scale_by_freq = True,
-                                  pad_to = m_pad_to)
+                                        Fs = trace.stats.sampling_rate,
+                                        NFFT = m_n_fft,
+                                        noverlap = m_overlap,
+                                        detrend = 'constant',
+                                        scale_by_freq = True,
+                                        pad_to = m_pad_to)
             m_psd = 10 * np.log10(m_psd)
             self.logger.debug('m_frequ: %s', m_frequ)
             self.logger.debug('m_psd: %s', m_psd)
 
+            min_frequ = 1
+            max_frequ = None
 
+            if max_frequ is None:
+                max_frequ = trace.stats.sampling_rate / 2
+
+            left_frequ = frequ[1:left_fft]
+            left_psd = psd[1:left_fft]
+            m_left_frequ = m_frequ[1:m_left_fft]
+            m_left_psd = m_psd[1:m_left_fft]
+            
+            mask = (left_frequ >= min_frequ) & (left_frequ <= max_frequ)
+            m_mask = (m_left_frequ >= min_frequ) & (m_left_frequ <= max_frequ)
 
             # Plot the psd.
             if not self.lines['psd']:
-                self.lines['psd'], = self.axes.plot(frequ[1:left_fft], psd[1:left_fft], color = self.line_colors['psd'])
-                self.lines['m_psd'], = self.axes.plot(m_frequ[1:m_left_fft], m_psd[1:m_left_fft], color = 'r')
+                self.lines['psd'], = self.axes.plot(left_frequ[mask],
+                                                    left_psd[mask],
+                                                    color = self.line_colors['psd'])
+                self.lines['m_psd'], = self.axes.plot(m_left_frequ[m_mask],
+                                                      m_left_psd[m_mask],
+                                                      color = 'r')
             else:
-                self.lines['psd'].set_xdata(frequ[1:left_fft])
-                self.lines['psd'].set_ydata(psd[1:left_fft])
-                self.lines['m_psd'].set_xdata(m_frequ[1:m_left_fft])
-                self.lines['m_psd'].set_ydata(m_psd[1:m_left_fft])
+                self.lines['psd'].set_xdata(left_frequ[mask])
+                self.lines['psd'].set_ydata(left_psd[mask])
+                self.lines['m_psd'].set_xdata(m_left_frequ[m_mask])
+                self.lines['m_psd'].set_ydata(m_left_psd[m_mask])
 
             cur_unit = trace.stats.unit
 
-            self.logger.info('max: %s', max(psd[1:left_fft]))
-            self.logger.info('min: %s', min(psd[1:left_fft]))
+            self.logger.info('max: %s', max(left_psd[mask]))
+            self.logger.info('min: %s', min(left_psd[mask]))
 
             # Plot the noise model.
             if self.show_noise_model:
@@ -1337,22 +1354,25 @@ class FrequencySpectrumView(psy_view.viewnode.ViewNode):
                 self.axes.set_ylim(bottom = -220, top = -80)
                 cur_unit_label = '(m/s^2)^2/Hz in dB'
             elif cur_unit == 'counts':
-                self.axes.set_ylim(bottom = min(psd[1:left_fft]),
-                                   top = max(psd[1:left_fft]))
+                self.axes.set_ylim(bottom = min(left_psd[mask]),
+                                   top = max(left_psd[mask]))
                 cur_unit_label = 'counts^2/Hz in dB'
             else:
                 cur_unit_label = '???^2/Hz in dB'
 
+            # Styling of the axis.
             self.axes.set_xscale('log')
-            self.axes.set_xlim(left = 1e-3, right = trace.stats.sampling_rate)
-            self.axes.set_frame_on(False)
+            self.axes.set_xlim(left = min_frequ,
+                               right = max_frequ)
+            self.axes.xaxis.grid(True,
+                                 which = 'both')
+            #self.axes.set_frame_on(False)
             self.axes.tick_params(axis = 'x', pad = -20)
             self.axes.tick_params(axis = 'y', pad = -40)
 
             annot_string = 'X-axis: frequency\nX-units: Hz\n\nY-axis: psd\nY-units: %s' % cur_unit_label
             self.set_annotation(annot_string)
-            #self.axes.get_xaxis().set_visible(False)
-            #self.axes.get_yaxis().set_visible(False)
+
 
 
     def plot_noise_model(self, unit):
