@@ -144,7 +144,7 @@ class Field(wx.Panel):
     def addControl(self, controlElement):
         self.controlElement = controlElement
         if self.pref_item.tool_tip is not None:
-            self.controlElement.SetToolTipString(self.pref_item.tool_tip)
+            self.controlElement.SetToolTip(self.pref_item.tool_tip)
         self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
         self.sizer.AddGrowableCol(1)
 
@@ -214,7 +214,7 @@ class PrefPagePanel(wx.Panel):
                                             id = wx.ID_ANY,
                                             label = cur_item.label)
                     if cur_item.tool_tip is not None:
-                        gui_element.SetToolTipString(cur_item.tool_tip)
+                        gui_element.SetToolTip(cur_item.tool_tip)
                     gui_element.Bind(wx.EVT_BUTTON, cur_item.action)
                     cur_item.set_gui_element(gui_element)
                     cur_container.addActionField(gui_element)
