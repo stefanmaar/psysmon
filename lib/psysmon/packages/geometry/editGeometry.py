@@ -1603,7 +1603,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
     def onItemSelectionChanged(self, evt):
         self.logger.debug("onItemSelectionChanged: %s", self.GetItemText(evt.GetItem()))
-        pyData = self.GetItemPyData(evt.GetItem())
+        pyData = self.GetItemData(evt.GetItem())
 
         # The pydata of the stationsensors is a tuple.
         if isinstance(pyData, tuple):

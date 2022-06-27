@@ -221,7 +221,7 @@ class CollectionPanel(wx.Panel):
     def onCollectionNodeItemSelected(self, evt):
         if not evt.GetItem():
             return
-        item_data = self.collectionTreeCtrl.GetItemPyData(evt.GetItem())
+        item_data = self.collectionTreeCtrl.GetItemData(evt.GetItem())
         node_type = item_data['node_type']
         node_pos = item_data['node_pos']
         self.logger.debug("Selected node %s at position %d in collection.", node_type, node_pos)
