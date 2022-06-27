@@ -185,7 +185,7 @@ class DataSourceDlg(wx.Dialog):
         for k, name in enumerate(client_names):
             client = self.psyBase.project.waveclient[name]
             if name == self.psyBase.project.defaultWaveclient:
-                self.wcListCtrl.InsertImageStringItem(k, client.name, self.iconDefault)
+                self.wcListCtrl.InsertItem(k, client.name, self.iconDefault)
             else:
                 self.wcListCtrl.InsertItem(k, client.name)
             self.wcListCtrl.SetItem(k, 1, client.mode)
