@@ -225,10 +225,10 @@ class TdDatetimeInfo(wx.Panel):
         sizer.AddGrowableRow(0)
         sizer.AddGrowableCol(4)
 
-        print("Sizes: ")
-        print(self.durationFloatSpin.GetMinSize())
-        print(self.durationFloatSpin.GetBestSize())
-        print(self.durationFloatSpin.DoGetBestClientSize())
+        #print("Sizes: ")
+        #print(self.durationFloatSpin.GetMinSize())
+        #print(self.durationFloatSpin.GetBestSize())
+        #print(self.durationFloatSpin.DoGetBestClientSize())
 
         self.SetSizerAndFit(sizer)
 

@@ -851,7 +851,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         viewPlugins = [x for x in self.plugins if x.mode == 'view' and x.active]
 
         for curPlugin in viewPlugins:
-            print('Plotting plugin {:s}.'.format(curPlugin.name))
+            self.logger.debug('Plotting plugin {:s}.'.format(curPlugin.name))
             curPlugin.plot(self.displayManager, self.dataManager)
 
         # Hide those views which don't contain any data.
