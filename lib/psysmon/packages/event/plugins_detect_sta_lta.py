@@ -372,7 +372,6 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
                     cur_line.set_ydata(cur_data)
 
             y_lim = [np.min(y_lim_min), np.max(y_lim_max)]
-            print(y_lim)
             self.axes.set_ylim(bottom = y_lim[0], top = y_lim[1])
             #self.axes.set_ylim(bottom = 0, top = detector.thr)
             self.axes.set_yscale('log')
