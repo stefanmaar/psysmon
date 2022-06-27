@@ -223,9 +223,9 @@ class EditGeometryDlg(wx.Frame):
             for curFile in self.collectionNode.property['inputFiles']:
                 fSize = os.path.getsize(curFile['filename']);
                 fSize = fSize/1024.0
-                self.fileListCtrl.InsertStringItem(index, curFile['format'])
-                self.fileListCtrl.SetStringItem(index, 1, curFile['filename'])
-                self.fileListCtrl.SetStringItem(index, 2, "%.2f" % fSize)
+                self.fileListCtrl.InsertItem(index, curFile['format'])
+                self.fileListCtrl.SetItem(index, 1, curFile['filename'])
+                self.fileListCtrl.SetItem(index, 2, "%.2f" % fSize)
                 index += 1
 
 
@@ -1603,7 +1603,7 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
     def onItemSelectionChanged(self, evt):
         self.logger.debug("onItemSelectionChanged: %s", self.GetItemText(evt.GetItem()))
-        pyData = self.GetItemPyData(evt.GetItem())
+        pyData = self.GetItemData(evt.GetItem())
 
         # The pydata of the stationsensors is a tuple.
         if isinstance(pyData, tuple):
@@ -1752,27 +1752,27 @@ class InventoryTreeCtrl(wx.TreeCtrl):
         # rebuild the inventory tree.
         for curKey, curInventory in self.Parent.inventories.items():
             inventoryItem = self.AppendItem(self.root, curKey + '(' + curInventory.type + ')')
-            self.SetItemPyData(inventoryItem, curInventory)
+            self.SetItemData(inventoryItem, curInventory)
             self.SetItemBold(inventoryItem, True)
             self.SetItemImage(inventoryItem, self.icons['xmlInventory'], wx.TreeItemIcon_Normal)
 
             sensorListItem = self.AppendItem(inventoryItem, 'Sensors')
-            self.SetItemPyData(sensorListItem, curInventory)
+            self.SetItemData(sensorListItem, curInventory)
             self.SetItemBold(sensorListItem, True)
             self.SetItemImage(sensorListItem, self.icons['sensorList'], wx.TreeItemIcon_Normal)
 
             recorderListItem = self.AppendItem(inventoryItem, 'Recorders')
-            self.SetItemPyData(recorderListItem, curInventory)
+            self.SetItemData(recorderListItem, curInventory)
             self.SetItemBold(recorderListItem, True)
             self.SetItemImage(recorderListItem, self.icons['recorderList'], wx.TreeItemIcon_Normal)
 
             networkListItem = self.AppendItem(inventoryItem, 'Networks')
-            self.SetItemPyData(networkListItem, curInventory)
+            self.SetItemData(networkListItem, curInventory)
             self.SetItemBold(networkListItem, True)
             self.SetItemImage(networkListItem, self.icons['networkList'], wx.TreeItemIcon_Normal)
 
             arrayListItem = self.AppendItem(inventoryItem, 'Arrays')
-            self.SetItemPyData(arrayListItem, curInventory)
+            self.SetItemData(arrayListItem, curInventory)
             self.SetItemBold(arrayListItem, True)
             self.SetItemImage(arrayListItem, self.icons['arrayList'], wx.TreeItemIcon_Normal)
 
@@ -1783,86 +1783,86 @@ class InventoryTreeCtrl(wx.TreeCtrl):
                 else:
                     sensor_model = curSensor.model
                 curSensorItem = self.AppendItem(sensorListItem, curSensor.serial + ' (' + curSensor.producer + ':' + sensor_model + ')')
-                self.SetItemPyData(curSensorItem, curSensor)
+                self.SetItemData(curSensorItem, curSensor)
                 self.SetItemImage(curSensorItem, self.icons['sensor'], wx.TreeItemIcon_Normal)
 
                 for curComponent in sorted(curSensor.components, key = attrgetter('name')):
                     curComponentItem = self.AppendItem(curSensorItem, curComponent.name)
-                    self.SetItemPyData(curComponentItem, curComponent)
+                    self.SetItemData(curComponentItem, curComponent)
                     self.SetItemImage(curComponentItem, self.icons['sensor_component'], wx.TreeItemIcon_Normal)
 
                     for curParameter in sorted(curComponent.parameters, key = attrgetter('start_time')):
                         item = self.AppendItem(curComponentItem, '(' + curParameter.start_time_string + ' to ' + curParameter.end_time_string + ')')
-                        self.SetItemPyData(item, curParameter)
+                        self.SetItemData(item, curParameter)
                         self.SetItemImage(item, self.icons['sensor_component_parameter'], wx.TreeItemIcon_Normal)
 
 
             # Fill the recorders.
             for curRecorder in sorted(curInventory.recorders, key = attrgetter('serial')):
                 curRecorderItem = self.AppendItem(recorderListItem, curRecorder.serial + ' (' + curRecorder.producer + ':' + curRecorder.model + ')')
-                self.SetItemPyData(curRecorderItem, curRecorder)
+                self.SetItemData(curRecorderItem, curRecorder)
                 self.SetItemImage(curRecorderItem, self.icons['recorder'], wx.TreeItemIcon_Normal)
 
 
                 # Add the recorder streams.
                 for curStream in sorted(curRecorder.streams, key = attrgetter('name')):
                     curStreamItem = self.AppendItem(curRecorderItem, curStream.name)
-                    self.SetItemPyData(curStreamItem, curStream)
+                    self.SetItemData(curStreamItem, curStream)
                     self.SetItemImage(curStreamItem, self.icons['recorder_stream'], wx.TreeItemIcon_Normal)
 
                     # Add the recorder stream parameter list icon.
                     list_item = self.AppendItem(curStreamItem, 'parameters')
-                    self.SetItemPyData(list_item, curStream)
+                    self.SetItemData(list_item, curStream)
                     self.SetItemBold(list_item, True)
                     self.SetItemImage(list_item, self.icons['recorder_stream_parameter_list'], wx.TreeItemIcon_Normal)
                     for cur_parameter in sorted(curStream.parameters, key = attrgetter('start_time')):
                         item = self.AppendItem(list_item, '(' + cur_parameter.start_time_string + ' to ' + cur_parameter.end_time_string + ')')
-                        self.SetItemPyData(item, cur_parameter)
+                        self.SetItemData(item, cur_parameter)
                         self.SetItemImage(item, self.icons['recorder_stream_parameter'], wx.TreeItemIcon_Normal)
 
                     # Add the assigned component list icon.
                     list_item = self.AppendItem(curStreamItem, 'assigned components')
-                    self.SetItemPyData(list_item, curStream)
+                    self.SetItemData(list_item, curStream)
                     self.SetItemBold(list_item, True)
                     self.SetItemImage(list_item, self.icons['recorder_assigned_components_list'], wx.TreeItemIcon_Normal)
 
                     for curTimebox in sorted(curStream.components, key = attrgetter('start_time')):
                         item = self.AppendItem(list_item, curTimebox.item.serial + ':' + curTimebox.item.name + ' (' + curTimebox.start_time_string + ' to ' + curTimebox.end_time_string + ')')
-                        self.SetItemPyData(item, curTimebox)
+                        self.SetItemData(item, curTimebox)
                         self.SetItemImage(item, self.icons['sensor_component'], wx.TreeItemIcon_Normal)
 
 
             # Fill the networks.
             for curNetwork in curInventory.networks:
                 curNetworkItem = self.AppendItem(networkListItem, curNetwork.name)
-                self.SetItemPyData(curNetworkItem, curNetwork)
+                self.SetItemData(curNetworkItem, curNetwork)
                 self.SetItemImage(curNetworkItem, self.icons['network'], wx.TreeItemIcon_Normal)
 
                 for curStation in sorted(curNetwork.stations,key = attrgetter('name')):
                     curStationItem = self.AppendItem(curNetworkItem, curStation.name + ':' + curStation.location_string)
-                    self.SetItemPyData(curStationItem, curStation)
+                    self.SetItemData(curStationItem, curStation)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
 
                     for curChannel in sorted(curStation.channels, key = attrgetter('name')):
                         curChannelItem = self.AppendItem(curStationItem, curChannel.name)
-                        self.SetItemPyData(curChannelItem, curChannel)
+                        self.SetItemData(curChannelItem, curChannel)
                         self.SetItemImage(curChannelItem, self.icons['channel'], wx.TreeItemIcon_Normal)
 
                         for curTimebox in sorted(curChannel.streams, key = attrgetter('start_time')):
                             item = self.AppendItem(curChannelItem, curTimebox.item.serial + ':' + curTimebox.item.name + ' (' + curTimebox.start_time_string + ' to ' + curTimebox.end_time_string + ')')
-                            self.SetItemPyData(item, curTimebox)
+                            self.SetItemData(item, curTimebox)
                             self.SetItemImage(item, self.icons['channel_stream'], wx.TreeItemIcon_Normal)
 
             # Fill the arrays.
             for curArray in curInventory.arrays:
                 curArrayItem = self.AppendItem(arrayListItem, curArray.name)
-                self.SetItemPyData(curArrayItem, curArray)
+                self.SetItemData(curArrayItem, curArray)
                 self.SetItemImage(curArrayItem, self.icons['array'], wx.TreeItemIcon_Normal)
 
                 for curStationTb in sorted(curArray.stations, key = attrgetter('name')):
                     curStationItem = self.AppendItem(curArrayItem, curStationTb.network + ':' + curStationTb.name + ':' + curStationTb.location_string)
                     print(curStationTb.item)
-                    self.SetItemPyData(curStationItem, curStationTb)
+                    self.SetItemData(curStationItem, curStationTb)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
 
             self.ExpandAllChildren(inventoryItem)
@@ -1946,10 +1946,10 @@ class InventoryViewNotebook(wx.Notebook):
         self.logger.debug("Initializing the mapview")
 
         def init_map(panel, cur_inventory):
-            panel.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+            panel.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
             panel.mapViewPanel.initMap(cur_inventory)
             panel.inventory = cur_inventory
-            panel.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            panel.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
         if inventory != self.inventory or array != self.array:
             #t = Thread(target = init_map, args = (self, inventory))

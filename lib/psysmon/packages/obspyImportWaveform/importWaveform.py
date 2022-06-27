@@ -426,9 +426,9 @@ class ImportWaveformEditDlg(wx.Frame):
             #for k, curFile in enumerate(self.collectionNode.pref_manager.get_value('input_files')):
             #    fSize = os.path.getsize(curFile['filename']);
             #    fSize = fSize/1024.0
-            #    self.fileListCtrl.InsertStringItem(k, curFile['format'])
-            #    self.fileListCtrl.SetStringItem(k, 1, curFile['filename'])
-            #    self.fileListCtrl.SetStringItem(k, 2, "%.2f" % fSize)
+            #    self.fileListCtrl.InsertItem(k, curFile['format'])
+            #    self.fileListCtrl.SetItem(k, 1, curFile['filename'])
+            #    self.fileListCtrl.SetItem(k, 2, "%.2f" % fSize)
 
 
     def initUI(self):

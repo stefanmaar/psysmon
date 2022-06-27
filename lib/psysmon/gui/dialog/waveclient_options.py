@@ -277,13 +277,13 @@ class PsysmonDbWaveClientOptions(wx.Panel):
             else:
                 last_scan = curDir.last_scan
 
-            self.wfListCtrl.InsertStringItem(k, str(curDir.id))
-            self.wfListCtrl.SetStringItem(k, 1, curDir.directory)
-            self.wfListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
-            self.wfListCtrl.SetStringItem(k, 3, curDir.description)
-            self.wfListCtrl.SetStringItem(k, 4, curDir.file_ext)
-            self.wfListCtrl.SetStringItem(k, 5, first_import)
-            self.wfListCtrl.SetStringItem(k, 6, last_scan)
+            self.wfListCtrl.InsertItem(k, str(curDir.id))
+            self.wfListCtrl.SetItem(k, 1, curDir.directory)
+            self.wfListCtrl.SetItem(k, 2, curDir.aliases[0].alias)
+            self.wfListCtrl.SetItem(k, 3, curDir.description)
+            self.wfListCtrl.SetItem(k, 4, curDir.file_ext)
+            self.wfListCtrl.SetItem(k, 5, first_import)
+            self.wfListCtrl.SetItem(k, 6, last_scan)
 
         self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         #self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)

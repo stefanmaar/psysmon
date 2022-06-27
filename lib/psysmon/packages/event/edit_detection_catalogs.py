@@ -166,12 +166,12 @@ class EditDetectionCatalogsDlg(wx.Frame):
         self.list_ctrl.DeleteAllItems()
 
         for cur_catalog in self.catalogs:
-            self.list_ctrl.InsertStringItem(index, str(cur_catalog.id))
-            self.list_ctrl.SetStringItem(index, 1, cur_catalog.name)
-            self.list_ctrl.SetStringItem(index, 2, cur_catalog.description)
-            self.list_ctrl.SetStringItem(index, 3, cur_catalog.agency_uri)
-            self.list_ctrl.SetStringItem(index, 4, cur_catalog.author_uri)
-            self.list_ctrl.SetStringItem(index, 5, cur_catalog.creation_time)
+            self.list_ctrl.InsertItem(index, str(cur_catalog.id))
+            self.list_ctrl.SetItem(index, 1, cur_catalog.name)
+            self.list_ctrl.SetItem(index, 2, cur_catalog.description)
+            self.list_ctrl.SetItem(index, 3, cur_catalog.agency_uri)
+            self.list_ctrl.SetItem(index, 4, cur_catalog.author_uri)
+            self.list_ctrl.SetItem(index, 5, cur_catalog.creation_time)
 
             index += 1
 

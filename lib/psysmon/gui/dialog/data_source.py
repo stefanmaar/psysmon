@@ -185,12 +185,12 @@ class DataSourceDlg(wx.Dialog):
         for k, name in enumerate(client_names):
             client = self.psyBase.project.waveclient[name]
             if name == self.psyBase.project.defaultWaveclient:
-                self.wcListCtrl.InsertImageStringItem(k, client.name, self.iconDefault)
+                self.wcListCtrl.InsertItem(k, client.name, self.iconDefault)
             else:
-                self.wcListCtrl.InsertStringItem(k, client.name)
-            self.wcListCtrl.SetStringItem(k, 1, client.mode)
-            self.wcListCtrl.SetStringItem(k, 2, client.description)
-            #self.wcListCtrl.SetStringItem(k, 2, curDir.aliases[0].alias)
+                self.wcListCtrl.InsertItem(k, client.name)
+            self.wcListCtrl.SetItem(k, 1, client.mode)
+            self.wcListCtrl.SetItem(k, 2, client.description)
+            #self.wcListCtrl.SetItem(k, 2, curDir.aliases[0].alias)
 
         self.wcListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.wcListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
@@ -206,10 +206,10 @@ class DataSourceDlg(wx.Dialog):
             The waveformDir mapper instance to be added to the list control.
         '''
         k = self.wfListCtrl.GetItemCount()
-        self.wfListCtrl.InsertStringItem(k, str(item.id))
-        self.wfListCtrl.SetStringItem(k, 1, item.directory)
-        self.wfListCtrl.SetStringItem(k, 2, item.aliases[0].alias)
-        self.wfListCtrl.SetStringItem(k, 3, item.description)
+        self.wfListCtrl.InsertItem(k, str(item.id))
+        self.wfListCtrl.SetItem(k, 1, item.directory)
+        self.wfListCtrl.SetItem(k, 2, item.aliases[0].alias)
+        self.wfListCtrl.SetItem(k, 3, item.description)
         self.wfListCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.wfListCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
         self.wfListCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
