@@ -2227,12 +2227,11 @@ class MapViewPanel(wx.Panel):
 
         #TODO The call in the next line prevents the creation of the map.
         #self.pref_manager.set_value('projection_coordinate_system', 'epsg:'+code[0][0])
-        proj = pyproj.Proj(init = 'epsg:'+code[0][0])
-
+        proj = pyproj.Proj('epsg:'+code[0][0])
 
         # Plot the stations.
         station_palette = sns.color_palette(n_colors = len(inventory.arrays) + 1)
-        x,y = proj(lon, lat)
+        x, y = proj(lon, lat)
         stat_color = []
         for cur_station, cur_x, cur_y in zip(self.stations, x, y):
             cur_color = station_palette[0]
@@ -2242,11 +2241,16 @@ class MapViewPanel(wx.Panel):
                     break
             stat_color.append(cur_color)
             self.mapAx.text(cur_x, cur_y, cur_station.snl_string)
-        self.mapAx.scatter(x, y, s=100, c = stat_color, marker='^', picker=5, zorder = 3)
+        self.mapAx.scatter(x, y,
+                           s = 100,
+                           c = stat_color,
+                           marker = '^',
+                           picker = 5,
+                           zorder = 3)
 
         # Add some map annotation.
         self.mapAx.text(1, 1.02, geom_util.epsg_from_srs(proj.srs),
-            ha = 'right', transform = self.mapAx.transAxes)
+                        ha = 'right', transform = self.mapAx.transAxes)
 
 
     def plot_array(self, array):
