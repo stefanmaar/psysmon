@@ -34,6 +34,9 @@ plugin_modules = ['plugin_pick_tool', ]
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
 
+# The packages which this package requires.
+depends_on = ['geometry', 'event']
+
 
 def databaseFactory(base):
     from sqlalchemy import Column

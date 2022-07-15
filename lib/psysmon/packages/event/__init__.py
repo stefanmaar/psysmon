@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-name = "events"                                 # The package name.
+name = "event"                                 # The package name.
 version = "0.0.2"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
@@ -45,6 +45,9 @@ plugin_modules = ['plugins_event_selector',
 
 # Specify the module(s) where to search for processing node classes.
 processing_node_modules = []
+
+# The packages which this package requires.
+depends_on = ['geometry']
 
 
 '''
@@ -100,8 +103,45 @@ def databaseFactory(base):
             self.author_uri = author_uri
             self.creation_time = creation_time
 
-
     tables.append(EventCatalogDb)
+
+
+    ###########################################################################
+    # EVENT_TYPE table mapper class
+    class EventTypeDb(base):
+        __tablename__  = 'event_type'
+        __table_args__ = (
+                          UniqueConstraint('name'),
+                          {'mysql_engine': 'InnoDB'}
+                         )
+        _version = '1.0.0'
+
+        id = Column(Integer, primary_key = True, autoincrement = True)
+        parent_id = Column(Integer,
+                           ForeignKey('event_type.id',
+                                      onupdate = 'cascade',
+                                      ondelete = 'cascade'),
+                           nullable = True)
+        name = Column(String(191), nullable = False)
+        description = Column(Text, nullable = True)
+        agency_uri = Column(String(255), nullable = True)
+        author_uri = Column(String(255), nullable = True)
+        creation_time = Column(String(30), nullable = True)
+
+        children = relationship('EventTypeDb',
+                                cascade = 'all',
+                                backref = backref('parent', remote_side = [id]))
+
+
+        def __init__(self, name, description, agency_uri,
+                     author_uri, creation_time):
+            self.name = name
+            self.description = description
+            self.agency_uri = agency_uri
+            self.author_uri = author_uri
+            self.creation_time = creation_time
+
+    tables.append(EventTypeDb)
 
 
 
@@ -116,10 +156,10 @@ def databaseFactory(base):
 
         id = Column(Integer, primary_key = True, autoincrement = True)
         ev_catalog_id = Column(Integer,
-                             ForeignKey('event_catalog.id',
-                                        onupdate = 'cascade',
-                                        ondelete = 'set null'),
-                             nullable = True)
+                               ForeignKey('event_catalog.id',
+                                          onupdate = 'cascade',
+                                          ondelete = 'set null'),
+                               nullable = True)
         start_time = Column(Float(53), nullable = False)
         end_time = Column(Float(53), nullable = False)
         public_id = Column(String(255), nullable = True)
@@ -166,46 +206,6 @@ def databaseFactory(base):
 
     tables.append(EventDb)
 
-
-
-
-    ###########################################################################
-    # EVENT_TYPE table mapper class
-    class EventTypeDb(base):
-        __tablename__  = 'event_type'
-        __table_args__ = (
-                          UniqueConstraint('name'),
-                          {'mysql_engine': 'InnoDB'}
-                         )
-        _version = '1.0.0'
-
-        id = Column(Integer, primary_key = True, autoincrement = True)
-        parent_id = Column(Integer,
-                           ForeignKey('event_type.id',
-                                      onupdate = 'cascade',
-                                      ondelete = 'cascade'),
-                           nullable = True)
-        name = Column(String(191), nullable = False)
-        description = Column(Text, nullable = True)
-        agency_uri = Column(String(255), nullable = True)
-        author_uri = Column(String(255), nullable = True)
-        creation_time = Column(String(30), nullable = True)
-
-        children = relationship('EventTypeDb',
-                                cascade = 'all',
-                                backref = backref('parent', remote_side = [id]))
-
-
-        def __init__(self, name, description, agency_uri,
-                     author_uri, creation_time):
-            self.name = name
-            self.description = description
-            self.agency_uri = agency_uri
-            self.author_uri = author_uri
-            self.creation_time = creation_time
-
-
-    tables.append(EventTypeDb)
 
 
     ###########################################################################
@@ -299,12 +299,10 @@ def databaseFactory(base):
                          )
         _version = '1.1.0'
 
-
-
         ev_id = Column(Integer,
                        ForeignKey('event.id',
-                                   onupdate = 'cascade',
-                                   ondelete = 'cascade'),
+                                  onupdate = 'cascade',
+                                  ondelete = 'cascade'),
                        primary_key = True,
                        nullable = False)
         det_id = Column(Integer,
@@ -313,7 +311,7 @@ def databaseFactory(base):
                                    ondelete = 'cascade'),
                         primary_key = True,
                         nullable = False)
-
+        
         detection = relationship('DetectionDb')
 
         def __init(self, ev_id, det_id):
@@ -321,8 +319,6 @@ def databaseFactory(base):
             self.det_id = det_id
 
     tables.append(DetectionToEventDb)
-
-
 
     return tables
 
