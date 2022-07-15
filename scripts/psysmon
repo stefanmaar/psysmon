@@ -70,7 +70,9 @@ def run(config):
     Start the psysmon program.
     '''
     config_file = config
-    if config_file is not None:
+    if config_file is None:
+        config_file = psysmon.get_config_file()
+    else:
         config_file = os.path.abspath(config_file)
     config = load_config(config_file = config_file)
 
@@ -93,8 +95,9 @@ def run(config):
     logger.addHandler(handler)
 
     if pref_manager is None:
-        logger.warning("Couldn't load the configuration from file %s.",
+        logger.warning("Couldn't load the configuration from file %s. Using the default configuration.",
                        config_file)
+        logger.info("If this is the first time starting psysmon, the configuration file will be created and the warning should not appear again.")
 
     psyBaseDir = os.path.abspath(psysmon.__file__)
     psyBaseDir = os.path.dirname(psyBaseDir)
@@ -130,13 +133,10 @@ def run(config):
     psyBase.stop_project_server()
 
 
-def load_config(config_file = None):
+def load_config(config_file):
     ''' Load the configuration data from the config file.
     '''
     config = {}
-
-    if not config_file:
-        config_file = psysmon.get_config_file()
 
     if os.path.exists(config_file):
         try:
