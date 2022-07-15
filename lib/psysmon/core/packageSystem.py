@@ -406,9 +406,15 @@ class PackageManager(object):
         --------
         :class:`Package`
         '''
-        curPkg = Package(name=pkgModule.name,
-                         version=pkgModule.version,
-                         dependency=None)
+
+        try:
+            depends_on = pkgModule.depends_on
+        except Exception:
+            depends_on = []
+            
+        curPkg = Package(name = pkgModule.name,
+                         version = pkgModule.version,
+                         dependency = depends_on)
 
         self.dbMetadata = MetaData()
 
@@ -737,7 +743,7 @@ class Package(object):
 
     '''
 
-    def __init__(self, name, version, dependency):   
+    def __init__(self, name, version, dependency):
         '''
         The constructor.
 
@@ -768,6 +774,8 @@ class Package(object):
         self.version = version
 
         # The package dependencies.
+        if dependency is None:
+            dependency = []
         self.dependency = dependency
 
         #The collection node templates of the package.
