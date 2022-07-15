@@ -136,7 +136,7 @@ class SelectDataSource(psysmon.core.packageNodes.CollectionNode):
 
         client = self.project.waveclient[selected_waveclient]
 
-        if client.mode is not 'PsysmonDbWaveClient':
+        if client.mode != 'PsysmonDbWaveClient':
             waveform_dir_list = []
         else:
             client.loadWaveformDirList()
