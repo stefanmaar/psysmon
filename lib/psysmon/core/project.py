@@ -823,13 +823,9 @@ class Project(object):
         
         sorted_keys = sorted(list(packages_wo_dep.keys()))
         sorted_packages = [packages_wo_dep[x] for x in sorted_keys]
-        
+
+        remaining_packages = packages_w_dep.copy()
         for k in range(len(packages_w_dep)):
-            remaining_packages = [(key, pkg) for key, pkg in packages_w_dep.items() if key not in sorted_keys]
-            remaining_packages = dict(remaining_packages)
-            if len(remaining_packages) == 0:
-                break
-            
             for key, pkg in remaining_packages.items():
                 dependency = pkg.dependency
                 dependency_ok = True
@@ -842,7 +838,12 @@ class Project(object):
                     sorted_keys.append(key)
                     sorted_packages.append(pkg)
 
-        if len(remaining_packages) >= 0:
+            remaining_packages = [(key, pkg) for key, pkg in packages_w_dep.items() if key not in sorted_keys]
+            remaining_packages = dict(remaining_packages)
+            if len(remaining_packages) == 0:
+                break
+
+        if len(remaining_packages) > 0:
             self.logger.warning("There exist packages for which the dependencies are not fulfilled.")
             self.logger.warning("Packages with missing dependencies: %s.",
                                 list(remaining_packages.keys()))
