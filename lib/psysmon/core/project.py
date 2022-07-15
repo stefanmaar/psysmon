@@ -813,10 +813,44 @@ class Project(object):
         if not self.dbBase:
             self.connect2Db()
 
+        packages_with_dbf = [(key, pkg) for key, pkg in packages.items() if pkg.databaseFactory]
+        packages_with_dbf = dict(packages_with_dbf)
+
+        packages_wo_dep = [(key, pkg) for key, pkg in packages_with_dbf.items() if len(pkg.dependency) == 0]
+        packages_wo_dep = dict(packages_wo_dep)
+        packages_w_dep = [(key, pkg) for key, pkg in packages_with_dbf.items() if len(pkg.dependency) > 0]
+        packages_w_dep = dict(packages_w_dep)
+        
+        sorted_keys = sorted(list(packages_wo_dep.keys()))
+        sorted_packages = [packages_wo_dep[x] for x in sorted_keys]
+        
+        for k in range(len(packages_w_dep)):
+            remaining_packages = [(key, pkg) for key, pkg in packages_w_dep.items() if key not in sorted_keys]
+            remaining_packages = dict(remaining_packages)
+            if len(remaining_packages) == 0:
+                break
+            
+            for key, pkg in remaining_packages.items():
+                dependency = pkg.dependency
+                dependency_ok = True
+                for cur_depend in dependency:
+                    if cur_depend not in sorted_keys:
+                        dependency_ok = False
+                        break
+                    
+                if dependency_ok:
+                    sorted_keys.append(key)
+                    sorted_packages.append(pkg)
+
+        if len(remaining_packages) >= 0:
+            self.logger.warning("There exist packages for which the dependencies are not fulfilled.")
+            self.logger.warning("Packages with missing dependencies: %s.",
+                                list(remaining_packages.keys()))
+            
         save_needed = False
-        for _, curPkg in packages.items():
+        for curPkg in sorted_packages:
             if not curPkg.databaseFactory:
-                self.logger.info("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
+                self.logger.warning("%s: No databaseFactory found. Package provides no database tables.", curPkg.name)
                 continue
             else:
                 self.logger.info("%s: databaseFactory found. Retrieving the table definitions.", curPkg.name)
