@@ -122,7 +122,7 @@ class CreateNewProjectDlg(wx.Dialog):
             keys_2_pass = ['name', 'base_dir', 'db_host', 'user_name', 'user_pwd',
                            'author_name', 'author_uri', 'agency_name', 'agency_uri']
             projectData = {}
-            for _, curKey, _, _, _, _ in self.dialogData():
+            for _, curKey, _, _, _, _, _ in self.dialogData():
                 if curKey in keys_2_pass:
                     projectData[curKey] = self.edit[curKey].GetValue()
 
