@@ -519,12 +519,17 @@ class Base(object):
         # By default add a psysmon Database waveclient with the name 'main
         # client'. Add the waveclient only, if the required packages are
         # present.
-        required_packages = ['obspyImportWaveform', 'geometry']
+        required_packages = sorted(['obspyImportWaveform', 'geometry'])
         available_packages = [x for x in self.packageMgr.packages.keys() if x in required_packages]
+        available_packages = sorted(available_packages)
         if required_packages == available_packages:
             waveclient = PsysmonDbWaveClient('db client', self.project)
             self.project.addWaveClient(waveclient)
             self.project.defaultWaveclient = 'db client'
+        else:
+            msg = "Couldn't create the default waveclient.\nThe required packages {:s} have not been found.\nFound packages: {:s}.".format(str(required_packages),
+                                                                                                  str(available_packages))
+            self.logger.error(msg)
 
         self.project.save_json()
 
