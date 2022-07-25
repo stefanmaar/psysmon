@@ -406,7 +406,8 @@ def databaseFactory(base):
         creation_time = Column(String(30))
 
         channels = relationship('GeomChannel')
-        arrays = relationship('GeomStatToArray')
+        arrays = relationship('GeomStatToArray',
+                              viewonly = True)
 
 
         def __init__(self, name, location, x, y, z, coord_system,
@@ -520,11 +521,13 @@ def databaseFactory(base):
         _version = '1.0.0'
 
         array_name = Column(String(50),
-                            ForeignKey('geom_array.name', onupdate = 'cascade'),
+                            ForeignKey('geom_array.name',
+                                       onupdate = 'cascade'),
                             primary_key = True,
                             nullable = False)
         station_id = Column(Integer,
-                            ForeignKey('geom_station.id', onupdate = 'cascade'),
+                            ForeignKey('geom_station.id',
+                                       onupdate = 'cascade'),
                             primary_key = True,
                             nullable = False)
         start_time = Column(Float(53), nullable=False)
