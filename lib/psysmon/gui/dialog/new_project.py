@@ -135,16 +135,26 @@ class CreateNewProjectDlg(wx.Dialog):
 
 
     def dialogData(self):
-        return(("name:", "name", wx.TE_RIGHT, False, "", 'edit'),
-               ("base directory:", "base_dir", wx.TE_LEFT, True, self.onBaseDirBrowse, 'edit'),
-               ("database host:", "db_host", wx.TE_RIGHT, False, "", 'edit'),
-               ("username:", "user_name", wx.TE_RIGHT, False, "", 'edit'),
-               ("user pwd:", "user_pwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, "", 'edit'),
-               ("author name:", "author_name", wx.TE_RIGHT, False, "", 'edit'),
-               ("author URI:", "author_uri", wx.TE_RIGHT, False, "", 'edit'),
-               ("agency name:", "agency_name", wx.TE_RIGHT, False, "", 'edit'),
-               ("agency URI:", "agency_uri", wx.TE_RIGHT, False, "", 'edit'),
-               ("resource ID:", "resource_id", wx.TE_RIGHT, False, "", 'static')
+        return(("name:", "name", wx.TE_RIGHT, False, "", 'edit',
+                "The name of the project."),
+               ("base directory:", "base_dir", wx.TE_LEFT, True, self.onBaseDirBrowse, 'edit',
+                "The base directory in which the directory of the new project will be created."),
+               ("database host:", "db_host", wx.TE_RIGHT, False, "", 'edit',
+                "The address (hostname, URL or ip address) of the database server (e.g. localhost)."),
+               ("username:", "user_name", wx.TE_RIGHT, False, "", 'edit',
+                "The name of the psysmon database user."),
+               ("user pwd:", "user_pwd", wx.TE_PASSWORD|wx.TE_RIGHT, False, "", 'edit',
+                "The password of the database user. Leave empty if no password is used."),
+               ("author name:", "author_name", wx.TE_RIGHT, False, "", 'edit',
+                "The name of the author related to the project. It is used to create the resource id for this project."),
+               ("author URI:", "author_uri", wx.TE_RIGHT, False, "", 'edit',
+                "The uniform resource identifier of the author related to the project. This usually is some kind of abbreviation of the author name. It is used to create the resource id for this project."),
+               ("agency name:", "agency_name", wx.TE_RIGHT, False, "", 'edit',
+                "The agency name to which the author is related. It is used to create the resource id for this project."),
+               ("agency URI:", "agency_uri", wx.TE_RIGHT, False, "", 'edit',
+                "The uniform resource identifier of the agency. This usually is some kind of abbreviation of the agency name. It is used to create the resource id for this project."),
+               ("resource ID:", "resource_id", wx.TE_RIGHT, False, "", 'static',
+                "The resource ID is used to identify the author of digital content created during the work with psysmon.")
                )
 
     def createDialogFields(self):
@@ -152,10 +162,11 @@ class CreateNewProjectDlg(wx.Dialog):
         gbSizer = wx.GridBagSizer(5, 5)
         rowCount = 0
 
-        for curLabel, curKey, curStyle, hasBrowseBtn, curBtnHandler, curType in dialogData:
+        for curLabel, curKey, curStyle, hasBrowseBtn, curBtnHandler, curType, curToolTip in dialogData:
             self.label[curKey] = wx.StaticText(self, wx.ID_ANY, curLabel)
-            self.edit[curKey] = wx.TextCtrl(self, size=(300, -1), 
+            self.edit[curKey] = wx.TextCtrl(self, size=(300, -1),
                                             style=curStyle)
+            self.edit[curKey].SetToolTip(curToolTip)
 
             if curType == 'static':
                 self.edit[curKey].SetEditable(False)
