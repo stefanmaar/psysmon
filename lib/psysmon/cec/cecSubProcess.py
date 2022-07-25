@@ -73,7 +73,7 @@ if __name__ == "__main__":
     db.close()
 
     #logfileName = os.path.join(tempfile.gettempdir(), proc_name + '.log')
-    logfileName = os.path.join(project.tmpDir, proc_name + '.log')
+    logfileName = os.path.join(project.logDir, proc_name + '.log')
 
     logger = logging.getLogger('psysmon')
     # Don't propagete the messages to the root logger to avoid logging

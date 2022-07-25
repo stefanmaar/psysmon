@@ -706,6 +706,10 @@ class Project(object):
             self.tmpDir = os.path.join(self.projectDir, "tmp")
             os.makedirs(self.tmpDir)
 
+            ## The project's log directory.
+            self.logDir = os.path.join(self.projectDir, "log")
+            os.makedirs(self.logDir)
+
             ## The project's collection directory.
             self.collectionDir = os.path.join(self.projectDir, "collection")
             os.makedirs(self.collectionDir)
@@ -740,6 +744,14 @@ class Project(object):
                 self.logger.warning("The project temporary directory %s doesn't exist.",
                                     self.tmpDir)
                 os.makedirs(self.tmpDir)
+
+            ## The project's log directory.
+            self.logDir = os.path.join(self.projectDir, "log")
+
+            if not os.path.exists(self.logDir):
+                self.logger.warning("The project log directory %s doesn't exist.",
+                                    self.logDir)
+                os.makedirs(self.logDir)
 
             ## The project's collection directory.
             self.collectionDir = os.path.join(self.projectDir, "collection")
@@ -1321,7 +1333,10 @@ class User(object):
             self.logger.error("The collection already exists.")
             return
 
-        self.collection[name] = psysmon.core.base.Collection(name, tmpDir = project.tmpDir, project = project)
+        self.collection[name] = psysmon.core.base.Collection(name,
+                                                             project = project,
+                                                             tmpDir = project.tmpDir,
+                                                             logDir = project.logDir)
         self.setActiveCollection(name)
 
 

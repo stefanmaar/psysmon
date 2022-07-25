@@ -742,7 +742,8 @@ class Collection(object):
         Collection log files are saved there.
     '''
 
-    def __init__(self, name, tmpDir = '.', nodes = None, project = None):
+    def __init__(self, name, tmpDir = '.', logDir = None,
+                 nodes = None, project = None):
         ''' The constructor.
 
         Parameters
@@ -770,10 +771,13 @@ class Collection(object):
         for cur_node in self.nodes:
             cur_node.parentCollection = self
 
-        ## The project's temporary directory.
-        #
-        # Collection log files go in there.
+        # The project's temporary directory.
         self.tmpDir = tmpDir
+
+        # The project's log directory.
+        if logDir is None:
+            logDir = tmpDir
+        self.logDir = logDir
 
         # The runtime attributes of the collection.
         self.runtime_att = psysmon.core.util.AttribDict()
@@ -1147,7 +1151,7 @@ class Collection(object):
 
         # If a thread is running, add the log message to the log file.
         if self.procId:
-            logFile = open(os.path.join(self.tmpDir, self.procId + ".log"), 'a')
+            logFile = open(os.path.join(self.logDir, self.procId + ".log"), 'a')
             logFile.write(msgString)
             logFile.close()
 
