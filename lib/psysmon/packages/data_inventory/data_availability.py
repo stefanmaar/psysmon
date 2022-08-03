@@ -79,12 +79,12 @@ class DataAvailabilityNode(package_nodes.CollectionNode):
             channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
             self.pref_manager.set_limit('channels', channels)
 
+        # Create the edit dialog.
+        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
+
         # Update the preference item gui elements based on the current
         # selections.
         self.on_window_mode_selected()
-
-        # Create the edit dialog.
-        dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         #self.on_select_individual()
@@ -125,6 +125,10 @@ class DataAvailabilityNode(package_nodes.CollectionNode):
             window_length = None
             window_start_times = util.compute_month_list(start_time, end_time)
             window_end_times = [util.add_month(x) for x in window_start_times]
+        elif window_mode == 'whole':
+            start_time = UTCDateTime(start_time.year, start_time.month, start_time.day)
+            end_time = UTCDateTime(end_time.year, end_time.month, end_time.day)
+            window_length = end_time - start_time
 
         processor.process(start_time = start_time,
                           end_time = end_time,
@@ -158,8 +162,8 @@ class DataAvailabilityNode(package_nodes.CollectionNode):
 
         item = psy_pm.SingleChoicePrefItem(name = 'window_mode',
                                            label = 'window mode',
-                                           limit = ('free', 'daily', 'weekly', 'monthly'),
-                                           value = 'free',
+                                           limit = ('free', 'daily', 'weekly', 'monthly', 'whole'),
+                                           value = 'monthly',
                                            hooks = {'on_value_change': self.on_window_mode_selected},
                                            tool_tip = 'The mode of the window computation.')
         process_time_span_group.add_item(item)
@@ -209,14 +213,11 @@ class DataAvailabilityNode(package_nodes.CollectionNode):
         '''
         '''
         if self.pref_manager.get_value('window_mode') == 'free':
-            self.pref_manager.get_item('window_length')[0].enable_gui_element()
-        elif self.pref_manager.get_value('window_mode') == 'daily':
+            item = self.pref_manager.get_item('window_length')[0]
+            item.enable_gui_element()
+        else:
             item = self.pref_manager.get_item('window_length')[0]
             item.disable_gui_element()
-        elif self.pref_manager.get_value('window_mode') == 'weekly':
-            item = self.pref_manager.get_item('window_length')[0]
-            item.disable_gui_element()
-
 
 
 class AvailabilityProcessor(object):
@@ -418,16 +419,25 @@ class AvailabilityProcessor(object):
     def plot_availability(self, channels, start_time, end_time):
         channels = channels[::-1]
         fig = plt.figure()
-        ax = fig.add_subplot(1,1,1)
+        ax = fig.add_subplot(1, 1, 1)
 
         for k, cur_channel in enumerate(channels):
             cur_time = self.availability[cur_channel.scnl][0]
             cur_time = [x.datetime for x in cur_time]
             cur_has_data = self.availability[cur_channel.scnl][1]
-            cur_data_ok = np.ma.array(np.zeros(cur_has_data.shape), mask = cur_has_data == False)
-            cur_data_bad = np.ma.array(np.zeros(cur_has_data.shape), mask = cur_has_data == True)
-            ax.plot(cur_time, cur_data_ok + k, 'k', linewidth = 1, solid_capstyle = 'butt')
-            ax.plot(cur_time, cur_data_bad + k, 'r', linewidth = 10, solid_capstyle = 'butt')
+            cur_has_data = np.array(cur_has_data)
+            cur_has_data = cur_has_data.astype(dtype = bool)
+            cur_data_ok = np.ma.array(np.zeros(cur_has_data.shape),
+                                      mask = ~cur_has_data)
+            cur_data_bad = np.ma.array(np.zeros(cur_has_data.shape),
+                                       mask = cur_has_data)
+            ax.plot(cur_time, cur_data_ok + k, 'k',
+                    linewidth = 3,
+                    solid_capstyle = 'butt')
+            ax.plot(cur_time, cur_data_bad + k, 'orangered',
+                    linewidth = 10,
+                    solid_capstyle = 'butt',
+                    alpha = 0.8)
 
         ax.set_yticks(np.arange(len(channels)))
         xtick_labels = [x.scnl_string for x in channels]
