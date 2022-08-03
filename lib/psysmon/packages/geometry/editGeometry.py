@@ -1865,7 +1865,6 @@ class InventoryTreeCtrl(wx.TreeCtrl):
 
                 for curStationTb in sorted(curArray.stations, key = attrgetter('name')):
                     curStationItem = self.AppendItem(curArrayItem, curStationTb.network + ':' + curStationTb.name + ':' + curStationTb.location_string)
-                    print(curStationTb.item)
                     self.SetItemData(curStationItem, curStationTb)
                     self.SetItemImage(curStationItem, self.icons['station'], wx.TreeItemIcon_Normal)
 
