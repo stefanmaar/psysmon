@@ -164,6 +164,13 @@ class Event(object):
             else:
                 catalog_id = None
 
+            # TODO: Fix the confusion with the event_type usage.
+            # Sometimes it seems, that the event type is an instance.
+            try:
+                ev_type_id = self.event_type.id
+            except Exception:
+                ev_type_id = self.event_type
+
             db_session = project.getDbSession()
             db_event_orm = project.dbTables['event']
             db_event = db_event_orm(ev_catalog_id = catalog_id,
@@ -173,12 +180,8 @@ class Event(object):
                                     pref_origin_id = None,
                                     pref_magnitude_id = None,
                                     pref_focmec_id = None,
-                                    # TODO: Add an event_type class to handle
-                                    # the event types correctly. Currently, the
-                                    # event_type attribute holds the event type
-                                    # id.
                                     tags = ','.join(self.tags),
-                                    ev_type_id = self.event_type.id,
+                                    ev_type_id = ev_type_id,
                                     ev_type_certainty = self.event_type_certainty,
                                     description = self.description,
                                     agency_uri = self.agency_uri,
@@ -217,13 +220,19 @@ class Event(object):
                     db_event.ev_catalog_id = self.parent.db_id
                 else:
                     db_event.ev_catalog_id = None
+                # TODO: Fix the confusion with the event_type usage.
+                # Sometimes it seems, that the event type is an instance.
+                try:
+                    ev_type_id = self.event_type.id
+                except Exception:
+                    ev_type_id = self.event_type
                 db_event.start_time = self.start_time.timestamp
                 db_event.end_time = self.end_time.timestamp
                 db_event.public_id = self.public_id
                 #db_event.pref_origin_id = self.pref_origin_id
                 #db_event.pref_magnitude_id = self.pref_magnitude_id
                 #db_event.pref_focmec_id = self.pref_focmec_id
-                db_event.ev_type_id = self.event_type.id
+                db_event.ev_type_id = ev_type_id
                 db_event.ev_type_certainty = self.event_type_certainty
                 db_event.tags = ','.join(self.tags)
                 db_event.agency_uri = self.agency_uri
