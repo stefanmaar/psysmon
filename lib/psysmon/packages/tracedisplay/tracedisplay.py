@@ -1064,7 +1064,7 @@ class DisplayManager(object):
         ''' Grow the time period by a given ratio.
         '''
         duration = self.endTime - self.startTime
-        growAmount = duration * ratio/100.0
+        growAmount = duration / (1 - (ratio / 100.0)) - duration
         self.setTimeLimits(self.startTime - growAmount/2.0,
                            self.endTime + growAmount/2.0)
 
