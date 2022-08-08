@@ -856,13 +856,21 @@ class DockingFrame(wx.Frame):
             self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
                       handler = lambda evt, plugin = plugin: self.on_pref_aui_pane_close(evt,
                                                                                          plugin))
+            self.mgr.GetPane(curPanel).Hide()
             self.mgr.Update()
             self.foldPanels[plugin.name] = curPanel
+
+        if not self.foldPanels[plugin.name].IsShown():
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Show()
+            self.mgr.Update()
+            self.check_pref_menu_checkitem(plugin)
         else:
-            if not self.foldPanels[plugin.name].IsShown():
-                curPanel = self.foldPanels[plugin.name]
-                self.mgr.GetPane(curPanel).Show()
-                self.mgr.Update()
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Hide()
+            self.mgr.Update()
+            self.uncheck_pref_menu_checkitem(plugin)
+            
 
 
     def on_pref_aui_pane_close(self, event, plugin):
