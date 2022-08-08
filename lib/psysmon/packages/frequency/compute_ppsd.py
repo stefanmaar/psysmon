@@ -316,20 +316,24 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                  show = False,
                                  show_coverage = True,
                                  fig = fig)
+        except Exception:
+            self.logger.error("Couldn't create the PPSD figure. Maybe there was no data accumulated.")
 
+        try:
             self.logger.info("Saving image to file %s.", image_filename)
-        except:
-            self.logger.error("Couldn't save the PPSD. Maybe there was no data accumulated.")
-        finally:
             if not os.path.exists(os.path.dirname(image_filename)):
                 os.makedirs(os.path.dirname(image_filename))
             fig.savefig(image_filename, dpi = dpi)
+        except Exception:
+            self.logger.error("Couldn't save the PPSD.")
 
-
-        self.logger.info("Saving ppsd object to %s.", npz_filename)
-        if not os.path.exists(os.path.dirname(npz_filename)):
-            os.makedirs(os.path.dirname(npz_filename))
-        self.ppsd.save_npz(npz_filename)
+        try:
+            self.logger.info("Saving ppsd object to %s.", npz_filename)
+            if not os.path.exists(os.path.dirname(npz_filename)):
+                os.makedirs(os.path.dirname(npz_filename))
+            self.ppsd.save_npz(npz_filename)
+        except Exception:
+            self.logger.error("Couldn't save the PPSD data file.")
 
         # Delete the figure.
         fig.clear()
