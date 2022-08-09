@@ -79,12 +79,12 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
             channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
             self.pref_manager.set_limit('channels', channels)
 
+        # Create the edit dialog.
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
+
         # Update the preference item gui elements based on the current
         # selections.
         self.on_window_mode_selected()
-
-        # Create the edit dialog.
-        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the time-span elements depending on the 'set
         # collection time-span' collection node.
