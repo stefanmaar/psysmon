@@ -28,20 +28,22 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
-from __future__ import division
-from past.utils import old_div
 import copy
 import os
+import warnings
 
 import psysmon
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.gui.dialog.pref_listbook as psy_lb
 
+import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import obspy.core
+
 plt.style.use(psysmon.plot_style)
 
-import obspy.core
 
 class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
     '''
@@ -91,12 +93,11 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                              tool_tip = 'Length of data segments passed to psd [s].')
         ppsd_group.add_item(pref_item)
 
-
         pref_item = psy_pm.IntegerSpinPrefItem(name = 'ppsd_overlap',
-                                             label = 'ppsd overlap [%]',
-                                             value = 50,
-                                             limit = [0, 99],
-                                             tool_tip = 'Overlap of segments passed to psd [%].')
+                                               label = 'ppsd overlap [%]',
+                                               value = 50,
+                                               limit = [0, 99],
+                                               tool_tip = 'Overlap of segments passed to psd [%].')
         ppsd_group.add_item(pref_item)
 
 
@@ -110,8 +111,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
                                         label = 'output directory',
                                         value = '',
-                                        tool_tip = 'Specify a directory where to save the PPSD files.'
-                                       )
+                                        tool_tip = 'Specify a directory where to save the PPSD files.')
         folder_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'img_width',
@@ -120,8 +120,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                         increment = 1,
                                         digits = 1,
                                         limit = [1, 1000],
-                                        tool_tip = 'The width of the PPSD image in cm.'
-                                       )
+                                        tool_tip = 'The width of the PPSD image in cm.')
         img_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'img_height',
@@ -130,16 +129,14 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                         increment = 1,
                                         digits = 1,
                                         limit = [1, 1000],
-                                        tool_tip = 'The height of the PPSD image in cm.'
-                                       )
+                                        tool_tip = 'The height of the PPSD image in cm.')
         img_group.add_item(item)
 
         item = psy_pm.IntegerSpinPrefItem(name = 'img_resolution',
-                                       label = 'resolution [dpi]',
-                                       value = 300.,
-                                       limit = [1, 10000],
-                                       tool_tip = 'The resolution of the PPSD image in dpi.'
-                                      )
+                                          label = 'resolution [dpi]',
+                                          value = 300.,
+                                          limit = [1, 10000],
+                                          tool_tip = 'The resolution of the PPSD image in dpi.')
         img_group.add_item(item)
 
     def edit(self):
@@ -148,6 +145,16 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
         dlg.ShowModal()
         dlg.Destroy()
+        
+
+    def make_output_dir(self, base_dir):
+        ''' Build the output directory.
+        '''
+        output_dir = os.path.join(base_dir, 'ppsd')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        return output_dir
 
 
     def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
@@ -155,7 +162,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         '''
         start_time = process_limits[0]
         end_time = process_limits[1]
-
+        output_dir = self.make_output_dir(base_dir = kwargs['output_dir'])
 
         self.logger.info('Processing time interval: %s to %s.', start_time.isoformat(),
                                                                 end_time.isoformat())
@@ -169,28 +176,31 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
             self.initialize_ppsd(cur_trace, start_time, end_time)
 
             self.logger.info("Adding the trace to the ppsd.")
-            self.ppsd.add(cur_trace)
+            try:
+                self.ppsd.add(cur_trace)
+            except Exception:
+                self.logger.exception("Error when adding the trace %s.", cur_trace)
             self.logger.info("Time limits of PPSD used times: %s to %s.", self.ppsd.current_times_used[0].isoformat(),
                                                                           self.ppsd.current_times_used[-1].isoformat())
 
-            self.save_ppsd()
+            self.save_ppsd(output_dir = output_dir)
 
 
-
-    def execute_chunked(self, chunk_count, total_chunks, stream, process_limits = None, origin_resource = None):
+    def execute_chunked(self, chunk_count, total_chunks, stream,
+                        process_limits = None, origin_resource = None, **kwargs):
         '''
         '''
         start_time = process_limits[0]
         end_time = process_limits[1]
-
+        output_dir = self.make_output_dir(base_dir = kwargs['output_dir'])
 
         self.logger.info('Processing chunk %d/%d with time interval: %s to %s.', chunk_count, total_chunks,
-                                                                                 start_time.isoformat(),
-                                                                                 end_time.isoformat())
+                         start_time.isoformat(),
+                         end_time.isoformat())
         for cur_trace in stream:
             self.logger.info('Processing trace with id %s.', cur_trace.id)
 
-            if self.ppsd == None:
+            if self.ppsd is None:
                 # Initialize the PPSD.
                 self.initialize_ppsd(cur_trace, start_time, end_time)
                 self.overall_start_time = start_time
@@ -201,16 +211,16 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                 self.overall_end_time = end_time
 
             self.logger.info("Adding the trace to the ppsd.")
-            self.ppsd.add(cur_trace)
             try:
+                self.ppsd.add(cur_trace)
                 self.logger.info("Time limits of PPSD used times: %s to %s.", self.ppsd.current_times_used[0].isoformat(),
-                                                                               self.ppsd.current_times_used[-1].isoformat())
-            except:
+                                 self.ppsd.current_times_used[-1].isoformat())
+            except Exception:
                 self.logger.warning("No PPSD data accumulated.")
 
         if chunk_count == total_chunks:
             self.overall_end_time = end_time
-            self.save_ppsd()
+            self.save_ppsd(output_dir = output_dir)
 
 
 
@@ -230,7 +240,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
         if len(cur_channel) == 0:
             self.logger.error("No channel found for trace %s. Can't initialize the PPSD object.", trace.id)
-            raise RuntimeError("No channel found for trace %s. Can't initialize the PPSD object." & trace.id)
+            raise RuntimeError("No channel found for trace %s. Can't initialize the PPSD object." % trace.id)
         elif len(cur_channel) > 1:
             self.logger.error("Multiple channels found for trace %s; channels: %s", trace.id, cur_channel)
             raise RuntimeError("Multiple channels found for trace %s; channels: %s. Can't initialize the PPSD object." % (trace.id, cur_channel))
@@ -266,7 +276,8 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         # Create the obspy PAZ dictionary.
         paz = {}
         paz['gain'] = comp_param.tf_normalization_factor
-        paz['sensitivity'] = old_div((rec_stream_param.gain * comp_param.sensitivity), rec_stream_param.bitweight)
+        #paz['sensitivity'] = old_div((rec_stream_param.gain * comp_param.sensitivity), rec_stream_param.bitweight)
+        paz['sensitivity'] = 1
         paz['poles'] = comp_param.tf_poles
         paz['zeros'] = comp_param.tf_zeros
 
@@ -284,13 +295,13 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                       overlap = ppsd_overlap)
 
 
-    def save_ppsd(self):
+    def save_ppsd(self, output_dir):
         '''
         '''
-        ppsd_id = self.ppsd.id.replace('.','_')
-        output_dir = self.pref_manager.get_value('output_dir')
-        image_filename = os.path.join(output_dir, 'images', 'ppsd_%s_%s_%s.png' % (ppsd_id, self.overall_start_time.isoformat().replace(':',''), self.overall_end_time.isoformat().replace(':','')))
-        npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, self.overall_start_time.isoformat().replace(':',''), self.overall_end_time.isoformat().replace(':','')))
+        ppsd_id = self.ppsd.id.replace('.', '_')
+        #output_dir = self.pref_manager.get_value('output_dir')
+        image_filename = os.path.join(output_dir, 'images', 'ppsd_%s_%s_%s.png' % (ppsd_id, self.overall_start_time.isoformat().replace(':', ''), self.overall_end_time.isoformat().replace(':', '')))
+        npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, self.overall_start_time.isoformat().replace(':', ''), self.overall_end_time.isoformat().replace(':', '')))
 
 
         # Set the viridis colomap 0 value to fully transparent white.
@@ -351,9 +362,6 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
 # A monkey patch of the obspy.signal.PPSD.plot method to deal with the problems
 # of resizing the figure.
-import warnings
-import matplotlib
-import numpy as np
 def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogram=True,
          show_percentiles=False, percentiles=[0, 25, 50, 75, 100],
          show_noise_models=True, grid=True, show=True,
