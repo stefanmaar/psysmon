@@ -294,17 +294,32 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         ppsd_id = self.ppsd.id.replace('.', '_')
         start_string = self.overall_start_time.isoformat().replace(':', '')
         end_string = self.overall_end_time.isoformat().replace(':', '')
+
+        # Add the station name and channel to the output directory.
+        img_output_dir = os.path.join(output_dir,
+                                      'images',
+                                      self.ppsd.station,
+                                      self.ppsd.channel)
+        if not os.path.exists(img_output_dir):
+            os.makedirs(img_output_dir)
+
+        data_output_dir = os.path.join(output_dir,
+                                       'ppsd_objects',
+                                       self.ppsd.station,
+                                       self.ppsd.channel)
+        if not os.path.exists(data_output_dir):
+            os.makedirs(data_output_dir)
+
+        # Create the output filenames.
         filename = 'ppsd_%s_%s_%s.png' % (ppsd_id,
                                           start_string,
                                           end_string)
-        image_filename = os.path.join(output_dir,
-                                      'images',
+        image_filename = os.path.join(img_output_dir,
                                       filename)
         filename = 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id,
                                               end_string,
                                               end_string)
-        npz_filename = os.path.join(output_dir,
-                                    'ppsd_objects',
+        npz_filename = os.path.join(data_output_dir,
                                     filename)
 
         # Set the viridis colomap 0 value to fully transparent white.
