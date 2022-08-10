@@ -274,14 +274,15 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
     def on_window_mode_selected(self):
         '''
         '''
-        if self.pref_manager.get_value('window_mode') == 'free':
-            self.pref_manager.get_item('window_length')[0].enable_gui_element()
-        elif self.pref_manager.get_value('window_mode') == 'daily':
-            item = self.pref_manager.get_item('window_length')[0]
-            item.disable_gui_element()
-        elif self.pref_manager.get_value('window_mode') == 'weekly':
-            item = self.pref_manager.get_item('window_length')[0]
-            item.disable_gui_element()
+        winlength_item = self.pref_manager.get_item('window_length')[0]
+        overlap_item = self.pref_manager.get_item('window_overlap')[0]
+        win_mode = self.pref_manager.get_value('window_mode')
+        if win_mode == 'free':
+            winlength_item.enable_gui_element()
+            overlap_item.enable_gui_element()
+        else:
+            winlength_item.disable_gui_element()
+            overlap_item.disable_gui_element()
 
 
 
