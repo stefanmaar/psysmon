@@ -129,6 +129,8 @@ class Field(wx.Panel):
 
         self.SetSizer(self.sizer)
 
+        self.Bind(wx.EVT_CHILD_FOCUS, self.on_focus)
+
     def __del__(self):
         try:
             self.pref_item.remove_gui_element(self)
@@ -147,11 +149,17 @@ class Field(wx.Panel):
             self.controlElement.SetToolTip(self.pref_item.tool_tip)
         self.sizer.Add(controlElement, pos=(0,1), flag=wx.EXPAND|wx.ALL, border=2)
         self.sizer.AddGrowableCol(1)
-
+        
 
     def onValueChange(self, event):
         self.setPrefValue()
         self.call_hook('on_value_change')
+
+    def on_focus(self, event):
+        toplevel = self.GetTopLevelParent()
+        toplevel.deactivate_accelerator_table()
+        event.ResumePropagation(1)
+        event.Skip()
 
 
     ## Set the corresponding value in the options dictionary.
@@ -239,7 +247,6 @@ class PrefPagePanel(wx.Panel):
 
         sizer.AddGrowableCol(0)
         self.SetSizer(sizer)
-
 
 
 class PrefEditPanel(wx.Panel):
@@ -614,23 +621,23 @@ class FloatSpinField(Field):
         parent :
             The parent wxPyton window of this field.
         '''
-        Field.__init__(self, parent=parent, name=name, 
+        Field.__init__(self, parent=parent, name=name,
                        pref_item = pref_item, size=size)
 
         # Create the field label.
-        self.labelElement = StaticText(parent=self, 
-                                  ID=wx.ID_ANY, 
-                                  label=self.label,
-                                  style=wx.ALIGN_RIGHT)
+        self.labelElement = StaticText(parent=self,
+                                       ID=wx.ID_ANY,
+                                       label=self.label,
+                                       style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
-        self.controlElement = FS.FloatSpin(parent=self, 
-                                      id=wx.ID_ANY,
-                                      min_val = pref_item.limit[0],
-                                      max_val = pref_item.limit[1],
-                                      increment = pref_item.increment,
-                                      digits = pref_item.digits,
-                                      agwStyle=FS.FS_LEFT)
+        self.controlElement = FS.FloatSpin(parent=self,
+                                           id=wx.ID_ANY,
+                                           min_val = pref_item.limit[0],
+                                           max_val = pref_item.limit[1],
+                                           increment = pref_item.increment,
+                                           digits = pref_item.digits,
+                                           agwStyle=FS.FS_LEFT)
         self.controlElement.SetFormat(pref_item.spin_format)
 
         # Add the elements to the field sizer.

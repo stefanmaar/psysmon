@@ -216,12 +216,27 @@ class ViewAnnotationPanel(wx.Panel):
         sizer.Add(self.label, 1, wx.EXPAND | wx.ALL, border=0)
         self.SetSizer(sizer)
 
+        self.label.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down_label)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
+
 
     def setLabel(self, text):
         ''' Set the text of the annotation label.
         '''
         self.label.SetLabelText(text)
         self.label.Refresh()
+
+    def on_mouse_down(self, event):
+        ''' Handle mouse clicks in the annotation area.
+        '''
+        self.GetParent().SetFocus()
+        self.GetTopLevelParent().activate_accelerator_table()
+
+    def on_mouse_down_label(self, event):
+        ''' Handle mouse clicks in the annotation area label.
+        '''
+        event.ResumePropagation(1)
+        event.Skip()
 
 
 class AnnotationArtist(object):

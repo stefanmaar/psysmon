@@ -173,10 +173,12 @@ class TdDatetimeInfo(wx.Panel):
                                               excludeChars = '',
                                               formatcodes = 'F!',
                                               includeChars = '',
+                                              style = wx.TE_RIGHT,
                                               size = (-1, -1))
 
 
         size = self.startTimePicker.GetSize()
+        self.startTimePicker.SetMinSize((size[0] * 1.1, size[1]))
         self.startTimeGoButton = wx.Button(self,
                                            id = wx.ID_ANY,
                                            label = "go",
@@ -238,8 +240,18 @@ class TdDatetimeInfo(wx.Panel):
                   self.onDurationFloatSpin,
                   self.durationFloatSpin)
         self.Bind(wx.EVT_BUTTON, self.onStartTimeGo, self.startTimeGoButton)
+        self.durationFloatSpin.Bind(wx.EVT_CHILD_FOCUS, self.on_focus)
+        self.startTimeGoButton.Bind(wx.EVT_CHILD_FOCUS, self.on_focus)
+        self.startDatePicker.Bind(wx.EVT_SET_FOCUS, self.on_focus)
+        self.startTimePicker.Bind(wx.EVT_SET_FOCUS, self.on_focus)
         
 
+    def on_focus(self, event):
+        toplevel = self.GetTopLevelParent()
+        toplevel.deactivate_accelerator_table()
+        event.ResumePropagation(1)
+        event.Skip()
+        
     def onStartTimePicker(self, event):
         self.logger.debug('onStartTimePicker')
 
