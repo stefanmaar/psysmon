@@ -303,7 +303,9 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         filename = 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id,
                                               end_string,
                                               end_string)
-        npz_filename = os.path.join(output_dir, 'ppsd_objects', )
+        npz_filename = os.path.join(output_dir,
+                                    'ppsd_objects',
+                                    filename)
 
         # Set the viridis colomap 0 value to fully transparent white.
         cmap = plt.get_cmap('viridis')
