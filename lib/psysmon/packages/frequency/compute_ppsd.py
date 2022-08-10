@@ -105,14 +105,7 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         ''' Create the output preference items.
         '''
         out_page = self.pref_manager.add_page('output')
-        folder_group = out_page.add_group('folder')
         img_group = out_page.add_group('image')
-
-        item = psy_pm.DirBrowsePrefItem(name = 'output_dir',
-                                        label = 'output directory',
-                                        value = '',
-                                        tool_tip = 'Specify a directory where to save the PPSD files.')
-        folder_group.add_item(item)
 
         item = psy_pm.FloatSpinPrefItem(name = 'img_width',
                                         label = 'width [cm]',
@@ -299,10 +292,18 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         '''
         '''
         ppsd_id = self.ppsd.id.replace('.', '_')
-        #output_dir = self.pref_manager.get_value('output_dir')
-        image_filename = os.path.join(output_dir, 'images', 'ppsd_%s_%s_%s.png' % (ppsd_id, self.overall_start_time.isoformat().replace(':', ''), self.overall_end_time.isoformat().replace(':', '')))
-        npz_filename = os.path.join(output_dir, 'ppsd_objects', 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id, self.overall_start_time.isoformat().replace(':', ''), self.overall_end_time.isoformat().replace(':', '')))
-
+        start_string = self.overall_start_time.isoformat().replace(':', '')
+        end_string = self.overall_end_time.isoformat().replace(':', '')
+        filename = 'ppsd_%s_%s_%s.png' % (ppsd_id,
+                                          start_string,
+                                          end_string)
+        image_filename = os.path.join(output_dir,
+                                      'images',
+                                      filename)
+        filename = 'ppsd_%s_%s_%s.pkl.npz' % (ppsd_id,
+                                              end_string,
+                                              end_string)
+        npz_filename = os.path.join(output_dir, 'ppsd_objects', )
 
         # Set the viridis colomap 0 value to fully transparent white.
         cmap = plt.get_cmap('viridis')
@@ -311,9 +312,6 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
         cmap.colors = np.hstack([cmap.colors, np.ones(cmap.N)[:, np.newaxis]])
         cmap.colors[0] = np.array([1, 1, 1, 0])
         cmap.colors = list(cmap.colors)
-
-
-
 
         # TODO: make the period limit user selectable
         width = self.pref_manager.get_value('img_width') / 2.54
@@ -363,11 +361,11 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 # A monkey patch of the obspy.signal.PPSD.plot method to deal with the problems
 # of resizing the figure.
 def ppsd_plot(self, fig = None, filename=None, show_coverage=True, show_histogram=True,
-         show_percentiles=False, percentiles=[0, 25, 50, 75, 100],
-         show_noise_models=True, grid=True, show=True,
-         max_percentage=None, period_lim=(0.01, 179), show_mode=False,
-         show_mean=False, cmap=obspy.imaging.cm.obspy_sequential, cumulative=False,
-         cumulative_number_of_colors=20, xaxis_frequency=False):
+              show_percentiles=False, percentiles=[0, 25, 50, 75, 100],
+              show_noise_models=True, grid=True, show=True,
+              max_percentage=None, period_lim=(0.01, 179), show_mode=False,
+              show_mean=False, cmap=obspy.imaging.cm.obspy_sequential, cumulative=False,
+              cumulative_number_of_colors=20, xaxis_frequency=False):
     """
     Plot the 2D histogram of the current PPSD.
     If a filename is specified the plot is saved to this file, otherwise
