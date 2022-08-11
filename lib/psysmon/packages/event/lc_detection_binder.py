@@ -82,8 +82,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                         label = 'detection catalog',
                                                         limit = [],
                                                         value = None,
-                                                        tool_tip = 'The detection catalog to use for binding.'
-                                                       )
+                                                        tool_tip = 'The detection catalog to use for binding.')
         cat_group.add_item(item)
 
         # The event catalog to which to write the new events.
@@ -91,8 +90,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                         label = 'event catalog',
                                                         limit = [],
                                                         value = None,
-                                                        tool_tip = 'The event catalog for new events.'
-                                                       )
+                                                        tool_tip = 'The event catalog for new events.')
         cat_group.add_item(item)
 
         # The minimum length of the detecions used for binding.
@@ -263,7 +261,3 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.binder.event_catalog.write_to_database(self.project,
                                                     bulk_insert = True)
         self.binder.event_catalog.clear_events()
-
-
-
-
