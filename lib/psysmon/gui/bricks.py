@@ -157,7 +157,10 @@ class Field(wx.Panel):
 
     def on_focus(self, event):
         toplevel = self.GetTopLevelParent()
-        toplevel.deactivate_accelerator_table()
+        try:
+            toplevel.deactivate_accelerator_table()
+        except AttributeError:
+            pass
         event.ResumePropagation(1)
         event.Skip()
 
