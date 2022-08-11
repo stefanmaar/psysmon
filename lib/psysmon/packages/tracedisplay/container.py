@@ -166,6 +166,8 @@ class TdDatetimeInfo(wx.Panel):
         self.startDatePicker = DatePickerCtrl(self,
                                               id = wx.ID_ANY,
                                               style = style)
+        tool_tip = "The date of the start time."
+        self.startDatePicker.SetToolTip(tool_tip)
 
 
         self.startTimePicker = MaskedTextCtrl(self, wx.ID_ANY, '',
@@ -175,6 +177,8 @@ class TdDatetimeInfo(wx.Panel):
                                               includeChars = '',
                                               style = wx.TE_RIGHT,
                                               size = (-1, -1))
+        tool_tip = "The start time of the displayed time range [HH:MM:SS.mmmmmm]."
+        self.startTimePicker.SetToolTip(tool_tip)
 
 
         size = self.startTimePicker.GetSize()
@@ -183,7 +187,8 @@ class TdDatetimeInfo(wx.Panel):
                                            id = wx.ID_ANY,
                                            label = "go",
                                            size = (-1, size[1]))
-
+        tool_tip = "Set the start time."
+        self.startTimeGoButton.SetToolTip(tool_tip)
 
         fs = floatspin.FloatSpin(self,
                                  wx.ID_ANY,
@@ -193,6 +198,9 @@ class TdDatetimeInfo(wx.Panel):
                                  value = 60,
                                  agwStyle = floatspin.FS_RIGHT,
                                  size = (-1, -1))
+        tool_tip = "The duration of the display time span [s]."
+        fs.SetToolTip(tool_tip)
+        
         self.durationFloatSpin = fs
         self.durationFloatSpin.SetDigits(3)
         self.durationFloatSpin.SetFormat('%f')
