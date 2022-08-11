@@ -121,7 +121,10 @@ class DetectionBinder(object):
             # selected for binding the detections.
 
             # TODO: Check if the neighbors have the correct length.
-            neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
+            #neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
+            neighbors = self.epi_dist[first_detection.snl]
+            if len(neighbors) > (n_neighbors +1):
+                neighbors = neighbors[1:n_neighbors + 1]
             #neighbors = [x for x in neighbors if x[1] <= max_neighbor_dist]
             neighbors_snl = [x[0] for x in neighbors]
             match_snl = [x.snl for x in match_detections]
