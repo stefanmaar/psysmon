@@ -541,6 +541,8 @@ class SeismogramView(psy_view.viewnode.ViewNode):
                                             parent_rid = parent_rid,
                                             key = key)
 
+        ylim = self.axes.get_ylim()
+
         if annotation_artist:
             annotation_artist = annotation_artist[0]
             line_artist = annotation_artist.line_artist[0]
@@ -551,17 +553,24 @@ class SeismogramView(psy_view.viewnode.ViewNode):
             if line_artist:
                 line_artist.set_xdata(x)
             if label_artist:
-                label_artist.set_position((x, 0))
+                label_artist.set_position((x, ylim[1]))
         else:
             line_artist = self.axes.axvline(x = x, **kwargs)
             if 'label' in iter(kwargs.keys()):
-                label_artist = self.axes.text(x = x, y = 0, s = kwargs['label'])
+                props = dict(boxstyle = 'round',
+                             facecolor = 'wheat',
+                             alpha = 0.8)
+                label_artist = self.axes.text(x = x,
+                                              y = ylim[1],
+                                              s = kwargs['label'],
+                                              verticalalignment = 'top',
+                                              bbox = props)
             else:
                 label_artist = None
 
             annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vline',
-                                                                       parent_rid = parent_rid,
-                                                                       key = key)
+                                                                    parent_rid = parent_rid,
+                                                                    key = key)
             if label_artist is not None:
                 annotation_artist.add_artist([line_artist, label_artist])
             else:
@@ -598,14 +607,15 @@ class SeismogramView(psy_view.viewnode.ViewNode):
             vspan_artist = self.axes.axvspan(x_start, x_end, **kwargs)
             if 'label' in iter(kwargs.keys()):
                 ylim = self.axes.get_ylim()
-                label_artist = self.axes.text(x = x_start, y = ylim[1],
-                                                  s = kwargs['label'],
-                                                  verticalalignment = 'top')
+                label_artist = self.axes.text(x = x_start,
+                                              y = ylim[1],
+                                              s = kwargs['label'],
+                                              verticalalignment = 'top')
             else:
                 label_artist = None
             annotation_artist = psy_view.plotpanel.AnnotationArtist(mode = 'vspan',
-                                                                       parent_rid = parent_rid,
-                                                                       key = key)
+                                                                    parent_rid = parent_rid,
+                                                                    key = key)
             annotation_artist.add_artist([vspan_artist, label_artist])
             self.annotation_artists.append(annotation_artist)
 
