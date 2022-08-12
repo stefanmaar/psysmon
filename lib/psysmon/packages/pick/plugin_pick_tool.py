@@ -193,7 +193,7 @@ class PickTool(InteractivePlugin):
         else:
             if self.selected_catalog_name is None:
                 self.logger.info('You have to select a pick catalog first.')
-            elif cur_view.name.endswith('plot_seismogram'):
+            elif cur_view.name.endswith('seismogram'):
                 self.pick_seismogram(event, dataManager, displayManager)
             else:
                 self.logger.info('Picking in a %s view is not supported.', cur_view.name)
@@ -301,12 +301,16 @@ class PickTool(InteractivePlugin):
             if len(selected_event_info) > 1:
                 raise RuntimeError("More than one event info was returned. This shouldn't happen.")
             selected_event_info = selected_event_info[0]
-            event_start = selected_event_info.value['start_time']
-            event_end = selected_event_info.value['end_time']
             event_id = selected_event_info.value['id']
-            if not (snap_x >= event_start.timestamp and snap_x <= event_end.timestamp):
-                self.logger.info("The pick is outside the selected event limits. Setting the pick is not allowed.")
-                return
+
+            # TODO: Add an option in the preferences to limit the picks to the
+            # event limits. The event start is usually behind the actual onset,
+            # so the limit is annoying.
+            #event_start = selected_event_info.value['start_time']
+            #event_end = selected_event_info.value['end_time']
+            #if not (snap_x >= event_start.timestamp and snap_x <= event_end.timestamp):
+            #    self.logger.info("The pick is outside the selected event limits. Setting the pick is not allowed.")
+            #    return
         else:
             event_id = None
 
@@ -328,17 +332,21 @@ class PickTool(InteractivePlugin):
 
             # Check if a pick already exists in the displayed time span, or, if
             # an event is selected in the selected event limits.
-            if selected_event_info:
-                search_win_start = selected_event_info.value['start_time']
-                search_win_end = selected_event_info.value['end_time']
-            else:
-                search_win_start = self.parent.displayManager.startTime
-                search_win_end = self.parent.displayManager.endTime
+            search_win_start = self.parent.displayManager.startTime
+            search_win_end = self.parent.displayManager.endTime
+
+            # TODO: Add a preferences option.
+            # Limit the search to the event only if activated in the
+            # preferences.
+            #if selected_event_info:
+            #    search_win_start = selected_event_info.value['start_time']
+            #    search_win_end = selected_event_info.value['end_time']
+            #else:
+            #    search_win_start = self.parent.displayManager.startTime
+            #    search_win_end = self.parent.displayManager.endTime
 
             if event_id is not None:
-                picks = cur_catalog.get_pick(start_time = search_win_start,
-                                             end_time = search_win_end,
-                                             label = self.pref_manager.get_value('label'),
+                picks = cur_catalog.get_pick(label = self.pref_manager.get_value('label'),
                                              station = props.station,
                                              location = props.location,
                                              event_id = event_id)
@@ -356,7 +364,7 @@ class PickTool(InteractivePlugin):
                                           amp1 = snap_y,
                                           channel = cur_channel,
                                           event_id = event_id)
-                cur_catalog.add_picks([cur_pick,])
+                cur_catalog.add_picks([cur_pick])
                 cur_pick.write_to_database(self.parent.project)
             else:
                 pick_time = UTCDateTime(snap_x)
@@ -489,17 +497,19 @@ class PickTool(InteractivePlugin):
             if len(selected_event_info) > 1:
                 raise RuntimeError("More than one event info was returned. This shouldn't happen.")
             selected_event_info = selected_event_info[0]
-            time_win_start = selected_event_info.value['start_time']
-            time_win_end = selected_event_info.value['end_time']
+            event_id = selected_event_info.value['id']
+            # load_picks requires a list of event ids.
+            event_id = [event_id]
             self.catalog_loaded_for_selected_event = True
+            cur_catalog.load_picks(project = self.parent.project,
+                                   event_id = event_id)
         else:
             time_win_start = self.parent.displayManager.startTime
             time_win_end = self.parent.displayManager.endTime
             self.catalog_loaded_for_selected_event = False
-
-        cur_catalog.load_picks(project = self.parent.project,
-                               start_time = time_win_start,
-                               end_time = time_win_end)
+            cur_catalog.load_picks(project = self.parent.project,
+                                   start_time = time_win_start,
+                                   end_time = time_win_end)
 
 
     def clear_pick_lines(self):
