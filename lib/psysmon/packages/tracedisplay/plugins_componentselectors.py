@@ -63,8 +63,8 @@ class SelectArray(OptionPlugin):
                              choices = self.array_list)
 
         shown_array_names = [x.name for x in self.parent.displayManager.showArrays]
-        ind = [m for m,x in enumerate(self.array_list) if x in shown_array_names]
-        lb.SetChecked(ind)
+        ind = [m for m, x in enumerate(self.array_list) if x in shown_array_names]
+        lb.SetCheckedItems(ind)
 
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.on_box_checked, lb)
@@ -112,6 +112,15 @@ class SelectStation(OptionPlugin):
 
         self.lb = None
 
+        # Accelerators for shortcuts not bound to a menu item.
+        handler = self.on_next_station
+        self.shortcuts['next_station'] = {'accelerator_string': 'Down',
+                                          'handler': handler}
+
+        handler = self.on_prev_station
+        self.shortcuts['prev_station'] = {'accelerator_string': 'Up',
+                                          'handler': handler}
+
 
     def register_keyboard_shortcuts(self):
         ''' Register the keyboard shortcuts.
@@ -144,7 +153,7 @@ class SelectStation(OptionPlugin):
                              choices = stationListString)
 
         ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
-        lb.SetChecked(ind)
+        lb.SetCheckedItems(ind)
 
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
@@ -179,7 +188,7 @@ class SelectStation(OptionPlugin):
         self.lb.Clear()
         self.lb.Append(stationListString)
         ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
-        self.lb.SetChecked(ind)
+        self.lb.SetCheckedItems(ind)
 
 
     def onBoxChecked(self, event):
@@ -195,6 +204,18 @@ class SelectStation(OptionPlugin):
         else:
             self.parent.displayManager.showStation(self.stationList[index])
 
+
+    def on_next_station(self, evt):
+        ''' Handle a shortcut press.
+        '''
+        self.next_station()
+
+        
+    def on_prev_station(self, evt):
+        ''' Handle a shortcut press.
+        '''
+        self.prev_station()
+        
             
     def next_station(self):
         ''' Display the next station.
@@ -202,9 +223,8 @@ class SelectStation(OptionPlugin):
         self.parent.displayManager.show_next_station()
         if self.lb is not None:
             displayedStations = self.parent.displayManager.getSNL('show')
-            ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
-            self.lb.SetChecked(ind)
-
+            ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
+            self.lb.SetCheckedItems(ind)
 
 
     def prev_station(self):
@@ -213,8 +233,8 @@ class SelectStation(OptionPlugin):
         self.parent.displayManager.show_prev_station()
         if self.lb is not None:
             displayedStations = self.parent.displayManager.getSNL('show')
-            ind = [m for m,x in enumerate(self.stationList) if x in displayedStations]
-            self.lb.SetChecked(ind)
+            ind = [m for m, x in enumerate(self.stationList) if x in displayedStations]
+            self.lb.SetCheckedItems(ind)
 
 
 
@@ -257,8 +277,8 @@ class SelectChannel(OptionPlugin):
                              id = wx.ID_ANY,
                              choices = self.channelList)
 
-        ind = [m for m,x in enumerate(self.channelList) if x in self.parent.displayManager.showChannels]
-        lb.SetChecked(ind)
+        ind = [m for m, x in enumerate(self.channelList) if x in self.parent.displayManager.showChannels]
+        lb.SetCheckedItems(ind)
 
         # Bind the events.
         lb.Bind(wx.EVT_CHECKLISTBOX, self.onBoxChecked, lb)
