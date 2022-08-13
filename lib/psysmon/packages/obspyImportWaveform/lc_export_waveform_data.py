@@ -365,7 +365,8 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
             # Plot the trace data.
             cur_data = cur_trace.data
             cur_time = cur_trace.times()
-            ax.plot(cur_time, cur_data)
+            ax.plot(cur_time, cur_data,
+                    color = 'black')
 
             # Add the event limit lines.
             ax.axvspan(event.start_time - cur_trace.stats.starttime,
@@ -378,7 +379,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                 for cur_detection in detection_list:
                     ax.axvspan(cur_detection.start_time - cur_trace.stats.starttime,
                                cur_detection.end_time - cur_trace.stats.starttime,
-                               color = 'xkcd:eggshell')
+                               color = 'xkcd:faded pink')
 
 
 
@@ -400,7 +401,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                 ax.set_title(title)
             if k < n_plots - 1:
                 ax.set_xticklabels([])
-            if k == n_plots -1:
+            if k == n_plots - 1:
                 cur_unit = cur_trace.stats.unit
                 if cur_unit == 'm/s':
                     cur_unit_label = 'vel. [m/s]'
