@@ -128,9 +128,14 @@ class ExportEvents(package_nodes.CollectionNode):
 
         event_tags = self.pref_manager.get_value('event_tag')
         if event_tags:
-            event_tags = [event_tags,]
+            event_tags = [event_tags]
         else:
             event_tags = None
+
+        now = utcdatetime.UTCDateTime()
+        print(exporter.output_dir)
+        self.save_settings(output_dir = exporter.output_dir,
+                           execution_time = now)
 
         exporter.export(start_time = start_time,
                         end_time = end_time,
