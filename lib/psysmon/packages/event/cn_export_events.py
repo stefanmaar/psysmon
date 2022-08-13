@@ -45,8 +45,9 @@ import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
-import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 import psysmon.packages.event.core as event_core
+import psysmon.packages.event.detect as detect
+import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 
 
 
@@ -133,7 +134,6 @@ class ExportEvents(package_nodes.CollectionNode):
             event_tags = None
 
         now = utcdatetime.UTCDateTime()
-        print(exporter.output_dir)
         self.save_settings(output_dir = exporter.output_dir,
                            execution_time = now)
 
@@ -403,6 +403,14 @@ class EventExporter(object):
         event_lib.load_catalog_from_db(self.project, name = event_catalog)
         catalog = event_lib.catalogs[event_catalog]
 
+        det_lib = detect.Library('detections')
+        name_list = det_lib.get_catalogs_in_db(self.project)
+        det_lib.load_catalog_from_db(project = self.project,
+                                     name = name_list,
+                                     load_detections = False)
+        det_cat_map = [(x.db_id, x.name) for x in det_lib.catalogs.values()]
+        det_cat_map = dict(det_cat_map)
+        
         available_event_types = self.load_event_types()
 
         for k, cur_start_time in enumerate(interval_start[:-1]):
@@ -434,12 +442,12 @@ class EventExporter(object):
                 else:
                     self.logger.info('No events found for the specified event IDs: %s.', event_ids)
                 continue
-
+            
+            # Create the event result.
             res_columns = ['event_start_time', 'event_end_time', 'n_stations',
                            'detection_scnl', 'detection_start',
                            'detection_end', 'catalog_name', 'event_type_id',
                            'event_type']
-            # Create the result.
             cur_res = result.TableResult(name = 'event',
                                          key_name = 'id',
                                          start_time = cur_start_time,
@@ -447,6 +455,17 @@ class EventExporter(object):
                                          origin_name = self.parent_name,
                                          origin_resource = self.parent_rid,
                                          column_names = res_columns)
+
+            # Create the detection result.
+            det_columns = ['start_time', 'end_time', 'channel', 'catalog',
+                           'event_id', 'event_start_time', 'event_end_time']
+            cur_det_res = result.TableResult(name = 'detection',
+                                             key_name = 'id',
+                                             start_time = cur_start_time,
+                                             end_time = cur_end_time,
+                                             origin_name = self.parent_name,
+                                             origin_resource = self.parent_rid,
+                                             column_names = det_columns)
 
             # Loop through the events.
             n_events = len(catalog.events)
@@ -466,13 +485,15 @@ class EventExporter(object):
                     else:
                         cur_event_type = None
                 
-
+                # Add the event to the result.
                 detection_scnl = [str(x.channel.scnl_string) for x in cur_event.detections]
                 detection_start = [str(x.start_time.timestamp) for x in cur_event.detections]
                 detection_end = [str(x.end_time.timestamp) for x in cur_event.detections]
+                event_start = cur_event.start_time.isoformat()
+                event_end = cur_event.end_time.isoformat()
                 cur_res.add_row(key = cur_event.db_id,
-                                event_start_time = cur_event.start_time.isoformat(),
-                                event_end_time = cur_event.end_time.isoformat(),
+                                event_start_time = event_start,
+                                event_end_time = event_end,
                                 n_stations = len(cur_event.detections),
                                 detection_scnl = ','.join(detection_scnl),
                                 detection_start = ','.join(detection_start),
@@ -481,10 +502,24 @@ class EventExporter(object):
                                 event_type_id = cur_event.event_type,
                                 event_type = cur_event_type)
 
+                # Add the detections to the detection result.
+                for cur_det in cur_event.detections:
+                    det_start = cur_det.start_time.isoformat()
+                    det_end = cur_det.end_time.isoformat()
+                    det_cat = det_cat_map[cur_det.catalog_id]
+                    cur_det_res.add_row(key = cur_det.db_id,
+                                        start_time = det_start,
+                                        end_time = det_end,
+                                        channel = cur_det.channel.scnl_string,
+                                        catalog = det_cat,
+                                        event_id = cur_event.db_id,
+                                        event_start_time = event_start,
+                                        event_end_time = event_end)
+
+            # Save the results.
             cur_res.base_output_dir = self.output_dir
-            cur_res.save()
+            cur_res.save(with_timewindow = False)
 
-
-
-
+            cur_det_res.base_output_dir = self.output_dir
+            cur_det_res.save(with_timewindow = False)
 
