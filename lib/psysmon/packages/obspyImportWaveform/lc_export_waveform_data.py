@@ -59,7 +59,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         ''' The time-span needed for correct processing prior to the start time
         of the stream passed to the execute method [s].
         '''
-        return self.pref_manager.get_value('pre_event_length')
+        return self.pref_manager.get_value('pre_window_length')
 
 
     @property
@@ -67,14 +67,15 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         ''' The time-span needed for correct processing after the start time
         of the stream passed to the execute method [s].
         '''
-        return self.pref_manager.get_value('pre_event_length')
+        return self.pref_manager.get_value('post_window_length')
 
 
     def create_format_preferences(self):
         ''' Create the format preferences.
         '''
         format_page = self.pref_manager.add_page('Format')
-        format_group = format_page.add_group('format')
+        format_group = format_page.add_group('file format')
+        meta_group = format_page.add_group('metadata')
 
         obspy_formats = list(obspy.core.util.base.ENTRY_POINTS['waveform'].keys())
         obspy_formats = sorted(obspy_formats)
@@ -84,6 +85,21 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                            value = 'MSEED',
                                            tool_tip = 'The export file format supported by obspy.')
         format_group.add_item(item)
+
+        tool_tip = ('Apply the psysmon geometry metadata to the metadata '
+                    'saved in the waveform data files.')
+        item = psy_pm.CheckBoxPrefItem(name = 'apply_geometry',
+                                       label = 'apply geometry',
+                                       value = False,
+                                       tool_tip = tool_tip)
+        meta_group.add_item(item)
+
+        tool_tip = ('Apply the psysmon geometry metadata to seismogram images.')
+        item = psy_pm.CheckBoxPrefItem(name = 'apply_geometry_seismogram',
+                                       label = 'apply geometry to seismogram',
+                                       value = True,
+                                       tool_tip = tool_tip)
+        meta_group.add_item(item)
 
         # TODO: Add format preferences for selected output formats.
 
@@ -95,21 +111,21 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         window_group = timespan_page.add_group('time window')
 
         # The pre-event time for the export.
-        item = psy_pm.FloatSpinPrefItem(name = 'pre_event_length',
-                                        label = 'pre event length',
-                                        value = 10,
+        item = psy_pm.FloatSpinPrefItem(name = 'pre_window_length',
+                                        label = 'pre window length [s]',
+                                        value = 0,
                                         digits = 3,
                                         limit = (0, 1000000),
-                                        tool_tip = 'The seconds prepended to the exported event.')
+                                        tool_tip = 'The seconds prepended to the exported timespan. Useful when exporting events.')
         window_group.add_item(item)
 
         # The post-event time for the export.
-        item = psy_pm.FloatSpinPrefItem(name = 'post_event_length',
-                                        label = 'post event length',
-                                        value = 10,
+        item = psy_pm.FloatSpinPrefItem(name = 'post_window_length',
+                                        label = 'post window length [s]',
+                                        value = 0,
                                         digits = 3,
                                         limit = (0, 1000000),
-                                        tool_tip = 'The seconds appended to the exported event.')
+                                        tool_tip = 'The seconds appended to the exported timespan. Useful when exporting events.')
         window_group.add_item(item)
 
 
@@ -248,21 +264,27 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
 
         output_dir = kwargs['output_dir']
         output_dir = self.make_output_dir(output_dir)
-        
+        apply_geometry = self.pref_manager.get_value('apply_geometry')
+        prop = 'apply_geometry_seismogram'
+        apply_geometry_seis = self.pref_manager.get_value(prop)
         destination = self.pref_manager.get_value('destination')
+
         if destination == 'looper output directory':
             self.export_to_folder(stream = stream,
                                   channels = channels,
                                   event = event,
                                   process_limits = process_limits,
-                                  output_dir = output_dir)
+                                  output_dir = output_dir,
+                                  apply_geometry = apply_geometry,
+                                  apply_geometry_seis = apply_geometry_seis)
         elif destination == 'data source':
             self.export_to_data_source(stream = stream)
 
 
 
     def export_to_folder(self, stream, channels, output_dir,
-                         process_limits = None, event = None):
+                         process_limits = None, event = None,
+                         apply_geometry = False, apply_geometry_seis = True):
         ''' Write the data stream to a folder.
         '''
         export_format = self.pref_manager.get_value('file_format')
@@ -285,12 +307,59 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
             start_time = None
             end_time = None
 
+        # Create a stream with the original metadata.
+        orig_stream = stream.copy()
+        inv = self.project.geometry_inventory
+        for cur_trace in orig_stream:
+            cur_channel = inv.get_channel(network = cur_trace.stats.network,
+                                          station = cur_trace.stats.station,
+                                          location = cur_trace.stats.location,
+                                          name = cur_trace.stats.channel)
+            if len(cur_channel) == 1:
+                cur_channel = cur_channel[0]
+            else:
+                self.logger.error("Multiple channels found for trace %s.",
+                                  cur_trace)
+                continue
+
+            if cur_channel:
+                if start_time:
+                    active_streams = cur_channel.get_stream(start_time = start_time,
+                                                            end_time = end_time)
+                else:
+                    active_streams = cur_channel.get_stream()
+
+                if len(active_streams) == 1:
+                    cur_rec_stream_tb = active_streams[0]
+                    cur_rec_stream = cur_rec_stream_tb.item
+                    orig_serial = cur_rec_stream.serial
+                    tmp = cur_rec_stream.name.split(':')
+                    orig_loc = tmp[0]
+                    orig_channel = tmp[1]
+                    orig_net = cur_channel.parent_station.network
+                    
+                    cur_trace.stats.network = orig_net
+                    cur_trace.stats.station = orig_serial
+                    cur_trace.stats.location = orig_loc
+                    cur_trace.stats.channel = orig_channel
+                elif len(active_streams) == 0:
+                    self.logger.warning("No recorder stream found for trace %s.",
+                                        cur_trace)
+                elif len(active_streams) > 1:
+                    self.logger.warning("Multiple active streams found for trace %s. This case is not yet implemented.", cur_trace)
+            
         for cur_channel in channels:
             if start_time:
                 active_streams = cur_channel.get_stream(start_time = start_time,
                                                         end_time = end_time)
             else:
                 active_streams = cur_channel.get_stream()
+
+            if len(active_streams) == 0:
+                self.logger.warning("No recorder stream found for trace %s.",
+                                    cur_trace)
+            elif len(active_streams) > 1:
+                self.logger.warning("Multiple active recorder streams found for trace %s. This case is not yet implemented.", cur_trace)
                                                         
             for cur_rec_stream_tb in active_streams:
                 cur_rec_stream = cur_rec_stream_tb.item
@@ -306,20 +375,26 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                            channel = cur_channel.name)
                 cur_stream = cur_stream.split()
                 for cur_trace in cur_stream:
-                    cur_trace.stats.network = orig_net
-                    cur_trace.stats.station = orig_serial
-                    cur_trace.stats.location = orig_loc
-                    cur_trace.stats.channel = orig_channel
+                    if not apply_geometry:
+                        cur_trace.stats.network = orig_net
+                        cur_trace.stats.station = orig_serial
+                        cur_trace.stats.location = orig_loc
+                        cur_trace.stats.channel = orig_channel
+
+                    exp_net = cur_trace.stats.network
+                    exp_stat = cur_trace.stats.station
+                    exp_loc = cur_trace.stats.location
+                    exp_channel = cur_trace.stats.channel
                     cur_start = cur_trace.stats.starttime
                     filename = '%d_%03d_%02d%02d%02d_%s_%s_%s_%s.msd' % (cur_start.year,
                                                                          cur_start.julday,
                                                                          cur_start.hour,
                                                                          cur_start.minute,
                                                                          cur_start.second,
-                                                                         orig_net,
-                                                                         orig_serial,
-                                                                         orig_loc,
-                                                                         orig_channel)
+                                                                         exp_net,
+                                                                         exp_stat,
+                                                                         exp_loc,
+                                                                         exp_channel)
 
                     if event:
                         dest_path = os.path.join(output_dir,
@@ -333,7 +408,8 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     dest_path = os.path.join(dest_path,
                                              '{0:04d}'.format(cur_start.year),
                                              '{0:03d}'.format(cur_start.julday),
-                                             orig_serial)
+                                             exp_net,
+                                             exp_stat)
                                              
                     if not os.path.exists(dest_path):
                         os.makedirs(dest_path)
@@ -351,9 +427,14 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                      'event_%010d_%s' % (event.db_id,
                                                          event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
 
-            self.plot_data(stream,
-                           dest_path,
-                           event)
+            if apply_geometry_seis:
+                plot_stream = stream
+            else:
+                plot_stream = orig_stream
+
+            self.plot_data(stream = plot_stream,
+                           dest_path = dest_path,
+                           event = event)
 
 
     def plot_data(self, stream, dest_path, event):
@@ -387,8 +468,6 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                cur_detection.end_time - cur_trace.stats.starttime,
                                color = 'xkcd:faded pink')
 
-
-
             # Add the SCNL text.
             ax.text(x = 0.99, y = 0.5,
                     s = cur_trace.id,
@@ -396,9 +475,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                     fontsize = 8,
                     verticalalignment = 'center',
                     horizontalalignment = 'right',
-                    bbox = dict(facecolor='white', alpha=0.6))
-
-
+                    bbox = dict(facecolor='white', alpha=0.9))
 
             ax.set_xlim((cur_time[0], cur_time[-1]))
             max_data = np.max(np.abs(cur_data))
