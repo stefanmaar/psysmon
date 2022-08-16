@@ -553,7 +553,8 @@ class EventProcessor(object):
                                                process_limits = process_limits,
                                                origin_resource = resource_id,
                                                channels = channels,
-                                               event = cur_event)
+                                               event = cur_event,
+                                               output_dir = self.output_dir)
 
                         self.logger.debug("Finished execution of node %s.", cur_node.name)
 
