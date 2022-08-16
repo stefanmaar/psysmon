@@ -118,23 +118,17 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         '''
         output_page = self.pref_manager.add_page('Output')
         dest_group = output_page.add_group('destination')
-        folder_group = output_page.add_group('folder')
         ds_group = output_page.add_group('data source')
 
         # The destination option.
         item = psy_pm.SingleChoicePrefItem(name = 'destination',
                                            label = 'destination',
-                                           limit = ('folder', 'data source'),
-                                           value = 'folder',
+                                           limit = ('looper output directory', 'data source'),
+                                           value = 'looper output directory',
                                            hooks = {'on_value_change': self.on_destination_changed},
                                            tool_tip = 'The location where the exported data files will be saved.')
         dest_group.add_item(item)
 
-        # The destination folder.
-        item = psy_pm.DirBrowsePrefItem(name = 'folder',
-                                        value = '',
-                                        tool_tip = 'The folder where the data files will be saved.')
-        folder_group.add_item(item)
 
         # The waveclient to work with.
         item = psy_pm.SingleChoicePrefItem(name = 'waveclient',
@@ -164,12 +158,12 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
     def on_destination_changed(self):
         ''' Handle the change of the destination preference value.
         '''
-        if self.pref_manager.get_value('destination') == 'folder':
-            enable = ['folder',]
+        if self.pref_manager.get_value('destination') == 'looper output directory':
+            enable = []
             disable = ['waveclient', 'wf_dir']
         elif self.pref_manager.get_value('destination') == 'data source':
             enable = ['waveclient', 'wf_dir']
-            disable = ['folder',]
+            disable = []
 
         for cur_item_name in enable:
             item = self.pref_manager.get_item(cur_item_name)[0]
@@ -215,6 +209,16 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         self.pref_manager.set_value('wf_dir', values)
 
 
+    def make_output_dir(self, base_dir):
+        ''' Build the output directory.
+        '''
+        output_dir = os.path.join(base_dir, 'waveform')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        return output_dir
+
+    
     def edit(self):
         ''' Create the preferences edit dialog.
         '''
@@ -227,7 +231,8 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
 
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None, channels = None, **kwargs):
+    def execute(self, stream, process_limits = None,
+                origin_resource = None, channels = None, **kwargs):
         ''' Execute the looper child node.
 
         Parameters
@@ -241,23 +246,26 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
         else:
             event = kwargs['event']
 
+        output_dir = kwargs['output_dir']
+        output_dir = self.make_output_dir(output_dir)
+        
         destination = self.pref_manager.get_value('destination')
-        if destination == 'folder':
+        if destination == 'looper output directory':
             self.export_to_folder(stream = stream,
                                   channels = channels,
                                   event = event,
-                                  process_limits = process_limits)
+                                  process_limits = process_limits,
+                                  output_dir = output_dir)
         elif destination == 'data source':
             self.export_to_data_source(stream = stream)
 
 
 
-    def export_to_folder(self, stream, channels, process_limits = None,
-                         event = None):
+    def export_to_folder(self, stream, channels, output_dir,
+                         process_limits = None, event = None):
         ''' Write the data stream to a folder.
         '''
         export_format = self.pref_manager.get_value('file_format')
-        dest_dir = self.pref_manager.get_value('folder')
 
         stream.sort()
         self.logger.debug("Using stream: %s.", stream)
@@ -314,21 +322,19 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                                                                          orig_channel)
 
                     if event:
-                        dest_path = os.path.join(dest_dir,
+                        dest_path = os.path.join(output_dir,
                                                  "{0:04d}".format(cur_start.year),
                                                  "{0:03d}".format(cur_start.julday),
                                                  'event_%010d_%s' % (event.db_id,
                                                                      event.start_time.isoformat().replace(':', '').replace('-', '').replace('.', '')))
                     else:
-                        dest_path = dest_dir
+                        dest_path = output_dir
 
                     dest_path = os.path.join(dest_path,
                                              '{0:04d}'.format(cur_start.year),
                                              '{0:03d}'.format(cur_start.julday),
                                              orig_serial)
                                              
-
-
                     if not os.path.exists(dest_path):
                         os.makedirs(dest_path)
 
@@ -339,7 +345,7 @@ class ExportWaveformData(package_nodes.LooperCollectionChildNode):
                         self.logger.exception(e)
 
         if event:
-            dest_path = os.path.join(dest_dir,
+            dest_path = os.path.join(output_dir,
                                      "{0:04d}".format(cur_start.year),
                                      "{0:03d}".format(cur_start.julday),
                                      'event_%010d_%s' % (event.db_id,
