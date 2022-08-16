@@ -135,6 +135,10 @@ class ExportEventPicks(package_nodes.CollectionNode):
         else:
             event_tags = None
 
+        now = utcdatetime.UTCDateTime()
+        self.save_settings(output_dir = exporter.output_dir,
+                           execution_time = now)
+
         exporter.export(start_time = start_time,
                         end_time = end_time,
                         output_interval = self.pref_manager.get_value('output_interval'),
@@ -378,6 +382,20 @@ class EventPickExporter(object):
         return interval_start
 
 
+    def create_public_id(self, utc_datetime, agency_id, author_id,
+                         service_id, project_id, resource_id):
+        template = "smi:{aid:s}.{auid:s}.{sid:s}/{pid:s}{rid:s}-{date:s}"
+        date = utc_datetime.isoformat().replace(':', '')\
+                                       .replace('.', '')\
+                                       .replace('-', '')
+        pub_id = template.format(aid = agency_id,
+                                 auid = author_id,
+                                 sid = service_id,
+                                 pid = project_id,
+                                 rid = resource_id,
+                                 date = date)
+        return pub_id
+    
     def export(self, start_time, end_time, output_interval,
                event_catalog, event_ids = None,
                event_types = None, event_tags = None,
@@ -436,8 +454,9 @@ class EventPickExporter(object):
                     self.logger.info('No events found for the specified event IDs: %s.', event_ids)
                 continue
 
-            res_columns = ['event_start_time', 'event_end_time', 'network',
-                           'station', 'location', 'channel', 'pick_label',
+            res_columns = ['event_public_id', 'event_start_time',
+                           'event_end_time', 'network', 'station',
+                           'location', 'channel', 'pick_label',
                            'time']
 
             # Loop through the events.
@@ -472,10 +491,19 @@ class EventPickExporter(object):
                 event_picks = pick_catalog.get_pick(start_time = cur_event.start_time,
                                                     end_time = cur_event.end_time)
 
+                # Create the public ID.
+                ev_pub_id = self.create_public_id(utc_datetime = cur_event.start_time,
+                                                  agency_id = cur_event.agency_uri,
+                                                  author_id = cur_event.author_uri,
+                                                  service_id = 'psysmon',
+                                                  project_id = self.project.name,
+                                                  resource_id = cur_event.rid)
+
                 self.logger.debug("event_picks: %s", event_picks)
 
                 for cur_pick in event_picks:
-                    cur_res.add_row(key = cur_event.db_id,
+                    cur_res.add_row(key = cur_pick.db_id,
+                                    event_public_id = ev_pub_id,
                                     event_start_time = cur_event.start_time.isoformat(),
                                     event_end_time = cur_event.end_time.isoformat(),
                                     network = cur_pick.channel.parent_station.network,
@@ -488,4 +516,4 @@ class EventPickExporter(object):
                 cur_res.base_output_dir = self.output_dir
                 
                 if len(event_picks) > 0:
-                    cur_res.save()
+                    cur_res.save(with_timewindow = False)
