@@ -379,6 +379,20 @@ class EventExporter(object):
 
         return event_types
 
+    def create_public_id(self, utc_datetime, agency_id, author_id,
+                         service_id, project_id, resource_id):
+        template = "smi:{aid:s}.{auid:s}.{sid:s}/{pid:s}{rid:s}-{date:s}"
+        date = utc_datetime.isoformat().replace(':', '')\
+                                       .replace('.', '')\
+                                       .replace('-', '')
+        pub_id = template.format(aid = agency_id,
+                                 auid = author_id,
+                                 sid = service_id,
+                                 pid = project_id,
+                                 rid = resource_id,
+                                 date = date)
+        return pub_id
+
     
     def export(self, start_time, end_time, output_interval,
                event_catalog, event_ids = None,
@@ -444,8 +458,8 @@ class EventExporter(object):
                 continue
             
             # Create the event result.
-            res_columns = ['event_start_time', 'event_end_time', 'n_stations',
-                           'detection_scnl', 'detection_start',
+            res_columns = ['public_id', 'event_start_time', 'event_end_time',
+                           'n_stations', 'detection_scnl', 'detection_start',
                            'detection_end', 'catalog_name', 'event_type_id',
                            'event_type']
             cur_res = result.TableResult(name = 'event',
@@ -484,6 +498,14 @@ class EventExporter(object):
                         cur_event_type = cur_event_type[0]
                     else:
                         cur_event_type = None
+
+                # Create the public ID if needed.
+                pub_id = self.create_public_id(utc_datetime = cur_event.start_time,
+                                               agency_id = cur_event.agency_uri,
+                                               author_id = cur_event.author_uri,
+                                               service_id = 'psysmon',
+                                               project_id = self.project.name,
+                                               resource_id = cur_event.rid)
                 
                 # Add the event to the result.
                 detection_scnl = [str(x.channel.scnl_string) for x in cur_event.detections]
@@ -492,6 +514,7 @@ class EventExporter(object):
                 event_start = cur_event.start_time.isoformat()
                 event_end = cur_event.end_time.isoformat()
                 cur_res.add_row(key = cur_event.db_id,
+                                public_id = pub_id,
                                 event_start_time = event_start,
                                 event_end_time = event_end,
                                 n_stations = len(cur_event.detections),
