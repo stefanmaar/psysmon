@@ -72,10 +72,12 @@ class PsysmonDbWaveClientOptions(wx.Panel):
         self.description_edit = wx.TextCtrl(self, -1,
                                             self.client.description,
                                             size=(100, -1))
+        self.waveformdir_label = wx.StaticText(self,
+                                               -1,
+                                               "waveform directories:")
 
         # Layout using sizers.
         sizer = wx.GridBagSizer(5, 5)
-
 
         sizer.Add(self.name_label, pos=(0, 0),
                   flag = wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT | wx.ALL,
@@ -85,14 +87,17 @@ class PsysmonDbWaveClientOptions(wx.Panel):
                   border = 5)
         sizer.Add(self.description_label, pos=(1, 0),
                   flag = wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT | wx.ALL,
-                  border=5)
+                  border= 5)
         sizer.Add(self.description_edit, pos=(1, 1),
                   flag=wx.EXPAND | wx.ALL,
                   border = 5)
-
+        sizer.Add(self.waveformdir_label,
+                  pos = (2, 0),
+                  flag = wx.ALIGN_RIGHT | wx.ALL,
+                  border = 5)
         sizer.Add(self.wfListCtrl, pos=(2, 1),
                   flag = wx.EXPAND | wx.ALL,
-                  border=5)
+                  border= 5)
         sizer.Add(gridButtonSizer, pos=(2, 2),
                   flag = wx.EXPAND | wx.ALL,
                   border=5)

@@ -90,8 +90,7 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                         label = 'cf type',
                                                         limit = ('abs', 'square', 'envelope', 'envelope^2'),
                                                         value = 'square',
-                                                        tool_tip = 'The type of the characteristic function.'
-                                                       )
+                                                        tool_tip = 'The type of the characteristic function.')
         gen_group.add_item(item)
 
 
@@ -99,7 +98,8 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         item = preferences_manager.FloatSpinPrefItem(name = 'sta_length',
                                                      label = 'STA length [s]',
                                                      value = 1,
-                                                     limit = (0, 3600))
+                                                     limit = (0, 3600),
+                                                     tool_tip = 'The length of the short term average window.')
         gen_group.add_item(item)
 
 
@@ -107,7 +107,8 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         item = preferences_manager.FloatSpinPrefItem(name = 'lta_length',
                                                      label = 'LTA length [s]',
                                                      value = 5,
-                                                     limit = (0, 3600))
+                                                     limit = (0, 3600),
+                                                     tool_tip = 'The length of the long term average window.')
         gen_group.add_item(item)
 
 
@@ -115,39 +116,33 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         item = preferences_manager.FloatSpinPrefItem(name = 'thr',
                                                      label = 'Threshold',
                                                      value = 3,
-                                                     limit = (0, 100))
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The threshold value used to detect a signal start. Trigger signal if STA/LTA > THR.')
         thr_group.add_item(item)
 
         # Fine threshold value
         item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr',
                                                      label = 'Fine threshold',
                                                      value = 2,
-                                                     limit = (0, 100))
+                                                     limit = (0, 100),
+                                                     tool_tip = 'A threshold value used to refine the signal start after a positive trigger. The threshold function is search in reverse to get to a value below the fine threshold.')
         thr_group.add_item(item)
 
         # Turn limit.
         item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
                                                      label = 'turn limit',
                                                      value = 0.05,
-                                                     limit = (0, 10))
+                                                     limit = (0, 10),
+                                                     tool_tip = 'The turning limit when to stop the event begin refinement if the fine threshold is not reached in strict downward motion. It is defined as a threshold function difference.')
         thr_group.add_item(item)
-
-
-
-        # Stop criterium delay.
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
-                                                     label = 'Stop delay [s]',
-                                                     value = 0.1,
-                                                     limit = (0, 100),
-                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
-        sc_group.add_item(item)
 
         # stop growth
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth',
                                                      label = 'stop grow ratio',
                                                      value = 0.001,
-                                                     digits = 10,
-                                                     limit = (0, 0.1))
+                                                     digits = 6,
+                                                     limit = (0, 0.1),
+                                                     tool_tip = 'The ratio with which the stop value is grown to ensure to reach the stop criterium at some time.')
         sc_group.add_item(item)
 
         # stop growth exponent
@@ -155,15 +150,17 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                      label = 'stop grow exponent',
                                                      value = 1,
                                                      digits = 1,
-                                                     limit = (0.1, 100))
+                                                     limit = (0.1, 100),
+                                                     tool_tip = 'The exponent of the stop grow function. The higher, the faster the stop function grows.')
         sc_group.add_item(item)
 
         # stop growth increase percentage
         item = preferences_manager.FloatSpinPrefItem(name = 'stop_growth_inc',
                                                      label = 'stop grow increase [%]',
                                                      value = 0,
-                                                     digits = 10,
-                                                     limit = (0, 100))
+                                                     digits = 6,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The increase of the stop grow value after each sample. The higher, the faster the stop growth value increases.')
         sc_group.add_item(item)
 
         # stop growth increase percentage
@@ -172,16 +169,24 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                      value = 10,
                                                      digits = 3,
                                                      limit = (0, 100000),
-                                                     tool_tip = "When to start growing the stop grow value using the stop grow increase percentage [s].")
+                                                     tool_tip = "When to start growing the stop grow value using the stop grow increase. The time is in seconds relative to the time the STA falls below the LTA.")
         sc_group.add_item(item)
+
+        # Stop criterium delay.
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
+                                                     label = 'Stop delay [s]',
+                                                     value = 0.1,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
+        sc_group.add_item(item)
+        
 
         # The target detection catalog.
         item = preferences_manager.SingleChoicePrefItem(name = 'detection_catalog',
                                                         label = 'detection catalog',
                                                         limit = [],
                                                         value = None,
-                                                        tool_tip = 'The detection catalog to which the detections are written.'
-                                                       )
+                                                        tool_tip = 'The detection catalog to which the detections are written.')
         cat_group.add_item(item)
 
         # Detection reject length
@@ -303,6 +308,11 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             last_marker = []
             if len(detection_markers) > 0 and np.isnan(detection_markers[-1][1]):
                 # Handle a detected event with no end.
+                # Add the start time of the open-end detection to the open_end_start
+                # array so that it can be handled in the next time window.
+                # In the next time window the data will be loaded from the open-end
+                # start with some time prepended. This pre_stream_length depends on
+                # the detection parameters.
                 last_marker = detection_markers.pop(-1)
                 slice_marker = last_marker[0] - detector.n_lta - detector.n_sta - 1
                 if slice_marker < 0:

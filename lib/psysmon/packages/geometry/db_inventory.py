@@ -510,6 +510,24 @@ class DbArray(Array):
 
         return added_station
 
+    def remove_station_by_instance(self, station_timebox):
+        ''' Remove a station by its timebox instance.
+        '''
+        Array.remove_station_by_instance(self,
+                                         station_timebox)
+
+        station = station_timebox.item
+        orm_to_remove = []
+        for orm_station in self.orm.stations:
+            if ((orm_station.station_id == station.id) and
+                    (orm_station.start_time == station_timebox.start_time) and
+                    (orm_station.end_time == station_timebox.end_time)):
+                orm_to_remove.append(orm_station)
+
+        for orm_station in orm_to_remove:
+            self.orm.stations.remove(orm_station)
+            self.parent_inventory.db_session.delete(orm_station)
+        
 
     def remove_station(self, start_time = None, end_time = None, **kwargs):
         ''' Remove a station from the array.

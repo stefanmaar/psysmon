@@ -356,7 +356,7 @@ class TableResult(Result):
         row.add_cells(**kwargs)
         self.rows.append(row)
 
-    def save(self, formats = None):
+    def save(self, formats = None, with_timewindow = True):
         ''' Save the result in the specified format.
 
         Parameters
@@ -371,23 +371,52 @@ class TableResult(Result):
         for cur_format in formats:
             if cur_format == 'csv':
                 self.filename_ext = 'csv'
-                self.save_csv()
+                self.save_csv(with_timewindow = with_timewindow)
             else:
                 # TODO: Throw an exception.
                 pass
 
-    def save_csv(self):
+    def save_csv(self, with_timewindow):
         '''Save the result in CSV format.
         '''
         import csv
 
-
+        if with_timewindow:
+            if self.event_id:
+                header = [self.key_name,
+                          'event_id',
+                          'win_start_time',
+                          'win_end_time']
+            else:
+                header = [self.key_name,
+                          'win_start_time',
+                          'win_end_time']
+        else:
+            if self.event_id:
+                header = [self.key_name,
+                          'event_id']
+            else:
+                header = [self.key_name]
+            
         export_values = []
         for cur_row in sorted(self.rows, key=lambda x: x.key):
-            if self.event_id:
-                cur_values = [cur_row.key, self.event_id, self.start_time.isoformat(), self.end_time.isoformat()]
+            if with_timewindow:
+                if self.event_id:
+                    cur_values = [cur_row.key,
+                                  self.event_id,
+                                  self.start_time.isoformat(),
+                                  self.end_time.isoformat()]
+                else:
+                    cur_values = [cur_row.key,
+                                  self.start_time.isoformat(),
+                                  self.end_time.isoformat()]
             else:
-                cur_values = [cur_row.key, self.start_time.isoformat(), self.end_time.isoformat()]
+                if self.event_id:
+                    cur_values = [cur_row.key,
+                                  self.event_id]
+                else:
+                    cur_values = [cur_row.key]
+                
             cur_values.extend([cur_row[key] for key in self.column_names])
             #cur_values.reverse()
             #try:
@@ -413,10 +442,6 @@ class TableResult(Result):
         #    filename = filename.encode(encoding = 'utf-8')
 
         with open(filename, 'w') as fid:
-            if self.event_id:
-                header = [self.key_name, 'event_id', 'start_time', 'end_time']
-            else:
-                header = [self.key_name, 'start_time', 'end_time']
             header.extend(self.column_names)
             writer = csv.writer(fid, quoting=csv.QUOTE_MINIMAL)
             writer.writerow(header)

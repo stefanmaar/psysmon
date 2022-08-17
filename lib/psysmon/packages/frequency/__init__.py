@@ -28,7 +28,7 @@ website = "http://psysmon.mertl-research.at"    # The package website.
 # Specify the module(s) where to search for collection node classes.
 collection_node_modules = ['compute_psd',
                            'create_psd_images',
-                           'create_ppsd_images',
+                           # 'create_ppsd_images',  # This is an old collection node. It should be re-written to handle data created by the compute_ppsd looper child.
                            'compute_ppsd']
 
 # Specify the module(s) where to search for plugin classes.

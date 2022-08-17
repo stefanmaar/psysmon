@@ -79,12 +79,12 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
             channels = sorted(list(set([x.name for x in self.project.geometry_inventory.get_channel()])))
             self.pref_manager.set_limit('channels', channels)
 
+        # Create the edit dialog.
+        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
+
         # Update the preference item gui elements based on the current
         # selections.
         self.on_window_mode_selected()
-
-        # Create the edit dialog.
-        dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the time-span elements depending on the 'set
         # collection time-span' collection node.
@@ -104,6 +104,8 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
 
 
     def execute(self, prevNodeOutput={}):
+        '''
+        '''
         # Get the output directory from the pref_manager. If no directory is
         # specified create one based on the node resource id.
         output_dir = self.pref_manager.get_value('output_dir')
@@ -158,7 +160,6 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
             end_time = UTCDateTime(end_time.year, end_time.month, end_time.day) +  (7 - end_time.weekday) * 86400
             window_length = 86400. * 7
             overlap = 0.
-
 
         processor.process(looper_nodes = self.children,
                           start_time = start_time,
@@ -273,14 +274,15 @@ class TimeWindowLooperNode(package_nodes.LooperCollectionNode):
     def on_window_mode_selected(self):
         '''
         '''
-        if self.pref_manager.get_value('window_mode') == 'free':
-            self.pref_manager.get_item('window_length')[0].enable_gui_element()
-        elif self.pref_manager.get_value('window_mode') == 'daily':
-            item = self.pref_manager.get_item('window_length')[0]
-            item.disable_gui_element()
-        elif self.pref_manager.get_value('window_mode') == 'weekly':
-            item = self.pref_manager.get_item('window_length')[0]
-            item.disable_gui_element()
+        winlength_item = self.pref_manager.get_item('window_length')[0]
+        overlap_item = self.pref_manager.get_item('window_overlap')[0]
+        win_mode = self.pref_manager.get_value('window_mode')
+        if win_mode == 'free':
+            winlength_item.enable_gui_element()
+            overlap_item.enable_gui_element()
+        else:
+            winlength_item.disable_gui_element()
+            overlap_item.disable_gui_element()
 
 
 
@@ -366,10 +368,12 @@ class SlidingWindowProcessor(object):
 
         try:
             if chunked:
-                self.process_chunked(looper_nodes, windowlist_start, station_names,
-                                     channel_names, window_length, chunk_window_length)
+                self.process_chunked(looper_nodes, windowlist_start,
+                                     station_names, channel_names,
+                                     window_length, chunk_window_length)
             else:
-                self.process_whole(looper_nodes, windowlist_start, station_names, channel_names, window_length)
+                self.process_whole(looper_nodes, windowlist_start,
+                                   station_names, channel_names, window_length)
         finally:
             pass
 
@@ -411,7 +415,7 @@ class SlidingWindowProcessor(object):
                                                                             location = cur_loc,
                                                                             name = cur_channel))
 
-        n_chunk_windows =  np.ceil(old_div(window_length, chunk_length))
+        n_chunk_windows = np.ceil(old_div(window_length, chunk_length))
 
         pre_stream_length = [x.pre_stream_length for x in looper_nodes]
         post_stream_length = [x.post_stream_length for x in looper_nodes]
@@ -446,21 +450,36 @@ class SlidingWindowProcessor(object):
                             # TODO: Call the reset method of the node.
                             try:
                                 cur_node.sculpture_layer = None
-                            except:
+                            except Exception:
                                 pass
-                        cur_node.execute_chunked(chunk_count = m + 1,
-                                                 total_chunks = len(chunk_windowlist),
-                                                 stream = stream,
+                        try:
+                            if (hasattr(cur_node, 'execute_chunked') and
+                                    callable(cur_node.execute)):
+                                cur_node.execute_chunked(chunk_count = m + 1,
+                                                         total_chunks = len(chunk_windowlist),
+                                                         stream = stream,
+                                                         process_limits = process_limits,
+                                                         origin_resource = resource_id,
+                                                         output_dir = self.output_dir)
+                            else:
+                                self.logger.warning("The node %s doesn't support chunked execution. Using normal execution.", cur_node.name)
+                                cur_node.execute(stream = stream,
                                                  process_limits = process_limits,
-                                                 origin_resource = resource_id)
-                        # Get the results of the node.
-                        if cur_node.result_bag:
-                            if len(cur_node.result_bag.results) > 0:
-                                for cur_result in cur_node.result_bag.results:
-                                    cur_result.base_output_dir = self.output_dir
-                                    cur_result.save()
+                                                 origin_resource = resource_id,
+                                                 channels = [cur_channel],
+                                                 output_dir = self.output_dir)
+
+                            # Get the results of the node.
+                            if cur_node.result_bag:
+                                if len(cur_node.result_bag.results) > 0:
+                                    for cur_result in cur_node.result_bag.results:
+                                        cur_result.base_output_dir = self.output_dir
+                                        cur_result.save()
 
                                 cur_node.result_bag.clear()
+                        except Exception:
+                            self.node_execution_error = True
+                            self.logger.exception("Error when executing a looper node. Skipping this time window.")  
 
 
 
@@ -539,7 +558,8 @@ class SlidingWindowProcessor(object):
                         cur_node.execute(stream = stream,
                                          process_limits = process_limits,
                                          origin_resource = resource_id,
-                                         channels = channels)
+                                         channels = channels,
+                                         output_dir = self.output_dir)
                         self.logger.debug("Finished execution of node %s.", cur_node.name)
 
                         # Get the results of the node.

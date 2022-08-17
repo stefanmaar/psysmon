@@ -840,11 +840,12 @@ class StaLtaDetector(object):
                 cur_event_length = cur_event_end - event_start
                 if cur_event_length > self.reject_length:
                     event_marker.append((event_start, cur_event_end))
-
+                    
             # Recompute the next event start indices.
             if np.isnan(cur_event_end):
-                # There is no event end before the end of the data. Stop the
-                # loop.
+                # There is no event end before the end of the data.
+                # Add the open event end and Stop the loop.
+                event_marker.append((event_start, cur_event_end))
                 break
             else:
                 event_start, stop_value = self.compute_start_stop_values(cur_event_end, stop_delay)

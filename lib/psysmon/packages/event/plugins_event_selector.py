@@ -315,9 +315,10 @@ class SelectEvents(OptionPlugin):
                 channel_detections = [x for x in selected_event.detections if x.scnl == scnl]
 
             for cur_node in channel_nodes:
+                label = "event: {:d}".format(int(self.selected_event['id']))
                 cur_node.plot_annotation_vspan(x_start = self.selected_event['start_time'],
                                                x_end = self.selected_event['end_time'],
-                                               label = self.selected_event['id'],
+                                               label = label,
                                                parent_rid = self.rid,
                                                key = self.selected_event['id'],
                                                color = self.colors['event_vspan'])
@@ -325,7 +326,8 @@ class SelectEvents(OptionPlugin):
                 for cur_detection in channel_detections:
                     cur_node.plot_annotation_vspan(x_start = cur_detection.start_time,
                                                    x_end = cur_detection.end_time,
-                                                   label = cur_detection.db_id,
+                                                   #label = cur_detection.db_id,
+                                                   label = '',
                                                    parent_rid = self.rid,
                                                    key = cur_detection.db_id,
                                                    color = self.colors['detection_vspan'])

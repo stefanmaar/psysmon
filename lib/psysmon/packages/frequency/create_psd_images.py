@@ -28,10 +28,6 @@ The importWaveform module.
     http://www.gnu.org/licenses/gpl-3.0.html
 
 '''
-from __future__ import division
-from builtins import range
-from builtins import object
-from past.utils import old_div
 import os
 import shelve
 import logging
@@ -116,18 +112,24 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
         par_page = self.pref_manager.add_page('plot parameters')
         plot_group = par_page.add_group('plot')
 
+        pref_item = psy_pm.SingleChoicePrefItem(name = 'plot_mode',
+                                                label = 'plot mode',
+                                                limit = ('free', 'daily', 'weekly', 'whole'),
+                                                value = 'weekly',
+                                                hooks = {'on_value_change': self.on_window_mode_selected},
+                                                tool_tip = 'The mode of the plot window computation.')
+        plot_group.add_item(pref_item)
 
         pref_item = psy_pm.IntegerSpinPrefItem(name = 'plot_length',
-                                             label = 'plot length [days]',
-                                             value = 7,
-                                             limit = [1, 365],
-                                             tool_tip = 'The length of PSD plots [days].'
-                                             )
+                                               label = 'plot length [seconds]',
+                                               value = 86400,
+                                               limit = [0, 1209600],
+                                               tool_tip = 'The length of the plot in free mode in seconds.')
         plot_group.add_item(pref_item)
 
         pref_item = psy_pm.CheckBoxPrefItem(name = 'with_average_plot',
                                        label = 'with average plot',
-                                       value = False,
+                                       value = True,
                                        tool_tip = 'Add the temporal average with noise models to the PSD plot.')
         plot_group.add_item(pref_item)
 
@@ -166,6 +168,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
                                             )
         files_group.add_item(pref_item)
 
+        
     def on_use_upper_frequ_changed(self):
         '''
         '''
@@ -176,14 +179,29 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
             item = self.pref_manager.get_item('upper_frequ')[0]
             item.disable_gui_element()
 
+            
+    def on_window_mode_selected(self):
+        '''
+        '''
+        item = self.pref_manager.get_item('plot_length')[0]
+        if self.pref_manager.get_value('plot_mode') == 'free':
+            item.enable_gui_element()
+        else:
+            item.disable_gui_element()
+
+
 
     def edit(self):
         # Initialize the components
         if self.project.geometry_inventory:
             channels = sorted([x.scnl for x in self.project.geometry_inventory.get_channel()])
             self.pref_manager.set_limit('scnl_list', channels)
-
+            
         dlg = psy_lb. ListbookPrefDialog(preferences = self.pref_manager)
+        
+        # Update the preference item gui elements based on the current
+        # selections.
+        self.on_window_mode_selected()
         self.on_use_upper_frequ_changed()
         dlg.ShowModal()
         dlg.Destroy()
@@ -194,7 +212,7 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
         '''
         start_time = self.pref_manager.get_value('start_time')
         end_time = self.pref_manager.get_value('end_time')
-        plot_length = self.pref_manager.get_value('plot_length')
+        plot_mode = self.pref_manager.get_value('plot_mode')
         lower_frequ = self.pref_manager.get_value('lower_frequ')
         use_upper_frequ = self.pref_manager.get_value('use_upper_frequ')
         if use_upper_frequ:
@@ -202,28 +220,43 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
         else:
             upper_frequ = None
 
-        # Round the times to days.
-        start_day = UTCDateTime(year = start_time.year,
-                                month = start_time.month,
-                                day = start_time.day)
+        if plot_mode == 'whole':
+            plot_length = end_time - start_time
+        elif plot_mode == 'free':
+            plot_length = self.pref_manager.get_value('plot_length')
+        elif plot_mode == 'daily':
+            start_time = UTCDateTime(year = start_time.year,
+                                     month = start_time.month,
+                                     day = start_time.day)
 
-        end_day = UTCDateTime(year = end_time.year,
-                              month = end_time.month,
-                              day = end_time.day)
+            end_time = UTCDateTime(year = end_time.year,
+                                   month = end_time.month,
+                                   day = end_time.day)
+            # If the start- and end day are equal, plot at least one day.
+            if start_time == end_time:
+                end_time = end_time + 86400
+                
+            plot_length = 86400
+        elif plot_mode == 'weekly':
+            start_time = UTCDateTime(start_time.year,
+                                     start_time.month,
+                                     start_time.day)
+            start_time = start_time - start_time.weekday * 86400
+            end_time = UTCDateTime(end_time.year,
+                                   end_time.month,
+                                   end_time.day)
+            end_time = end_time + (7 - end_time.weekday) * 86400
+            plot_length = 86400 * 7
 
-        # If the start- and end day are equal, plot at least one day.
-        if start_day == end_day:
-            end_day = end_day + 86400
-
-        # The length of the plot in seconds
-        plot_length = plot_length * 86400
-        plots_between = int(old_div((end_day - start_day), plot_length))
-        plot_list = [start_day + x * plot_length for x in range(plots_between+1)]
-
-        if plot_list[-1] == end_day:
+        n_plots = int((end_time - start_time) / plot_length)
+        if n_plots < 0:
+            n_plots = 0
+        plot_list = [start_time + x * plot_length for x in range(0, n_plots)]
+        
+        if plot_list[-1] == end_time:
             plot_list = plot_list[:-1]
 
-        if plot_list[-1] + plot_length < end_day:
+        if plot_list[-1] + plot_length < end_time:
             plot_list.append(plot_list[-1] + plot_length)
 
         for k, cur_start in enumerate(plot_list):
@@ -231,17 +264,21 @@ class CreatePsdImagesNode(psysmon.core.packageNodes.CollectionNode):
 
             for cur_scnl in self.pref_manager.get_value('scnl_list'):
                 self.logger.info("Plotting PSD for %s from %s to %s.", ':'.join(cur_scnl), cur_start.isoformat(), cur_end.isoformat())
+                data_dir = self.pref_manager.get_value('data_dir')
+                output_dir = self.pref_manager.get_value('output_dir')
+                with_av_plot = self.pref_manager.get_value('with_average_plot')
                 psd_plotter = PSDPlotter(station = cur_scnl[0],
                                          channel = cur_scnl[1],
                                          network = cur_scnl[2],
                                          location = cur_scnl[3],
                                          starttime = cur_start,
                                          endtime = cur_end,
-                                         data_dir = self.pref_manager.get_value('data_dir'),
-                                         output_dir = self.pref_manager.get_value('output_dir'),
-                                         with_average_plot = self.pref_manager.get_value('with_average_plot'),
+                                         data_dir = data_dir,
+                                         output_dir = output_dir,
+                                         with_average_plot = with_av_plot,
                                          min_frequ = lower_frequ,
-                                         max_frequ = upper_frequ)
+                                         max_frequ = upper_frequ,
+                                         plot_mode = plot_mode)
 
                 psd_plotter.plot()
 
@@ -253,7 +290,8 @@ class PSDPlotter(object):
 
     def __init__(self, station, channel, network, location,
                  data_dir, output_dir, starttime = None, endtime = None,
-                 with_average_plot = False, min_frequ = 0.1, max_frequ = None):
+                 with_average_plot = False, min_frequ = 0.1, max_frequ = None,
+                 plot_mode = None):
         ''' The constructor.
 
         '''
@@ -281,6 +319,8 @@ class PSDPlotter(object):
         self.min_frequ = min_frequ
 
         self.max_frequ = max_frequ
+
+        self.plot_mode = plot_mode
 
 
     def scan_for_files(self):
@@ -448,6 +488,7 @@ class PSDPlotter(object):
 
         time = np.array([UTCDateTime(x) for x in time_key])
         time = time - self.starttime
+        time = time.astype(float)
 
         return time, frequ, psd_matrix
 
@@ -505,9 +546,9 @@ class PSDPlotter(object):
         cur_scnl = (self.station, self.channel, self.network, self.location)
         dpi = 300.
         cm_to_inch = 2.54
-        avg_width = old_div(4, cm_to_inch)
-        psd_min_width = old_div(10, cm_to_inch)
-        cb_width = old_div(1, cm_to_inch)
+        avg_width = 4 / cm_to_inch
+        psd_min_width = 10 / cm_to_inch
+        cb_width = 1 / cm_to_inch
         plot_length = self.endtime - self.starttime
         #width = (plot_length / (window_length * (1-window_overlap / 100))) * 3 / dpi
         #psd_width = old_div(len(time), dpi)
@@ -515,7 +556,7 @@ class PSDPlotter(object):
         if psd_width < psd_min_width:
             psd_width = psd_min_width
 
-        height = old_div(8, cm_to_inch)
+        height = 8 / cm_to_inch
         width = avg_width + psd_width + cb_width
 
         # TODO: Add the feature to specify the total width and height. This is
@@ -537,33 +578,45 @@ class PSDPlotter(object):
             #ax_avg = fig.add_subplot(gs[0, 0])
             #ax_psd = fig.add_subplot(gs[0, 1])
 
-            ax_avg = fig.add_axes([0, 0.15, old_div(avg_width,width), 0.75])
-            ax_psd = fig.add_axes([old_div(avg_width,width), 0.15, old_div(psd_width,width), 0.75])
+            ax_avg = fig.add_axes([0, 0.15, avg_width / width, 0.75])
+            ax_psd = fig.add_axes([avg_width / width, 0.15, psd_width / width, 0.75])
             pos = ax_psd.get_position()
-            ax_cb = fig.add_axes([pos.x1, 0.15, old_div(cb_width,width), 0.75])
+            ax_cb = fig.add_axes([pos.x1, 0.15, cb_width / width, 0.75])
             ax_avg.set_yscale('log')
             ax_avg.set_ylim((min_frequ, max_frequ))
         else:
-            ax_psd = fig.add_axes([0.1, 0.15, old_div(psd_width,width), 0.75])
+            ax_psd = fig.add_axes([0.1, 0.15, psd_width / width, 0.75])
             pos = ax_psd.get_position()
-            ax_cb = fig.add_axes([pos.x1 + 0.01, 0.15, old_div(cb_width,width), 0.75])
+            ax_cb = fig.add_axes([pos.x1 + 0.01, 0.15, cb_width / width, 0.75])
 
 
         ax_psd.set_yscale('log')
         ax_psd.set_ylim((min_frequ, max_frequ))
-        ax_psd.set_xlim((0, (self.endtime - self.starttime)/3600.))
+        ax_psd.set_xlim((0, (self.endtime - self.starttime) / 3600.))
+        
         amp_resp = 10 * np.log10(np.abs(psd_matrix))
         if unit == 'm/s':
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80, cmap = 'viridis')
+            self.logger.info("time: %s", time.dtype)
+            self.logger.info("frequ: %s", frequ.dtype)
+            self.logger.info("amp_resp: %s", amp_resp.dtype)
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp,
+                                    vmin = -220,
+                                    vmax = -80,
+                                    cmap = 'viridis')
             unit_label = '(m/s)^2/Hz'
         elif unit == 'm/s^2':
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, vmin = -220, vmax = -80, cmap = 'viridis')
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp,
+                                    vmin = -220,
+                                    vmax = -80,
+                                    cmap = 'viridis')
             unit_label = '(m/s^2)^2/Hz'
         elif unit == 'counts':
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, cmap = 'viridis')
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp,
+                                    cmap = 'viridis')
             unit_label = 'counts^2/Hz'
         else:
-            pcm = ax_psd.pcolormesh(time, frequ, amp_resp, cmap = 'viridis')
+            pcm = ax_psd.pcolormesh(time, frequ, amp_resp,
+                                    cmap = 'viridis')
             unit_label = '???^2/Hz'
 
         if self.with_average_plot:
@@ -575,24 +628,30 @@ class PSDPlotter(object):
             # obspy returns the NLNM and NHNM values in acceleration.
             # Convert them to the current unit (see Bormann (1998)).
             if unit == 'm':
-                nhnm = nhnm + 40 * np.log10(old_div(p_nhnm, (2 * np.pi)))
-                nlnm = nlnm + 40 * np.log10(old_div(p_nlnm, (2 * np.pi)))
+                nhnm = nhnm + 40 * np.log10(p_nhnm / (2 * np.pi))
+                nlnm = nlnm + 40 * np.log10(p_nlnm / (2 * np.pi))
             elif unit == 'm/s':
-                nhnm = nhnm + 20 * np.log10(old_div(p_nhnm, (2 * np.pi)))
-                nlnm = nlnm + 20 * np.log10(old_div(p_nlnm, (2 * np.pi)))
+                nhnm = nhnm + 20 * np.log10(p_nhnm / (2 * np.pi))
+                nlnm = nlnm + 20 * np.log10(p_nlnm / (2 * np.pi))
             elif unit != 'm/s^2':
                 nhnm = None
                 nlnm = None
                 self.logger.error('The NLNM and NHNM is not available for the unit: %s.', unit)
 
             if nlnm is not None:
-                ax_avg.plot(nlnm, old_div(1,p_nlnm), color = 'lightgray')
+                ax_avg.plot(nlnm, 1 / p_nlnm,
+                            color = 'lightgray')
 
             if nhnm is not None:
-                ax_avg.plot(nhnm, old_div(1,p_nhnm), color = 'lightgray')
+                ax_avg.plot(nhnm, 1 / p_nhnm,
+                            color = 'lightgray')
 
-            ax_avg.plot(avg_amp_resp, frequ, color='saddlebrown', label='avg')
-            ax_avg.plot(med_amp_resp, frequ, color='darkviolet', label='med')
+            ax_avg.plot(avg_amp_resp, frequ,
+                        color='saddlebrown',
+                        label='avg')
+            ax_avg.plot(med_amp_resp, frequ,
+                        color='darkviolet',
+                        label='med')
 
             ax_avg.set_xlim(pcm.get_clim())
             xlim = ax_avg.get_xlim()
@@ -606,10 +665,11 @@ class PSDPlotter(object):
             ax_avg.set_xlabel('PSD [dB]', fontsize=axes_label_size)
             ax_avg.legend(loc='lower left', fontsize=tick_label_size)
 
-
         cb = fig.colorbar(pcm, cax = ax_cb)
-        cb.set_label('PSD ' + unit_label + ' in dB', fontsize = axes_label_size)
-        cb.ax.tick_params(axis = 'both', labelsize = tick_label_size)
+        cb.set_label('PSD ' + unit_label + ' in dB',
+                     fontsize = axes_label_size)
+        cb.ax.tick_params(axis = 'both',
+                          labelsize = tick_label_size)
 
         xlim = ax_psd.get_xlim()
 
@@ -622,10 +682,12 @@ class PSDPlotter(object):
         xticks = np.arange(xlim[0], xlim[1], tick_interval)
         xticks = np.append(xticks, xlim[1])
         ax_psd.set_xticks(xticks)
-        ax_psd.set_xlabel('Time since %s [h]' % self.starttime.isoformat(), fontsize = axes_label_size)
+        ax_psd.set_xlabel('Time since %s [h]' % self.starttime.isoformat(),
+                          fontsize = axes_label_size)
 
         if self.with_average_plot:
-            ax_avg.set_ylabel('Frequency [Hz]', fontsize = axes_label_size)
+            ax_avg.set_ylabel('Frequency [Hz]',
+                              fontsize = axes_label_size)
             ax_avg.xaxis.tick_top()
             ax_avg.xaxis.set_ticks_position('both')
             ax_psd.yaxis.tick_right()
@@ -633,7 +695,8 @@ class PSDPlotter(object):
         else:
             ax_psd.xaxis.set_ticks_position('both')
             ax_psd.yaxis.set_ticks_position('both')
-            ax_psd.set_ylabel('Frequency [Hz]', fontsize = axes_label_size)
+            ax_psd.set_ylabel('Frequency [Hz]',
+                              fontsize = axes_label_size)
 
         ax_psd.set_title('PSD %s %s' % (self.starttime.isoformat(), ':'.join(cur_scnl)), fontsize = title_size)
 
@@ -678,15 +741,21 @@ class PSDPlotter(object):
             ax_cb.set_position(pos)
 
             # TODO: Adjust the height of the axes as well to make shure, that
-            # the axis ticks and labels and the figure title are shown.
+            # the axis ticks and labels and the figure title are shown.    
 
+        plot_mode = self.plot_mode
+        if not plot_mode:
+            plot_mode = 'unknown'
+        filename = '%s_%s_%s_%s_%s_%s_%s.png' % (plot_mode,
+                                                 self.starttime.strftime('%Y%m%d'),
+                                                 self.endtime.strftime('%Y%m%d'),
+                                                 self.network, self.station,
+                                                 self.location, self.channel)
 
-        filename = '%s_%s_%s_%s_%s_%s.png' % (self.starttime.strftime('%Y%m%d'),
-                                              self.endtime.strftime('%Y%m%d'),
-                                              self.network, self.station,
-                                              self.location, self.channel)
-        filename = filename.lower()
-        output_dir = os.path.join(self.output_dir, self.network.lower(), self.station.lower(), self.location.lower())
+        output_dir = os.path.join(self.output_dir,
+                                  self.network,
+                                  self.station,
+                                  self.location)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         filename = os.path.join(output_dir, filename)
@@ -697,4 +766,3 @@ class PSDPlotter(object):
         fig.clear()
         plt.close(fig)
         del fig
-

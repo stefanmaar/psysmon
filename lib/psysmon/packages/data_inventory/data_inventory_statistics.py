@@ -180,7 +180,7 @@ class DataInventoryStatisticsDlg(wx.Frame):
                                                  filter(t_datafile.wf_id == cur_wf_dir[0]).\
                                                  filter(t_traceheader.datafile_id == t_datafile.id).\
                                                  distinct().all()
-                cur_stats['unique_streams'] = [' '.join(x) for x in unique_streams]
+                cur_stats['unique_streams'] = ['-'.join(x) for x in unique_streams]
 
                 # The datafiles per recorder serial.
                 files_per_recorder = db_session.query(t_traceheader.recorder_serial, sqa.func.count()).\

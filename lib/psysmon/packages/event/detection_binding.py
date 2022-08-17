@@ -96,22 +96,24 @@ class DetectionBinder(object):
 
         while len(next_detections) > 0:
 
-            next_detections = sorted(next_detections, key = op.attrgetter('start_time'))
+            next_detections = sorted(next_detections,
+                                     key = op.attrgetter('start_time'))
             first_detection = next_detections.pop(0)
 
-            self.logger.debug('Processing detection %d, %s, %s.', first_detection.db_id,
+            self.logger.debug('Processing detection %d, %s, %s.',
+                              first_detection.db_id,
                               first_detection.start_time,
                               first_detection.snl)
 
             # Get the search windows for the detection combinations.
-            search_windows = self.get_search_window(first_detection, next_detections)
+            search_windows = self.get_search_window(first_detection,
+                                                    next_detections)
             self.logger.debug('Search windows: %s', search_windows)
 
             # Get the detections matching the search window.
-            match_detections = [x for k,x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + search_win_extend]
+            match_detections = [x for k, x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + search_win_extend]
             self.logger.debug('Matching detections: %s.', [(x.db_id, x.start_time, x.snl) for x in match_detections])
 
-            # TODO: Make the min_match_neighbors a user preference.
             # Check if there are matching detections on neighboring stations.
             # There have to be detections at at least min_match_neighbors.
             # If there are not enough matching detections, all matching
@@ -119,9 +121,9 @@ class DetectionBinder(object):
 
             #TODO: The neighbors should contain only stations which have been
             # selected for binding the detections.
-
-            # TODO: Check if the neighbors have the correct length.
-            neighbors = self.epi_dist[first_detection.snl][1:n_neighbors + 1]
+            neighbors = self.epi_dist[first_detection.snl]
+            if len(neighbors) > (n_neighbors + 1):
+                neighbors = neighbors[1:n_neighbors + 1]
             #neighbors = [x for x in neighbors if x[1] <= max_neighbor_dist]
             neighbors_snl = [x[0] for x in neighbors]
             match_snl = [x.snl for x in match_detections]
@@ -155,11 +157,14 @@ class DetectionBinder(object):
 
             if match_detections:
                 # Create an event using the matching detections.
-                event = ev_core.Event(start_time = min([x.start_time for x in match_detections]),
-                                      end_time = max([x.end_time for x in match_detections]),
+                creation_time = utcdatetime.UTCDateTime()
+                start_time = min([x.start_time for x in match_detections])
+                end_time = max([x.end_time for x in match_detections])
+                event = ev_core.Event(start_time = start_time,
+                                      end_time = end_time,
                                       author_uri = self.author_uri,
                                       agency_uri = self.agency_uri,
-                                      creation_time = utcdatetime.UTCDateTime(),
+                                      creation_time = creation_time,
                                       detections = match_detections)
                 self.event_catalog.add_events([event, ])
                 self.logger.debug('Added event %s to %s.',

@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import operator as op
+import re
 
 import wx
 import wx.lib.agw.ribbon as ribbon
@@ -38,12 +39,15 @@ class DockingFrame(wx.Frame):
                  title = 'docking frame', size = (1000, 600)):
         ''' Initialize the instance.
         '''
+        slug = title.lower()
+        slug = re.sub(r'[^a-z0-9]+', '-', slug)
         wx.Frame.__init__(self,
                           parent = parent,
                           id = id,
                           title = title,
                           pos = wx.DefaultPosition,
-                          style = wx.DEFAULT_FRAME_STYLE)
+                          style = wx.DEFAULT_FRAME_STYLE,
+                          name = slug)
         self.SetMinSize(size)
 
         # The docking manager.
@@ -100,6 +104,7 @@ class DockingFrame(wx.Frame):
         
     def on_set_focus(self, event):
         self.logger.debug("on_set_focus in docking frame. event: %s", event)
+        self.activate_accelerator_table()
         event.ResumePropagation(30)
         event.Skip()
 
@@ -108,6 +113,12 @@ class DockingFrame(wx.Frame):
         self.logger.debug("on_key_down in viewport. event: %s", event)
         event.ResumePropagation(30)
         event.Skip()
+
+    def deactivate_accelerator_table(self):
+        self.SetAcceleratorTable(wx.NullAcceleratorTable)
+
+    def activate_accelerator_table(self):
+        self.SetAcceleratorTable(self.accelerator_table)
         
 
     def init_viewport(self):
@@ -258,6 +269,7 @@ class DockingFrame(wx.Frame):
 
         accel = wx.AcceleratorTable(entries)
         self.SetAcceleratorTable(accel)
+        self.accelerator_table = accel
 
 
     def create_menu_item(self, menu, item_id, plugin):
@@ -856,13 +868,21 @@ class DockingFrame(wx.Frame):
             self.Bind(event = wx.aui.EVT_AUI_PANE_CLOSE,
                       handler = lambda evt, plugin = plugin: self.on_pref_aui_pane_close(evt,
                                                                                          plugin))
+            self.mgr.GetPane(curPanel).Hide()
             self.mgr.Update()
             self.foldPanels[plugin.name] = curPanel
+
+        if not self.foldPanels[plugin.name].IsShown():
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Show()
+            self.mgr.Update()
+            self.check_pref_menu_checkitem(plugin)
         else:
-            if not self.foldPanels[plugin.name].IsShown():
-                curPanel = self.foldPanels[plugin.name]
-                self.mgr.GetPane(curPanel).Show()
-                self.mgr.Update()
+            curPanel = self.foldPanels[plugin.name]
+            self.mgr.GetPane(curPanel).Hide()
+            self.mgr.Update()
+            self.uncheck_pref_menu_checkitem(plugin)
+            
 
 
     def on_pref_aui_pane_close(self, event, plugin):

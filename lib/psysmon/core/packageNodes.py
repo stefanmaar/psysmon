@@ -30,15 +30,16 @@ The package node base classes.
 This module contains the base classes of the nodes used in 
 the :mod:`~psysmon.core.packageSystem`.
 '''
-from __future__ import print_function
 
-from builtins import object
 import weakref
-import logging
+import os
+import json
 
 import psysmon
 from psysmon.core.preferences_manager import PreferencesManager
 import psysmon.core.result as core_result
+import psysmon.core.json_util as json_util
+
 
 class CollectionNode(object):
     ''' The base class of all psysmon collection nodes.
@@ -345,6 +346,33 @@ class CollectionNode(object):
                 return False
 
         return True
+
+
+    def save_settings(self, output_dir, execution_time):
+        ''' Save the collection node settings to a file.
+
+        Parameters
+        ----------
+        output_dir : String
+            The filepath of the ouput directory.
+
+        execution_time: :class:`obspy.UTCDateTime
+            The time of the execution.
+        '''
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        exec_meta = {}
+        exec_meta['rid'] = self.rid
+        exec_meta['execution_time'] = execution_time
+        exec_meta['node_settings'] = self.settings
+        settings_filename = 'execution_metadata.json'
+        settings_filepath = os.path.join(output_dir,
+                                         settings_filename)
+        with open(settings_filepath, 'w') as fp:
+            json.dump(exec_meta,
+                      fp = fp,
+                      cls = json_util.GeneralFileEncoder)
 
 
 

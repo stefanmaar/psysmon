@@ -167,7 +167,7 @@ class LoggingPanel(wx.aui.AuiNotebook):
     def onViewLogFile(self, event):
         selectedRow = self.processes.GetFirstSelected()
         procName = self.processes.GetItem(selectedRow, 2).GetText()
-        logFile = os.path.join(self.GetParent().psyBase.project.tmpDir,
+        logFile = os.path.join(self.GetParent().psyBase.project.logDir,
                                procName + ".log")
         self.logger.info("Showing the log file %s.", logFile)
         try:

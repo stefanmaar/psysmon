@@ -1064,7 +1064,7 @@ class DisplayManager(object):
         ''' Grow the time period by a given ratio.
         '''
         duration = self.endTime - self.startTime
-        growAmount = duration * ratio/100.0
+        growAmount = duration / (1 - (ratio / 100.0)) - duration
         self.setTimeLimits(self.startTime - growAmount/2.0,
                            self.endTime + growAmount/2.0)
 
@@ -1081,23 +1081,33 @@ class DisplayManager(object):
     def show_next_station(self):
         ''' Show the next station listed in the available stations.
         '''
-        cur_station = self.showStations[-1]
-        ind = self.availableStations.index(cur_station) + 1
-        if ind < len(self.availableStations):
-            self.hideStation(cur_station.getSNL())
-            self.showStation(self.availableStations[ind].getSNL())
+        if len(self.showStations) == 1:
+            cur_station = self.showStations[-1]
+            ind = self.availableStations.index(cur_station) + 1
+            if ind < len(self.availableStations):
+                self.hideStation(cur_station.getSNL())
+                self.showStation(self.availableStations[ind].getSNL())
+        else:
+            msg = ("Shifting the stations if more than one "
+                   "station is shown is not yet supported.")
+            self.logger.info(msg)
 
 
     def show_prev_station(self):
         ''' Show the previous station listed in the available stations.
         '''
-        cur_station = self.showStations[0]
-        ind = self.availableStations.index(cur_station) - 1
-        if ind >= 0:
-            self.hideStation(cur_station.getSNL())
-            self.showStation(self.availableStations[ind].getSNL())
+        if len(self.showStations) == 1:
+            cur_station = self.showStations[0]
+            ind = self.availableStations.index(cur_station) - 1
+            if ind >= 0:
+                self.hideStation(cur_station.getSNL())
+                self.showStation(self.availableStations[ind].getSNL())
+        else:
+            msg = ("Shifting the stations if more than one "
+                   "station is shown is not yet supported.")
+            self.logger.info(msg)
 
-
+            
     def setDuration(self, duration):
         ''' Set the duration of the displayed time period.
 
@@ -1311,7 +1321,7 @@ class DisplayManager(object):
         if len(interactive_plugins) == 1:
             cur_plugin = interactive_plugins[0]
             self.parent.viewport.register_mpl_event_callbacks(cur_plugin.getHooks())
-        #self.parent.viewport.SetFocus()
+        self.parent.viewport.SetFocus()
 
 
     def showChannel(self, channel):
@@ -1435,6 +1445,7 @@ class DisplayManager(object):
         channel : String
             The name of the channel which should be hidden.
         '''
+        # Remove the channel from the shown stations.
         for curStation in self.showStations:
             removedSCNL = curStation.removeChannel([channel])
             for cur_scnl in removedSCNL:
@@ -1448,6 +1459,10 @@ class DisplayManager(object):
                                               channel = cur_scnl[1],
                                               network = cur_scnl[2],
                                               location = cur_scnl[3])
+                    
+        # Remove the channel also from those currently not shown.
+        for curStation in self.availableStations:
+            curStation.removeChannel([channel])
 
         self.showChannels.remove(channel)
 

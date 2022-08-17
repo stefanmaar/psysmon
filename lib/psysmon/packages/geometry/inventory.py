@@ -4226,10 +4226,25 @@ class Array(object):
         for cur_station in [x for x in self.stations]:
             self.remove_station_by_instance(cur_station)
 
-        for cur_station in merge_array.stations:
-            self.add_station(station = cur_station.item,
-                             start_time = cur_station.start_time,
-                             end_time = cur_station.end_time)
+        for cur_timebox in merge_array.stations:
+            # Try to get the station from the current inventory.
+            start_time = cur_timebox.start_time
+            end_time = cur_timebox.end_time
+            cur_merge_station = cur_timebox.item
+            cur_station = self.parent_inventory.get_station(network = cur_merge_station.network,
+                                                            name = cur_merge_station.name,
+                                                            location = cur_merge_station.location)
+            if len(cur_station) == 1:
+                cur_station = cur_station[0]
+                self.add_station(station = cur_station,
+                                 start_time = start_time,
+                                 end_time = end_time)
+            elif len(cur_station) == 0:
+                self.logger.warning("The array station %s was not found in the inventory.",
+                                    cur_station.snl_string)
+            else:
+                self.logger.error("Multiple stations found for station %s.",
+                                  cur_station.snl_string)
 
 
 
