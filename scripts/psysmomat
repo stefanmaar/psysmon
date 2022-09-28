@@ -246,16 +246,21 @@ def handle_add_waveform_dir_command(args, logger):
     if not args.description:
         args.description = ''
 
-
-    psybase = test_util.create_psybase();
+    psybase = test_util.create_psybase()
     try:
         load_success = psybase.load_json_project(project_file,
-                                                user_name,
-                                                user_pwd)
+                                                 user_name,
+                                                 user_pwd)
         wf_dir_orm = psybase.project.dbTables['waveform_dir']
         wf_dir_alias_orm = psybase.project.dbTables['waveform_dir_alias']
 
-        wf_dir = wf_dir_orm(args.path,
+        if psybase.project.defaultWaveclient is None:
+            logger.error("No default waveclient found. Don't know for which waveclient the waveform dir should be added.")
+
+        default_wc = psybase.project.defaultWaveclient
+        waveclient = psybase.project.waveclient[default_wc]
+        wf_dir = wf_dir_orm(waveclient.name,
+                            args.path,
                             args.description,
                             args.file_ext,
                             '',
