@@ -272,13 +272,15 @@ class Inventory(object):
             The sensor that has been added to the inventory.
         '''
         added_sensor = None
-        if not self.get_sensor(serial = sensor_to_add.serial):
+        if not self.get_sensor(serial = sensor_to_add.serial,
+                               model = sensor_to_add.model,
+                               producer = sensor_to_add.producer):
             self.sensors.append(sensor_to_add)
             sensor_to_add.parent_inventory = self
             added_sensor = sensor_to_add
         else:
             self.logger.warning('The sensor with serial %s already exists in the inventory.',
-                    sensor_to_add.serial)
+                                sensor_to_add.serial)
 
         return added_sensor
 
@@ -1117,8 +1119,6 @@ class Inventory(object):
 
                 sx_network.stations.append(sx_station)
 
-
-
             exp_inv.networks.append(sx_network)
 
         return exp_inv
@@ -1154,6 +1154,13 @@ class Inventory(object):
             inventory.add_network(cur_network)
 
         return inventory
+
+    @classmethod
+    def from_obspy_inventory(cls, obs_inv):
+        ''' Convert an obspy inventory to psysmon geometry format.
+
+        '''
+        pass
 
 
 class Recorder(object):
@@ -2118,6 +2125,25 @@ class Sensor(object):
         self.has_changed = True
 
 
+    def __str__(self):
+        template = ('Sensor\n'
+                    '{indent}serial: {serial}\n'
+                    '{indent}producer: {producer}\n'
+                    '{indent}model: {model}\n'
+                    '{indent}description: {description}\n')
+        indent = ' ' * 2
+        ret_str = template.format(serial = self.serial,
+                                  producer = self.producer,
+                                  model = self.model,
+                                  description = self.description,
+                                  indent = indent)
+        return ret_str
+
+
+    def __repr__(self):
+        return self.__str__()
+
+
     def add_component(self, component_to_add):
         ''' Add a component to the sensor.
 
@@ -2418,6 +2444,27 @@ class SensorComponent(object):
         else:
             return False
 
+
+    def __str__(self):
+        template = ('SensorComponent\n'
+                    '{indent}name: {name}\n'
+                    '{indent}description: {description}\n'
+                    '{indent}input_unit: {input_unit}\n'
+                    '{indent}output_unit: {output_unit}\n'
+                    '{indent}deliver_unit: {deliver_unit}\n')
+        indent = ' ' * 2
+        ret_str = template.format(name = self.name,
+                                  description = self.description,
+                                  input_unit = self.input_unit,
+                                  output_unit = self.output_unit,
+                                  deliver_unit = self.deliver_unit,
+                                  indent = indent)
+        return ret_str
+
+
+    def __repr__(self):
+        return self.__str__()
+    
 
     def add_parameter(self, parameter_to_add):
         ''' Add a sensor component paramter instance to the sensor component.
@@ -2781,7 +2828,7 @@ class SensorComponentParameter(object):
         if type(self) is type(other):
             compare_attributes = ['sensitivity', 'tf_type',
                                   'tf_units', 'tf_normalization_factor', 'tf_normalization_frequency',
-                                  'id', 'tf_poles', 'tf_zeros', 'start_time', 'end_time',
+                                  'tf_poles', 'tf_zeros', 'start_time', 'end_time',
                                   'has_changed']
             for cur_attribute in compare_attributes:
                 if getattr(self, cur_attribute) != getattr(other, cur_attribute):
@@ -2790,6 +2837,33 @@ class SensorComponentParameter(object):
             return True
         else:
             return False
+
+
+    def __str__(self):
+        template = ('SensorComponentParameter'
+                    '{indent}sensitivity: {sensitivity}\n'
+                    '{indent}start_time: {start_time}\n'
+                    '{indent}end_time: {end_time}\n'
+                    '{indent}tf_type: {tf_type}\n'
+                    '{indent}tf_normalization_factor: {tf_normalization_factor}\n'
+                    '{indent}tf_normalization_frequency: {tf_normalization_frequency}\n'
+                    '{indent}tf_poles: {tf_poles}\n'
+                    '{indent}tf_zeros: {tf_zeros}\n')
+        indent = ' ' * 2
+        ret_str = template.format(sensitivity = self.sensitivity,
+                                  start_time = self.start_time,
+                                  end_time = self.end_time,
+                                  tf_type = self.tf_type,
+                                  tf_normalization_factor = self.tf_normalization_factor,
+                                  tf_normalization_frequency = self.tf_normalization_frequency,
+                                  tf_poles = self.tf_poles,
+                                  tf_zeros = self.tf_zeros,
+                                  indent = indent)
+        return ret_str
+
+
+    def __repr__(self):
+        return self.__str__()
 
 
     def set_transfer_function(self, tf_type, tf_units, tf_normalization_factor, 
@@ -3816,6 +3890,22 @@ class Network(object):
         else:
             return False
 
+ 
+    def __str__(self):
+        template = ("{indent}Network\n"
+                    "{indent}name: {name}\n"
+                    "{indent}description: {description}")
+        indent = ' ' * 2
+        ret_str = template.format(name = self.name,
+                                  description = self.description,
+                                  indent = indent)
+        return ret_str
+
+
+    def __repr__(self):
+        return self.__str__()
+
+    
     def as_dict(self, style = None):
         ''' Get a dictionary representation of the instance.
 
