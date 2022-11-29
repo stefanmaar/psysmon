@@ -1160,7 +1160,13 @@ class Inventory(object):
         ''' Convert an obspy inventory to psysmon geometry format.
 
         '''
-        pass
+        inv = cls(name = 'obspy_inventory')
+        add_sensors_from_obspy_inventory(inv, obs_inv)
+        add_recorders_from_obspy_inventory(inv, obs_inv)
+        add_networks_from_obspy_inventory(inv, obs_inv)
+        
+        return inv
+        
 
 
 class Recorder(object):
@@ -4424,3 +4430,264 @@ class TimeBox(object):
             d[cur_attr] = getattr(self, cur_attr)
         d['item'] = self.item.as_dict(style = style)
         return d
+
+
+def add_sensors_from_obspy_inventory(inv, obs_inv):
+    ''' Add the sensors to a psysmon inventory using an obspy inventory.
+    '''
+    for obs_net in obs_inv.networks:
+        for obs_stat in obs_net:
+            for obs_chan in obs_stat:
+                new_sensor = True
+                obs_sensor = obs_chan.sensor
+                if obs_sensor.serial_number is None:
+                    serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                else:
+                    serial = obs_sensor.serial_number
+
+                model = obs_sensor.model or 'unknown'
+                producer = obs_sensor.manufacturer or 'unknown'
+                description = obs_sensor.description or 'unknown'
+
+                # If there exists a description but no model name,
+                # use the description as the model name.
+                if description != 'unknown' and model == 'unknown':
+                    model = description
+
+                # Check if the sensor already exists in the inventory.
+                found_sensors = inv.get_sensor(serial = serial,
+                                                model = model,
+                                                producer = producer)
+                if len(found_sensors) == 0:
+                    psy_sensor = Sensor(serial = serial,
+                                        model = model,
+                                        producer = producer,
+                                        description = description)
+                elif len(found_sensors) == 1:
+                    psy_sensor = found_sensors[0]
+                    new_sensor = False
+                else:
+                    print("ERROR: Multiple sensors found.")
+                    raise SystemExit("Error. Stop execution.")
+
+                if obs_chan.response is not None:
+                    obs_sensor_stage = obs_chan.response.response_stages[0]
+                    input_unit = obs_sensor_stage.input_units
+                    output_unit = input_unit
+                    deliver_unit = obs_sensor_stage.output_units
+                    description = obs_sensor_stage.description
+                    sensitivity = obs_sensor_stage.stage_gain
+                    sensor_tf_type = obs_sensor_stage.pz_transfer_function_type
+                    sensor_tf_poles = obs_sensor_stage.poles
+                    sensor_tf_zeros = obs_sensor_stage.zeros
+                    # The normalization factor shifts the amplitude response to amplitude = 1 at the normalization frequency.
+                    sensor_tf_norm_fac = obs_sensor_stage.normalization_factor
+                    sensor_tf_norm_frequ = obs_sensor_stage.normalization_frequency
+                    chan_start = obs_chan.start_date
+                    chan_end = obs_chan.end_date
+
+                    if sensor_tf_type != 'LAPLACE (RADIANS/SECOND)':
+                        print('ERROR: Invalid sensor transfer function type: {}.'.format(sensor_tf_type))
+                        raise SystemExit("Error. Stop execution.")
+
+                    component_parameter = SensorComponentParameter(sensitivity = sensitivity,
+                                                                   start_time = chan_start,
+                                                                   end_time = chan_end,
+                                                                   tf_type = sensor_tf_type,
+                                                                   tf_normalization_factor = sensor_tf_norm_fac,
+                                                                   tf_normalization_frequency = sensor_tf_norm_frequ,
+                                                                   tf_poles = sensor_tf_poles,
+                                                                   tf_zeros = sensor_tf_zeros)
+
+                else:
+                    input_unit = None
+                    output_unit = None
+                    deliver_unit = None
+                    description = None
+                    component_parameter = None
+
+                # Check if the sensor component already exists.
+                found_comps = inv.get_component(name = obs_chan.code,
+                                                serial = serial,
+                                                model = model,
+                                                producer = producer)
+                if len(found_comps) == 1:
+                    psy_component = found_comps[0]
+                elif len(found_comps) == 0:
+                    psy_component = SensorComponent(name = obs_chan.code,
+                                                    input_unit = input_unit,
+                                                    output_unit = output_unit,
+                                                    deliver_unit = deliver_unit,
+                                                    description = description)
+                else:
+                    print('ERROR: Multiple components found.')
+                    raise SystemExit("Error. Stop execution.")
+
+                # Add the component paramter.
+                if component_parameter is not None:
+                    psy_component.add_parameter(component_parameter)    
+                # Add the component to the sensor.
+                psy_sensor.add_component(psy_component)
+
+                if new_sensor:
+                    inv.add_sensor(psy_sensor)
+
+                    
+def add_recorders_from_obspy_inventory(inv, obs_inv):
+    for obs_net in obs_inv.networks:
+        for obs_stat in obs_net:
+            for obs_chan in obs_stat:
+                new_recorder = True
+                obs_recorder = obs_chan.data_logger
+                if obs_recorder is None:
+                    serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    model = 'unknown'
+                    producer = 'unknown'
+                    description = 'unknown'
+                else:
+                    if obs_recorder.serial is None:
+                        serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    else:
+                        serial = obs_recorder.serial
+
+                    model = obs_recorder.model or 'unknown'
+                    producer = obs_recorder.manufacturer or 'unknown'
+                    description = obs_recorder.description or 'unknown'
+
+                # Check if the recorder already exists in the inventory.
+                found_recorders = inv.get_recorder(serial = serial,
+                                                   model = model,
+                                                   producer = producer)
+                if len(found_recorders) == 0:
+                    psy_recorder = Recorder(serial = serial,
+                                            model = model,
+                                            producer = producer,
+                                            description = description)
+                elif len(found_recorders) == 1:
+                    psy_recorder = found_recorders[0]
+                    new_recorder = False
+                else:
+                    print("ERROR: Multiple recorders found.")
+                    raise SystemExit("Error. Stop execution.")
+
+
+                # Create the recorder stream for the channel.
+                stream_name = obs_chan.location_code + ':' + obs_chan.code
+                found_streams = psy_recorder.get_stream(name = stream_name)
+                if len(found_streams) == 0:
+                    psy_stream = RecorderStream(name = stream_name,
+                                                label = obs_chan.code)
+                    psy_recorder.add_stream(psy_stream)
+                elif len(found_streams) == 1:
+                    psy_stream = found_streams[0]
+                else:
+                    print("ERROR: Multiple recorder streams found.")
+                    raise SystemExit("Error. Stop execution.")
+
+                # Create the stream parameters.
+                if obs_chan.response is not None:
+                    # Get the analog preamplificaton gain.
+                    preamp_stages = [x for x in obs_chan.response.response_stages if x.input_units == 'V' and x.output_units == 'V']
+                    preamp_gain = [x.stage_gain for x in preamp_stages]
+                    preamp_gain = np.sum(preamp_gain)
+
+                    # Get the digitizer bitweight.
+                    digitizer_stage = [x for x in obs_chan.response.response_stages if x.input_units == 'V' and x.output_units == 'counts']
+                    if len(digitizer_stage) == 1:
+                        digitizer_stage = digitizer_stage[0]
+                    else:
+                        print("ERROR: Multiple digitizer stages found.")
+                        raise SystemExit("Error. Stop execution.")
+                    bitweight = 1 / digitizer_stage.stage_gain
+
+                    # Check for digital filter gain.
+                    digfilter_stage = [x for x in obs_chan.response.response_stages if x.input_units == 'counts' and x.output_units == 'counts']
+                    digfilter_gain = [x.stage_gain for x in digfilter_stage]
+                    digfilter_gain = np.sum(digfilter_gain)
+
+                    psy_param = RecorderStreamParameter(start_time = obs_chan.start_date,
+                                                        end_time = obs_chan.end_date,
+                                                        gain = preamp_gain,
+                                                        bitweight = bitweight * digfilter_gain)
+                    psy_stream.add_parameter(psy_param)
+
+                if new_recorder:
+                    inv.add_recorder(psy_recorder)
+
+                # Add the sensor component
+                obs_sensor = obs_chan.sensor
+                if obs_sensor.serial_number is None:
+                    serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                else:
+                    serial = obs_sensor.serial_number
+                model = obs_sensor.model or 'unknown'
+                producer = obs_sensor.manufacturer or 'unknown'
+                description = obs_sensor.description or 'unknown'
+                # If there exists a description but no model name,
+                # use the description as the model name.
+                if description != 'unknown' and model == 'unknown':
+                    model = description
+
+                added_component = psy_stream.add_component(serial = serial,
+                                                           model = model,
+                                                           producer = producer,
+                                                           name = obs_chan.code,
+                                                           start_time = obs_chan.start_date,
+                                                           end_time = obs_chan.end_date)
+
+
+def add_networks_from_obspy_inventory(inv, obs_inv):
+    ''' Add networks to a psysmon inventory from an obspy inventory.
+    '''
+    for obs_net in obs_inv.networks:
+        psy_net = Network(name = obs_net.code,
+                          description = obs_net.description)
+        inv.add_network(psy_net)
+
+        for obs_stat in obs_net:
+            for obs_chan in obs_stat:
+                psy_stat = psy_net.get_station(name = obs_stat.code,
+                                               location = obs_chan.location_code)
+                if len(psy_stat) == 0:
+                    psy_stat = Station(name = obs_stat.code,
+                                       location = obs_chan.location_code,
+                                       x = obs_chan.longitude,
+                                       y = obs_chan.latitude,
+                                       z = obs_chan.elevation,
+                                       coord_system = 'epsg:4326',
+                                       description = obs_stat.site.name)
+                    psy_net.add_station(psy_stat)
+                else:
+                    psy_stat = psy_stat[0]
+
+                psy_chan = psy_stat.get_channel(name = obs_chan.code)
+                if len(psy_chan) == 0:
+                    psy_chan = Channel(name = obs_chan.code,
+                                       description = obs_chan.description)
+                    psy_stat.add_channel(psy_chan)
+                else:
+                    psy_chan = psy_chan[0]
+
+
+                # Get the associated stream.
+                obs_recorder = obs_chan.data_logger
+                if obs_recorder is None:
+                    serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    model = 'unknown'
+                    producer = 'unknown'
+                else:
+                    if obs_recorder.serial is None:
+                        serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    else:
+                        serial = obs_recorder.serial
+
+                    model = obs_recorder.model or 'unknown'
+                    producer = obs_recorder.manufacturer or 'unknown'
+
+                stream_name = obs_chan.location_code + ':' + obs_chan.code
+                psy_chan.add_stream(name = stream_name,
+                                    serial = serial,
+                                    model = model,
+                                    producer = producer,
+                                    start_time = obs_chan.start_date,
+                                    end_time = obs_chan.end_date)
