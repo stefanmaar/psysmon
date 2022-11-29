@@ -325,9 +325,10 @@ class InventoryXmlParser(object):
                                          'end_time':self.clean_time_string}
 
         component_parameter_paz_attributes = []
-        component_parameter_paz_tags = ['type', 'A0_normalization_factor', 'normalization_frequency',
+        component_parameter_paz_tags = ['type', 'units', 'A0_normalization_factor', 'normalization_frequency',
                                         'complex_zero', 'complex_pole']
         component_parameter_paz_map = {'type':'tf_type',
+                                       'units': 'tf_units',
                                        'A0_normalization_factor':'tf_normalization_factor',
                                        'normalization_frequency':'tf_normalization_frequency',
                                        'complex_zero':'tf_zeros',
