@@ -4539,7 +4539,7 @@ def add_recorders_from_obspy_inventory(inv, obs_inv):
             for obs_chan in obs_stat:
                 new_recorder = True
                 obs_recorder = obs_chan.data_logger
-                if obs_recorder is None:
+                if obs_recorder is None or not hasattr(obs_recorder, 'serial'):
                     serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
                     model = 'unknown'
                     producer = 'unknown'
@@ -4592,16 +4592,21 @@ def add_recorders_from_obspy_inventory(inv, obs_inv):
                     preamp_gain = np.sum(preamp_gain)
 
                     # Get the digitizer bitweight.
-                    digitizer_stage = [x for x in obs_chan.response.response_stages if x.input_units == 'V' and x.output_units == 'counts']
+                    digitizer_stage = [x for x in obs_chan.response.response_stages if x.input_units == 'V' and x.output_units.lower() == 'counts']
                     if len(digitizer_stage) == 1:
                         digitizer_stage = digitizer_stage[0]
+                        bitweight = 1 / digitizer_stage.stage_gain
+                    elif len(digitizer_stage) == 0:
+                        print("WARNING: No digitizer stage found.")
+                        print(obs_chan.response)
+                        bitweight = 1
                     else:
                         print("ERROR: Multiple digitizer stages found.")
                         raise SystemExit("Error. Stop execution.")
-                    bitweight = 1 / digitizer_stage.stage_gain
+                    
 
                     # Check for digital filter gain.
-                    digfilter_stage = [x for x in obs_chan.response.response_stages if x.input_units == 'counts' and x.output_units == 'counts']
+                    digfilter_stage = [x for x in obs_chan.response.response_stages if x.input_units.lower() == 'counts' and x.output_units.lower() == 'counts']
                     digfilter_gain = [x.stage_gain for x in digfilter_stage]
                     digfilter_gain = np.sum(digfilter_gain)
 
@@ -4640,9 +4645,13 @@ def add_networks_from_obspy_inventory(inv, obs_inv):
     ''' Add networks to a psysmon inventory from an obspy inventory.
     '''
     for obs_net in obs_inv.networks:
-        psy_net = Network(name = obs_net.code,
-                          description = obs_net.description)
-        inv.add_network(psy_net)
+        psy_net = inv.get_network(name = obs_net.code)
+        if len(psy_net) == 0:
+            psy_net = Network(name = obs_net.code,
+                              description = obs_net.description)
+            inv.add_network(psy_net)
+        else:
+            psy_net = psy_net[0]
 
         for obs_stat in obs_net:
             for obs_chan in obs_stat:
@@ -4671,7 +4680,7 @@ def add_networks_from_obspy_inventory(inv, obs_inv):
 
                 # Get the associated stream.
                 obs_recorder = obs_chan.data_logger
-                if obs_recorder is None:
+                if obs_recorder is None or not hasattr(obs_recorder, 'serial'):
                     serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
                     model = 'unknown'
                     producer = 'unknown'
