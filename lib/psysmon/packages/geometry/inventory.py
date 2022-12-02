@@ -4540,13 +4540,13 @@ def add_recorders_from_obspy_inventory(inv, obs_inv):
                 new_recorder = True
                 obs_recorder = obs_chan.data_logger
                 if obs_recorder is None or not hasattr(obs_recorder, 'serial'):
-                    serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    serial = obs_stat.code.strip()[:5]
                     model = 'unknown'
                     producer = 'unknown'
                     description = 'unknown'
                 else:
                     if obs_recorder.serial is None:
-                        serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                        serial = obs_stat.code.strip()[:5]
                     else:
                         serial = obs_recorder.serial
 
@@ -4681,12 +4681,12 @@ def add_networks_from_obspy_inventory(inv, obs_inv):
                 # Get the associated stream.
                 obs_recorder = obs_chan.data_logger
                 if obs_recorder is None or not hasattr(obs_recorder, 'serial'):
-                    serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    serial = obs_stat.code.strip()[:5]
                     model = 'unknown'
                     producer = 'unknown'
                 else:
                     if obs_recorder.serial is None:
-                        serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                        serial = obs_stat.code.strip()[:5]
                     else:
                         serial = obs_recorder.serial
 
