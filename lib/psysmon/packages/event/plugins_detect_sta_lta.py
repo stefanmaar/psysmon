@@ -345,6 +345,7 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
             stop_win_length_smp = int(stop_win_length * cur_trace.stats.sampling_rate)
+            fine_thr_win_smp = int(detector.fine_thr_win * cur_trace.stats.sampling_rate)
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
@@ -354,7 +355,8 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
             detector.compute_cf()
             detector.compute_sta_lta()
             detection_markers = detector.compute_event_limits(stop_win_length = stop_win_length_smp,
-                                                              stop_win_mode = stop_win_mode)
+                                                              stop_win_mode = stop_win_mode,
+                                                              fine_thr_win = fine_thr_win_smp)
 
             y_lim_min = []
             y_lim_max = []
