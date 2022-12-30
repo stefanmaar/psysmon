@@ -154,11 +154,18 @@ class DetectStaLta(ViewPlugin):
         sc_group.add_item(item)
 
         # Stop criterium delay.
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
-                                                     label = 'Stop delay [s]',
-                                                     value = 0.1,
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_win_length',
+                                                     label = 'Stop window length [s]',
+                                                     value = 0.5,
                                                      limit = (0, 100),
-                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
+                                                     tool_tip = 'The length of the time window in front of the event trigger used to compute the initial value of the stop criterium.')
+        sc_group.add_item(item)
+
+        item = preferences_manager.SingleChoicePrefItem(name = 'stop_win_mode',
+                                                        label = 'Stop window mode',
+                                                        value = 'median',
+                                                        limit = ('min', 'mean', 'median'),
+                                                        tool_tip = 'The mode used to compute the initial stop criterium using the stop window.')
         sc_group.add_item(item)
 
 
@@ -200,7 +207,8 @@ class DetectStaLta(ViewPlugin):
         fine_thr = self.pref_manager.get_value('fine_thr')
         turn_limit = self.pref_manager.get_value('turn_limit')
         cf_type = self.pref_manager.get_value('cf_type')
-        stop_delay = self.pref_manager.get_value('stop_delay')
+        stop_win_length = self.pref_manager.get_value('stop_win_length')
+        stop_win_mode = self.pref_manager.get_value('stop_win_mode')
         stop_growth = self.pref_manager.get_value('stop_growth')
         stop_growth_exp = self.pref_manager.get_value('stop_growth_exp')
         stop_growth_inc = self.pref_manager.get_value('stop_growth_inc')
@@ -236,7 +244,8 @@ class DetectStaLta(ViewPlugin):
                                   fine_thr = fine_thr,
                                   turn_limit = turn_limit,
                                   cf_type = cf_type,
-                                  stop_delay = stop_delay,
+                                  stop_win_length = stop_win_length,
+                                  stop_win_mode = stop_win_mode,
                                   stop_growth = stop_growth,
                                   stop_growth_exp = stop_growth_exp,
                                   stop_growth_inc = stop_growth_inc,
@@ -297,17 +306,19 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
         self.lines['stop_crit'] = None
 
         self.marker_lines = []
+        self.range_spans = []
 
 
 
     def plot(self, stream, sta_len, lta_len, thr, fine_thr, turn_limit, cf_type,
-             stop_delay, stop_growth, stop_growth_exp,
+             stop_win_length, stop_win_mode, stop_growth, stop_growth_exp,
              stop_growth_inc, stop_growth_inc_begin,
              reject_length):
         ''' Plot the STA/LTA features.
         '''
         plot_detection_marker = True
         plot_lta_replace_marker = False
+        plot_stop_window = True
         #plot_features = ['sta', 'lta * thr']
         plot_features = ['sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
         #plot_features = ['thrf']
@@ -333,7 +344,7 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
 
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
-            stop_delay_smp = int(stop_delay * cur_trace.stats.sampling_rate)
+            stop_win_length_smp = int(stop_win_length * cur_trace.stats.sampling_rate)
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
@@ -342,7 +353,8 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
             detector.set_data(cur_trace.data)
             detector.compute_cf()
             detector.compute_sta_lta()
-            detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
+            detection_markers = detector.compute_event_limits(stop_win_length = stop_win_length_smp,
+                                                              stop_win_mode = stop_win_mode)
 
             y_lim_min = []
             y_lim_max = []
@@ -358,7 +370,7 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
                 elif cur_feature == 'lta_orig * thr':
                     cur_data = detector.lta_orig * detector.thr
                 elif cur_feature == 'thrf':
-                    cur_data = old_div(detector.sta, detector.lta)
+                    cur_data = detector.sta / detector.lta
                 else:
                     cur_data = getattr(detector, cur_feature)
 
@@ -389,7 +401,11 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
             # Clear the marker lines.
             for cur_line in self.marker_lines:
                 self.axes.lines.remove(cur_line)
+            # Clear the range spans.
+            for cur_span in self.range_spans:
+                cur_span.remove()
             self.marker_lines = []
+            self.range_spans = []
 
             if plot_detection_marker:
                 for det_start_ind, det_end_ind in detection_markers:
@@ -402,6 +418,16 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
                         cur_line = self.axes.axvline(x = det_end_time.timestamp, color = 'b')
                         self.marker_lines.append(cur_line)
 
+            if plot_stop_window:
+                for det_start_ind, det_end_ind in detection_markers:
+                    det_start_time = cur_trace.stats.starttime + det_start_ind / cur_trace.stats.sampling_rate
+                    win_start = det_start_time - stop_win_length
+                    win_end = det_start_time
+                    cur_span = self.axes.axvspan(xmin = win_start,
+                                                 xmax = win_end,
+                                                 color = 'gray',
+                                                 alpha = 0.3)
+                    self.range_spans.append(cur_span)
 
             if plot_lta_replace_marker:
                 for det_start_ind, det_end_ind in detector.replace_limits:
