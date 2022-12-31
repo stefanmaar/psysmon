@@ -108,6 +108,14 @@ class DetectStaLta(ViewPlugin):
                                                      tool_tip = 'A threshold value used to refine the signal start after a positive trigger. The threshold function is search in reverse to get to a value below the fine threshold.')
         thr_group.add_item(item)
 
+        # Fine threshold refinement window
+        item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr_win',
+                                                     label = 'Fine threshold window [s]',
+                                                     value = 1,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The time window in front of the detection start used to refine the detection start using the fine threshold.')
+        thr_group.add_item(item)
+
         # Turn limit.
         item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
                                                      label = 'turn limit',
@@ -205,6 +213,7 @@ class DetectStaLta(ViewPlugin):
         lta_len = self.pref_manager.get_value('lta_length')
         thr = self.pref_manager.get_value('thr')
         fine_thr = self.pref_manager.get_value('fine_thr')
+        fine_thr_win = self.pref_manager.get_value('fine_thr_win')
         turn_limit = self.pref_manager.get_value('turn_limit')
         cf_type = self.pref_manager.get_value('cf_type')
         stop_win_length = self.pref_manager.get_value('stop_win_length')
@@ -242,6 +251,7 @@ class DetectStaLta(ViewPlugin):
                                   lta_len = lta_len,
                                   thr = thr,
                                   fine_thr = fine_thr,
+                                  fine_thr_win = fine_thr_win,
                                   turn_limit = turn_limit,
                                   cf_type = cf_type,
                                   stop_win_length = stop_win_length,
@@ -310,9 +320,9 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
 
 
 
-    def plot(self, stream, sta_len, lta_len, thr, fine_thr, turn_limit, cf_type,
-             stop_win_length, stop_win_mode, stop_growth, stop_growth_exp,
-             stop_growth_inc, stop_growth_inc_begin,
+    def plot(self, stream, sta_len, lta_len, thr, fine_thr, fine_thr_win,
+             turn_limit, cf_type, stop_win_length, stop_win_mode, stop_growth,
+             stop_growth_exp, stop_growth_inc, stop_growth_inc_begin,
              reject_length):
         ''' Plot the STA/LTA features.
         '''
@@ -345,7 +355,7 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
             stop_win_length_smp = int(stop_win_length * cur_trace.stats.sampling_rate)
-            fine_thr_win_smp = int(detector.fine_thr_win * cur_trace.stats.sampling_rate)
+            fine_thr_win_smp = int(fine_thr_win * cur_trace.stats.sampling_rate)
 
             detector.n_sta = n_sta
             detector.n_lta = n_lta
