@@ -655,7 +655,7 @@ class StaLtaDetector(object):
 
     def __init__(self, data = None, cf_type = 'square', n_sta = 2,
                  n_lta = 10, thr = 3, fine_thr = None, turn_limit = 0.05,
-                 fine_thr_win = 1, stop_growth = 0.001, stop_growth_exp = 1,
+                 stop_growth = 0.001, stop_growth_exp = 1,
                  stop_growth_inc = 0,
                  stop_growth_inc_begin = None,
                  reject_length = 0):
@@ -686,10 +686,6 @@ class StaLtaDetector(object):
             self.fine_thr = self.thr
         else:
             self.fine_thr = fine_thr
-
-        # The maximum time before the initial detection start to refine the
-        # trigger start using the fine_thr.
-        self.fine_thr_win = fine_thr_win
 
         # The turning limit when to stop the event begin refinement if the fine_thr is
         # not reached.
@@ -809,12 +805,18 @@ class StaLtaDetector(object):
             # and event end.
             cur_search_start = event_start + 1
 
+            # The relative initial trigger before the refinement
+            # of the detection start.
+            rel_init_trigger = initial_event_start - cur_search_start
+
             # TODO: Use a loop in a C function do compute the event stop.
             # Using the complete array is not efficient when processing
             # long arrays.
             clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
-            cur_sta = np.ascontiguousarray(self.sta[cur_search_start:], dtype = np.float64)
-            cur_lta = np.ascontiguousarray(self.lta[cur_search_start:], dtype = np.float64)
+            cur_sta = np.ascontiguousarray(self.sta[cur_search_start:],
+                                           dtype = np.float64)
+            cur_lta = np.ascontiguousarray(self.lta[cur_search_start:],
+                                           dtype = np.float64)
             cur_lta = cur_lta * self.thr
             n_cur_sta = len(cur_sta)
             n_cur_lta = len(cur_lta)
@@ -828,7 +830,8 @@ class StaLtaDetector(object):
                                                          self.stop_growth,
                                                          self.stop_growth_exp,
                                                          self.stop_growth_inc,
-                                                         self.stop_growth_inc_begin)
+                                                         self.stop_growth_inc_begin,
+                                                         rel_init_trigger)
             self.logger.debug("next_end_ind: %d", next_end_ind)
 
             # Compute the event end.

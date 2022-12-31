@@ -28,12 +28,15 @@ int compute_event_end(const long n_sta, const double *sta,
                       const long n_lta, const double *lta,
                       double stop_value, double *stop_crit,
                       const double stop_growth, const double stop_growth_exp,
-                      const double stop_growth_inc, const long stop_growth_inc_begin)
+                      const double stop_growth_inc, const long stop_growth_inc_begin,
+                      const long init_trigger)
 {
     int k;
     int event_end = -1;
     int end_triggered = 0;
+    // TODO: Make this a user selectable parameter.
     int sta_below_lta_required = 10;
+    // TODO: Make this a user selectable parameter.
     int sta_below_stop_required = 100;
     int cnt_sta_below_lta = 0;
     int cnt_sta_below_stop = 0;
@@ -44,7 +47,11 @@ int compute_event_end(const long n_sta, const double *sta,
     {
         if (sta[k] < lta[k])
         {
-            cnt_sta_below_lta++;
+            // Increase the counter only if the index has passed
+            // the initial trigger of the detection start.
+            if (k > init_trigger) {
+                cnt_sta_below_lta++;
+            }
         }
         else
         {
@@ -176,6 +183,7 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
             {
                 //printf("k: %d; clear up_trigger.\n", k);
                 up_trigger = 0;
+                turn_flag = 0;
             }
 
         }
