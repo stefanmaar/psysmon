@@ -137,9 +137,9 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
     }
 
     // Refine the event start using a lower thr.
-    printf("passed initial_event_start: %ld\n", *initial_event_start);
+    //printf("passed initial_event_start: %ld\n", *initial_event_start);
     *initial_event_start = event_start;
-    printf("event_start before refinement: %ld\n", *initial_event_start);
+    //printf("event_start before refinement: %ld\n", *initial_event_start);
     min_k = event_start;
     min_k_value = thrf[event_start];
     for (k = event_start; k >= 0; k--)
@@ -153,7 +153,7 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
         if (thrf[k] < fine_thr)
         {
             // The thrf falls below the fine thr.
-            printf("k: %d; thrf below fine_thr. break.\n", k);
+            //printf("k: %d; thrf below fine_thr. break.\n", k);
             event_start = k;
             break;
         }
@@ -191,13 +191,13 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
         //printf("k: %d; thrf[k]: %f; turn_value: %f\n", k, thrf[k], turn_value);
         if ((turn_flag == 1) && (thrf[k] - turn_value) > turn_limit)
         {
-            printf("turn_value limit reached.\n");
+            //printf("turn_value limit reached.\n");
             event_start = min_k;
             break;
         }
 
         if ((event_start - k) > fine_thr_win) {
-           printf("fine_thr_win reached.\n");
+           //printf("fine_thr_win reached.\n");
            event_start = min_k;
            break;
         }
@@ -206,7 +206,7 @@ int compute_event_start(const long n_thrf, const double *thrf, const double thr,
            event_start = min_k;
         }
     }
-    printf("event_start: %ld\n", event_start);
+    //printf("event_start: %ld\n", event_start);
 
     return event_start;
 }
