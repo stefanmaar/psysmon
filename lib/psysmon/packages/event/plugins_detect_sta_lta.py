@@ -333,8 +333,11 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
         plot_features = ['sta', 'lta * thr', 'lta_orig * thr', 'stop_crit']
         #plot_features = ['thrf']
 
-        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
-                                         turn_limit = turn_limit, stop_growth = stop_growth,
+        detector = detect.StaLtaDetector(thr = thr,
+                                         cf_type = cf_type,
+                                         fine_thr = fine_thr,
+                                         turn_limit = turn_limit,
+                                         stop_growth = stop_growth,
                                          stop_growth_exp = stop_growth_exp,
                                          stop_growth_inc = stop_growth_inc)
 
