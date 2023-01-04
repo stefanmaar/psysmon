@@ -80,7 +80,9 @@ class DetectionBinder(object):
              channel_scnl,
              n_neighbors = 2,
              min_match_neighbors = 2,
-             search_win_extend = 0.1):
+             extend_ratio = 0.01,
+             min_extend = 0.5,
+             max_extend = 10):
         ''' Bind the detections to events.
         '''
         # Get the detections of the channels and sort them according to time.
@@ -105,13 +107,26 @@ class DetectionBinder(object):
                               first_detection.start_time,
                               first_detection.snl)
 
+            # Compute the search window extend based on the length
+            # of the main detection.
+            search_win_extend = first_detection.length * extend_ratio
+            if search_win_extend < min_extend:
+                search_win_extend = min_extend
+            elif search_win_extend > max_extend:
+                search_win_extend = max_extend
+
+            self.logger.debug('main detection length: %f.', first_detection.length)
+            self.logger.debug('search_win_extend: %f.', search_win_extend)
+
             # Get the search windows for the detection combinations.
             search_windows = self.get_search_window(first_detection,
                                                     next_detections)
             self.logger.debug('Search windows: %s', search_windows)
+            ext_sw = [x + search_win_extend for x in search_windows]
+            self.logger.debug('Extended search windows: %s', ext_sw)
 
             # Get the detections matching the search window.
-            match_detections = [x for k, x in enumerate(next_detections) if x.start_time <= first_detection.start_time + search_windows[k] + search_win_extend]
+            match_detections = [x for k, x in enumerate(next_detections) if x.start_time <= first_detection.start_time + ext_sw[k]]
             self.logger.debug('Matching detections: %s.', [(x.db_id, x.start_time, x.snl) for x in match_detections])
 
             # Check if there are matching detections on neighboring stations.

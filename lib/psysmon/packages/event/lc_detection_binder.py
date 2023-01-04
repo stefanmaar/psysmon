@@ -126,12 +126,28 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                        tool_tip = 'The velocity used to compute the search window lengths [m/s].')
         bind_group.add_item(item)
 
-        # The lenght of the search window extension.
-        item = preferences_manager.FloatSpinPrefItem(name = 'search_win_extend',
-                                                       label = 'search window extend',
-                                                       value = 0.1,
-                                                       limit = (0, 100000),
-                                                       tool_tip = 'The lenght of the time window added to the search windwo [s].')
+        # The ratio used to compute the search window from the detection length..
+        item = preferences_manager.FloatSpinPrefItem(name = 'extend_ratio',
+                                                     label = 'search window extend ratio',
+                                                     value = 0.01,
+                                                     limit = (0, 1),
+                                                     tool_tip = 'The detection length multiplied with the extend ratio is used for the search window extend value.')
+        bind_group.add_item(item)
+        
+        # The minimum lenght of the search window extension.
+        item = preferences_manager.FloatSpinPrefItem(name = 'min_search_win_extend',
+                                                     label = 'min. search window extend [s]',
+                                                     value = 0.1,
+                                                     limit = (0, 100000),
+                                                     tool_tip = 'The minimum length of the time window added to the search window.')
+        bind_group.add_item(item)
+
+        # The maximum length of the search window extension.
+        item = preferences_manager.FloatSpinPrefItem(name = 'max_search_win_extend',
+                                                     label = 'max. search window extend [s]',
+                                                     value = 10,
+                                                     limit = (0, 100000),
+                                                     tool_tip = 'The maximum length of the time window added to the search window.')
         bind_group.add_item(item)
 
     def edit(self):
@@ -243,12 +259,17 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.info('Binding the detections.')
         n_neighbors = self.pref_manager.get_value('n_neighbors')
         min_match_neighbors = self.pref_manager.get_value('min_match_neighbors')
-        search_win_extend = self.pref_manager.get_value('search_win_extend')
+        extend_ratio = self.pref_manager.get_value('extend_ratio')
+        min_extend = self.pref_manager.get_value('min_search_win_extend')
+        max_extend = self.pref_manager.get_value('max_search_win_extend')
+        
         self.binder.bind(catalog = self.detection_catalog,
                          channel_scnl = [x.scnl for x in channels],
                          n_neighbors = n_neighbors,
                          min_match_neighbors = min_match_neighbors,
-                         search_win_extend = search_win_extend)
+                         extend_ratio = extend_ratio,
+                         min_extend = min_extend,
+                         max_extend = max_extend)
 
         # Store the unprocessed detection in the catalog for the next step.
         self.logger.info('Cleaning the detection catalog.')
