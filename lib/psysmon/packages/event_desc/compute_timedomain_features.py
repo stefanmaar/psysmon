@@ -1,4 +1,3 @@
-from __future__ import division
 # LICENSE
 #
 # This file is part of pSysmon.
@@ -19,7 +18,6 @@ from __future__ import division
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from past.utils import old_div
 import psysmon.core.packageNodes as package_nodes
 import psysmon.gui.dialog.pref_listbook as psy_lb
 from psysmon.core.preferences_manager import FloatSpinPrefItem
@@ -139,15 +137,14 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                 if noise_start_time < tr.stats.starttime:
                     noise_start_time = tr.stats.starttime
                 noise_trace = tr.slice(starttime = noise_start_time,
-                                      endtime = noise_start_time + noise_window_length)
+                                       endtime = noise_start_time + noise_window_length)
                 signal_rms = np.sqrt(np.mean(proc_trace.data**2))
                 noise_rms = np.sqrt(np.mean(noise_trace.data**2))
                 noise_mean = np.mean(np.abs(noise_trace.data))
                 noise_max_abs = np.max(np.abs(noise_trace.data))
-                snr = old_div(signal_rms,noise_rms)
-                snr_max_mean = old_div(max_abs, noise_mean)
-                snr_max_max = old_div(max_abs, noise_max_abs)
-
+                snr = signal_rms / noise_rms
+                snr_max_mean = max_abs / noise_mean
+                snr_max_max = max_abs / noise_max_abs
 
             cur_scnl = p_util.traceid_to_scnl(tr.id)
             table_result.add_row(key = ':'.join(cur_scnl),
@@ -160,8 +157,4 @@ class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
                                  snr_max_mean = round(snr_max_mean, 2),
                                  snr_max_max = round(snr_max_max, 2))
 
-
         self.result_bag.add(table_result)
-
-
-
