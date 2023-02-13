@@ -408,7 +408,8 @@ class Catalog(object):
 
     #@profile(immediate=True)
     def load_detections(self, project, start_time = None, end_time = None,
-                        min_detection_length = None):
+                        min_detection_length = None,
+                        max_detection_length = None):
         ''' Load detections from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -439,6 +440,8 @@ class Catalog(object):
 
             if min_detection_length:
                 query = query.filter(detection_table.end_time - detection_table.start_time >= min_detection_length)
+            if max_detection_length:
+                query = query.filter(detection_table.end_time - detection_table.start_time <= max_detection_length)
 
             detections_to_add = []
             for cur_orm in query:

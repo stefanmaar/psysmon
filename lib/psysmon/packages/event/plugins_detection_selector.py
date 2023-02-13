@@ -156,6 +156,9 @@ class SelectDetection(OptionPlugin):
         self.selected_catalog.load_detections(project = self.parent.project,
                                               start_time = start_time,
                                               end_time = end_time)
+        detection_list = self.selected_catalog.get_detections()
+        for cur_detection in detection_list:
+            self.logger.debug('det: %s', cur_detection.start_time)
         self.selected_catalog.assign_channel(self.parent.project.geometry_inventory)
         self.logger.debug('....done.')
 
