@@ -26,11 +26,11 @@ import psysmon.core.util as p_util
 import numpy as np
 
 
-class ComputeAmplitudeFeatures(package_nodes.LooperCollectionChildNode):
+class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
     ''' Apply a median filter to a timeseries.
 
     '''
-    name = 'compute amplitude features'
+    name = 'compute timedomain features'
     mode = 'looper child'
     category = 'Amplitude'
     tags = ['stable', 'looper child']
