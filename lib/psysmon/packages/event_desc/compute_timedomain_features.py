@@ -18,12 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+import numpy as np
+import scipy as sp
+
 import psysmon.core.packageNodes as package_nodes
-import psysmon.gui.dialog.pref_listbook as psy_lb
 from psysmon.core.preferences_manager import FloatSpinPrefItem
+import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.result as result
 import psysmon.core.util as p_util
-import numpy as np
 
 
 class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
@@ -45,17 +48,15 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
         # computation [s].
         self.noise_gap = 0.1
 
-
         pref_page = self.pref_manager.add_page('Preferences')
         w_group = pref_page.add_group('window')
 
         # Add an float_spin field.
         item = FloatSpinPrefItem(name = 'noise_window_length',
-                              label = 'noise window length',
-                              value = 5,
-                              limit = (0, 1000),
-                              tool_tip = 'The length of the time-span used to compute the noise parameters [s].'
-                             )
+                                 label = 'noise window length',
+                                 value = 5,
+                                 limit = (0, 1000),
+                                 tool_tip = 'The length of the time-span used to compute the noise parameters [s].')
         w_group.add_item(item)
 
 
@@ -90,7 +91,8 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             The data to process.
         '''
         # Create a table result.
-        columns = ['max_abs', 'peak_to_peak', 'mean', 'std', 'median', 'snr', 'snr_max_mean', 'snr_max_max']
+        columns = ['max_abs', 'peak_to_peak', 'mean', 'std',
+                   'median', 'snr', 'snr_max_mean', 'snr_max_max']
         table_result = result.TableResult(name='amplitude features',
                                           key_name='scnl',
                                           start_time=process_limits[0],
@@ -111,8 +113,32 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             if len(proc_trace) == 0:
                 continue
 
-            # Compute the absolute maximum value of the trace.
+            # Absolute maximum value of the trace.
             max_abs = np.max(np.abs(proc_trace.data))
+
+            # Maximum of the envelope of the trace.
+            comp_trace = sp.signal.hilbert(proc_trace.data)
+            trace_envelope = np.sqrt(np.real(comp_trace)**2 + np.imag(comp_trace)**2)
+            max_env = np.max(trace_envelope)
+
+            # Autocorrelation parameters of the trace
+            acf_max_length = 10
+            sps = proc_trace.stats.sampling_rate
+            max_lag = int(acf_max_length * sps)
+            first_zero, n_peaks = self.compute_acf_features(data = proc_trace.data,
+                                                            sps = sps,
+                                                            max_lag = max_lag)
+            acf_tr_first_zero = first_zero
+            acf_tr_npeaks = n_peaks
+            
+
+            # Autocorrelation parameters of the trace
+            max_lag = int(acf_max_length * sps)
+            first_zero, n_peaks = self.compute_acf_features(data = trace_envelope,
+                                                            sps = sps,
+                                                            max_lag = max_lag)
+            acf_env_first_zero = first_zero
+            acf_env_npeaks = n_peaks
 
             # Compute the maximum range of the trace.
             peak_to_peak = np.max(proc_trace.data) + np.abs(np.min(proc_trace.data))
@@ -125,6 +151,12 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
 
             # Compute the median of the trace.
             median = np.median(proc_trace.data)
+
+            # Skewness of the data.
+            skew = sp.stats.skew(proc_trace.data)
+
+            # Kurtosis of the data.
+            kurt = sp.stats.kurtosis(proc_trace.data)
 
             #Compute the signal to noise ratio.
             if process_limits is None:
@@ -158,3 +190,70 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
                                  snr_max_max = round(snr_max_max, 2))
 
         self.result_bag.add(table_result)
+
+
+    def compute_acf_features(self, data, sps, max_lag):
+        ''' Compute the autocorrelation features.
+
+        '''
+        acf = sp.signal.correlate(data,
+                                  data)
+        lags = sp.signal.correlation_lags(len(data),
+                                          len(data))
+        pos_mask = lags >= 0
+        acf = acf[pos_mask][:max_lag]
+        lags = lags[pos_mask]
+
+        # Normalize the acf
+        acf = acf / np.max(np.abs(acf))
+
+        # Get the first zero crossing.
+        first_zero = np.where(acf <= 0)[0][0]
+        first_zero_time = first_zero / sps
+
+        # Find the peaks.
+        peaks = sp.signal.find_peaks(acf,
+                                     prominence = 0.1)
+        peaks = peaks[0]
+
+        return (first_zero_time, len(peaks))
+
+
+    def compute_histogram_features(self, data, nbins = 50):
+        ''' Compute the hisotram features.
+        '''
+        data = np.abs(data)
+        perc10 = np.percentile(data, 10)
+        perc95 = np.percentile(data, 95)
+        noise_mask = data <= perc10
+        outlier_mask = data > perc95
+        data = data[~(noise_mask | outlier_mask)]
+        data = data / np.max(np.abs(data))
+        data = np.sort(data)
+
+        hist, bin_edges = np.histogram(data,
+                                       bins = nbins,
+                                       range = [0, np.max(data)],
+                                       density = True)
+        cumsum = np.cumsum(hist * np.diff(bin_edges))
+        bin_right = bin_edges[:-1] + np.diff(bin_edges)
+        a_below = np.trapz(cumsum, bin_right)
+        a_above = np.trapz(1 - cumsum, bin_right)
+
+        return a_above / a_below
+
+
+    def compute_energy_buildup(self, data, sps):
+        ''' Compute the energy buildup features.
+        '''
+        energy = data**2
+        energy = energy / np.sum(energy)
+        en_cumsum = np.cumsum(energy)
+        percentiles = [10, 25, 50, 75, 90]
+        eb = {}
+        for cur_perc in percentiles:
+            cur_key = 'eb_{:.0f}'.format(np.floor(cur_perc))
+            cur_ind = np.argwhere(en_cumsum > (cur_perc / 100))[0][0]
+            eb[cur_key] = cur_ind / sps
+
+        return eb
