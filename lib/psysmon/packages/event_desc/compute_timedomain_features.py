@@ -92,7 +92,11 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
         '''
         # Create a table result.
         columns = ['max_abs', 'peak_to_peak', 'mean', 'std',
-                   'median', 'snr', 'snr_max_mean', 'snr_max_max']
+                   'median', 'snr', 'snr_max_mean', 'snr_max_max',
+                   'max_env', 'acf_tr_fz', 'acf_tr_npeaks',
+                   'acf_env_npeaks', 'skew', 'kurt', 'hist_ratio',
+                   'eb_10', 'eb_25', 'eb_50', 'eb_75', 'eb_90',
+                   'max_env_peak_time', 'fwd_peak_cnt', 'rvs_peak_cnt']
         table_result = result.TableResult(name='amplitude features',
                                           key_name='scnl',
                                           start_time=process_limits[0],
@@ -112,7 +116,9 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
 
             if len(proc_trace) == 0:
                 continue
-
+            
+            self.logger.debug('proc_trace: %s', proc_trace)
+            
             # Absolute maximum value of the trace.
             max_abs = np.max(np.abs(proc_trace.data))
 
@@ -122,7 +128,7 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             max_env = np.max(trace_envelope)
 
             # Autocorrelation parameters of the trace
-            acf_max_length = 10
+            acf_max_length = 5
             sps = proc_trace.stats.sampling_rate
             max_lag = int(acf_max_length * sps)
             first_zero, n_peaks = self.compute_acf_features(data = proc_trace.data,
@@ -132,16 +138,15 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             acf_tr_npeaks = n_peaks
             
 
-            # Autocorrelation parameters of the trace
+            # Autocorrelation parameters of the envelope
             max_lag = int(acf_max_length * sps)
             first_zero, n_peaks = self.compute_acf_features(data = trace_envelope,
                                                             sps = sps,
                                                             max_lag = max_lag)
-            acf_env_first_zero = first_zero
             acf_env_npeaks = n_peaks
 
             # Compute the maximum range of the trace.
-            peak_to_peak = np.max(proc_trace.data) + np.abs(np.min(proc_trace.data))
+            peak_to_peak = np.max(proc_trace.data) - np.min(proc_trace.data)
 
             # Compute the mean value of the trace.
             mean = np.mean(proc_trace.data)
@@ -157,6 +162,22 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
 
             # Kurtosis of the data.
             kurt = sp.stats.kurtosis(proc_trace.data)
+
+            # Histogram area ratio.
+            hist_ratio = self.compute_histogram_features(proc_trace.data,
+                                                         nbins = 50)
+
+            # Energy buildup.
+            eb = self.compute_energy_buildup(proc_trace.data,
+                                             sps = sps)
+
+            # Envelope peaks.
+            res = self.compute_envelope_peaks(proc_trace.data,
+                                              sps = sps,
+                                              prominence = 0.05)
+            max_env_peak_time = res['max_peak_time']
+            fwd_peak_cnt = res['fwd_peak_cnt']
+            rvs_peak_cnt = res['rvs_peak_cnt']
 
             #Compute the signal to noise ratio.
             if process_limits is None:
@@ -185,9 +206,24 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
                                  mean = mean,
                                  std = std,
                                  median = median,
-                                 snr = round(snr,2),
+                                 snr = round(snr, 2),
                                  snr_max_mean = round(snr_max_mean, 2),
-                                 snr_max_max = round(snr_max_max, 2))
+                                 snr_max_max = round(snr_max_max, 2),
+                                 max_env = max_env,
+                                 acf_tr_fz = acf_tr_first_zero,
+                                 acf_tr_npeaks = acf_tr_npeaks,
+                                 acf_env_npeaks = acf_env_npeaks,
+                                 skew = skew,
+                                 kurt = kurt,
+                                 hist_ratio = hist_ratio,
+                                 eb_10 = eb['eb_10'],
+                                 eb_25 = eb['eb_25'],
+                                 eb_50 = eb['eb_50'],
+                                 eb_75 = eb['eb_75'],
+                                 eb_90 = eb['eb_90'],
+                                 max_env_peak_time = max_env_peak_time,
+                                 fwd_peak_cnt = fwd_peak_cnt,
+                                 rvs_peak_cnt = rvs_peak_cnt)
 
         self.result_bag.add(table_result)
 
@@ -208,8 +244,11 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
         acf = acf / np.max(np.abs(acf))
 
         # Get the first zero crossing.
-        first_zero = np.where(acf <= 0)[0][0]
-        first_zero_time = first_zero / sps
+        if np.any(acf <= 0):
+            first_zero = np.where(acf <= 0)[0][0]
+            first_zero_time = first_zero / sps
+        else:
+            first_zero_time = None
 
         # Find the peaks.
         peaks = sp.signal.find_peaks(acf,
@@ -257,3 +296,44 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             eb[cur_key] = cur_ind / sps
 
         return eb
+
+
+    def compute_envelope_peaks(self, data, sps, prominence = 0.1):
+        comp_trace = sp.signal.hilbert(data)
+        tr_env = np.sqrt(np.real(comp_trace)**2 + np.imag(comp_trace)**2)
+
+        # Normalize the envelope.
+        max_env = np.max(tr_env)
+        tr_env = tr_env / max_env
+
+        # Find the peaks.
+        peaks = sp.signal.find_peaks(tr_env,
+                                     prominence = prominence)
+        peaks = peaks[0]
+
+        # Compute the time of the max peak.
+        max_ind = np.argmax(tr_env[peaks])
+        max_peak_time = peaks[max_ind] / sps
+
+        # Count the peaks that form a new maximum in forward direction.
+        fwd_peak_cnt = 0
+        max_peak = 0
+        for cur_peak in peaks:
+            cur_amp = tr_env[cur_peak]
+            if cur_amp > max_peak:
+                fwd_peak_cnt += 1
+                max_peak = cur_amp
+
+        # Count the peaks, that form a new maximum in reverse direction.
+        rvs_peak_cnt = 0
+        max_peak = 0
+        for cur_peak in peaks[::-1]:
+            cur_amp = tr_env[cur_peak]
+            if cur_amp > max_peak:
+                rvs_peak_cnt += 1
+                max_peak = cur_amp
+
+        res = {'max_peak_time': max_peak_time,
+               'fwd_peak_cnt': fwd_peak_cnt,
+               'rvs_peak_cnt': rvs_peak_cnt}
+        return res
