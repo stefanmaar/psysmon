@@ -26,7 +26,8 @@ description = "Compute descriptive features of events."            # The package
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['compute_timedomain_features']
+collection_node_modules = ['compute_timedomain_features',
+                           'compute_freqdomain_features']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
