@@ -91,8 +91,8 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             The data to process.
         '''
         # Create a table result.
-        columns = ['max_abs', 'peak_to_peak', 'mean', 'std',
-                   'median', 'snr', 'snr_max_mean', 'snr_max_max',
+        columns = ['max_abs', 'peak_to_peak', 'mean_abs', 'std_abs',
+                   'median_abs', 'snr', 'snr_max_mean', 'snr_max_max',
                    'max_env', 'acf_tr_fz', 'acf_tr_npeaks',
                    'acf_env_npeaks', 'skew', 'kurt', 'hist_ratio',
                    'eb_10', 'eb_25', 'eb_50', 'eb_75', 'eb_90',
@@ -118,9 +118,12 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
                 continue
             
             self.logger.debug('proc_trace: %s', proc_trace)
+
+            # The absolute values of the trace amplitudes.
+            abs_trace = np.abs(proc_trace.data)
             
             # Absolute maximum value of the trace.
-            max_abs = np.max(np.abs(proc_trace.data))
+            max_abs = np.max(abs_trace)
 
             # Maximum of the envelope of the trace.
             comp_trace = sp.signal.hilbert(proc_trace.data)
@@ -148,14 +151,14 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             # Compute the maximum range of the trace.
             peak_to_peak = np.max(proc_trace.data) - np.min(proc_trace.data)
 
-            # Compute the mean value of the trace.
-            mean = np.mean(proc_trace.data)
+            # Compute the mean value of the trace absolute values.
+            mean_abs = np.mean(abs_trace)
 
             # Compute the standard deviation of the trace.
-            std = np.std(proc_trace.data)
+            std_abs = np.std(abs_trace)
 
             # Compute the median of the trace.
-            median = np.median(proc_trace.data)
+            median_abs = np.median(abs_trace)
 
             # Skewness of the data.
             skew = sp.stats.skew(proc_trace.data)
@@ -203,9 +206,9 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
             table_result.add_row(key = ':'.join(cur_scnl),
                                  max_abs = max_abs,
                                  peak_to_peak = peak_to_peak,
-                                 mean = mean,
-                                 std = std,
-                                 median = median,
+                                 mean_abs = mean_abs,
+                                 std_abs = std_abs,
+                                 median_abs = median_abs,
                                  snr = round(snr, 2),
                                  snr_max_mean = round(snr_max_mean, 2),
                                  snr_max_max = round(snr_max_max, 2),
