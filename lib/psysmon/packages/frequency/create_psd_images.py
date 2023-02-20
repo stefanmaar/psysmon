@@ -39,11 +39,14 @@ import psysmon
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-#plt.style.use(psysmon.plot_style)
 
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.gui.dialog.pref_listbook as psy_lb
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
+    
 from obspy.core.utcdatetime import UTCDateTime
 import obspy.signal
 

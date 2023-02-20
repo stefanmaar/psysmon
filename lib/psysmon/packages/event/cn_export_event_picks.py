@@ -37,13 +37,16 @@ import os
 import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
-import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
-import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 import psysmon.packages.event.core as event_core
 import psysmon.packages.pick.core as pick_core
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
+    import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 
 
 class ExportEventPicks(package_nodes.CollectionNode):

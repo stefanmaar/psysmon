@@ -28,12 +28,16 @@ import pyproj
 import numpy as np
 import scipy as sp
 
+import psysmon
 import psysmon.core.packageNodes as package_nodes
-import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.preferences_manager as pm
 import psysmon.core.result as result
 import psysmon.packages.sourcemap as sourcemap
 import sourcemap.core
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class ComputeSourcemap(package_nodes.LooperCollectionChildNode):
