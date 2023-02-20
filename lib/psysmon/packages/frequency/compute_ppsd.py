@@ -35,7 +35,10 @@ import warnings
 import psysmon
 import psysmon.core.packageNodes
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.gui.dialog.pref_listbook as psy_lb
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 import matplotlib
 import matplotlib.pyplot as plt

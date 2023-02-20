@@ -20,8 +20,12 @@
 
 import obspy.core.utcdatetime as utcdatetime
 
+import psysmon
 import psysmon.core.packageNodes as package_nodes
-import psysmon.gui.dialog.pref_listbook as psy_lb
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class CollectionLooper(package_nodes.CollectionNode):

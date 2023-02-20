@@ -45,7 +45,11 @@ import psysmon.core.packageNodes as package_nodes
 import psysmon.core.util as util
 from obspy.core.utcdatetime import UTCDateTime
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.gui.dialog.pref_listbook as psy_lb
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
+    
 import seaborn as sns
 
 sns.set_style('whitegrid')
