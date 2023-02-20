@@ -164,10 +164,10 @@ class ComputeFreqdomainFeatures(package_nodes.LooperCollectionChildNode):
             n_peaks = len(peaks)
             peak_frequ = frequ[peaks]
             peaks_mean = np.mean(peak_frequ)
-            peaks_med = np.mean(peak_frequ)
+            peaks_med = np.median(peak_frequ)
             peaks_diff = np.diff(peak_frequ)
             peaks_mean_delta = np.mean(peaks_diff)
-            peaks_med_delta = np.mean(peaks_diff)
+            peaks_med_delta = np.median(peaks_diff)
             peaks_std_delta = np.std(peaks_diff)
             
             cur_scnl = p_util.traceid_to_scnl(tr.id)
