@@ -23,10 +23,15 @@ import matplotlib.mlab as mlab
 import numpy as np
 import scipy as sp
 
+import psysmon
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
 import psysmon.core.util as p_util
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 
 class ComputeFreqdomainFeatures(package_nodes.LooperCollectionChildNode):
@@ -75,10 +80,6 @@ class ComputeFreqdomainFeatures(package_nodes.LooperCollectionChildNode):
     def edit(self):
         ''' Create the preferences edit dialog.
         '''
-        # Import the module in the function to avoid import errors
-        # in headless mode, when not wxPython library is installed.
-        import psysmon.gui.dialog.pref_listbook as psy_lb
-
         # Create the edit dialog.
         dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
