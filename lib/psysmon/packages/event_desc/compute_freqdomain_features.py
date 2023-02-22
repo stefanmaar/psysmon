@@ -151,7 +151,10 @@ class ComputeFreqdomainFeatures(package_nodes.LooperCollectionChildNode):
             peaks = peaks[0]
 
             # Compute statistical parameters of the peaks.
-            fft_max_peak_frequ = np.max(frequ[peaks])
+            try:
+                fft_max_peak_frequ = np.max(frequ[peaks])
+            except Exception:
+                fft_max_preak_frequ = np.nan
             fft_mean = np.mean(P_norm)
             fft_med = np.median(P_norm)
             fft_skew = sp.stats.skew(P_norm)
@@ -161,8 +164,12 @@ class ComputeFreqdomainFeatures(package_nodes.LooperCollectionChildNode):
             f_c, f_bw = self.compute_cent_bw(P_norm, frequ, p = 2)
 
             # Compute the bandwidth of the peaks.
-            peaks_bw = [np.min(frequ[peaks]),
-                        np.max(frequ[peaks])]
+            try:
+                peaks_bw = [np.min(frequ[peaks]),
+                            np.max(frequ[peaks])]
+            except Exception:
+                peaks_bw = [np.nan,
+                            np.nan]
 
             # Compute the statistical parameters of the peaks distribution.
             n_peaks = len(peaks)
