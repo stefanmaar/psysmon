@@ -571,6 +571,8 @@ class EventProcessor(object):
                         # Handle the looper child return value.
                         if ret and ret == 'abort':
                             break
+            except Exception:
+                self.logger.exception("Error running the looper nodes for this event.")
             finally:
                 pass
 
