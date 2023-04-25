@@ -525,7 +525,7 @@ class Catalog(object):
                 query = query.filter(events_table.start_time <= end_time.timestamp)
 
             if event_id:
-                query = query.filter(events_table.id in event_id)
+                query = query.filter(events_table.id.in_(event_id))
 
             if min_event_length:
                 query = query.filter(events_table.end_time - events_table.start_time >= min_event_length)
@@ -534,6 +534,7 @@ class Catalog(object):
                 for cur_tag in event_tags:
                     query = query.filter(events_table.tags.like('%' + cur_tag + '%'))
 
+            self.logger.info('Query: %s.', query.statement)
             events_to_add = []
             for cur_orm in query:
                 try:
@@ -695,6 +696,149 @@ class Library(object):
                     self.add_catalog(cur_catalog)
         finally:
             db_session.close()
+
+
+    def get_events(self, catalog_names = None, start_time = None, end_time = None, **kwargs):
+        ''' Get events from the library using from search criteria passed as keywords.
+
+        Only events already loaded from the database are processed.
+
+        Parameters
+        ----------
+        start_time : :class:`~obspy.core.utcdatetime.UTCDateTime`
+            The minimum starttime of the detections.
+
+        end_time : :class:`obspy.core.utcdatetime.UTCDateTime`
+            The maximum end_time of the detections.
+
+
+        Keyword Arguments
+        -----------------
+        kwargs:
+            Keyword arguments passed to :meth:`Catalog.get_events`.
+
+        Returns
+        -------
+        :obj:`list` of :class:`Event`
+            The events matching the search criteria.
+        '''
+        ret_events = []
+
+        if catalog_names is None:
+            catalog_names = list(self.catalogs.keys())
+
+        # Filter out catalog names, that are not available.
+        catalog_names = [x for x in catalog_names if x in self.catalogs.keys()]
+
+        for cur_catalog_name in catalog_names:
+            cur_catalog = self.catalogs[cur_catalog_name]
+            ret_events.extend(cur_catalog.get_events(start_time = start_time,
+                                                     end_time = end_time,
+                                                     **kwargs))
+        return ret_events
+
+            
+    def load_event_from_db(self, project, ev_id = None, public_id = None):
+        ''' Load an event from the database by database id or the
+        public id.
+
+        Parameters
+        ----------
+        project : :class:`~psysmon.core.project.Project`
+            The project used to access the database.
+
+        ev_id : int
+            The unique database id of the event.
+
+        public_id : str
+            The public id of the event.
+
+        Returns
+        -------
+        :obj:`list` of :class:`Event`
+            The events found in the database matching the search criteria.
+        '''
+        if ev_id is None and public_id is None:
+            raise RuntimeError(("You have to specify at least one of the two "
+                                "parameters ev_id and public_id."))
+
+        found_events = []
+        db_session = project.getDbSession()
+        
+        try:
+            events_table = project.dbTables['event']
+            query = db_session.query(events_table)
+
+            if ev_id is not None:
+                query = query.filter(events_table.id == ev_id)
+
+            if public_id is not None:
+                query = query.filter(events_table.public_id.like(public_id))
+
+            for cur_orm in query:
+                try:
+                    cur_event = Event.from_db_event(db_event = cur_orm)
+                    # Get the parent catalog of the event.
+                    cat_id = cur_orm.ev_catalog_id
+
+                    # TODO: Better handling of the event catalog.
+                    #if cat_id is not None:
+                    #    # Load the required catalog from the database to the library.
+                    #    self.load_catalog_from_db(cat_id = cat_id,
+                    #                              project = project)
+                    #    # Get the catalog from the library.
+                    #    parent_cat = self.get_catalog_by_id(cat_id = cat_id)
+                    #    # Set the parent catalog of the event.
+                    #    cur_event.parent = parent_cat
+                        
+                    found_events.append(cur_event)
+                except Exception:
+                    self.logger.exception("Error when creating an event object from database values for event %d. Skipping this event.", cur_orm.id)
+        finally:
+            db_session.close()
+
+        return found_events
+
+    
+    def load_event_by_id(self, project, ev_id = None, public_id = None):
+        ''' Get an event by the database id or the public id.
+
+        Parameters
+        ----------
+        project: :class:`psysmon.core.project.Project`
+            The project to use to access the database.
+
+        ev_id : int
+            The unique database id of the event.
+
+        Returns
+        -------
+        :class:`Event`
+            The event matching the search criteria.
+
+        '''
+        if ev_id is None and public_id is None:
+            raise RuntimeError(("You have to specify at least one of the two "
+                                "parameters ev_id and public_id."))
+
+        event = None
+        # Check if the event is available in the existing catalogs.
+        event_list = self.get_events(db_id = ev_id,
+                                     public_id = public_id)
+
+        if len(event_list) == 0:
+            # Load the event directly from the database.
+            event_list = self.load_event_from_db(project = project,
+                                                 ev_id = ev_id,
+                                                 public_id = public_id)
+
+        if len(event_list) == 1:
+            event = event_list[0]
+        elif len(event_list) > 1:
+            raise RuntimeError(("More than one events found, "
+                                "this shouldn't happen for unique ids."))
+
+        return event
 
 
 
