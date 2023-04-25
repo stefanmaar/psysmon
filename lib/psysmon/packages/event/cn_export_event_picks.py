@@ -495,12 +495,15 @@ class EventPickExporter(object):
                                                     end_time = cur_event.end_time)
 
                 # Create the public ID.
-                ev_pub_id = self.create_public_id(utc_datetime = cur_event.start_time,
-                                                  agency_id = cur_event.agency_uri,
-                                                  author_id = cur_event.author_uri,
-                                                  service_id = 'psysmon',
-                                                  project_id = self.project.name,
-                                                  resource_id = cur_event.rid)
+                if cur_event.public_id is None:
+                    ev_pub_id = self.create_public_id(utc_datetime = cur_event.start_time,
+                                                      agency_id = cur_event.agency_uri,
+                                                      author_id = cur_event.author_uri,
+                                                      service_id = 'psysmon',
+                                                      project_id = self.project.name,
+                                                      resource_id = cur_event.rid)
+                else:
+                    ev_pub_id = cur_event.public_id
 
                 self.logger.debug("event_picks: %s", event_picks)
 
