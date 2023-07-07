@@ -154,7 +154,7 @@ class ComputeFreqdomainFeatures(package_nodes.LooperCollectionChildNode):
             try:
                 fft_max_peak_frequ = np.max(frequ[peaks])
             except Exception:
-                fft_max_preak_frequ = np.nan
+                fft_max_peak_frequ = np.nan
             fft_mean = np.mean(P_norm)
             fft_med = np.median(P_norm)
             fft_skew = sp.stats.skew(P_norm)
