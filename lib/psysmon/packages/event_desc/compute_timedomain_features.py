@@ -319,8 +319,11 @@ class ComputeTimedomainFeatures(package_nodes.LooperCollectionChildNode):
         peaks = peaks[0]
 
         # Compute the time of the max peak.
-        max_ind = np.argmax(tr_env[peaks])
-        max_peak_time = peaks[max_ind] / sps
+        if len(peaks) > 0:
+            max_ind = np.argmax(tr_env[peaks])
+            max_peak_time = peaks[max_ind] / sps
+        else:
+            max_peak_time = np.NaN
 
         # Count the peaks that form a new maximum in forward direction.
         fwd_peak_cnt = 0
