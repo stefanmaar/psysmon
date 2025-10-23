@@ -527,7 +527,7 @@ class SeismogramView(psy_view.viewnode.ViewNode):
         max_data = data.max(axis=1)
         min_data = np.ma.resize(min_data, (len(min_data), 1))
         max_data = np.ma.resize(max_data, (len(max_data), 1))
-        minmax_data = np.ma.zeros((int(n_step) * 2, 1), dtype=np.float)
+        minmax_data = np.ma.zeros((int(n_step) * 2, 1), dtype=np.float64)
         minmax_data[0:len(minmax_data):2] = min_data
         minmax_data[1:len(minmax_data):2] = max_data
 
