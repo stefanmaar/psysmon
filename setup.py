@@ -32,6 +32,10 @@ The pSysmon setup script.
 '''
 import os
 import sys
+# Add the directory of setup.py to the path to find setupExt.py.
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+                
+from setuptools import setup, Extension
 from pkg_resources import parse_version
 from setupExt import printStatus, printMessage, printLine, printRaw, \
     checkForPackage, get_data_files
@@ -49,31 +53,31 @@ if headless_var is not None and (int(headless_var) == 1):
 
                               
 # Check for mandatory modules.
-try:
-    import numpy  # @UnusedImport # NOQA
-except ImportError:
-    printLine()
-    printRaw("MISSING REQUIREMENT")
-    printStatus('numpy', 'Missing module')
-    printMessage('Numpy is needed to run the psysmon setup script. Please install it first.')
-    raise ImportError('Numpy is needed to run the psysmon setup script. Please install it first.')
+#try:
+#    import numpy  # @UnusedImport # NOQA
+#except ImportError:
+#    printLine()
+#    printRaw("MISSING REQUIREMENT")
+#    printStatus('numpy', 'Missing module')
+#    printMessage('Numpy is needed to run the psysmon setup script. Please install it first.')
+#    raise ImportError('Numpy is needed to run the psysmon setup script. Please install it first.')
 
 
-if not headless:
-    wx_required_version = '4.0.6'
-    try:
-        import wx
-        if parse_version(wx.__version__) < parse_version(wx_required_version):
-            printRaw("MISSING REQUIREMENT")
-            printStatus('wxPython', 'Missing module')
-            printMessage('You have to install wxPxthon >= ' + wx_required_version)
-            sys.exit(1)
-    except ImportError:
-        printRaw("MISSING REQUIREMENT")
-        printStatus('wxPython', 'Missing module')
-        printMessage('You have to install wxPxthon >= ' + wx_required_version)
-        printMessage('See https://www.wxpython.org/pages/downloads/ how to install it using a Wheel package.')
-        raise ImportError('Missing wxPython module.')
+#if not headless:
+#    wx_required_version = '4.0.6'
+#    try:
+#        import wx
+#        if parse_version(wx.__version__) < parse_version(wx_required_version):
+#            printRaw("MISSING REQUIREMENT")
+#            printStatus('wxPython', 'Missing module')
+#            printMessage('You have to install wxPxthon >= ' + wx_required_version)
+#            sys.exit(1)
+#    except ImportError:
+#        printRaw("MISSING REQUIREMENT")
+#        printStatus('wxPython', 'Missing module')
+#        printMessage('You have to install wxPxthon >= ' + wx_required_version)
+#        printMessage('See https://www.wxpython.org/pages/downloads/ how to install it using a Wheel package.')
+#        raise ImportError('Missing wxPython module.')
 
 
 import os
@@ -81,9 +85,8 @@ import os
 import inspect
 #import distutil
 #import setuptools
-from numpy.distutils.core import setup
-from numpy.distutils.misc_util import Configuration
-
+#from numpy.distutils.core import setup
+#from numpy.distutils.misc_util import Configuration
 
 
 
@@ -121,9 +124,9 @@ scripts = ['scripts/psysmon',
            'scripts/psysmomat']
 
 # Define some package data.
-packageDir = {'': 'lib',
-              'psysmon.artwork': 'lib/psysmon/artwork'}
-packageData = {'psysmon.artwork': ['splash/psysmon.png']}
+package_dir = {'': 'lib',
+               'psysmon.artwork': 'lib/psysmon/artwork'}
+package_data = {'psysmon.artwork': ['splash/psysmon.png']}
 
 # Add the documentation data files.
 data_files = get_data_files(os.path.join(os.getcwd(), 'doc/user_doc/build/html/'),
@@ -205,20 +208,52 @@ sys.path.insert(0, core_path)
 from clib_util import get_lib_name  # @UnresolvedImport
 sys.path.pop(0)
 
-def configuration(parent_package = '', top_path = None):
+#def configuration(parent_package = '', top_path = None):
+#    '''
+#
+#    '''
+#    config = Configuration('', parent_package, top_path,
+#                           package_dir = packageDir)
+#
+#
+#    # LIBSIGNAL
+#    path = os.path.join(root_dir, 'core', 'src')
+#    files = [os.path.join(path, 'moving_average.c'), ]
+#    printRaw(files)
+#    config.add_extension(get_lib_name('signal'),
+#                         sources = files)
+#
+#    # LIBRT130
+#    #path = os.path.join(root_dir, 'packages', 'reftek', 'src')
+#    #files = [os.path.join(path, 'rt_130wrapper_py.c'),
+#    #         os.path.join(path, 'rt_130_py.c')]
+#    #printRaw(files)
+#    #config.add_extension('rt_130_py',
+#    #                     sources = files)
+#
+#    # LIBDETECT
+#    path = os.path.join(root_dir, 'packages', 'event', 'src')
+#    files = [os.path.join(path, 'detect_sta_lta.c')]
+#    printRaw(files)
+#    config.add_extension(get_lib_name('detect_sta_lta'),
+#                         sources = files)
+#
+#    return config
+
+
+def create_ext_modules():
     '''
 
     '''
-    config = Configuration('', parent_package, top_path,
-                           package_dir = packageDir)
-
-
+    ext_list = []
+    
     # LIBSIGNAL
     path = os.path.join(root_dir, 'core', 'src')
     files = [os.path.join(path, 'moving_average.c'), ]
     printRaw(files)
-    config.add_extension(get_lib_name('signal'),
-                         sources = files)
+    cur_ext = Extension(name = get_lib_name('signal'),
+                        sources = files)
+    ext_list.append(cur_ext)
 
     # LIBRT130
     #path = os.path.join(root_dir, 'packages', 'reftek', 'src')
@@ -232,10 +267,11 @@ def configuration(parent_package = '', top_path = None):
     path = os.path.join(root_dir, 'packages', 'event', 'src')
     files = [os.path.join(path, 'detect_sta_lta.c')]
     printRaw(files)
-    config.add_extension(get_lib_name('detect_sta_lta'),
-                         sources = files)
+    cur_ext = Extension(get_lib_name('detect_sta_lta'),
+                        sources = files)
+    ext_list.append(cur_ext)
 
-    return config
+    return ext_list
 
 #distutils.log.set_verbosity(1)
 
@@ -254,11 +290,13 @@ setup(name = 'psysmon',
       license = __license__,
       keywords = __keywords__,
       packages = packages,
+      package_dir = package_dir,
       platforms = 'any',
       scripts = scripts,
-      package_data = packageData,
+      package_data = package_data,
       data_files = data_files,
       ext_package = 'psysmon.lib',
       install_requires = install_requires,
-      configuration = configuration
+      #configuration = configuration
+      ext_modules = create_ext_modules()
       )
