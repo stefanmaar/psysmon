@@ -1048,7 +1048,8 @@ class SpectrogramView(psy_view.viewnode.ViewNode):
                                             mask=trace.data.mask)
 
             if self.axes.images:
-                self.axes.images.pop()
+                for cur_image in self.axes.images:
+                    cur_image.remove()
 
             self.spectrogram(data = trace.data,
                              samp_rate = trace.stats.sampling_rate,
