@@ -64,7 +64,7 @@ class ResultBag(object):
             The results to add to the bag.
         '''
         import collections
-        if not isinstance(results, collections.Iterable):
+        if not isinstance(results, collections.abc.Iterable):
             results = [results, ]
 
         self.results.extend(results)
