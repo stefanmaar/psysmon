@@ -179,8 +179,8 @@ class ProjectFileEncoder(json.JSONEncoder):
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
-        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
-        arg = inspect.getargspec(obj.__init__)
+        base_arg = inspect.getfullargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getfullargspec(obj.__init__)
 
         for cur_arg in arg.args:
             if cur_arg not in base_arg.args and cur_arg in attr:
@@ -199,8 +199,8 @@ class ProjectFileEncoder(json.JSONEncoder):
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
-        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
-        arg = inspect.getargspec(obj.__init__)
+        base_arg = inspect.getfullargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getfullargspec(obj.__init__)
 
         for cur_arg in arg.args:
             if cur_arg not in base_arg.args:
@@ -782,8 +782,8 @@ class ConfigFileEncoder(json.JSONEncoder):
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
-        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
-        arg = inspect.getargspec(obj.__init__)
+        base_arg = inspect.getfullargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getfullargspec(obj.__init__)
 
         for cur_arg in arg.args:
             if cur_arg not in base_arg.args and cur_arg in attr:
@@ -802,8 +802,8 @@ class ConfigFileEncoder(json.JSONEncoder):
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
-        base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
-        arg = inspect.getargspec(obj.__init__)
+        base_arg = inspect.getfullargspec(obj.__class__.__bases__[0].__init__)
+        arg = inspect.getfullargspec(obj.__init__)
 
         for cur_arg in arg.args:
             if cur_arg not in base_arg.args:
@@ -1070,8 +1070,8 @@ class CollectionFileEncoder(json.JSONEncoder):
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
-        #base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
-        #arg = inspect.getargspec(obj.__init__)
+        #base_arg = inspect.getfullargspec(obj.__class__.__bases__[0].__init__)
+        #arg = inspect.getfullargspec(obj.__init__)
 
         #for cur_arg in arg.args:
         #    if cur_arg not in base_arg.args and cur_arg in attr:
@@ -1089,8 +1089,8 @@ class CollectionFileEncoder(json.JSONEncoder):
         d = self.object_to_dict(obj, attr)
 
         # Find any additional arguments.
-        #base_arg = inspect.getargspec(obj.__class__.__bases__[0].__init__)
-        #arg = inspect.getargspec(obj.__init__)
+        #base_arg = inspect.getfullargspec(obj.__class__.__bases__[0].__init__)
+        #arg = inspect.getfullargspec(obj.__init__)
 
         #for cur_arg in arg.args:
         #    if cur_arg not in base_arg.args:
