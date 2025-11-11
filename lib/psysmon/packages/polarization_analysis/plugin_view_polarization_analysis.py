@@ -31,6 +31,7 @@ import psysmon
 from psysmon.core.plugins import ViewPlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
 import psysmon.gui.view as psy_view
+import psysmon.gui.view.viewnode
 import psysmon.core.preferences_manager as preferences_manager
 import psysmon.packages.polarization_analysis.core
 
@@ -144,12 +145,6 @@ class PolarizationAnalysis(ViewPlugin):
 
         '''
         return PolarizationAnalysisView
-
-
-
-
-
-
 
 
 class PolarizationAnalysisView(psy_view.viewnode.ViewNode):
