@@ -49,3 +49,6 @@ packages = [
             "psysmon.artwork.icons",
             "psysmon.progs"
            ]
+
+package-data = {"psysmon.artwork" = ["splash/psysmon.png"]}
+
