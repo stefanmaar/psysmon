@@ -199,7 +199,7 @@ class ViewNode(wx.Panel):
                                                        key = key)
         for cur_artist in artists_to_remove:
             for cur_line_artist in cur_artist.line_artist:
-                self.axes.lines.remove(cur_line_artist)
+                cur_line_artist.remove()
 
             for cur_patch_artist in cur_artist.patch_artist:
                 self.axes.patches.remove(cur_patch_artist)
