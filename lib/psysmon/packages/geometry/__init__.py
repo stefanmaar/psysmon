@@ -139,8 +139,22 @@ def databaseFactory(base):
 
 
         def __repr__(self):
-            return "GeomRecorderStream\id: %d\nrecorder_id: %d\nname: %s\nlabel: %s\nagency_uri: %s\nauthor_uri: %s\ncreation_time: %s\n" % (self.id,
-                        self.recorder_id, self.name, self.label, self.agency_uri, self.author_uri, self.creation_time)
+            template = ("GeomRecorderStream\n"
+                        "id: {stream_id:d}\n"
+                        "recorder_id: {rec_id:d}\n"
+                        "name: {name}\n"
+                        "label: {label}\n"
+                        "agency_uri: {agency}\n"
+                        "author_uri: {author}\n"
+                        "creation_time: {creation_time}\n")
+            
+            return template.format(stream_id = self.id,
+                                   rec_id = self.recorder_id,
+                                   name = self.name,
+                                   label = self.label,
+                                   agency = self.agency_uri,
+                                   author = self.author_uri,
+                                   creation_time = self.creation_time)
 
     tables.append(GeomRecorderStream)
 
