@@ -336,7 +336,7 @@ class PSDPlotter(object):
             files = fnmatch.filter(files, namefilter)
             files = sorted(files)
             for cur_file in files:
-                parts = re.split('_|\.', cur_file)
+                parts = re.split(r'_|\.', cur_file)
 
                 cur_year = int(parts[1][:4])
                 cur_month = int(parts[1][4:6])
