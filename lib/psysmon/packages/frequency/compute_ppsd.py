@@ -44,6 +44,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import obspy.core
+import obspy.imaging.cm
 
 plt.style.use(psysmon.plot_style)
 
@@ -89,8 +90,8 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
         pref_item = psy_pm.FloatSpinPrefItem(name = 'ppsd_length',
                                              label = 'ppsd length [s]',
-                                             value = 3600,
-                                             limit = [0, 1e10],
+                                             value = 3600.,
+                                             limit = (0, 1e10),
                                              increment = 1,
                                              digits = 3,
                                              tool_tip = 'Length of data segments passed to psd [s].')
@@ -112,10 +113,10 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
 
         item = psy_pm.FloatSpinPrefItem(name = 'img_width',
                                         label = 'width [cm]',
-                                        value = 16.,
+                                        value = 16,
                                         increment = 1,
                                         digits = 1,
-                                        limit = [1, 1000],
+                                        limit = (1, 1000),
                                         tool_tip = 'The width of the PPSD image in cm.')
         img_group.add_item(item)
 
@@ -124,13 +125,13 @@ class ComputePpsdNode(psysmon.core.packageNodes.LooperCollectionChildNode):
                                         value = 12.,
                                         increment = 1,
                                         digits = 1,
-                                        limit = [1, 1000],
+                                        limit = (1, 1000),
                                         tool_tip = 'The height of the PPSD image in cm.')
         img_group.add_item(item)
 
         item = psy_pm.IntegerSpinPrefItem(name = 'img_resolution',
                                           label = 'resolution [dpi]',
-                                          value = 300.,
+                                          value = 300,
                                           limit = [1, 10000],
                                           tool_tip = 'The resolution of the PPSD image in dpi.')
         img_group.add_item(item)
