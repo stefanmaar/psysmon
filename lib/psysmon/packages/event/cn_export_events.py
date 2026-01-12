@@ -41,13 +41,16 @@ import obspy.core.utcdatetime as utcdatetime
 import sqlalchemy
 
 import psysmon
-import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
 import psysmon.packages.event.core as event_core
 import psysmon.packages.event.detect as detect
-import psysmon.packages.event.plugins_event_selector as plugins_event_selector
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
+    import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 
 
 
@@ -349,17 +352,25 @@ class EventExporter(object):
             year_list = list(range(start_year, end_year + 1))
             for k, cur_year in enumerate(year_list):
                 if k == 0:
-                    month_dict[year_list[0]] = list(range(start_month, end_month))
+                    if len(year_list) == 1:
+                        month_dict[cur_year] = list(range(start_month,
+                                                          end_month + 1))
+                    else:
+                        month_dict[cur_year] = list(range(start_month, 13))
                 elif k == len(year_list) - 1:
-                    month_dict[year_list[0]] = list(range(1, end_month))
+                    month_dict[cur_year] = list(range(1, end_month))
                 else:
-                    month_dict[year_list[0]] = list(range(1, 12))
+                    month_dict[cur_year] = list(range(1, 12))
 
             for cur_year, month_list in month_dict.items():
                 for cur_month in month_list:
-                    interval_start.append(utcdatetime.UTCDateTime(year = cur_year, month = cur_month))
+                    cur_time = utcdatetime.UTCDateTime(year = cur_year,
+                                                       month = cur_month,
+                                                       day = 1)
+                    interval_start.append(cur_time)
 
         interval_start.append(end_time)
+        self.logger.info(interval_start)
         return interval_start
 
 

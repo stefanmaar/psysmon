@@ -1,0 +1,55 @@
+[project]
+name = "psysmon"
+version = "1.0.0"
+description = "A seismological data processing and prototyping software."
+authors = [
+        {name = "Stefan Mertl", email = "info@mertl-research.at"},
+]
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+dependencies = [
+             "click>=8.0",
+             "construct>=2.9.45",
+             "future>=0.18.2",
+             "geojson>=2.5.0",
+             "lxml>=2.3.2",
+             "matplotlib>=3.2.0",
+             "obspy>=1.4.2",
+             "pillow>=2.3.0",
+             "pycairo>=1.18.1",
+             "pymysql>=0.9.3",
+             "pyproj>=2.2.1",
+             "PyPubSub>=4.0.3",
+             "Pyro4>=4.32",
+             "pytz>=2019.2",
+             "scipy>=1.0.0",
+             "seaborn>=0.9.0",
+             "sqlalchemy>=0.9.8",
+             "wxpython>=4.2.4",
+]
+
+[project.scripts]
+psysmon = "psysmon.progs.psysmon:run"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "lib"}
+packages = [
+            "psysmon",
+            "psysmon.core",
+            "psysmon.packages",
+            "psysmon.packages.example",
+            "psysmon.packages.example2",
+            "psysmon.packages.geometry",
+            "psysmon.packages.obspyImportWaveform",
+            "psysmon.packages.tracedisplay",
+            "psysmon.artwork",
+            "psysmon.artwork.icons",
+            "psysmon.progs"
+           ]
+
+package-data = {"psysmon.artwork" = ["splash/psysmon.png"]}
+

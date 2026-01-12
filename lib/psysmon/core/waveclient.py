@@ -505,7 +505,7 @@ class PsysmonDbWaveClient(WaveClient):
 
             # Add the startTime filter option.
             if start_time:
-                query = query.filter(self.traceheader.begin_time + old_div(self.traceheader.numsamp * 1,self.traceheader.sps) > start_time.timestamp)
+                query = query.filter((self.traceheader.begin_time + self.traceheader.numsamp / self.traceheader.sps) > start_time.timestamp)
 
             # Add the endTime filter option.
             if end_time:
@@ -530,6 +530,9 @@ class PsysmonDbWaveClient(WaveClient):
                 # Ignore duplicate filenames.
                 cur_query = cur_query.distinct(self.datafile.filename)
 
+                self.logger.debug('Searching for recorder serial %s; stream: %s.', cur_rec_stream.serial,
+                                  cur_rec_stream.name)
+                
                 # Process the results of the query.
                 for curHeader in cur_query:
                     filename = os.path.join(curHeader.alias, curHeader.filename)

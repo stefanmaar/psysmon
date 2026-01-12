@@ -246,7 +246,7 @@ class ImsParser(object):
         cur_date = cur_line[0:10].strip()
         [cur_year, cur_month, cur_day] = cur_date.split('/')
         cur_time = cur_line[11:22].strip()
-        time_split = re.split('[:\.]', cur_time)
+        time_split = re.split(r"[:\.]", cur_time)
         cur_hour = time_split[0]
         cur_min = time_split[1]
         cur_sec = time_split[2]

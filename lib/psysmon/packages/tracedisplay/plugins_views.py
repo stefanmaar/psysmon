@@ -308,7 +308,7 @@ class SeismogramView(psy_view.viewnode.ViewNode):
                     self.line.set_ydata(trace_data)
             else:
                 if self.line is not None:
-                    self.axes.lines.remove(self.line)
+                    self.line.remove()
                     self.line = None
 
             if show_envelope is True:
@@ -328,7 +328,7 @@ class SeismogramView(psy_view.viewnode.ViewNode):
 
                 if envelope_style == 'filled':
                     if self.envelope_collection_filled is not None:
-                        self.axes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled.remove()
 
                     self.envelope_collection_filled = self.axes.fill_between(x = timeArray,
                                                                          y1 = trace_envelope.flatten(),
@@ -338,39 +338,39 @@ class SeismogramView(psy_view.viewnode.ViewNode):
 
                 if envelope_style == 'top':
                     if self.envelope_line_bottom:
-                        self.axes.lines.remove(self.envelope_line_bottom)
+                        self.envelope_line_bottom.remove()
                         self.envelope_line_bottom = None
                     if self.envelope_collection_filled:
-                        self.axes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled.remove()
                         self.envelope_collection_filled = None
                 elif envelope_style == 'bottom':
                     if self.envelope_line_top:
-                        self.axes.lines.remove(self.envelope_line_top)
+                        self.envelope_line_top.remove()
                         self.envelope_line_top = None
                     if self.envelope_collection_filled:
-                        self.axes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled.remove()
                         self.envelope_collection_filled = None
                 elif envelope_style == 'top-bottom':
                     if self.envelope_collection_filled:
-                        self.axes.collections.remove(self.envelope_collection_filled)
+                        self.envelope_collection_filled.remove()
                         self.envelope_collection_filled = None
                 elif envelope_style == 'filled':
                     if self.envelope_line_top:
-                        self.axes.lines.remove(self.envelope_line_top)
+                        self.envelope_line_top.remove()
                         self.envelope_line_top = None
                     if self.envelope_line_bottom:
-                        self.axes.lines.remove(self.envelope_line_bottom)
+                        self.envelope_line_bottom.remove()
                         self.envelope_line_bottom = None
 
             else:
                 if self.envelope_line_top:
-                    self.axes.lines.remove(self.envelope_line_top)
+                    self.envelope_line_top.remove()
                     self.envelope_line_top = None
                 if self.envelope_line_bottom:
-                    self.axes.lines.remove(self.envelope_line_bottom)
+                    self.envelope_line_bottom.remove()
                     self.envelope_line_bottom = None
                 if self.envelope_collection_filled:
-                    self.axes.collections.remove(self.envelope_collection_filled)
+                    self.envelope_collection_filled.remove()
                     self.envelope_collection_filled = None
 
 
@@ -551,7 +551,7 @@ class SeismogramView(psy_view.viewnode.ViewNode):
             else:
                 label_artist = None
             if line_artist:
-                line_artist.set_xdata(x)
+                line_artist.set_xdata([x, x])
             if label_artist:
                 label_artist.set_position((x, ylim[1]))
         else:
@@ -831,7 +831,7 @@ class DemoView(psy_view.viewnode.ViewNode):
             line_artist = annotation_artist.line_artist[0]
             label_artist = annotation_artist.text_artist[0]
             if line_artist:
-                line_artist.set_xdata(x)
+                line_artist.set_xdata([x, x])
             if label_artist:
                 label_artist.set_position((x, 0))
         else:
@@ -1048,7 +1048,8 @@ class SpectrogramView(psy_view.viewnode.ViewNode):
                                             mask=trace.data.mask)
 
             if self.axes.images:
-                self.axes.images.pop()
+                for cur_image in self.axes.images:
+                    cur_image.remove()
 
             self.spectrogram(data = trace.data,
                              samp_rate = trace.stats.sampling_rate,
@@ -1554,7 +1555,7 @@ class ArrayDemoView(psy_view.viewnode.ViewNode):
         ''' Plot all normalized traces of the stream.
         '''
         for cur_line in self.lines:
-            self.axes.lines.remove(cur_line)
+            cur_line.remove()
         self.lines = []
         self.axes.set_color_cycle(None)
 
@@ -1620,7 +1621,7 @@ class ArrayDemoView(psy_view.viewnode.ViewNode):
             line_artist = annotation_artist.line_artist[0]
             label_artist = annotation_artist.text_artist[0]
             if line_artist:
-                line_artist.set_xdata(x)
+                line_artist.set_xdata([x, x])
             if label_artist:
                 label_artist.set_position((x, 0))
         else:

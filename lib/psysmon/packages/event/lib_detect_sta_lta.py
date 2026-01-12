@@ -52,6 +52,7 @@ clib_detect_sta_lta.compute_event_end.argtypes = [ctypes.c_long,
                                                   ctypes.c_double,
                                                   ctypes.c_double,
                                                   ctypes.c_double,
+                                                  ctypes.c_long,
                                                   ctypes.c_long]
 
 clib_detect_sta_lta.compute_event_start.argtypes = [ctypes.c_long,
@@ -60,6 +61,8 @@ clib_detect_sta_lta.compute_event_start.argtypes = [ctypes.c_long,
                                                                            flags = 'C_CONTIGUOUS'),
                                                     ctypes.c_double,
                                                     ctypes.c_double,
-                                                    ctypes.c_double]
+                                                    ctypes.c_double,
+                                                    ctypes.c_double,
+                                                    ctypes.POINTER(ctypes.c_long)]
 
 

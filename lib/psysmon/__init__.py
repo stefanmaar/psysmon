@@ -50,7 +50,7 @@ logConfig['package_prefix'] = 'psysmon.packages'
 doc_entry_point = os.path.join(os.path.dirname(__file__), 'doc')
 
 # The matplotlib plot style.
-plot_style = 'seaborn-paper'
+plot_style = 'seaborn-v0_8-paper'
 
 
 class MultilineMessagesFormatter(logging.Formatter):

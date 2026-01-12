@@ -294,6 +294,7 @@ class EditGeometryDlg(wx.Frame):
     def menuData(self):
         return (("File",
                  ("Import from XML", "Import inventory from XML file.", self.onImportFromXml),
+                 ("Import from directory", "Import inventory from XML files in a direcotry.", self.onImportFromDirectory),
                  ("Export to XML", "Export the selected inventory to an XML file.", self.onExport2Xml),
                  ("", "", ""),
                  ("Export stations to CSV", "Export the stations of the selected inventory to a CSV file.", self.onExportStations2Csv),
@@ -320,7 +321,7 @@ class EditGeometryDlg(wx.Frame):
     def onImportFromXml(self, event):
         dlg = wx.FileDialog(
             self, message="Choose a file",
-            defaultDir=os.getcwd(), 
+            defaultDir=os.getcwd(),
             defaultFile="",
             wildcard="xml file (*.xml)"\
                      "All files (*.*)|*.*",
@@ -344,6 +345,32 @@ class EditGeometryDlg(wx.Frame):
             self.inventories[cur_inventory.name] = cur_inventory
             self.inventoryTree.updateInventoryData()
 
+
+    def onImportFromDirectory(self, event):
+        dlg = wx.DirDialog(
+            self,
+            message="Choose a dirctory containing the XML files.",
+            defaultPath=os.getcwd(),
+            style=wx.DD_DIR_MUST_EXIST
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response, 
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            path = dlg.GetPath()
+            inventory_parser = InventoryXmlParser()
+
+            try:
+                cur_inventory = inventory_parser.parse(path)
+            except Warning as w:
+                self.logger.warning(w)
+            except Exception:
+                self.logger.exception("Error while parsing file %s.", path)
+
+            self.inventories[cur_inventory.name] = cur_inventory
+            self.inventoryTree.updateInventoryData()
+            
 
     def onExport2Xml(self, event):
         if not self.selected_inventory:

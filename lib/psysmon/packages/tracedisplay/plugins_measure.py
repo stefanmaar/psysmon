@@ -70,8 +70,8 @@ class MeasurePoint(InteractivePlugin):
         ''' Remove all elements added to the views.
         '''
         for cur_key, cur_crosshair in self.crosshair.items():
-            cur_crosshair[0].axes.lines.remove(cur_crosshair[0])
-            cur_crosshair[1].axes.lines.remove(cur_crosshair[1])
+            cur_crosshair[0].remove()
+            cur_crosshair[1].remove()
             cur_view = cur_key[0]
             cur_view.draw()
 
@@ -153,8 +153,8 @@ class MeasurePoint(InteractivePlugin):
             for cur_line in cur_crosshair:
                 cur_line.set_color('r')
 
-            cur_crosshair[0].set_xdata(xy[0])
-            cur_crosshair[1].set_ydata(xy[1])
+            cur_crosshair[0].set_xdata([xy[0], xy[0]])
+            cur_crosshair[1].set_ydata([xy[1], xy[1]])
 
             date_string = utcdatetime.UTCDateTime(xy[0])
             measure_string += 'time: {0:s}\n{1:s}: {2:g}\n\n'.format(date_string.isoformat(),

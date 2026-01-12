@@ -37,6 +37,8 @@ from builtins import str
 from builtins import range
 from builtins import object
 from past.utils import old_div
+
+import csv
 import json
 import os
 import copy
@@ -96,6 +98,7 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
 
         # Enable/Disable the gui elements based on the pref_manager settings.
         self.on_select_individual()
+        self.on_specify_ids()
 
         # Enable/Disable the time-span elements depending on the 'set
         # collection time-span' collection node.
@@ -131,6 +134,16 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         else:
             event_ids = None
 
+        if self.pref_manager.get_value('specify_ids') is True:
+            if event_ids is None:
+                event_ids = []
+            ids_filepath = self.pref_manager.get_value('event_ids_filename')
+            with open(ids_filepath) as in_file:
+                reader = csv.reader(in_file, delimiter = ',')
+
+                for cur_row in reader:
+                    event_ids.append(int(cur_row[0]))
+
         if self.parentCollection.runtime_att.start_time:
             start_time = self.parentCollection.runtime_att.start_time
         else:
@@ -146,7 +159,6 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
             event_tags = [event_tags,]
         else:
             event_tags = None
-
 
         processor.process(looper_nodes = self.children,
                           start_time = start_time,
@@ -185,6 +197,19 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
                                           value = '',
                                           limit = [],
                                           tool_tip = 'Select an event catalog for which to load the events.')
+        event_group.add_item(item)
+
+        item = psy_pm.CheckBoxPrefItem(name = 'specify_ids',
+                                       label = 'specify IDs',
+                                       value = False,
+                                       tool_tip = 'Specify the events to export using a text file with event IDs.',
+                                       hooks = {'on_value_change': self.on_specify_ids})
+        event_group.add_item(item)
+
+        item = psy_pm.FileBrowsePrefItem(name = 'event_ids_filename',
+                                        label = 'event IDs file',
+                                        value = '',
+                                        tool_tip = 'Specify a file containing the IDs of the events to process.')
         event_group.add_item(item)
 
         item = psy_pm.CheckBoxPrefItem(name = 'select_individual',
@@ -309,6 +334,13 @@ class EventLooperNode(package_nodes.LooperCollectionNode):
         field = pref_item.gui_element[0]
         field.set_events(event_catalog.events)
 
+
+    def on_specify_ids(self):
+        if self.pref_manager.get_value('specify_ids') is True:
+            self.pref_manager.get_item('event_ids_filename')[0].enable_gui_element()
+        else:
+            self.pref_manager.get_item('event_ids_filename')[0].disable_gui_element()
+            
 
     def on_select_individual(self):
         if self.pref_manager.get_value('select_individual') is True:
@@ -467,6 +499,7 @@ class EventProcessor(object):
         event_lib = event_core.Library('events')
         event_lib.load_catalog_from_db(self.project, name = event_catalog)
         catalog = event_lib.catalogs[event_catalog]
+        self.logger.info('Using catalog: %s.', catalog.name)
 
         for k, cur_start_time in enumerate(interval_start[:-1]):
             cur_end_time = interval_start[k + 1]
@@ -487,7 +520,8 @@ class EventProcessor(object):
             else:
                 # Load the events with the given ids from the database. Ignore the
                 # time-span.
-                catalog.load_events(event_id = event_ids)
+                catalog.load_events(project = self.project,
+                                    event_id = event_ids)
 
             # Abort the execution if no events are available for the time span.
             if not catalog.events:
@@ -571,6 +605,8 @@ class EventProcessor(object):
                         # Handle the looper child return value.
                         if ret and ret == 'abort':
                             break
+            except Exception:
+                self.logger.exception("Error running the looper nodes for this event.")
             finally:
                 pass
 

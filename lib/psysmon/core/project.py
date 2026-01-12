@@ -595,7 +595,12 @@ class Project(object):
 
         '''
         collection = self.getActiveCollection()
-        data_sources = collection.data_sources
+        if collection is not None:
+            data_sources = collection.data_sources
+        else:
+            all_scnl = [x.scnl for x in self.geometry_inventory.get_channel()]
+            default_source = self.defaultWaveclient
+            data_sources = dict([(x, default_source) for x in all_scnl])
 
         self.logger.debug('Requesting data for scnl: %s.', scnl)
         self.logger.debug('data_sources: %s.', data_sources)

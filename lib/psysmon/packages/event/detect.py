@@ -36,6 +36,7 @@ from builtins import zip
 from past.builtins import basestring
 from past.utils import old_div
 from builtins import object
+import ctypes
 import logging
 import warnings
 
@@ -407,7 +408,8 @@ class Catalog(object):
 
     #@profile(immediate=True)
     def load_detections(self, project, start_time = None, end_time = None,
-                        min_detection_length = None):
+                        min_detection_length = None,
+                        max_detection_length = None):
         ''' Load detections from the database.
 
         The query can be limited using the allowed keyword arguments.
@@ -438,6 +440,8 @@ class Catalog(object):
 
             if min_detection_length:
                 query = query.filter(detection_table.end_time - detection_table.start_time >= min_detection_length)
+            if max_detection_length:
+                query = query.filter(detection_table.end_time - detection_table.start_time <= max_detection_length)
 
             detections_to_add = []
             for cur_orm in query:
@@ -772,7 +776,8 @@ class StaLtaDetector(object):
         self.valid_ind = self.n_lta + self.n_sta
 
 
-    def compute_event_limits(self, stop_delay = 0):
+    def compute_event_limits(self, stop_win_length = 0,
+                             fine_thr_win = 0, stop_win_mode = 'min'):
         ''' Compute the event start and end times based on the detection functions.
 
         '''
@@ -783,7 +788,11 @@ class StaLtaDetector(object):
 
         # Find the event begins indicated by exceeding the threshold value.
         # Start after n_lta samples to avoid effects of the filter buildup.
-        event_start, stop_value = self.compute_start_stop_values(self.valid_ind, stop_delay)
+        ret_data = self.compute_start_stop_values(crop_start = self.valid_ind,
+                                                  win_length = stop_win_length,
+                                                  fine_thr_win = fine_thr_win,
+                                                  mode = stop_win_mode)
+        event_start, stop_value, initial_event_start = ret_data
         self.logger.debug("First event_start: %d.", event_start)
 
         # Find the event end values.
@@ -799,12 +808,18 @@ class StaLtaDetector(object):
             # and event end.
             cur_search_start = event_start + 1
 
+            # The relative initial trigger before the refinement
+            # of the detection start.
+            rel_init_trigger = initial_event_start - cur_search_start
+
             # TODO: Use a loop in a C function do compute the event stop.
             # Using the complete array is not efficient when processing
             # long arrays.
             clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
-            cur_sta = np.ascontiguousarray(self.sta[cur_search_start:], dtype = np.float64)
-            cur_lta = np.ascontiguousarray(self.lta[cur_search_start:], dtype = np.float64)
+            cur_sta = np.ascontiguousarray(self.sta[cur_search_start:],
+                                           dtype = np.float64)
+            cur_lta = np.ascontiguousarray(self.lta[cur_search_start:],
+                                           dtype = np.float64)
             cur_lta = cur_lta * self.thr
             n_cur_sta = len(cur_sta)
             n_cur_lta = len(cur_lta)
@@ -818,7 +833,8 @@ class StaLtaDetector(object):
                                                          self.stop_growth,
                                                          self.stop_growth_exp,
                                                          self.stop_growth_inc,
-                                                         self.stop_growth_inc_begin)
+                                                         self.stop_growth_inc_begin,
+                                                         rel_init_trigger)
             self.logger.debug("next_end_ind: %d", next_end_ind)
 
             # Compute the event end.
@@ -848,8 +864,11 @@ class StaLtaDetector(object):
                 event_marker.append((event_start, cur_event_end))
                 break
             else:
-                event_start, stop_value = self.compute_start_stop_values(cur_event_end, stop_delay)
-
+                ret_data = self.compute_start_stop_values(crop_start = cur_event_end,
+                                                          win_length = stop_win_length,
+                                                          fine_thr_win = fine_thr_win,
+                                                          mode = stop_win_mode)
+                event_start, stop_value, initial_event_start = ret_data
         self.logger.debug("Finished the event limits computation.")
 
         return event_marker
@@ -896,24 +915,48 @@ class StaLtaDetector(object):
         return event_lta
 
 
-    def compute_start_stop_values(self, crop_start, stop_delay):
+    def compute_start_stop_values(self, crop_start, win_length,
+                                  fine_thr_win, mode = 'min'):
         ''' Compute the event start indices and the stop values.
         '''
         clib_detect = lib_detect_sta_lta.clib_detect_sta_lta
 
-        thrf = np.ascontiguousarray(old_div(self.sta[crop_start:],self.lta[crop_start:]), dtype = np.float64)
-        event_start = clib_detect.compute_event_start(len(thrf), thrf, self.thr, self.fine_thr, self.turn_limit)
+        thrf = np.ascontiguousarray(self.sta[crop_start:] / self.lta[crop_start:],
+                                    dtype = np.float64)
+        initial_event_start = ctypes.c_long(0)
+        event_start = clib_detect.compute_event_start(len(thrf),
+                                                      thrf,
+                                                      self.thr,
+                                                      self.fine_thr,
+                                                      self.turn_limit,
+                                                      fine_thr_win,
+                                                      ctypes.pointer(initial_event_start))
 
+        initial_event_start = int(initial_event_start.value)
+        
         event_start_ind = crop_start + event_start
+        initial_event_start = crop_start + initial_event_start
 
         # Use a sta value stop_delay samples prior to the event start to take
         # the delayed reaction of the detector into account.
-        stop_value = self.sta[event_start_ind - stop_delay]
+        win_start = event_start_ind - win_length
+        win_end = event_start_ind
+        if win_start < 0:
+            win_start = 0
+        sta_win = self.sta[win_start:win_end]
+        if mode == 'min':
+            stop_value = np.min(sta_win)
+        elif mode == 'median':
+            stop_value = np.median(sta_win)
+        elif mode == 'mean':
+            stop_value = np.mean(sta_win)
+        else:
+            stop_value = sta_win[0]
 
         # Reset stop values larger than the STA value of the event start.
         if stop_value > self.sta[event_start_ind]:
             stop_value = self.sta[event_start_ind]
 
-        return event_start_ind, stop_value
+        return event_start_ind, stop_value, initial_event_start
 
 

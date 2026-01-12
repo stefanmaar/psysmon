@@ -37,13 +37,16 @@ import os
 import obspy.core.utcdatetime as utcdatetime
 
 import psysmon
-import psysmon.gui.dialog.pref_listbook as psy_lb
 import psysmon.core.packageNodes as package_nodes
 import psysmon.core.preferences_manager as psy_pm
 import psysmon.core.result as result
-import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 import psysmon.packages.event.core as event_core
 import psysmon.packages.pick.core as pick_core
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
+    import psysmon.packages.event.plugins_event_selector as plugins_event_selector
 
 
 class ExportEventPicks(package_nodes.CollectionNode):
@@ -492,12 +495,15 @@ class EventPickExporter(object):
                                                     end_time = cur_event.end_time)
 
                 # Create the public ID.
-                ev_pub_id = self.create_public_id(utc_datetime = cur_event.start_time,
-                                                  agency_id = cur_event.agency_uri,
-                                                  author_id = cur_event.author_uri,
-                                                  service_id = 'psysmon',
-                                                  project_id = self.project.name,
-                                                  resource_id = cur_event.rid)
+                if cur_event.public_id is None:
+                    ev_pub_id = self.create_public_id(utc_datetime = cur_event.start_time,
+                                                      agency_id = cur_event.agency_uri,
+                                                      author_id = cur_event.author_uri,
+                                                      service_id = 'psysmon',
+                                                      project_id = self.project.name,
+                                                      resource_id = cur_event.rid)
+                else:
+                    ev_pub_id = cur_event.public_id
 
                 self.logger.debug("event_picks: %s", event_picks)
 

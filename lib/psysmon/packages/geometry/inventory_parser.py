@@ -32,8 +32,10 @@ This module contains parser classes to read inventory data from files.
 
 from builtins import str
 from builtins import object
-import logging
-from lxml import etree
+import glob
+import os
+
+import lxml.etree
 
 import psysmon
 from psysmon.packages.geometry.inventory import Inventory
@@ -126,15 +128,77 @@ class InventoryXmlParser(object):
         :class:`mss_dataserver.geometry.inventory.Inventory`
             The parsed inventory.
         '''
-        import lxml.etree
-
         self.logger.debug("parsing file...\n")
 
         inventory = Inventory(inventory_name, type = 'xml')
+        
+        loaded_inventory_name = None
+        # Collect the geometry XML nodes from the specified file(s).
+        if os.path.isfile(filename):
+            # Handle a single XML file import.
+            self.logger.debug("Handle a single file import.")
+            collected_nodes = self.collect_xml_nodes(filename)
+            loaded_inventory_name = collected_nodes['inventory_name']
+        elif os.path.isdir(filename):
+            # Handle import of multiple XML files from a directory.
+            self.logger.debug("Handle a directory import.")
+            search_path = os.path.join(filename,
+                                       '**', '*.xml')
+            file_list = glob.glob(search_path,
+                                  recursive = True)
+            file_list = sorted(file_list)
+
+            collected_nodes = {'sensors': [],
+                               'recorders': [],
+                               'networks': [],
+                               'arrays': []}
+            for cur_file in file_list:
+                cur_nodes = self.collect_xml_nodes(cur_file)
+                collected_nodes['sensors'].extend(cur_nodes['sensors'])
+                collected_nodes['recorders'].extend(cur_nodes['recorders'])
+                collected_nodes['networks'].extend(cur_nodes['networks'])
+                collected_nodes['arrays'].extend(cur_nodes['arrays'])
+
+                if loaded_inventory_name is None:
+                    loaded_inventory_name = cur_nodes['inventory_name']
+
+        if loaded_inventory_name is not None:
+            inventory.name = loaded_inventory_name
+            
+        # Process the sensors first.
+        self.process_sensors(inventory,
+                             collected_nodes['sensors'])
+
+        # Next process the recorders. These might depend on sensors.
+        self.process_recorders(inventory,
+                               collected_nodes['recorders'])
+
+        # Now process the networks which might depend on recorders.
+        self.process_networks(inventory,
+                              collected_nodes['networks'])
+
+        # Finally process the arrays which require all elements already added
+        # to the inventory.
+        self.process_arrays(inventory,
+                            collected_nodes['arrays'])
+
+        self.logger.debug("Success reading the XML file.")
+
+        return inventory
+
+
+    def collect_xml_nodes(self, filepath):
+        ''' Collect geometry XML nodes from a file.
+        '''
+        collected_nodes = {'inventory_name': None,
+                           'sensors': [],
+                           'recorder': [],
+                           'networks': [],
+                           'arrays': []}
 
         # Parse the xml file passed as argument.
         parser = lxml.etree.XMLParser(remove_comments = True)
-        tree = lxml.etree.parse(filename, parser)
+        tree = lxml.etree.parse(filepath, parser)
         inventory_root = tree.getroot()
 
         # Check if the root element is of type inventory.
@@ -144,36 +208,32 @@ class InventoryXmlParser(object):
             self.logger.debug("found inventory root tag\n")
 
         # Set the name of the inventory.
-        inventory.name = inventory_root.attrib['name']
+        inventory_name = inventory_root.attrib['name']
 
         # Get the recorders and stations of the inventory.
-        sensor_list = tree.findall('sensor_list')
-        recorder_list = tree.findall('recorder_list')
+        sensors = []
+        sensor_list_nodes = tree.findall('sensor_list')
+        for cur_node in sensor_list_nodes:
+            cur_sensors = cur_node.findall('sensor')
+            sensors.extend(cur_sensors)
+
+        recorders = []
+        recorder_list_nodes = tree.findall('recorder_list')
+        for cur_node in recorder_list_nodes:
+            cur_recorders = cur_node.findall('recorder')
+            recorders.extend(cur_recorders)
         networks = tree.findall('network')
         arrays = tree.findall('array')
 
-        # Process the sensors first.
-        for cur_sensor_list in sensor_list:
-            sensors = cur_sensor_list.findall('sensor')
-            self.process_sensors(inventory, sensors)
+        collected_nodes['inventory_name'] = inventory_name
+        collected_nodes['sensors'] = sensors
+        collected_nodes['recorders'] = recorders
+        collected_nodes['networks'] = networks
+        collected_nodes['arrays'] = arrays
+    
+        return collected_nodes
 
-        # Next process the recorders. These might depend on sensors.
-        for cur_recorder_list in recorder_list:
-            recorders = cur_recorder_list.findall('recorder')
-            self.process_recorders(inventory, recorders)
-
-        # Now process the networks which might depend on recorders.
-        self.process_networks(inventory, networks)
-
-        # Finally process the arrays which require all elements already added
-        # to the inventory.
-        self.process_arrays(inventory, arrays)
-
-        self.logger.debug("Success reading the XML file.")
-
-        return inventory
-
-
+        
     def instance_to_xml(self, instance, root, name, attributes, tags, attr_map, converter, element_handler = {}):
         ''' Translate an inventory object into a xml element.
 
@@ -325,9 +385,10 @@ class InventoryXmlParser(object):
                                          'end_time':self.clean_time_string}
 
         component_parameter_paz_attributes = []
-        component_parameter_paz_tags = ['type', 'A0_normalization_factor', 'normalization_frequency',
+        component_parameter_paz_tags = ['type', 'units', 'A0_normalization_factor', 'normalization_frequency',
                                         'complex_zero', 'complex_pole']
         component_parameter_paz_map = {'type':'tf_type',
+                                       'units': 'tf_units',
                                        'A0_normalization_factor':'tf_normalization_factor',
                                        'normalization_frequency':'tf_normalization_frequency',
                                        'complex_zero':'tf_zeros',
@@ -875,14 +936,23 @@ class InventoryXmlParser(object):
             if 'station' in content.keys():
                 content.pop('station')
 
-            # Create the Recorder instance.
-            net_to_add = Network(name=cur_network.attrib['name'], **content)
+            inv_network = inventory.get_network(name = cur_network.attrib['name'])
+            if len(inv_network) == 1:
+                inv_network = inv_network[0]
+            else:
+                inv_network = None
 
-            # Add the network to the inventory.
-            inventory.add_network(net_to_add)
+            if inv_network is None:
+                # Create the Network instance.
+                net_to_add = Network(name=cur_network.attrib['name'], **content)
+
+                # Add the network to the inventory.
+                inventory.add_network(net_to_add)
+
+                inv_network = net_to_add
 
             stations = cur_network.findall('station')
-            self.process_stations(net_to_add, stations)
+            self.process_stations(inv_network, stations)
 
 
     def process_arrays(self, inventory, arrays):

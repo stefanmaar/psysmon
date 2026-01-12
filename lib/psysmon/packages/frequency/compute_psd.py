@@ -36,7 +36,10 @@ import os
 import psysmon.core.packageNodes
 import psysmon.core.result as result
 import psysmon.core.preferences_manager as psy_pm
-import psysmon.gui.dialog.pref_listbook as psy_lb
+
+# Import GUI related modules only if wxPython is available.
+if psysmon.wx_available:
+    import psysmon.gui.dialog.pref_listbook as psy_lb
 
 from obspy.core.utcdatetime import UTCDateTime
 import matplotlib.mlab as mlab

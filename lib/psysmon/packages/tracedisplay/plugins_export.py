@@ -86,7 +86,7 @@ class ExportVisible(plugins.CommandPlugin):
                                   'WAV': 'wav'}
         item = preferences_manager.SingleChoicePrefItem(name = 'export_format',
                                                         label = 'export format',
-                                                        value = 'TSPAIR',
+                                                        value = 'MSEED',
                                                         limit = obspy_export_formats,
                                                         tool_tip = 'The available export file formats. See the obspy documentation for further details on specific formats.')
         exp_group.add_item(item)
@@ -124,7 +124,7 @@ class ExportVisible(plugins.CommandPlugin):
         export_format = self.pref_manager.get_value('export_format')
 
         for cur_trace in data:
-            cur_id = cur_trace.id.replace('.','_')
+            cur_id = cur_trace.id.replace('.', '_')
             cur_isoformat = cur_trace.stats.starttime.isoformat()
             cur_isoformat = cur_isoformat.replace(':', '')
             cur_isoformat = cur_isoformat.replace('.', '_')

@@ -128,6 +128,14 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
                                                      tool_tip = 'A threshold value used to refine the signal start after a positive trigger. The threshold function is search in reverse to get to a value below the fine threshold.')
         thr_group.add_item(item)
 
+        # Fine threshold refinement window
+        item = preferences_manager.FloatSpinPrefItem(name = 'fine_thr_win',
+                                                     label = 'Fine threshold window [s]',
+                                                     value = 1,
+                                                     limit = (0, 100),
+                                                     tool_tip = 'The time window in front of the detection start used to refine the detection start using the fine threshold.')
+        thr_group.add_item(item)
+
         # Turn limit.
         item = preferences_manager.FloatSpinPrefItem(name = 'turn_limit',
                                                      label = 'turn limit',
@@ -173,11 +181,18 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         sc_group.add_item(item)
 
         # Stop criterium delay.
-        item = preferences_manager.FloatSpinPrefItem(name = 'stop_delay',
-                                                     label = 'Stop delay [s]',
-                                                     value = 0.1,
+        item = preferences_manager.FloatSpinPrefItem(name = 'stop_win_length',
+                                                     label = 'Stop window length [s]',
+                                                     value = 0.5,
                                                      limit = (0, 100),
-                                                     tool_tip = 'The time prepend to the triggered event start to set the initial value of the stop criterium.')
+                                                     tool_tip = 'The length of the time window in front of the event trigger used to compute the initial value of the stop criterium.')
+        sc_group.add_item(item)
+
+        item = preferences_manager.SingleChoicePrefItem(name = 'stop_win_mode',
+                                                        label = 'Stop window mode',
+                                                        value = 'median',
+                                                        limit = ('min', 'mean', 'median'),
+                                                        tool_tip = 'The mode used to compute the initial stop criterium using the stop window.')
         sc_group.add_item(item)
         
 
@@ -235,9 +250,11 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
         lta_len = self.pref_manager.get_value('lta_length')
         thr = self.pref_manager.get_value('thr')
         fine_thr = self.pref_manager.get_value('fine_thr')
+        fine_thr_win = self.pref_manager.get_value('fine_thr_win')
         turn_limit = self.pref_manager.get_value('turn_limit')
         cf_type = self.pref_manager.get_value('cf_type')
-        stop_delay = self.pref_manager.get_value('stop_delay')
+        stop_win_length = self.pref_manager.get_value('stop_win_length')
+        stop_win_mode = self.pref_manager.get_value('stop_win_mode')
         stop_growth = self.pref_manager.get_value('stop_growth')
         stop_growth_exp = self.pref_manager.get_value('stop_growth_exp')
         stop_growth_inc = self.pref_manager.get_value('stop_growth_inc')
@@ -256,8 +273,11 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             selected_catalog = selected_catalog[0]
 
         # Initialize the detector.
-        detector = detect.StaLtaDetector(thr = thr, cf_type = cf_type, fine_thr = fine_thr,
-                                         turn_limit = turn_limit, stop_growth = stop_growth,
+        detector = detect.StaLtaDetector(thr = thr,
+                                         cf_type = cf_type,
+                                         fine_thr = fine_thr,
+                                         turn_limit = turn_limit,
+                                         stop_growth = stop_growth,
                                          stop_growth_exp = stop_growth_exp,
                                          stop_growth_inc = stop_growth_inc)
 
@@ -290,8 +310,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
 
             n_sta = int(sta_len * cur_trace.stats.sampling_rate)
             n_lta = int(lta_len * cur_trace.stats.sampling_rate)
-            stop_delay_smp = int(stop_delay * cur_trace.stats.sampling_rate)
-
+            stop_win_length_smp = int(stop_win_length * cur_trace.stats.sampling_rate)
+            fine_thr_win_smp = int(fine_thr_win * cur_trace.stats.sampling_rate)
+            
             detector.n_sta = n_sta
             detector.n_lta = n_lta
             detector.stop_growth_inc_begin = int(stop_growth_inc_begin * cur_trace.stats.sampling_rate)
@@ -300,7 +321,9 @@ class StaLtaDetection(package_nodes.LooperCollectionChildNode):
             detector.set_data(cur_trace.data)
             detector.compute_cf()
             detector.compute_sta_lta()
-            detection_markers = detector.compute_event_limits(stop_delay = stop_delay_smp)
+            detection_markers = detector.compute_event_limits(stop_win_length = stop_win_length_smp,
+                                                              stop_win_mode = stop_win_mode,
+                                                              fine_thr_win = fine_thr_win_smp)
             self.logger.debug("detection_markers: %s", detection_markers)
 
             # Check if the last event has no end. Change the pre_stream_length

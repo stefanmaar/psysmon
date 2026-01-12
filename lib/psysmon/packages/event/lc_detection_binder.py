@@ -95,10 +95,26 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
 
         # The minimum length of the detecions used for binding.
         item = preferences_manager.FloatSpinPrefItem(name = 'min_detection_length',
-                                                     label = 'min. detection length',
+                                                     label = 'min. detection length [s]',
                                                      value = 0.1,
                                                      limit = (0, 1000000),
                                                      tool_tip = 'The minimum length of the detections used for the binding [s].')
+        bind_group.add_item(item)
+
+        # Use the maximum length limit.
+        item = preferences_manager.CheckBoxPrefItem(name = 'limit_max_length',
+                                                    label = 'limit max. length',
+                                                    value = False,
+                                                    tool_tip = 'Use the maximum detection length limit.',
+                                                    hooks = {'on_value_change': self.on_limit_max_length})
+        bind_group.add_item(item)
+
+        # The maxmimum length of the detecions used for binding.
+        item = preferences_manager.FloatSpinPrefItem(name = 'max_detection_length',
+                                                     label = 'max. detection length [s]',
+                                                     value = 100,
+                                                     limit = (0, 1000000),
+                                                     tool_tip = 'The maximum length of the detections used for the binding [s].')
         bind_group.add_item(item)
 
         # The number of nearest neighbors used for searching neighboring 
@@ -126,13 +142,39 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
                                                        tool_tip = 'The velocity used to compute the search window lengths [m/s].')
         bind_group.add_item(item)
 
-        # The lenght of the search window extension.
-        item = preferences_manager.FloatSpinPrefItem(name = 'search_win_extend',
-                                                       label = 'search window extend',
-                                                       value = 0.1,
-                                                       limit = (0, 100000),
-                                                       tool_tip = 'The lenght of the time window added to the search windwo [s].')
+        # The ratio used to compute the search window from the detection length..
+        item = preferences_manager.FloatSpinPrefItem(name = 'extend_ratio',
+                                                     label = 'search window extend ratio',
+                                                     value = 0.01,
+                                                     limit = (0, 1),
+                                                     tool_tip = 'The detection length multiplied with the extend ratio is used for the search window extend value.')
         bind_group.add_item(item)
+        
+        # The minimum lenght of the search window extension.
+        item = preferences_manager.FloatSpinPrefItem(name = 'min_search_win_extend',
+                                                     label = 'min. search window extend [s]',
+                                                     value = 0.1,
+                                                     limit = (0, 100000),
+                                                     tool_tip = 'The minimum length of the time window added to the search window.')
+        bind_group.add_item(item)
+        
+        # The maximum length of the search window extension.
+        item = preferences_manager.FloatSpinPrefItem(name = 'max_search_win_extend',
+                                                     label = 'max. search window extend [s]',
+                                                     value = 10,
+                                                     limit = (0, 100000),
+                                                     tool_tip = 'The maximum length of the time window added to the search window.')
+        bind_group.add_item(item)
+
+
+    def on_limit_max_length(self):
+        ''' Handle a value change of the limit_max_length checkbox perference.
+        '''
+        if self.pref_manager.get_value('limit_max_length') is True:
+            self.pref_manager.get_item('max_detection_length')[0].enable_gui_element()
+        else:
+            self.pref_manager.get_item('max_detection_length')[0].disable_gui_element()
+                
 
     def edit(self):
         ''' Create the preferences edit dialog.
@@ -156,7 +198,7 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         dlg = psy_lb.ListbookPrefDialog(preferences = self.pref_manager)
 
         # Enable/Disable the gui elements based on the pref_manager settings.
-        #self.on_select_individual()
+        self.on_limit_max_length()
 
         dlg.ShowModal()
         dlg.Destroy()
@@ -221,13 +263,18 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         '''
         # Load the detections for the processing timespan.
         min_detection_length = self.pref_manager.get_value('min_detection_length')
+        max_detection_length = None
+        limit_max_length = self.pref_manager.get_value('limit_max_length')
+        if limit_max_length is True:
+            max_detection_length = self.pref_manager.get_value('max_detection_length')
+            
         self.logger.info('Loading the detections.')
         self.detection_catalog.load_detections(project = self.project,
                                                start_time = process_limits[0],
                                                end_time = process_limits[1],
-                                               min_detection_length = min_detection_length)
+                                               min_detection_length = min_detection_length,
+                                               max_detection_length = max_detection_length)
         self.detection_catalog.assign_channel(inventory = self.project.geometry_inventory)
-
 
 
         # Get the detecions at the end of the processing window which can't be
@@ -243,12 +290,17 @@ class DetectionBinder(package_nodes.LooperCollectionChildNode):
         self.logger.info('Binding the detections.')
         n_neighbors = self.pref_manager.get_value('n_neighbors')
         min_match_neighbors = self.pref_manager.get_value('min_match_neighbors')
-        search_win_extend = self.pref_manager.get_value('search_win_extend')
+        extend_ratio = self.pref_manager.get_value('extend_ratio')
+        min_extend = self.pref_manager.get_value('min_search_win_extend')
+        max_extend = self.pref_manager.get_value('max_search_win_extend')
+        
         self.binder.bind(catalog = self.detection_catalog,
                          channel_scnl = [x.scnl for x in channels],
                          n_neighbors = n_neighbors,
                          min_match_neighbors = min_match_neighbors,
-                         search_win_extend = search_win_extend)
+                         extend_ratio = extend_ratio,
+                         min_extend = min_extend,
+                         max_extend = max_extend)
 
         # Store the unprocessed detection in the catalog for the next step.
         self.logger.info('Cleaning the detection catalog.')

@@ -18,15 +18,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-name = "core looper children"                          # The package name.
+name = "event_description"                          # The package name.
 version = "0.0.1"                               # The package version.
 author = "Stefan Mertl"                         # The package author.
 minPsysmonVersion = "0.0.1"                     # The minimum pSysmon version required.
-description = "The core looper collection nodes."            # The package description.
+description = "Compute descriptive features of events."            # The package description.
 website = "http://psysmon.mertl-research.at"    # The package website.
 
 # Specify the module(s) where to search for collection node classes.
-collection_node_modules = ['processing_stack']
+collection_node_modules = ['compute_timedomain_features',
+                           'compute_freqdomain_features']
 
 # Specify the module(s) where to search for plugin classes.
 plugin_modules = []
