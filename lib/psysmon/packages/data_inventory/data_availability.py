@@ -425,6 +425,12 @@ class AvailabilityProcessor(object):
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
 
+        bbox = ax.get_window_extent()
+        height_in_points = bbox.height
+        linewidth = height_in_points / len(channels) / 10
+
+        print(linewidth)
+        
         for k, cur_channel in enumerate(channels):
             cur_time = self.availability[cur_channel.scnl][0]
             cur_time = [x.datetime for x in cur_time]
@@ -436,16 +442,21 @@ class AvailabilityProcessor(object):
             cur_data_bad = np.ma.array(np.zeros(cur_has_data.shape),
                                        mask = cur_has_data)
             ax.plot(cur_time, cur_data_ok + k, 'k',
-                    linewidth = 3,
+                    linewidth = linewidth * 3,
                     solid_capstyle = 'butt')
-            ax.plot(cur_time, cur_data_bad + k, 'orangered',
-                    linewidth = 10,
+            #ax.plot(cur_time, cur_data_bad + k, 'orangered',
+            #        linewidth = linewidth,
+            #        solid_capstyle = 'butt',
+            #        alpha = 0.8)
+            ax.plot(cur_time, cur_data_bad + k, 'lightgrey',
+                    linewidth = linewidth,
                     solid_capstyle = 'butt',
                     alpha = 0.8)
 
         ax.set_yticks(np.arange(len(channels)))
-        xtick_labels = [x.scnl_string for x in channels]
-        ax.set_yticklabels(xtick_labels)
+        ytick_labels = [x.scnl_string for x in channels]
+        ax.set_yticklabels(ytick_labels)
+        
         ax.set_xlabel('time')
         ax.set_xlim((start_time.datetime, end_time.datetime))
 
@@ -454,6 +465,9 @@ class AvailabilityProcessor(object):
         if plot_length_days > 14 and plot_length_days < 70:
             ax.xaxis.set_major_locator(mpl.dates.WeekdayLocator())
             ax.xaxis.set_major_formatter(mpl.dates.DateFormatter('%Y-%m-%d'))
+
+        for label in ax.get_xticklabels(which='major'):
+            label.set(rotation=30, horizontalalignment='right')
 
         #ax.set_title('data availability week {0:s}-{1:04d}'.format(start_time.strftime('%W'), start_time.year))
         # TODO: Add the time information to the title.
