@@ -315,6 +315,11 @@ class PackageManager(object):
                 try:
                     if curDir not in sys.path:
                         sys.path.append(curDir)
+                        #print("Added curDir: {}".format(curDir))
+                    cur_module_dir = os.path.join(curDir, pkgName)
+                    if cur_module_dir not in sys.path:
+                        sys.path.append(cur_module_dir)
+                        #print("Added module_dir: {}".format(cur_module_dir))
                     pkgModule = __import__(pkgName)
                     pkgModule = sys.modules[pkgName]
                     isOk = self.checkPackage(pkgModule)
