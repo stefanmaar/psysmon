@@ -305,9 +305,9 @@ class PackageManager(object):
             #    print "importer: %s; modname: %s; ispkg: %s\n" % (importer, modname, ispkg)
 
             self.logger.debug("Scanning directory %s", curDir)
-            packages2Register = [ name for name in os.listdir(curDir) 
-                                  if os.path.isdir(os.path.join(curDir, name)) 
-                                  and name[0]!='.']
+            packages2Register = [name for name in os.listdir(curDir) 
+                                 if os.path.isdir(os.path.join(curDir, name)) 
+                                 and name[0] != '.']
 
             for curPkg in packages2Register:
                 self.logger.debug("Registering package " + curPkg + ".")
@@ -317,7 +317,8 @@ class PackageManager(object):
                         sys.path.append(curDir)
                         #print("Added curDir: {}".format(curDir))
                     cur_module_dir = os.path.join(curDir, pkgName)
-                    if cur_module_dir not in sys.path:
+                    cur_init_path = os.path.join(cur_module_dir, '__init__.py')
+                    if os.path.exists(cur_init_path) and cur_module_dir not in sys.path:
                         sys.path.append(cur_module_dir)
                         #print("Added module_dir: {}".format(cur_module_dir))
                     pkgModule = __import__(pkgName)

@@ -34,6 +34,8 @@ import pprint
 import sys
 import shelve
 
+import glob
+
 
 #class ExecutionFrame(wx.Frame):
 #
@@ -65,6 +67,12 @@ if __name__ == "__main__":
     db = shelve.open(filename)
     package_directories = db['package_directories']
     sys.path.extend(package_directories)
+    for cur_pkg_dir in package_directories:
+        cur_search_path = os.path.join(cur_pkg_dir, '*/')
+        cur_dir_list = glob.glob(cur_search_path)
+        cur_dir_list = [x for x in cur_dir_list if os.path.exists(os.path.join(x, '__init__.py'))]
+        sys.path.extend(cur_dir_list)
+    
     project = db['project']
     collection = db['collection']
     waveclients = db['waveclient']
