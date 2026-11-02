@@ -172,7 +172,7 @@ class ProcessingStack(object):
 
 
 
-    def execute(self, stream, process_limits = None, origin_resource = None):
+    def execute(self, stream, process_limits = None, origin_resource = None, **kwargs):
         ''' Execute the stack.
 
         Parameters
@@ -181,10 +181,14 @@ class ProcessingStack(object):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
+        self.output_dir = kwargs.get('output_dir', None)
         for curNode in self.nodes:
             curNode.clear_results()
             if curNode.isEnabled():
-                curNode.execute(stream, process_limits, origin_resource)
+                try:
+                    curNode.execute(stream, process_limits, origin_resource, **kwargs)
+                except TypeError:
+                    curNode.execute(stream, process_limits, origin_resource)
 
 
     def clear_results(self):

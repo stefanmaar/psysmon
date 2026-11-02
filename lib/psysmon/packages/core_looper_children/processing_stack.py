@@ -80,13 +80,16 @@ class ProcessingStackLooperChild(package_nodes.LooperCollectionChildNode):
         stream : :class:`obspy.core.Stream`
             The data to process.
         '''
+        self.output_dir = kwargs.get('output_dir', None)
         processing_stack = ps.ProcessingStack(name = 'pstack',
                                               project = self.project,
-                                              nodes = self.pref_manager.get_value('processing_stack'))
+                                              nodes = self.pref_manager.get_value('processing_stack'),
+                                              parent = self)
 
         processing_stack.execute(stream = stream,
                                  process_limits = process_limits,
-                                 origin_resource = origin_resource)
+                                 origin_resource = origin_resource,
+                                 **kwargs)
 
 
 
