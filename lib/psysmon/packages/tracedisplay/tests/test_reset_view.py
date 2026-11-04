@@ -73,6 +73,11 @@ class ResetViewTestCase(unittest.TestCase):
         self.assertIsNotNone(plotter.pref_manager.get_item(name='capture_current_view'))
         self.assertIsNotNone(plotter.pref_manager.get_item(name='reset_view_now'))
 
+        dur_item = plotter.pref_manager.get_item(name='original_duration')[0]
+        start_item = plotter.pref_manager.get_item(name='original_start_time')[0]
+        self.assertEqual(dur_item.label, 'duration [s]')
+        self.assertEqual(start_item.label, 'start time')
+
         # Default values
         self.assertEqual(plotter.pref_manager.get_value('original_duration'), 86400.0)
         self.assertIsNone(plotter.pref_manager.get_value('original_start_time'))

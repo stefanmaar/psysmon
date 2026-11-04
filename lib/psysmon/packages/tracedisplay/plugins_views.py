@@ -124,7 +124,7 @@ class SeismogramPlotter(ViewPlugin):
         orig_group = pref_page.add_group('original view')
 
         item = preferences_manager.FloatSpinPrefItem(name = 'original_duration',
-                                                     label = 'original duration [s]',
+                                                     label = 'duration [s]',
                                                      value = 86400.0,
                                                      limit = (0.1, None),
                                                      digits = 3,
@@ -133,7 +133,7 @@ class SeismogramPlotter(ViewPlugin):
         orig_group.add_item(item)
 
         item = preferences_manager.DateTimeEditPrefItem(name = 'original_start_time',
-                                                        label = 'original start time',
+                                                        label = 'start time',
                                                         value = None,
                                                         tool_tip = 'Start time of the original view.')
         orig_group.add_item(item)
