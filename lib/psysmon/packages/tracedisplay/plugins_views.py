@@ -120,6 +120,58 @@ class SeismogramPlotter(ViewPlugin):
                                                      tool_tip = 'For windows larger than the min-max limit, not all samples are shown. The plotted samples are reduced using a min-max algorithm.')
         disp_group.add_item(item)
 
+        # Add the original view preferences.
+        orig_group = pref_page.add_group('original view')
+
+        item = preferences_manager.FloatSpinPrefItem(name = 'original_duration',
+                                                     label = 'original duration [s]',
+                                                     value = 86400.0,
+                                                     limit = (0.1, None),
+                                                     digits = 3,
+                                                     increment = 60.0,
+                                                     tool_tip = 'Duration of the original view in seconds.')
+        orig_group.add_item(item)
+
+        item = preferences_manager.DateTimeEditPrefItem(name = 'original_start_time',
+                                                        label = 'original start time',
+                                                        value = None,
+                                                        tool_tip = 'Start time of the original view.')
+        orig_group.add_item(item)
+
+        item = preferences_manager.ActionItem(name = 'capture_current_view',
+                                              label = 'set current view as original',
+                                              mode = 'button',
+                                              action = self.on_capture_current_view,
+                                              tool_tip = 'Save the currently visible start time and duration as original view.')
+        orig_group.add_item(item)
+
+        item = preferences_manager.ActionItem(name = 'reset_view_now',
+                                              label = 'reset view now',
+                                              mode = 'button',
+                                              action = self.on_reset_view_now,
+                                              tool_tip = 'Reset the trace display back to the original view.')
+        orig_group.add_item(item)
+
+
+    def on_capture_current_view(self, event = None):
+        ''' Capture the currently visible start time and duration into preferences.
+        '''
+        if self.parent is not None and hasattr(self.parent, 'displayManager'):
+            start_time = self.parent.displayManager.startTime
+            duration = self.parent.displayManager.duration
+            if start_time is not None:
+                self.pref_manager.set_value('original_start_time', start_time)
+                self.parent.orig_startTime = start_time
+            if duration is not None:
+                self.pref_manager.set_value('original_duration', duration)
+                self.parent.orig_duration = duration
+
+    def on_reset_view_now(self, event = None):
+        ''' Trigger a reset of the trace display view.
+        '''
+        if self.parent is not None and hasattr(self.parent, 'reset_view'):
+            self.parent.reset_view()
+
 
 
     def plot(self, displayManager, dataManager):

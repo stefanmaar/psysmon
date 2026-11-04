@@ -406,6 +406,10 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         self.displayManager = DisplayManager(parent = self,
                                              inventory = project.geometry_inventory)
 
+        # Track the original view settings.
+        self.orig_startTime = self.displayManager.startTime
+        self.orig_duration = self.displayManager.duration
+
         # Create the dataManager.
         self.dataManager = DataManager(self)
 
@@ -432,6 +436,21 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
                     self.check_menu_checkitem(cur_plugin)
                 self.call_hook('plugin_activated',
                                plugin_rid = cur_plugin.rid)
+
+        # Synchronize original view preferences with seismogram plugin.
+        seismo_plugin = [p for p in self.plugins if p.name == 'seismogram']
+        if seismo_plugin:
+            pm = seismo_plugin[0].pref_manager
+            pref_start = pm.get_value('original_start_time')
+            pref_dur = pm.get_value('original_duration')
+            if pref_start is None:
+                pm.set_value('original_start_time', self.orig_startTime)
+            else:
+                self.orig_startTime = pref_start
+            if pref_dur is None or pref_dur <= 0:
+                pm.set_value('original_duration', self.orig_duration)
+            else:
+                self.orig_duration = pref_dur
 
 
     @property
@@ -479,6 +498,7 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         # Initialize the plugin shortcuts which are not related
         # to a menu item.
         self.init_plugin_accelerators()
+        self.initKeyEvents()
 
         # Add the datetime info to the viewport sizer.
         # TODO: Add a method in the PsysmonDockingFrame class to insert
@@ -522,6 +542,9 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
         self.shortcut_manager.add_shortcut(origin_rid = self.collection_node.rid,
                                            key_combination = ('WXK_ESCAPE',),
                                            action = self.deactivate_tool)
+        self.shortcut_manager.add_shortcut(origin_rid = self.collection_node.rid,
+                                           key_combination = ('WXK_SPACE',),
+                                           action = self.reset_view)
 
 
     def advanceTime(self, time_step = None):
@@ -639,18 +662,59 @@ class TraceDisplayDlg(psysmon.gui.docking_frame.DockingFrame):
 
 
 
-    def setDuration(self, duration):
+    def setDuration(self, duration, is_original = True):
         ''' Set a new duration of the displayed time period.
         '''
         self.displayManager.setDuration(duration)
+        if is_original:
+            self.orig_duration = duration
+            self.sync_original_view_to_preferences(duration = duration)
         self.update_display()
 
 
-    def setStartTime(self, startTime):
+    def setStartTime(self, startTime, is_original = True):
         ''' Set the new start time of the displayed time period.
         '''
         self.displayManager.setStartTime(startTime)
+        if is_original:
+            self.orig_startTime = startTime
+            self.sync_original_view_to_preferences(start_time = startTime)
         self.update_display()
+
+
+    def sync_original_view_to_preferences(self, start_time = None, duration = None):
+        ''' Synchronize the original view parameters with SeismogramPlotter preferences.
+        '''
+        seismo_plugin = [p for p in self.plugins if p.name == 'seismogram']
+        if seismo_plugin:
+            pm = seismo_plugin[0].pref_manager
+            if start_time is not None:
+                pm.set_value('original_start_time', start_time)
+            if duration is not None:
+                pm.set_value('original_duration', duration)
+
+
+    def reset_view(self):
+        ''' Reset the displayed time window back to the original view.
+        '''
+        target_start = None
+        target_duration = None
+
+        seismo_plugin = [p for p in self.plugins if p.name == 'seismogram']
+        if seismo_plugin:
+            pm = seismo_plugin[0].pref_manager
+            target_start = pm.get_value('original_start_time')
+            target_duration = pm.get_value('original_duration')
+
+        if target_start is None:
+            target_start = getattr(self, 'orig_startTime', self.displayManager.startTime)
+        if target_duration is None or target_duration <= 0:
+            target_duration = getattr(self, 'orig_duration', self.displayManager.duration)
+
+        if target_start is not None and target_duration is not None:
+            self.logger.debug("Resetting view to start: %s, duration: %s", target_start, target_duration)
+            self.displayManager.setTimeLimits(target_start, target_start + target_duration)
+            self.update_display()
 
 
     def onKeyDown(self, event):
@@ -1107,7 +1171,15 @@ class DisplayManager(object):
                    "station is shown is not yet supported.")
             self.logger.info(msg)
 
-            
+    @property
+    def duration(self):
+        ''' The duration of the displayed time span in seconds.
+        '''
+        if self.startTime is not None and self.endTime is not None:
+            return self.endTime - self.startTime
+        return None
+
+
     def setDuration(self, duration):
         ''' Set the duration of the displayed time period.
 
