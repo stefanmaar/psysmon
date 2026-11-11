@@ -415,7 +415,7 @@ class DetectStaLtaView(psy_view.viewnode.ViewNode):
 
             # Clear the marker lines.
             for cur_line in self.marker_lines:
-                self.axes.lines.remove(cur_line)
+                cur_line.remove()
             # Clear the range spans.
             for cur_span in self.range_spans:
                 cur_span.remove()
