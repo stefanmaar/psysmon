@@ -45,7 +45,6 @@ import wx.lib.mixins.listctrl as listmix
 # preference item doesn't work for the headless option without wxPython support.
 # Add a clean way to create custom preference items and related gui classes to
 # the gui bricks handling.
-import psysmon.packages.tracedisplay.plugins_processingstack as plugins_processingstack
 
 
 ## The Field class.
@@ -232,6 +231,13 @@ class PrefPagePanel(wx.Panel):
                 else:
                     if cur_item.mode in iter(gui_elements.keys()):
                         guiclass = gui_elements[cur_item.mode]
+                    elif cur_item.mode == 'processing_stack':
+                        try:
+                            from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
+                            gui_elements['processing_stack'] = PStackEditField
+                            guiclass = PStackEditField
+                        except Exception:
+                            guiclass = cur_item.gui_class
                     else:
                         guiclass = cur_item.gui_class
 
@@ -247,6 +253,7 @@ class PrefPagePanel(wx.Panel):
                 sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.TOP | wx.EXPAND, border = 10)
             else:
                 sizer.Add(cur_container, pos = (k,0), flag = wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, border = 10)
+            sizer.AddGrowableRow(k)
 
         sizer.AddGrowableCol(0)
         self.SetSizer(sizer)
@@ -344,7 +351,7 @@ class StaticBoxContainer(wx.Panel):
         self.sizer = wx.GridBagSizer(5)
         self.sizer.AddGrowableCol(0)
 
-        self.b_sizer.Add(self.sizer, 0, flag = wx.EXPAND)
+        self.b_sizer.Add(self.sizer, 1, flag = wx.EXPAND)
 
         # Create the sizer holding the static box.        
         self.SetSizer(self.b_sizer)
@@ -360,7 +367,9 @@ class StaticBoxContainer(wx.Panel):
         '''
         #print("Deleting StaticBoxContainer.")
         for cur_field in self.fieldList:
-            cur_field.pref_item.remove_gui_element(cur_field)
+            if hasattr(cur_field, 'pref_item') and cur_field.pref_item and hasattr(cur_field.pref_item, 'gui_element'):
+                if cur_field in cur_field.pref_item.gui_element:
+                    cur_field.pref_item.remove_gui_element(cur_field)
 
 
     ## Add a field to the container.
@@ -372,7 +381,8 @@ class StaticBoxContainer(wx.Panel):
         #field.options = self.options
 
         #self.bSizer.Add(field, 1, wx.EXPAND|wx.LEFT|wx.BOTTOM, 2)
-        self.sizer.Add(field, pos = (len(self), 0), flag=wx.EXPAND)
+        row_idx = len(self)
+        self.sizer.Add(field, pos = (row_idx, 0), flag=wx.EXPAND)
 
         self.fieldList.append(field)
 
@@ -380,6 +390,9 @@ class StaticBoxContainer(wx.Panel):
 
         for cur_field in self.fieldList:
             cur_field.SetMinSize(cur_field.GetBestSize())
+
+        if type(field).__name__ == 'PStackEditField':
+            self.sizer.AddGrowableRow(row_idx, 1)
 
 
     def adjustLabelSize(self):
@@ -542,7 +555,8 @@ class IntegerRangeField(Field):
 
         # Create the field spincontrol.
         self.controlElement = wx.SpinCtrl(self, wx.ID_ANY)
-        self.controlElement.SetRange(pref_item.limit[0], pref_item.limit[1])
+        if pref_item.limit is not None:
+            self.controlElement.SetRange(pref_item.limit[0], pref_item.limit[1])
 
         # Add the gui elements to the field.
         self.addLabel(self.labelElement)
@@ -634,10 +648,11 @@ class FloatSpinField(Field):
                                        style=wx.ALIGN_RIGHT)
 
         # Create the field spincontrol.
+        limit = pref_item.limit if pref_item.limit is not None else (None, None)
         self.controlElement = FS.FloatSpin(parent=self,
                                            id=wx.ID_ANY,
-                                           min_val = pref_item.limit[0],
-                                           max_val = pref_item.limit[1],
+                                           min_val = limit[0],
+                                           max_val = limit[1],
                                            increment = pref_item.increment,
                                            digits = pref_item.digits,
                                            agwStyle=FS.FS_LEFT)
@@ -1401,4 +1416,8 @@ gui_elements['datetime'] = DateTimeEditField
 gui_elements['checkbox'] = CheckBoxField
 gui_elements['list_ctrl'] = ListCtrlEditField
 gui_elements['list_grid'] = ListGridEditField
-gui_elements['processing_stack'] = plugins_processingstack.PStackEditField
+try:
+    from psysmon.packages.tracedisplay.plugins_processingstack import PStackEditField
+    gui_elements['processing_stack'] = PStackEditField
+except (ImportError, AttributeError):
+    pass

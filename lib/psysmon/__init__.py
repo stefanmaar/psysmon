@@ -156,7 +156,7 @@ def get_logger(inst):
     mod = sys.modules[mod_name]
     mod_file = mod.__file__
 
-    if not mod_name.startswith('psysmon'):
+    if not (mod_name == 'psysmon' or mod_name.startswith('psysmon.')):
         log_prefix = 'psysmon.unknown'
         if mod_file.startswith(pkg_path):
             log_prefix = 'psysmon.packages'

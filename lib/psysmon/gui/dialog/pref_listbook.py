@@ -29,7 +29,7 @@ from psysmon.gui.bricks import PrefPagePanel
 class ListbookPrefDialog(wx.Dialog):
 
     def __init__(self, parent = None, preferences = None,
-                 size = (400, 600), title = 'preferences'):
+                 size = (620, 720), title = 'preferences'):
         ''' Initialize the instance.
         '''
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title = title,
@@ -67,6 +67,10 @@ class ListbookPrefDialog(wx.Dialog):
         sizer.AddGrowableCol(0)
 
         self.SetSizerAndFit(sizer)
+        self.SetMinSize((580, 680))
+        cur_w, cur_h = self.GetSize()
+        self.SetSize((max(cur_w, 620), max(cur_h, 720)))
+        self.Layout()
 
 
     def build_pref_listbook(self):

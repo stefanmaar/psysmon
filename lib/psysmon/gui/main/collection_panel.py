@@ -204,30 +204,8 @@ class CollectionPanel(wx.Panel):
             selectedLooper = self.Parent.psyBase.project.getNodeFromCollection(self.selectedCollectionNodeIndex)
             selectedNode = selectedLooper.children[self.selectedLooperChildNodeIndex]
 
-
         selectedNode.enabled = not selectedNode.enabled
         self.refreshCollection()
-        return
-    
-        node_item = self.collectionTreeCtrl.GetSelection()
-        if selectedNode.enabled:
-            self.collectionTreeCtrl.SetItemTextColour(node_item,
-                                                      wx.BLACK)
-
-            if isinstance(selectedNode, psy_pn.LooperCollectionNode):
-                self.collectionTreeCtrl.SetItemImage(node_item,
-                                                     self.collectionTreeCtrl.icons['looper_node'],
-                                                     wx.TreeItemIcon_Normal)
-            else:
-                self.collectionTreeCtrl.SetItemImage(node_item,+
-                                                     self.collectionTreeCtrl.icons['node'],
-                                                     wx.TreeItemIcon_Normal)
-        else:
-            self.collectionTreeCtrl.SetItemTextColour(node_item,
-                                                      wx.TheColourDatabase.Find('GREY70'))
-            self.collectionTreeCtrl.SetItemImage(node_item,
-                                                 self.collectionTreeCtrl.icons['node_disabled'],
-                                                 wx.TreeItemIcon_Normal)
         
 
     ## Select node item callback.
@@ -293,6 +271,30 @@ class CollectionPanel(wx.Panel):
         # collection file. Think about removing the currently active collection
         # or showing a dialog from which to select the collection to delete.
 
+    def _style_node_item(self, item, enabled):
+        ''' Style a collection tree node based on its enabled status.
+        Applies GREY70 text color and strikethrough font when disabled (color-blind friendly).
+        '''
+        font = self.collectionTreeCtrl.GetFont()
+        if not enabled:
+            font.SetStrikethrough(True)
+            self.collectionTreeCtrl.SetItemFont(item, font)
+            self.collectionTreeCtrl.SetItemTextColour(
+                item, wx.Colour(178, 178, 178)
+            )
+            self.collectionTreeCtrl.SetItemImage(
+                item,
+                self.collectionTreeCtrl.icons['node_disabled'],
+                wx.TreeItemIcon_Normal
+            )
+        else:
+            font.SetStrikethrough(False)
+            self.collectionTreeCtrl.SetItemFont(item, font)
+            self.collectionTreeCtrl.SetItemTextColour(
+                item, wx.NullColour
+            )
+
+
     def refreshCollection(self):
         '''
         Refresh the collection nodes displayed in the collection listbox.
@@ -321,12 +323,7 @@ class CollectionPanel(wx.Panel):
                     self.collectionTreeCtrl.SetItemImage(looper_node_item, self.collectionTreeCtrl.icons['looper_node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(looper_node_item)
-                    if not curNode.enabled:
-                        self.collectionTreeCtrl.SetItemTextColour(looper_node_item,
-                                                                  wx.TheColourDatabase.Find('GREY70'))
-                        self.collectionTreeCtrl.SetItemImage(looper_node_item,
-                                                             self.collectionTreeCtrl.icons['node_disabled'],
-                                                             wx.TreeItemIcon_Normal)
+                    self._style_node_item(looper_node_item, curNode.enabled)
 
                     for child_pos, cur_child in enumerate(curNode.children):
                         node_string = cur_child.name + '(child)'
@@ -339,12 +336,8 @@ class CollectionPanel(wx.Panel):
                                                             item_data)
                         self.collectionTreeCtrl.SetItemImage(node_item,
                                                              self.collectionTreeCtrl.icons['looper_node_child'], wx.TreeItemIcon_Normal)
-                        if not curNode.enabled:
-                            self.collectionTreeCtrl.SetItemTextColour(node_item,
-                                                                      wx.TheColourDatabase.Find('GREY70'))
-                            self.collectionTreeCtrl.SetItemImage(node_item,
-                                                                 self.collectionTreeCtrl.icons['node_disabled'],
-                                                                 wx.TreeItemIcon_Normal)
+                        is_child_enabled = curNode.enabled and getattr(cur_child, 'enabled', True)
+                        self._style_node_item(node_item, is_child_enabled)
                 else:
                     node_string = curNode.name
                     node_item = self.collectionTreeCtrl.AppendItem(self.collectionTreeCtrl.root, node_string)
@@ -354,11 +347,7 @@ class CollectionPanel(wx.Panel):
                     self.collectionTreeCtrl.SetItemImage(node_item, self.collectionTreeCtrl.icons['node'], wx.TreeItemIcon_Normal)
                     if k == self.selectedCollectionNodeIndex:
                         self.collectionTreeCtrl.SelectItem(node_item)
-                    if not curNode.enabled:
-                        self.collectionTreeCtrl.SetItemTextColour(node_item, wx.TheColourDatabase.Find('GREY70'))
-                        self.collectionTreeCtrl.SetItemImage(node_item,
-                                                             self.collectionTreeCtrl.icons['node_disabled'],
-                                                             wx.TreeItemIcon_Normal)
+                    self._style_node_item(node_item, curNode.enabled)
 
         self.collectionTreeCtrl.ExpandAll()
 
