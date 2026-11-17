@@ -54,3 +54,7 @@ psysmon.egg-info/
 lib/psysmon/packages/seismicsculpture
 lib/psysmon/packages/seismogram_intaglio
 
+
+# Ignore log files and folder.
+/log/
+*.log
