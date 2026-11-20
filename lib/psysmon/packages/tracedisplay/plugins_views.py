@@ -41,6 +41,40 @@ from obspy.imaging.spectrogram import spectrogram
 import obspy.imaging
 
 
+def get_safe_trace_max(data):
+    ''' Compute the maximum absolute value of a data array, safely handling
+    NaNs, Infs, masked arrays, empty slices, and non-positive values.
+
+    Parameters
+    ----------
+    data : array_like or :class:`numpy.ma.MaskedArray`
+        Input data array or sequence.
+
+    Returns
+    -------
+    float or None
+        The positive maximum absolute value, or None if no valid finite
+        positive values exist.
+    '''
+    if data is None:
+        return None
+
+    if isinstance(data, np.ma.MaskedArray):
+        valid = data.compressed()
+    else:
+        valid = np.asarray(data)
+
+    if valid.size == 0:
+        return None
+
+    valid = valid[np.isfinite(valid)]
+    if valid.size == 0:
+        return None
+
+    max_val = float(np.max(np.abs(valid)))
+    return max_val if max_val > 0.0 else None
+
+
 class SeismogramPlotter(ViewPlugin):
     '''
 
@@ -149,18 +183,21 @@ class SeismogramPlotter(ViewPlugin):
         # TODO: Do the scaling of the axes limits after the data was plotted.
         # The plot method has to return the max data value which is used to
         # compute the axes limits. At the end, the y-limits of the axes ar set.
-        if scaling_mode == 'window':
-            abs_values = [np.max(np.abs(x)) for x in stream.traces]
-            y_lim = np.max(abs_values)
+        if scaling_mode == 'window' and stream:
+            abs_values = [get_safe_trace_max(x.data) for x in stream.traces if hasattr(x, 'data')]
+            valid_vals = [v for v in abs_values if v is not None]
+            y_lim = max(valid_vals) if valid_vals else None
         elif scaling_mode == 'manual':
-            y_lim = self.pref_manager.get_value('manual_y_lim')
+            manual_val = self.pref_manager.get_value('manual_y_lim')
+            y_lim = float(manual_val) if (manual_val is not None and np.isfinite(manual_val) and manual_val > 0) else None
 
         for curChannel in channels:
-            if scaling_mode == 'station':
+            if scaling_mode == 'station' and stream:
                 stat_stream = stream.select(station = curChannel.parent.name,
                                             network = curChannel.parent.network)
-                abs_values = [np.max(np.abs(x)) for x in stat_stream.traces]
-                y_lim = np.max(abs_values)
+                abs_values = [get_safe_trace_max(x.data) for x in stat_stream.traces if hasattr(x, 'data')]
+                valid_vals = [v for v in abs_values if v is not None]
+                y_lim = max(valid_vals) if valid_vals else None
 
             views = displayManager.getViewContainer(station = curChannel.parent.name,
                                                     channel = curChannel.name,
@@ -374,11 +411,18 @@ class SeismogramView(psy_view.viewnode.ViewNode):
                     self.envelope_collection_filled = None
 
 
-            if y_lim is None:
-                y_lim = np.max(np.abs(trace.data))
+            if y_lim is None or not np.isfinite(y_lim) or y_lim <= 0:
+                t_max = get_safe_trace_max(trace.data)
+                y_lim = t_max if t_max is not None else 1.0
+
             if show_envelope is True:
-                env_max = np.max(trace_envelope)
-                y_lim = np.max([y_lim, env_max])
+                env_max = get_safe_trace_max(trace_envelope)
+                if env_max is not None:
+                    y_lim = max(y_lim, env_max)
+
+            if y_lim is None or not np.isfinite(y_lim) or y_lim <= 0:
+                y_lim = 1.0
+
             self.axes.set_ylim(bottom = -y_lim, top = y_lim)
             self.logger.debug('y_lim: %s', y_lim)
 
@@ -776,7 +820,9 @@ class DemoView(psy_view.viewnode.ViewNode):
             self.axes.set_frame_on(False)
             self.axes.get_xaxis().set_visible(False)
             self.axes.get_yaxis().set_visible(False)
-            yLim = np.max(np.abs(trace.data))
+            yLim = get_safe_trace_max(trace.data)
+            if yLim is None or not np.isfinite(yLim) or yLim <= 0:
+                yLim = 1.0
             self.axes.set_ylim(bottom = -yLim, top = yLim)
 
 
