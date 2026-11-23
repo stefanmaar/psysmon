@@ -674,6 +674,8 @@ class Inventory(object):
 
         for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
+                if cur_key == 'location' and not cur_value:
+                    cur_value = '--'
                 ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
@@ -3982,6 +3984,8 @@ class Network(object):
         :obj:`list` of :class:`Station`
             The removed stations.
         '''
+        if not location:
+            location = '--'
         station_2_remove = [x for x in self.stations if x.name == name and x.location == location]
 
         removed_station = None
@@ -3990,7 +3994,6 @@ class Network(object):
         elif len(station_2_remove) == 1:
             station_2_remove = station_2_remove[0]
             self.stations.remove(station_2_remove)
-            station_2_remove.network = None
             station_2_remove.parent_network = None
             removed_station = station_2_remove
         else:
@@ -4027,6 +4030,8 @@ class Network(object):
 
         for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
+                if cur_key == 'location' and not cur_value:
+                    cur_value = '--'
                 ret_station = [x for x in ret_station if getattr(x, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
@@ -4293,6 +4298,8 @@ class Array(object):
 
         for cur_key, cur_value in kwargs.items():
             if cur_key in valid_keys:
+                if cur_key == 'location' and not cur_value:
+                    cur_value = '--'
                 ret_station = [x for x in ret_station if hasattr(x.item, cur_key) and getattr(x.item, cur_key) == cur_value]
             else:
                 warnings.warn('Search attribute %s is not existing.' % cur_key, RuntimeWarning)
@@ -4440,14 +4447,20 @@ def add_sensors_from_obspy_inventory(inv, obs_inv):
             for obs_chan in obs_stat:
                 new_sensor = True
                 obs_sensor = obs_chan.sensor
-                if obs_sensor.serial_number is None:
+                if obs_sensor is None or not hasattr(obs_sensor, 'serial_number'):
                     serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    model = 'unknown'
+                    producer = 'unknown'
+                    description = 'unknown'
                 else:
-                    serial = obs_sensor.serial_number
+                    if obs_sensor.serial_number is None:
+                        serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    else:
+                        serial = obs_sensor.serial_number
 
-                model = obs_sensor.model or 'unknown'
-                producer = obs_sensor.manufacturer or 'unknown'
-                description = obs_sensor.description or 'unknown'
+                    model = obs_sensor.model or 'unknown'
+                    producer = obs_sensor.manufacturer or 'unknown'
+                    description = obs_sensor.description or 'unknown'
 
                 # If there exists a description but no model name,
                 # use the description as the model name.
@@ -4621,13 +4634,19 @@ def add_recorders_from_obspy_inventory(inv, obs_inv):
 
                 # Add the sensor component
                 obs_sensor = obs_chan.sensor
-                if obs_sensor.serial_number is None:
+                if obs_sensor is None or not hasattr(obs_sensor, 'serial_number'):
                     serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    model = 'unknown'
+                    producer = 'unknown'
+                    description = 'unknown'
                 else:
-                    serial = obs_sensor.serial_number
-                model = obs_sensor.model or 'unknown'
-                producer = obs_sensor.manufacturer or 'unknown'
-                description = obs_sensor.description or 'unknown'
+                    if obs_sensor.serial_number is None:
+                        serial = obs_net.code + '-' + obs_stat.code + '-' + obs_chan.location_code + '-' + obs_chan.code
+                    else:
+                        serial = obs_sensor.serial_number
+                    model = obs_sensor.model or 'unknown'
+                    producer = obs_sensor.manufacturer or 'unknown'
+                    description = obs_sensor.description or 'unknown'
                 # If there exists a description but no model name,
                 # use the description as the model name.
                 if description != 'unknown' and model == 'unknown':
@@ -4655,17 +4674,21 @@ def add_networks_from_obspy_inventory(inv, obs_inv):
 
         for obs_stat in obs_net:
             for obs_chan in obs_stat:
+                loc_code = obs_chan.location_code.strip() if (obs_chan.location_code and obs_chan.location_code.strip()) else '--'
                 psy_stat = psy_net.get_station(name = obs_stat.code,
-                                               location = obs_chan.location_code)
+                                               location = loc_code)
                 if len(psy_stat) == 0:
+                    description = obs_stat.site.name if obs_stat.site is not None else None
                     psy_stat = Station(name = obs_stat.code,
-                                       location = obs_chan.location_code,
+                                       location = loc_code,
                                        x = obs_chan.longitude,
                                        y = obs_chan.latitude,
                                        z = obs_chan.elevation,
                                        coord_system = 'epsg:4326',
-                                       description = obs_stat.site.name)
-                    psy_net.add_station(psy_stat)
+                                       description = description)
+                    added = psy_net.add_station(psy_stat)
+                    if added is None:
+                        psy_stat = psy_net.get_station(name = obs_stat.code, location = loc_code)[0]
                 else:
                     psy_stat = psy_stat[0]
 
