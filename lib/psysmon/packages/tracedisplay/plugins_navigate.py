@@ -26,6 +26,7 @@ import wx
 import psysmon
 from psysmon.core.plugins import InteractivePlugin
 from psysmon.artwork.icons import iconsBlack16 as icons
+import psysmon.core.preferences_manager as preferences_manager
 
 
 class Navigate(InteractivePlugin):
@@ -50,6 +51,15 @@ class Navigate(InteractivePlugin):
 
         # Set the shortcut string.
         self.accelerator_string = 'N'
+
+        # Add the plugin preferences.
+        pref_page = self.pref_manager.add_page('Preferences')
+        resp_group = pref_page.add_group('response')
+
+        item = preferences_manager.IntegerSpinPrefItem(name = 'zoom_history_steps',
+                                                       value = 3,
+                                                       limit = (1, 10))
+        resp_group.add_item(item)
 
         # Accelerators for shortcuts not bound to a menu item.
         handler = ft.partial(self.on_time_advance, step = 100)
@@ -146,6 +156,12 @@ class Navigate(InteractivePlugin):
                                                   key_combination = ('WXK_ALT', 'WXK_LEFT'),
                                                   action = self.parent.decreaseTimePercentage,
                                                   action_kwargs = {'step': 1})
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('"z"',),
+                                                  action = lambda: None)
+        self.parent.shortcut_manager.add_shortcut(origin_rid = self.rid,
+                                                  key_combination = ('Ctrl+Z',),
+                                                  action = getattr(self.parent, 'undo_zoom', lambda: None))
 
 
     def deactivate(self):

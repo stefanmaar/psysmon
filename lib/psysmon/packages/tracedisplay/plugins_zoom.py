@@ -49,16 +49,18 @@ class Zoom(InteractivePlugin):
         self.logger = psysmon.get_logger(self)
 
         self.icons['active'] = icons.zoom_icon_16
-        self.cursor = wx.CURSOR_MAGNIFIER
+        self.cursor = wx.CURSOR_CROSS
         #self.cursor = icons.zoom_icon_16
         #self.cursor_hotspot = (0.5, 0.5)
 
         self.bg = {}
         self.startTime = None
         self.endTime = None
+        self.in_drag = False
+        self.restore_on_release = False
 
         # Set the shortcut string.
-        self.accelerator_string = 'Z'
+        self.accelerator_string = 'SHIFT+Z'
         self.pref_accelerator_string = 'ALT+Z'
 
         # Accelerators for shortcuts not bound to a menu item.
@@ -174,27 +176,35 @@ class Zoom(InteractivePlugin):
         ''' Remove all elements added to the views.
         '''
         # Clear the zoom lines.
-        channel_container = self.parent.viewport.get_node(group = 'channel_container', node_type = 'container')
-        for cur_container in channel_container:
-            view_nodes = cur_container.get_node(node_type = 'view')
-            for cur_view in view_nodes:
-                cur_view.clear_annotation_artist(parent_rid = self.rid)
+        if hasattr(self.parent, 'viewport') and self.parent.viewport is not None:
+            channel_container = self.parent.viewport.get_node(group = 'channel_container', node_type = 'container')
+            for cur_container in channel_container:
+                view_nodes = cur_container.get_node(node_type = 'view')
+                for cur_view in view_nodes:
+                    cur_view.clear_annotation_artist(parent_rid = self.rid)
 
-
-        # Clear the motion notify callbacks.
-        self.parent.viewport.clear_mpl_event_callbacks(event_name = 'motion_notify_event')
+            # Clear the motion notify callbacks.
+            self.parent.viewport.clear_mpl_event_callbacks(event_name = 'motion_notify_event')
 
         self.bg = {}
+        self.in_drag = False
 
 
 
 
     def onButtonPress(self, event, parent = None):
         self.logger.debug('onButtonPress - button: %s', str(event.button))
+        if event.xdata is None:
+            return
         if event.button == 2:
             # Skip the middle mouse button.
             return
         elif event.button == 3:
+            # If zoom history is available, restore the previous zoom state.
+            if hasattr(self.parent, 'has_zoom_history') and self.parent.has_zoom_history():
+                self.parent.undo_zoom()
+                return
+
             # Use the right mouse button to zoom out.
             self.startTime = event.xdata
             ratio = self.pref_manager.get_value('zoom ratio')
@@ -211,6 +221,7 @@ class Zoom(InteractivePlugin):
 
         self.startTime = event.xdata
         self.endTime = event.xdata
+        self.in_drag = True
 
         viewport = self.parent.viewport
         cur_view = event.canvas.GetGrandParent()
@@ -225,12 +236,27 @@ class Zoom(InteractivePlugin):
 
     def onMouseMotion(self, event, parent = None):
         self.logger.debug('mouse motion')
+        if getattr(self, 'in_drag', False):
+            # If mouse left button was released outside the canvas / window:
+            app = wx.GetApp()
+            if app is not None:
+                try:
+                    left_down = wx.GetMouseState().LeftIsDown()
+                except Exception:
+                    left_down = True
+                if not left_down:
+                    self.cleanup()
+                    self.check_restore_tool()
+                    return
+
         self.logger.debug('x: %f', event.x)
         if event.inaxes is not None:
             self.logger.debug('xData: %f', event.xdata)
             self.endTime = event.xdata
 
-        viewport = self.parent.viewport
+        viewport = getattr(self.parent, 'viewport', None)
+        if viewport is None:
+            return
 
         channel_container = viewport.get_node(group = 'channel_container', node_type = 'container')
 
@@ -257,25 +283,61 @@ class Zoom(InteractivePlugin):
     def onButtonRelease(self, event, parent = None):
         self.logger.debug('onButtonRelease')
 
-        self.cleanup()
+        # Right-click release: no-op (zoom undo occurs on button press)
+        if getattr(event, 'button', None) == 3:
+            return
 
-        # Call the setTimeLimits of the displayManager.
-        # The timebase of the plots is unixseconds.
-        if self.startTime == self.endTime:
-            # This was a single click with no drag.
-            ratio = self.pref_manager.get_value('zoom ratio')
-            duration = self.parent.displayManager.endTime - self.parent.displayManager.startTime
-            shrinkAmount = duration * ratio/100.0
-            tmp = self.startTime
-            self.startTime = tmp - shrinkAmount/2.0
-            self.endTime = tmp + shrinkAmount/2.0
-        elif self.endTime < self.startTime:
-            tmp = self.startTime
-            self.startTime = self.endTime
-            self.endTime = tmp
+        # Only button 1 (left mouse button) during active drag performs zoom-in
+        if getattr(event, 'button', None) != 1 or not getattr(self, 'in_drag', False):
+            if getattr(self, 'in_drag', False):
+                self.cleanup()
+                self.check_restore_tool()
+            return
 
-        self.parent.displayManager.setTimeLimits(UTCDateTime(self.startTime),
-                                               UTCDateTime(self.endTime))
+        try:
+            # Call the setTimeLimits of the displayManager.
+            # The timebase of the plots is unixseconds.
+            if self.startTime == self.endTime:
+                # This was a single click with no drag.
+                ratio = self.pref_manager.get_value('zoom ratio')
+                duration = self.parent.displayManager.endTime - self.parent.displayManager.startTime
+                shrinkAmount = duration * ratio/100.0
+                tmp = self.startTime
+                self.startTime = tmp - shrinkAmount/2.0
+                self.endTime = tmp + shrinkAmount/2.0
+            elif self.endTime < self.startTime:
+                tmp = self.startTime
+                self.startTime = self.endTime
+                self.endTime = tmp
 
-        self.parent.displayManager.parent.update_display()
+            if hasattr(self.parent, 'push_zoom_history'):
+                self.parent.push_zoom_history()
+
+            self.parent.displayManager.setTimeLimits(UTCDateTime(self.startTime),
+                                                   UTCDateTime(self.endTime))
+
+            self.parent.displayManager.parent.update_display()
+        finally:
+            self.cleanup()
+            self.check_restore_tool()
+
+
+    def check_restore_tool(self):
+        ''' Check whether to restore a swapped tool.
+        '''
+        if getattr(self, 'restore_on_release', False):
+            self.restore_on_release = False
+            if hasattr(self.parent, 'restore_tool'):
+                self.parent.restore_tool()
+            return
+
+        if getattr(self.parent, 'plugin_to_restore', None) is not None:
+            z_down = False
+            try:
+                z_down = wx.GetKeyState(ord('Z')) or wx.GetKeyState(ord('z'))
+            except Exception:
+                pass
+            if not z_down:
+                if hasattr(self.parent, 'restore_tool'):
+                    self.parent.restore_tool()
 
