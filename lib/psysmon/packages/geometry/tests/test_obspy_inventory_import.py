@@ -194,6 +194,35 @@ class ObsPyInventoryImportTestCase(unittest.TestCase):
         self.assertEqual(len(inv.networks[0].stations), 1)
         self.assertEqual(len(inv.networks[0].stations[0].channels), 2)
 
+    def test_export_xml_after_obspy_import(self):
+        ''' Test exporting an inventory converted from ObsPy to an XML file.
+        Verifies that etree is properly imported and export_xml does not fail.
+        '''
+        import tempfile
+        import os
+        import psysmon.packages.geometry.inventory_parser as psy_invparser
+
+        net = obs_inv.Network(code='DK')
+        stat = obs_inv.Station(code='SCO', latitude=70.48, longitude=-21.95, elevation=69.0)
+        chan = self._create_mock_channel('HHZ', location_code='')
+        stat.channels = [chan]
+        net.stations = [stat]
+        raw_inv = obs_inv.Inventory(networks=[net])
+
+        inv = psy_inv.Inventory.from_obspy_inventory(raw_inv)
+        parser = psy_invparser.InventoryXmlParser()
+
+        with tempfile.NamedTemporaryFile(suffix='.xml', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            parser.export_xml(inv, tmp_path)
+            self.assertTrue(os.path.exists(tmp_path))
+            self.assertGreater(os.path.getsize(tmp_path), 0)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
 
 if __name__ == '__main__':
     unittest.main()
