@@ -36,6 +36,7 @@ import glob
 import os
 
 import lxml.etree
+from lxml import etree
 
 import psysmon
 from psysmon.packages.geometry.inventory import Inventory
