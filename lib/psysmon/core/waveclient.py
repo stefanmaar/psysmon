@@ -36,7 +36,7 @@ from builtins import object
 import fnmatch
 import logging
 import os
-import pkg_resources
+import psysmon.core.util as psy_util
 import threading
 
 import numpy as np
@@ -704,14 +704,14 @@ class PsysmonDbWaveClient(WaveClient):
                     file_format = None
                     for format_ep in [x for (key, x) in list(EPS.items())]:
                         # search isFormat for given entry point
-                        isFormat = pkg_resources.load_entry_point(format_ep.dist.key,
-                            'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
-                            'isFormat')
+                        isFormat = psy_util.load_format_checker(format_ep, 'waveform')
+                        if isFormat is None:
+                            continue
                         # check format
                         self.logger.debug('Checking format with %s.', isFormat)
                         if isFormat(file_path):
                             file_format = format_ep.name
-                            break;
+                            break
 
                     if not file_format:
                         self.logger.error("Unknown file format. Skipping this file.")

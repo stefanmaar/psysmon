@@ -498,7 +498,7 @@ class ImportWaveformEditDlg(wx.Frame):
 
     def onAddFiles(self, event):
         from obspy.core.util.base import ENTRY_POINTS
-        from pkg_resources import load_entry_point
+        import psysmon.core.util as psy_util
 
         wildCards = self.getWildCardData()
 
@@ -539,9 +539,9 @@ class ImportWaveformEditDlg(wx.Frame):
                     EPS = ENTRY_POINTS['waveform']
                     for format_ep in [x for (key, x) in list(EPS.items()) if key == 'MSEED']:
                         # search isFormat for given entry point
-                        isFormat = load_entry_point(format_ep.dist.key,
-                            'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
-                            'isFormat')
+                        isFormat = psy_util.load_format_checker(format_ep, 'waveform')
+                        if isFormat is None:
+                            continue
                         # check format
                         self.logger.debug('Checking format with %s.', isFormat)
                         if isFormat(filename):
@@ -564,7 +564,7 @@ class ImportWaveformEditDlg(wx.Frame):
 
     def onAddDirectory(self, event):
         from obspy.core.util.base import ENTRY_POINTS
-        from pkg_resources import load_entry_point
+        import psysmon.core.util as psy_util
         import wx.lib.agw.multidirdialog as mdd
 
 #        dlg = wx.DirDialog(self, "Choose a directory:",
@@ -633,14 +633,14 @@ class ImportWaveformEditDlg(wx.Frame):
                                 EPS = ENTRY_POINTS['waveform']
                                 for format_ep in [x for (key, x) in list(EPS.items()) if key == 'MSEED']:
                                     # search isFormat for given entry point
-                                    isFormat = load_entry_point(format_ep.dist.key,
-                                        'obspy.plugin.%s.%s' % ('waveform', format_ep.name),
-                                        'isFormat')
+                                    isFormat = psy_util.load_format_checker(format_ep, 'waveform')
+                                    if isFormat is None:
+                                        continue
                                     # check format
                                     self.logger.debug('Checking format with %s.', isFormat)
                                     if isFormat(os.path.join(root,filename)):
                                         file_format = format_ep.name
-                                        break;
+                                        break
                                 else:
                                     file_format = 'unknown'
                             else:
