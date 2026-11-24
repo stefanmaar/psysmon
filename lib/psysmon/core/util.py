@@ -536,3 +536,47 @@ class Version(object):
                     nn[k] = 0
 
         return tuple(nn)
+
+
+def load_format_checker(format_ep, plugin_type='waveform'):
+    ''' Load the isFormat checker function for an ObsPy entry point.
+
+    Supports both modern importlib.metadata entry points (ObsPy >= 1.4, Python >= 3.10)
+    and legacy pkg_resources entry points.
+    '''
+    # 1. Try ObsPy's native buffered_load_entry_point
+    try:
+        from obspy.core.util.base import buffered_load_entry_point
+        dist_name = getattr(format_ep.dist, 'name', getattr(format_ep.dist, 'key', 'obspy'))
+        return buffered_load_entry_point(
+            dist_name,
+            'obspy.plugin.%s.%s' % (plugin_type, format_ep.name),
+            'isFormat')
+    except (ImportError, AttributeError):
+        pass
+
+    # 2. Try importlib.metadata directly
+    try:
+        import importlib.metadata
+        group = 'obspy.plugin.%s.%s' % (plugin_type, format_ep.name)
+        for ep in importlib.metadata.entry_points(group=group):
+            if ep.name == 'isFormat':
+                return ep.load()
+    except Exception:
+        pass
+
+    # 3. Fallback to pkg_resources for older legacy environments
+    try:
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            import pkg_resources
+            dist_name = getattr(format_ep.dist, 'key', getattr(format_ep.dist, 'name', 'obspy'))
+            return pkg_resources.load_entry_point(
+                dist_name,
+                'obspy.plugin.%s.%s' % (plugin_type, format_ep.name),
+                'isFormat')
+    except Exception:
+        pass
+
+    return None
